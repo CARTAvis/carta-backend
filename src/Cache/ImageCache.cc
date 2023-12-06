@@ -7,9 +7,9 @@
 #include "ImageCache.h"
 
 #include "ChannelImageCache.h"
+#include "CubeImageCache.h"
 #include "FullImageCache.h"
 #include "Logger/Logger.h"
-#include "StokesImageCache.h"
 #include "Util/Stokes.h"
 #include "Util/System.h"
 
@@ -31,7 +31,7 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelp
             ImageCache::ImageMemorySize(loader_helper->Width(), loader_helper->Height(), loader_helper->Depth(), 1);
         if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= single_stokes_image_memory_size) {
             spdlog::info("Cache single stokes image data.");
-            return std::make_unique<StokesImageCache>(loader_helper);
+            return std::make_unique<CubeImageCache>(loader_helper);
         }
 
         if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {

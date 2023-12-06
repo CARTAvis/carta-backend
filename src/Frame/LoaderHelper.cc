@@ -203,7 +203,7 @@ bool LoaderHelper::FillChannelImageCache(std::unique_ptr<float[]>& channel_data,
     return true;
 }
 
-bool LoaderHelper::FillStokesImageCache(std::unique_ptr<float[]>& stokes_data, int stokes) {
+bool LoaderHelper::FillCubeImageCache(std::unique_ptr<float[]>& stokes_data, int stokes) {
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
     auto data_size = stokes_slicer.slicer.length().product();
     stokes_data = std::make_unique<float[]>(data_size);

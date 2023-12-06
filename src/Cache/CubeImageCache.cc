@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "StokesImageCache.h"
+#include "CubeImageCache.h"
 
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
@@ -12,7 +12,7 @@
 
 namespace carta {
 
-StokesImageCache::StokesImageCache(std::shared_ptr<LoaderHelper> loader_helper)
+CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     : ImageCache(loader_helper), _beam_area(_loader_helper->GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
     // Update the availability of full image cache size
     std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
@@ -20,23 +20,23 @@ StokesImageCache::StokesImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     ulock_full_image_cache_size_available.unlock();
 }
 
-StokesImageCache::~StokesImageCache() {
+CubeImageCache::~CubeImageCache() {
     // Update the availability of full image cache size
     std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
     FULL_IMAGE_CACHE_SIZE_AVAILABLE += ImageMemorySize(_width, _height, _depth, 1);
     ulock_full_image_cache_size_available.unlock();
 }
 
-float* StokesImageCache::GetChannelData(int z, int stokes) {
+float* CubeImageCache::GetChannelData(int z, int stokes) {
     return CachedChannelDataAvailable(z, stokes) ? _stokes_data.get() + (_width * _height * z) : nullptr;
 }
 
-float StokesImageCache::GetValue(int x, int y, int z, int stokes) const {
+float CubeImageCache::GetValue(int x, int y, int z, int stokes) const {
     size_t idx = (_width * _height * z) + (_width * y) + x;
     return CachedChannelDataAvailable(z, stokes) ? _stokes_data[idx] : FLOAT_NAN;
 }
 
-bool StokesImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+bool CubeImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     int x, y;
     point.ToIndex(x, y);
     if (CachedChannelDataAvailable(ALL_Z, stokes)) {
@@ -50,9 +50,8 @@ bool StokesImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, 
     return false;
 }
 
-bool StokesImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes,
-    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
-    std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     // Region spectral profile for computed stokes can not be directly calculated from its pixel values. It is calculated from the
     // combination of spectral profiles for stokes I, Q, U, or V.
     if (!mask.shape().empty() && CachedChannelDataAvailable(ALL_Z, stokes) && !IsComputedStokes(stokes)) {
@@ -131,17 +130,17 @@ bool StokesImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, in
     return false;
 }
 
-bool StokesImageCache::CachedChannelDataAvailable(int z, int stokes) const {
+bool CubeImageCache::CachedChannelDataAvailable(int z, int stokes) const {
     return _loader_helper->IsCurrentStokes(stokes) && _stokes_image_cache_valid;
 }
 
-bool StokesImageCache::UpdateChannelImageCache(int z, int stokes) {
+bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
     if (CachedChannelDataAvailable(z, stokes)) {
         return true;
     }
 
     Timer t;
-    if (!_loader_helper->FillStokesImageCache(_stokes_data, stokes)) {
+    if (!_loader_helper->FillCubeImageCache(_stokes_data, stokes)) {
         _valid = false;
         return false;
     }
@@ -153,7 +152,7 @@ bool StokesImageCache::UpdateChannelImageCache(int z, int stokes) {
     return true;
 }
 
-void StokesImageCache::SetImageChannels(int z, int stokes) {
+void CubeImageCache::SetImageChannels(int z, int stokes) {
     if (!_loader_helper->IsCurrentStokes(stokes)) {
         _stokes_image_cache_valid = false;
     }
