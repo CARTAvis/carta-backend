@@ -182,6 +182,11 @@ int Frame::StokesAxis() {
     return _stokes_axis;
 }
 
+bool Frame::IsCurrentZStokes(const StokesSource& stokes_source) {
+    return (stokes_source.z_range.from == stokes_source.z_range.to) && (stokes_source.z_range.from == CurrentZ()) &&
+           (stokes_source.stokes == CurrentStokes());
+}
+
 bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
     std::string error;
     bool beams_ok = _loader->GetBeams(beams, error);
@@ -366,7 +371,6 @@ bool Frame::SetCursor(float x, float y) {
 
 bool Frame::FillImageCache() {
     // get image data for z, stokes
-
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
@@ -1605,68 +1609,103 @@ bool Frame::GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubIm
 bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data, bool report_performance) {
     // Get image data with a region applied
     Timer t;
-    casacore::SubImage<float> sub_image;
-    bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
+    std::vector<bool> region_mask;
 
-    if (!subimage_ok) {
-        return false;
-    }
+    if (IsCurrentZStokes(stokes_region.stokes_source)) {
+        try {
+            // Slice cached image data using LCRegion bounding box
+            casacore::Slicer bounding_box = stokes_region.image_region.asLCRegion().boundingBox();
+            StokesSlicer stokes_slicer(stokes_region.stokes_source, bounding_box);
+            data.resize(bounding_box.length().product());
 
-    casacore::IPosition subimage_shape = sub_image.shape();
-    if (subimage_shape.empty()) {
-        return false;
-    }
-
-    try {
-        casacore::IPosition start(subimage_shape.size(), 0);
-        casacore::IPosition count(subimage_shape);
-        casacore::Slicer slicer(start, count); // entire subimage
-        bool is_computed_stokes(!stokes_region.stokes_source.IsOriginalImage());
-
-        // Get image data
-        std::unique_lock<std::mutex> ulock(_image_mutex);
-        if (_loader->IsGenerated() || is_computed_stokes) { // For the image in memory
-            casacore::Array<float> tmp;
-            sub_image.doGetSlice(tmp, slicer);
-            data = tmp.tovector();
-        } else {
-            data.resize(subimage_shape.product()); // must size correctly before sharing
-            casacore::Array<float> tmp(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
-            sub_image.doGetSlice(tmp, slicer);
-        }
-
-        // Get mask that defines region in subimage bounding box
-        casacore::Array<bool> tmpmask;
-        sub_image.doGetMaskSlice(tmpmask, slicer);
-        ulock.unlock();
-
-        // Apply mask to data
-        std::vector<bool> datamask = tmpmask.tovector();
-        for (size_t i = 0; i < data.size(); ++i) {
-            if (!datamask[i]) {
-                data[i] = NAN;
+            if (GetSlicerData(stokes_slicer, data.data())) {
+                // Next get the LCRegion as a mask (LCRegion is a Lattice<bool>)
+                casacore::Array<bool> tmpmask = stokes_region.image_region.asLCRegion().get();
+                region_mask = tmpmask.tovector();
             }
+        } catch (const casacore::AipsError& err) {
+            // ImageRegion underlying region was not LCRegion
+            data.clear();
         }
-
-        if (report_performance) {
-            spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
-        }
-
-        return true;
-    } catch (casacore::AipsError& err) {
-        data.clear();
     }
 
-    return false;
+    if (data.empty()) {
+        // Apply region to image to get SubImage data
+        casacore::SubImage<float> sub_image;
+        bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
+
+        if (!subimage_ok) {
+            return false;
+        }
+
+        casacore::IPosition subimage_shape = sub_image.shape();
+        if (subimage_shape.empty()) {
+            return false;
+        }
+
+        try {
+            casacore::IPosition start(subimage_shape.size(), 0);
+            casacore::IPosition count(subimage_shape);
+            casacore::Slicer slicer(start, count); // entire subimage
+            bool is_computed_stokes(!stokes_region.stokes_source.IsOriginalImage());
+
+            // Get image data and mask, with image mutex locked
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            casacore::Array<float> tmpdata;
+            if (_loader->IsGenerated() || is_computed_stokes) { // For the image in memory
+                sub_image.doGetSlice(tmpdata, slicer);
+                data = tmpdata.tovector();
+            } else {
+                data.resize(subimage_shape.product()); // must size correctly before sharing
+                tmpdata = casacore::Array<float>(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+                sub_image.doGetSlice(tmpdata, slicer);
+            }
+
+            // Get mask that defines region in subimage bounding box
+            casacore::Array<bool> tmpmask;
+            sub_image.doGetMaskSlice(tmpmask, slicer);
+            ulock.unlock();
+            region_mask = tmpmask.tovector();
+        } catch (const casacore::AipsError& err) {
+            data.clear();
+            return false;
+        }
+    }
+
+    // Apply mask to data
+    for (size_t i = 0; i < data.size(); ++i) {
+        if (!region_mask[i]) {
+            data[i] = NAN;
+        }
+    }
+
+    if (report_performance) {
+        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
+    }
+
+    return true;
 }
 
 bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
-    // Get image data with a slicer applied
+    // Get image data with a slicer applied; data must be correctly resized
+    bool data_ok(false);
     casacore::Array<float> tmp(stokes_slicer.slicer.length(), data, casacore::StorageInitPolicy::SHARE);
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool data_ok = _loader->GetSlice(tmp, stokes_slicer);
-    _loader->CloseImageIfUpdated();
-    ulock.unlock();
+
+    if (_image_cache_valid && IsCurrentZStokes(stokes_slicer.stokes_source)) {
+        // Slice image cache
+        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false); // read lock
+        auto xy_shape = casacore::IPosition(2, ImageShape()(0), ImageShape()(1));
+        casacore::Array<float> image_cache_as_array(xy_shape, _image_cache.get(), casacore::StorageInitPolicy::SHARE);
+        auto slicer = stokes_slicer.slicer;
+        tmp = image_cache_as_array(slicer);
+        data_ok = true;
+    } else {
+        // Use loader to slice image
+        std::unique_lock<std::mutex> ulock(_image_mutex);
+        data_ok = _loader->GetSlice(tmp, stokes_slicer);
+        _loader->CloseImageIfUpdated();
+        ulock.unlock();
+    }
     return data_ok;
 }
 
