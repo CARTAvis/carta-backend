@@ -2274,15 +2274,21 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 float* Frame::GetImageData(int z, int stokes) {
     _image_state->CheckCurrentZ(z);
     _image_state->CheckCurrentStokes(stokes);
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->GetChannelData(z, stokes);
 }
 
 bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->LoadCachedPointSpectralData(profile, stokes, point);
 }
 
 bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->LoadCachedRegionSpectralData(z_range, stokes, mask, origin, profiles);
 }
 
