@@ -1694,8 +1694,14 @@ bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
     if (_image_cache_valid && IsCurrentZStokes(stokes_slicer.stokes_source)) {
         // Slice image cache
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false); // read lock
-        auto xy_shape = casacore::IPosition(2, ImageShape()(0), ImageShape()(1));
-        casacore::Array<float> image_cache_as_array(xy_shape, _image_cache.get(), casacore::StorageInitPolicy::SHARE);
+        auto cache_shape = ImageShape();
+        if (Depth() > 1) {
+            cache_shape(_spectral_axis) = 1;
+        }
+        if (NumStokes() > 1) {
+            cache_shape(_stokes_axis) = 1;
+        }
+        casacore::Array<float> image_cache_as_array(cache_shape, _image_cache.get(), casacore::StorageInitPolicy::SHARE);
         auto slicer = stokes_slicer.slicer;
         tmp = image_cache_as_array(slicer);
         data_ok = true;
