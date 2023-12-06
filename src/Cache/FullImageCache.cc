@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "CubeImageCache.h"
+#include "FullImageCache.h"
 
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
@@ -12,7 +12,7 @@
 
 namespace carta {
 
-CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
+FullImageCache::FullImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     : ImageCache(loader_helper),
       _stokes_i(-1),
       _stokes_q(-1),
@@ -21,7 +21,7 @@ CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
       _beam_area(DOUBLE_NAN),
       _computed_stokes_channel(-1) {
     Timer t;
-    if (!_loader_helper->FillCubeImageCache(_stokes_data)) {
+    if (!_loader_helper->FillFullImageCache(_stokes_data)) {
         _valid = false;
         return;
     }
@@ -45,7 +45,7 @@ CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     ulock_full_image_cache_size_available.unlock();
 }
 
-CubeImageCache::~CubeImageCache() {
+FullImageCache::~FullImageCache() {
     // Update the availability of full image cache size
     if (_valid) {
         std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
@@ -54,7 +54,7 @@ CubeImageCache::~CubeImageCache() {
     }
 }
 
-float* CubeImageCache::GetChannelData(int z, int stokes) {
+float* FullImageCache::GetChannelData(int z, int stokes) {
     if (IsComputedStokes(stokes)) {
         if (_computed_stokes_channel_data.count(stokes) && _computed_stokes_channel == z) {
             return _computed_stokes_channel_data[stokes].get();
@@ -116,7 +116,7 @@ float* CubeImageCache::GetChannelData(int z, int stokes) {
     return _stokes_data[stokes].get() + (_width * _height * z);
 }
 
-float CubeImageCache::GetValue(int x, int y, int z, int stokes) const {
+float FullImageCache::GetValue(int x, int y, int z, int stokes) const {
     size_t idx = (_width * _height * z) + (_width * y) + x;
 
     if (IsComputedStokes(stokes)) {
@@ -154,7 +154,7 @@ float CubeImageCache::GetValue(int x, int y, int z, int stokes) const {
     return _stokes_data.at(stokes)[idx];
 }
 
-bool CubeImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+bool FullImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     int x, y;
     point.ToIndex(x, y);
     if (_stokes_data.count(stokes) || IsComputedStokes(stokes)) {
@@ -168,7 +168,7 @@ bool CubeImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, in
     return false;
 }
 
-bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool FullImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     // Region spectral profile for computed stokes can not be directly calculated from its pixel values. It is calculated from the
     // combination of spectral profiles for stokes I, Q, U, or V.
@@ -248,15 +248,15 @@ bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
     return false;
 }
 
-bool CubeImageCache::CachedChannelDataAvailable(int z, int stokes) const {
+bool FullImageCache::CachedChannelDataAvailable(int z, int stokes) const {
     return true;
 }
 
-bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
+bool FullImageCache::UpdateChannelImageCache(int z, int stokes) {
     return true;
 }
 
-void CubeImageCache::SetImageChannels(int z, int stokes) {
+void FullImageCache::SetImageChannels(int z, int stokes) {
     _loader_helper->SetImageChannels(z, stokes);
 }
 

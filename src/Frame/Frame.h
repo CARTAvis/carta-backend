@@ -18,7 +18,7 @@
 #include <unordered_map>
 
 #include "Cache/ChannelImageCache.h"
-#include "Cache/CubeImageCache.h"
+#include "Cache/FullImageCache.h"
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"

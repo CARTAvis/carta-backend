@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_CACHE_CUBEIMAGECACHE_H_
-#define CARTA_SRC_CACHE_CUBEIMAGECACHE_H_
+#ifndef CARTA_SRC_CACHE_FULLIMAGECACHE_H_
+#define CARTA_SRC_CACHE_FULLIMAGECACHE_H_
 
 #include "ImageCache.h"
 
@@ -20,10 +20,10 @@
 
 namespace carta {
 
-class CubeImageCache : public ImageCache {
+class FullImageCache : public ImageCache {
 public:
-    CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper);
-    ~CubeImageCache() override;
+    FullImageCache(std::shared_ptr<LoaderHelper> loader_helper);
+    ~FullImageCache() override;
 
     float* GetChannelData(int z, int stokes) override;
     inline float GetValue(int x, int y, int z, int stokes) const override;
@@ -55,4 +55,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_SRC_CACHE_CUBEIMAGECACHE_H_
+#endif // CARTA_SRC_CACHE_FULLIMAGECACHE_H_

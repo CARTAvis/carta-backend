@@ -24,7 +24,7 @@ public:
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg);
     bool TileCacheAvailable();
     double GetBeamArea();
-    bool FillCubeImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data);
+    bool FillFullImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data);
     bool FillChannelImageCache(std::unique_ptr<float[]>& channel_data, int z, int stokes);
     bool FillStokesImageCache(std::unique_ptr<float[]>& stokes_data, int stokes);
     bool IsValid() const;

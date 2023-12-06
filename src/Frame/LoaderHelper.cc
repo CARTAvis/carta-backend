@@ -175,7 +175,7 @@ double LoaderHelper::GetBeamArea() {
     return _loader->CalculateBeamArea();
 }
 
-bool LoaderHelper::FillCubeImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data) {
+bool LoaderHelper::FillFullImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data) {
     if (!stokes_data.empty()) {
         stokes_data.clear();
     }
@@ -185,7 +185,7 @@ bool LoaderHelper::FillCubeImageCache(std::map<int, std::unique_ptr<float[]>>& s
         auto data_size = stokes_slicer.slicer.length().product();
         stokes_data[stokes] = std::make_unique<float[]>(data_size);
         if (!GetSlicerData(stokes_slicer, stokes_data[stokes].get())) {
-            spdlog::error("Loading cube image cache failed (stokes index: {}).", stokes);
+            spdlog::error("Loading cube image failed (stokes index: {}).", stokes);
             return false;
         }
     }
@@ -197,7 +197,7 @@ bool LoaderHelper::FillChannelImageCache(std::unique_ptr<float[]>& channel_data,
     auto data_size = stokes_slicer.slicer.length().product();
     channel_data = std::make_unique<float[]>(data_size);
     if (!GetSlicerData(stokes_slicer, channel_data.get())) {
-        spdlog::error("Loading channel image cache failed (z: {}, stokes: {})", z, stokes);
+        spdlog::error("Loading channel image failed (z: {}, stokes: {})", z, stokes);
         return false;
     }
     return true;
@@ -208,7 +208,7 @@ bool LoaderHelper::FillStokesImageCache(std::unique_ptr<float[]>& stokes_data, i
     auto data_size = stokes_slicer.slicer.length().product();
     stokes_data = std::make_unique<float[]>(data_size);
     if (!GetSlicerData(stokes_slicer, stokes_data.get())) {
-        spdlog::error("Loading cube image cache failed (stokes index: {}).", stokes);
+        spdlog::error("Loading cube image failed (stokes index: {}).", stokes);
         return false;
     }
     return true;
