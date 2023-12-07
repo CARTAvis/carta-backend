@@ -111,4 +111,79 @@ float ImageCache::ImageMemorySize(size_t width, size_t height, size_t depth, siz
     return (image_memory_size + num_computed_stokes * width * height * sizeof(float)) / 1.0e6; // MB
 }
 
+void ImageCache::DoStatisticsCalculations(const AxisRange& z_range, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, double beam_area, const std::function<float(size_t idx)>& get_value,
+    std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+    int x_min = origin(0);
+    int y_min = origin(1);
+    casacore::IPosition mask_shape(mask.shape());
+    int mask_width = mask_shape(0);
+    int mask_height = mask_shape(1);
+    int start = z_range.from;
+    int end = z_range.to;
+    size_t z_size = end - start + 1;
+    bool has_flux = !std::isnan(beam_area);
+
+    profiles[CARTA::StatsType::Sum] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::FluxDensity] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::Mean] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::RMS] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::Sigma] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::SumSq] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::Min] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::Max] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::Extrema] = std::vector<double>(z_size, DOUBLE_NAN);
+    profiles[CARTA::StatsType::NumPixels] = std::vector<double>(z_size, DOUBLE_NAN);
+
+#pragma omp parallel for
+    for (int z = start; z <= end; ++z) {
+        double sum = 0;
+        double mean = 0;
+        double rms = 0;
+        double sigma = 0;
+        double sum_sq = 0;
+        double min = std::numeric_limits<float>::max();
+        double max = std::numeric_limits<float>::lowest();
+        double extrema = 0;
+        double num_pixels = 0;
+
+        for (int x = x_min; x < x_min + mask_width; ++x) {
+            for (int y = y_min; y < y_min + mask_height; ++y) {
+                // Get pixel value
+                size_t idx = (_width * _height * z) + (_width * y) + x;
+                auto val = get_value(idx);
+                if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
+                    sum += val;
+                    sum_sq += val * val;
+                    min = val < min ? val : min;
+                    max = val > max ? val : max;
+                    num_pixels++;
+                }
+            }
+        }
+
+        if (num_pixels) {
+            mean = sum / num_pixels;
+            rms = sqrt(sum_sq / num_pixels);
+            sigma = num_pixels > 1 ? sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1)) : 0;
+            extrema = (abs(min) > abs(max) ? min : max);
+            size_t idx = z - start;
+
+            profiles[CARTA::StatsType::Sum][idx] = sum;
+            profiles[CARTA::StatsType::Mean][idx] = mean;
+            profiles[CARTA::StatsType::RMS][idx] = rms;
+            profiles[CARTA::StatsType::Sigma][idx] = sigma;
+            profiles[CARTA::StatsType::SumSq][idx] = sum_sq;
+            profiles[CARTA::StatsType::Min][idx] = min;
+            profiles[CARTA::StatsType::Max][idx] = max;
+            profiles[CARTA::StatsType::Extrema][idx] = extrema;
+            profiles[CARTA::StatsType::NumPixels][idx] = num_pixels;
+
+            if (has_flux) {
+                profiles[CARTA::StatsType::FluxDensity][idx] = sum / beam_area;
+            }
+        }
+    }
+}
+
 } // namespace carta

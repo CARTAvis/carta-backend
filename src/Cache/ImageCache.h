@@ -51,6 +51,10 @@ public:
     bool IsValid() const;
 
 protected:
+    void DoStatisticsCalculations(const AxisRange& z_range, const casacore::ArrayLattice<casacore::Bool>& mask,
+        const casacore::IPosition& origin, double beam_area, const std::function<float(size_t idx)>& get_value,
+        std::map<CARTA::StatsType, std::vector<double>>& profiles);
+
     std::shared_ptr<LoaderHelper> _loader_helper;
     bool _valid;
 
