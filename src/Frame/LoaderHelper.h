@@ -38,7 +38,6 @@ public:
     int XAxis() const;
     int YAxis() const;
     int ZAxis() const;
-    int SpectralAxis() const;
     int StokesAxis() const;
     int CurrentZ() const;
     int CurrentStokes() const;

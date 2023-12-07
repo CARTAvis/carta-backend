@@ -167,20 +167,8 @@ size_t Frame::NumStokes() const {
     return _image_state->num_stokes;
 }
 
-int Frame::XAxis() const {
-    return _image_state->x_axis;
-}
-
-int Frame::YAxis() const {
-    return _image_state->y_axis;
-}
-
 int Frame::ZAxis() const {
     return _image_state->z_axis;
-}
-
-int Frame::SpectralAxis() const {
-    return _image_state->spectral_axis;
 }
 
 int Frame::StokesAxis() const {

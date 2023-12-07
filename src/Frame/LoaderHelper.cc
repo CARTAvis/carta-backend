@@ -257,10 +257,6 @@ int LoaderHelper::ZAxis() const {
     return _image_state->z_axis;
 }
 
-int LoaderHelper::SpectralAxis() const {
-    return _image_state->spectral_axis;
-}
-
 int LoaderHelper::StokesAxis() const {
     return _image_state->stokes_axis;
 }
