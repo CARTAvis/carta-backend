@@ -42,7 +42,7 @@ public:
 class CubeImageCacheTest : public ::testing::Test, public ImageGenerator {
 public:
     enum FileType { FITS, HDF5 };
-    enum ImageCacheType { Full, Cube, Channel };
+    enum ImageCacheType { Channel, All };
 
     static std::string GenerateFile(FileType file_type, std::string image_dims) {
         return file_type == FileType::FITS ? GeneratedFitsImagePath(image_dims, IMAGE_OPTS)
@@ -59,10 +59,8 @@ public:
     static void SetFullImageCacheSizeAvailable(
         const ImageCacheType& image_cache_type, int x_size, int y_size, int z_size, int stokes_size) {
         std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        if (image_cache_type == ImageCacheType::Full) {
+        if (image_cache_type == ImageCacheType::All) {
             FULL_IMAGE_CACHE_SIZE_AVAILABLE = 2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION;
-        } else if (image_cache_type == ImageCacheType::Cube) {
-            FULL_IMAGE_CACHE_SIZE_AVAILABLE = x_size * y_size * z_size * sizeof(float) / ONE_MILLION;
         } else {
             FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0;
         }
@@ -70,11 +68,8 @@ public:
     }
 
     static std::string TextPrefix(const ImageCacheType& image_cache_type) {
-        if (image_cache_type == ImageCacheType::Full) {
-            return "[w/ full image cache]";
-        }
-        if (image_cache_type == ImageCacheType::Cube) {
-            return "[w/ cube image cache]";
+        if (image_cache_type == ImageCacheType::All) {
+            return "[w/ all image cache]";
         }
         return "[w/ channel image cache]";
     }
@@ -618,8 +613,11 @@ TEST_F(CubeImageCacheTest, SpatialProfile3D) {
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
     SpatialProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Channel);
-    SpatialProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Full);
-    SpatialProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Cube);
+    SpatialProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::All);
+
+    auto results1 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, "", ImageCacheType::Channel);
+    auto results2 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, "", ImageCacheType::All);
+    CmpSpatialProfiles(results1, results2);
 }
 
 TEST_F(CubeImageCacheTest, SpatialProfile4D) {
@@ -629,16 +627,13 @@ TEST_F(CubeImageCacheTest, SpatialProfile4D) {
     std::vector<std::string> normal_stokes = {"I", "Q", "U", "V"};
     for (auto stokes : normal_stokes) {
         SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
-        SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Full);
-        SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::All);
     }
 
     for (auto stokes : STOKES_TYPES) {
         auto results1 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
-        auto results2 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Full);
-        auto results3 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        auto results2 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::All);
         CmpSpatialProfiles(results1, results2);
-        CmpSpatialProfiles(results1, results3);
     }
 }
 
@@ -647,10 +642,8 @@ TEST_F(CubeImageCacheTest, CursorSpectralProfile3D) {
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
     auto spectral_profile1 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Channel);
-    auto spectral_profile2 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Full);
-    auto spectral_profile3 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Cube);
+    auto spectral_profile2 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::All);
     CmpVectors(spectral_profile1, spectral_profile2);
-    CmpVectors(spectral_profile1, spectral_profile3);
 }
 
 TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
@@ -659,27 +652,41 @@ TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
 
     for (auto stokes : STOKES_TYPES) {
         auto spectral_profile1 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Channel);
-        auto spectral_profile2 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Full);
-        auto spectral_profile3 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Cube);
+        auto spectral_profile2 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::All);
         CmpVectors(spectral_profile1, spectral_profile2);
-        CmpVectors(spectral_profile1, spectral_profile3);
     }
 }
 
-TEST_F(CubeImageCacheTest, PointRegionSpectralProfile) {
+TEST_F(CubeImageCacheTest, PointRegionSpectralProfile3D) {
+    FileType file_type = FileType::FITS;
+    std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
+
+    auto spectral_profile1 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, "z", ImageCacheType::Channel);
+    auto spectral_profile2 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, "z", ImageCacheType::All);
+    CmpVectors(spectral_profile1, spectral_profile2);
+}
+
+TEST_F(CubeImageCacheTest, PointRegionSpectralProfile4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
     for (auto stokes : STOKES_TYPES) {
         auto spectral_profile1 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Channel);
-        auto spectral_profile2 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Full);
-        auto spectral_profile3 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Cube);
+        auto spectral_profile2 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::All);
         CmpVectors(spectral_profile1, spectral_profile2);
-        CmpVectors(spectral_profile1, spectral_profile3);
     }
 }
 
-TEST_F(CubeImageCacheTest, CubeHistogram) {
+TEST_F(CubeImageCacheTest, CubeHistogram3D) {
+    FileType file_type = FileType::FITS;
+    std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
+
+    auto hist1 = CubeHistogram(file_type, filename, IMAGE_DIMS, "", ImageCacheType::Channel);
+    auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, "", ImageCacheType::All);
+    EXPECT_TRUE(CmpHistograms(hist1, hist2));
+}
+
+TEST_F(CubeImageCacheTest, CubeHistogram4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
@@ -688,60 +695,81 @@ TEST_F(CubeImageCacheTest, CubeHistogram) {
 
     for (auto stokes : normal_stokes) {
         auto hist1 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
-        auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Full);
-        auto hist3 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::All);
         EXPECT_TRUE(CmpHistograms(hist1, hist2));
-        EXPECT_TRUE(CmpHistograms(hist1, hist3));
     }
 
     for (auto stokes : computed_stokes) {
         auto hist1 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
-        auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Full);
-        auto hist3 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::All);
         EXPECT_TRUE(CmpHistograms(hist1, hist2, false));
-        EXPECT_TRUE(CmpHistograms(hist1, hist3, false));
     }
 }
 
-TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile) {
+TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile3D) {
+    FileType file_type = FileType::FITS;
+    std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
+    CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
+
+    auto spectral_profile1 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, "z", region_type, ImageCacheType::Channel);
+    auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, "z", region_type, ImageCacheType::All);
+    EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
+}
+
+TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
     CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
 
     for (auto stokes : STOKES_TYPES) {
         auto spectral_profile1 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Channel);
-        auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Full);
-        auto spectral_profile3 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Cube);
+        auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::All);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
-        EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile3));
     }
 }
 
-TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile) {
+TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile3D) {
+    FileType file_type = FileType::FITS;
+    std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
+    CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
+
+    auto spectral_profile1 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, "z", region_type, ImageCacheType::Channel);
+    auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, "z", region_type, ImageCacheType::All);
+    EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
+}
+
+TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
     CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
 
     for (auto stokes : STOKES_TYPES) {
         auto spectral_profile1 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Channel);
-        auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Full);
-        auto spectral_profile3 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Cube);
+        auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::All);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
-        EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile3));
     }
 }
 
-TEST_F(CubeImageCacheTest, ImagePixelData) {
+TEST_F(CubeImageCacheTest, ImagePixelData3D) {
+    FileType file_type = FileType::FITS;
+    std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
+
+    auto data1 = TestImagePixelData(file_type, filename, IMAGE_DIMS, "", ImageCacheType::Channel);
+    auto data2 = TestImagePixelData(file_type, filename, IMAGE_DIMS, "", ImageCacheType::All);
+    for (int i = 0; i < data1.size(); ++i) {
+        CmpVectors(data1[i], data2[i]);
+    }
+}
+
+TEST_F(CubeImageCacheTest, ImagePixelData4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
     for (auto stokes : STOKES_TYPES) {
         auto data1 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
-        auto data2 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Full);
-        auto data3 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        auto data2 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::All);
         for (int i = 0; i < data1.size(); ++i) {
             CmpVectors(data1[i], data2[i]);
-            CmpVectors(data1[i], data3[i]);
         }
     }
 }

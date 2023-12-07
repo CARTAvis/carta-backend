@@ -25,19 +25,16 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelp
         auto depth = loader_helper->Depth();
         auto num_stokes = loader_helper->NumStokes();
 
-        auto full_image_memory_size = ImageCache::ImageMemorySize(width, height, depth, num_stokes);
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= full_image_memory_size && num_stokes > 1) {
-            spdlog::info("Cache full image data.");
-            return std::make_unique<FullImageCache>(loader_helper);
-        }
-
-        auto single_cube_image_memory_size = ImageCache::ImageMemorySize(width, height, depth, 1);
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= single_cube_image_memory_size && depth > 1) {
-            spdlog::info("Cache single cube image data.");
-            return std::make_unique<CubeImageCache>(loader_helper);
-        }
-
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0 && depth > 1) {
+        if (depth > 1) {
+            auto full_image_memory_size = ImageCache::ImageMemorySize(width, height, depth, num_stokes);
+            if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= full_image_memory_size) {
+                if (num_stokes > 1) {
+                    spdlog::info("Cache full cubes image data.");
+                    return std::make_unique<FullImageCache>(loader_helper);
+                }
+                spdlog::info("Cache single cube image data.");
+                return std::make_unique<CubeImageCache>(loader_helper);
+            }
             spdlog::info("Cube image too large ({:.0f} MB). Not cache the whole image data.", full_image_memory_size);
         }
     }
