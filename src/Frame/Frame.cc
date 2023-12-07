@@ -336,11 +336,12 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
             bool z_ok(CheckZ(new_z));
             bool stokes_ok(CheckStokes(new_stokes));
             if (z_ok && stokes_ok) {
+                // invalidate the image cache
+                InvalidateImageCache();
+
                 _z_index = new_z;
                 _stokes_index = new_stokes;
 
-                // invalidate the image cache
-                InvalidateImageCache();
 
                 if (!(_loader->UseTileCache() && _loader->HasMip(2)) || IsComputedStokes(_stokes_index)) {
                     // Reload the full channel cache for loaders which use it
@@ -1622,6 +1623,8 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
                 // Next get the LCRegion as a mask (LCRegion is a Lattice<bool>)
                 casacore::Array<bool> tmpmask = stokes_region.image_region.asLCRegion().get();
                 region_mask = tmpmask.tovector();
+            } else {
+                data.clear();
             }
         } catch (const casacore::AipsError& err) {
             // ImageRegion underlying region was not LCRegion
@@ -1693,17 +1696,26 @@ bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
 
     if (_image_cache_valid && IsCurrentZStokes(stokes_slicer.stokes_source)) {
         // Slice image cache
-        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false); // read lock
         auto cache_shape = ImageShape();
-        if (Depth() > 1) {
+        auto slicer_start = stokes_slicer.slicer.start();
+        auto slicer_end = stokes_slicer.slicer.end();
+
+        // Adjust cache shape and slicer for single channel and stokes
+        if (_spectral_axis >= 0) {
             cache_shape(_spectral_axis) = 1;
+            slicer_start(_spectral_axis) = 0;
+            slicer_end(_spectral_axis) = 0;
         }
-        if (NumStokes() > 1) {
+        if (_stokes_axis >= 0) {
             cache_shape(_stokes_axis) = 1;
+            slicer_start(_stokes_axis) = 0;
+            slicer_end(_stokes_axis) = 0;
         }
+        casacore::Slicer cache_slicer(slicer_start, slicer_end, casacore::Slicer::endIsLast);
+
+        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false); // read lock
         casacore::Array<float> image_cache_as_array(cache_shape, _image_cache.get(), casacore::StorageInitPolicy::SHARE);
-        auto slicer = stokes_slicer.slicer;
-        tmp = image_cache_as_array(slicer);
+        tmp = image_cache_as_array(cache_slicer);
         data_ok = true;
     } else {
         // Use loader to slice image

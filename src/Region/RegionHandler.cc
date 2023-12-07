@@ -2490,6 +2490,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
             }
 
             if (cancelled) {
+                profiles.resize();
                 continue;
             }
 
@@ -2529,7 +2530,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         }
     }
 
-    return (progress >= 1.0) && !allEQ(profiles, NAN);
+    return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, NAN);
 }
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {
