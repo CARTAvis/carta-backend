@@ -156,6 +156,7 @@ void Region::SetReferenceRegion() {
     casacore::IPosition pixel_axes(2, 0, 1);
     casacore::Vector<casacore::Int> abs_rel;
     auto type(region_state.type);
+
     try {
         switch (type) {
             case CARTA::POINT:
@@ -212,7 +213,7 @@ void Region::SetReferenceRegion() {
             }
             case CARTA::ELLIPSE:
             case CARTA::ANNELLIPSE:   // [(cx, cy), (bmaj, bmin)]
-            case CARTA::ANNCOMPASS: { // [(cx, cy), (length, length)}
+            case CARTA::ANNCOMPASS: { // [(cx, cy), (length, length)]
                 float ellipse_rotation;
                 if (EllipsePointsToWorld(pixel_points, _wcs_control_points, ellipse_rotation)) {
                     // control points are in order: xcenter, ycenter, major axis, minor axis
@@ -822,7 +823,7 @@ casacore::TableRecord Region::GetImageRegionRecord(
     }
 
     if (record.empty()) {
-        // LCRegion failed, is outside the image or a rotated rectangle.
+        // LCRegion failed: is outside the image or a rotated rectangle.
         // Manually convert control points and put in Record.
         record = GetRegionPointsRecord(file_id, output_csys, output_shape);
     }

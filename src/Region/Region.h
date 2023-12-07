@@ -48,15 +48,10 @@ struct RegionState {
     RegionState(int ref_file_id_, CARTA::RegionType type_, const std::vector<CARTA::Point>& control_points_, float rotation_)
         : reference_file_id(ref_file_id_), type(type_), control_points(control_points_), rotation(rotation_) {}
 
-    void operator=(const RegionState& other) {
-        reference_file_id = other.reference_file_id;
-        type = other.type;
-        control_points = other.control_points;
-        rotation = other.rotation;
-    }
     bool operator==(const RegionState& rhs) {
         return (reference_file_id == rhs.reference_file_id) && (type == rhs.type) && !RegionChanged(rhs);
     }
+
     bool operator!=(const RegionState& rhs) {
         return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || RegionChanged(rhs);
     }
@@ -101,10 +96,6 @@ public:
         std::lock_guard<std::mutex> guard(_region_state_mutex);
         RegionState region_state = _region_state;
         return region_state;
-    }
-
-    inline int GetReferenceFileId() {
-        return GetRegionState().reference_file_id;
     }
 
     inline bool RegionChanged() { // reference image, type, points, or rotation changed
@@ -152,8 +143,6 @@ public:
     std::shared_mutex& GetActiveTaskMutex();
 
 private:
-    bool SetPoints(const std::vector<CARTA::Point>& points);
-
     // check points: number required for region type, and values are finite
     bool CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionType type);
     bool PointsFinite(const std::vector<CARTA::Point>& points);

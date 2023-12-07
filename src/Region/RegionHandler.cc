@@ -96,14 +96,6 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
     return valid_region;
 }
 
-bool RegionHandler::RegionChanged(int region_id) {
-    // Used to trigger sending profiles etc., so not for annotation regions
-    if (!RegionSet(region_id, true)) {
-        return false;
-    }
-    return GetRegion(region_id)->RegionChanged();
-}
-
 void RegionHandler::RemoveRegion(int region_id) {
     // Call destructor and erase from map
     if (!RegionSet(region_id)) {
