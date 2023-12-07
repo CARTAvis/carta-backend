@@ -18,6 +18,7 @@ CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
     FULL_IMAGE_CACHE_SIZE_AVAILABLE -= ImageMemorySize(_width, _height, _depth, 1);
     ulock.unlock();
+    spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
 }
 
 CubeImageCache::~CubeImageCache() {
@@ -25,6 +26,7 @@ CubeImageCache::~CubeImageCache() {
     std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
     FULL_IMAGE_CACHE_SIZE_AVAILABLE += ImageMemorySize(_width, _height, _depth, 1);
     ulock.unlock();
+    spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
 }
 
 float* CubeImageCache::GetChannelData(int z, int stokes) {

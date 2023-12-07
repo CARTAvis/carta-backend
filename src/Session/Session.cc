@@ -513,11 +513,6 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             // create Frame for image
             auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu, DEFAULT_Z));
 
-            // Update the full image cache
-            if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {
-                spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
-            }
-
             // query loader for mipmap dataset
             bool has_mipmaps(loader->HasMip(2));
 
@@ -658,9 +653,6 @@ void Session::DeleteFrame(int file_id) {
     }
     if (_region_handler) {
         _region_handler->RemoveFrame(file_id);
-    }
-    if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {
-        spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
     }
 }
 

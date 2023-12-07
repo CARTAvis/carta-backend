@@ -20,22 +20,25 @@ namespace carta {
 
 std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelper> loader_helper) {
     if (!loader_helper->TileCacheAvailable()) {
-        auto full_image_memory_size = ImageCache::ImageMemorySize(
-            loader_helper->Width(), loader_helper->Height(), loader_helper->Depth(), loader_helper->NumStokes());
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= full_image_memory_size && loader_helper->NumStokes() > 1) {
+        auto width = loader_helper->Width();
+        auto height = loader_helper->Height();
+        auto depth = loader_helper->Depth();
+        auto num_stokes = loader_helper->NumStokes();
+
+        auto full_image_memory_size = ImageCache::ImageMemorySize(width, height, depth, num_stokes);
+        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= full_image_memory_size && num_stokes > 1) {
             spdlog::info("Cache full image data.");
             return std::make_unique<FullImageCache>(loader_helper);
         }
 
-        auto single_stokes_image_memory_size =
-            ImageCache::ImageMemorySize(loader_helper->Width(), loader_helper->Height(), loader_helper->Depth(), 1);
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= single_stokes_image_memory_size) {
-            spdlog::info("Cache single stokes image data.");
+        auto single_cube_image_memory_size = ImageCache::ImageMemorySize(width, height, depth, 1);
+        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= single_cube_image_memory_size && depth > 1) {
+            spdlog::info("Cache single cube image data.");
             return std::make_unique<CubeImageCache>(loader_helper);
         }
 
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {
-            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", full_image_memory_size);
+        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0 && depth > 1) {
+            spdlog::info("Cube image too large ({:.0f} MB). Not cache the whole image data.", full_image_memory_size);
         }
     }
     spdlog::info("Cache single channel image data.");
@@ -89,12 +92,12 @@ void ImageCache::AssignFullImageCacheSizeAvailable(int& full_image_cache_size_av
         std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
         FULL_IMAGE_CACHE_SIZE_AVAILABLE = full_image_cache_size_available;
         ulock.unlock();
-        msg += fmt::format(" Total amount of full image cache {} MB.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
+        msg += fmt::format("Total amount of full image cache {} MB.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
     }
 }
 
 float ImageCache::ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes) {
-    float image_cubes_size = width * height * depth * num_stokes * sizeof(float);
+    float image_memory_size = width * height * depth * num_stokes * sizeof(float);
 
     // Conservatively estimate the number of computed stokes will be generated
     int num_computed_stokes = 0;
@@ -105,7 +108,7 @@ float ImageCache::ImageMemorySize(size_t width, size_t height, size_t depth, siz
     } else if (num_stokes == 2) {
         num_computed_stokes = 2;
     }
-    return (image_cubes_size + num_computed_stokes * width * height * sizeof(float)) / 1.0e6; // MB
+    return (image_memory_size + num_computed_stokes * width * height * sizeof(float)) / 1.0e6; // MB
 }
 
 } // namespace carta
