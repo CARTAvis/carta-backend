@@ -2009,9 +2009,12 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         cache_results[stat] = init_spectral;
     }
 
+    // Get 2D region start points
+    casacore::IPosition origin = lc_region->boundingBox().start();
+    casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1));
+
     // Spectral profile for the point region
     if (initial_region_state.type == CARTA::RegionType::POINT) {
-        casacore::IPosition origin = lc_region->boundingBox().start();
         PointXy point_xy(origin(0), origin(1));
         std::vector<float> profile;
         // Use cube image cache if it is available
@@ -2031,10 +2034,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
 
-    // Get 2D region mask and the region start points
+    // Get 2D region mask
     casacore::ArrayLattice<casacore::Bool> mask = region->GetImageRegionMask(file_id);
-    casacore::IPosition origin = lc_region->boundingBox().start();
-    casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1));
 
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
