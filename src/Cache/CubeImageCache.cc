@@ -15,16 +15,16 @@ namespace carta {
 CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     : ImageCache(loader_helper), _beam_area(_loader_helper->GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
     // Update the availability of full image cache size
-    std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+    std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
     FULL_IMAGE_CACHE_SIZE_AVAILABLE -= ImageMemorySize(_width, _height, _depth, 1);
-    ulock_full_image_cache_size_available.unlock();
+    ulock.unlock();
 }
 
 CubeImageCache::~CubeImageCache() {
     // Update the availability of full image cache size
-    std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+    std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
     FULL_IMAGE_CACHE_SIZE_AVAILABLE += ImageMemorySize(_width, _height, _depth, 1);
-    ulock_full_image_cache_size_available.unlock();
+    ulock.unlock();
 }
 
 float* CubeImageCache::GetChannelData(int z, int stokes) {

@@ -86,9 +86,9 @@ void ImageCache::AssignFullImageCacheSizeAvailable(int& full_image_cache_size_av
         }
 
         // Set the global variable for full image cache
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+        std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
         FULL_IMAGE_CACHE_SIZE_AVAILABLE = full_image_cache_size_available;
-        ulock_full_image_cache_size_available.unlock();
+        ulock.unlock();
         msg += fmt::format(" Total amount of full image cache {} MB.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
     }
 }
