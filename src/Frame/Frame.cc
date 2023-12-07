@@ -342,7 +342,6 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
                 _z_index = new_z;
                 _stokes_index = new_stokes;
 
-
                 if (!(_loader->UseTileCache() && _loader->HasMip(2)) || IsComputedStokes(_stokes_index)) {
                     // Reload the full channel cache for loaders which use it
                     FillImageCache();
