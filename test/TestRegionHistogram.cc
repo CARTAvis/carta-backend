@@ -66,7 +66,7 @@ public:
 
 TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
-    std::vector<float> endpoints = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
+    std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogram(image_path, endpoints, histogram_data);
 
@@ -83,7 +83,7 @@ TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
     ASSERT_EQ(histogram_data.histograms().num_bins(), expected_num_bins);
 
     FitsDataReader reader(image_path);
-    auto image_data = reader.ReadRegion({0, 0, 0}, {4, 4, 1});
+    auto image_data = reader.ReadRegion({1, 1, 0}, {5, 5, 1});
     double expected_mean = std::accumulate(image_data.begin(), image_data.end(), 0.0) / image_data.size();
     ASSERT_DOUBLE_EQ(histogram_data.histograms().mean(), expected_mean);
 }

@@ -66,7 +66,7 @@ public:
 
 TEST_F(RegionStatsTest, TestFitsRegionStats) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
-    std::vector<float> endpoints = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
+    std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionStatsData stats_data;
     bool ok = RegionStats(image_path, endpoints, stats_data);
 
@@ -80,7 +80,7 @@ TEST_F(RegionStatsTest, TestFitsRegionStats) {
 
     // Calc expected stats from image data
     FitsDataReader reader(image_path);
-    auto image_data = reader.ReadRegion({0, 0, 0}, {4, 4, 1});
+    auto image_data = reader.ReadRegion({1, 1, 0}, {5, 5, 1});
     double expected_sum = std::accumulate(image_data.begin(), image_data.end(), 0.0);
     double expected_mean = expected_sum / image_data.size();
     double expected_min = *std::min_element(image_data.begin(), image_data.end());
