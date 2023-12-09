@@ -56,6 +56,8 @@ set(TEST_SOURCES
         TestPvGenerator.cc
         TestRegion.cc
         TestRegionHistogram.cc
+        TestRegionMatched.cc
+        TestRegionRotbox.cc
         TestRegionSpatialProfiles.cc
         TestRegionStats.cc
         TestRestApi.cc

@@ -18,7 +18,7 @@ using namespace carta;
 using ::testing::FloatNear;
 using ::testing::Pointwise;
 
-class RegionTest : public ::testing::Test {
+class RegionMatchedTest : public ::testing::Test {
 public:
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, CARTA::RegionType type,
         const std::vector<float>& points, float rotation, std::shared_ptr<casacore::CoordinateSystem> csys) {
@@ -31,223 +31,191 @@ public:
         RegionState region_state(file_id, type, control_points, rotation);
         return region_handler.SetRegion(region_id, region_state, csys);
     }
-
-    static void ConvertRotboxPointsToCorners(
-        const std::vector<float>& points, float rotation, std::vector<float>& x, std::vector<float>& y) {
-        float center_x(points[0]), center_y(points[1]);
-        float width(points[2]), height(points[3]);
-        float cos_x = cos(rotation * M_PI / 180.0f);
-        float sin_x = sin(rotation * M_PI / 180.0f);
-        float width_vector_x = cos_x * width;
-        float width_vector_y = sin_x * width;
-        float height_vector_x = -sin_x * height;
-        float height_vector_y = cos_x * height;
-
-        // Bottom left
-        x.push_back(center_x + (-width_vector_x - height_vector_x) / 2.0f);
-        y.push_back(center_y + (-width_vector_y - height_vector_y) / 2.0f);
-        // Bottom right
-        x.push_back(center_x + (width_vector_x - height_vector_x) / 2.0f);
-        y.push_back(center_y + (width_vector_y - height_vector_y) / 2.0f);
-        // Top right
-        x.push_back(center_x + (width_vector_x + height_vector_x) / 2.0f);
-        y.push_back(center_y + (width_vector_y + height_vector_y) / 2.0f);
-        // Top left
-        x.push_back(center_x + (-width_vector_x + height_vector_x) / 2.0f);
-        y.push_back(center_y + (-width_vector_y + height_vector_y) / 2.0f);
-    }
 };
 
-TEST_F(RegionTest, TestSetUpdateRemoveRegion) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+TEST_F(RegionMatchedTest, TestMatchedImageRectangleLCRegion) {
+    // frame 0
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+    // frame 1
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+    std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
-    // Set region
+    // Set rectangle in frame 0
     carta::RegionHandler region_handler;
     int file_id(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
     std::vector<float> points = {5.0, 5.0, 4.0, 3.0};
     float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
-    bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
-
-    // RegionHandler checks
-    ASSERT_TRUE(ok);
-    ASSERT_FALSE(region_handler.IsPointRegion(region_id));
-    ASSERT_FALSE(region_handler.IsLineRegion(region_id));
-    ASSERT_TRUE(region_handler.IsClosedRegion(region_id));
-
-    // Region checks
-    ASSERT_EQ(RegionName(region_type), "rectangle");
-    auto region = region_handler.GetRegion(region_id);
-    ASSERT_TRUE(region); // shared_ptr<Region>
-    ASSERT_TRUE(region->IsValid());
-    ASSERT_FALSE(region->IsPoint());
-    ASSERT_FALSE(region->IsLineType());
-    ASSERT_FALSE(region->IsRotbox());
-    ASSERT_FALSE(region->IsAnnotation());
-    ASSERT_FALSE(region->RegionChanged());
-    ASSERT_TRUE(region->IsConnected());
-    ASSERT_EQ(region->CoordinateSystem(), csys);
-    auto region_state = region->GetRegionState();
-
-    // Update region
-    rotation = 30.0;
-    ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
-    ASSERT_TRUE(ok);
-    ASSERT_TRUE(region->IsValid());
-    ASSERT_TRUE(region->RegionChanged());
-    ASSERT_TRUE(region->IsRotbox());
-    auto new_region_state = region->GetRegionState();
-    ASSERT_FALSE(region_state == new_region_state);
-
-    // Remove region and frame (not set, should not cause error)
-    region_handler.RemoveRegion(region_id);
-    auto no_region = region_handler.GetRegion(region_id);
-    ASSERT_FALSE(no_region);
-}
-
-TEST_F(RegionTest, TestReferenceImageRectangleLCRegion) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
-
-    // Set region
-    carta::RegionHandler region_handler;
-    int file_id(0), region_id(-1);
-    CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
-    std::vector<float> points = {5.0, 5.0, 4.0, 3.0};
-    float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
+    auto csys = frame0->CoordinateSystem();
     bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
     ASSERT_TRUE(ok);
-
-    // Get Region as 3D LCRegion
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
-    auto image_shape = frame->ImageShape();
+
+    // Get Region as 2D LCRegion in frame1
+    file_id = 1;
+    csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
     auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+
+    // Check LCRegion
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
     ASSERT_EQ(lc_region->ndim(), image_shape.size());
     ASSERT_EQ(lc_region->latticeShape(), image_shape);
-    ASSERT_EQ(lc_region->shape(), casacore::IPosition(3, 5, 3, 10));
+    ASSERT_EQ(lc_region->shape(), casacore::IPosition(2, 5, 3));
 }
 
-TEST_F(RegionTest, TestReferenceImageEllipseLCRegion) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+TEST_F(RegionMatchedTest, TestMatchedImageEllipseLCRegion) {
+    // frame 0
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+    // frame 1
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+    std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
-    // Set region
+    // Set region in frame0
     carta::RegionHandler region_handler;
     int file_id(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
     std::vector<float> points = {5.0, 5.0, 4.0, 3.0};
     float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
+    auto csys = frame0->CoordinateSystem();
     bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
     ASSERT_TRUE(ok);
-
-    // Get Region as 3D LCRegion
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
-    auto image_shape = frame->ImageShape();
+
+    // Get Region as 2D LCRegion in frame1
+    file_id = 1;
+    csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
     auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+
+    // Check LCRegion
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
     ASSERT_EQ(lc_region->ndim(), image_shape.size());
     ASSERT_EQ(lc_region->latticeShape(), image_shape);
-    ASSERT_EQ(lc_region->shape(), casacore::IPosition(3, 7, 9, 10));
+    ASSERT_EQ(lc_region->shape(), casacore::IPosition(2, 7, 9));
 }
 
-TEST_F(RegionTest, TestReferenceImagePolygonLCRegion) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+TEST_F(RegionMatchedTest, TestMatchedImagePolygonLCRegion) {
+    // frame 0
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+    // frame 1
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+    std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
-    // Set region
+    // Set region in frame0
     carta::RegionHandler region_handler;
     int file_id(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::POLYGON;
     std::vector<float> points = {5.0, 5.0, 4.0, 3.0, 1.0, 6.0, 3.0, 8.0};
     float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
+    auto csys = frame0->CoordinateSystem();
     bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
     ASSERT_TRUE(ok);
-
-    // Get Region as 3D LCRegion
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
-    auto image_shape = frame->ImageShape();
+
+    // Get Region as 2D LCRegion in frame1
+    file_id = 1;
+    csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
     auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+
+    // Check LCRegion
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
     ASSERT_EQ(lc_region->ndim(), image_shape.size());
     ASSERT_EQ(lc_region->latticeShape(), image_shape);
-    ASSERT_EQ(lc_region->shape(), casacore::IPosition(3, 5, 6, 10));
+    ASSERT_EQ(lc_region->shape(), casacore::IPosition(2, 5, 6));
 }
 
-TEST_F(RegionTest, TestReferenceImagePointRecord) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+TEST_F(RegionMatchedTest, TestMatchedImagePointRecord) {
+    // frame 0
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+    // frame 1
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+    std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
-    // Set region
+    // Set region in frame0
     carta::RegionHandler region_handler;
     int file_id(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::POINT;
     std::vector<float> points = {4.0, 2.0};
     float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
+    auto csys = frame0->CoordinateSystem();
     bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
     ASSERT_TRUE(ok);
-
-    // Get Region as casacore::Record
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
-    auto image_shape = frame->ImageShape();
+
+    // Get Region as casacore::Record in frame1
+    file_id = 1;
+    csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
     auto region_record = region->GetImageRegionRecord(file_id, csys, image_shape);
+
+    // Check record
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCBox"); // box with blc = trc
     ASSERT_TRUE(region_record.asBool("oneRel"));        // FITS 1-based
     auto blc = region_record.asArrayFloat("blc").tovector();
     auto trc = region_record.asArrayFloat("trc").tovector();
-    ASSERT_EQ(blc.size(), 3);
-    ASSERT_EQ(trc.size(), 3);
+    ASSERT_EQ(blc.size(), 2);
+    ASSERT_EQ(trc.size(), 2);
     ASSERT_FLOAT_EQ(blc[0], points[0] + 1.0);
     ASSERT_FLOAT_EQ(blc[1], points[1] + 1.0);
-    ASSERT_FLOAT_EQ(blc[2], 1.0); // channel
     ASSERT_FLOAT_EQ(trc[0], points[0] + 1.0);
     ASSERT_FLOAT_EQ(trc[1], points[1] + 1.0);
-    ASSERT_FLOAT_EQ(trc[2], 10.0); // channel
 }
 
-TEST_F(RegionTest, TestReferenceImageLineRecord) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+TEST_F(RegionMatchedTest, TestMatchedImageLineRecord) {
+    // frame 0
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+    // frame 1
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+    std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
-    // Set region
+    // Set region in frame0
     carta::RegionHandler region_handler;
     int file_id(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::LINE;
     std::vector<float> points = {5.0, 5.0, 4.0, 3.0};
     float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
+    auto csys = frame0->CoordinateSystem();
     bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
     ASSERT_TRUE(ok);
-
-    // Get Region as casacore::Record (from control points, no casacore Line region)
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
-    auto image_shape = frame->ImageShape();
+
+    // Get Region as casacore::Record in frame1
+    file_id = 1;
+    csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
     auto region_record = region->GetImageRegionRecord(file_id, csys, image_shape);
+
+    // Check record
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "Line");
     ASSERT_FALSE(region_record.asBool("oneRel"));
-    auto x = region_record.asArrayFloat("x").tovector();
-    auto y = region_record.asArrayFloat("y").tovector();
+    auto x = region_record.asArrayDouble("x").tovector();
+    auto y = region_record.asArrayDouble("y").tovector();
     ASSERT_EQ(x.size(), 2);
     ASSERT_EQ(y.size(), 2);
     ASSERT_FLOAT_EQ(x[0], points[0]);
@@ -256,26 +224,35 @@ TEST_F(RegionTest, TestReferenceImageLineRecord) {
     ASSERT_FLOAT_EQ(y[1], points[3]);
 }
 
-TEST_F(RegionTest, TestReferenceImageRectangleRecord) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+TEST_F(RegionMatchedTest, TestMatchedImageRectangleRecord) {
+    // frame 0
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+    // frame 1
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+    std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
-    // Set region
+    // Set region in frame0
     carta::RegionHandler region_handler;
     int file_id(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
     std::vector<float> points = {5.0, 5.0, 4.0, 3.0};
     float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
+    auto csys = frame0->CoordinateSystem();
     bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
     ASSERT_TRUE(ok);
-
-    // Get Region as casacore::Record
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
-    auto image_shape = frame->ImageShape();
+
+    // Get Region as casacore::Record in frame1
+    file_id = 1;
+    csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
     auto region_record = region->GetImageRegionRecord(file_id, csys, image_shape);
+
+    // Check record
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCPolygon"); // box corners set as polygon
@@ -291,36 +268,39 @@ TEST_F(RegionTest, TestReferenceImageRectangleRecord) {
     ASSERT_EQ(y.size(), 5); // casacore repeats first point to close polygon
     ASSERT_FLOAT_EQ(x[0], left_x);
     ASSERT_FLOAT_EQ(x[1], right_x);
-    ASSERT_FLOAT_EQ(x[2], right_x);
-    ASSERT_FLOAT_EQ(x[3], left_x);
-    ASSERT_FLOAT_EQ(x[4], left_x);
     ASSERT_FLOAT_EQ(y[0], bottom_y);
-    ASSERT_FLOAT_EQ(y[1], bottom_y);
     ASSERT_FLOAT_EQ(y[2], top_y);
-    ASSERT_FLOAT_EQ(y[3], top_y);
-    ASSERT_FLOAT_EQ(y[4], bottom_y);
 }
 
-TEST_F(RegionTest, TestReferenceImageEllipseRecord) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+TEST_F(RegionMatchedTest, TestMatchedImageEllipseRecord) {
+    // frame 0
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+    // frame 1
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+    std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
-    // Set region
+    // Set region in frame0
     carta::RegionHandler region_handler;
     int file_id(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
     std::vector<float> points = {5.0, 5.0, 4.0, 3.0};
     float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
+    auto csys = frame0->CoordinateSystem();
     bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
     ASSERT_TRUE(ok);
-
-    // Get Region as casacore::Record
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
-    auto image_shape = frame->ImageShape();
+
+    // Get Region as casacore::Record in frame1
+    file_id = 1;
+    csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
     auto region_record = region->GetImageRegionRecord(file_id, csys, image_shape);
+
+    // Check record
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCEllipsoid");
@@ -333,26 +313,35 @@ TEST_F(RegionTest, TestReferenceImageEllipseRecord) {
     ASSERT_FLOAT_EQ(radii[1], points[2]);
 }
 
-TEST_F(RegionTest, TestReferenceImagePolygonRecord) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+TEST_F(RegionMatchedTest, TestMatchedImagePolygonRecord) {
+    // frame 0
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+    // frame 1
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+    std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
-    // Set region
+    // Set region in frame0
     carta::RegionHandler region_handler;
     int file_id(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::POLYGON;
     std::vector<float> points = {5.0, 5.0, 4.0, 3.0, 1.0, 6.0, 3.0, 8.0}; // 4 points
     float rotation(0.0);
-    auto csys = frame->CoordinateSystem();
+    auto csys = frame0->CoordinateSystem();
     bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
     ASSERT_TRUE(ok);
-
-    // Get Region as casacore::Record
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
-    auto image_shape = frame->ImageShape();
+
+    // Get Region as casacore::Record in frame1
+    file_id = 1;
+    csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
     auto region_record = region->GetImageRegionRecord(file_id, csys, image_shape);
+
+    // Check record
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCPolygon");
