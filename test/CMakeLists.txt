@@ -54,6 +54,7 @@ set(TEST_SOURCES
         TestNormalizedUnits.cc
         TestProgramSettings.cc
         TestPvGenerator.cc
+        TestRegion.cc
         TestRegionHistogram.cc
         TestRegionSpatialProfiles.cc
         TestRegionStats.cc
