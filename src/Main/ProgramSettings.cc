@@ -193,7 +193,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("files", "files to load", cxxopts::value<std::vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>())
-        ("full_image_cache_size", "maximum amount of memory (in MB)", cxxopts::value<int>(), "<MB>");
+        ("full_image_cache_size", "maximum amount of memory for full image caching in MB", cxxopts::value<int>());
 
     options.add_options("Deprecated and debug")
         ("debug_no_auth", "accept all incoming WebSocket connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
