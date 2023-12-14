@@ -60,7 +60,7 @@ public:
         const ImageCacheType& image_cache_type, int x_size, int y_size, int z_size, int stokes_size) {
         std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
         if (image_cache_type == ImageCacheType::All) {
-            FULL_IMAGE_CACHE_SIZE_AVAILABLE = 2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION;
+            FULL_IMAGE_CACHE_SIZE_AVAILABLE = x_size * y_size * z_size * (stokes_size + 6) * sizeof(float) / ONE_MILLION;
         } else {
             FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0;
         }

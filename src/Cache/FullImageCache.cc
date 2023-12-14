@@ -13,21 +13,15 @@
 namespace carta {
 
 FullImageCache::FullImageCache(std::shared_ptr<LoaderHelper> loader_helper)
-    : ImageCache(loader_helper),
-      _stokes_i(-1),
-      _stokes_q(-1),
-      _stokes_u(-1),
-      _stokes_v(-1),
-      _beam_area(_loader_helper->GetBeamArea()),
-      _computed_stokes_channel(-1) {
+    : ImageCache(loader_helper), _stokes_i(-1), _stokes_q(-1), _stokes_u(-1), _stokes_v(-1), _beam_area(_loader_helper->GetBeamArea()) {
     Timer t;
     if (!_loader_helper->FillFullImageCache(_stokes_data)) {
         _valid = false;
         return;
     }
     auto dt = t.Elapsed();
-    spdlog::performance("Load {}x{}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, _depth, dt.ms(),
-        (float)(_width * _height * _depth) / dt.us());
+    spdlog::performance("Load {}x{}x{}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, _depth, _num_stokes, dt.ms(),
+        (float)(_width * _height * _depth * _num_stokes) / dt.us());
 
     // Get stokes indices
     bool mute_err_msg(true);
@@ -35,6 +29,15 @@ FullImageCache::FullImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     _loader_helper->GetStokesTypeIndex("Q", _stokes_q, mute_err_msg);
     _loader_helper->GetStokesTypeIndex("U", _stokes_u, mute_err_msg);
     _loader_helper->GetStokesTypeIndex("V", _stokes_v, mute_err_msg);
+
+    t.Restart();
+    FillComputedStokesCubes();
+    dt = t.Elapsed();
+    int num_computed_stokes = _stokes_data.size() - _num_stokes;
+    if (num_computed_stokes > 0) {
+        spdlog::performance("Calculate stokes hypercubes {}x{}x{}x{} in {:.3f} ms at {:.3f} MPix/s", _width, _height, _depth,
+            num_computed_stokes, dt.ms(), (float)(_width * _height * _depth * num_computed_stokes) / dt.us());
+    }
 
     // Update the availability of full image cache size
     std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
@@ -53,108 +56,89 @@ FullImageCache::~FullImageCache() {
     }
 }
 
-float* FullImageCache::GetChannelData(int z, int stokes) {
-    if (IsComputedStokes(stokes)) {
-        if (_computed_stokes_channel_data.count(stokes) && _computed_stokes_channel == z) {
-            return _computed_stokes_channel_data[stokes].get();
-        }
-
-        // Calculate the channel image data for computed stokes
-        _computed_stokes_channel_data[stokes] = std::make_unique<float[]>(_width * _height);
-        _computed_stokes_channel = z;
-
-        auto stokes_type = StokesTypes[stokes];
-        size_t start_idx = _width * _height * z;
-        if (stokes_type == CARTA::PolarizationType::Ptotal) {
-            if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
+void FullImageCache::FillComputedStokesCubes() {
+    if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
+        int stokes = StokesValues[CARTA::PolarizationType::PFtotal];
+        _stokes_data[stokes] = std::make_unique<float[]>(_width * _height * _depth);
 #pragma omp parallel for
-                for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = start_idx + i;
-                    _computed_stokes_channel_data[stokes][i] =
-                        CalcPtotal(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx], _stokes_data[_stokes_v][idx]);
-                }
-            }
-        } else if (stokes_type == CARTA::PolarizationType::Plinear) {
-            if (_stokes_q > -1 && _stokes_u > -1) {
+        for (size_t z = 0; z < _depth; ++z) {
+            size_t start_idx = _width * _height * z;
 #pragma omp parallel for
-                for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = start_idx + i;
-                    _computed_stokes_channel_data[stokes][i] = CalcPlinear(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
-                }
-            }
-        } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
-            if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
-#pragma omp parallel for
-                for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = start_idx + i;
-                    _computed_stokes_channel_data[stokes][i] = CalcPFtotal(_stokes_data[_stokes_i][idx], _stokes_data[_stokes_q][idx],
-                        _stokes_data[_stokes_u][idx], _stokes_data[_stokes_v][idx]);
-                }
-            }
-        } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
-            if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1) {
-#pragma omp parallel for
-                for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = start_idx + i;
-                    _computed_stokes_channel_data[stokes][i] =
-                        CalcPFlinear(_stokes_data[_stokes_i][idx], _stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
-                }
-            }
-        } else if (stokes_type == CARTA::PolarizationType::Pangle) {
-            if (_stokes_q > -1 && _stokes_u > -1) {
-#pragma omp parallel for
-                for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = start_idx + i;
-                    _computed_stokes_channel_data[stokes][i] = CalcPangle(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
-                }
+            for (int i = 0; i < _width * _height; ++i) {
+                size_t idx = start_idx + i;
+                _stokes_data[stokes][idx] = CalcPFtotal(
+                    _stokes_data[_stokes_i][idx], _stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx], _stokes_data[_stokes_v][idx]);
             }
         }
-        return _computed_stokes_channel_data[stokes].get();
     }
 
+    if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
+        int stokes = StokesValues[CARTA::PolarizationType::Ptotal];
+        _stokes_data[stokes] = std::make_unique<float[]>(_width * _height * _depth);
+#pragma omp parallel for
+        for (size_t z = 0; z < _depth; ++z) {
+            size_t start_idx = _width * _height * z;
+#pragma omp parallel for
+            for (int i = 0; i < _width * _height; ++i) {
+                size_t idx = start_idx + i;
+                _stokes_data[stokes][idx] =
+                    CalcPtotal(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx], _stokes_data[_stokes_v][idx]);
+            }
+        }
+    }
+
+    if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1) {
+        int stokes = StokesValues[CARTA::PolarizationType::PFlinear];
+        _stokes_data[stokes] = std::make_unique<float[]>(_width * _height * _depth);
+#pragma omp parallel for
+        for (size_t z = 0; z < _depth; ++z) {
+            size_t start_idx = _width * _height * z;
+#pragma omp parallel for
+            for (int i = 0; i < _width * _height; ++i) {
+                size_t idx = start_idx + i;
+                _stokes_data[stokes][idx] =
+                    CalcPFlinear(_stokes_data[_stokes_i][idx], _stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
+            }
+        }
+    }
+
+    if (_stokes_q > -1 && _stokes_u > -1) {
+        int stokes = StokesValues[CARTA::PolarizationType::Plinear];
+        _stokes_data[stokes] = std::make_unique<float[]>(_width * _height * _depth);
+#pragma omp parallel for
+        for (size_t z = 0; z < _depth; ++z) {
+            size_t start_idx = _width * _height * z;
+#pragma omp parallel for
+            for (int i = 0; i < _width * _height; ++i) {
+                size_t idx = start_idx + i;
+                _stokes_data[stokes][idx] = CalcPlinear(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
+            }
+        }
+
+        stokes = StokesValues[CARTA::PolarizationType::Pangle];
+        _stokes_data[stokes] = std::make_unique<float[]>(_width * _height * _depth);
+#pragma omp parallel for
+        for (size_t z = 0; z < _depth; ++z) {
+            size_t start_idx = _width * _height * z;
+#pragma omp parallel for
+            for (int i = 0; i < _width * _height; ++i) {
+                size_t idx = start_idx + i;
+                _stokes_data[stokes][idx] = CalcPangle(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
+            }
+        }
+    }
+}
+
+float* FullImageCache::GetChannelData(int z, int stokes) {
     return _stokes_data[stokes].get() + (_width * _height * z);
 }
 
 float FullImageCache::GetValue(int x, int y, int z, int stokes) const {
-    size_t idx = (_width * _height * z) + (_width * y) + x;
-
-    if (IsComputedStokes(stokes)) {
-        if (_computed_stokes_channel_data.count(stokes) && _computed_stokes_channel == z) {
-            return _computed_stokes_channel_data.at(stokes)[(_width * y) + x];
-        }
-
-        auto stokes_type = StokesTypes[stokes];
-
-        if (stokes_type == CARTA::PolarizationType::Ptotal) {
-            if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
-                return CalcPtotal(_stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx], _stokes_data.at(_stokes_v)[idx]);
-            }
-        } else if (stokes_type == CARTA::PolarizationType::Plinear) {
-            if (_stokes_q > -1 && _stokes_u > -1) {
-                return CalcPlinear(_stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx]);
-            }
-        } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
-            if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
-                return CalcPFtotal(_stokes_data.at(_stokes_i)[idx], _stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx],
-                    _stokes_data.at(_stokes_v)[idx]);
-            }
-        } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
-            if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1) {
-                return CalcPFlinear(_stokes_data.at(_stokes_i)[idx], _stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx]);
-            }
-        } else if (stokes_type == CARTA::PolarizationType::Pangle) {
-            if (_stokes_q > -1 && _stokes_u > -1) {
-                return CalcPangle(_stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx]);
-            }
-        }
-        return FLOAT_NAN;
-    }
-
-    return _stokes_data.at(stokes)[idx];
+    return _stokes_data.at(stokes)[(_width * _height * z) + (_width * y) + x];
 }
 
 bool FullImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    if (_stokes_data.count(stokes) || IsComputedStokes(stokes)) {
+    if (_stokes_data.count(stokes)) {
         int x, y;
         point.ToIndex(x, y);
         profile.resize(_depth);

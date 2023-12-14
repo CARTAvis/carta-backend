@@ -37,20 +37,16 @@ public:
     void SetImageChannels(int z, int stokes) override;
 
 private:
+    void FillComputedStokesCubes();
+
     int _stokes_i; // stokes "I" index
     int _stokes_q; // stokes "Q" index
     int _stokes_u; // stokes "U" index
     int _stokes_v; // stokes "V" index
     double _beam_area;
 
-    // Current channel of computed stokes image cache
-    int _computed_stokes_channel;
-
     // Map of cube image cache, key is the stokes index
     std::map<int, std::unique_ptr<float[]>> _stokes_data;
-
-    // Map of computed stokes *channel* image cache, key is the computed stokes index
-    std::map<int, std::unique_ptr<float[]>> _computed_stokes_channel_data;
 };
 
 } // namespace carta
