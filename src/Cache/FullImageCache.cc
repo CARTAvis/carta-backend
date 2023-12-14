@@ -39,9 +39,11 @@ FullImageCache::FullImageCache(std::shared_ptr<LoaderHelper> loader_helper)
             num_computed_stokes, dt.ms(), (float)(_width * _height * _depth * num_computed_stokes) / dt.us());
     }
 
+    _memory_size = ImageMemorySize(_width, _height, _depth, _num_stokes, num_computed_stokes);
+
     // Update the availability of full image cache size
     std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-    FULL_IMAGE_CACHE_SIZE_AVAILABLE -= ImageMemorySize(_width, _height, _depth, _num_stokes);
+    FULL_IMAGE_CACHE_SIZE_AVAILABLE -= _memory_size;
     ulock.unlock();
     spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
 }
@@ -50,7 +52,7 @@ FullImageCache::~FullImageCache() {
     // Update the availability of full image cache size
     if (_valid) {
         std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE += ImageMemorySize(_width, _height, _depth, _num_stokes);
+        FULL_IMAGE_CACHE_SIZE_AVAILABLE += _memory_size;
         ulock.unlock();
         spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
     }

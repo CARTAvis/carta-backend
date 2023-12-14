@@ -33,7 +33,8 @@ public:
     static std::unique_ptr<ImageCache> GetImageCache(std::shared_ptr<LoaderHelper> loader_helper);
 
     static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
-    static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
+    static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes);                             // MB
+    static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes, size_t num_computed_stokes); // MB
 
     virtual float* GetChannelData(int z, int stokes) = 0;
     virtual float GetValue(int x, int y, int z, int stokes) const = 0;
@@ -57,6 +58,7 @@ protected:
 
     std::shared_ptr<LoaderHelper> _loader_helper;
     bool _valid;
+    float _memory_size;
 
     // Cube image cache size
     size_t _width;

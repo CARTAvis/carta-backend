@@ -42,7 +42,7 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelp
     return std::make_unique<ChannelImageCache>(loader_helper);
 }
 
-ImageCache::ImageCache(std::shared_ptr<LoaderHelper> loader_helper) : _loader_helper(loader_helper), _valid(true) {
+ImageCache::ImageCache(std::shared_ptr<LoaderHelper> loader_helper) : _loader_helper(loader_helper), _valid(true), _memory_size(0) {
     if (!_loader_helper->IsValid()) {
         _valid = false;
         return;
@@ -103,6 +103,10 @@ float ImageCache::ImageMemorySize(size_t width, size_t height, size_t depth, siz
     } else if (num_stokes == 2) {
         num_computed_stokes = 2;
     }
+    return (width * height * depth * (num_stokes + num_computed_stokes) * sizeof(float)) / 1.0e6; // MB
+}
+
+float ImageCache::ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes, size_t num_computed_stokes) {
     return (width * height * depth * (num_stokes + num_computed_stokes) * sizeof(float)) / 1.0e6; // MB
 }
 
