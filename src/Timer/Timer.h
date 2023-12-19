@@ -29,7 +29,6 @@ public:
     Timer();
     ~Timer() = default;
 
-    void Restart();
     TimeDelta Elapsed();
 
 private:

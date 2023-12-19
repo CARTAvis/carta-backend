@@ -14,7 +14,7 @@ namespace carta {
 
 CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     : ImageCache(loader_helper), _beam_area(_loader_helper->GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
-    _memory_size = ImageMemorySize(_width, _height, _depth, 1, 0);
+    _memory_size = ImageMemorySize(_width, _height, _depth, 1);
 
     // Update the availability of full image cache size
     std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);

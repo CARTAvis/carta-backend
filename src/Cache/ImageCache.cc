@@ -94,20 +94,7 @@ void ImageCache::AssignFullImageCacheSizeAvailable(int& full_image_cache_size_av
 }
 
 float ImageCache::ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes) {
-    // Conservatively estimate the number of computed stokes will be generated
-    int num_computed_stokes(0);
-    if (num_stokes >= 4) {
-        num_computed_stokes = 5;
-    } else if (num_stokes == 3) {
-        num_computed_stokes = 4;
-    } else if (num_stokes == 2) {
-        num_computed_stokes = 2;
-    }
-    return (width * height * depth * (num_stokes + num_computed_stokes) * sizeof(float)) / 1.0e6; // MB
-}
-
-float ImageCache::ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes, size_t num_computed_stokes) {
-    return (width * height * depth * (num_stokes + num_computed_stokes) * sizeof(float)) / 1.0e6; // MB
+    return (float)(width * height * depth * num_stokes) * sizeof(float) / 1.0e6; // MB
 }
 
 void ImageCache::DoStatisticsCalculations(const AxisRange& z_range, const casacore::ArrayLattice<casacore::Bool>& mask,

@@ -37,15 +37,14 @@ public:
     void SetImageChannels(int z, int stokes) override;
 
 private:
-    void FillComputedStokesCubes();
-
     int _stokes_i; // stokes "I" index
     int _stokes_q; // stokes "Q" index
     int _stokes_u; // stokes "U" index
     int _stokes_v; // stokes "V" index
     double _beam_area;
+    int _current_computed_stokes_channel;
 
-    // Map of cube image cache, key is the stokes index
+    // Map of the cube image cache, key is the stokes index (I, Q, U, or V). For computed stokes, it only caches image data per channel.
     std::map<int, std::unique_ptr<float[]>> _stokes_data;
 };
 
