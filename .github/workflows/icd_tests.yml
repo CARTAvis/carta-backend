@@ -298,7 +298,7 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-dec2023.sif
             port: 9005
-    needs: Prepare-ICD-RxJS
+    needs: [File-Browser-ICD-Tests, Prepare-ICD-RxJS]
     if: always()
     steps:
       # macOS steps
