@@ -9,8 +9,8 @@ runs:
   steps:
     - name: Start the carta-backend
       run: |
-        SRC_DIR=${{ inputs.github_workspace }}/source
-        BUILD_DIR=${{ inputs.github_workspace }}/build
+        SRC_DIR=$GITHUB_WORKSPACE/source
+        BUILD_DIR=$GITHUB_WORKSPACE/build
         cd $BUILD_DIR
         ASAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan.supp \
         LSAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan-leaks.supp \
@@ -23,8 +23,8 @@ runs:
 
     - name: ICD tests
       run: |
-        ICD_RXJS_DIR=${{ inputs.github_workspace }}/build/ICD-RxJS
-        cd $ICD_RXJS_DIR
+        ICD_DIR=$GITHUB_WORKSPACE/ICD_RxJS
+        cd $ICD_DIR
         for test_file in $(cat ICD_test_stages/${{ inputs.test_stage_name }}.tests); do
           CI=true npm test $test_file
           sleep 3 && pgrep carta_backend
