@@ -16,7 +16,7 @@ runs:
         LSAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan-leaks.supp \
         ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
         ./carta_backend /images --top_level_folder /images \
-        --port $PORT \
+        --port 5555 \
         --omp_threads=4 --debug_no_auth --no_frontend --no_database --verbosity=5 &
         echo "CARTA_BACKEND_PID=$!" >> $GITHUB_ENV
       shell: bash
