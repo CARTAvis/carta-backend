@@ -165,7 +165,7 @@ jobs:
       - name: Prepare ICD-RxJS (macOS)
         if: matrix.os == 'macos'
         run: |
-          ICD_DIR=$GITHUB_WORKSPACE/ICD_RxJS
+          ICD_DIR=$GITHUB_WORKSPACE/ICD-RxJS
           cd $ICD_DIR
           git submodule init && git submodule update && npm install
           cd protobuf
@@ -177,7 +177,7 @@ jobs:
         if: matrix.os == 'linux'
         run: |
           BUILD_DIR=$GITHUB_WORKSPACE/build-${{ matrix.os_version }}
-          ICD_DIR=$GITHUB_WORKSPACE/ICD_RxJS
+          ICD_DIR=$GITHUB_WORKSPACE/ICD-RxJS
           cp -r $ICD_DIR $BUILD_DIR
           apptainer exec --bind $GITHUB_WORKSPACE:$GITHUB_WORKSPACE --pwd $BUILD_DIR ${{ matrix.image }} /bin/bash -c "\
             cd ICD-RxJS && \

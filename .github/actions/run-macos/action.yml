@@ -23,7 +23,7 @@ runs:
 
     - name: ICD tests
       run: |
-        ICD_DIR=$GITHUB_WORKSPACE/ICD_RxJS
+        ICD_DIR=$GITHUB_WORKSPACE/ICD-RxJS
         cd $ICD_DIR
         for test_file in $(cat ICD_test_stages/${{ inputs.test_stage_name }}.tests); do
           CI=true npm test $test_file
