@@ -1,6 +1,5 @@
 name: ICD tests
 on:
-  push:
   schedule:
     - cron: '0 0 * * *' # UTC time
 env:
