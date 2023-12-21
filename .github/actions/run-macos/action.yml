@@ -1,0 +1,36 @@
+name: 'Run ICD tests on macOS'
+description: 'Start the carta_backend, run the ICD tests, and stop the carta_backend'
+inputs:
+  test_stage_name:
+    description: 'ICD test stage'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Start the carta-backend
+      run: |
+        SRC_DIR=$GITHUB_WORKSPACE/source
+        BUILD_DIR=$GITHUB_WORKSPACE/build
+        cd $BUILD_DIR
+        ASAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan.supp \
+        LSAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan-leaks.supp \
+        ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+        ./carta_backend /images --top_level_folder /images \
+        --port 5555 \
+        --omp_threads=4 --debug_no_auth --no_frontend --no_database --verbosity=5 &
+        echo "CARTA_BACKEND_PID=$!" >> $GITHUB_ENV
+      shell: bash
+
+    - name: ICD tests
+      run: |
+        ICD_DIR=$GITHUB_WORKSPACE/ICD-RxJS
+        cd $ICD_DIR
+        for test_file in $(cat ICD_test_stages/${{ inputs.test_stage_name }}.tests); do
+          CI=true npm test $test_file
+          sleep 3 && pgrep carta_backend
+        done
+      shell: bash
+
+    - name: Stop carta-backend
+      run: kill ${{ env.CARTA_BACKEND_PID }}
+      shell: bash
