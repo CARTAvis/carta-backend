@@ -391,25 +391,6 @@ void CmpSpatialProfiles(
     }
 }
 
-void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err) {
-    EXPECT_EQ(data1.size(), data2.size());
-    if (data1.size() == data2.size()) {
-        for (int i = 0; i < data1.size(); ++i) {
-            CmpValues(data1[i], data2[i], abs_err);
-        }
-    }
-}
-
-void CmpValues(float data1, float data2, float abs_err) {
-    if (!std::isnan(data1) || !std::isnan(data2)) {
-        if (abs_err > 0) {
-            EXPECT_NEAR(data1, data2, abs_err);
-        } else {
-            EXPECT_FLOAT_EQ(data1, data2);
-        }
-    }
-}
-
 bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2) {
     if (hist1.GetNbins() != hist2.GetNbins()) {
         return false;
