@@ -37,5 +37,4 @@ void CmpValues(T data1, T data2, T abs_err) {
     }
 }
 
-
 #endif // CARTA_TEST_COMMONTESTUTILITIES_TCC_

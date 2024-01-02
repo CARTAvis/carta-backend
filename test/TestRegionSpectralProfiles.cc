@@ -37,8 +37,8 @@ public:
         return region_handler.SetRegion(region_id, region_state, csys);
     }
 
-    static bool SpectralProfile(const std::string& image_path, const std::vector<float>& endpoints, CARTA::SpectralProfileData& spectral_data,
-        bool is_annotation = false) {
+    static bool SpectralProfile(const std::string& image_path, const std::vector<float>& endpoints,
+        CARTA::SpectralProfileData& spectral_data, bool is_annotation = false) {
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
@@ -98,17 +98,16 @@ TEST_F(RegionSpectralProfileTest, TestFitsSpectralProfile) {
         CARTA::StatsType::Max, CARTA::StatsType::Extrema};
     ASSERT_EQ(num_profiles, expected_types.size());
 
-
     for (int i = 0; i < num_profiles; ++i) {
         auto profile = spectral_data.profiles(i);
         ASSERT_EQ(profile.coordinate(), "z");
         ASSERT_EQ(profile.stats_type(), expected_types[i]);
-        auto values = profile.raw_values_fp64(); // string (bytes)
+        auto values = profile.raw_values_fp64();    // string (bytes)
         ASSERT_EQ(values.size(), num_channels * 8); // double (8-byte) values
 
         if (profile.stats_type() == CARTA::StatsType::Mean) {
-			std::vector<double> expected_profile = GetExpectedMeanProfile(image_path, num_channels);
-			std::vector<double> actual_profile = GetSpectralProfileValues<double>(profile);
+            auto expected_profile = GetExpectedMeanProfile(image_path, num_channels);
+            auto actual_profile = GetSpectralProfileValues<double>(profile);
             CmpVectors<double>(actual_profile, expected_profile);
         }
     }
