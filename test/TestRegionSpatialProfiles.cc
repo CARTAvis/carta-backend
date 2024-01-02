@@ -197,7 +197,7 @@ TEST_F(RegionSpatialProfileTest, FitsHorizontalCutProfile) {
     // Profile data of horizontal line with width=1 is same as slice
     FitsDataReader reader(image_path);
     auto image_data = reader.ReadRegion({1, 5, 0}, {10, 6, 1});
-    CmpVectors(profile_data, image_data);
+    CmpVectors<float>(profile_data, image_data);
 }
 
 TEST_F(RegionSpatialProfileTest, FitsVerticalCutProfile) {
@@ -221,7 +221,7 @@ TEST_F(RegionSpatialProfileTest, FitsVerticalCutProfile) {
     // Profile data of vertical line with width=1 is same as slice
     FitsDataReader reader(image_path);
     auto image_data = reader.ReadRegion({5, 1, 0}, {6, 10, 1});
-    CmpVectors(profile_data, image_data);
+    CmpVectors<float>(profile_data, image_data);
 }
 
 TEST_F(RegionSpatialProfileTest, FitsPolylineProfile) {
@@ -252,7 +252,7 @@ TEST_F(RegionSpatialProfileTest, FitsPolylineProfile) {
     }
 
     // Profile data of polyline with width=1 is same as image data slices
-    CmpVectors(profile_data, image_data);
+    CmpVectors<float>(profile_data, image_data);
 }
 
 TEST_F(RegionSpatialProfileTest, AveragingWidthRange) {
@@ -296,7 +296,7 @@ TEST_F(RegionSpatialProfileTest, FitsPointProfile) {
     // Profile data of point is same as slice
     FitsDataReader reader(image_path);
     auto image_data = reader.ReadRegion({0, 0, 0}, {10, 1, 1});
-    CmpVectors(profile_data, image_data);
+    CmpVectors<float>(profile_data, image_data);
 }
 
 TEST_F(RegionSpatialProfileTest, Hdf5PointProfile) {
@@ -320,7 +320,7 @@ TEST_F(RegionSpatialProfileTest, Hdf5PointProfile) {
     // Profile data of point is same as slice
     Hdf5DataReader reader(image_path);
     auto image_data = reader.ReadRegion({0, 0, 0}, {10, 1, 1});
-    CmpVectors(profile_data, image_data);
+    CmpVectors<float>(profile_data, image_data);
 }
 
 TEST_F(RegionSpatialProfileTest, FitsAnnotationPointProfile) {

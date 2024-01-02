@@ -386,8 +386,8 @@ void CmpSpatialProfiles(
     const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles) {
     EXPECT_EQ(data_vec.size(), 1);
     for (const auto& data : data_vec) {
-        CmpVectors(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
-        CmpVectors(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
+        CmpVectors<float>(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
+        CmpVectors<float>(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
     }
 }
 
