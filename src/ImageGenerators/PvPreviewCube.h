@@ -7,12 +7,12 @@
 #ifndef CARTA_SRC_IMAGEGENERATORS_PVPREVIEWCUBE_H_
 #define CARTA_SRC_IMAGEGENERATORS_PVPREVIEWCUBE_H_
 
+#include <casacore/images/Images/SubImage.h>
+
 #include "ImageGenerators/ImageGenerator.h"
 #include "Region/Region.h"
 #include "Util/File.h"
 #include "Util/Image.h"
-
-#include <casacore/images/Images/SubImage.h>
 
 namespace carta {
 

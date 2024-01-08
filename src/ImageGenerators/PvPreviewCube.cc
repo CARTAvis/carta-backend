@@ -12,6 +12,7 @@
 #include <casacore/images/Images/RebinImage.h>
 
 #include "DataStream/Smoothing.h"
+#include "Logger/Logger.h"
 #include "Timer/Timer.h"
 
 #define LOAD_DATA_PROGRESS_INTERVAL 1000

@@ -11,6 +11,7 @@
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
 #include "Logger/Logger.h"
+#include "Util/Message.h"
 
 namespace carta {
 
