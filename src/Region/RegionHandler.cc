@@ -1280,11 +1280,11 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
             // Progress for loading data here if needed due to prior cancel
             if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, message)) {
                 // spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
-                casacore::Vector<float> const profileV(profile);
+                casacore::Vector<float> const profile_v(profile);
                 if (reverse) {
-                    preview_data_matrix.column(iregion) = profileV;
+                    preview_data_matrix.column(iregion) = profile_v;
                 } else {
-                    preview_data_matrix.row(iregion) = profileV;
+                    preview_data_matrix.row(iregion) = profile_v;
                 }
             }
         }
