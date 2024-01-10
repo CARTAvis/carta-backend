@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_MOMENT_MOMENTGENERATOR_H_
-#define CARTA_BACKEND_MOMENT_MOMENTGENERATOR_H_
+#ifndef CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_
+#define CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_
 
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
@@ -89,4 +89,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_MOMENT_MOMENTGENERATOR_H_
+#endif // CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_

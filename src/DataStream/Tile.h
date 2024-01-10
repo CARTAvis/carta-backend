@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__TILE_H_
-#define CARTA_BACKEND__TILE_H_
+#ifndef CARTA_SRC_DATASTREAM_TILE_H_
+#define CARTA_SRC_DATASTREAM_TILE_H_
 
 #include <cmath>
 #include <cstdint>
@@ -52,4 +52,4 @@ struct Tile {
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__TILE_H_
+#endif // CARTA_SRC_DATASTREAM_TILE_H_

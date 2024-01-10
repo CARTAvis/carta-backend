@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEGENERATORS_PVPREVIEWCUBE_H_
-#define CARTA_BACKEND_IMAGEGENERATORS_PVPREVIEWCUBE_H_
+#ifndef CARTA_SRC_IMAGEGENERATORS_PVPREVIEWCUBE_H_
+#define CARTA_SRC_IMAGEGENERATORS_PVPREVIEWCUBE_H_
 
 #include "ImageGenerators/ImageGenerator.h"
 #include "Region/Region.h"
@@ -115,4 +115,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEGENERATORS_PVPREVIEWCUBE_H_
+#endif // CARTA_SRC_IMAGEGENERATORS_PVPREVIEWCUBE_H_

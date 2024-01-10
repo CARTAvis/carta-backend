@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_SRC_SESSIONMANAGER_SESSIONMANAGER_H_
-#define CARTA_BACKEND_SRC_SESSIONMANAGER_SESSIONMANAGER_H_
+#ifndef CARTA_SRC_SESSION_SESSIONMANAGER_H_
+#define CARTA_SRC_SESSION_SESSIONMANAGER_H_
 
 #include <uWebSockets/App.h>
 #include <vector>
@@ -52,4 +52,4 @@ private:
     std::string IPAsText(std::string_view binary);
 };
 } // namespace carta
-#endif // CARTA_BACKEND_SRC_SESSIONMANAGER_SESSIONMANAGER_H_
+#endif // CARTA_SRC_SESSION_SESSIONMANAGER_H_

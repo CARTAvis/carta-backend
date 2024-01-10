@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEFITTER_IMAGEFITTER_H_
-#define CARTA_BACKEND_IMAGEFITTER_IMAGEFITTER_H_
+#ifndef CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
+#define CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
 
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multifit_nlinear.h>
@@ -139,9 +139,9 @@ private:
     GeneratorProgressCallback _progress_callback;
 
     /**
-     * @brief Calculate the number of NaN values in the image data.
+     * @brief Calculate the number of NaN values and standard deviation of the image data.
      */
-    void CalculateNanNum();
+    void CalculateNanNumAndStd();
     /**
      * @brief Set initial fitting parameters for the fitting.
      * @param initial_values Initial fitting parameters
@@ -242,4 +242,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEFITTER_IMAGEFITTER_H_
+#endif // CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_

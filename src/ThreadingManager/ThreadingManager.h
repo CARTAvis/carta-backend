@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef __THREADING_H__
-#define __THREADING_H__
+#ifndef CARTA_SRC_THREADINGMANAGER_THREADINGMANAGER_H_
+#define CARTA_SRC_THREADINGMANAGER_THREADINGMANAGER_H_
 
 #include <omp.h>
 #include "Session/OnMessageTask.h"
@@ -41,4 +41,4 @@ public:
 
 } // namespace carta
 
-#endif // __THREADING_H__
+#endif // CARTA_SRC_THREADINGMANAGER_THREADINGMANAGER_H_

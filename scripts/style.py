@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import glob
 import argparse
 import subprocess
 
@@ -11,8 +12,7 @@ class Test:
     TESTS = {}
     EXCLUDE_FROM_ALL = False
 
-    EXTENSIONS = ("cc", "h", "tcc")
-    FILE_REGEX = fr".*\.({'|'.join(EXTENSIONS)})$"
+    EXTENSIONS = {"cc", "h", "tcc"}
 
     quiet = False
     out = print
@@ -29,11 +29,13 @@ class Test:
         return (cls.TESTS[testname],)
 
     @classmethod
-    def cpp_files(cls, directory):
+    def cpp_files(cls, directory, exclude=set()):
+        FILE_REGEX = fr".*\.({'|'.join(cls.EXTENSIONS - exclude)})$"
+
         for root, dirs, files in os.walk(directory):
             dirs[:] = [d for d in dirs]
             for basename in files:
-                if re.match(cls.FILE_REGEX, basename):
+                if re.match(FILE_REGEX, basename):
                     filename = os.path.join(root, basename)
                     yield filename
 
@@ -180,6 +182,96 @@ class Newline(Test):
                     with open(filename, "w") as f:
                         f.write(data)
                         f.write("\n")
+
+        return 0
+
+
+class HeaderGuards(Test):
+    IFNDEF_REGEX = re.compile("^#ifndef ([A-Z_0-9]*_(H|TCC)_*)$", flags=re.MULTILINE)
+    LAST_ENDIF_REGEX = re.compile(r"^(#endif[^\n]*?)\n$(?!.*#endif)", flags=re.MULTILINE|re.DOTALL)
+
+    @classmethod
+    def make_guard_name(cls, filename):
+        name = re.sub('[/.$]', '_', filename).upper()
+        return f"CARTA_{name}_"
+
+    @classmethod
+    def make_endif(cls, name):
+        return f"#endif // {name}"
+
+    @classmethod
+    def check(cls, directories):
+        status = 0
+
+        for directory in directories:
+            for filename in cls.cpp_files(directory, exclude={"cc"}):
+                with open(filename) as f:
+                    data = f.read()
+
+                new_guard_name = cls.make_guard_name(filename)
+
+                m = cls.IFNDEF_REGEX.search(data)
+
+                if m is None:
+                    cls.out("Can't find header guard in", filename)
+                    status = 1
+                else:
+
+                    existing_guard_name = m.group(1)
+
+                    if new_guard_name != existing_guard_name:
+                        cls.out("Bad header guard in", filename)
+                        status = 1
+
+                    last_endif = cls.LAST_ENDIF_REGEX.search(data).group(1)
+                    if last_endif != cls.make_endif(existing_guard_name):
+                        cls.out("Mismatched header guard #endif comment in", filename)
+                        status = 1
+
+        return status
+
+    @classmethod
+    def fix(cls, directories):
+        for directory in directories:
+            for filename in cls.cpp_files(directory, exclude={"cc"}):
+                with open(filename) as f:
+                    data = f.read()
+
+                new_guard_name = cls.make_guard_name(filename)
+                new_endif = cls.make_endif(new_guard_name)
+                data_changed = False
+
+                m = cls.IFNDEF_REGEX.search(data)
+
+                if m is None:
+                    cls.out("Can't find header guard in", filename)
+                    cls.out("Fixing...")
+
+                    data = re.sub("(/\*.*?\*/\n)", rf"\1\n#ifndef {new_guard_name}\n#define {new_guard_name}\n", data, count=1, flags=re.DOTALL)
+                    data = re.sub(r"\n$", rf"\n{new_endif}\n", data)
+                    data_changed = True
+
+                else:
+                    existing_guard_name = m.group(1)
+
+                    if new_guard_name != existing_guard_name:
+                        cls.out("Bad header guard in", filename)
+                        cls.out("Fixing...")
+
+                        data = re.sub(existing_guard_name, new_guard_name, data)
+                        data_changed = True
+
+                    last_endif = cls.LAST_ENDIF_REGEX.search(data).group(1)
+                    if last_endif != new_endif:
+                        cls.out("Mismatched header guard #endif comment in", filename)
+                        cls.out("Fixing...")
+
+                        data = cls.LAST_ENDIF_REGEX.sub(rf"{new_endif}\n", data)
+                        data_changed = True
+
+                if data_changed:
+                    with open(filename, "w") as f:
+                        f.write(data)
 
         return 0
 
