@@ -2275,6 +2275,7 @@ bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std:
 
 bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb) {
     // Line spatial profiles.  Use callback to return each profile individually.
+    Timer t;
     if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
@@ -2333,6 +2334,7 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
             });
     }
 
+    spdlog::performance("Line spatial data in {:.3f} ms", t.Elapsed().ms());
     return profile_ok;
 }
 
