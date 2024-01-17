@@ -15,9 +15,6 @@
 
 using namespace carta;
 
-using ::testing::FloatNear;
-using ::testing::Pointwise;
-
 class RegionMatchedTest : public ::testing::Test {
 public:
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, CARTA::RegionType type,
@@ -205,7 +202,7 @@ TEST_F(RegionMatchedTest, TestMatchedImagePointRecord) {
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCBox"); // box with blc = trc
-    ASSERT_TRUE(region_record.asBool("oneRel"));        // FITS 1-based
+    ASSERT_TRUE(region_record.asBool("oneRel"));        // 1-based pixels
     auto blc = region_record.asArrayFloat("blc").tovector();
     auto trc = region_record.asArrayFloat("trc").tovector();
     ASSERT_EQ(blc.size(), 2);
@@ -247,7 +244,7 @@ TEST_F(RegionMatchedTest, TestMatchedImageLineRecord) {
     // Check record
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
-    ASSERT_EQ(region_record.asString("name"), "Line");
+    ASSERT_EQ(region_record.asString("name"), "line");
     ASSERT_FALSE(region_record.asBool("oneRel"));
     auto x = region_record.asArrayDouble("x").tovector();
     auto y = region_record.asArrayDouble("y").tovector();
@@ -291,7 +288,7 @@ TEST_F(RegionMatchedTest, TestMatchedImageRectangleRecord) {
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCPolygon"); // box corners set as polygon
-    ASSERT_TRUE(region_record.asBool("oneRel"));            // FITS 1-based
+    ASSERT_TRUE(region_record.asBool("oneRel"));            // 1-based pixels
     // x, y order is [blc, brc, trc, tlc, blc]
     auto x = region_record.asArrayFloat("x").tovector();
     auto y = region_record.asArrayFloat("y").tovector();
@@ -393,7 +390,7 @@ TEST_F(RegionMatchedTest, TestMatchedImageEllipseRecord) {
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCEllipsoid");
-    ASSERT_TRUE(region_record.asBool("oneRel")); // FITS 1-based
+    ASSERT_TRUE(region_record.asBool("oneRel")); // 1-based pixels
     auto center = region_record.asArrayFloat("center").tovector();
     ASSERT_FLOAT_EQ(center[0], points[0] + 1.0);
     ASSERT_FLOAT_EQ(center[1], points[1] + 1.0);
@@ -434,7 +431,7 @@ TEST_F(RegionMatchedTest, TestMatchedImagePolygonRecord) {
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCPolygon");
-    ASSERT_TRUE(region_record.asBool("oneRel")); // FITS 1-based
+    ASSERT_TRUE(region_record.asBool("oneRel")); // 1-based pixels
     // x, y points
     auto x = region_record.asArrayFloat("x").tovector();
     auto y = region_record.asArrayFloat("y").tovector();

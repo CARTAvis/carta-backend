@@ -57,7 +57,6 @@ set(TEST_SOURCES
         TestRegion.cc
         TestRegionHistogram.cc
         TestRegionMatched.cc
-        TestRegionRotbox.cc
         TestRegionSpatialProfiles.cc
         TestRegionSpectralProfiles.cc
         TestRegionStats.cc

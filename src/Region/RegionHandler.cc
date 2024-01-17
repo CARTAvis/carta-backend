@@ -2371,13 +2371,15 @@ bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::st
 }
 
 bool RegionHandler::IsPointRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
-        return GetRegion(region_id)->IsPoint();
+        return GetRegion(region_id)->IsPoint() && !GetRegion(region_id)->IsAnnotation();
     }
     return false;
 }
 
 bool RegionHandler::IsLineRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         return GetRegion(region_id)->IsLineType() && !GetRegion(region_id)->IsAnnotation();
     }
@@ -2385,6 +2387,7 @@ bool RegionHandler::IsLineRegion(int region_id) {
 }
 
 bool RegionHandler::IsClosedRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         auto type = GetRegion(region_id)->GetRegionState().type;
         return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON);

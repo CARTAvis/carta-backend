@@ -15,9 +15,6 @@
 
 using namespace carta;
 
-using ::testing::FloatNear;
-using ::testing::Pointwise;
-
 class RegionSpatialProfileTest : public ::testing::Test {
 public:
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, const std::vector<float>& points,

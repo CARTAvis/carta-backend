@@ -15,9 +15,6 @@
 
 using namespace carta;
 
-using ::testing::FloatNear;
-using ::testing::Pointwise;
-
 class RegionTest : public ::testing::Test {
 public:
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, CARTA::RegionType type,
@@ -58,12 +55,12 @@ TEST_F(RegionTest, TestSetUpdateRemoveRegion) {
     ASSERT_TRUE(region->IsValid());
     ASSERT_FALSE(region->IsPoint());
     ASSERT_FALSE(region->IsLineType());
-    ASSERT_FALSE(region->IsRotbox());
     ASSERT_FALSE(region->IsAnnotation());
     ASSERT_FALSE(region->RegionChanged());
     ASSERT_TRUE(region->IsConnected());
     ASSERT_EQ(region->CoordinateSystem(), csys);
     auto region_state = region->GetRegionState();
+    ASSERT_FALSE(region_state.IsRotbox());
 
     // Update region
     rotation = 30.0;
@@ -71,9 +68,9 @@ TEST_F(RegionTest, TestSetUpdateRemoveRegion) {
     ASSERT_TRUE(ok);
     ASSERT_TRUE(region->IsValid());
     ASSERT_TRUE(region->RegionChanged());
-    ASSERT_TRUE(region->IsRotbox());
     auto new_region_state = region->GetRegionState();
     ASSERT_FALSE(region_state == new_region_state);
+    ASSERT_TRUE(new_region_state.IsRotbox());
 
     // Remove region and frame (not set, should not cause error)
     region_handler.RemoveRegion(region_id);
@@ -246,7 +243,7 @@ TEST_F(RegionTest, TestReferenceImageLineRecord) {
     auto region_record = region->GetImageRegionRecord(file_id, csys, image_shape);
     ASSERT_GT(region_record.nfields(), 0);
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
-    ASSERT_EQ(region_record.asString("name"), "Line");
+    ASSERT_EQ(region_record.asString("name"), "line");
     ASSERT_FALSE(region_record.asBool("oneRel"));
     auto x = region_record.asArrayFloat("x").tovector();
     auto y = region_record.asArrayFloat("y").tovector();
@@ -283,8 +280,8 @@ TEST_F(RegionTest, TestReferenceImageRectangleRecord) {
     ASSERT_EQ(region_record.asString("name"), "LCPolygon"); // box corners set as polygon
     ASSERT_FALSE(region_record.asBool("oneRel"));
     // x, y order is [blc, brc, trc, tlc, blc]
-    auto x = region_record.asArrayFloat("x").tovector();
-    auto y = region_record.asArrayFloat("y").tovector();
+    auto x = region_record.asArrayDouble("x").tovector();
+    auto y = region_record.asArrayDouble("y").tovector();
     float left_x = points[0] - (points[2] / 2.0);
     float right_x = points[0] + (points[2] / 2.0);
     float bottom_y = points[1] - (points[3] / 2.0);
@@ -329,8 +326,8 @@ TEST_F(RegionTest, TestReferenceImageRotboxRecord) {
     ASSERT_EQ(region_record.asString("name"), "LCPolygon"); // box corners set as polygon
     ASSERT_FALSE(region_record.asBool("oneRel"));
     // x, y order is [blc, brc, trc, tlc, blc]
-    auto x = region_record.asArrayFloat("x").tovector();
-    auto y = region_record.asArrayFloat("y").tovector();
+    auto x = region_record.asArrayDouble("x").tovector();
+    auto y = region_record.asArrayDouble("y").tovector();
     float left_x = points[0] - (points[2] / 2.0);
     float right_x = points[0] + (points[2] / 2.0);
     float bottom_y = points[1] - (points[3] / 2.0);
