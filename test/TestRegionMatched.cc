@@ -337,7 +337,6 @@ TEST_F(RegionMatchedTest, TestMatchedImageRotboxRecord) {
     ASSERT_EQ(region_record.asInt("isRegion"), 1);
     ASSERT_EQ(region_record.asString("name"), "LCPolygon"); // box corners set as polygon
     ASSERT_FALSE(region_record.asBool("oneRel"));
-    std::cerr << "matched rotbox record=" << region_record << std::endl;
     // x, y order is [blc, brc, trc, tlc, blc]
     auto x = region_record.asArrayFloat("x").tovector();
     auto y = region_record.asArrayFloat("y").tovector();
