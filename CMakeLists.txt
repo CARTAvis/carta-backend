@@ -192,7 +192,7 @@ set(LINK_LIBS
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-	third-party/pugixml/src/pugixml.cpp
+        third-party/pugixml/src/pugixml.cpp
         src/Cache/TileCache.cc
         src/Cache/TilePool.cc
         src/DataStream/Compression.cc
@@ -224,7 +224,7 @@ set(SOURCE_FILES
         src/ImageStats/Histogram.cc
         src/ImageStats/StatsCalculator.cc
         src/Logger/Logger.cc
-		src/Logger/CartaLogSink.cc
+        src/Logger/CartaLogSink.cc
         src/Main/Main.cc
         src/Main/ProgramSettings.cc
         src/Main/WebBrowser.cc
