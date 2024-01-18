@@ -11,6 +11,7 @@
 
 #include "FileList/FileListHandler.h"
 #include "HttpServer/HttpServer.h"
+#include "Logger/CartaLogSink.h"
 #include "Logger/Logger.h"
 #include "ProgramSettings.h"
 #include "Session/SessionManager.h"
@@ -19,6 +20,9 @@
 #include "Util/FileSystem.h"
 #include "Util/Token.h"
 #include "WebBrowser.h"
+
+#include <casacore/casa/Logging/LogIO.h>
+#include <casacore/casa/Logging/NullLogSink.h>
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
@@ -51,6 +55,29 @@ int main(int argc, char* argv[]) {
         carta::logger::InitLogger(
             settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
         settings.FlushMessages(); // flush log messages produced during Program Settings setup
+
+        // Send casacore log messages (global and local) to sink.
+        // CartaLogSink sends messages to spdlog, NullLogSink discards messages.
+        casacore::LogSinkInterface* carta_log_sink(nullptr);
+        switch (settings.verbosity) {
+            case 0:
+                carta_log_sink = new casacore::NullLogSink();
+                break;
+            case 1:
+            case 2:
+                carta_log_sink = new CartaLogSink(casacore::LogMessage::SEVERE);
+                break;
+            case 3:
+                carta_log_sink = new CartaLogSink(casacore::LogMessage::WARN);
+                break;
+            case 4:
+            case 5:
+            default:
+                carta_log_sink = new CartaLogSink(casacore::LogMessage::NORMAL);
+        }
+        casacore::LogSink log_sink(carta_log_sink->filter(), std::shared_ptr<casacore::LogSinkInterface>(carta_log_sink));
+        casacore::LogSink::globalSink(carta_log_sink);
+        casacore::LogIO casacore_log(log_sink);
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);

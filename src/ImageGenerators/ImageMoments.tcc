@@ -28,8 +28,7 @@ ImageMoments<T>::ImageMoments(const casacore::ImageInterface<T>& image, casacore
 
 template <class T>
 casacore::Bool ImageMoments<T>::SetNewImage(const casacore::ImageInterface<T>& image) {
-    T* dummy = nullptr;
-    casacore::DataType imageType = casacore::whatType(dummy);
+    casacore::DataType imageType = casacore::whatType<T>();
     ThrowIf(imageType != casacore::TpFloat && imageType != casacore::TpDouble,
         "Moments can only be evaluated for Float or Double valued images");
 
