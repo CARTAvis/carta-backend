@@ -159,7 +159,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 try {
                     lcregion.reset(casacore::LCRegion::fromRecord(region_record, ""));
                 } catch (const casacore::AipsError& err) {
-                    std::cerr << "LCRegion::fromRecord failed: " << err.getMesg() << std::endl;
+                    // Region is outside image
                 }
                 _lcregion_set = true;
 

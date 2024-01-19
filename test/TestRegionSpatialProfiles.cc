@@ -320,6 +320,18 @@ TEST_F(RegionSpatialProfileTest, Hdf5PointProfile) {
     CmpVectors<float>(profile_data, image_data);
 }
 
+TEST_F(RegionSpatialProfileTest, FitsPointProfileOutsideImage) {
+    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    std::vector<float> endpoints = {-2.0, -2.0};
+    int start(0), end(0), mip(0), width(1);
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+
+    CARTA::SpatialProfileData spatial_profile;
+    bool ok = RegionSpatialProfile(image_path, endpoints, spatial_reqs, spatial_profile);
+
+    ASSERT_FALSE(ok);
+}
+
 TEST_F(RegionSpatialProfileTest, FitsAnnotationPointProfile) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
     std::vector<float> point = {0.0, 0.0};
