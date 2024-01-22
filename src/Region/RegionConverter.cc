@@ -670,7 +670,6 @@ casacore::TableRecord RegionConverter::GetImageRegionRecord(
 
         // Get LCRegion definition as Record
         if (lc_region) {
-            std::cerr << "Get record from converted LCRegion" << std::endl;
             record = lc_region->toRecord("region");
             if (record.isDefined("region")) {
                 record = record.asRecord("region");
@@ -681,10 +680,8 @@ casacore::TableRecord RegionConverter::GetImageRegionRecord(
     if (record.empty()) {
         // LCRegion failed, is outside the image or a rotated rectangle.
         // Manually convert control points and put in Record.
-        std::cerr << "Get record from converted control points" << std::endl;
         record = GetRegionPointsRecord(output_csys, output_shape);
     }
-    std::cerr << "RegionConverter returning record=" << record << std::endl;
     return record;
 }
 

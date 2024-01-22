@@ -250,10 +250,9 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         }
     }
 
-    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+    bool export_pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
     auto output_csys = frame->CoordinateSystem();
-
-    if (!pixel_coord && !output_csys->hasDirectionCoordinate()) {
+    if (!export_pixel_coord && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
         export_ack.set_success(false);
         export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
@@ -267,7 +266,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             exporter = std::unique_ptr<RegionImportExport>(new CrtfImportExport(output_csys, output_shape, frame->StokesAxis()));
             break;
         case CARTA::FileType::DS9_REG:
-            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, pixel_coord));
+            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, export_pixel_coord));
             break;
         default:
             break;
@@ -283,7 +282,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             auto region = GetRegion(region_id);
             auto region_state = region->GetRegionState();
 
-            if ((region_state.reference_file_id == file_id) && pixel_coord) {
+            if ((region_state.reference_file_id == file_id) && export_pixel_coord) {
                 // Use RegionState control points with reference file id for pixel export
                 region_added = exporter->AddExportRegion(region_state, region_style);
             } else {
@@ -291,7 +290,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                     // Use Record containing pixel coords of region converted to output image
                     casacore::TableRecord region_record = region->GetImageRegionRecord(file_id, output_csys, output_shape);
                     if (!region_record.empty()) {
-                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
+                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, export_pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
                     spdlog::error("Export region record failed: {}", err.getMesg());

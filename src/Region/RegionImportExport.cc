@@ -398,7 +398,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
     } else {
         x = region_record.asArrayDouble("x");
         y = region_record.asArrayDouble("y");
-	}
+    }
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {

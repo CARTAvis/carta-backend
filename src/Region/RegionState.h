@@ -84,7 +84,7 @@ struct RegionState {
 
     bool GetRectangleCorners(casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y, bool apply_rotation = true) {
         // Convert rectangle points [[cx, cy], [width, height]] to corner points. Optionally apply rotation.
-        if (type != CARTA::RECTANGLE && type != CARTA::ANNRECTANGLE) {
+        if (type != CARTA::RECTANGLE && type != CARTA::ANNRECTANGLE && type != CARTA::ANNTEXT) {
             return false;
         }
         float center_x(control_points[0].x()), center_y(control_points[0].y());
