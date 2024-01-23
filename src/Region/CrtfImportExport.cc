@@ -499,7 +499,8 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
                         // Set text label for text region
                         if (parameters.size() == 4) { // text, x, y, "text"
                             std::string label(parameters[3]);
-                            if (!label.empty() && ((label.front() == '"' && label.back() == '"') || (label.front() == '\'' && label.back() == '\''))) {
+                            if (!label.empty() &&
+                                ((label.front() == '"' && label.back() == '"') || (label.front() == '\'' && label.back() == '\''))) {
                                 label.pop_back();
                                 label = label.substr(1);
                             }
