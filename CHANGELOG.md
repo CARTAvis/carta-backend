@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed incorrect std calculation when fitting images with nan values ([#1318](https://github.com/CARTAvis/carta-backend/issues/1318)).
 * Fixed the hanging problem when deleting a region during the spectral profile process ([#1328](https://github.com/CARTAvis/carta-backend/issues/1328)).
 
+### Changed
+* Updated for compatibility with latest carta-casacore using CASA 6.6.0.
+
 ## [4.0.0]
 
 ### Changed
