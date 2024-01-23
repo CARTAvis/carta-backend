@@ -54,7 +54,8 @@ void RegionConverter::SetReferenceWCRegion() {
                 // Convert one point for wcs control points
                 if (CartaPointToWorld(_region_state.control_points[0], _wcs_control_points)) {
                     // WCBox blc and trc are same point
-                    region = new casacore::WCBox(_wcs_control_points, _wcs_control_points, pixel_axes, *_reference_coord_sys, abs_rel);
+                    casacore::Vector<casacore::Quantity> const wcs_points(_wcs_control_points);
+                    region = new casacore::WCBox(wcs_points, wcs_points, pixel_axes, *_reference_coord_sys, abs_rel);
                 }
                 break;
             }
