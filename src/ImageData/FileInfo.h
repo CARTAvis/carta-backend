@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_FILEINFO_H
-#define CARTA_BACKEND_FILEINFO_H
+#ifndef CARTA_SRC_IMAGEDATA_FILEINFO_H_
+#define CARTA_SRC_IMAGEDATA_FILEINFO_H_
 
 #include <map>
 #include <vector>
@@ -138,4 +138,4 @@ static bool ConvertFitsStokesValue(const int& in_stokes_value, int& out_stokes_v
 } // namespace FileInfo
 } // namespace carta
 
-#endif // CARTA_BACKEND_FILEINFO_H
+#endif // CARTA_SRC_IMAGEDATA_FILEINFO_H_

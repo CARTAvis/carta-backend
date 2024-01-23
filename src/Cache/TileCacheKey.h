@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_TILECACHEKEY_H
-#define CARTA_BACKEND_TILECACHEKEY_H
+#ifndef CARTA_SRC_CACHE_TILECACHEKEY_H_
+#define CARTA_SRC_CACHE_TILECACHEKEY_H_
 
 namespace carta {
 /** @brief Key for tiles used in TileCache
@@ -54,4 +54,4 @@ struct hash<carta::TileCacheKey> {
 };
 } // namespace std
 
-#endif // CARTA_BACKEND_TILECACHEKEY_H
+#endif // CARTA_SRC_CACHE_TILECACHEKEY_H_

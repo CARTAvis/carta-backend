@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef VOTABLE_TEST__DATACOLUMN_TCC_
-#define VOTABLE_TEST__DATACOLUMN_TCC_
+#ifndef CARTA_SRC_TABLE_DATACOLUMN_TCC_
+#define CARTA_SRC_TABLE_DATACOLUMN_TCC_
 
 #include "Columns.h"
 
@@ -281,4 +281,4 @@ void DataColumn<T>::FillColumnData(
 
 } // namespace carta
 
-#endif // VOTABLE_TEST__DATACOLUMN_TCC_
+#endif // CARTA_SRC_TABLE_DATACOLUMN_TCC_

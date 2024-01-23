@@ -110,14 +110,20 @@ void RegionHandler::RemoveRegion(int region_id) {
         return;
     }
 
-    std::unique_lock<std::mutex> region_lock(_region_mutex);
+    // Disconnect region(s)
     if (region_id == ALL_REGIONS) {
         for (auto& region : _regions) {
             region.second->WaitForTaskCancellation();
         }
-        _regions.clear();
     } else {
         _regions.at(region_id)->WaitForTaskCancellation();
+    }
+
+    // Erase region(s)
+    std::unique_lock<std::mutex> region_lock(_region_mutex);
+    if (region_id == ALL_REGIONS) {
+        _regions.clear();
+    } else {
         _regions.erase(region_id);
     }
     region_lock.unlock();
@@ -1274,10 +1280,11 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
             // Progress for loading data here if needed due to prior cancel
             if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, message)) {
                 // spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
+                casacore::Vector<float> const profile_v(profile);
                 if (reverse) {
-                    preview_data_matrix.column(iregion) = profile;
+                    preview_data_matrix.column(iregion) = profile_v;
                 } else {
-                    preview_data_matrix.row(iregion) = profile;
+                    preview_data_matrix.row(iregion) = profile_v;
                 }
             }
         }
@@ -2603,7 +2610,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
                     // Get mean spectral profile and max NumPixels for small region.
                     auto npix_per_chan = results[CARTA::StatsType::NumPixels];
                     num_pixels = *max_element(npix_per_chan.begin(), npix_per_chan.end());
-                    profile = results[CARTA::StatsType::Mean];
+                    profile = casacore::Vector<float>(results[CARTA::StatsType::Mean]); // TODO: use double for profile
                 }
             });
     } else {

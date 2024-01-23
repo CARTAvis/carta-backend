@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_MESSAGE_TCC_
-#define CARTA_BACKEND__UTIL_MESSAGE_TCC_
+#ifndef CARTA_SRC_UTIL_MESSAGE_TCC_
+#define CARTA_SRC_UTIL_MESSAGE_TCC_
 
 template <typename T>
 T Message::DecodeMessage(std::vector<char>& message) {
@@ -16,4 +16,4 @@ T Message::DecodeMessage(std::vector<char>& message) {
     return decoded_message;
 }
 
-#endif // CARTA_BACKEND__UTIL_MESSAGE_TCC_
+#endif // CARTA_SRC_UTIL_MESSAGE_TCC_

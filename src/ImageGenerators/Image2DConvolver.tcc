@@ -7,8 +7,8 @@
 //
 // Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/Image2DConvolver.tcc"
 //
-#ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
-#define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
+#ifndef CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_TCC_
+#define CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_TCC_
 
 #include "../Logger/Logger.h"
 #include "Util/Casacore.h"
@@ -165,7 +165,8 @@ void Image2DConvolver<T>::_convolve(SPIIT imageOut, const ImageInterface<T>& ima
         if (logFactors) {
             pixelArea = cSys.directionCoordinate().getPixelArea().getValue("arcsec*arcsec");
             if (!_targetres) {
-                GaussianBeam kernelBeam(kernelParms);
+                casacore::Vector<casacore::Quantity> const kernelParmsV(kernelParms);
+                GaussianBeam kernelBeam(kernelParmsV);
                 factor1 = pixelArea / kernelBeam.getArea("arcsec*arcsec");
             }
         }
@@ -207,25 +208,27 @@ void Image2DConvolver<T>::_doSingleBeam(ImageInfo& iiOut, Double& kernelVolume, 
     String& brightnessUnitOut, GaussianBeam& beamOut, SPIIT imageOut, const ImageInterface<T>& imageIn,
     const vector<Quantity>& originalParms, VectorKernel::KernelTypes kernelType, Bool logFactors, Double factor1, Double pixelArea) const {
     GaussianBeam inputBeam = imageIn.imageInfo().restoringBeam();
+    casacore::Vector<casacore::Quantity> const kernelParmsV(kernelParms);
+    casacore::Vector<casacore::Quantity> const originalParmsV(originalParms);
 
     if (_targetres) {
         kernelParms = _getConvolvingBeamForTargetResolution(originalParms, inputBeam);
         spdlog::debug("Convolving image that has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
-            FormatBeam(inputBeam), FormatBeam(GaussianBeam(kernelParms)), FormatBeam(GaussianBeam(originalParms)));
+            FormatBeam(inputBeam), FormatBeam(GaussianBeam(kernelParmsV)), FormatBeam(GaussianBeam(originalParmsV)));
 
         kernelVolume = _makeKernel(kernel, kernelType, kernelParms, imageIn);
     }
 
     const CoordinateSystem& cSys = imageIn.coordinates();
     auto scaleFactor = _dealWithRestoringBeam(
-        brightnessUnitOut, beamOut, kernel, kernelVolume, kernelType, kernelParms, cSys, inputBeam, imageIn.units(), true);
+        brightnessUnitOut, beamOut, kernel, kernelVolume, kernelType, kernelParmsV, cSys, inputBeam, imageIn.units(), true);
     string message;
 
     message += "Scaling pixel values by ";
 
     if (logFactors) {
         if (_targetres) {
-            GaussianBeam kernelBeam(kernelParms);
+            GaussianBeam kernelBeam(kernelParmsV);
             factor1 = pixelArea / kernelBeam.getArea("arcsec*arcsec");
         }
         Double factor2 = beamOut.getArea("arcsec*arcsec") / inputBeam.getArea("arcsec*arcsec");
@@ -290,9 +293,10 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
     casacore::Int channel = -1;
     casacore::Int polarization = -1;
 
+    casacore::Vector<casacore::Quantity> const kernelParmsV(kernelParms);
     if (_targetres) {
         iiOut.removeRestoringBeam();
-        iiOut.setRestoringBeam(casacore::GaussianBeam(kernelParms));
+        iiOut.setRestoringBeam(casacore::GaussianBeam(kernelParmsV));
     }
 
     casacore::uInt count = (nChan > 0 && nPol > 0) ? nChan * nPol : nChan > 0 ? nChan : nPol;
@@ -347,14 +351,15 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
 
             message += " ";
 
-            if (near(inputBeam, GaussianBeam(originalParms), 1e-5, casacore::Quantity(1e-2, "arcsec"))) {
+            casacore::Vector<casacore::Quantity> const originalParmsV(originalParms);
+            if (near(inputBeam, GaussianBeam(originalParmsV), 1e-5, casacore::Quantity(1e-2, "arcsec"))) {
                 doConvolve = false;
                 message += fmt::format("Input beam is already near target resolution so this plane will not be convolved.");
             } else {
                 kernelParms = _getConvolvingBeamForTargetResolution(originalParms, inputBeam);
                 kernelVolume = _makeKernel(kernel, kernelType, kernelParms, imageIn);
                 message += fmt::format(": Convolving image which has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
-                    FormatBeam(inputBeam), FormatBeam(GaussianBeam(kernelParms)), FormatBeam(GaussianBeam(originalParms)));
+                    FormatBeam(inputBeam), FormatBeam(GaussianBeam(kernelParmsV)), FormatBeam(GaussianBeam(originalParmsV)));
             }
 
             spdlog::debug(message);
@@ -363,12 +368,12 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
         casacore::TempImage<T> subImageOut(subImage.shape(), subImage.coordinates());
         if (doConvolve) {
             auto scaleFactor = _dealWithRestoringBeam(
-                brightnessUnitOut, beamOut, kernel, kernelVolume, kernelType, kernelParms, subCsys, inputBeam, imageIn.units(), i == 0);
+                brightnessUnitOut, beamOut, kernel, kernelVolume, kernelType, kernelParmsV, subCsys, inputBeam, imageIn.units(), i == 0);
             {
                 string message("Scaling pixel values by ");
                 if (logFactors) {
                     if (_targetres) {
-                        casacore::GaussianBeam kernelBeam(kernelParms);
+                        casacore::GaussianBeam kernelBeam(kernelParmsV);
                         factor1 = pixelArea / kernelBeam.getArea("arcsec*arcsec");
                     }
                     auto factor2 = beamOut.getArea("arcsec*arcsec") / inputBeam.getArea("arcsec*arcsec");
@@ -438,7 +443,8 @@ template <class T>
 Double Image2DConvolver<T>::_makeKernel(casacore::Array<Double>& kernelArray, casacore::VectorKernel::KernelTypes kernelType,
     const std::vector<casacore::Quantity>& parameters, const casacore::ImageInterface<T>& imageIn) const {
     // Check number of parameters
-    _checkKernelParameters(kernelType, parameters);
+    casacore::Vector<casacore::Quantity> const parametersV(parameters);
+    _checkKernelParameters(kernelType, parametersV);
 
     // Convert kernel widths to pixels from world.  Demands major and minor both in pixels or both in world, else exception
     casacore::Vector<casacore::Double> dParameters;
@@ -744,4 +750,4 @@ void Image2DConvolver<T>::StopCalculation() {
     _stop = true;
 }
 
-#endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
+#endif // CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_TCC_

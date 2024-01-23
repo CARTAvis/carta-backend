@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef VOTABLE_TEST__TABLEVIEW_H_
-#define VOTABLE_TEST__TABLEVIEW_H_
+#ifndef CARTA_SRC_TABLE_TABLEVIEW_H_
+#define CARTA_SRC_TABLE_TABLEVIEW_H_
 
 #include <carta-protobuf/defs.pb.h>
 
@@ -51,4 +51,4 @@ protected:
 
 #include "TableView.tcc"
 
-#endif // VOTABLE_TEST__TABLEVIEW_H_
+#endif // CARTA_SRC_TABLE_TABLEVIEW_H_

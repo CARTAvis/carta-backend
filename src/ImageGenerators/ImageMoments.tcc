@@ -7,8 +7,8 @@
 //
 // Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
 //
-#ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
-#define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
+#ifndef CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
+#define CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
 
 #include "../Logger/Logger.h"
 #include "Util/Casacore.h"
@@ -28,8 +28,7 @@ ImageMoments<T>::ImageMoments(const casacore::ImageInterface<T>& image, casacore
 
 template <class T>
 casacore::Bool ImageMoments<T>::SetNewImage(const casacore::ImageInterface<T>& image) {
-    T* dummy = nullptr;
-    casacore::DataType imageType = casacore::whatType(dummy);
+    casacore::DataType imageType = casacore::whatType<T>();
     ThrowIf(imageType != casacore::TpFloat && imageType != casacore::TpDouble,
         "Moments can only be evaluated for Float or Double valued images");
 
@@ -728,4 +727,4 @@ casacore::IPosition ImageMoments<T>::ChunkShape(casacore::uInt axis, const casac
     return chunk_shape;
 }
 
-#endif // CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
+#endif // CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_

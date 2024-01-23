@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__FRAME_VECTORFIELD_H_
-#define CARTA_BACKEND__FRAME_VECTORFIELD_H_
+#ifndef CARTA_SRC_DATASTREAM_VECTORFIELD_H_
+#define CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
@@ -138,4 +138,4 @@ CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int 
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FRAME_VECTORFIELD_H_
+#endif // CARTA_SRC_DATASTREAM_VECTORFIELD_H_

@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef VOTABLE_TEST__TABLEVIEW_TCC_
-#define VOTABLE_TEST__TABLEVIEW_TCC_
+#ifndef CARTA_SRC_TABLE_TABLEVIEW_TCC_
+#define CARTA_SRC_TABLE_TABLEVIEW_TCC_
 
 #include "TableView.h"
 
@@ -22,4 +22,4 @@ std::vector<T> TableView::Values(const Column* column, int64_t start, int64_t en
 
 } // namespace carta
 
-#endif // VOTABLE_TEST__TABLEVIEW_TCC_
+#endif // CARTA_SRC_TABLE_TABLEVIEW_TCC_

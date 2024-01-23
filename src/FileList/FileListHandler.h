@@ -6,8 +6,8 @@
 
 // file list handler for all users' requests
 
-#ifndef CARTA_BACKEND__FILELISTHANDLER_H_
-#define CARTA_BACKEND__FILELISTHANDLER_H_
+#ifndef CARTA_SRC_FILELIST_FILELISTHANDLER_H_
+#define CARTA_SRC_FILELIST_FILELISTHANDLER_H_
 
 #include <functional>
 #include <mutex>
@@ -69,4 +69,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FILELISTHANDLER_H_
+#endif // CARTA_SRC_FILELIST_FILELISTHANDLER_H_
