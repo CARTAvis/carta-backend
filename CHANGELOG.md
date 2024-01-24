@@ -13,12 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Normalize the style of guard names in header files ([#1023](https://github.com/CARTAvis/carta-backend/issues/1023)).
 * Store global settings in a singleton class ([#1302](https://github.com/CARTAvis/carta-backend/issues/1302)).
 
+## [4.1.0]
+
 ### Fixed
-* Fixed scripting interface and symlink directory issues ([#1283](https://github.com/CARTAvis/carta-frontend/issues/1283), [#1284](https://github.com/CARTAvis/carta-frontend/issues/1284), [#1314](https://github.com/CARTAvis/carta-frontend/issues/1314)).
 * Include casacore log messages in carta log ([#1169](https://github.com/CARTAvis/carta-backend/issues/1169)).
 * Fixed the problem of opening old IRAM fits images ([#1312](https://github.com/CARTAvis/carta-backend/issues/1312)).
+* Fixed scripting interface and symlink directory issues ([#1283](https://github.com/CARTAvis/carta-frontend/issues/1283), [#1284](https://github.com/CARTAvis/carta-frontend/issues/1284), [#1314](https://github.com/CARTAvis/carta-frontend/issues/1314)).
 * Fixed incorrect std calculation when fitting images with nan values ([#1318](https://github.com/CARTAvis/carta-backend/issues/1318)).
 * Fixed the hanging problem when deleting a region during the spectral profile process ([#1328](https://github.com/CARTAvis/carta-backend/issues/1328)).
+
+### Changed
+* Updated for compatibility with latest carta-casacore using CASA 6.6.0.
 
 ## [4.0.0]
 
