@@ -993,7 +993,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     }
 
     // 2. Region is line
-    if (GetRegion(region_id)->GetRegionState().type != CARTA::RegionType::LINE) {
+    if (!IsLineRegion(region_id)) {
         pv_response.set_message("Region type not supported for PV cut.");
         return false;
     }
@@ -2450,11 +2450,6 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     auto line_region_state = line_region->GetRegionState();
     auto line_coord_sys = line_region->CoordinateSystem();
     region_lock.unlock();
-
-    if (per_z && (line_region_state.type == CARTA::RegionType::POLYLINE)) {
-        message = "Polyline region not supported for PV images.";
-        return false;
-    }
 
     if (CancelLineProfiles(region_id, file_id, line_region_state)) {
         cancelled = true;
