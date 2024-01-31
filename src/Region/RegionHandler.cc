@@ -2335,7 +2335,6 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
         spdlog::performance("Fill line spatial profile in {:.3f} ms", t.Elapsed().ms());
     }
 
-    spdlog::performance("Line spatial data in {:.3f} ms", t.Elapsed().ms());
     return profile_ok;
 }
 
