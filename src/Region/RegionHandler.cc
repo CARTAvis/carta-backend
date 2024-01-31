@@ -2332,6 +2332,7 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
                     profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
                 cb(profile_message);
             });
+        spdlog::performance("Fill line spatial profile in {:.3f} ms", t.Elapsed().ms());
     }
 
     spdlog::performance("Line spatial data in {:.3f} ms", t.Elapsed().ms());
@@ -2468,24 +2469,31 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         auto t_start = std::chrono::high_resolution_clock::now();
         auto num_profiles = box_regions.size();
 
+#pragma omp parallel for
         for (size_t iprofile = 0; iprofile < num_profiles; ++iprofile) {
+            if (cancelled) {
+                continue;
+            }
+
             // Frame/region closing, or line changed
             if (CancelLineProfiles(region_id, file_id, line_region_state)) {
                 cancelled = true;
-                return false;
             }
 
             // PV generator: check if user canceled
             if (per_z && _stop_pv[file_id]) {
                 spdlog::debug("Stopping line profiles: PV generator cancelled");
                 cancelled = true;
-                return false;
             }
 
             // Line spatial profile: check if requirements removed
             if (!per_z && !HasSpatialRequirements(region_id, file_id, coordinate, width)) {
                 cancelled = true;
-                return false;
+            }
+
+            if (cancelled) {
+                profiles.resize();
+                continue;
             }
 
             // Get mean profile for requested file_id and log number of pixels in region
@@ -2509,7 +2517,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
                 profiles.row(iprofile) = region_profile;
             }
 
-            progress = float(iprofile + 1) / float(num_profiles);
+            progress = max(progress, float(iprofile + 1) / float(num_profiles));
 
             if (per_z) {
                 // Update progress if time interval elapsed
@@ -2524,7 +2532,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         }
     }
 
-    return (progress >= 1.0) && !allEQ(profiles, NAN);
+    return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, NAN);
 }
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {
@@ -2559,9 +2567,9 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
     }
 
     std::lock_guard<std::mutex> guard(_line_profile_mutex);
+    // Set temporary region
     int region_id(TEMP_REGION_ID);
     SetRegion(region_id, region_state, reference_csys);
-
     if (!RegionSet(region_id, true)) {
         return profile;
     }
@@ -2602,19 +2610,27 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
             });
     } else {
         // Use BasicStats to get num_pixels and mean for current channel and stokes
-        // Get region
+        // Get region as LCRegion
         StokesRegion stokes_region;
         std::shared_ptr<casacore::LCRegion> lc_region;
         std::shared_lock frame_lock(_frames.at(file_id)->GetActiveTaskMutex());
         if (ApplyRegionToFile(region_id, file_id, z_range, stokes_index, lc_region, stokes_region)) {
-            // Get region data (report_performance = false, too much output)
+            // Get region data by applying LCRegion to image
             std::vector<float> region_data;
             if (_frames.at(file_id)->GetRegionData(stokes_region, region_data, false)) {
-                // Get BasicStats
-                BasicStats<float> basic_stats;
-                CalcBasicStats(basic_stats, region_data.data(), region_data.size());
-                num_pixels = basic_stats.num_pixels;
-                profile[0] = basic_stats.mean;
+                // Very small region, just calc needed stats here
+                num_pixels = 0;
+                double sum(0.0);
+                for (size_t i = 0; i < region_data.size(); ++i) {
+                    float val(region_data[i]);
+                    if (std::isfinite(val)) {
+                        num_pixels++;
+                        sum += (double)val;
+                    }
+                }
+                if (num_pixels > 0) {
+                    profile[0] = sum / num_pixels;
+                }
             }
         }
         frame_lock.unlock();

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove program settings equality operators ([#1001](https://github.com/CARTAvis/carta-backend/issues/1001)).
 * Normalize the style of guard names in header files ([#1023](https://github.com/CARTAvis/carta-backend/issues/1023)).
 * Move Region code to RegionConverter for maintenance and performance ([#1347](https://github.com/CARTAvis/carta-backend/issues/1347)).
+* Improve performance of region spatial profiles and PV image generation ([#1339](https://github.com/CARTAvis/carta-backend/issues/1339)).
 
 ## [4.1.0]
 
