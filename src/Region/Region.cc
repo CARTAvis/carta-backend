@@ -333,8 +333,22 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
             casacore::Vector<casacore::Float> center(2), radii(2);
             center(0) = region_state.control_points[0].x();
             center(1) = region_state.control_points[0].y();
-            radii(0) = region_state.control_points[1].x();
-            radii(1) = region_state.control_points[1].y();
+            auto major = region_state.control_points[1].x();
+            auto minor = region_state.control_points[1].y();
+            auto ellipse_rotation = region_state.rotation;
+
+            // Enforce major > minor (as in WCEllipsoid) for ellipse.
+            bool is_compass(region_type == CARTA::RegionType::ANNCOMPASS);
+            if (major > minor || is_compass) {
+                radii(0) = major;
+                radii(1) = minor;
+                // carta rotation is from y-axis, ellipse rotation is from x-axis
+                ellipse_rotation += 90.0;
+            } else {
+                // swapping takes care of 90 deg adjustment
+                radii(0) = minor;
+                radii(1) = major;
+            }
 
             if (region_type == CARTA::RegionType::ANNCOMPASS) {
                 record.define("name", "compass");
@@ -345,7 +359,7 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
             record.define("radii", radii);
 
             // LCEllipsoid measured from major (x) axis
-            casacore::Quantity theta = casacore::Quantity(region_state.rotation + 90.0, "deg");
+            casacore::Quantity theta = casacore::Quantity(ellipse_rotation, "deg");
             theta.convert("rad");
             record.define("theta", theta.getValue());
             break;
