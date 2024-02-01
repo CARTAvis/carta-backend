@@ -1827,7 +1827,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             }
             casa::SPIIF image(_loader->GetStokesImage(output_stokes_region.stokes_source));
             success = _image_fitter->GetGeneratedImages(
-                image, output_stokes_region.image_region, file_id, GetFileName(), model_image, residual_image, fitting_response);
+                image, output_stokes_region.image_region, GetFileName(), model_image, residual_image, fitting_response);
         }
     }
 
