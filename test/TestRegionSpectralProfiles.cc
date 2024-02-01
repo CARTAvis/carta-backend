@@ -28,15 +28,15 @@ public:
         CARTA::RegionType region_type;
         if (control_points.size() > 1) {
             region_type = is_annotation ? CARTA::ANNPOLYGON : CARTA::POLYGON;
-		} else {
+        } else {
             region_type = is_annotation ? CARTA::ANNPOINT : CARTA::POINT;
         }
         RegionState region_state(file_id, region_type, control_points, 0.0);
         return region_handler.SetRegion(region_id, region_state, csys);
     }
 
-    static bool SpectralProfile(const std::string& image_path, const std::vector<float>& points,
-        CARTA::SpectralProfileData& spectral_data, bool is_annotation = false) {
+    static bool SpectralProfile(const std::string& image_path, const std::vector<float>& points, CARTA::SpectralProfileData& spectral_data,
+        bool is_annotation = false) {
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
@@ -78,7 +78,6 @@ public:
             for (float data : channel_data) {
                 profile.push_back(data);
             }
-
         }
         return profile;
     }
