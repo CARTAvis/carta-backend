@@ -1,0 +1,5 @@
+<map id="carta::ImageFitter::GetGeneratedImages" name="carta::ImageFitter::GetGeneratedImages">
+<area shape="rect" id="node1" title="Generate model and residual images based on the fitting results." alt="" coords="5,39,175,80"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562" title="Generate filenames by adding a suffix." alt="" coords="223,5,361,47"/>
+<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a6de0511604f66daf077814e64edb5c69" title="Generate a casacore ImageInterface object from the provided image data." alt="" coords="223,71,361,112"/>
+</map>

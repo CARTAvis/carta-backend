@@ -133,9 +133,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aed4497f70e14e441c9e33950f8f9ab44"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44">FitImage</a> (size_t width, size_t height, float *image, double beam_size, string unit, const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, const std::vector&lt; bool &gt; &amp;fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse &amp;fitting_response, <a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a> progress_callback, size_t offset_x=0, size_t offset_y=0)</td></tr>
 <tr class="memdesc:aed4497f70e14e441c9e33950f8f9ab44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fit Gaussian components to an image and generate fitting results along with model and residual data.  <a href="classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44">More...</a><br /></td></tr>
 <tr class="separator:aed4497f70e14e441c9e33950f8f9ab44"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0cda5d39e25c707d58f1459914f49b7e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e">GetGeneratedImages</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, const casacore::ImageRegion &amp;image_region, int file_id, const std::string &amp;filename, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;model_image, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;residual_image, CARTA::FittingResponse &amp;fitting_response)</td></tr>
-<tr class="memdesc:a0cda5d39e25c707d58f1459914f49b7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate model and residual images based on the fitting results.  <a href="classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e">More...</a><br /></td></tr>
-<tr class="separator:a0cda5d39e25c707d58f1459914f49b7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80d07c79b6d88abc9de2b4fca9954dc7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a80d07c79b6d88abc9de2b4fca9954dc7">GetGeneratedImages</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, const casacore::ImageRegion &amp;image_region, const std::string &amp;filename, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;model_image, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;residual_image, CARTA::FittingResponse &amp;fitting_response)</td></tr>
+<tr class="memdesc:a80d07c79b6d88abc9de2b4fca9954dc7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate model and residual images based on the fitting results.  <a href="classcarta_1_1ImageFitter.html#a80d07c79b6d88abc9de2b4fca9954dc7">More...</a><br /></td></tr>
+<tr class="separator:a80d07c79b6d88abc9de2b4fca9954dc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42b7d3b5141dc7d3777af3355496fb91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a42b7d3b5141dc7d3777af3355496fb91">StopFitting</a> ()</td></tr>
 <tr class="memdesc:a42b7d3b5141dc7d3777af3355496fb91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stop the ongoing fitting process.  <a href="classcarta_1_1ImageFitter.html#a42b7d3b5141dc7d3777af3355496fb91">More...</a><br /></td></tr>
 <tr class="separator:a42b7d3b5141dc7d3777af3355496fb91"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -166,9 +166,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a178477bf1d50315a77b2211c0ddbe562"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562">GetFilename</a> (const std::string &amp;filename, std::string suffix)</td></tr>
 <tr class="memdesc:a178477bf1d50315a77b2211c0ddbe562"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate filenames by adding a suffix.  <a href="classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562">More...</a><br /></td></tr>
 <tr class="separator:a178477bf1d50315a77b2211c0ddbe562"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6284a9df68da6eeaf25d316fc7d62d4f"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f">GetGeneratedMomentFilename</a> (const std::string &amp;filename, std::string suffix)</td></tr>
-<tr class="memdesc:a6284a9df68da6eeaf25d316fc7d62d4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate filenames by adding a suffix for generated moment images.  <a href="classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f">More...</a><br /></td></tr>
-<tr class="separator:a6284a9df68da6eeaf25d316fc7d62d4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa75c9a39995194ed580c52d27a9fd6ab"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aa75c9a39995194ed580c52d27a9fd6ab">GetGeneratedMomentFilename</a> (const std::string &amp;filename, std::string suffix)</td></tr>
+<tr class="memdesc:aa75c9a39995194ed580c52d27a9fd6ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate filenames by adding a suffix for generated moment images.  <a href="classcarta_1_1ImageFitter.html#aa75c9a39995194ed580c52d27a9fd6ab">More...</a><br /></td></tr>
+<tr class="separator:aa75c9a39995194ed580c52d27a9fd6ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-static-methods"></a>
 Static Private Member Functions</h2></td></tr>
@@ -760,7 +760,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a178477bf1d50315a77b2211c0ddbe562_icgraph.svg" width="650" height="82"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a178477bf1d50315a77b2211c0ddbe562_icgraph.svg" width="367" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -893,8 +893,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a0cda5d39e25c707d58f1459914f49b7e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0cda5d39e25c707d58f1459914f49b7e">&#9670;&nbsp;</a></span>GetGeneratedImages()</h2>
+<a id="a80d07c79b6d88abc9de2b4fca9954dc7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a80d07c79b6d88abc9de2b4fca9954dc7">&#9670;&nbsp;</a></span>GetGeneratedImages()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -910,12 +910,6 @@ Here is the caller graph for this function:</div>
           <td></td>
           <td class="paramtype">const casacore::ImageRegion &amp;&#160;</td>
           <td class="paramname"><em>image_region</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>file_id</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -966,14 +960,14 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a0cda5d39e25c707d58f1459914f49b7e_cgraph.svg" width="650" height="147"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a80d07c79b6d88abc9de2b4fca9954dc7_cgraph.svg" width="367" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
 </div>
 </div>
-<a id="a6284a9df68da6eeaf25d316fc7d62d4f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6284a9df68da6eeaf25d316fc7d62d4f">&#9670;&nbsp;</a></span>GetGeneratedMomentFilename()</h2>
+<a id="aa75c9a39995194ed580c52d27a9fd6ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa75c9a39995194ed580c52d27a9fd6ab">&#9670;&nbsp;</a></span>GetGeneratedMomentFilename()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -982,7 +976,7 @@ Here is the call graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::string ImageFitter::GetGeneratedMomentFilename </td>
+          <td class="memname">std::string carta::ImageFitter::GetGeneratedMomentFilename </td>
           <td>(</td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>filename</em>, </td>
@@ -1015,18 +1009,6 @@ Here is the call graph for this function:</div>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The modified filename </dd></dl>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a6284a9df68da6eeaf25d316fc7d62d4f_cgraph.svg" width="432" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a6284a9df68da6eeaf25d316fc7d62d4f_icgraph.svg" width="463" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
 
 </div>
 </div>

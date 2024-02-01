@@ -1,8 +1,5 @@
 var NAVTREEINDEX8 =
 {
-"classcarta_1_1TileCache.html#aad31fdac22c38823271c5c9a0e3f3a3e":[3,0,0,14,13],
-"classcarta_1_1TileCache.html#ab49d270d06a755ebdd2e2d6b46e7825c":[3,0,0,14,12],
-"classcarta_1_1TileCache.html#abd21587759d89495cf7a548dcacd356b":[3,0,0,14,19],
 "classcarta_1_1TileCache.html#ac93cc128ac47219904ac19d9de4b1928":[3,0,0,14,3],
 "classcarta_1_1TileCache.html#ade12cbdd722de568f333a6d735a205cd":[3,0,0,14,2],
 "classcarta_1_1TileCache.html#aec30217cd860262f1f21a1cf3d4b32a8":[3,0,0,14,18],
@@ -110,8 +107,8 @@ var NAVTREEINDEX8 =
 "functions_enum.html":[3,3,4],
 "functions_eval.html":[3,3,5],
 "functions_f.html":[3,3,0,6],
-"functions_func.html":[3,3,1,0],
 "functions_func.html":[3,3,1],
+"functions_func.html":[3,3,1,0],
 "functions_func_a.html":[3,3,1,1],
 "functions_func_b.html":[3,3,1,2],
 "functions_func_c.html":[3,3,1,3],
@@ -154,8 +151,8 @@ var NAVTREEINDEX8 =
 "functions_type.html":[3,3,3],
 "functions_u.html":[3,3,0,21],
 "functions_v.html":[3,3,0,22],
-"functions_vars.html":[3,3,2,0],
 "functions_vars.html":[3,3,2],
+"functions_vars.html":[3,3,2,0],
 "functions_vars_a.html":[3,3,2,1],
 "functions_vars_b.html":[3,3,2,2],
 "functions_vars_c.html":[3,3,2,3],
@@ -190,8 +187,8 @@ var NAVTREEINDEX8 =
 "globals_type.html":[4,1,3],
 "globals_vars.html":[4,1,2],
 "hierarchy.html":[3,2],
-"index.html":[],
 "index.html":[0],
+"index.html":[],
 "index.html#autotoc_md3":[0,0],
 "md_docs_static_faq.html":[1],
 "md_docs_static_faq.html#autotoc_md0":[1,0],
@@ -249,5 +246,8 @@ var NAVTREEINDEX8 =
 "namespacecarta.html#ab893c6b5f03810d00b2d92e29bb9b545":[2,0,0,123],
 "namespacecarta.html#ab956cf731110ba23b135cca4982ce525":[2,0,0,147],
 "namespacecarta.html#abf80e39f46bb6dfcabb145a18352d366":[2,0,0,120],
-"namespacecarta.html#ac6eddf9c2268eb8aa3bbac4f45c6f16d":[2,0,0,129]
+"namespacecarta.html#ac6eddf9c2268eb8aa3bbac4f45c6f16d":[2,0,0,129],
+"namespacecarta.html#aca3cf2a9ea68bea36091f387d35c3911":[2,0,0,114],
+"namespacecarta.html#ae0d37b236270de77bb23613108e10258":[2,0,0,125],
+"namespacecarta.html#ae278df3199bf699b6cd2998337dbcb64":[2,0,0,121]
 };

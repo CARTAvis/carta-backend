@@ -21,7 +21,7 @@
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e" target="_top" xlink:title="Generate model and residual images based on the fitting results.">
+<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#a80d07c79b6d88abc9de2b4fca9954dc7" target="_top" xlink:title="Generate model and residual images based on the fitting results.">
 <polygon fill="none" stroke="black" points="0,-0.5 0,-30.5 127,-30.5 127,-0.5 0,-0.5"/>
 <text text-anchor="start" x="8" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="63.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetGeneratedImages</text>

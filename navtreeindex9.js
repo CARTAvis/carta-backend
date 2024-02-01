@@ -1,8 +1,5 @@
 var NAVTREEINDEX9 =
 {
-"namespacecarta.html#aca3cf2a9ea68bea36091f387d35c3911":[2,0,0,114],
-"namespacecarta.html#ae0d37b236270de77bb23613108e10258":[2,0,0,125],
-"namespacecarta.html#ae278df3199bf699b6cd2998337dbcb64":[2,0,0,121],
 "namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e":[2,0,0,135],
 "namespacecarta.html#aead2ccf135cb75c1b5d5f5d8b5a64849":[2,0,0,116],
 "namespacecarta.html#af7359c825e152777546c5e50b44b6e20":[2,0,0,143],
@@ -202,11 +199,10 @@ var NAVTREEINDEX9 =
 "structcarta_1_1FitStatus.html#ad6b680e816346f91b04dae7bac78eca3":[3,0,0,47,1],
 "structcarta_1_1FitStatus.html#ae08494841b31270364591d7a175d6939":[3,0,0,47,4],
 "structcarta_1_1GeneratedImage.html":[3,0,0,50],
-"structcarta_1_1GeneratedImage.html#a145228ec4c28a713fde2c25b7666930c":[3,0,0,50,1],
-"structcarta_1_1GeneratedImage.html#a35248b08dcd942584d3ccbd9bc5fee53":[3,0,0,50,2],
-"structcarta_1_1GeneratedImage.html#a4834abe8edabd13dcf81c4f62701528a":[3,0,0,50,3],
+"structcarta_1_1GeneratedImage.html#a4834abe8edabd13dcf81c4f62701528a":[3,0,0,50,2],
 "structcarta_1_1GeneratedImage.html#a783d20b6ec7eb0eed1a1280caf2f9d53":[3,0,0,50,0],
-"structcarta_1_1GeneratedImage.html#acfba2ca3f0a19d564886a242c827d347":[3,0,0,50,4],
+"structcarta_1_1GeneratedImage.html#a7a2bc538629dde1308a5264192041007":[3,0,0,50,1],
+"structcarta_1_1GeneratedImage.html#acfba2ca3f0a19d564886a242c827d347":[3,0,0,50,3],
 "structcarta_1_1HistogramCache.html":[3,0,0,8],
 "structcarta_1_1HistogramCache.html#a1787c315a603130e2570e709acebe2ab":[3,0,0,8,2],
 "structcarta_1_1HistogramCache.html#a208a72597f72b2c067608f6ef36c7f1a":[3,0,0,8,3],
@@ -249,5 +245,9 @@ var NAVTREEINDEX9 =
 "structcarta_1_1PreviewCutParameters.html#a2e792abe28cc8bae9f0ece26619606f2":[3,0,0,56,2],
 "structcarta_1_1PreviewCutParameters.html#a359110c97997a541912b7c147774f0dc":[3,0,0,56,1],
 "structcarta_1_1PreviewCutParameters.html#a3b48ac71f8d73feeca7d96177ab7d2b6":[3,0,0,56,9],
-"structcarta_1_1PreviewCutParameters.html#a66745b629ef568c82af9948b4249b9c4":[3,0,0,56,4]
+"structcarta_1_1PreviewCutParameters.html#a66745b629ef568c82af9948b4249b9c4":[3,0,0,56,4],
+"structcarta_1_1PreviewCutParameters.html#aa4a54c3824767809268817a9c957c870":[3,0,0,56,0],
+"structcarta_1_1PreviewCutParameters.html#acac74ea0c62be2241afaf7b9584a7fa4":[3,0,0,56,7],
+"structcarta_1_1PreviewCutParameters.html#acd3a13f48a5959a71e5924c61b591b2d":[3,0,0,56,12],
+"structcarta_1_1PreviewCutParameters.html#adda0b79bd8f392f8f1603b9bf944d6e9":[3,0,0,56,11]
 };

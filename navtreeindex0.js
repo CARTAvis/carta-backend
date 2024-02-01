@@ -1,6 +1,5 @@
 var NAVTREEINDEX0 =
 {
-"":[2,0,3],
 "AnimationObject_8h.html":[4,0,0],
 "AnimationObject_8h.html#a7ffe0cee0422c9c50de63e10a01a3b01":[4,0,0,1],
 "AnimationObject_8h.html#aa4c49ddab4b04a2c6ccf74e8884890df":[4,0,0,2],
@@ -207,11 +206,7 @@ var NAVTREEINDEX0 =
 "ImageFitter_8cc.html#a3b4061b3bdecb108eb01fcbcd4f04a9d":[4,0,67,1],
 "ImageFitter_8h.html":[4,0,68],
 "ImageGenerator_8h.html":[4,0,69],
-"ImageGenerator_8h.html#a035756639403611a4321f1fb7c5db57d":[4,0,69,1],
-"ImageGenerator_8h.html#a0bb62f1e22905362426c4778b1b9bd24":[4,0,69,3],
-"ImageGenerator_8h.html#a580749d842c14b13f1a1fe655b844e3b":[4,0,69,2],
-"ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7":[4,0,69,5],
-"ImageGenerator_8h.html#afb09e0c29ab478d67e9f62dd50d58527":[4,0,69,4],
+"ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7":[4,0,69,1],
 "ImageMoments_8h.html":[4,0,70],
 "ImageMoments_8tcc.html":[4,0,71],
 "ImagePtrLoader_8h.html":[4,0,72],
@@ -249,5 +244,10 @@ var NAVTREEINDEX0 =
 "Logger_8cc.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,79,3],
 "Logger_8cc.html#a7b334512783c98ccfdac74bd38aa2f9f":[4,0,79,0],
 "Logger_8cc.html#ab9e339746ee51ea21696ab43b50841d5":[4,0,79,4],
-"Logger_8h.html":[4,0,80]
+"Logger_8h.html":[4,0,80],
+"Logger_8h.html#a0ab032d47dbab9ca28d1fa3f65ec7e5d":[4,0,80,3],
+"Logger_8h.html#a220224f8f0ac091a4555ac30dfc7619d":[4,0,80,9],
+"Logger_8h.html#a3a30c8519779f61e8148bc6bcc19a489":[4,0,80,7],
+"Logger_8h.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,80,10],
+"Logger_8h.html#a670c6a63d98e715c33a6063e6e0c7b0c":[4,0,80,12]
 };

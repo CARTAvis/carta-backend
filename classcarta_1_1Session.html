@@ -327,6 +327,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a6c490d8acff0517270d57a70a6956dc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac671b008e48c5074c520343edb43beec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ac671b008e48c5074c520343edb43beec">FillExtendedFileInfo</a> (CARTA::FileInfoExtended &amp;extended_info, std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, const std::string &amp;filename, std::string &amp;message, std::shared_ptr&lt; <a class="el" href="classcarta_1_1FileLoader.html">FileLoader</a> &gt; &amp;image_loader)</td></tr>
 <tr class="separator:ac671b008e48c5074c520343edb43beec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc6ce12cd4d4847acdca333a010a7f0e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#abc6ce12cd4d4847acdca333a010a7f0e">GetNextFileId</a> ()</td></tr>
+<tr class="separator:abc6ce12cd4d4847acdca333a010a7f0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab36b319ffe1c796a753ea63b1eee575"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aab36b319ffe1c796a753ea63b1eee575">DeleteFrame</a> (int file_id)</td></tr>
 <tr class="separator:aab36b319ffe1c796a753ea63b1eee575"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9e908b20d1e35ff162cc1f361dbfe56"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aa9e908b20d1e35ff162cc1f361dbfe56">CalculateCubeHistogram</a> (int file_id, CARTA::RegionHistogramData &amp;cube_histogram_message)</td></tr>
@@ -380,6 +382,8 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a730b80401bd39846e6a679bf74f337be"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acfd0ed1b3d968523411b76a5564c88bb"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#acfd0ed1b3d968523411b76a5564c88bb">_frames</a></td></tr>
 <tr class="separator:acfd0ed1b3d968523411b76a5564c88bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f96366926983ba3cb956749be71b567"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a6f96366926983ba3cb956749be71b567">_last_file_id</a></td></tr>
+<tr class="separator:a6f96366926983ba3cb956749be71b567"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac2d8942e113b34cf5f8c4474315027ef"><td class="memItemLeft" align="right" valign="top">std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ac2d8942e113b34cf5f8c4474315027ef">_frame_mutex</a></td></tr>
 <tr class="separator:ac2d8942e113b34cf5f8c4474315027ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb78096afd300df488c69b5561d5cad9"><td class="memItemLeft" align="right" valign="top">const std::unique_ptr&lt; <a class="el" href="classcarta_1_1TableController.html">TableController</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aeb78096afd300df488c69b5561d5cad9">_table_controller</a></td></tr>
@@ -1590,6 +1594,37 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a59949ab9d3dd6d79fb2d6f12e30731c6_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="abc6ce12cd4d4847acdca333a010a7f0e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc6ce12cd4d4847acdca333a010a7f0e">&#9670;&nbsp;</a></span>GetNextFileId()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int carta::Session::GetNextFileId </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_abc6ce12cd4d4847acdca333a010a7f0e_icgraph.svg" width="478" height="170"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -4795,6 +4830,28 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">std::unordered_map&lt;int, bool&gt; carta::Session::_image_channel_task_active</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a6f96366926983ba3cb956749be71b567"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f96366926983ba3cb956749be71b567">&#9670;&nbsp;</a></span>_last_file_id</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int carta::Session::_last_file_id</td>
         </tr>
       </table>
   </td>
