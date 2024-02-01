@@ -97,7 +97,7 @@ public:
      * @param fitting_response The fitting response message
      * @return Whether the images are successfully generated
      */
-    bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region, int file_id,
+    bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region,
         const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response);
     /** @brief Stop the ongoing fitting process. */
     void StopFitting();
