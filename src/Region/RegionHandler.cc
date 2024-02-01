@@ -2473,9 +2473,13 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     if (line_box_regions.GetLineBoxRegions(line_region_state, line_coord_sys, width, increment, box_regions, message)) {
         auto t_start = std::chrono::high_resolution_clock::now();
         auto num_profiles = box_regions.size();
+        size_t iprofile;
+        // Use completed profiles (not iprofile) for progress.
+        // iprofile not in order so progress is uneven.
+        size_t completed_profiles(0);
 
-#pragma omp parallel for
-        for (size_t iprofile = 0; iprofile < num_profiles; ++iprofile) {
+#pragma omp parallel for private(iprofile) shared(progress, t_start, completed_profiles)
+        for (iprofile = 0; iprofile < num_profiles; ++iprofile) {
             if (cancelled) {
                 continue;
             }
@@ -2522,7 +2526,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
                 profiles.row(iprofile) = region_profile;
             }
 
-            progress = max(progress, float(iprofile + 1) / float(num_profiles));
+            progress = float(++completed_profiles) / float(num_profiles);
 
             if (per_z) {
                 // Update progress if time interval elapsed
