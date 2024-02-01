@@ -215,10 +215,10 @@ TEST_F(RegionTest, TestReferenceImagePointRecord) {
     ASSERT_EQ(trc.size(), 3);
     ASSERT_FLOAT_EQ(blc[0], points[0]);
     ASSERT_FLOAT_EQ(blc[1], points[1]);
-    ASSERT_FLOAT_EQ(blc[2], 0.0); // channel
+    ASSERT_FLOAT_EQ(blc[2], 0.0); // min channel
     ASSERT_FLOAT_EQ(trc[0], points[0]);
     ASSERT_FLOAT_EQ(trc[1], points[1]);
-    ASSERT_FLOAT_EQ(trc[2], 0.0); // channel
+    ASSERT_FLOAT_EQ(trc[2], 9.0); // max channel
 }
 
 TEST_F(RegionTest, TestReferenceImageLineRecord) {

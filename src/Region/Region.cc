@@ -48,6 +48,8 @@ bool Region::UpdateRegion(const RegionState& new_state) {
 
 void Region::ResetRegionCache() {
     // Invalid when region changes
+    std::lock_guard<std::mutex> guard(_lcregion_mutex);
+    _lcregion.reset();
     _lcregion_set = false;
     _region_converter.reset();
 }
@@ -263,13 +265,16 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
     switch (region_type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT: {
-            // Box with blc=trc, same ndim as image (chan/stokes range not used so just 0)
+            // Box with blc=trc, same ndim as image and all chan/stokes
             auto ndim = image_shape.size();
             casacore::Vector<casacore::Float> blc(ndim, 0.0), trc(ndim, 0.0);
             blc(0) = region_state.control_points[0].x();
             blc(1) = region_state.control_points[0].y();
             trc(0) = region_state.control_points[0].x();
             trc(1) = region_state.control_points[0].y();
+            for (size_t i = 2; i < ndim; ++i) {
+                trc(i) = image_shape(i) - 1.0f;
+            }
 
             record.define("name", "LCBox");
             record.define("blc", blc);
