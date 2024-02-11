@@ -1306,7 +1306,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     int start_channel(0);                    // spectral range applied in preview image
     int stokes(preview_cube->GetStokes());
     PvGenerator pv_generator;
-    pv_generator.SetFileIdName(frame_id, preview_id, preview_cube->GetSourceFileName(), true);
+    pv_generator.SetFileName(preview_id, preview_cube->GetSourceFileName(), true);
 
     if (pv_generator.GetPvImage(preview_frame, no_preview_data, data_shape, increment, start_channel, stokes, reverse, pv_image, error)) {
         int width = data_shape(0);
@@ -1386,9 +1386,9 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
         std::shared_lock frame_lock(frame->GetActiveTaskMutex());
         auto source_filename = frame->GetFileName();
 
-        // Create GeneratedImage with id and name in PvGenerator
+        // Create GeneratedImage in PvGenerator
         PvGenerator pv_generator;
-        pv_generator.SetFileIdName(file_id, name_index, source_filename);
+        pv_generator.SetFileName(name_index, source_filename);
         pv_success =
             pv_generator.GetPvImage(frame, pv_data, pv_shape, offset_increment, start_chan, stokes_index, reverse, pv_image, message);
         cancelled &= _stop_pv[file_id];

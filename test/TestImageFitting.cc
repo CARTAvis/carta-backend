@@ -77,23 +77,11 @@ public:
             frame->GetImageRegion(file_id, AxisRange(frame->CurrentZ()), frame->CurrentStokes(), output_stokes_region);
             casa::SPIIF image(loader->GetStokesImage(output_stokes_region.stokes_source));
             success = image_fitter->GetGeneratedImages(
-                image, output_stokes_region.image_region, file_id, frame->GetFileName(), model_image, residual_image, fitting_response);
+                image, output_stokes_region.image_region, frame->GetFileName(), model_image, residual_image, fitting_response);
 
             EXPECT_TRUE(success);
             CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->ImageCacheData());
         }
-    }
-
-    void GetGeneratedImageWithIncorrectFileId() {
-        std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
-        GeneratedImage model_image;
-        GeneratedImage residual_image;
-        CARTA::FittingResponse fitting_response;
-        bool success =
-            image_fitter->GetGeneratedImages(nullptr, casacore::ImageRegion(), -1001, "", model_image, residual_image, fitting_response);
-
-        EXPECT_FALSE(success);
-        EXPECT_EQ(fitting_response.message(), "generating images from generated PV and model/residual images is not supported");
     }
 
     void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
@@ -173,14 +161,12 @@ private:
             fitting_response.result_values().begin(), fitting_response.result_values().end());
         std::vector<float> expect_model_data = Gaussian(result_values);
 
-        EXPECT_EQ(model_image.file_id, -999);
         EXPECT_EQ(model_image.name, filename.substr(0, filename.length() - 5) + "_model.fits");
         EXPECT_EQ(model_data.size(), 128 * 128);
         for (size_t i = 0; i < model_data.size(); i++) {
             EXPECT_NEAR(model_data[i], expect_model_data[i], 1e-6);
         }
 
-        EXPECT_EQ(residual_image.file_id, -998);
         EXPECT_EQ(residual_image.name, filename.substr(0, filename.length() - 5) + "_residual.fits");
         EXPECT_EQ(residual_data.size(), 128 * 128);
         for (size_t i = 0; i < residual_data.size(); i++) {
@@ -259,10 +245,6 @@ TEST_F(ImageFittingTest, BackgroundUnfixedFitting) {
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     FitImage(gaussian_model);
-}
-
-TEST_F(ImageFittingTest, IncorrectFileId) {
-    GetGeneratedImageWithIncorrectFileId();
 }
 
 TEST_F(ImageFittingTest, FittingWithFov) {

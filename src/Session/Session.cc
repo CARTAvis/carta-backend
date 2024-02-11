@@ -526,6 +526,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 }
                 std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
                 _frames[file_id] = move(frame);
+                _last_file_id = file_id;
                 lock.unlock();
 
                 // copy file info, extended file info
@@ -597,6 +598,7 @@ bool Session::OnOpenFile(
             }
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);
+            _last_file_id = file_id;
             lock.unlock();
 
             // Set file info, extended file info
@@ -1244,10 +1246,11 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         }
 
         // Open moments images from the cache, open files acknowledgements will be sent to the frontend
+        int next_file_id = GetNextFileId();
         for (int i = 0; i < collapse_results.size(); ++i) {
             auto& collapse_result = collapse_results[i];
             auto* open_file_ack = moment_response.add_open_file_acks();
-            OnOpenFile(collapse_result.file_id, collapse_result.name, collapse_result.image, open_file_ack);
+            OnOpenFile(next_file_id++, collapse_result.name, collapse_result.image, open_file_ack);
         }
 
         // Send moment response message
@@ -1376,8 +1379,9 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
 
                 if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
                     // Fill response OpenFileAck
+                    int next_file_id = GetNextFileId();
                     auto* open_file_ack = pv_response.mutable_open_file_ack();
-                    OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+                    OnOpenFile(next_file_id, pv_image.name, pv_image.image, open_file_ack);
                 }
             }
             spdlog::performance("Generate pv response in {:.3f} ms", t.Elapsed().ms());
@@ -1439,13 +1443,14 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
         }
 
         if (success) {
+            int next_file_id = GetNextFileId();
             if (fitting_request.create_model_image()) {
                 auto* model_image_open_file_ack = fitting_response.mutable_model_image();
-                OnOpenFile(model_image.file_id, model_image.name, model_image.image, model_image_open_file_ack);
+                OnOpenFile(next_file_id, model_image.name, model_image.image, model_image_open_file_ack);
             }
             if (fitting_request.create_residual_image()) {
                 auto* residual_image_open_file_ack = fitting_response.mutable_residual_image();
-                OnOpenFile(residual_image.file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
+                OnOpenFile(++next_file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
             }
         }
 
