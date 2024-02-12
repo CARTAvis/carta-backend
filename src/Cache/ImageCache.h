@@ -7,7 +7,6 @@
 #ifndef CARTA_SRC_CACHE_IMAGECACHE_H_
 #define CARTA_SRC_CACHE_IMAGECACHE_H_
 
-#include "Frame/ImageState.h"
 #include "ImageData/FileLoader.h"
 #include "Util/Image.h"
 
@@ -20,13 +19,14 @@
 
 namespace carta {
 
+class Frame;
+
 class ImageCache {
 public:
-    ImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex);
+    ImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
     virtual ~ImageCache() = default;
 
-    static std::unique_ptr<ImageCache> GetImageCache(
-        std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex);
+    static std::unique_ptr<ImageCache> GetImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
     static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
     static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
 
@@ -60,8 +60,8 @@ protected:
     static float _full_image_cache_size_available; // MB
     static std::mutex _full_image_cache_size_available_mutex;
 
+    Frame* _frame;
     std::shared_ptr<FileLoader> _loader;
-    std::shared_ptr<ImageState> _image_state;
     std::mutex& _image_mutex; // Reference of the image mutex for the file loader
     bool _valid;
     float _image_memory_size;

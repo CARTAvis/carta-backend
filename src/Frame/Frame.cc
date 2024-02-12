@@ -37,7 +37,17 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _valid(true),
       _loader(loader),
       _tile_cache(0),
-      _image_state(nullptr),
+      _width(0),
+      _height(0),
+      _depth(1),
+      _num_stokes(1),
+      _x_axis(0),
+      _y_axis(1),
+      _z_axis(-1),
+      _spectral_axis(-1),
+      _stokes_axis(-1),
+      _z(default_z),
+      _stokes(DEFAULT_STOKES),
       _image_cache(nullptr),
       _moment_generator(nullptr),
       _moment_name_index(0) {
@@ -60,16 +70,27 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         return;
     }
 
-    // Create an image status object and get the image shape and axes from the loader
-    _image_state = std::make_shared<ImageState>(session_id, _loader, default_z, _open_image_error);
-    if (!_image_state->valid) {
+    // Get image shape and axes from the loader
+    std::string message;
+    std::vector<int> spatial_axes;
+    std::vector<int> render_axes;
+    if (!_loader->FindCoordinateAxes(_image_shape, spatial_axes, _spectral_axis, _stokes_axis, render_axes, _z_axis, message)) {
+        _open_image_error = fmt::format("Cannot determine file shape. {}", message);
+        spdlog::error("Session {}: {}", session_id, _open_image_error);
         return;
     }
+
+    _x_axis = render_axes[0];
+    _y_axis = render_axes[1];
+    _width = _image_shape(_x_axis);
+    _height = _image_shape(_y_axis);
+    _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
+    _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // Create an image cache
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    _image_cache = ImageCache::GetImageCache(_loader, _image_state, _image_mutex);
+    _image_cache = ImageCache::GetImageCache(this, _loader, _image_mutex);
     cache_lock.release();
 
     if (!_image_cache->IsValid()) {
@@ -144,39 +165,47 @@ casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
 }
 
 casacore::IPosition Frame::OriginalImageShape() const {
-    return _image_state->image_shape;
+    return _image_shape;
 }
 
 size_t Frame::Width() const {
-    return _image_state->width;
+    return _width;
 }
 
 size_t Frame::Height() const {
-    return _image_state->height;
+    return _height;
 }
 
 size_t Frame::Depth() const {
-    return _image_state->depth;
+    return _depth;
 }
 
 size_t Frame::NumStokes() const {
-    return _image_state->num_stokes;
+    return _num_stokes;
+}
+
+int Frame::XAxis() const {
+    return _x_axis;
+}
+
+int Frame::YAxis() const {
+    return _y_axis;
 }
 
 int Frame::ZAxis() const {
-    return _image_state->z_axis;
+    return _z_axis;
 }
 
 int Frame::StokesAxis() const {
-    return _image_state->stokes_axis;
+    return _stokes_axis;
 }
 
 int Frame::CurrentZ() const {
-    return _image_state->z;
+    return _z;
 }
 
 int Frame::CurrentStokes() const {
-    return _image_state->stokes;
+    return _stokes;
 }
 
 bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
@@ -199,16 +228,47 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     return _image_cache->GetImageSlicer(x_range, y_range, z_range, stokes);
 }
 
-bool Frame::CheckZ(int z) const {
-    return _image_state->CheckZ(z);
+void Frame::SetCurrentZ(int z) {
+    _z = z;
 }
 
-bool Frame::CheckStokes(int stokes) const {
-    return _image_state->CheckStokes(stokes);
+void Frame::SetCurrentStokes(int stokes) {
+    _stokes = stokes;
+}
+
+void Frame::CheckCurrentZ(int& z) const {
+    if (z == CURRENT_Z) {
+        z = _z;
+    }
+}
+
+void Frame::CheckCurrentStokes(int& stokes) const {
+    if (stokes == CURRENT_STOKES) {
+        stokes = _stokes;
+    }
+}
+
+bool Frame::ValidZ(int z) const {
+    return (z >= 0 && z < _depth);
+}
+
+bool Frame::ValidStokes(int stokes) const {
+    return ((stokes >= 0 && stokes < _num_stokes) || IsComputedStokes(stokes));
+}
+
+bool Frame::IsCurrentChannel(int z, int stokes) const {
+    CheckCurrentZ(z);
+    CheckCurrentStokes(stokes);
+    return (z == _z && stokes == _stokes);
+}
+
+bool Frame::IsCurrentStokes(int stokes) const {
+    CheckCurrentStokes(stokes);
+    return (stokes == _stokes);
 }
 
 bool Frame::ZStokesChanged(int z, int stokes) const {
-    return _image_state->ZStokesChanged(z, stokes);
+    return (z != _z || stokes != _stokes);
 }
 
 void Frame::WaitForTaskCancellation() {
@@ -231,8 +291,8 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
         message = "No file loaded";
     } else {
         if (ZStokesChanged(new_z, new_stokes)) {
-            bool z_ok(CheckZ(new_z));
-            bool stokes_ok(CheckStokes(new_stokes));
+            bool z_ok(ValidZ(new_z));
+            bool stokes_ok(ValidStokes(new_stokes));
             if (z_ok && stokes_ok) {
                 bool write_lock(true);
                 queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
@@ -1432,7 +1492,7 @@ std::shared_ptr<casacore::LCRegion> Frame::GetImageRegion(
 }
 
 bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region) {
-    if (!CheckZ(z_range.from) || !CheckZ(z_range.to) || !CheckStokes(stokes)) {
+    if (!ValidZ(z_range.from) || !ValidZ(z_range.to) || !ValidStokes(stokes)) {
         return false;
     }
     try {
@@ -2256,8 +2316,8 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 }
 
 float* Frame::GetImageData(int z, int stokes) {
-    _image_state->CheckCurrentZ(z);
-    _image_state->CheckCurrentStokes(stokes);
+    CheckCurrentZ(z);
+    CheckCurrentStokes(stokes);
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->GetChannelData(z, stokes);

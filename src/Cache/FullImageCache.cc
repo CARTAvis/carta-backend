@@ -6,14 +6,15 @@
 
 #include "FullImageCache.h"
 
+#include "Frame/Frame.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 #include "Util/Stokes.h"
 
 namespace carta {
 
-FullImageCache::FullImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex)
-    : ImageCache(loader, image_state, image_mutex),
+FullImageCache::FullImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex)
+    : ImageCache(frame, loader, image_mutex),
       _stokes_i(-1),
       _stokes_q(-1),
       _stokes_u(-1),
@@ -62,7 +63,7 @@ bool FullImageCache::FillFullImageCache(std::map<int, std::unique_ptr<float[]>>&
         stokes_data.clear();
     }
 
-    for (int stokes = 0; stokes < _image_state->num_stokes; ++stokes) {
+    for (int stokes = 0; stokes < _frame->NumStokes(); ++stokes) {
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
         auto data_size = stokes_slicer.slicer.length().product();
         stokes_data[stokes] = std::make_unique<float[]>(data_size);
@@ -207,8 +208,8 @@ bool FullImageCache::UpdateChannelImageCache(int z, int stokes) {
 }
 
 void FullImageCache::SetImageChannels(int z, int stokes) {
-    _image_state->SetCurrentZ(z);
-    _image_state->SetCurrentStokes(stokes);
+    _frame->SetCurrentZ(z);
+    _frame->SetCurrentStokes(stokes);
 }
 
 } // namespace carta

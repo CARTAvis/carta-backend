@@ -6,14 +6,15 @@
 
 #include "CubeImageCache.h"
 
+#include "Frame/Frame.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 #include "Util/Stokes.h"
 
 namespace carta {
 
-CubeImageCache::CubeImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex)
-    : ImageCache(loader, image_state, image_mutex), _beam_area(GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
+CubeImageCache::CubeImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex)
+    : ImageCache(frame, loader, image_mutex), _beam_area(GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
     spdlog::info("Cache single cube image data.");
     _image_memory_size = ImageMemorySize(_width, _height, _depth, 1);
 
@@ -80,7 +81,7 @@ bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
 }
 
 bool CubeImageCache::CachedChannelDataAvailable(int z, int stokes) const {
-    return _image_state->IsCurrentStokes(stokes) && _stokes_image_cache_valid;
+    return _frame->IsCurrentStokes(stokes) && _stokes_image_cache_valid;
 }
 
 bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
@@ -102,11 +103,11 @@ bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
 }
 
 void CubeImageCache::SetImageChannels(int z, int stokes) {
-    if (!_image_state->IsCurrentStokes(stokes)) {
+    if (!_frame->IsCurrentStokes(stokes)) {
         _stokes_image_cache_valid = false;
     }
-    _image_state->SetCurrentZ(z);
-    _image_state->SetCurrentStokes(stokes);
+    _frame->SetCurrentZ(z);
+    _frame->SetCurrentStokes(stokes);
 }
 
 } // namespace carta

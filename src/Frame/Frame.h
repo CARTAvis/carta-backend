@@ -24,7 +24,6 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
-#include "Frame/ImageState.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -102,10 +101,18 @@ public:
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
     casacore::IPosition OriginalImageShape() const; // Image shape from the original file
-    size_t Width() const;                           // length of x axis
-    size_t Height() const;                          // length of y axis
-    size_t Depth() const;                           // length of z axis
-    size_t NumStokes() const;                       // if no stokes axis, number of stokes = 1
+    void SetCurrentZ(int z);
+    void SetCurrentStokes(int stokes);
+    void CheckCurrentZ(int& z) const;
+    void CheckCurrentStokes(int& stokes) const;
+    bool IsCurrentChannel(int z, int stokes) const;
+    bool IsCurrentStokes(int stokes) const;
+    size_t Width() const;     // length of x axis
+    size_t Height() const;    // length of y axis
+    size_t Depth() const;     // length of z axis
+    size_t NumStokes() const; // if no stokes axis, number of stokes = 1
+    int XAxis() const;
+    int YAxis() const;
     int ZAxis() const;
     int StokesAxis() const;
     int CurrentZ() const;
@@ -229,9 +236,9 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);
 
 protected:
-    // Validate z and stokes index values
-    bool CheckZ(int z) const;
-    bool CheckStokes(int stokes) const;
+    // Validate z and stokes values
+    bool ValidZ(int z) const;
+    bool ValidStokes(int stokes) const;
 
     // Check whether z or stokes has changed
     bool ZStokesChanged(int z, int stokes) const;
@@ -276,6 +283,21 @@ protected:
     float* GetImageData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
     bool ImageCacheAvailable(int z = CURRENT_Z, int stokes = CURRENT_STOKES) const;
 
+    // Image shape or sizes
+    casacore::IPosition _image_shape;
+    size_t _width;
+    size_t _height;
+    size_t _depth;
+    size_t _num_stokes;
+
+    int _x_axis; // Render x-axis
+    int _y_axis; // Render y-axis
+    int _z_axis; // Depth axis (non-render axis) that is not stokes (if any)
+    int _spectral_axis;
+    int _stokes_axis;
+    int _z;      // Current channel
+    int _stokes; // Current stokes
+
     // Setup
     uint32_t _session_id;
 
@@ -288,9 +310,6 @@ protected:
 
     // Image loader for image type
     std::shared_ptr<FileLoader> _loader;
-
-    // Image status
-    std::shared_ptr<ImageState> _image_state;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;

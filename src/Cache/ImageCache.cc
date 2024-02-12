@@ -8,6 +8,7 @@
 
 #include "ChannelImageCache.h"
 #include "CubeImageCache.h"
+#include "Frame/Frame.h"
 #include "FullImageCache.h"
 #include "Logger/Logger.h"
 #include "Util/Stokes.h"
@@ -18,40 +19,39 @@ namespace carta {
 float ImageCache::_full_image_cache_size_available = 0; // MB
 std::mutex ImageCache::_full_image_cache_size_available_mutex;
 
-std::unique_ptr<ImageCache> ImageCache::GetImageCache(
-    std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex) {
+std::unique_ptr<ImageCache> ImageCache::GetImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
     if (!(loader->UseTileCache() && loader->HasMip(2))) {
-        auto width = image_state->width;
-        auto height = image_state->height;
-        auto depth = image_state->depth;
-        auto num_stokes = image_state->num_stokes;
+        auto width = frame->Width();
+        auto height = frame->Height();
+        auto depth = frame->Depth();
+        auto num_stokes = frame->NumStokes();
 
         if (depth > 1) {
             auto full_image_memory_size = ImageCache::ImageMemorySize(width, height, depth, num_stokes);
             if (_full_image_cache_size_available >= full_image_memory_size) {
                 if (num_stokes > 1) {
-                    return std::make_unique<FullImageCache>(loader, image_state, image_mutex);
+                    return std::make_unique<FullImageCache>(frame, loader, image_mutex);
                 }
-                return std::make_unique<CubeImageCache>(loader, image_state, image_mutex);
+                return std::make_unique<CubeImageCache>(frame, loader, image_mutex);
             }
             spdlog::info("Cube image too large ({:.0f} MB). Not cache the whole image data.", full_image_memory_size);
         }
     }
-    return std::make_unique<ChannelImageCache>(loader, image_state, image_mutex);
+    return std::make_unique<ChannelImageCache>(frame, loader, image_mutex);
 }
 
-ImageCache::ImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex)
-    : _loader(loader), _image_state(image_state), _image_mutex(image_mutex), _valid(true), _image_memory_size(0) {
-    if (!_loader || !_image_state) {
+ImageCache::ImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex)
+    : _frame(frame), _loader(loader), _image_mutex(image_mutex), _valid(true), _image_memory_size(0) {
+    if (!_loader || !_frame) {
         _valid = false;
         spdlog::error("Image loader helper is invalid!");
     }
 
     // Get image size
-    _width = _image_state->width;
-    _height = _image_state->height;
-    _depth = _image_state->depth;
-    _num_stokes = _image_state->num_stokes;
+    _width = _frame->Width();
+    _height = _frame->Height();
+    _depth = _frame->Depth();
+    _num_stokes = _frame->NumStokes();
 }
 
 StokesSlicer ImageCache::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
@@ -66,7 +66,7 @@ StokesSlicer ImageCache::GetImageSlicer(const AxisRange& x_range, const AxisRang
     end -= 1; // last position, not length
 
     // Slice x axis
-    if (_image_state->x_axis >= 0) {
+    if (_frame->XAxis() >= 0) {
         int start_x(x_range.from), end_x(x_range.to);
 
         // Normalize x constants
@@ -74,20 +74,20 @@ StokesSlicer ImageCache::GetImageSlicer(const AxisRange& x_range, const AxisRang
             start_x = 0;
         }
         if (end_x == ALL_X) {
-            end_x = _image_state->width - 1;
+            end_x = _frame->Width() - 1;
         }
 
         if (stokes_source.IsOriginalImage()) {
-            start(_image_state->x_axis) = start_x;
-            end(_image_state->x_axis) = end_x;
+            start(_frame->XAxis()) = start_x;
+            end(_frame->XAxis()) = end_x;
         } else { // Reset the slice cut for the computed stokes image
-            start(_image_state->x_axis) = 0;
-            end(_image_state->x_axis) = end_x - start_x;
+            start(_frame->XAxis()) = 0;
+            end(_frame->XAxis()) = end_x - start_x;
         }
     }
 
     // Slice y axis
-    if (_image_state->y_axis >= 0) {
+    if (_frame->YAxis() >= 0) {
         int start_y(y_range.from), end_y(y_range.to);
 
         // Normalize y constants
@@ -95,55 +95,55 @@ StokesSlicer ImageCache::GetImageSlicer(const AxisRange& x_range, const AxisRang
             start_y = 0;
         }
         if (end_y == ALL_Y) {
-            end_y = _image_state->height - 1;
+            end_y = _frame->Height() - 1;
         }
 
         if (stokes_source.IsOriginalImage()) {
-            start(_image_state->y_axis) = start_y;
-            end(_image_state->y_axis) = end_y;
+            start(_frame->YAxis()) = start_y;
+            end(_frame->YAxis()) = end_y;
         } else { // Reset the slice cut for the computed stokes image
-            start(_image_state->y_axis) = 0;
-            end(_image_state->y_axis) = end_y - start_y;
+            start(_frame->YAxis()) = 0;
+            end(_frame->YAxis()) = end_y - start_y;
         }
     }
 
     // Slice z axis
-    if (_image_state->z_axis >= 0) {
+    if (_frame->ZAxis() >= 0) {
         int start_z(z_range.from), end_z(z_range.to);
 
         // Normalize z constants
         if (start_z == ALL_Z) {
             start_z = 0;
         } else if (start_z == CURRENT_Z) {
-            start_z = _image_state->z;
+            start_z = _frame->CurrentZ();
         }
         if (end_z == ALL_Z) {
-            end_z = _image_state->depth - 1;
+            end_z = _frame->Depth() - 1;
         } else if (end_z == CURRENT_Z) {
-            end_z = _image_state->z;
+            end_z = _frame->CurrentZ();
         }
 
         if (stokes_source.IsOriginalImage()) {
-            start(_image_state->z_axis) = start_z;
-            end(_image_state->z_axis) = end_z;
+            start(_frame->ZAxis()) = start_z;
+            end(_frame->ZAxis()) = end_z;
         } else { // Reset the slice cut for the computed stokes image
-            start(_image_state->z_axis) = 0;
-            end(_image_state->z_axis) = end_z - start_z;
+            start(_frame->ZAxis()) = 0;
+            end(_frame->ZAxis()) = end_z - start_z;
         }
     }
 
     // Slice stokes axis
-    if (_image_state->stokes_axis >= 0) {
+    if (_frame->StokesAxis() >= 0) {
         // Normalize stokes constant
-        _image_state->CheckCurrentStokes(stokes);
+        _frame->CheckCurrentStokes(stokes);
 
         if (stokes_source.IsOriginalImage()) {
-            start(_image_state->stokes_axis) = stokes;
-            end(_image_state->stokes_axis) = stokes;
+            start(_frame->StokesAxis()) = stokes;
+            end(_frame->StokesAxis()) = stokes;
         } else {
             // Reset the slice cut for the computed stokes image
-            start(_image_state->stokes_axis) = 0;
-            end(_image_state->stokes_axis) = 0;
+            start(_frame->StokesAxis()) = 0;
+            end(_frame->StokesAxis()) = 0;
         }
     }
 
@@ -153,7 +153,7 @@ StokesSlicer ImageCache::GetImageSlicer(const AxisRange& x_range, const AxisRang
 }
 
 casacore::IPosition ImageCache::OriginalImageShape() const {
-    return _image_state->image_shape;
+    return _frame->ImageShape();
 }
 
 bool ImageCache::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
@@ -194,7 +194,7 @@ bool ImageCache::GetStokesTypeIndex(const string& coordinate, int& stokes_index,
                 stokes_ok = true;
             } else {
                 int assumed_stokes_index = (StokesValues[stokes_type] - 1) % 4;
-                if (_image_state->num_stokes > assumed_stokes_index) {
+                if (_frame->NumStokes() > assumed_stokes_index) {
                     stokes_index = assumed_stokes_index;
                     stokes_ok = true;
                     spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
@@ -206,7 +206,7 @@ bool ImageCache::GetStokesTypeIndex(const string& coordinate, int& stokes_index,
             return false;
         }
     } else {
-        stokes_index = _image_state->stokes; // current stokes
+        stokes_index = _frame->CurrentStokes(); // current stokes
     }
     return true;
 }

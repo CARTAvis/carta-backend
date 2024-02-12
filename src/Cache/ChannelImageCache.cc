@@ -6,14 +6,15 @@
 
 #include "ChannelImageCache.h"
 
+#include "Frame/Frame.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 #include "Util/Stokes.h"
 
 namespace carta {
 
-ChannelImageCache::ChannelImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex)
-    : ImageCache(loader, image_state, image_mutex), _channel_data(nullptr), _channel_image_cache_valid(false) {
+ChannelImageCache::ChannelImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex)
+    : ImageCache(frame, loader, image_mutex), _channel_data(nullptr), _channel_image_cache_valid(false) {
     spdlog::info("Cache single channel image data.");
 }
 
@@ -47,7 +48,7 @@ float ChannelImageCache::GetValue(int x, int y, int z, int stokes) const {
 }
 
 bool ChannelImageCache::CachedChannelDataAvailable(int z, int stokes) const {
-    return _image_state->IsCurrentChannel(z, stokes) && _channel_image_cache_valid;
+    return _frame->IsCurrentChannel(z, stokes) && _channel_image_cache_valid;
 }
 
 bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
@@ -70,8 +71,8 @@ bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
 
 void ChannelImageCache::SetImageChannels(int z, int stokes) {
     _channel_image_cache_valid = false;
-    _image_state->SetCurrentZ(z);
-    _image_state->SetCurrentStokes(stokes);
+    _frame->SetCurrentZ(z);
+    _frame->SetCurrentStokes(stokes);
 }
 
 } // namespace carta

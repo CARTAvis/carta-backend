@@ -22,7 +22,7 @@ namespace carta {
 
 class ChannelImageCache : public ImageCache {
 public:
-    ChannelImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex);
+    ChannelImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
 
     float* GetChannelData(int z, int stokes) override;
     inline float GetValue(int x, int y, int z, int stokes) const override;
