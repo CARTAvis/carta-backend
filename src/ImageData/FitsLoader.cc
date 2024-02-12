@@ -19,7 +19,8 @@
 
 namespace carta {
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz, bool is_http) : FileLoader(filename, "", is_gz), _is_http(is_http) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz, bool is_http)
+    : FileLoader(filename, "", is_gz, is_http), _is_http(is_http) {}
 
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file
