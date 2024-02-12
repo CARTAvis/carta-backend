@@ -19,10 +19,6 @@
 #include <unordered_map>
 #include <vector>
 
-// Global variable
-extern float FULL_IMAGE_CACHE_SIZE_AVAILABLE; // MB
-extern std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
-
 namespace carta {
 
 class ImageCache {
@@ -55,9 +51,12 @@ protected:
         const casacore::IPosition& origin, double beam_area, const std::function<float(size_t idx)>& get_value,
         std::map<CARTA::StatsType, std::vector<double>>& profiles);
 
+    static float _full_image_cache_size_available; // MB
+    static std::mutex _full_image_cache_size_available_mutex;
+
     std::shared_ptr<LoaderHelper> _loader_helper;
     bool _valid;
-    float _memory_size;
+    float _image_memory_size;
 
     // Cube image cache size
     size_t _width;

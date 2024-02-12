@@ -13,10 +13,10 @@
 #include "Util/Stokes.h"
 #include "Util/System.h"
 
-float FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0; // MB
-std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
-
 namespace carta {
+
+float ImageCache::_full_image_cache_size_available = 0; // MB
+std::mutex ImageCache::_full_image_cache_size_available_mutex;
 
 std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelper> loader_helper) {
     if (!loader_helper->TileCacheAvailable()) {
@@ -27,7 +27,7 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelp
 
         if (depth > 1) {
             auto full_image_memory_size = ImageCache::ImageMemorySize(width, height, depth, num_stokes);
-            if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= full_image_memory_size) {
+            if (_full_image_cache_size_available >= full_image_memory_size) {
                 if (num_stokes > 1) {
                     spdlog::info("Cache full cubes image data.");
                     return std::make_unique<FullImageCache>(loader_helper);
@@ -42,7 +42,7 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelp
     return std::make_unique<ChannelImageCache>(loader_helper);
 }
 
-ImageCache::ImageCache(std::shared_ptr<LoaderHelper> loader_helper) : _loader_helper(loader_helper), _valid(true), _memory_size(0) {
+ImageCache::ImageCache(std::shared_ptr<LoaderHelper> loader_helper) : _loader_helper(loader_helper), _valid(true), _image_memory_size(0) {
     if (!_loader_helper->IsValid()) {
         _valid = false;
         return;
@@ -86,10 +86,10 @@ void ImageCache::AssignFullImageCacheSizeAvailable(int& full_image_cache_size_av
         }
 
         // Set the global variable for full image cache
-        std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE = full_image_cache_size_available;
+        std::unique_lock<std::mutex> ulock(_full_image_cache_size_available_mutex);
+        _full_image_cache_size_available = full_image_cache_size_available;
         ulock.unlock();
-        msg += fmt::format("Total amount of full image cache {} MB.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
+        msg += fmt::format("Total amount of full image cache {} MB.", _full_image_cache_size_available);
     }
 }
 

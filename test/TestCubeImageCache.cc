@@ -58,13 +58,10 @@ public:
 
     static void SetFullImageCacheSizeAvailable(
         const ImageCacheType& image_cache_type, int x_size, int y_size, int z_size, int stokes_size) {
-        std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        if (image_cache_type == ImageCacheType::All) {
-            FULL_IMAGE_CACHE_SIZE_AVAILABLE = x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION;
-        } else {
-            FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0;
-        }
-        ulock.unlock();
+        std::string msg;
+        int full_image_cache_size_available =
+            image_cache_type == ImageCacheType::All ? x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION : 0;
+        ImageCache::AssignFullImageCacheSizeAvailable(full_image_cache_size_available, msg);
     }
 
     static std::string TextPrefix(const ImageCacheType& image_cache_type) {

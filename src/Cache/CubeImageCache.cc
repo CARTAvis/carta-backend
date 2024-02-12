@@ -14,21 +14,21 @@ namespace carta {
 
 CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     : ImageCache(loader_helper), _beam_area(_loader_helper->GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
-    _memory_size = ImageMemorySize(_width, _height, _depth, 1);
+    _image_memory_size = ImageMemorySize(_width, _height, _depth, 1);
 
     // Update the availability of full image cache size
-    std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-    FULL_IMAGE_CACHE_SIZE_AVAILABLE -= _memory_size;
+    std::unique_lock<std::mutex> ulock(_full_image_cache_size_available_mutex);
+    _full_image_cache_size_available -= _image_memory_size;
     ulock.unlock();
-    spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
+    spdlog::info("{:.0f} MB of full image cache are available.", _full_image_cache_size_available);
 }
 
 CubeImageCache::~CubeImageCache() {
     // Update the availability of full image cache size
-    std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-    FULL_IMAGE_CACHE_SIZE_AVAILABLE += _memory_size;
+    std::unique_lock<std::mutex> ulock(_full_image_cache_size_available_mutex);
+    _full_image_cache_size_available += _image_memory_size;
     ulock.unlock();
-    spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
+    spdlog::info("{:.0f} MB of full image cache are available.", _full_image_cache_size_available);
 }
 
 float* CubeImageCache::GetChannelData(int z, int stokes) {

@@ -36,22 +36,22 @@ FullImageCache::FullImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     _loader_helper->GetStokesTypeIndex("U", _stokes_u, mute_err_msg);
     _loader_helper->GetStokesTypeIndex("V", _stokes_v, mute_err_msg);
 
-    _memory_size = ImageMemorySize(_width, _height, _depth, _num_stokes);
+    _image_memory_size = ImageMemorySize(_width, _height, _depth, _num_stokes);
 
     // Update the availability of full image cache size
-    std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-    FULL_IMAGE_CACHE_SIZE_AVAILABLE -= _memory_size;
+    std::unique_lock<std::mutex> ulock(_full_image_cache_size_available_mutex);
+    _full_image_cache_size_available -= _image_memory_size;
     ulock.unlock();
-    spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
+    spdlog::info("{:.0f} MB of full image cache are available.", _full_image_cache_size_available);
 }
 
 FullImageCache::~FullImageCache() {
     // Update the availability of full image cache size
     if (_valid) {
-        std::unique_lock<std::mutex> ulock(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE += _memory_size;
+        std::unique_lock<std::mutex> ulock(_full_image_cache_size_available_mutex);
+        _full_image_cache_size_available += _image_memory_size;
         ulock.unlock();
-        spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
+        spdlog::info("{:.0f} MB of full image cache are available.", _full_image_cache_size_available);
     }
 }
 
