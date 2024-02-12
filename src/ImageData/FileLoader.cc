@@ -82,7 +82,7 @@ FileLoader::FileLoader(const std::string& filename, const std::string& directory
       _has_pixel_mask(false),
       _stokes_cdelt(0) {
     // Set initial modify time
-    //ImageUpdated();
+    // ImageUpdated();
 }
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {

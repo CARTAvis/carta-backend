@@ -19,10 +19,7 @@
 
 namespace carta {
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz, bool is_http)
-    : FileLoader(filename, "", is_gz),
-      _is_http(is_http)
-{}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz, bool is_http) : FileLoader(filename, "", is_gz), _is_http(is_http) {}
 
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file
@@ -37,7 +34,7 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
     // Open image file as a casacore::ImageInterface<float>
 
     // Convert string to FITS hdu number
-    casacore::uInt hdu_num(_is_http ? 0: FileInfo::GetFitsHdu(hdu));
+    casacore::uInt hdu_num(_is_http ? 0 : FileInfo::GetFitsHdu(hdu));
 
     if (!_image || (hdu_num != _hdu_num)) {
         bool gz_mem_ok(true);

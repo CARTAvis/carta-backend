@@ -39,7 +39,6 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu, bo
       _pixel_mask(nullptr),
       _is_http(is_http),
       _is_copy(false) {
-
     if (!is_http) {
         casacore::File ccfile(filename);
         if (!ccfile.exists() || !ccfile.isReadable()) {
