@@ -2431,4 +2431,6 @@ void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint3
         response.set_success(false);
         response.set_message(err_message);
     }
+
+    SendEvent(CARTA::REMOTE_FILE_RESPONSE, request_id, response);
 }
