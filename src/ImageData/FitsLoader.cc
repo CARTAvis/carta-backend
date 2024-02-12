@@ -171,7 +171,8 @@ int FitsLoader::GetNumHeaders(const std::string& filename, int hdu) {
 void FitsLoader::ResetImageBeam(unsigned int hdu_num) {
     // Remove restoring beam not if not in header entries.
     // If supporting AIPS beam, use last beam from history instead.
-    if (!_image) {
+    // Remote files can't have restoring beams
+    if (!_image || _is_http) {
         return;
     }
 

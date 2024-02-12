@@ -449,7 +449,9 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
     fits_free_memory(*header, &free_status);
 
     // Done with file setup
-    CloseFile();
+    if (!_is_http) {
+        CloseFile();
+    }
 }
 
 void CartaFitsImage::SetFitsHeaderStrings(int nheaders, const std::string& header) {
