@@ -94,6 +94,8 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
                     // use casacore for unzipped FITS file
                     _image.reset(new casacore::FITSImage(_unzip_file, 0, hdu_num));
                 }
+            } else if (_is_http) {
+                _image.reset(new CartaFitsImage(_filename, hdu_num, true));
             } else if (use_casacore_fits) {
                 if (Is64BitBeamsTable(_filename)) {
                     use_casacore_fits = false;

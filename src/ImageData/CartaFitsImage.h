@@ -28,7 +28,7 @@ static std::unordered_map<int, casacore::DataType> bitpix_types(
 class CartaFitsImage : public casacore::ImageInterface<float> {
 public:
     // Construct an image from a pre-existing file.
-    CartaFitsImage(const std::string& filename, unsigned int hdu = 0);
+    CartaFitsImage(const std::string& filename, unsigned int hdu = 0, bool is_http = false);
     // Copy constructor
     CartaFitsImage(const CartaFitsImage& other);
     ~CartaFitsImage() override;

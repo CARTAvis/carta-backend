@@ -96,6 +96,7 @@ public:
     void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
+    void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;

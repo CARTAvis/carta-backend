@@ -464,24 +464,12 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     bool lel_expr(message.lel_expr());
     bool support_aips_beam(message.support_aips_beam());
 
-    bool is_http = true;
-    //bool is_http(filename.rfind("https://", 0) == 0);
-
     // response message:
     CARTA::OpenFileAck ack;
     bool success(false);
     string err_message;
 
-    if (is_http) {
-        auto loader = new FitsLoader(filename, false, true);
-        try {
-            loader->OpenFile(hdu);
-            auto image = loader->GetImage();
-            success = OnOpenFile(file_id, filename, image, &ack);
-        } catch (const casacore::AipsError& err) {
-            err_message = err.getMesg();
-        }
-    } else if (lel_expr) {
+    if (lel_expr) {
         // filename field is LEL expression
         auto dir_path = GetResolvedFilename(_top_level_folder, directory, "", err_message);
         if (!dir_path.empty()) {
@@ -2411,5 +2399,36 @@ void Session::CloseCachedImage(const std::string& directory, const std::string& 
         for (auto& frame : _frames) {
             frame.second->CloseCachedImage(fullname);
         }
+    }
+}
+void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id) {
+    auto file_id(message.file_id());
+    // TODO: generate URL
+    auto url =
+        "https://alasky.cds.unistra.fr/hips-image-services/"
+        "hips2fits?hips=CDS%2FP%2FDSS2%2FNIR&width=800&height=800&fov=0.5&projection=TAN&coordsys=icrs&rotation_angle=0.0&object=m51&"
+        "format=fits";
+    auto loader = new FitsLoader(url, false, true);
+
+    CARTA::RemoteFileResponse response;
+    CARTA::OpenFileAck ack;
+    bool success(false);
+    string err_message;
+
+    try {
+        loader->OpenFile("0");
+        auto image = loader->GetImage();
+        success = OnOpenFile(file_id, "remote_file.fits", image, response.mutable_open_file_ack());
+    } catch (const casacore::AipsError& err) {
+        err_message = err.getMesg();
+        success = false;
+    }
+
+    if (success) {
+        response.set_success(true);
+        response.set_message("File opened successfully");
+    } else {
+        response.set_success(false);
+        response.set_message(err_message);
     }
 }

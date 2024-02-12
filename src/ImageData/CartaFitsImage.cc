@@ -27,7 +27,7 @@
 
 using namespace carta;
 
-CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
+CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu, bool is_http)
     : casacore::ImageInterface<float>(),
       _filename(filename),
       _hdu(hdu),
@@ -37,12 +37,10 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
       _equiv_bitpix(-32), // assume float
       _has_blanks(false),
       _pixel_mask(nullptr),
+      _is_http(is_http),
       _is_copy(false) {
 
-    if (true) {
-        _is_http = true;
-    } else {
-        _is_http = false;
+    if (!is_http) {
         casacore::File ccfile(filename);
         if (!ccfile.exists() || !ccfile.isReadable()) {
             throw(casacore::AipsError("FITS file is not readable or does not exist."));

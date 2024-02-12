@@ -38,6 +38,7 @@
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
 #include <carta-protobuf/vector_overlay_tile.pb.h>
+#include <carta-protobuf/remote_file_request.pb.h>
 
 #include <casacore/casa/Quanta/Quantum.h>
 
@@ -133,6 +134,7 @@ public:
     static CARTA::PvRequest PvRequest(
         int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false);
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress, int32_t preview_id = 0);
+    static CARTA::RemoteFileRequest RemoteFileRequest(int32_t file_id, const std::string& hips, const std::string& wcs, int32_t width, int32_t height, const std::string& projection, float fov, float ra, float dec, const std::string& coordsys, float rotation_angle, const std::string& object);
     static CARTA::FittingProgress FittingProgress(int32_t file_id, float progress);
     static CARTA::RegionHistogramData RegionHistogramData(
         int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress, const carta::HistogramConfig& hist_config);
