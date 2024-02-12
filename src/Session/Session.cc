@@ -33,6 +33,7 @@
 #include "Util/App.h"
 #include "Util/File.h"
 #include "Util/Message.h"
+#include "Util/RemoteFiles.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
@@ -2403,34 +2404,31 @@ void Session::CloseCachedImage(const std::string& directory, const std::string& 
 }
 void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id) {
     auto file_id(message.file_id());
-    // TODO: generate URL
-    auto url =
-        "https://alasky.cds.unistra.fr/hips-image-services/"
-        "hips2fits?hips=CDS%2FP%2FDSS2%2FNIR&width=800&height=800&fov=0.5&projection=TAN&coordsys=icrs&rotation_angle=0.0&object=m51&"
-        "format=fits";
-    auto loader = new FitsLoader(url, false, true);
 
     CARTA::RemoteFileResponse response;
-    CARTA::OpenFileAck ack;
-    bool success(false);
-    string err_message;
-
-    try {
-        loader->OpenFile("0");
-        auto image = loader->GetImage();
-        success = OnOpenFile(file_id, "remote_file.fits", image, response.mutable_open_file_ack());
-    } catch (const casacore::AipsError& err) {
-        err_message = err.getMesg();
-        success = false;
-    }
-
+    std::string url, err_message;
+    bool success = GenerateUrlFromRequest(message, url, err_message);
     if (success) {
-        response.set_success(true);
-        response.set_message("File opened successfully");
-    } else {
-        response.set_success(false);
-        response.set_message(err_message);
+        spdlog::info("Fetching remote file from url {}", url);
+        auto loader = new FitsLoader(url, false, true);
+
+        CARTA::OpenFileAck ack;
+        try {
+            loader->OpenFile("0");
+            auto image = loader->GetImage();
+            success = OnOpenFile(file_id, "remote_file.fits", image, response.mutable_open_file_ack());
+        } catch (const casacore::AipsError& err) {
+            err_message = err.getMesg();
+            success = false;
+        }
+
+        if (success) {
+            response.set_message("File opened successfully");
+        } else {
+            response.set_message(err_message);
+        }
     }
+    response.set_success(success);
 
     SendEvent(CARTA::REMOTE_FILE_RESPONSE, request_id, response);
 }
