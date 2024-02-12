@@ -19,7 +19,10 @@
 
 namespace carta {
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, "", is_gz) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz, bool is_http)
+    : FileLoader(filename, "", is_gz),
+      _is_http(is_http)
+{}
 
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file
@@ -34,7 +37,7 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
     // Open image file as a casacore::ImageInterface<float>
 
     // Convert string to FITS hdu number
-    casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
+    casacore::uInt hdu_num(_is_http ? 0: FileInfo::GetFitsHdu(hdu));
 
     if (!_image || (hdu_num != _hdu_num)) {
         bool gz_mem_ok(true);
@@ -64,15 +67,20 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
 
         // Default is casacore::FITSImage; if fails, try CartaFitsImage
         bool use_casacore_fits(true);
-        auto num_headers = GetNumHeaders(_filename, hdu_num);
 
-        if (num_headers == 0) {
-            throw(casacore::AipsError("Error reading FITS file."));
-        }
-
-        if (num_headers > 2000) {
-            // casacore::FITSImage parses HISTORY
+        if (_is_http) {
             use_casacore_fits = false;
+        } else {
+            auto num_headers = GetNumHeaders(_filename, hdu_num);
+
+            if (num_headers == 0) {
+                throw(casacore::AipsError("Error reading FITS file."));
+            }
+
+            if (num_headers > 2000) {
+                // casacore::FITSImage parses HISTORY
+                use_casacore_fits = false;
+            }
         }
 
         try {

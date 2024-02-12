@@ -38,9 +38,15 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
       _has_blanks(false),
       _pixel_mask(nullptr),
       _is_copy(false) {
-    casacore::File ccfile(filename);
-    if (!ccfile.exists() || !ccfile.isReadable()) {
-        throw(casacore::AipsError("FITS file is not readable or does not exist."));
+
+    if (true) {
+        _is_http = true;
+    } else {
+        _is_http = false;
+        casacore::File ccfile(filename);
+        if (!ccfile.exists() || !ccfile.isReadable()) {
+            throw(casacore::AipsError("FITS file is not readable or does not exist."));
+        }
     }
 
     SetUpImage();

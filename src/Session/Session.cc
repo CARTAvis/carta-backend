@@ -24,6 +24,7 @@
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
 #include "ImageData/CompressedFits.h"
+#include "ImageData/FitsLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
@@ -463,12 +464,24 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     bool lel_expr(message.lel_expr());
     bool support_aips_beam(message.support_aips_beam());
 
+    bool is_http = true;
+    //bool is_http(filename.rfind("https://", 0) == 0);
+
     // response message:
     CARTA::OpenFileAck ack;
     bool success(false);
     string err_message;
 
-    if (lel_expr) {
+    if (is_http) {
+        auto loader = new FitsLoader(filename, false, true);
+        try {
+            loader->OpenFile(hdu);
+            auto image = loader->GetImage();
+            success = OnOpenFile(file_id, filename, image, &ack);
+        } catch (const casacore::AipsError& err) {
+            err_message = err.getMesg();
+        }
+    } else if (lel_expr) {
         // filename field is LEL expression
         auto dir_path = GetResolvedFilename(_top_level_folder, directory, "", err_message);
         if (!dir_path.empty()) {
