@@ -8,7 +8,6 @@
 #define CARTA_SRC_CACHE_IMAGECACHE_H_
 
 #include "Frame/ImageState.h"
-#include "Frame/LoaderHelper.h"
 #include "ImageData/FileLoader.h"
 #include "Util/Image.h"
 
@@ -23,13 +22,19 @@ namespace carta {
 
 class ImageCache {
 public:
-    ImageCache(std::shared_ptr<LoaderHelper> loader_helper);
+    ImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex);
     virtual ~ImageCache() = default;
 
-    static std::unique_ptr<ImageCache> GetImageCache(std::shared_ptr<LoaderHelper> loader_helper);
-
+    static std::unique_ptr<ImageCache> GetImageCache(
+        std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex);
     static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
     static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
+
+    StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
+    casacore::IPosition OriginalImageShape() const;
+    bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
+    bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg);
+    bool TileCacheAvailable();
 
     virtual float* GetChannelData(int z, int stokes) = 0;
     virtual float GetValue(int x, int y, int z, int stokes) const = 0;
@@ -50,11 +55,14 @@ protected:
     void DoStatisticsCalculations(const AxisRange& z_range, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, double beam_area, const std::function<float(size_t idx)>& get_value,
         std::map<CARTA::StatsType, std::vector<double>>& profiles);
+    double GetBeamArea();
 
     static float _full_image_cache_size_available; // MB
     static std::mutex _full_image_cache_size_available_mutex;
 
-    std::shared_ptr<LoaderHelper> _loader_helper;
+    std::shared_ptr<FileLoader> _loader;
+    std::shared_ptr<ImageState> _image_state;
+    std::mutex& _image_mutex; // Reference of the image mutex for the file loader
     bool _valid;
     float _image_memory_size;
 

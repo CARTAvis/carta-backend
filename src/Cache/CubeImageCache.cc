@@ -12,8 +12,9 @@
 
 namespace carta {
 
-CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
-    : ImageCache(loader_helper), _beam_area(_loader_helper->GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
+CubeImageCache::CubeImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex)
+    : ImageCache(loader, image_state, image_mutex), _beam_area(GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
+    spdlog::info("Cache single cube image data.");
     _image_memory_size = ImageMemorySize(_width, _height, _depth, 1);
 
     // Update the availability of full image cache size
@@ -29,6 +30,17 @@ CubeImageCache::~CubeImageCache() {
     _full_image_cache_size_available += _image_memory_size;
     ulock.unlock();
     spdlog::info("{:.0f} MB of full image cache are available.", _full_image_cache_size_available);
+}
+
+bool CubeImageCache::FillCubeImageCache(std::unique_ptr<float[]>& stokes_data, int stokes) {
+    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
+    auto data_size = stokes_slicer.slicer.length().product();
+    stokes_data = std::make_unique<float[]>(data_size);
+    if (!GetSlicerData(stokes_slicer, stokes_data.get())) {
+        spdlog::error("Loading cube image failed (stokes index: {}).", stokes);
+        return false;
+    }
+    return true;
 }
 
 float* CubeImageCache::GetChannelData(int z, int stokes) {
@@ -68,7 +80,7 @@ bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
 }
 
 bool CubeImageCache::CachedChannelDataAvailable(int z, int stokes) const {
-    return _loader_helper->IsCurrentStokes(stokes) && _stokes_image_cache_valid;
+    return _image_state->IsCurrentStokes(stokes) && _stokes_image_cache_valid;
 }
 
 bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
@@ -77,7 +89,7 @@ bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
     }
 
     Timer t;
-    if (!_loader_helper->FillCubeImageCache(_stokes_data, stokes)) {
+    if (!FillCubeImageCache(_stokes_data, stokes)) {
         _valid = false;
         return false;
     }
@@ -90,10 +102,11 @@ bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
 }
 
 void CubeImageCache::SetImageChannels(int z, int stokes) {
-    if (!_loader_helper->IsCurrentStokes(stokes)) {
+    if (!_image_state->IsCurrentStokes(stokes)) {
         _stokes_image_cache_valid = false;
     }
-    _loader_helper->SetImageChannels(z, stokes);
+    _image_state->SetCurrentZ(z);
+    _image_state->SetCurrentStokes(stokes);
 }
 
 } // namespace carta

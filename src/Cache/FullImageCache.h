@@ -22,7 +22,7 @@ namespace carta {
 
 class FullImageCache : public ImageCache {
 public:
-    FullImageCache(std::shared_ptr<LoaderHelper> loader_helper);
+    FullImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex);
     ~FullImageCache() override;
 
     float* GetChannelData(int z, int stokes) override;
@@ -37,6 +37,8 @@ public:
     void SetImageChannels(int z, int stokes) override;
 
 private:
+    bool FillFullImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data);
+
     int _stokes_i; // stokes "I" index
     int _stokes_q; // stokes "Q" index
     int _stokes_u; // stokes "U" index

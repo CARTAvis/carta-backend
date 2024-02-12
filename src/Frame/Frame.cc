@@ -38,7 +38,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _loader(loader),
       _tile_cache(0),
       _image_state(nullptr),
-      _loader_helper(nullptr),
       _image_cache(nullptr),
       _moment_generator(nullptr),
       _moment_name_index(0) {
@@ -67,13 +66,10 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         return;
     }
 
-    // Create an image loader helper
-    _loader_helper = std::make_shared<LoaderHelper>(_loader, _image_state, _image_mutex);
-
     // Create an image cache
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    _image_cache = ImageCache::GetImageCache(_loader_helper);
+    _image_cache = ImageCache::GetImageCache(_loader, _image_state, _image_mutex);
     cache_lock.release();
 
     if (!_image_cache->IsValid()) {
@@ -81,7 +77,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (!_loader_helper->TileCacheAvailable() && !FillImageCache()) {
+    if (!_image_cache->TileCacheAvailable() && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
@@ -196,11 +192,11 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
-    return _loader_helper->GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), z_range, stokes);
+    return _image_cache->GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), z_range, stokes);
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
-    return _loader_helper->GetImageSlicer(x_range, y_range, z_range, stokes);
+    return _image_cache->GetImageSlicer(x_range, y_range, z_range, stokes);
 }
 
 bool Frame::CheckZ(int z) const {
@@ -243,7 +239,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
                 _image_cache->SetImageChannels(new_z, new_stokes);
                 cache_lock.release();
 
-                if (!_loader_helper->TileCacheAvailable() || IsComputedStokes(CurrentStokes())) {
+                if (!_image_cache->TileCacheAvailable() || IsComputedStokes(CurrentStokes())) {
                     // Reload the full channel cache for loaders which use it
                     FillImageCache();
                 } else {
@@ -1529,7 +1525,7 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
 }
 
 bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
-    return _loader_helper->GetSlicerData(stokes_slicer, data);
+    return _image_cache->GetSlicerData(stokes_slicer, data);
 }
 
 bool Frame::GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
@@ -2101,7 +2097,7 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 }
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg) {
-    return _loader_helper->GetStokesTypeIndex(coordinate, stokes_index, mute_err_msg);
+    return _image_cache->GetStokesTypeIndex(coordinate, stokes_index, mute_err_msg);
 }
 
 std::string Frame::GetStokesType(int stokes_index) {

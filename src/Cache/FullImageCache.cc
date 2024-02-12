@@ -12,16 +12,18 @@
 
 namespace carta {
 
-FullImageCache::FullImageCache(std::shared_ptr<LoaderHelper> loader_helper)
-    : ImageCache(loader_helper),
+FullImageCache::FullImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex)
+    : ImageCache(loader, image_state, image_mutex),
       _stokes_i(-1),
       _stokes_q(-1),
       _stokes_u(-1),
       _stokes_v(-1),
-      _beam_area(_loader_helper->GetBeamArea()),
+      _beam_area(GetBeamArea()),
       _current_computed_stokes_channel(-1) {
+    spdlog::info("Cache full cubes image data.");
+
     Timer t;
-    if (!_loader_helper->FillFullImageCache(_stokes_data)) {
+    if (!FillFullImageCache(_stokes_data)) {
         _valid = false;
         return;
     }
@@ -31,10 +33,10 @@ FullImageCache::FullImageCache(std::shared_ptr<LoaderHelper> loader_helper)
 
     // Get stokes indices
     bool mute_err_msg(true);
-    _loader_helper->GetStokesTypeIndex("I", _stokes_i, mute_err_msg);
-    _loader_helper->GetStokesTypeIndex("Q", _stokes_q, mute_err_msg);
-    _loader_helper->GetStokesTypeIndex("U", _stokes_u, mute_err_msg);
-    _loader_helper->GetStokesTypeIndex("V", _stokes_v, mute_err_msg);
+    GetStokesTypeIndex("I", _stokes_i, mute_err_msg);
+    GetStokesTypeIndex("Q", _stokes_q, mute_err_msg);
+    GetStokesTypeIndex("U", _stokes_u, mute_err_msg);
+    GetStokesTypeIndex("V", _stokes_v, mute_err_msg);
 
     _image_memory_size = ImageMemorySize(_width, _height, _depth, _num_stokes);
 
@@ -53,6 +55,23 @@ FullImageCache::~FullImageCache() {
         ulock.unlock();
         spdlog::info("{:.0f} MB of full image cache are available.", _full_image_cache_size_available);
     }
+}
+
+bool FullImageCache::FillFullImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data) {
+    if (!stokes_data.empty()) {
+        stokes_data.clear();
+    }
+
+    for (int stokes = 0; stokes < _image_state->num_stokes; ++stokes) {
+        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
+        auto data_size = stokes_slicer.slicer.length().product();
+        stokes_data[stokes] = std::make_unique<float[]>(data_size);
+        if (!GetSlicerData(stokes_slicer, stokes_data[stokes].get())) {
+            spdlog::error("Loading cube image failed (stokes index: {}).", stokes);
+            return false;
+        }
+    }
+    return true;
 }
 
 float* FullImageCache::GetChannelData(int z, int stokes) {
@@ -188,7 +207,8 @@ bool FullImageCache::UpdateChannelImageCache(int z, int stokes) {
 }
 
 void FullImageCache::SetImageChannels(int z, int stokes) {
-    _loader_helper->SetImageChannels(z, stokes);
+    _image_state->SetCurrentZ(z);
+    _image_state->SetCurrentStokes(stokes);
 }
 
 } // namespace carta

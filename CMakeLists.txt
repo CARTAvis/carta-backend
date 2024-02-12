@@ -211,7 +211,6 @@ set(SOURCE_FILES
         src/FileList/FitsHduList.cc
         src/Frame/Frame.cc
         src/Frame/ImageState.cc
-        src/Frame/LoaderHelper.cc
         src/HttpServer/HttpServer.cc
         src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc

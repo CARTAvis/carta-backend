@@ -12,8 +12,21 @@
 
 namespace carta {
 
-ChannelImageCache::ChannelImageCache(std::shared_ptr<LoaderHelper> loader_helper)
-    : ImageCache(loader_helper), _channel_data(nullptr), _channel_image_cache_valid(false) {}
+ChannelImageCache::ChannelImageCache(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> image_state, std::mutex& image_mutex)
+    : ImageCache(loader, image_state, image_mutex), _channel_data(nullptr), _channel_image_cache_valid(false) {
+    spdlog::info("Cache single channel image data.");
+}
+
+bool ChannelImageCache::FillChannelImageCache(std::unique_ptr<float[]>& channel_data, int z, int stokes) {
+    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(z), stokes);
+    auto data_size = stokes_slicer.slicer.length().product();
+    channel_data = std::make_unique<float[]>(data_size);
+    if (!GetSlicerData(stokes_slicer, channel_data.get())) {
+        spdlog::error("Loading channel image failed (z: {}, stokes: {})", z, stokes);
+        return false;
+    }
+    return true;
+}
 
 float* ChannelImageCache::GetChannelData(int z, int stokes) {
     return CachedChannelDataAvailable(z, stokes) ? _channel_data.get() : nullptr;
@@ -34,7 +47,7 @@ float ChannelImageCache::GetValue(int x, int y, int z, int stokes) const {
 }
 
 bool ChannelImageCache::CachedChannelDataAvailable(int z, int stokes) const {
-    return _loader_helper->IsCurrentChannel(z, stokes) && _channel_image_cache_valid;
+    return _image_state->IsCurrentChannel(z, stokes) && _channel_image_cache_valid;
 }
 
 bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
@@ -43,7 +56,7 @@ bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
     }
 
     Timer t;
-    if (!_loader_helper->FillChannelImageCache(_channel_data, z, stokes)) {
+    if (!FillChannelImageCache(_channel_data, z, stokes)) {
         _valid = false;
         return false;
     }
@@ -57,7 +70,8 @@ bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
 
 void ChannelImageCache::SetImageChannels(int z, int stokes) {
     _channel_image_cache_valid = false;
-    _loader_helper->SetImageChannels(z, stokes);
+    _image_state->SetCurrentZ(z);
+    _image_state->SetCurrentStokes(stokes);
 }
 
 } // namespace carta
