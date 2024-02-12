@@ -24,6 +24,7 @@
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
 #include "ImageData/CompressedFits.h"
+#include "ImageData/FitsLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
@@ -32,6 +33,7 @@
 #include "Util/App.h"
 #include "Util/File.h"
 #include "Util/Message.h"
+#include "Util/RemoteFiles.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
@@ -2399,4 +2401,34 @@ void Session::CloseCachedImage(const std::string& directory, const std::string& 
             frame.second->CloseCachedImage(fullname);
         }
     }
+}
+void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id) {
+    auto file_id(message.file_id());
+
+    CARTA::RemoteFileResponse response;
+    std::string url, err_message;
+    bool success = GenerateUrlFromRequest(message, url, err_message);
+    if (success) {
+        spdlog::info("Fetching remote file from url {}", url);
+        auto loader = new FitsLoader(url, false, true);
+
+        CARTA::OpenFileAck ack;
+        try {
+            loader->OpenFile("0");
+            auto image = loader->GetImage();
+            success = OnOpenFile(file_id, "remote_file.fits", image, response.mutable_open_file_ack());
+        } catch (const casacore::AipsError& err) {
+            err_message = err.getMesg();
+            success = false;
+        }
+
+        if (success) {
+            response.set_message("File opened successfully");
+        } else {
+            response.set_message(err_message);
+        }
+    }
+    response.set_success(success);
+
+    SendEvent(CARTA::REMOTE_FILE_RESPONSE, request_id, response);
 }
