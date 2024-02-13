@@ -179,7 +179,7 @@ public:
 
 class TestSession : public Session {
 public:
-    TestSession() : Session(nullptr, nullptr, 0, "", "/", "", nullptr, -1, false) {}
+    TestSession() : Session(nullptr, nullptr, 0, "", nullptr) {}
 
     void TestFileInfo(const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
         auto request = Message::FileInfoRequest(SAMPLE_FILES_PATH, request_filename, request_hdu);

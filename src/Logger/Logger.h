@@ -110,7 +110,7 @@ private:
 
 namespace carta {
 namespace logger {
-void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_, fs::path user_directory);
+void InitLogger();
 void LogReceivedEventType(const CARTA::EventType& event_type);
 void LogSentEventType(const CARTA::EventType& event_type);
 void FlushLogFile();

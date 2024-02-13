@@ -46,14 +46,13 @@ int main(int argc, char* argv[]) {
         sigaction(SIGINT, &sig_handler, nullptr);
 
         // Main
-        carta::ProgramSettings settings(argc, argv);
+        auto settings = ProgramSettings::Initialise(argc, argv);
 
         if (settings.help || settings.version) {
             exit(0);
         }
 
-        carta::logger::InitLogger(
-            settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
+        carta::logger::InitLogger();
         settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         // Send casacore log messages (global and local) to sink.
