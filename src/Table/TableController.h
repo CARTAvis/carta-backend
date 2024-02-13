@@ -61,7 +61,8 @@ private:
     volatile bool _stop_getting_file_list;
     volatile bool _first_report_made;
     std::function<void(CARTA::ListProgress)> _progress_callback;
-    ProgramSettings& _settings;
+    std::string _top_level_folder;
+    std::string _starting_folder;
 };
 } // namespace carta
 #endif // CARTA_SRC_TABLE_TABLECONTROLLER_H_
