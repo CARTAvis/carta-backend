@@ -240,6 +240,11 @@ protected:
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
         const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader);
 
+    // Next unused file id for generated images
+    inline int GetNextFileId() {
+        return _last_file_id + 1;
+    }
+
     // Delete Frame(s)
     void DeleteFrame(int file_id);
 
@@ -279,6 +284,7 @@ protected:
 
     // Frame; key is file_id; shared with RegionHandler for data streams
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
+    int _last_file_id;
     std::mutex _frame_mutex;
 
     const std::unique_ptr<TableController> _table_controller;
