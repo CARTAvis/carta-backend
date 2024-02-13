@@ -334,8 +334,10 @@ protected:
     // Timestamp for the last protobuf message
     std::chrono::high_resolution_clock::time_point _last_message_timestamp;
 
-    // Reference to the global settings object
-    ProgramSettings& _settings;
+    // Parameters which are copied from the global settings
+    std::string _top_level_folder;
+    bool _read_only_mode;
+    bool _enable_scripting;
 };
 
 } // namespace carta
