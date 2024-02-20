@@ -111,7 +111,10 @@ TEST_F(DataExporterTest, PathNotExist) {
 
 TEST_F(DataExporterTest, InvalidPath) {
     std::string filename = "profiles-" + GetCurrentTime() + ".tsv";
+    TestExportDataMsg("..", filename, 100, false);
     TestExportDataMsg("../profiles", filename, 100, false);
+    TestExportDataMsg("~", filename, 100, false);
+    TestExportDataMsg("~/", filename, 100, false);
 }
 
 TEST_F(DataExporterTest, OverwriteFile) {

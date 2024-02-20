@@ -23,7 +23,7 @@ void DataExporter::ExportData(const CARTA::ExportData& export_data_msg, CARTA::E
     };
 
     std::string directory_str = export_data_msg.directory();
-    if (directory_str.find("..") != std::string::npos) {
+    if ((directory_str.find("..") != std::string::npos) || (directory_str.find("~") != std::string::npos)) {
         handle_error("Invalid request directory!");
         return;
     }
