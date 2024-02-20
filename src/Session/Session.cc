@@ -1474,6 +1474,15 @@ void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParamete
     }
 }
 
+void Session::OnExportData(const CARTA::ExportData export_data, uint32_t request_id) {
+    CARTA::ExportDataAck export_data_ack;
+    if (!_data_exporter) {
+        _data_exporter = std::make_unique<DataExporter>(_top_level_folder);
+    }
+    _data_exporter->ExportData(export_data, export_data_ack);
+    SendEvent(CARTA::EventType::EXPORT_DATA_ACK, request_id, export_data_ack);
+}
+
 // ******** SEND DATA STREAMS *********
 
 bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message) {

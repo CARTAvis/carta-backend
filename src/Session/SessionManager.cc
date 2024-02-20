@@ -512,6 +512,14 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     }
                     break;
                 }
+                case CARTA::EventType::EXPORT_DATA: {
+                    CARTA::ExportData message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnExportData(message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
                 default: {
                     spdlog::warn("Bad event type {}!", event_type);
                     break;
