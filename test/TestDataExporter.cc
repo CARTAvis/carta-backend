@@ -123,5 +123,5 @@ TEST_F(DataExporterTest, OverwriteFile) {
 
 TEST_F(DataExporterTest, CreateNewFile) {
     std::string filename = "profiles-" + GetCurrentTime() + ".tsv";
-    TestExportDataMsg("profiles", "test-image-profiles.tsv", 100, true);
+    TestExportDataMsg("profiles", filename, 100, true);
 }
