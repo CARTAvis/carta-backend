@@ -12,6 +12,7 @@
 #include <carta-protobuf/contour_image.pb.h>
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>
+#include <carta-protobuf/export_data.pb.h>
 #include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>

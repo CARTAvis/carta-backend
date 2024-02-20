@@ -32,6 +32,7 @@
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
 #include "ThreadingManager/Concurrency.h"
+#include "Util/DataExporter.h"
 #include "Util/Message.h"
 
 #include "Table/TableController.h"
@@ -96,6 +97,7 @@ public:
     void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
+    void OnExportData(const CARTA::ExportData export_data, uint32_t request_id);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -305,6 +307,8 @@ protected:
 
     // Individual stokes files connector
     std::unique_ptr<StokesFilesConnector> _stokes_files_connector;
+
+    std::unique_ptr<DataExporter> _data_exporter;
 
     // Manage image channel/z
     std::unordered_map<int, std::mutex> _image_channel_mutexes;

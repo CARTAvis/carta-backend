@@ -39,6 +39,7 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         TestBlockSmooth.cc
         TestContour.cc
+        TestDataExporter.cc
         TestExprImage.cc
         TestFileInfo.cc
         TestFileList.cc
