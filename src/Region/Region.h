@@ -176,9 +176,9 @@ private:
     std::vector<CARTA::Point> GetRectangleMidpoints();
     std::shared_ptr<casacore::LCRegion> GetCachedPolygonRegion(int file_id);
     std::shared_ptr<casacore::LCRegion> GetAppliedPolygonRegion(
-        int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape);
-    std::vector<std::vector<CARTA::Point>> GetReferencePolygonPoints(int num_vertices);
-    std::vector<std::vector<CARTA::Point>> GetApproximatePolygonPoints(int num_vertices);
+        int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape, bool has_distortion);
+    std::vector<std::vector<CARTA::Point>> GetReferencePolygonPoints(int num_vertices, bool has_distortion);
+    std::vector<std::vector<CARTA::Point>> GetApproximatePolygonPoints(int num_vertices, bool has_distortion);
     std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
     double GetTotalSegmentLength(std::vector<CARTA::Point>& points);
     bool ConvertPointsToImagePixels(const std::vector<CARTA::Point>& points, std::shared_ptr<casacore::CoordinateSystem> output_csys,
