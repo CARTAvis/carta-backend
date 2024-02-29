@@ -647,11 +647,16 @@ std::vector<std::vector<CARTA::Point>> Region::GetApproximatePolygonPoints(int n
     // Close polygon
     CARTA::Point first_point(region_points[0]);
     region_points.push_back(first_point);
+
+    // Total length (pixels) of reference region segments
     double total_length = GetTotalSegmentLength(region_points);
+    double min_length = 0.1;
 
     if (has_distortion) {
-        // Divide each polygon/rectangle segment into multiple segments for num_vertices points
+        // Divide each polygon/rectangle segment into multiple segments:
+        // length of each segment no less than min_length pixels
         double target_segment_length = total_length / num_vertices;
+        target_segment_length = (target_segment_length < min_length) ? min_length : target_segment_length;
 
         for (size_t i = 1; i < region_points.size(); ++i) {
             // Handle segment from point[i-1] to point[i]
