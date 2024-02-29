@@ -29,7 +29,7 @@ public:
     FRIEND_TEST(ImageFittingTest, ThreeComponentFitting);
 };
 
-class ImageFittingTest : public ::testing::Test {
+class ImageFittingTest : public ::testing::Test, public FileFinder {
 public:
     void SetInitialValues(std::vector<float> gaussian_model) {
         _initial_values = {};
@@ -285,4 +285,15 @@ TEST_F(ImageFittingTest, insufficientData) {
     SetFixedParams(fixed_params);
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 2, 2}, 0);
     FitImageWithFov(gaussian_model, 0, "insufficient data points");
+}
+
+TEST_F(ImageFittingTest, RunImageFitter2) {
+    ImageInterface<Float>* image;
+    std::string file_path = FitsImagePath("spw25_mom0.fits");
+    ImageUtilities::openImage(image, file_path);
+    std::shared_ptr<const casacore::ImageInterface<casacore::Float> > input_image(image);
+    ImageFitter2<Float> image_fitter2(input_image, "", 0, "", "", "", "", "", "");
+    image_fitter2.setModel("");
+    image_fitter2.setResidual("");
+    image_fitter2.fit();
 }

@@ -21,7 +21,7 @@ public:
     FRIEND_TEST(FitsImageTest, ExampleFriendTest);
 };
 
-class FitsImageTest : public ::testing::Test, public ImageGenerator, public FileFinder {};
+class FitsImageTest : public ::testing::Test, public ImageGenerator {};
 
 TEST_F(FitsImageTest, BasicLoadingTest) {
     auto path_string = GeneratedFitsImagePath("10 10");
@@ -135,15 +135,4 @@ TEST_F(FitsImageTest, CorrectShape4dImages) {
     EXPECT_EQ(frame->Depth(), 5);
     EXPECT_EQ(frame->NumStokes(), 2);
     EXPECT_EQ(frame->StokesAxis(), 2);
-}
-
-TEST_F(FitsImageTest, ImageFitter2) {
-    ImageInterface<Float>* image;
-    std::string file_path = FitsImagePath("spw25_mom0.fits");
-    ImageUtilities::openImage(image, file_path);
-    std::shared_ptr<const casacore::ImageInterface<casacore::Float> > sImage(image);
-    ImageFitter2<Float> imFitter(sImage, "", 0, "", "", "", "", "", "");
-    imFitter.setModel("");
-    imFitter.setResidual("");
-    imFitter.fit();
 }
