@@ -287,11 +287,53 @@ TEST_F(ImageFittingTest, insufficientData) {
     FitImageWithFov(gaussian_model, 0, "insufficient data points");
 }
 
+TEST_F(ImageFittingTest, RunImageFitter) {
+    std::string file_path = FitsImagePath("spw25_mom0.fits");
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
+
+    std::vector<float> gaussian_model = {1, 21.364, 24.199, 77, 5, 5, 60}; // gauss num, x, y, amp, fwhm-x, fwhm-y, pa
+    auto center = Message::DoublePoint(gaussian_model[1], gaussian_model[2]);
+    double amp = gaussian_model[3];
+    auto fwhm = Message::DoublePoint(gaussian_model[4], gaussian_model[5]);
+    double pa = gaussian_model[6];
+    std::vector<CARTA::GaussianComponent> initial_values;
+    initial_values.push_back(Message::GaussianComponent(center, amp, fwhm, pa));
+
+    std::vector<bool> fixed_params(7, false);
+
+    CARTA::FittingResponse fitting_response;
+    std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
+    auto progress_callback = [&](float progress) {};
+    bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), 0.0, "", initial_values,
+        fixed_params, 0.0, CARTA::FittingSolverType::Cholesky, true, true, fitting_response, progress_callback);
+
+    std::cout << "Fit success = " << fitting_response.success() << "\n";
+
+    auto fit_results = fitting_response.result_values();
+    std::cout << "\nFit results: \n";
+    std::cout << "x = " << fit_results[0].center().x() << "\n";
+    std::cout << "y = " << fit_results[0].center().y() << "\n";
+    std::cout << "amp = " << fit_results[0].amp() << "\n";
+    std::cout << "fwhm-x = " << fit_results[0].fwhm().x() << "\n";
+    std::cout << "fwhm-y = " << fit_results[0].fwhm().y() << "\n";
+    std::cout << "pa = " << fit_results[0].pa() << "\n";
+
+    std::cout << "\nFit errors: \n";
+    auto fit_errors = fitting_response.result_errors();
+    std::cout << "x = " << fit_errors[0].center().x() << "\n";
+    std::cout << "y = " << fit_errors[0].center().y() << "\n";
+    std::cout << "amp = " << fit_errors[0].amp() << "\n";
+    std::cout << "fwhm-x = " << fit_errors[0].fwhm().x() << "\n";
+    std::cout << "fwhm-y = " << fit_errors[0].fwhm().y() << "\n";
+    std::cout << "pa = " << fit_errors[0].pa() << "\n";
+}
+
 TEST_F(ImageFittingTest, RunImageFitter2) {
     ImageInterface<Float>* image;
     std::string file_path = FitsImagePath("spw25_mom0.fits");
     ImageUtilities::openImage(image, file_path);
-    std::shared_ptr<const casacore::ImageInterface<casacore::Float> > input_image(image);
+    casa::SPCIIF input_image(image);
     ImageFitter2<Float> image_fitter2(input_image, "", 0, "", "", "", "", "", "");
     image_fitter2.setModel("");
     image_fitter2.setResidual("");
