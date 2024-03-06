@@ -385,33 +385,61 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
 
     if (!lc_region) {
         auto region_state = GetRegionState();
-        if (file_id == region_state.reference_file_id) {
-            // Convert reference WCRegion to LCRegion and cache it
-            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_source, report_error);
-        } else {
-            bool use_polygon = UseApproximatePolygon(output_csys); // check region distortion, or is a rotbox
+        bool cache_polygon(false);
 
-            if (!use_polygon) {
-                // No distortion, do direct region conversion if possible
+        if (file_id == region_state.reference_file_id) {
+            if (IsRotbox()) {
+                // Create LCPolygon from box corners
+                casacore::Vector<casacore::Double> x, y;
+                RectanglePointsToCorners(region_state.control_points, region_state.rotation, x, y);
+                // Close polygon
+                auto npoints = x.size(); // should be 4!
+                x.resize(npoints + 1, true);
+                y.resize(npoints + 1, true);
+                x(npoints) = x(0);
+                y(npoints) = y(0);
+                // Need 2-dim shape for LCPolygon
+                casacore::IPosition keep_axes(2, 0, 1);
+                casacore::IPosition region_shape(output_shape.keepAxes(keep_axes));
+                lc_region.reset(new casacore::LCPolygon(x, y, region_shape));
+                cache_polygon = true;
+            } else {
+                // Convert reference WCRegion to LCRegion and cache it
                 lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_source, report_error);
             }
+        } else {
+            bool use_polygon = UseApproximatePolygon(output_csys); // check distortion in converted region
 
-            if (lc_region) {
-                // Region conversion successful
-                spdlog::debug("Using direct region conversion for {}", RegionName(region_state.type));
-            } else {
-                // Converted region is distorted and must be approximated as a polygon, or conversion failed:
-                // outside image or is a rotbox which needs corners to be converted as a polygon.
-                if (use_polygon) {
-                    spdlog::debug("Using polygon approximation for matched {} region", RegionName(region_state.type));
-                }
+            if (IsRotbox()) {
+                // Rotbox is always converted from a polygon, either just box corners (use_polygon==false)
+                // or polygon approximation with many points (use_polygon==true)
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape, use_polygon);
+                cache_polygon = true;
+            } else {
+                if (use_polygon) { // distortion
+                    spdlog::debug("Using polygon approximation to avoid distortion in matched {} region", RegionName(region_state.type));
+                    lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape, use_polygon);
+                    cache_polygon = true;
+                } else { // no distortion
+                    lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_source, report_error);
 
-                // Cache converted polygon
-                // Only for the original image (not computed stokes image). In order to avoid the ambiguity
-                if (lc_region && stokes_source.IsOriginalImage()) {
-                    _polygon_regions[file_id] = lc_region;
+                    if (lc_region) {
+                        // Region conversion successful
+                        spdlog::debug("Using direct region conversion for {} region", RegionName(region_state.type));
+                    } else {
+                        // Region conversion failed (likely outside image) but can convert points to world so make polygon
+                        spdlog::debug(
+                            "Using polygon approximation for failed conversion of matched {} region", RegionName(region_state.type));
+                        lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape, use_polygon);
+                        cache_polygon = true;
+                    }
                 }
+            }
+
+            // Cache converted polygon
+            // Only cache regions for the original image (not computed stokes image). In order to avoid the ambiguity
+            if (cache_polygon && lc_region && stokes_source.IsOriginalImage()) {
+                _polygon_regions[file_id] = lc_region;
             }
         }
     }
@@ -869,7 +897,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetConvertedLCRegion(int file_id, st
     bool is_reference_image(file_id == GetRegionState().reference_file_id);
 
     if (!is_reference_image && IsRotbox()) {
-        // Cannot convert rotbox region, it is a polygon type.
+        // Cannot convert rotbox region, it becomes a polygon type not a rectangle.
         return lc_region;
     }
 
