@@ -163,7 +163,7 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
     auto box_length = region_bounding_box.length();
 
     // Initialize profile
-    size_t nchan = box_length(_preview_image->coordinates().spectralAxisNumber());
+    size_t nchan = _preview_image->shape()(_preview_image->coordinates().spectralAxisNumber());
     profile.resize(nchan, NAN);
     std::vector<double> npix_per_chan(nchan, 0.0);
     auto data_shape = _cube_data.shape();

@@ -401,8 +401,12 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 // Need 2-dim shape for LCPolygon
                 casacore::IPosition keep_axes(2, 0, 1);
                 casacore::IPosition region_shape(output_shape.keepAxes(keep_axes));
-                lc_region.reset(new casacore::LCPolygon(x, y, region_shape));
-                cache_polygon = true;
+                try {
+                    lc_region.reset(new casacore::LCPolygon(x, y, region_shape));
+                    cache_polygon = true;
+                } catch (const casacore::AipsError& err) {
+                    // outside image, return nullptr
+                }
             } else {
                 // Convert reference WCRegion to LCRegion and cache it
                 lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_source, report_error);
