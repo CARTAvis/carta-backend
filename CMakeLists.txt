@@ -218,6 +218,8 @@ set(SOURCE_FILES
         src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
+        src/ImageFitter/ImageFitter.cc
+        src/ImageFitter/ImageFitter2.cc
         src/ImageGenerators/MomentGenerator.cc
         src/ImageGenerators/PvGenerator.cc
         src/ImageGenerators/PvPreviewCube.cc
@@ -252,9 +254,7 @@ set(SOURCE_FILES
         src/Util/Message.cc
         src/Util/Stokes.cc
         src/Util/String.cc
-        src/Util/Token.cc
-        src/ImageFitter/ImageFitter.cc
-        src/ImageFitter/ImageFitter2.cc)
+        src/Util/Token.cc)
 
 add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
 add_executable(carta_backend ${SOURCE_FILES})
