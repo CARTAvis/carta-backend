@@ -435,12 +435,12 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                     }
                 }
             }
+        }
 
-            // Cache converted polygon
-            // Only cache regions for the original image (not computed stokes image). In order to avoid the ambiguity
-            if (cache_polygon && lc_region && stokes_source.IsOriginalImage()) {
-                _polygon_regions[file_id] = lc_region;
-            }
+        // Cache converted polygon
+        // Only cache regions for the original image (not computed stokes image). In order to avoid the ambiguity
+        if (cache_polygon && lc_region && stokes_source.IsOriginalImage()) {
+            _polygon_regions[file_id] = lc_region;
         }
     }
 
@@ -816,6 +816,10 @@ casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
         if (_applied_regions.at(file_id)) {
             std::lock_guard<std::mutex> guard(_region_mutex);
             lcregion = _applied_regions.at(file_id);
+        } else if (_polygon_regions.count(file_id)) {
+            // rotbox is saved as a polygon not rectangle even for reference image
+            std::lock_guard<std::mutex> guard(_region_mutex);
+            lcregion = _polygon_regions.at(file_id);
         }
     } else if (_polygon_regions.count(file_id)) {
         if (_polygon_regions.at(file_id)) {
