@@ -462,7 +462,7 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     // RegionState needed to check if bmaj/bmin swapped for LCEllipsoid
     casacore::Vector<casacore::Float> center = region_record.asArrayFloat("center");
     casacore::Vector<casacore::Float> radii = region_record.asArrayFloat("radii");
-    casacore::Float theta = region_record.asFloat("theta"); // radians
+    casacore::Double theta = region_record.asDouble("theta"); // radians
     rotation = casacore::Quantity(theta, "rad");
     rotation.convert("deg"); // CASA rotang, from x-axis
 
