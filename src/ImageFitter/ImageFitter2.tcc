@@ -23,8 +23,8 @@
 //#                        Charlottesville, VA 22903-2475 USA
 //#
 
-#ifndef IMAGEANALYSIS_IMAGEFITTER_TCC
-#define IMAGEANALYSIS_IMAGEFITTER_TCC
+#ifndef CARTA_SRC_IMAGEFITTER_IMAGEFITTER2_TCC_
+#define CARTA_SRC_IMAGEFITTER_IMAGEFITTER2_TCC_
 
 #include <imageanalysis/ImageAnalysis/ImageFitter.h>
 
@@ -1705,4 +1705,4 @@ template <class T> void ImageFitter2<T>::_fitskyExtractBeam(
 
 }
 
-#endif
+#endif // CARTA_SRC_IMAGEFITTER_IMAGEFITTER2_TCC_

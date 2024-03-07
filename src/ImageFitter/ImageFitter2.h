@@ -23,8 +23,8 @@
 //#                        Charlottesville, VA 22903-2475 USA
 //#
 
-#ifndef IMAGEANALYSIS_IMAGEFITTER_H
-#define IMAGEANALYSIS_IMAGEFITTER_H
+#ifndef CARTA_SRC_IMAGEFITTER_IMAGEFITTER2_H_
+#define CARTA_SRC_IMAGEFITTER_IMAGEFITTER2_H_
 
 #include <imageanalysis/ImageAnalysis/ImageTask.h>
 
@@ -355,4 +355,4 @@ private:
 #include "ImageFitter2.tcc"
 #endif
 
-#endif
+#endif // CARTA_SRC_IMAGEFITTER_IMAGEFITTER2_H_
