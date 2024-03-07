@@ -12,7 +12,6 @@
 #include <casacore/lattices/LRegions/RegionType.h>
 
 #include "RegionConverter.h"
-// #include "Util/Image.h"
 
 using namespace carta;
 
