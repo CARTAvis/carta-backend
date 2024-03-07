@@ -1257,7 +1257,6 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
 
         // Get box region LCRegion and mask
         bool cancel(false);
-        casacore::Slicer box_bounding_box;
         auto box_lc_region = ApplyRegionToFile(box_region_id, frame_id);
 
         if (!box_lc_region) {
