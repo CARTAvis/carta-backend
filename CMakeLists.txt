@@ -218,6 +218,7 @@ set(SOURCE_FILES
         src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
+        src/ImageFitter/Deconvolver.cc
         src/ImageFitter/ImageFitter.cc
         src/ImageFitter/ImageFitter2.cc
         src/ImageGenerators/MomentGenerator.cc

@@ -339,3 +339,21 @@ TEST_F(ImageFittingTest, RunImageFitter2) {
     image_fitter2.setResidual("");
     image_fitter2.fit();
 }
+
+TEST_F(ImageFittingTest, TestDeconvolver) {
+    ImageInterface<Float>* image;
+    std::string file_path = FitsImagePath("spw25_mom0.fits");
+    ImageUtilities::openImage(image, file_path);
+    casa::SPCIIF input_image(image);
+    Deconvolver<Float> deconvolver(input_image, "", 0, "", "", "", "", "", "");
+
+    CARTA::GaussianComponent in_gauss;
+    in_gauss.set_amp(77.8518);
+    in_gauss.mutable_center()->set_x(21.3636);
+    in_gauss.mutable_center()->set_y(24.199);
+    in_gauss.mutable_fwhm()->set_x(10.9295);
+    in_gauss.mutable_fwhm()->set_y(9.14887);
+    in_gauss.set_pa(2.62175);
+
+    deconvolver.DoDeconvolution(in_gauss);
+}
