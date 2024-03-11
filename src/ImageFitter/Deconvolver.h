@@ -27,7 +27,7 @@ public:
         const casacore::String& maskInp = "", const casacore::String& estiamtesFilename = "", const casacore::String& newEstimatesInp = "",
         const casacore::String& compListName = "");
 
-    ~Deconvolver();
+    ~Deconvolver(){};
 
     inline casacore::String getClass() const {
         return _class;
@@ -38,42 +38,12 @@ public:
 private:
     double GetResidueRms();
     casacore::Quantity GetNoiseFWHM();
-    double CorrelatedOverallSNR(Quantity maj, Quantity min, double a, double b);
-
-    casacore::String _regionString{};
-    casacore::String _residual{}, _model{}, _estimatesString{}, _summary{};
-    casacore::String _newEstimatesFileName, _compListName, _bUnit;
-    std::shared_ptr<std::pair<T, T>> _includePixelRange{}, _excludePixelRange{};
-    casa::ComponentList _estimates{}, _curConvolvedList, _curDeconvolvedList;
-    casacore::Vector<casacore::String> _fixed{}, _deconvolvedMessages;
-    casacore::Bool _fitDone{false}, _noBeam{false}, _doZeroLevel{false}, _zeroLevelIsFixed{false}, _correlatedNoise, _useBeamForNoise;
-    casacore::Vector<casacore::Bool> _fitConverged{};
-    std::vector<casacore::Quantity> _peakIntensities{}, _peakIntensityErrors{}, _fluxDensityErrors{}, _fluxDensities{}, _majorAxes{},
-        _majorAxisErrors{}, _minorAxes{}, _minorAxisErrors{}, _positionAngles{}, _positionAngleErrors{};
-    std::vector<casacore::Quantity> _allConvolvedPeakIntensities{}, _allConvolvedPeakIntensityErrors{}, _allSums{}, _allFluxDensities{},
-        _allFluxDensityErrors{};
-    std::vector<std::shared_ptr<casacore::Vector<casacore::Double>>> _pixelCoords{};
-    std::vector<casacore::GaussianBeam> _allBeams;
-    std::vector<casacore::Double> _allBeamsPix, _allBeamsSter;
-    std::vector<casacore::uInt> _allChanNums;
-    std::vector<casacore::Bool> _isPoint;
-    casacore::Record _residStats, inputStats, _output;
-    casacore::Double _rms = -1;
-    casacore::String _kludgedStokes;
-    typename casa::ImageFitterResults<T>::CompListWriteControl _writeControl{casa::ImageFitterResults<T>::NO_WRITE};
-    casacore::Vector<casacore::uInt> _chanVec;
-    casacore::uInt _curChan;
-    casacore::Double _zeroLevelOffsetEstimate = 0;
-    std::vector<casacore::Double> _zeroLevelOffsetSolution, _zeroLevelOffsetError;
-    casacore::Int _stokesPixNumber = -1, _chanPixNumber = -1;
-    casa::ImageFitterResults<T> _results;
-    std::unique_ptr<casacore::Quantity> _noiseFWHM{};
-    casacore::Quantity _pixWidth{0, "arcsec"};
-
-    const static casacore::String _class;
+    double CorrelatedOverallSNR(Quantity maj, Quantity minor, double a, double b);
 
     casa::CasacRegionManager::StokesControl _getStokesControl() const;
     std::vector<casacore::Coordinate::Type> _getNecessaryCoordinates() const;
+
+    const static casacore::String _class;
 };
 
 } // namespace carta
