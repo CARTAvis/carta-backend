@@ -178,8 +178,8 @@ bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss) {
                   "rad");
     epa.convert(ori_pa);
 
-    casacore::Quantum<double> emaj = C::sqrt2 / CorrelatedOverallSNR(ori_maj, ori_minor, 2.5, 0.5) * ori_maj;
-    casacore::Quantum<double> emin = C::sqrt2 / CorrelatedOverallSNR(ori_maj, ori_minor, 0.5, 2.5) * ori_minor;
+    casacore::Quantum<double> emaj = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_maj, ori_minor, 2.5, 0.5) * ori_maj;
+    casacore::Quantum<double> emin = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_maj, ori_minor, 0.5, 2.5) * ori_minor;
 
     // Calculate the errors for deconvolved fit results
     std::shared_ptr<casa::PointShape> point;
