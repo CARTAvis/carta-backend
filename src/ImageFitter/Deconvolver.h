@@ -33,7 +33,7 @@ public:
         return _class;
     }
 
-    bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss);
+    bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss);
 
 private:
     double GetResidueRms();

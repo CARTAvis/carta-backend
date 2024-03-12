@@ -60,7 +60,7 @@ casa::CasacRegionManager::StokesControl Deconvolver<T>::_getStokesControl() cons
 }
 
 template <class T>
-bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss) {
+bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss) {
     bool success(false);
     casacore::Vector<casacore::Double> gauss_param(6, 0);
     gauss_param[0] = in_gauss.amp();
@@ -154,7 +154,6 @@ bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss) {
     double base_fac = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 0.5, 2.5);
     double ori_major_val = ori_major.getValue("arcsec");
     double ori_minor_val = ori_minor.getValue("arcsec");
-
     casacore::Quantum<double> err_pa =
         ori_major_val == ori_minor_val
             ? casacore::QC::qTurn()
@@ -165,58 +164,13 @@ bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss) {
 
     casacore::Quantum<double> err_major = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 2.5, 0.5) * ori_major;
     casacore::Quantum<double> err_minor = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 0.5, 2.5) * ori_minor;
-
-    std::shared_ptr<casa::PointShape> point_shape;
     casacore::GaussianBeam decon_beam;
-    std::shared_ptr<casa::GaussianShape> gauss_shape(static_cast<casa::GaussianShape*>(comp_list.getShape(0)->clone()));
+
+    // Set deconvolved results
+    out_gauss.reset(static_cast<casa::GaussianShape*>(comp_list.getShape(0)->clone()));
+
     if (fit_success) {
-        if (is_point_source) {
-            static const casacore::Quantity tiny(1e-60, "arcsec");
-            static const casacore::Quantity zero(0, "deg");
-            gauss_shape->setWidth(tiny, tiny, zero);
-            casacore::Quantity major = best_decon_sol.getMajor();
-            casacore::Quantity minor = best_decon_sol.getMinor();
-            casacore::Quantity pa = best_decon_sol.getPA(false);
-
-            casacore::GaussianBeam largest(major + err_major, minor + err_minor, pa - err_pa);
-            casacore::Bool is_point_source1(true);
-            try {
-                is_point_source1 = casa::GaussianDeconvolver::deconvolve(decon_beam, largest, beam);
-                fit_success = true;
-            } catch (const casacore::AipsError& x) {
-                is_point_source1 = true;
-            }
-
-            casacore::GaussianBeam lsize;
-            if (!is_point_source1) {
-                lsize = decon_beam;
-            }
-
-            largest.setPA(pa + err_pa);
-            casacore::Bool is_point_source2(true);
-            try {
-                is_point_source2 = casa::GaussianDeconvolver::deconvolve(decon_beam, largest, beam);
-            } catch (const AipsError& x) {
-                is_point_source2 = true;
-            }
-
-            if (is_point_source2) {
-                if (is_point_source1) {
-                    point_shape.reset(new casa::PointShape());
-                    point_shape->copyDirectionInfo(*gauss_shape);
-                } else {
-                    gauss_shape->setErrors(lsize.getMajor(), lsize.getMinor(), zero);
-                }
-            } else {
-                if (is_point_source1) {
-                    gauss_shape->setErrors(decon_beam.getMajor(), decon_beam.getMinor(), zero);
-                } else {
-                    Quantity lmajor = max(decon_beam.getMajor(), lsize.getMajor());
-                    Quantity lminor = max(decon_beam.getMinor(), lsize.getMinor());
-                    gauss_shape->setErrors(lmajor, lminor, zero);
-                }
-            }
-        } else {
+        if (!is_point_source) {
             casacore::Vector<casacore::Quantity> major_range(2, ori_major - err_major);
             major_range[1] = ori_major + err_major;
             casacore::Vector<casacore::Quantity> minor_range(2, ori_minor - err_minor);
@@ -264,16 +218,10 @@ bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss) {
                     }
                 }
             }
-            gauss_shape->setWidth(best_decon_sol.getMajor(), best_decon_sol.getMinor(), best_decon_sol.getPA(false));
-            gauss_shape->setErrors(err_major, err_minor, err_pa);
-            std::cout << " --- major axis FWHM = " << gauss_shape->majorAxis() << " +/- " << gauss_shape->majorAxisError() << "\n";
-            std::cout << " --- minor axis FWHM = " << gauss_shape->minorAxis() << " +/- " << gauss_shape->minorAxisError() << "\n";
-            std::cout << " --- position angle = " << gauss_shape->positionAngle() << " +/- " << gauss_shape->positionAngleError() << "\n";
+            out_gauss->setWidth(best_decon_sol.getMajor(), best_decon_sol.getMinor(), best_decon_sol.getPA(false));
+            out_gauss->setErrors(err_major, err_minor, err_pa);
+            success = true;
         }
-        success = true;
-    } else {
-        point_shape.reset(new casa::PointShape());
-        point_shape->copyDirectionInfo(*gauss_shape);
     }
     return success;
 }
