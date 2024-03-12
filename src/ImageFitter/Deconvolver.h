@@ -16,10 +16,10 @@
 
 namespace carta {
 
-template <class T>
 class Deconvolver {
 public:
     Deconvolver() = delete;
+
     Deconvolver(casa::SPIIF image);
 
     ~Deconvolver(){};
@@ -27,17 +27,13 @@ public:
     bool DoDeconvolution(int chan, int stokes, const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss);
 
 private:
-    double GetResidueRms();
-    casacore::Quantity GetNoiseFWHM(int chan, int stokes);
     double CorrelatedOverallSNR(int chan, int stokes, casacore::Quantity major, casacore::Quantity minor, double a, double b);
+    casacore::Quantity GetNoiseFWHM(int chan, int stokes);
+    double GetResidueRms();
 
     casa::SPIIF _image;
 };
 
 } // namespace carta
-
-#ifndef AIPS_NO_TEMPLATE_SRC
-#include "Deconvolver.tcc"
-#endif
 
 #endif // CARTA_SRC_IMAGEFITTER_DECONVOLVER_H_

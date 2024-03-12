@@ -345,7 +345,7 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
     std::string file_path = FitsImagePath("spw25_mom0.fits");
     casacore::ImageUtilities::openImage(image, file_path);
     casa::SPIIF input_image(image);
-    carta::Deconvolver<casacore::Float> deconvolver(input_image);
+    carta::Deconvolver deconvolver(input_image);
 
     CARTA::GaussianComponent in_gauss;
     in_gauss.set_amp(77.8518);                 // kJy.m.s-1/beam
