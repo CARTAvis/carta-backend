@@ -38,7 +38,7 @@ public:
 private:
     double GetResidueRms();
     casacore::Quantity GetNoiseFWHM();
-    double CorrelatedOverallSNR(Quantity maj, Quantity minor, double a, double b);
+    double CorrelatedOverallSNR(Quantity major, Quantity minor, double a, double b);
 
     casa::CasacRegionManager::StokesControl _getStokesControl() const;
     std::vector<casacore::Coordinate::Type> _getNecessaryCoordinates() const;
