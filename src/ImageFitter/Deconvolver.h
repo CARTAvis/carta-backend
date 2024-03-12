@@ -9,41 +9,29 @@
 
 #include "Util/Message.h"
 
-#include <casacore/lattices/LatticeMath/Fit2D.h>
+#include <casacore/casa/Quanta.h>
 
-#include <casacode/components/ComponentModels/ComponentList.h>
-#include <casacode/imageanalysis/IO/ImageFitterResults.h>
-#include <casacode/imageanalysis/ImageAnalysis/ImageTask.h>
+#include <casacode/components/ComponentModels/GaussianShape.h>
+#include <casacode/imageanalysis/ImageTypedefs.h>
 
 namespace carta {
 
 template <class T>
-class Deconvolver : public casa::ImageTask<T> {
+class Deconvolver {
 public:
     Deconvolver() = delete;
-
-    Deconvolver(const SPCIIT image, const casacore::String& region, const casacore::Record* const& regionRec,
-        const casacore::String& box = "", const casacore::String& chanInp = "", const casacore::String& stokes = "",
-        const casacore::String& maskInp = "", const casacore::String& estiamtesFilename = "", const casacore::String& newEstimatesInp = "",
-        const casacore::String& compListName = "");
+    Deconvolver(casa::SPIIF image);
 
     ~Deconvolver(){};
 
-    inline casacore::String getClass() const {
-        return _class;
-    }
-
-    bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss);
+    bool DoDeconvolution(int chan, int stokes, const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss);
 
 private:
     double GetResidueRms();
-    casacore::Quantity GetNoiseFWHM();
-    double CorrelatedOverallSNR(Quantity major, Quantity minor, double a, double b);
+    casacore::Quantity GetNoiseFWHM(int chan, int stokes);
+    double CorrelatedOverallSNR(int chan, int stokes, casacore::Quantity major, casacore::Quantity minor, double a, double b);
 
-    casa::CasacRegionManager::StokesControl _getStokesControl() const;
-    std::vector<casacore::Coordinate::Type> _getNecessaryCoordinates() const;
-
-    const static casacore::String _class;
+    casa::SPIIF _image;
 };
 
 } // namespace carta

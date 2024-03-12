@@ -344,8 +344,8 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
     casacore::ImageInterface<casacore::Float>* image;
     std::string file_path = FitsImagePath("spw25_mom0.fits");
     casacore::ImageUtilities::openImage(image, file_path);
-    casa::SPCIIF input_image(image);
-    carta::Deconvolver<casacore::Float> deconvolver(input_image, "", 0, "", "", "", "", "", "");
+    casa::SPIIF input_image(image);
+    carta::Deconvolver<casacore::Float> deconvolver(input_image);
 
     CARTA::GaussianComponent in_gauss;
     in_gauss.set_amp(77.8518);                 // kJy.m.s-1/beam
@@ -355,8 +355,10 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
     in_gauss.mutable_fwhm()->set_y(9.14887);   // in pixel coordinate
     in_gauss.set_pa(2.62175);                  // 2.62175 (rad) = 150.21 (degree) => 150.21 - 90 = 60.21 (degree)
 
+    int chan(0);
+    int stokes(0);
     std::shared_ptr<casa::GaussianShape> out_gauss;
-    bool success = deconvolver.DoDeconvolution(in_gauss, out_gauss);
+    bool success = deconvolver.DoDeconvolution(chan, stokes, in_gauss, out_gauss);
     EXPECT_TRUE(success);
 
     if (success) {

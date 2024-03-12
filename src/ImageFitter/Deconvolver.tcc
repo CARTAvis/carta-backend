@@ -7,60 +7,18 @@
 #ifndef CARTA_SRC_IMAGEFITTER_DECONVOLVER_TCC_
 #define CARTA_SRC_IMAGEFITTER_DECONVOLVER_TCC_
 
-#include <imageanalysis/ImageAnalysis/ImageFitter.h>
-
-#include <casacore/casa/BasicSL/STLIO.h>
-#include <casacore/casa/Utilities/Precision.h>
-#include <components/ComponentModels/ComponentShape.h>
-#include <components/ComponentModels/Flux.h>
-#include <components/ComponentModels/GaussianDeconvolver.h>
-#include <components/ComponentModels/GaussianShape.h>
-#include <components/ComponentModels/PointShape.h>
-#include <components/ComponentModels/SkyComponentFactory.h>
-#include <components/ComponentModels/SpectralModel.h>
-
-#include <casacore/lattices/LRegions/LCPixelSet.h>
-
-#include <imageanalysis/Annotations/AnnEllipse.h>
-#include <imageanalysis/IO/FitterEstimatesFileParser.h>
-#include <imageanalysis/ImageAnalysis/ImageStatsCalculator.h>
-#include <imageanalysis/ImageAnalysis/PeakIntensityFluxDensityConverter.h>
-
-using namespace casacore;
+#include <casacode/components/ComponentModels/ComponentList.h>
+#include <casacode/components/ComponentModels/GaussianDeconvolver.h>
+#include <casacode/components/ComponentModels/SkyComponentFactory.h>
 
 namespace carta {
 
 template <class T>
-const String Deconvolver<T>::_class = "Deconvolver";
+Deconvolver<T>::Deconvolver(casa::SPIIF image) : _image(image) {}
 
 template <class T>
-Deconvolver<T>::Deconvolver(const SPCIIT image, const String& region, const Record* const& regionRec, const String& box,
-    const String& chanInp, const String& stokes, const String& maskInp, const String& estimatesFilename, const String& newEstimatesInp,
-    const String& compListName)
-    : casa::ImageTask<T>(image, region, regionRec, box, chanInp, stokes, maskInp, "", false) {
-    if (stokes.empty() && image->coordinates().hasPolarizationCoordinate() && regionRec == 0 && region.empty()) {
-        const CoordinateSystem& csys = image->coordinates();
-        casacore::Int pol_axis_number = csys.polarizationAxisNumber();
-        casacore::Int stokesVal = (casacore::Int)csys.toWorld(casacore::IPosition(image->ndim(), 0))[pol_axis_number];
-        this->_setStokes(Stokes::name(Stokes::type(stokesVal)));
-    }
-    this->_construct();
-}
-
-template <class T>
-vector<Coordinate::Type> Deconvolver<T>::_getNecessaryCoordinates() const {
-    vector<Coordinate::Type> coordType(1);
-    coordType[0] = Coordinate::DIRECTION;
-    return coordType;
-}
-
-template <class T>
-casa::CasacRegionManager::StokesControl Deconvolver<T>::_getStokesControl() const {
-    return casa::CasacRegionManager::USE_FIRST_STOKES;
-}
-
-template <class T>
-bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss) {
+bool Deconvolver<T>::DoDeconvolution(
+    int chan, int stokes, const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss) {
     bool success(false);
     casacore::Vector<casacore::Double> gauss_param(6, 0);
     gauss_param[0] = in_gauss.amp();
@@ -70,48 +28,53 @@ bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, s
     gauss_param[4] = in_gauss.fwhm().y();
     gauss_param[5] = in_gauss.pa();
 
-    auto sub_image_tmp = casa::SubImageFactory<T>::createImage(
-        *this->_getImage(), "", *this->_getRegion(), this->_getMask(), false, false, false, this->_getStretch());
-
-    casacore::IPosition image_shape = sub_image_tmp->shape();
+    casacore::IPosition image_shape = _image->shape();
     casacore::IPosition start_pos(image_shape.nelements(), 0);
     casacore::IPosition end_pos(image_shape - 1);
     casacore::IPosition stride(image_shape.nelements(), 1);
 
-    const CoordinateSystem& image_coord_sys = sub_image_tmp->coordinates();
+    const casacore::CoordinateSystem& image_coord_sys = _image->coordinates();
     if (image_coord_sys.hasSpectralAxis()) {
-        int chan = 0;
-        uInt spectral_axis_number = image_coord_sys.spectralAxisNumber();
+        casacore::uInt spectral_axis_number = image_coord_sys.spectralAxisNumber();
         start_pos[spectral_axis_number] = chan;
         end_pos[spectral_axis_number] = start_pos[spectral_axis_number];
     }
 
+    casacore::String stokes_str("I"); // Default stokes string is "I"
     if (image_coord_sys.hasPolarizationCoordinate()) {
-        casacore::String stokes = "I";
-        uInt stokesAxisNumber = image_coord_sys.polarizationAxisNumber();
-        start_pos[stokesAxisNumber] = image_coord_sys.stokesPixelNumber(stokes);
+        casacore::uInt stokesAxisNumber = image_coord_sys.polarizationAxisNumber();
+        start_pos[stokesAxisNumber] = stokes;
         end_pos[stokesAxisNumber] = start_pos[stokesAxisNumber];
+
+        // Get stokes string if any
+        casacore::String iquv("IQUV");
+        for (auto c : iquv) {
+            casacore::String tmp_stokes_str = casacore::String(c);
+            auto tmp_stokes_idx = image_coord_sys.stokesPixelNumber(tmp_stokes_str);
+            if (tmp_stokes_idx == stokes) {
+                stokes_str = tmp_stokes_str;
+            }
+        }
     }
 
-    casacore::Slicer slice(start_pos, end_pos, stride, Slicer::endIsLast);
-    casacore::SubImage<T> all_axes_sub_image = casacore::SubImage<T>(*sub_image_tmp, slice, false, casacore::AxesSpecifier(true));
+    casacore::Slicer slice(start_pos, end_pos, stride, casacore::Slicer::endIsLast);
+    casacore::SubImage<T> all_axes_sub_image = casacore::SubImage<T>(*_image, slice, false, casacore::AxesSpecifier(true));
     casacore::SubImage<T> sub_image = casacore::SubImage<T>(all_axes_sub_image, casacore::AxesSpecifier(false));
     const casacore::CoordinateSystem& coord_sys = sub_image.coordinates();
     casacore::Bool is_longitude = coord_sys.isDirectionAbscissaLongitude();
-    int chan = 0;
-    int stokes_idx = 0;
-    casacore::GaussianBeam beam = this->_getImage()->imageInfo().restoringBeam(chan, stokes_idx);
+    casacore::GaussianBeam beam = _image->imageInfo().restoringBeam(chan, stokes);
 
-    casacore::Stokes::StokesTypes stokes = Stokes::type("I");
-    casacore::Bool deconvolve = false;
-    casa::SkyComponent sky_comp;
+    casacore::Stokes::StokesTypes stokes_type = casacore::Stokes::type(stokes_str);
+    casacore::Bool deconvolve(false);
     casacore::Double fac_to_Jy;
+    casa::SkyComponent sky_comp;
     casa::ComponentType::Shape model_type = casa::ComponentType::Shape::GAUSSIAN;
+    std::shared_ptr<casacore::LogIO> log = std::make_shared<casacore::LogIO>(casacore::LogIO());
 
     try {
         sky_comp = casa::SkyComponentFactory::encodeSkyComponent(
-            *this->_getLog(), fac_to_Jy, all_axes_sub_image, model_type, gauss_param, stokes, is_longitude, deconvolve, beam);
-    } catch (const AipsError& x) {
+            *log, fac_to_Jy, all_axes_sub_image, model_type, gauss_param, stokes_type, is_longitude, deconvolve, beam);
+    } catch (const casacore::AipsError& x) {
         std::string solution_str = "[";
         for (int i = 0; i < gauss_param.size(); ++i) {
             solution_str += gauss_param[i];
@@ -145,13 +108,13 @@ bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, s
     try {
         is_point_source = casa::GaussianDeconvolver::deconvolve(best_decon_sol, best_sol, beam);
         fit_success = true;
-    } catch (const AipsError& x) {
+    } catch (const casacore::AipsError& x) {
         fit_success = false;
         is_point_source = true;
     }
 
     // Calculate errors for deconvolved gaussian from original fit results
-    double base_fac = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 0.5, 2.5);
+    double base_fac = casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 0.5, 2.5);
     double ori_major_val = ori_major.getValue("arcsec");
     double ori_minor_val = ori_minor.getValue("arcsec");
     casacore::Quantum<double> err_pa =
@@ -162,8 +125,10 @@ bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, s
                   "rad");
     err_pa.convert(ori_pa);
 
-    casacore::Quantum<double> err_major = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 2.5, 0.5) * ori_major;
-    casacore::Quantum<double> err_minor = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 0.5, 2.5) * ori_minor;
+    casacore::Quantum<double> err_major =
+        casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 2.5, 0.5) * ori_major;
+    casacore::Quantum<double> err_minor =
+        casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 0.5, 2.5) * ori_minor;
     casacore::GaussianBeam decon_beam;
 
     // Set deconvolved results
@@ -195,18 +160,18 @@ bool Deconvolver<T>::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, s
 
                             try {
                                 is_point = casa::GaussianDeconvolver::deconvolve(decon_beam, source_in, beam);
-                            } catch (const AipsError& x) {
+                            } catch (const casacore::AipsError& x) {
                                 is_point = true;
                             }
 
                             if (!is_point) {
-                                Quantity tmp_err_major = abs(best_decon_sol.getMajor() - decon_beam.getMajor());
+                                casacore::Quantity tmp_err_major = abs(best_decon_sol.getMajor() - decon_beam.getMajor());
                                 tmp_err_major.convert(err_major.getUnit());
 
-                                Quantity tmp_err_minor = abs(best_decon_sol.getMinor() - decon_beam.getMinor());
+                                casacore::Quantity tmp_err_minor = abs(best_decon_sol.getMinor() - decon_beam.getMinor());
                                 tmp_err_minor.convert(err_minor.getUnit());
 
-                                Quantity tmp_err_pa = abs(best_decon_sol.getPA(true) - decon_beam.getPA(true));
+                                casacore::Quantity tmp_err_pa = abs(best_decon_sol.getPA(true) - decon_beam.getPA(true));
                                 tmp_err_pa = min(tmp_err_pa, abs(tmp_err_pa - casacore::QC::hTurn()));
                                 tmp_err_pa.convert(err_pa.getUnit());
 
@@ -232,16 +197,14 @@ double Deconvolver<T>::GetResidueRms() {
 }
 
 template <class T>
-casacore::Quantity Deconvolver<T>::GetNoiseFWHM() {
-    int chan = 0;
-    int stokes = 0;
-    casacore::GaussianBeam beam = this->_getImage()->imageInfo().restoringBeam(chan, stokes);
+casacore::Quantity Deconvolver<T>::GetNoiseFWHM(int chan, int stokes) {
+    casacore::GaussianBeam beam = _image->imageInfo().restoringBeam(chan, stokes);
     return casacore::Quantity(sqrt(beam.getMajor() * beam.getMinor()).get("arcsec"));
 }
 
 template <class T>
-double Deconvolver<T>::CorrelatedOverallSNR(Quantity major, Quantity minor, double a, double b) {
-    casacore::Quantity noise_FWHM = GetNoiseFWHM();
+double Deconvolver<T>::CorrelatedOverallSNR(int chan, int stokes, casacore::Quantity major, casacore::Quantity minor, double a, double b) {
+    casacore::Quantity noise_FWHM = GetNoiseFWHM(chan, stokes);
     casacore::Quantity peak_intensities = casacore::Quantity(77.8518, "Jy/beam.km/s"); // Todo: this value is from the original fit result
     double signal_to_noise = abs(peak_intensities).getValue() / GetResidueRms();
     double fac = signal_to_noise / 2 * (sqrt(major * minor) / (noise_FWHM)).getValue("");
