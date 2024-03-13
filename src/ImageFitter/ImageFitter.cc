@@ -10,7 +10,7 @@
 #include "ImageFitter.h"
 #include "Util/Message.h"
 
-#include <omp.h>
+#include <gsl/gsl_rstat.h>
 
 using namespace carta;
 
@@ -126,6 +126,18 @@ bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageReg
 
 void ImageFitter::StopFitting() {
     _fit_data.stop_fitting = true;
+}
+
+double ImageFitter::GetResidualRms() {
+    double residual_rms = std::numeric_limits<double>::quiet_NaN();
+    if (_create_residual_data) {
+        gsl_rstat_workspace* rstat_p = gsl_rstat_alloc();
+        for (int i = 0; i < _residual_data.size(); ++i) {
+            gsl_rstat_add(_residual_data[i], rstat_p);
+        }
+        residual_rms = gsl_rstat_rms(rstat_p);
+    }
+    return residual_rms;
 }
 
 void ImageFitter::CalculateNanNumAndStd() {

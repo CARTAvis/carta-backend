@@ -308,25 +308,28 @@ TEST_F(ImageFittingTest, RunImageFitter) {
     bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), 0.0, "", initial_values,
         fixed_params, 0.0, CARTA::FittingSolverType::Cholesky, true, true, fitting_response, progress_callback);
 
-    std::cout << "Fit success = " << fitting_response.success() << "\n";
+    EXPECT_TRUE(success);
+    if (success) {
+        auto fit_results = fitting_response.result_values();
+        std::cout << "\nFit results: \n";
+        std::cout << "x = " << fit_results[0].center().x() << "\n";
+        std::cout << "y = " << fit_results[0].center().y() << "\n";
+        std::cout << "amp = " << fit_results[0].amp() << "\n";
+        std::cout << "fwhm-x = " << fit_results[0].fwhm().x() << "\n";
+        std::cout << "fwhm-y = " << fit_results[0].fwhm().y() << "\n";
+        std::cout << "pa = " << fit_results[0].pa() << "\n";
 
-    auto fit_results = fitting_response.result_values();
-    std::cout << "\nFit results: \n";
-    std::cout << "x = " << fit_results[0].center().x() << "\n";
-    std::cout << "y = " << fit_results[0].center().y() << "\n";
-    std::cout << "amp = " << fit_results[0].amp() << "\n";
-    std::cout << "fwhm-x = " << fit_results[0].fwhm().x() << "\n";
-    std::cout << "fwhm-y = " << fit_results[0].fwhm().y() << "\n";
-    std::cout << "pa = " << fit_results[0].pa() << "\n";
+        std::cout << "\nFit errors: \n";
+        auto fit_errors = fitting_response.result_errors();
+        std::cout << "x = " << fit_errors[0].center().x() << "\n";
+        std::cout << "y = " << fit_errors[0].center().y() << "\n";
+        std::cout << "amp = " << fit_errors[0].amp() << "\n";
+        std::cout << "fwhm-x = " << fit_errors[0].fwhm().x() << "\n";
+        std::cout << "fwhm-y = " << fit_errors[0].fwhm().y() << "\n";
+        std::cout << "pa = " << fit_errors[0].pa() << "\n";
 
-    std::cout << "\nFit errors: \n";
-    auto fit_errors = fitting_response.result_errors();
-    std::cout << "x = " << fit_errors[0].center().x() << "\n";
-    std::cout << "y = " << fit_errors[0].center().y() << "\n";
-    std::cout << "amp = " << fit_errors[0].amp() << "\n";
-    std::cout << "fwhm-x = " << fit_errors[0].fwhm().x() << "\n";
-    std::cout << "fwhm-y = " << fit_errors[0].fwhm().y() << "\n";
-    std::cout << "pa = " << fit_errors[0].pa() << "\n";
+        std::cout << "\nRMS of residual data = " << image_fitter->GetResidualRms() << "\n";
+    }
 }
 
 TEST_F(ImageFittingTest, RunImageFitter2) {
