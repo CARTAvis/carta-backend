@@ -115,7 +115,7 @@ bool Deconvolver::DoDeconvolution(
     double base_fac = casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 0.5, 2.5);
     double ori_major_val = ori_major.getValue("arcsec");
     double ori_minor_val = ori_minor.getValue("arcsec");
-    casacore::Quantum<double> err_pa =
+    casacore::Quantity err_pa =
         ori_major_val == ori_minor_val
             ? casacore::QC::qTurn()
             : casacore::Quantity(base_fac * casacore::C::sqrt2 *
@@ -123,10 +123,8 @@ bool Deconvolver::DoDeconvolution(
                   "rad");
     err_pa.convert(ori_pa);
 
-    casacore::Quantum<double> err_major =
-        casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 2.5, 0.5) * ori_major;
-    casacore::Quantum<double> err_minor =
-        casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 0.5, 2.5) * ori_minor;
+    casacore::Quantity err_major = casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 2.5, 0.5) * ori_major;
+    casacore::Quantity err_minor = casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 0.5, 2.5) * ori_minor;
     casacore::GaussianBeam decon_beam;
 
     // Set deconvolved results
