@@ -28,6 +28,14 @@ struct TileCacheKey {
     bool operator==(const TileCacheKey& other) const {
         return (x == other.x && y == other.y);
     }
+    /** @brief Inequality operator
+     *  @param other Another key
+     *  @return Whether the keys are not equal
+     *  @details Keys are not equal unless their coordinates are equal.
+     */
+    bool operator!=(const TileCacheKey& other) const {
+        return !operator==(other);
+    }
     /** @brief The X coordinate */
     int32_t x;
     /** @brief The Y coordinate */

@@ -15,7 +15,7 @@
 
 #include "Cache/TileCacheKey.h"
 #include "Cache/TilePool.h"
-#include "ImageData/FileLoader.h"
+// #include "ImageData/FileLoader.h" TODO should this be removed?
 
 #define MAX_TILE_CACHE_CAPACITY 4096
 
@@ -31,6 +31,7 @@ using TilePtr = std::shared_ptr<std::vector<float>>;
  *  @see TilePool
  *  @see TileCacheKey
  */
+
 class TileCache {
 public:
     using Key = TileCacheKey;
@@ -52,7 +53,8 @@ public:
      *  @param key The tile key
      *  @details This function locks the cache because it modifies the cache state.
      */
-    TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
+    template <class Loader>
+    TilePtr Get(Key key, std::shared_ptr<Loader> loader, std::mutex& image_mutex);
     /** @brief Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles.
      *  @param z The new Z coordinate
      *  @param stokes The new Stokes coordinate
@@ -92,7 +94,8 @@ private:
      * and add all the tiles contained in the chunk into the cache at once.
      *  @see ChunkKey
      */
-    bool LoadChunk(Key chunk_key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
+    template <class Loader>
+    bool LoadChunk(Key chunk_key, std::shared_ptr<Loader> loader, std::mutex& image_mutex);
 
     /** @brief The current Z coordinate. */
     int32_t _z;
@@ -114,5 +117,7 @@ private:
 };
 
 } // namespace carta
+
+#include "TileCache.tcc"
 
 #endif // CARTA_SRC_CACHE_TILECACHE_H_
