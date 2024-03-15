@@ -6,7 +6,6 @@
 
 #include "Deconvolver.h"
 
-#include <casacode/components/ComponentModels/ComponentList.h>
 #include <casacode/components/ComponentModels/GaussianDeconvolver.h>
 #include <casacode/components/ComponentModels/SkyComponentFactory.h>
 
@@ -25,53 +24,32 @@ bool Deconvolver::DoDeconvolution(
     gauss_param[4] = in_gauss.fwhm().y();
     gauss_param[5] = in_gauss.pa();
 
-    casacore::IPosition image_shape = _image->shape();
-    casacore::IPosition start_pos(image_shape.nelements(), 0);
-    casacore::IPosition end_pos(image_shape - 1);
-    casacore::IPosition stride(image_shape.nelements(), 1);
-
-    const casacore::CoordinateSystem& image_coord_sys = _image->coordinates();
-    if (image_coord_sys.hasSpectralAxis()) {
-        casacore::uInt spectral_axis_number = image_coord_sys.spectralAxisNumber();
-        start_pos[spectral_axis_number] = chan;
-        end_pos[spectral_axis_number] = start_pos[spectral_axis_number];
-    }
-
-    casacore::String stokes_str("I"); // Default stokes string is "I"
-    if (image_coord_sys.hasPolarizationCoordinate()) {
-        casacore::uInt stokesAxisNumber = image_coord_sys.polarizationAxisNumber();
-        start_pos[stokesAxisNumber] = stokes;
-        end_pos[stokesAxisNumber] = start_pos[stokesAxisNumber];
-
-        // Get stokes string if any
+    // Get stokes string if any, the default stokes string is "I"
+    casacore::CoordinateSystem coord_sys = _image->coordinates();
+    casacore::String stokes_str("I");
+    if (coord_sys.hasPolarizationCoordinate()) {
         casacore::String iquv("IQUV");
         for (auto c : iquv) {
             casacore::String tmp_stokes_str = casacore::String(c);
-            auto tmp_stokes_idx = image_coord_sys.stokesPixelNumber(tmp_stokes_str);
+            auto tmp_stokes_idx = coord_sys.stokesPixelNumber(tmp_stokes_str);
             if (tmp_stokes_idx == stokes) {
                 stokes_str = tmp_stokes_str;
             }
         }
     }
 
-    casacore::Slicer slice(start_pos, end_pos, stride, casacore::Slicer::endIsLast);
-    casacore::SubImage<casacore::Float> all_axes_sub_image =
-        casacore::SubImage<casacore::Float>(*_image, slice, false, casacore::AxesSpecifier(true));
-    casacore::SubImage<casacore::Float> sub_image = casacore::SubImage<casacore::Float>(all_axes_sub_image, casacore::AxesSpecifier(false));
-    const casacore::CoordinateSystem& coord_sys = sub_image.coordinates();
-    casacore::Bool is_longitude = coord_sys.isDirectionAbscissaLongitude();
+    casacore::Bool x_is_longitude = coord_sys.isDirectionAbscissaLongitude();
+    casacore::Unit brightness_unit = _image->units();
     casacore::GaussianBeam beam = _image->imageInfo().restoringBeam(chan, stokes);
-
     casacore::Stokes::StokesTypes stokes_type = casacore::Stokes::type(stokes_str);
-    casacore::Bool deconvolve(false);
     casacore::Double fac_to_Jy;
-    casa::SkyComponent sky_comp;
     casa::ComponentType::Shape model_type = casa::ComponentType::Shape::GAUSSIAN;
     std::shared_ptr<casacore::LogIO> log = std::make_shared<casacore::LogIO>(casacore::LogIO());
+    casa::SkyComponent sky_comp;
 
     try {
         sky_comp = casa::SkyComponentFactory::encodeSkyComponent(
-            *log, fac_to_Jy, all_axes_sub_image, model_type, gauss_param, stokes_type, is_longitude, deconvolve, beam);
+            *log, fac_to_Jy, coord_sys, brightness_unit, model_type, gauss_param, stokes_type, x_is_longitude, beam);
     } catch (const casacore::AipsError& x) {
         std::string solution_str = "[";
         for (int i = 0; i < gauss_param.size(); ++i) {
@@ -90,9 +68,7 @@ bool Deconvolver::DoDeconvolution(
         return success;
     }
 
-    casa::ComponentList comp_list = casa::ComponentList();
-    comp_list.add(sky_comp.copy());
-    const auto* ori_gauss_shape = static_cast<const casa::GaussianShape*>(comp_list.getShape(0));
+    auto* ori_gauss_shape = static_cast<const casa::GaussianShape*>(sky_comp.shape().clone());
     casacore::Quantity ori_major = ori_gauss_shape->majorAxis();
     casacore::Quantity ori_minor = ori_gauss_shape->minorAxis();
     casacore::Quantity ori_pa = ori_gauss_shape->positionAngle();
@@ -128,7 +104,7 @@ bool Deconvolver::DoDeconvolution(
     casacore::GaussianBeam decon_beam;
 
     // Set deconvolved results
-    out_gauss.reset(static_cast<casa::GaussianShape*>(comp_list.getShape(0)->clone()));
+    out_gauss.reset(static_cast<casa::GaussianShape*>(ori_gauss_shape->clone()));
 
     if (fit_success) {
         if (!is_point_source) {
