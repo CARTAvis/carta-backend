@@ -136,6 +136,7 @@ double ImageFitter::GetResidualRms() {
             gsl_rstat_add(_residual_data[i], rstat_p);
         }
         residual_rms = gsl_rstat_rms(rstat_p);
+        gsl_rstat_free(rstat_p);
     }
     return residual_rms;
 }
