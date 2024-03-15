@@ -10,9 +10,10 @@
 #include "Util/Message.h"
 
 #include <casacore/casa/Quanta.h>
+#include <casacore/coordinates/Coordinates.h>
+#include <casacore/scimath/Mathematics/GaussianBeam.h>
 
 #include <casacode/components/ComponentModels/GaussianShape.h>
-#include <casacode/imageanalysis/ImageTypedefs.h>
 
 namespace carta {
 
@@ -20,18 +21,21 @@ class Deconvolver {
 public:
     Deconvolver() = delete;
 
-    Deconvolver(casa::SPIIF image);
+    Deconvolver(casacore::CoordinateSystem coord_sys, casacore::Unit brightness_unit, casacore::GaussianBeam beam, int stokes);
 
     ~Deconvolver(){};
 
-    bool DoDeconvolution(int chan, int stokes, const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss);
+    bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss);
 
 private:
-    double CorrelatedOverallSNR(int chan, int stokes, casacore::Quantity major, casacore::Quantity minor, double a, double b);
-    casacore::Quantity GetNoiseFWHM(int chan, int stokes);
+    double CorrelatedOverallSNR(casacore::Quantity major, casacore::Quantity minor, double a, double b);
+    casacore::Quantity GetNoiseFWHM();
     double GetResidueRms();
 
-    casa::SPIIF _image;
+    casacore::CoordinateSystem _coord_sys;
+    casacore::Unit _brightness_unit;
+    casacore::GaussianBeam _beam;
+    int _stokes;
 };
 
 } // namespace carta

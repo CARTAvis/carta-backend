@@ -11,10 +11,10 @@
 
 namespace carta {
 
-Deconvolver::Deconvolver(casa::SPIIF image) : _image(image) {}
+Deconvolver::Deconvolver(casacore::CoordinateSystem coord_sys, casacore::Unit brightness_unit, casacore::GaussianBeam beam, int stokes)
+    : _coord_sys(coord_sys), _brightness_unit(brightness_unit), _beam(beam), _stokes(stokes) {}
 
-bool Deconvolver::DoDeconvolution(
-    int chan, int stokes, const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss) {
+bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss) {
     bool success(false);
     casacore::Vector<casacore::Double> gauss_param(6, 0);
     gauss_param[0] = in_gauss.amp();
@@ -25,22 +25,19 @@ bool Deconvolver::DoDeconvolution(
     gauss_param[5] = in_gauss.pa();
 
     // Get stokes string if any, the default stokes string is "I"
-    casacore::CoordinateSystem coord_sys = _image->coordinates();
     casacore::String stokes_str("I");
-    if (coord_sys.hasPolarizationCoordinate()) {
+    if (_coord_sys.hasPolarizationCoordinate()) {
         casacore::String iquv("IQUV");
         for (auto c : iquv) {
             casacore::String tmp_stokes_str = casacore::String(c);
-            auto tmp_stokes_idx = coord_sys.stokesPixelNumber(tmp_stokes_str);
-            if (tmp_stokes_idx == stokes) {
+            auto tmp_stokes = _coord_sys.stokesPixelNumber(tmp_stokes_str);
+            if (tmp_stokes == _stokes) {
                 stokes_str = tmp_stokes_str;
             }
         }
     }
 
-    casacore::Bool x_is_longitude = coord_sys.isDirectionAbscissaLongitude();
-    casacore::Unit brightness_unit = _image->units();
-    casacore::GaussianBeam beam = _image->imageInfo().restoringBeam(chan, stokes);
+    casacore::Bool x_is_longitude = _coord_sys.isDirectionAbscissaLongitude();
     casacore::Stokes::StokesTypes stokes_type = casacore::Stokes::type(stokes_str);
     casacore::Double fac_to_Jy;
     casa::ComponentType::Shape model_type = casa::ComponentType::Shape::GAUSSIAN;
@@ -49,7 +46,7 @@ bool Deconvolver::DoDeconvolution(
 
     try {
         sky_comp = casa::SkyComponentFactory::encodeSkyComponent(
-            *log, fac_to_Jy, coord_sys, brightness_unit, model_type, gauss_param, stokes_type, x_is_longitude, beam);
+            *log, fac_to_Jy, _coord_sys, _brightness_unit, model_type, gauss_param, stokes_type, x_is_longitude, _beam);
     } catch (const casacore::AipsError& x) {
         std::string solution_str = "[";
         for (int i = 0; i < gauss_param.size(); ++i) {
@@ -80,7 +77,7 @@ bool Deconvolver::DoDeconvolution(
 
     // Get deconvolved gaussian
     try {
-        is_point_source = casa::GaussianDeconvolver::deconvolve(best_decon_sol, best_sol, beam);
+        is_point_source = casa::GaussianDeconvolver::deconvolve(best_decon_sol, best_sol, _beam);
         fit_success = true;
     } catch (const casacore::AipsError& x) {
         fit_success = false;
@@ -88,7 +85,7 @@ bool Deconvolver::DoDeconvolution(
     }
 
     // Calculate errors for deconvolved gaussian from original fit results
-    double base_fac = casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 0.5, 2.5);
+    double base_fac = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 0.5, 2.5);
     double ori_major_val = ori_major.getValue("arcsec");
     double ori_minor_val = ori_minor.getValue("arcsec");
     casacore::Quantity err_pa =
@@ -99,8 +96,8 @@ bool Deconvolver::DoDeconvolution(
                   "rad");
     err_pa.convert(ori_pa);
 
-    casacore::Quantity err_major = casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 2.5, 0.5) * ori_major;
-    casacore::Quantity err_minor = casacore::C::sqrt2 / CorrelatedOverallSNR(chan, stokes, ori_major, ori_minor, 0.5, 2.5) * ori_minor;
+    casacore::Quantity err_major = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 2.5, 0.5) * ori_major;
+    casacore::Quantity err_minor = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 0.5, 2.5) * ori_minor;
     casacore::GaussianBeam decon_beam;
 
     // Set deconvolved results
@@ -131,7 +128,7 @@ bool Deconvolver::DoDeconvolution(
                             casacore::Bool is_point;
 
                             try {
-                                is_point = casa::GaussianDeconvolver::deconvolve(decon_beam, source_in, beam);
+                                is_point = casa::GaussianDeconvolver::deconvolve(decon_beam, source_in, _beam);
                             } catch (const casacore::AipsError& x) {
                                 is_point = true;
                             }
@@ -163,8 +160,8 @@ bool Deconvolver::DoDeconvolution(
     return success;
 }
 
-double Deconvolver::CorrelatedOverallSNR(int chan, int stokes, casacore::Quantity major, casacore::Quantity minor, double a, double b) {
-    casacore::Quantity noise_FWHM = GetNoiseFWHM(chan, stokes);
+double Deconvolver::CorrelatedOverallSNR(casacore::Quantity major, casacore::Quantity minor, double a, double b) {
+    casacore::Quantity noise_FWHM = GetNoiseFWHM();
     casacore::Quantity peak_intensities = casacore::Quantity(77.8518, "Jy/beam.km/s"); // Todo: this value is from the original fit result
     double signal_to_noise = abs(peak_intensities).getValue() / GetResidueRms();
     double fac = signal_to_noise / 2 * (sqrt(major * minor) / (noise_FWHM)).getValue("");
@@ -175,9 +172,8 @@ double Deconvolver::CorrelatedOverallSNR(int chan, int stokes, casacore::Quantit
     return fac * fac1 * fac2;
 }
 
-casacore::Quantity Deconvolver::GetNoiseFWHM(int chan, int stokes) {
-    casacore::GaussianBeam beam = _image->imageInfo().restoringBeam(chan, stokes);
-    return casacore::Quantity(sqrt(beam.getMajor() * beam.getMinor()).get("arcsec"));
+casacore::Quantity Deconvolver::GetNoiseFWHM() {
+    return casacore::Quantity(sqrt(_beam.getMajor() * _beam.getMinor()).get("arcsec"));
 }
 
 double Deconvolver::GetResidueRms() {
