@@ -14,7 +14,7 @@ namespace carta {
 Deconvolver::Deconvolver(
     casacore::CoordinateSystem coord_sys, casacore::Unit brightness_unit, casacore::GaussianBeam beam, int stokes, double residue_rms)
     : _coord_sys(coord_sys), _brightness_unit(brightness_unit), _beam(beam), _stokes(stokes), _residue_rms(residue_rms) {
-    _noise_FWHM = casacore::Quantity(sqrt(_beam.getMajor() * _beam.getMinor()).get("arcsec"));
+    _noise_FWHM = casacore::Quantity(casacore::sqrt(_beam.getMajor() * _beam.getMinor()).get("arcsec"));
 }
 
 bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result) {
@@ -116,8 +116,8 @@ bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, Deco
 
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
-                    my_major = max(major_range[i], minor_range[j]);
-                    my_minor = min(major_range[i], minor_range[j]);
+                    my_major = casacore::max(major_range[i], minor_range[j]);
+                    my_minor = casacore::min(major_range[i], minor_range[j]);
                     if (my_major.getValue() > 0 && my_minor.getValue() > 0) {
                         source_in.setMajorMinor(my_major, my_minor);
                         for (int k = 0; k < 2; k++) {
@@ -139,12 +139,12 @@ bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, Deco
                                 tmp_err_minor.convert(err_minor.getUnit());
 
                                 casacore::Quantity tmp_err_pa = abs(best_decon_sol.getPA(true) - decon_beam.getPA(true));
-                                tmp_err_pa = min(tmp_err_pa, abs(tmp_err_pa - casacore::QC::hTurn()));
+                                tmp_err_pa = casacore::min(tmp_err_pa, abs(tmp_err_pa - casacore::QC::hTurn()));
                                 tmp_err_pa.convert(err_pa.getUnit());
 
-                                err_major = max(err_major, tmp_err_major);
-                                err_minor = max(err_minor, tmp_err_minor);
-                                err_pa = max(err_pa, tmp_err_pa);
+                                err_major = casacore::max(err_major, tmp_err_major);
+                                err_minor = casacore::max(err_minor, tmp_err_minor);
+                                err_pa = casacore::max(err_pa, tmp_err_pa);
                             }
                         }
                     }
@@ -157,12 +157,12 @@ bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, Deco
 }
 
 double Deconvolver::CorrelatedOverallSNR(double peak_intensities, casacore::Quantity major, casacore::Quantity minor, double a, double b) {
-    double signal_to_noise = abs(peak_intensities) / _residue_rms;
-    double fac = signal_to_noise / 2 * (sqrt(major * minor) / (_noise_FWHM)).getValue("");
+    double signal_to_noise = std::abs(peak_intensities) / _residue_rms;
+    double fac = signal_to_noise / 2 * (casacore::sqrt(major * minor) / (_noise_FWHM)).getValue("");
     double p = (_noise_FWHM / major).getValue("");
-    double fac1 = pow(1 + p * p, a / 2);
+    double fac1 = std::pow(1 + p * p, a / 2);
     double q = (_noise_FWHM / minor).getValue("");
-    double fac2 = pow(1 + q * q, b / 2);
+    double fac2 = std::pow(1 + q * q, b / 2);
     return fac * fac1 * fac2;
 }
 
