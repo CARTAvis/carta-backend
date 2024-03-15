@@ -69,11 +69,10 @@ bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std:
     casacore::Quantity ori_major = ori_gauss_shape->majorAxis();
     casacore::Quantity ori_minor = ori_gauss_shape->minorAxis();
     casacore::Quantity ori_pa = ori_gauss_shape->positionAngle();
-
-    casacore::Bool fit_success = false;
+    casacore::Bool fit_success(false);
     casacore::GaussianBeam best_sol(ori_major, ori_minor, ori_pa);
     casacore::GaussianBeam best_decon_sol;
-    casacore::Bool is_point_source = true;
+    casacore::Bool is_point_source(true);
 
     // Get deconvolved gaussian
     try {
@@ -96,12 +95,10 @@ bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std:
                   "rad");
     err_pa.convert(ori_pa);
 
-    casacore::Quantity err_major = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 2.5, 0.5) * ori_major;
-    casacore::Quantity err_minor = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 0.5, 2.5) * ori_minor;
-    casacore::GaussianBeam decon_beam;
-
     // Set deconvolved results
     out_gauss.reset(static_cast<casa::GaussianShape*>(ori_gauss_shape->clone()));
+    casacore::Quantity err_major = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 2.5, 0.5) * ori_major;
+    casacore::Quantity err_minor = casacore::C::sqrt2 / CorrelatedOverallSNR(ori_major, ori_minor, 0.5, 2.5) * ori_minor;
 
     if (fit_success) {
         if (!is_point_source) {
@@ -111,17 +108,17 @@ bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std:
             minor_range[1] = ori_minor + err_minor;
             casacore::Vector<casacore::Quantity> pa_range(2, ori_pa - err_pa);
             pa_range[1] = ori_pa + err_pa;
-
             casacore::GaussianBeam source_in;
             casacore::Quantity my_major;
             casacore::Quantity my_minor;
+            casacore::GaussianBeam decon_beam;
+
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
                     my_major = max(major_range[i], minor_range[j]);
                     my_minor = min(major_range[i], minor_range[j]);
                     if (my_major.getValue() > 0 && my_minor.getValue() > 0) {
                         source_in.setMajorMinor(my_major, my_minor);
-
                         for (int k = 0; k < 2; k++) {
                             source_in.setPA(pa_range[k]);
                             decon_beam = casacore::GaussianBeam();
