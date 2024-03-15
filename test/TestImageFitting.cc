@@ -348,10 +348,14 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
     std::string file_path = FitsImagePath("spw25_mom0.fits");
     casacore::ImageUtilities::openImage(image, file_path);
     casa::SPIIF input_image(image);
+
+    casacore::CoordinateSystem coord_sys = input_image->coordinates();
+    casacore::Unit brightness_unit = input_image->units();
     int chan(0);
     int stokes(0);
-    carta::Deconvolver deconvolver(
-        input_image->coordinates(), input_image->units(), input_image->imageInfo().restoringBeam(chan, stokes), stokes);
+    casacore::GaussianBeam beam = input_image->imageInfo().restoringBeam(chan, stokes);
+    double residue_rms(1.43619);
+    carta::Deconvolver deconvolver(coord_sys, brightness_unit, beam, stokes, residue_rms);
 
     CARTA::GaussianComponent in_gauss;
     in_gauss.set_amp(77.8518);                 // kJy.m.s-1/beam
@@ -361,18 +365,18 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
     in_gauss.mutable_fwhm()->set_y(9.14887);   // in pixel coordinate
     in_gauss.set_pa(2.62175);                  // 2.62175 (rad) = 150.21 (degree) => 150.21 - 90 = 60.21 (degree)
 
-    std::shared_ptr<casa::GaussianShape> out_gauss;
-    bool success = deconvolver.DoDeconvolution(in_gauss, out_gauss);
+    DeconvolutionResult result;
+    bool success = deconvolver.DoDeconvolution(in_gauss, result);
     EXPECT_TRUE(success);
 
     if (success) {
-        std::string major = fmt::format("{:.3f}", out_gauss->majorAxis().getValue());
-        std::string minor = fmt::format("{:.3f}", out_gauss->minorAxis().getValue());
-        std::string pa = fmt::format("{:.0f}", out_gauss->positionAngle().getValue());
+        std::string major = fmt::format("{:.3f}", result.major.getValue());
+        std::string minor = fmt::format("{:.3f}", result.minor.getValue());
+        std::string pa = fmt::format("{:.0f}", result.pa.getValue());
 
-        std::string err_major = fmt::format("{:.3f}", out_gauss->majorAxisError().getValue());
-        std::string err_minor = fmt::format("{:.3f}", out_gauss->minorAxisError().getValue());
-        std::string err_pa = fmt::format("{:.0f}", out_gauss->positionAngleError().getValue());
+        std::string err_major = fmt::format("{:.3f}", result.major_err.getValue());
+        std::string err_minor = fmt::format("{:.3f}", result.minor_err.getValue());
+        std::string err_pa = fmt::format("{:.0f}", result.pa_err.getValue());
 
         EXPECT_EQ(major, "1.273");
         EXPECT_EQ(minor, "1.167");
@@ -382,13 +386,13 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
         EXPECT_EQ(err_minor, "0.071");
         EXPECT_EQ(err_pa, "31");
 
-        std::string unit_major = out_gauss->majorAxis().getUnit();
-        std::string unit_minor = out_gauss->minorAxis().getUnit();
-        std::string unit_pa = out_gauss->positionAngle().getUnit();
+        std::string unit_major = result.major.getUnit();
+        std::string unit_minor = result.minor.getUnit();
+        std::string unit_pa = result.pa.getUnit();
 
-        std::string unit_err_major = out_gauss->majorAxisError().getUnit();
-        std::string unit_err_minor = out_gauss->minorAxisError().getUnit();
-        std::string unit_err_pa = out_gauss->positionAngleError().getUnit();
+        std::string unit_err_major = result.major_err.getUnit();
+        std::string unit_err_minor = result.minor_err.getUnit();
+        std::string unit_err_pa = result.pa_err.getUnit();
 
         EXPECT_EQ(unit_major, "arcsec");
         EXPECT_EQ(unit_minor, "arcsec");
@@ -398,8 +402,8 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
         EXPECT_EQ(unit_err_minor, "arcsec");
         EXPECT_EQ(unit_err_pa, "deg");
 
-        std::cout << " --- major axis FWHM = " << out_gauss->majorAxis() << " +/- " << out_gauss->majorAxisError() << "\n";
-        std::cout << " --- minor axis FWHM = " << out_gauss->minorAxis() << " +/- " << out_gauss->minorAxisError() << "\n";
-        std::cout << " --- position angle = " << out_gauss->positionAngle() << " +/- " << out_gauss->positionAngleError() << "\n";
+        std::cout << " --- major axis FWHM = " << result.major << " +/- " << result.major_err << "\n";
+        std::cout << " --- minor axis FWHM = " << result.minor << " +/- " << result.minor_err << "\n";
+        std::cout << " --- position angle = " << result.pa << " +/- " << result.pa_err << "\n";
     }
 }

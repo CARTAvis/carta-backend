@@ -17,25 +17,34 @@
 
 namespace carta {
 
+struct DeconvolutionResult {
+    casacore::Quantity major;
+    casacore::Quantity minor;
+    casacore::Quantity pa;
+    casacore::Quantity major_err;
+    casacore::Quantity minor_err;
+    casacore::Quantity pa_err;
+};
+
 class Deconvolver {
 public:
     Deconvolver() = delete;
+    Deconvolver(
+        casacore::CoordinateSystem coord_sys, casacore::Unit brightness_unit, casacore::GaussianBeam beam, int stokes, double residue_rms);
 
-    Deconvolver(casacore::CoordinateSystem coord_sys, casacore::Unit brightness_unit, casacore::GaussianBeam beam, int stokes);
+    ~Deconvolver() = default;
 
-    ~Deconvolver(){};
-
-    bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, std::shared_ptr<casa::GaussianShape>& out_gauss);
+    bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result);
 
 private:
-    double CorrelatedOverallSNR(casacore::Quantity major, casacore::Quantity minor, double a, double b);
-    casacore::Quantity GetNoiseFWHM();
-    double GetResidueRms();
+    double CorrelatedOverallSNR(double peak_intensities, casacore::Quantity major, casacore::Quantity minor, double a, double b);
 
     casacore::CoordinateSystem _coord_sys;
     casacore::Unit _brightness_unit;
     casacore::GaussianBeam _beam;
     int _stokes;
+    double _residue_rms;
+    casacore::Quantity _noise_FWHM;
 };
 
 } // namespace carta
