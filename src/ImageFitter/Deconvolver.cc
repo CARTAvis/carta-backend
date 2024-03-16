@@ -6,18 +6,18 @@
 
 #include "Deconvolver.h"
 
-#include <casacore/casa/Quanta.h>
-
 #include <casacode/components/ComponentModels/GaussianDeconvolver.h>
 #include <casacode/components/ComponentModels/SkyComponentFactory.h>
 
 namespace carta {
 
 Deconvolver::Deconvolver(
-    casacore::CoordinateSystem coord_sys, casacore::Unit brightness_unit, casacore::ImageInfo image_info, double residue_rms)
-    : _coord_sys(coord_sys), _brightness_unit(brightness_unit), _image_info(image_info), _residue_rms(residue_rms) {}
+    casacore::CoordinateSystem coord_sys, casacore::Unit brightness_unit, casacore::GaussianBeam beam, int stokes, double residue_rms)
+    : _coord_sys(coord_sys), _brightness_unit(brightness_unit), _beam(beam), _stokes(stokes), _residue_rms(residue_rms) {
+    _noise_FWHM = casacore::Quantity(casacore::sqrt(_beam.getMajor() * _beam.getMinor()).get("arcsec"));
+}
 
-bool Deconvolver::DoDeconvolution(int chan, int stokes, const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result) {
+bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result) {
     bool success(false);
     casacore::Vector<casacore::Double> gauss_param(6, 0);
     gauss_param[0] = in_gauss.amp();
@@ -34,23 +34,22 @@ bool Deconvolver::DoDeconvolution(int chan, int stokes, const CARTA::GaussianCom
         for (auto c : iquv) {
             casacore::String tmp_stokes_str = casacore::String(c);
             auto tmp_stokes = _coord_sys.stokesPixelNumber(tmp_stokes_str);
-            if (tmp_stokes == stokes) {
+            if (tmp_stokes == _stokes) {
                 stokes_str = tmp_stokes_str;
             }
         }
     }
 
-    casa::SkyComponent sky_comp;
     casacore::Bool x_is_longitude = _coord_sys.isDirectionAbscissaLongitude();
     casacore::Stokes::StokesTypes stokes_type = casacore::Stokes::type(stokes_str);
     casacore::Double fac_to_Jy;
     casa::ComponentType::Shape model_type = casa::ComponentType::Shape::GAUSSIAN;
     std::shared_ptr<casacore::LogIO> log = std::make_shared<casacore::LogIO>(casacore::LogIO());
-    casacore::GaussianBeam beam = _image_info.restoringBeam(chan, stokes);
+    casa::SkyComponent sky_comp;
 
     try {
         sky_comp = casa::SkyComponentFactory::encodeSkyComponent(
-            *log, fac_to_Jy, _coord_sys, _brightness_unit, model_type, gauss_param, stokes_type, x_is_longitude, beam);
+            *log, fac_to_Jy, _coord_sys, _brightness_unit, model_type, gauss_param, stokes_type, x_is_longitude, _beam);
     } catch (const casacore::AipsError& x) {
         std::string solution_str = "[";
         for (int i = 0; i < gauss_param.size(); ++i) {
@@ -79,16 +78,15 @@ bool Deconvolver::DoDeconvolution(int chan, int stokes, const CARTA::GaussianCom
 
     // Get deconvolved gaussian
     try {
-        is_point_source = casa::GaussianDeconvolver::deconvolve(best_decon_sol, best_sol, beam);
+        is_point_source = casa::GaussianDeconvolver::deconvolve(best_decon_sol, best_sol, _beam);
         success = true;
     } catch (const casacore::AipsError& x) {
         is_point_source = true;
     }
 
     // Calculate errors for deconvolved gaussian from original fit results
-    casacore::Quantity noise_FWHM = casacore::Quantity(casacore::sqrt(beam.getMajor() * beam.getMinor()).get("arcsec"));
     double peak_intensities = in_gauss.amp();
-    double base_fac = casacore::C::sqrt2 / CorrelatedOverallSNR(noise_FWHM, peak_intensities, ori_major, ori_minor, 0.5, 2.5);
+    double base_fac = casacore::C::sqrt2 / CorrelatedOverallSNR(peak_intensities, ori_major, ori_minor, 0.5, 2.5);
     double ori_major_val = ori_major.getValue("arcsec");
     double ori_minor_val = ori_minor.getValue("arcsec");
     casacore::Quantity err_pa =
@@ -100,10 +98,8 @@ bool Deconvolver::DoDeconvolution(int chan, int stokes, const CARTA::GaussianCom
     err_pa.convert(ori_pa);
 
     // Set deconvolved results
-    casacore::Quantity err_major =
-        casacore::C::sqrt2 / CorrelatedOverallSNR(noise_FWHM, peak_intensities, ori_major, ori_minor, 2.5, 0.5) * ori_major;
-    casacore::Quantity err_minor =
-        casacore::C::sqrt2 / CorrelatedOverallSNR(noise_FWHM, peak_intensities, ori_major, ori_minor, 0.5, 2.5) * ori_minor;
+    casacore::Quantity err_major = casacore::C::sqrt2 / CorrelatedOverallSNR(peak_intensities, ori_major, ori_minor, 2.5, 0.5) * ori_major;
+    casacore::Quantity err_minor = casacore::C::sqrt2 / CorrelatedOverallSNR(peak_intensities, ori_major, ori_minor, 0.5, 2.5) * ori_minor;
 
     if (success) {
         if (!is_point_source) {
@@ -130,7 +126,7 @@ bool Deconvolver::DoDeconvolution(int chan, int stokes, const CARTA::GaussianCom
                             casacore::Bool is_point;
 
                             try {
-                                is_point = casa::GaussianDeconvolver::deconvolve(decon_beam, source_in, beam);
+                                is_point = casa::GaussianDeconvolver::deconvolve(decon_beam, source_in, _beam);
                             } catch (const casacore::AipsError& x) {
                                 is_point = true;
                             }
@@ -160,13 +156,12 @@ bool Deconvolver::DoDeconvolution(int chan, int stokes, const CARTA::GaussianCom
     return success;
 }
 
-double Deconvolver::CorrelatedOverallSNR(
-    casacore::Quantity noise_FWHM, double peak_intensities, casacore::Quantity major, casacore::Quantity minor, double a, double b) {
+double Deconvolver::CorrelatedOverallSNR(double peak_intensities, casacore::Quantity major, casacore::Quantity minor, double a, double b) {
     double signal_to_noise = std::abs(peak_intensities) / _residue_rms;
-    double fac = signal_to_noise / 2 * (casacore::sqrt(major * minor) / (noise_FWHM)).getValue("");
-    double p = (noise_FWHM / major).getValue("");
+    double fac = signal_to_noise / 2 * (casacore::sqrt(major * minor) / (_noise_FWHM)).getValue("");
+    double p = (_noise_FWHM / major).getValue("");
     double fac1 = std::pow(1 + p * p, a / 2);
-    double q = (noise_FWHM / minor).getValue("");
+    double q = (_noise_FWHM / minor).getValue("");
     double fac2 = std::pow(1 + q * q, b / 2);
     return fac * fac1 * fac2;
 }
