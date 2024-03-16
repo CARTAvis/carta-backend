@@ -2477,7 +2477,8 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         // iprofile not in order so progress is uneven.
         size_t completed_profiles(0);
 
-//#pragma omp parallel for private(iprofile) shared(progress, t_start, completed_profiles)
+        // Return this to column 0 when uncomment (moved for format check):
+        // #pragma omp parallel for private(iprofile) shared(progress, t_start, completed_profiles)
         for (iprofile = 0; iprofile < num_profiles; ++iprofile) {
             if (cancelled) {
                 continue;
