@@ -332,17 +332,6 @@ TEST_F(ImageFittingTest, RunImageFitter) {
     }
 }
 
-TEST_F(ImageFittingTest, RunImageFitter2) {
-    casacore::ImageInterface<casacore::Float>* image;
-    std::string file_path = FitsImagePath("spw25_mom0.fits");
-    casacore::ImageUtilities::openImage(image, file_path);
-    casa::SPCIIF input_image(image);
-    carta::ImageFitter2<casacore::Float> image_fitter2(input_image, "", 0, "", "", "", "", "", "");
-    image_fitter2.setModel("");
-    image_fitter2.setResidual("");
-    image_fitter2.fit();
-}
-
 TEST_F(ImageFittingTest, TestDeconvolver) {
     casacore::ImageInterface<casacore::Float>* image;
     std::string file_path = FitsImagePath("spw25_mom0.fits");

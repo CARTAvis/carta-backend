@@ -25,7 +25,6 @@
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/Deconvolver.h"
 #include "ImageFitter/ImageFitter.h"
-#include "ImageFitter/ImageFitter2.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"

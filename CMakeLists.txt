@@ -220,7 +220,6 @@ set(SOURCE_FILES
         src/ImageData/StokesFilesConnector.cc
         src/ImageFitter/Deconvolver.cc
         src/ImageFitter/ImageFitter.cc
-        src/ImageFitter/ImageFitter2.cc
         src/ImageGenerators/MomentGenerator.cc
         src/ImageGenerators/PvGenerator.cc
         src/ImageGenerators/PvPreviewCube.cc
