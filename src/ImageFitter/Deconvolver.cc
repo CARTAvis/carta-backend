@@ -19,7 +19,7 @@ Deconvolver::Deconvolver(
 
 std::string Deconvolver::GetDeconvolutionLog(const std::vector<CARTA::GaussianComponent>& in_gauss_vec) {
     std::ostringstream log;
-    log << "\n--- Deconvolved from beam ---\n";
+    log << "\n------------- Deconvolved from beam -------------\n";
     for (int i = 0; i < in_gauss_vec.size(); ++i) {
         const CARTA::GaussianComponent& in_gauss = in_gauss_vec[i];
         DeconvolutionResult result;
@@ -37,20 +37,25 @@ std::string Deconvolver::GetDeconvolutionLog(const std::vector<CARTA::GaussianCo
             std::string unit_minor = result.minor.getUnit();
             std::string unit_pa = result.pa.getUnit();
 
-            casacore::Vector<casacore::Double> pixel_params;
-            bool pixel_params_available = WorldWidthToPixel(result.major, result.minor, result.pa, pixel_params);
+            DeconvolutionResult pixel_coords;
+            bool pixel_params_available = GetWorldWidthToPixel(result, pixel_coords);
 
             log << fmt::format("FWHM Major Axis = {} +/- {} ({})\n", major, err_major, unit_major);
             if (pixel_params_available) {
-                log << fmt::format("                = {:.6f} +/- {} (pix)\n", pixel_params(0), 0);
+                auto major_pixel = pixel_coords.major.getValue();
+                auto major_err_pixel = pixel_coords.major_err.getValue();
+                log << fmt::format("                = {:.6f} +/- {:.6f} (pix)\n", major_pixel, major_err_pixel);
             }
             log << fmt::format("FWHM Minor Axis = {} +/- {} ({})\n", minor, err_minor, unit_minor);
             if (pixel_params_available) {
-                log << fmt::format("                = {:.6f} +/- {} (pix)\n", pixel_params(1), 0);
+                auto minor_pixel = pixel_coords.minor.getValue();
+                auto minor_err_pixel = pixel_coords.minor_err.getValue();
+                log << fmt::format("                = {:.6f} +/- {:.6f} (pix)\n", minor_pixel, minor_err_pixel);
             }
             log << fmt::format("P.A.            = {} +/- {} ({})\n", pa, err_pa, unit_pa);
         }
     }
+    log << "---------------------- End ----------------------\n";
     return log.str();
 }
 
@@ -206,6 +211,29 @@ double Deconvolver::CorrelatedOverallSNR(double peak_intensities, casacore::Quan
     return fac * fac1 * fac2;
 }
 
+bool Deconvolver::GetWorldWidthToPixel(const DeconvolutionResult& world_coords, DeconvolutionResult& pixel_coords) {
+    casacore::Vector<casacore::Double> pixels(3, 0);
+    casacore::Vector<casacore::Double> pixels_err1(3, 0);
+    casacore::Vector<casacore::Double> pixels_err2(3, 0);
+    casacore::Quantity major = world_coords.major;
+    casacore::Quantity minor = world_coords.minor;
+    casacore::Quantity pa = world_coords.pa;
+    casacore::Quantity major_err = world_coords.major_err;
+    casacore::Quantity minor_err = world_coords.minor_err;
+    casacore::Quantity pa_err = world_coords.pa_err;
+    bool pixels_available = WorldWidthToPixel(major, minor, pa, pixels);
+    bool pixels_err1_available = WorldWidthToPixel(major + major_err, minor + minor_err, pa, pixels_err1);
+    bool pixels_err2_available = WorldWidthToPixel(major - major_err, minor - minor_err, pa, pixels_err2);
+
+    casacore::Vector<casacore::Double> pixels_err(3, 0);
+    for (int i = 0; i < pixels_err.size(); ++i) {
+        pixels_err(i) = std::abs(pixels_err1(i) - pixels_err2(i)) / 2;
+    }
+    pixel_coords = {pixels(0), pixels(1), pixels(2), pixels_err(0), pixels_err(1), pixels_err(2)};
+
+    return pixels_available && pixels_err1_available && pixels_err2_available;
+}
+
 bool Deconvolver::WorldWidthToPixel(
     casacore::Quantity major, casacore::Quantity minor, casacore::Quantity pa, casacore::Vector<casacore::Double>& pixel_params) {
     casacore::Vector<casacore::Quantity> world_params(5);
@@ -222,7 +250,7 @@ bool Deconvolver::WorldWidthToPixel(
     try {
         casa::SkyComponentFactory::worldWidthsToPixel(pixel_params, world_params, _coord_sys, pixelAxes, do_ref);
     } catch (const casacore::AipsError& x) {
-        spdlog::error("Fail to convert 2D Gaussian world width to pixel {}", x.getMesg());
+        spdlog::error("Fail to convert 2D Gaussian world width to pixel: {}", x.getMesg());
         return false;
     }
     return true;

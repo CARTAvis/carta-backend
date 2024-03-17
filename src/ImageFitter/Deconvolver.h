@@ -36,6 +36,7 @@ public:
 
     std::string GetDeconvolutionLog(const std::vector<CARTA::GaussianComponent>& in_gauss_vec);
     bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result);
+    bool GetWorldWidthToPixel(const DeconvolutionResult& world_coords, DeconvolutionResult& pixel_coords);
     bool WorldWidthToPixel(
         casacore::Quantity major, casacore::Quantity minor, casacore::Quantity pa, casacore::Vector<casacore::Double>& pixel_params);
 
