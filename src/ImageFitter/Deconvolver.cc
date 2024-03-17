@@ -17,6 +17,43 @@ Deconvolver::Deconvolver(
     _noise_FWHM = casacore::Quantity(casacore::sqrt(_beam.getMajor() * _beam.getMinor()).get("arcsec"));
 }
 
+std::string Deconvolver::GetDeconvolutionLog(const std::vector<CARTA::GaussianComponent>& in_gauss_vec) {
+    std::ostringstream log;
+    log << "\n--- Deconvolved from beam ---\n";
+    for (int i = 0; i < in_gauss_vec.size(); ++i) {
+        const CARTA::GaussianComponent& in_gauss = in_gauss_vec[i];
+        DeconvolutionResult result;
+        if (DoDeconvolution(in_gauss, result)) {
+            log << fmt::format("Component #{}:\n", i + 1);
+            std::string major = fmt::format("{:.6f}", result.major.getValue());
+            std::string minor = fmt::format("{:.6f}", result.minor.getValue());
+            std::string pa = fmt::format("{:.6f}", result.pa.getValue());
+
+            std::string err_major = fmt::format("{:.6f}", result.major_err.getValue());
+            std::string err_minor = fmt::format("{:.6f}", result.minor_err.getValue());
+            std::string err_pa = fmt::format("{:.6f}", result.pa_err.getValue());
+
+            std::string unit_major = result.major.getUnit();
+            std::string unit_minor = result.minor.getUnit();
+            std::string unit_pa = result.pa.getUnit();
+
+            casacore::Vector<casacore::Double> pixel_params;
+            bool pixel_params_available = WorldWidthToPixel(result.major, result.minor, result.pa, pixel_params);
+
+            log << fmt::format("FWHM Major Axis = {} +/- {} ({})\n", major, err_major, unit_major);
+            if (pixel_params_available) {
+                log << fmt::format("                = {:.6f} +/- {} (pix)\n", pixel_params(0), 0);
+            }
+            log << fmt::format("FWHM Minor Axis = {} +/- {} ({})\n", minor, err_minor, unit_minor);
+            if (pixel_params_available) {
+                log << fmt::format("                = {:.6f} +/- {} (pix)\n", pixel_params(1), 0);
+            }
+            log << fmt::format("P.A.            = {} +/- {} ({})\n", pa, err_pa, unit_pa);
+        }
+    }
+    return log.str();
+}
+
 bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result) {
     bool success(false);
     casacore::Vector<casacore::Double> gauss_param(6, 0);
@@ -25,7 +62,10 @@ bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, Deco
     gauss_param[2] = in_gauss.center().y();
     gauss_param[3] = in_gauss.fwhm().x();
     gauss_param[4] = in_gauss.fwhm().y();
-    gauss_param[5] = in_gauss.pa();
+    gauss_param[5] = in_gauss.pa(); // in the unit of *degree*
+
+    // Rotate 90 degrees and convert the unit of position angle to *rad*
+    gauss_param[5] = (gauss_param[5] + 90.0) * casacore::C::pi / 180.0;
 
     // Get stokes string if any, the default stokes string is "I"
     casacore::String stokes_str("I");
@@ -164,6 +204,28 @@ double Deconvolver::CorrelatedOverallSNR(double peak_intensities, casacore::Quan
     double q = (_noise_FWHM / minor).getValue("");
     double fac2 = std::pow(1 + q * q, b / 2);
     return fac * fac1 * fac2;
+}
+
+bool Deconvolver::WorldWidthToPixel(
+    casacore::Quantity major, casacore::Quantity minor, casacore::Quantity pa, casacore::Vector<casacore::Double>& pixel_params) {
+    casacore::Vector<casacore::Quantity> world_params(5);
+    world_params(0).setValue(0);
+    world_params(0).setUnit(casacore::String(""));
+    world_params(1).setValue(0);
+    world_params(1).setUnit(casacore::String(""));
+    world_params(2) = major;
+    world_params(3) = minor;
+    world_params(4) = pa;
+
+    casacore::IPosition pixelAxes = {0, 1};
+    casacore::Bool do_ref(true);
+    try {
+        casa::SkyComponentFactory::worldWidthsToPixel(pixel_params, world_params, _coord_sys, pixelAxes, do_ref);
+    } catch (const casacore::AipsError& x) {
+        spdlog::error("Fail to convert 2D Gaussian world width to pixel {}", x.getMesg());
+        return false;
+    }
+    return true;
 }
 
 } // namespace carta

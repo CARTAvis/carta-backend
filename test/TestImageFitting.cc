@@ -359,11 +359,11 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
 
     CARTA::GaussianComponent in_gauss;
     in_gauss.set_amp(77.8518);                 // kJy.m.s-1/beam
-    in_gauss.mutable_center()->set_x(21.3636); // in pixel coordinate
-    in_gauss.mutable_center()->set_y(24.199);  // in pixel coordinate
-    in_gauss.mutable_fwhm()->set_x(10.9295);   // in pixel coordinate
-    in_gauss.mutable_fwhm()->set_y(9.14887);   // in pixel coordinate
-    in_gauss.set_pa(2.62175);                  // 2.62175 (rad) = 150.21 (degree) => 150.21 - 90 = 60.21 (degree)
+    in_gauss.mutable_center()->set_x(21.3636); // center x in pixel
+    in_gauss.mutable_center()->set_y(24.199);  // center y in pixel
+    in_gauss.mutable_fwhm()->set_x(10.9295);   // major in pixel
+    in_gauss.mutable_fwhm()->set_y(9.14887);   // minor in pixel
+    in_gauss.set_pa(60.21);                    // 2.62175 (rad) = 150.21 (degree) => 150.21 - 90 = 60.21 (degree)
 
     DeconvolutionResult result;
     bool success = deconvolver.DoDeconvolution(in_gauss, result);
@@ -405,5 +405,25 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
         std::cout << " --- major axis FWHM = " << result.major << " +/- " << result.major_err << "\n";
         std::cout << " --- minor axis FWHM = " << result.minor << " +/- " << result.minor_err << "\n";
         std::cout << " --- position angle = " << result.pa << " +/- " << result.pa_err << "\n";
+    }
+
+    // Input world coordinate for 2D Gaussian shape
+    casacore::Quantity major(1.749, "arcsec");
+    casacore::Quantity minor(1.464, "arcsec");
+    casacore::Quantity pa(60.21, "deg");
+
+    // Output pixel coordinate for 2D Gaussian shape
+    casacore::Vector<casacore::Double> pixels;
+    bool pixels_available = deconvolver.WorldWidthToPixel(major, minor, pa, pixels);
+    EXPECT_TRUE(pixels_available);
+
+    if (pixels_available) {
+        std::string major_str = fmt::format("{:.3f}", pixels(0));
+        std::string minor_str = fmt::format("{:.3f}", pixels(1));
+        std::string pa_str = fmt::format("{:.3f}", pixels(2));
+
+        EXPECT_EQ(major_str, "10.931"); // major in pixel (compared to original input: 10.9295 pixel)
+        EXPECT_EQ(minor_str, "9.150");  // minor in pixel (compared to original input: 9.14887 pixel)
+        EXPECT_EQ(pa_str, "2.622");     // pa in rad (compared to original input: 2.62175 rad)
     }
 }
