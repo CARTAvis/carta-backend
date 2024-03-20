@@ -380,13 +380,30 @@ bool RegionImportExport::ConvertRecordToRectangle(
     // Convert casacore Record to box Quantity control points.
     // Rectangles are exported to Record as LCPolygon with 4 points: blc, brc, trc, tlc.
     // The input Record for a rotbox must be the corners of an unrotated box (rotation in the region state)
-    casacore::Vector<casacore::Float> x = region_record.asArrayFloat("x");
-    casacore::Vector<casacore::Float> y = region_record.asArrayFloat("y");
+    casacore::Vector<casacore::Double> x, y;
+
+    if (region_record.dataType("x") == casacore::TpArrayFloat) {
+        casacore::Vector<casacore::Float> xf, yf;
+        xf = region_record.asArrayFloat("x");
+        yf = region_record.asArrayFloat("y");
+
+        // Convert to Double
+        auto xf_size(xf.size());
+        x.resize(xf_size);
+        y.resize(xf_size);
+        for (auto i = 0; i < xf_size; ++i) {
+            x(i) = xf(i);
+            y(i) = yf(i);
+        }
+    } else {
+        x = region_record.asArrayDouble("x");
+        y = region_record.asArrayDouble("y");
+    }
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
-        x -= (float)1.0;
-        y -= (float)1.0;
+        x -= 1.0;
+        y -= 1.0;
     }
 
     double cx, cy, width, height;
@@ -445,7 +462,7 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     // RegionState needed to check if bmaj/bmin swapped for LCEllipsoid
     casacore::Vector<casacore::Float> center = region_record.asArrayFloat("center");
     casacore::Vector<casacore::Float> radii = region_record.asArrayFloat("radii");
-    casacore::Float theta = region_record.asFloat("theta"); // radians
+    casacore::Double theta = region_record.asDouble("theta"); // radians
     rotation = casacore::Quantity(theta, "rad");
     rotation.convert("deg"); // CASA rotang, from x-axis
 

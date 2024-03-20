@@ -39,6 +39,7 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         TestBlockSmooth.cc
         TestContour.cc
+        TestCursorSpatialProfiles.cc
         TestExprImage.cc
         TestFileInfo.cc
         TestFileList.cc
@@ -48,14 +49,19 @@ set(TEST_SOURCES
         TestHdf5Image.cc
         TestHistogram.cc
         TestImageFitting.cc
-		TestLineSpatialProfiles.cc
         TestMain.cc
         TestMoment.cc
         TestNormalizedUnits.cc
         TestProgramSettings.cc
         TestPvGenerator.cc
+        TestRegion.cc
+        TestRegionImportExport.cc
+        TestRegionHistogram.cc
+        TestRegionMatched.cc
+        TestRegionSpatialProfiles.cc
+        TestRegionSpectralProfiles.cc
+        TestRegionStats.cc
         TestRestApi.cc
-        TestSpatialProfiles.cc
         TestTileEncoding.cc
         TestUtil.cc
         TestVoTable.cc)

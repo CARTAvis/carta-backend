@@ -35,7 +35,6 @@ public:
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys);
-    bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
     std::shared_ptr<Region> GetRegion(int region_id);
 
