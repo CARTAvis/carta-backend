@@ -1478,24 +1478,7 @@ void Region::RemoveHorizontalPolygonPoints(casacore::Vector<casacore::Double>& x
             // Line connecting points not ~horizontal - keep point
             keep_x.push_back(x[i]);
             keep_y.push_back(y[i]);
-            continue;
         }
-
-        // Line connecting points ~horizontal - keep point nearest integral pixel
-        int pixel_y = static_cast<int>(this_y);
-
-        if (!ValuesNear(this_y, float(pixel_y))) {
-            // Skip point not near pixel
-            continue;
-        }
-
-        if ((static_cast<int>(next_y) == pixel_y) && ((this_y - pixel_y) > (next_y - pixel_y))) {
-            // Skip point if next point nearer to pixel
-            continue;
-        }
-
-        keep_x.push_back(x[i]);
-        keep_y.push_back(y[i]);
     }
 
     if (keep_x.size() < npoints) {
