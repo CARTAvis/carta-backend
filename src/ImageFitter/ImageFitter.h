@@ -101,6 +101,8 @@ public:
         const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response);
     /** @brief Stop the ongoing fitting process. */
     void StopFitting();
+    /** @brief Get RMS of residual data from the fit. */
+    double GetResidualRms();
 
 private:
     /** @brief Fitting-related data. */

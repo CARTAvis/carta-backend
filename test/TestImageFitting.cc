@@ -29,7 +29,7 @@ public:
     FRIEND_TEST(ImageFittingTest, ThreeComponentFitting);
 };
 
-class ImageFittingTest : public ::testing::Test {
+class ImageFittingTest : public ::testing::Test, public FileFinder {
 public:
     void SetInitialValues(std::vector<float> gaussian_model) {
         _initial_values = {};
@@ -285,4 +285,134 @@ TEST_F(ImageFittingTest, insufficientData) {
     SetFixedParams(fixed_params);
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 2, 2}, 0);
     FitImageWithFov(gaussian_model, 0, "insufficient data points");
+}
+
+TEST_F(ImageFittingTest, RunImageFitter) {
+    std::string file_path = FitsImagePath("spw25_mom0.fits");
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
+
+    std::vector<float> gaussian_model = {1, 21.364, 24.199, 77, 5, 5, 60}; // gauss num, x, y, amp, fwhm-x, fwhm-y, pa
+    auto center = Message::DoublePoint(gaussian_model[1], gaussian_model[2]);
+    double amp = gaussian_model[3];
+    auto fwhm = Message::DoublePoint(gaussian_model[4], gaussian_model[5]);
+    double pa = gaussian_model[6];
+    std::vector<CARTA::GaussianComponent> initial_values;
+    initial_values.push_back(Message::GaussianComponent(center, amp, fwhm, pa));
+
+    std::vector<bool> fixed_params(7, false);
+
+    CARTA::FittingResponse fitting_response;
+    std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
+    auto progress_callback = [&](float progress) {};
+    bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), 0.0, "", initial_values,
+        fixed_params, 0.0, CARTA::FittingSolverType::Cholesky, true, true, fitting_response, progress_callback);
+
+    EXPECT_TRUE(success);
+    if (success) {
+        auto fit_results = fitting_response.result_values();
+        std::cout << "\nFit results: \n";
+        std::cout << "x = " << fit_results[0].center().x() << "\n";
+        std::cout << "y = " << fit_results[0].center().y() << "\n";
+        std::cout << "amp = " << fit_results[0].amp() << "\n";
+        std::cout << "fwhm-x = " << fit_results[0].fwhm().x() << "\n";
+        std::cout << "fwhm-y = " << fit_results[0].fwhm().y() << "\n";
+        std::cout << "pa = " << fit_results[0].pa() << "\n";
+
+        std::cout << "\nFit errors: \n";
+        auto fit_errors = fitting_response.result_errors();
+        std::cout << "x = " << fit_errors[0].center().x() << "\n";
+        std::cout << "y = " << fit_errors[0].center().y() << "\n";
+        std::cout << "amp = " << fit_errors[0].amp() << "\n";
+        std::cout << "fwhm-x = " << fit_errors[0].fwhm().x() << "\n";
+        std::cout << "fwhm-y = " << fit_errors[0].fwhm().y() << "\n";
+        std::cout << "pa = " << fit_errors[0].pa() << "\n";
+
+        std::cout << "\nRMS of residual data = " << image_fitter->GetResidualRms() << "\n";
+    }
+}
+
+TEST_F(ImageFittingTest, TestDeconvolver) {
+    casacore::ImageInterface<casacore::Float>* image;
+    std::string file_path = FitsImagePath("spw25_mom0.fits");
+    casacore::ImageUtilities::openImage(image, file_path);
+    casa::SPIIF input_image(image);
+
+    casacore::CoordinateSystem coord_sys = input_image->coordinates();
+    casacore::Unit brightness_unit = input_image->units();
+    int chan(0);
+    int stokes(0);
+    casacore::GaussianBeam beam = input_image->imageInfo().restoringBeam(chan, stokes);
+    double residue_rms(1.43619);
+    carta::Deconvolver deconvolver(coord_sys, brightness_unit, beam, stokes, residue_rms);
+
+    CARTA::GaussianComponent in_gauss;
+    in_gauss.set_amp(77.8518);                 // kJy.m.s-1/beam
+    in_gauss.mutable_center()->set_x(21.3636); // center x in pixel
+    in_gauss.mutable_center()->set_y(24.199);  // center y in pixel
+    in_gauss.mutable_fwhm()->set_x(10.9295);   // major in pixel
+    in_gauss.mutable_fwhm()->set_y(9.14887);   // minor in pixel
+    in_gauss.set_pa(60.21);                    // 2.62175 (rad) = 150.21 (degree) => 150.21 - 90 = 60.21 (degree)
+
+    DeconvolutionResult result;
+    bool success = deconvolver.DoDeconvolution(in_gauss, result);
+    EXPECT_TRUE(success);
+
+    if (success) {
+        std::string major = fmt::format("{:.3f}", result.major.getValue());
+        std::string minor = fmt::format("{:.3f}", result.minor.getValue());
+        std::string pa = fmt::format("{:.0f}", result.pa.getValue());
+
+        std::string err_major = fmt::format("{:.3f}", result.major_err.getValue());
+        std::string err_minor = fmt::format("{:.3f}", result.minor_err.getValue());
+        std::string err_pa = fmt::format("{:.0f}", result.pa_err.getValue());
+
+        EXPECT_EQ(major, "1.273");
+        EXPECT_EQ(minor, "1.167");
+        EXPECT_EQ(pa, "25");
+
+        EXPECT_EQ(err_major, "0.070");
+        EXPECT_EQ(err_minor, "0.071");
+        EXPECT_EQ(err_pa, "31");
+
+        std::string unit_major = result.major.getUnit();
+        std::string unit_minor = result.minor.getUnit();
+        std::string unit_pa = result.pa.getUnit();
+
+        std::string unit_err_major = result.major_err.getUnit();
+        std::string unit_err_minor = result.minor_err.getUnit();
+        std::string unit_err_pa = result.pa_err.getUnit();
+
+        EXPECT_EQ(unit_major, "arcsec");
+        EXPECT_EQ(unit_minor, "arcsec");
+        EXPECT_EQ(unit_pa, "deg");
+
+        EXPECT_EQ(unit_err_major, "arcsec");
+        EXPECT_EQ(unit_err_minor, "arcsec");
+        EXPECT_EQ(unit_err_pa, "deg");
+
+        std::cout << " --- major axis FWHM = " << result.major << " +/- " << result.major_err << "\n";
+        std::cout << " --- minor axis FWHM = " << result.minor << " +/- " << result.minor_err << "\n";
+        std::cout << " --- position angle = " << result.pa << " +/- " << result.pa_err << "\n";
+    }
+
+    // Input world coordinate for 2D Gaussian shape
+    casacore::Quantity major(1.749, "arcsec");
+    casacore::Quantity minor(1.464, "arcsec");
+    casacore::Quantity pa(60.21, "deg");
+
+    // Output pixel coordinate for 2D Gaussian shape
+    casacore::Vector<casacore::Double> pixels;
+    bool pixels_available = deconvolver.WorldWidthToPixel(major, minor, pa, pixels);
+    EXPECT_TRUE(pixels_available);
+
+    if (pixels_available) {
+        std::string major_str = fmt::format("{:.3f}", pixels(0));
+        std::string minor_str = fmt::format("{:.3f}", pixels(1));
+        std::string pa_str = fmt::format("{:.3f}", pixels(2));
+
+        EXPECT_EQ(major_str, "10.931"); // major in pixel (compared to original input: 10.9295 pixel)
+        EXPECT_EQ(minor_str, "9.150");  // minor in pixel (compared to original input: 9.14887 pixel)
+        EXPECT_EQ(pa_str, "2.622");     // pa in rad (compared to original input: 2.62175 rad)
+    }
 }

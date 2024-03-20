@@ -1817,6 +1817,16 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 
+        if (image->imageInfo().hasBeam()) {
+            carta::Deconvolver deconvolver(image->coordinates(), image->units(),
+                image->imageInfo().restoringBeam(CurrentZ(), CurrentStokes()), CurrentStokes(), _image_fitter->GetResidualRms());
+
+            const std::vector<CARTA::GaussianComponent>& fit_results = {
+                fitting_response.result_values().begin(), fitting_response.result_values().end()};
+            auto* fit_log = fitting_response.mutable_log();
+            fit_log->append(deconvolver.GetDeconvolutionLog(fit_results));
+        }
+
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
             int file_id(fitting_request.file_id());
             StokesRegion output_stokes_region;
