@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -254,26 +254,35 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetImageRegion(int file_id,
 
     if (!lc_region) {
         // Create converted LCRegion and cache it
-        if (!UseApproximatePolygon(output_csys)) {
+        bool cache_polygon(false);
+        bool use_polygon = UseApproximatePolygon(output_csys);
+        if (_region_state.IsRotbox()) {
+            // Rotbox is always converted from a polygon, either box corners only (use_polygon==false) or many points (use_polygon==true)
+            lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape, use_polygon);
+            cache_polygon = true;
+        } else if (use_polygon) { // distortion
+            // Approximate region as polygon points then convert the points.
+            spdlog::debug("Using polygon approximation to avoid distortion in matched region");
+            lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape, use_polygon);
+            cache_polygon = true;
+        } else { // no distortion
             // Do direct region conversion from reference WCRegion (no distortion detected)
             lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_source, report_error);
             if (lc_region) {
+                // Region conversion succeeded
                 spdlog::debug("Using direct region conversion for matched image");
+            } else {
+                // Region conversion failed (e.g. outside image) but can convert points to world
+                spdlog::debug("Using polygon approximation for failed conversion of matched region");
+                lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape, use_polygon);
+                cache_polygon = true;
             }
         }
 
-        if (!lc_region) {
-            // Approximate region as polygon points then convert the points.
-            lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
-
-            if (lc_region) {
-                spdlog::debug("Using polygon approximation for region in matched image");
-                if (stokes_source.IsOriginalImage()) {
-                    // Cache converted polygon, only for the original image (not computed stokes).
-                    std::lock_guard<std::mutex> guard(_region_mutex);
-                    _polygon_regions[file_id] = lc_region;
-                }
-            }
+        if (cache_polygon && lc_region && stokes_source.IsOriginalImage()) {
+            // Cache converted polygon, only for the original image (not computed stokes).
+            std::lock_guard<std::mutex> guard(_region_mutex);
+            _polygon_regions[file_id] = lc_region;
         }
     }
 
@@ -396,15 +405,16 @@ std::vector<CARTA::Point> RegionConverter::GetRectangleMidpoints() {
 }
 
 std::shared_ptr<casacore::LCRegion> RegionConverter::GetAppliedPolygonRegion(
-    int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape) {
-    // Approximate region as polygon pixel vertices, and convert to given csys
+    int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape, bool has_distortion) {
+    // Approximate region as polygon pixel vertices, and convert to given csys.
+    // If has distortion, use DEFAULT_VERTEX_COUNT vertices (else is rotbox and just use corners)
     std::shared_ptr<casacore::LCRegion> lc_region;
 
     bool is_point(_region_state.IsPoint());
     size_t nvertices(is_point ? 1 : DEFAULT_VERTEX_COUNT);
 
     // Set reference region as points along polygon segments
-    auto polygon_points = GetReferencePolygonPoints(nvertices);
+    auto polygon_points = GetReferencePolygonPoints(nvertices, has_distortion);
     if (polygon_points.empty()) {
         return lc_region;
     }
@@ -412,13 +422,13 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetAppliedPolygonRegion(
     // Convert polygon points to x and y pixel coords in matched image
     casacore::Vector<casacore::Double> x, y;
     if (polygon_points.size() == 1) {
-        // Point and ellipse have one vector for all points
+        // Point, ellipse, and rotbox with no distortion have one vector for all points
         if (!PointsToImagePixels(polygon_points[0], output_csys, x, y)) {
             spdlog::error("Error approximating region as polygon in matched image.");
             return lc_region;
         }
-        if (!is_point) {
-            // if ~horizontal then remove intermediate points to fix distortion
+        if (!is_point && has_distortion) {
+            // if ~horizontal then remove intermediate points to fix kinks
             RemoveHorizontalPolygonPoints(x, y);
         }
     } else {
@@ -430,14 +440,15 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetAppliedPolygonRegion(
                 return lc_region;
             }
 
-            // if ~horizontal then remove intermediate points to fix distortion
-            RemoveHorizontalPolygonPoints(segment_x, segment_y);
+            if (has_distortion) {
+                // if ~horizontal then remove intermediate points to fix "kinks" in mask
+                RemoveHorizontalPolygonPoints(segment_x, segment_y);
+            }
 
+            // Resize x and y to append selected segment points
             auto old_size = x.size();
             x.resize(old_size + segment_x.size(), true);
             y.resize(old_size + segment_y.size(), true);
-
-            // Append selected segment points
             for (auto i = 0; i < segment_x.size(); ++i) {
                 x[old_size + i] = segment_x[i];
                 y[old_size + i] = segment_y[i];
@@ -474,7 +485,7 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetAppliedPolygonRegion(
     return lc_region;
 }
 
-std::vector<std::vector<CARTA::Point>> RegionConverter::GetReferencePolygonPoints(int num_vertices) {
+std::vector<std::vector<CARTA::Point>> RegionConverter::GetReferencePolygonPoints(int num_vertices, bool has_distortion) {
     // Approximate reference region as polygon with input number of vertices.
     // Returns points for supported region types.
     std::vector<std::vector<CARTA::Point>> points;
@@ -485,7 +496,7 @@ std::vector<std::vector<CARTA::Point>> RegionConverter::GetReferencePolygonPoint
         }
         case CARTA::RECTANGLE:
         case CARTA::POLYGON: {
-            return GetApproximatePolygonPoints(num_vertices);
+            return GetApproximatePolygonPoints(num_vertices, has_distortion);
         }
         case CARTA::ELLIPSE: {
             points.push_back(GetApproximateEllipsePoints(num_vertices));
@@ -496,9 +507,9 @@ std::vector<std::vector<CARTA::Point>> RegionConverter::GetReferencePolygonPoint
     return points;
 }
 
-std::vector<std::vector<CARTA::Point>> RegionConverter::GetApproximatePolygonPoints(int num_vertices) {
-    // Approximate RECTANGLE or POLYGON region as polygon with num_vertices.
-    // Returns vector of points for each segment of polygon, or empty vector for other region types.
+std::vector<std::vector<CARTA::Point>> RegionConverter::GetApproximatePolygonPoints(int num_vertices, bool has_distortion) {
+    // Approximate RECTANGLE or POLYGON region as polygon with num_vertices if has distortion.  Else convert rotbox to polygon.
+    // Returns vector of points for each segment of polygon/rectangle, or empty vector for other region types.
     std::vector<std::vector<CARTA::Point>> polygon_points;
     std::vector<CARTA::Point> region_vertices;
     CARTA::RegionType region_type(_region_state.type);
@@ -522,36 +533,43 @@ std::vector<std::vector<CARTA::Point>> RegionConverter::GetApproximatePolygonPoi
     CARTA::Point first_point(region_vertices[0]);
     region_vertices.push_back(first_point);
 
-    double total_length = GetTotalSegmentLength(region_vertices);
-    double target_segment_length = total_length / num_vertices;
+    if (has_distortion) {
+        // Divide each polygon/rectangle segment into target number of segments with target length
+        double total_length = GetTotalSegmentLength(region_vertices);
+        double min_length = 0.1;
+        double target_segment_length = total_length / num_vertices;
+        target_segment_length = std::max(target_segment_length, min_length);
 
-    // Divide each polygon segment into target number of segments with target length
-    for (size_t i = 1; i < region_vertices.size(); ++i) {
-        // Handle segment from point[i-1] to point[i]
-        std::vector<CARTA::Point> segment_points;
+        for (size_t i = 1; i < region_vertices.size(); ++i) {
+            // Handle segment from point[i-1] to point[i]
+            std::vector<CARTA::Point> segment_points;
 
-        auto delta_x = region_vertices[i].x() - region_vertices[i - 1].x();
-        auto delta_y = region_vertices[i].y() - region_vertices[i - 1].y();
-        auto segment_length = sqrt((delta_x * delta_x) + (delta_y * delta_y));
-        auto dir_x = delta_x / segment_length;
-        auto dir_y = delta_y / segment_length;
-        auto target_nsegment = round(segment_length / target_segment_length);
-        auto target_length = segment_length / target_nsegment;
+            auto delta_x = region_vertices[i].x() - region_vertices[i - 1].x();
+            auto delta_y = region_vertices[i].y() - region_vertices[i - 1].y();
+            auto segment_length = sqrt((delta_x * delta_x) + (delta_y * delta_y));
+            auto dir_x = delta_x / segment_length;
+            auto dir_y = delta_y / segment_length;
+            auto target_nsegment = round(segment_length / target_segment_length);
+            auto target_length = segment_length / target_nsegment;
 
-        auto first_segment_point(region_vertices[i - 1]);
-        segment_points.push_back(first_segment_point);
+            auto first_segment_point(region_vertices[i - 1]);
+            segment_points.push_back(first_segment_point);
 
-        auto first_x(first_segment_point.x());
-        auto first_y(first_segment_point.y());
+            auto first_x(first_segment_point.x());
+            auto first_y(first_segment_point.y());
 
-        for (size_t j = 1; j < target_nsegment; ++j) {
-            auto length_from_first = j * target_length;
-            auto x_offset = dir_x * length_from_first;
-            auto y_offset = dir_y * length_from_first;
-            segment_points.push_back(Message::Point(first_x + x_offset, first_y + y_offset));
+            for (size_t j = 1; j < target_nsegment; ++j) {
+                auto length_from_first = j * target_length;
+                auto x_offset = dir_x * length_from_first;
+                auto y_offset = dir_y * length_from_first;
+                segment_points.push_back(Message::Point(first_x + x_offset, first_y + y_offset));
+            }
+
+            polygon_points.push_back(segment_points);
         }
-
-        polygon_points.push_back(segment_points);
+    } else {
+        // No need to add extra points, no distortion
+        polygon_points.push_back(region_vertices);
     }
 
     return polygon_points;
@@ -618,24 +636,7 @@ void RegionConverter::RemoveHorizontalPolygonPoints(casacore::Vector<casacore::D
             // Line connecting points not ~horizontal - keep point
             keep_x.push_back(x[i]);
             keep_y.push_back(y[i]);
-            continue;
         }
-
-        // Line connecting points ~horizontal - keep point nearest integral pixel
-        int pixel_y = static_cast<int>(this_y);
-
-        if (!ValuesNear(this_y, float(pixel_y))) {
-            // Skip point not near pixel
-            continue;
-        }
-
-        if ((static_cast<int>(next_y) == pixel_y) && ((this_y - pixel_y) > (next_y - pixel_y))) {
-            // Skip point if next point nearer to pixel
-            continue;
-        }
-
-        keep_x.push_back(x[i]);
-        keep_y.push_back(y[i]);
     }
 
     if (keep_x.size() < npoints) {
@@ -658,7 +659,7 @@ casacore::TableRecord RegionConverter::GetImageRegionRecord(
     // Return Record describing Region applied to output image in pixel coordinates
     casacore::TableRecord record;
 
-    // No LCRegion for lines. LCRegion for rectangles is a rotated polygon; Record should be unrotated box.
+    // No LCRegion for lines. LCRegion for rotbox is a polygon; Record should be for unrotated box with rotation field.
     if (!_region_state.IsLineType() && !_region_state.IsRotbox()) {
         // Get record from converted LCRegion, for enclosed regions only.
         // Check converted regions cache (but not polygon regions cache)
@@ -679,7 +680,7 @@ casacore::TableRecord RegionConverter::GetImageRegionRecord(
     }
 
     if (record.empty()) {
-        // LCRegion failed, is outside the image or a rotated rectangle.
+        // LCRegion failed: is outside the image or is a line or rotated rectangle.
         // Manually convert control points and put in Record.
         record = GetRegionPointsRecord(output_csys, output_shape);
     }

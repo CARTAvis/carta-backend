@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -54,9 +54,9 @@ private:
     bool UseApproximatePolygon(std::shared_ptr<casacore::CoordinateSystem> output_csys);
     std::vector<CARTA::Point> GetRectangleMidpoints();
     std::shared_ptr<casacore::LCRegion> GetAppliedPolygonRegion(
-        int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape);
-    std::vector<std::vector<CARTA::Point>> GetReferencePolygonPoints(int num_vertices);
-    std::vector<std::vector<CARTA::Point>> GetApproximatePolygonPoints(int num_vertices);
+        int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape, bool has_distortion);
+    std::vector<std::vector<CARTA::Point>> GetReferencePolygonPoints(int num_vertices, bool has_distortion);
+    std::vector<std::vector<CARTA::Point>> GetApproximatePolygonPoints(int num_vertices, bool has_distortion);
     std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
     double GetTotalSegmentLength(std::vector<CARTA::Point>& points);
     void RemoveHorizontalPolygonPoints(casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
