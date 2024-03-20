@@ -2010,10 +2010,34 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         cache_results[stat] = init_spectral;
     }
 
+    // Get 2D region start points
+    casacore::IPosition origin = lc_region->boundingBox().start();
+    casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1));
+
+    // Spectral profile for the point region
+    if (initial_region_state.type == CARTA::RegionType::POINT) {
+        PointXy point_xy(origin(0), origin(1));
+        std::vector<float> profile;
+        // Use cube image cache if it is available
+        if (_frames.at(file_id)->LoadCachedPointSpectralData(profile, stokes_index, point_xy)) {
+            auto stats_type = required_stats[0]; // Point region profile only has one statistical type
+            std::vector<double> vals(profile.begin(), profile.end());
+            results[stats_type] = vals;
+            partial_results_callback(results, 1.0); // progress = 1.0
+            memcpy(cache_results[stats_type].data(), vals.data(), vals.size() * sizeof(double));
+            _spectral_cache[cache_id] = SpectralCache(cache_results);
+            return true;
+        }
+    }
+
     // Calculate and cache profiles
     size_t start_z(z_range.from), count(0), end_z(0), profile_start(0);
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
+
+    // Get 2D region mask
+    casacore::ArrayLattice<casacore::Bool> mask = region->GetImageRegionMask(file_id);
+
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
     if (IsComputedStokes(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
@@ -2032,6 +2056,11 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         AxisRange partial_z_range(start_z, end_z);
 
         auto get_stokes_profiles_data = [&](ProfilesMap& tmp_partial_profiles, int tmp_stokes) {
+            // First try to get data from the image cache
+            if (_frames.at(file_id)->LoadCachedRegionSpectralData(partial_z_range, tmp_stokes, mask, xy_origin, tmp_partial_profiles)) {
+                return true;
+            }
+            // Try to get data from the casacore loader
             StokesRegion stokes_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
             return (ApplyRegionToFile(region_id, file_id, partial_z_range, tmp_stokes, lc_region, stokes_region) &&
@@ -2040,12 +2069,15 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
         auto get_profiles_data = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
             int tmp_stokes;
-            return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
-                    get_stokes_profiles_data(tmp_partial_profiles, tmp_stokes));
+            // Get stokes index
+            if (!_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes)) {
+                return false;
+            }
+            return get_stokes_profiles_data(tmp_partial_profiles, tmp_stokes);
         };
 
         ProfilesMap partial_profiles;
-        if (IsComputedStokes(stokes_index)) { // For computed stokes
+        if (IsComputedStokes(stokes_index)) {
             if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
                 return false;
             }
@@ -2060,9 +2092,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             auto stats_type = profile.first;
             const std::vector<double>& stats_data = profile.second;
             if (results.count(stats_type)) {
-                memcpy(&results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
+                memcpy(&results[stats_type][profile_start], stats_data.data(), stats_data.size() * sizeof(double));
             }
-            memcpy(&cache_results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
+            memcpy(&cache_results[stats_type][profile_start], stats_data.data(), stats_data.size() * sizeof(double));
         }
 
         start_z += count;

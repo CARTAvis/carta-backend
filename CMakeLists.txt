@@ -193,6 +193,10 @@ set(LINK_LIBS
 set(SOURCE_FILES
         ${SOURCE_FILES}
         third-party/pugixml/src/pugixml.cpp
+        src/Cache/ChannelImageCache.cc
+        src/Cache/CubeImageCache.cc
+        src/Cache/FullImageCache.cc
+        src/Cache/ImageCache.cc
         src/Cache/LoaderCache.cc
         src/Cache/TileCache.cc
         src/Cache/TilePool.cc
@@ -252,6 +256,7 @@ set(SOURCE_FILES
         src/Util/Message.cc
         src/Util/Stokes.cc
         src/Util/String.cc
+        src/Util/System.cc
         src/Util/Token.cc
         src/ImageFitter/ImageFitter.cc)
 

@@ -15,7 +15,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include "Cache/ImageCache.h"
 #include "Logger/Logger.h"
+#include "Util/App.h"
 #include "Util/FileSystem.h"
 
 #define OMP_THREAD_COUNT -1
@@ -58,6 +60,7 @@ struct ProgramSettings {
     bool read_only_mode = false;
     bool enable_scripting = false;
     bool controller_deployment = false;
+    int full_image_cache_size_available = 0; // MB
 
     std::string browser;
 
@@ -77,7 +80,8 @@ struct ProgramSettings {
         {"event_thread_count", &event_thread_count},
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
-        {"idle_timeout", &idle_session_wait_time}
+        {"idle_timeout", &idle_session_wait_time},
+        {"full_image_cache_size_available", &full_image_cache_size_available}
     };
 
     std::unordered_map<std::string, bool*> bool_keys_map{

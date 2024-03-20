@@ -5,6 +5,8 @@
 */
 
 #include "SessionManager.h"
+
+#include "Cache/ImageCache.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "ThreadingManager/ThreadingManager.h"

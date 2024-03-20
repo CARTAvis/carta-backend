@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Frame.h: represents an open image file.  Handles slicing data and region calculations
-//# (profiles, histograms, stats)
+// # Frame.h: represents an open image file.  Handles slicing data and region calculations
+// # (profiles, histograms, stats)
 
 #ifndef CARTA_SRC_FRAME_FRAME_H_
 #define CARTA_SRC_FRAME_FRAME_H_
@@ -17,6 +17,8 @@
 #include <shared_mutex>
 #include <unordered_map>
 
+#include "Cache/ChannelImageCache.h"
+#include "Cache/FullImageCache.h"
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"
@@ -84,11 +86,10 @@ static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesNa
 class Frame {
 public:
     // Load image cache for default_z, except for PV preview image which needs cube
-    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
-        bool load_image_cache = true);
+    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
     ~Frame(){};
 
-    bool IsValid();
+    bool IsValid() const;
     std::string GetErrorMessage();
 
     // Get the full name of image file
@@ -99,14 +100,23 @@ public:
 
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
-    size_t Width();     // length of x axis
-    size_t Height();    // length of y axis
-    size_t Depth();     // length of z axis
-    size_t NumStokes(); // if no stokes axis, nstokes=1
-    int CurrentZ();
-    int CurrentStokes();
-    int SpectralAxis();
-    int StokesAxis();
+    casacore::IPosition OriginalImageShape() const; // Image shape from the original file
+    void SetCurrentZ(int z);
+    void SetCurrentStokes(int stokes);
+    void CheckCurrentZ(int& z) const;
+    void CheckCurrentStokes(int& stokes) const;
+    bool IsCurrentChannel(int z, int stokes) const;
+    bool IsCurrentStokes(int stokes) const;
+    size_t Width() const;     // length of x axis
+    size_t Height() const;    // length of y axis
+    size_t Depth() const;     // length of z axis
+    size_t NumStokes() const; // if no stokes axis, number of stokes = 1
+    int XAxis() const;
+    int YAxis() const;
+    int ZAxis() const;
+    int StokesAxis() const;
+    int CurrentZ() const;
+    int CurrentStokes() const;
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
@@ -145,6 +155,7 @@ public:
     bool GetCubeHistogramConfig(HistogramConfig& config);
     void CacheCubeStats(int stokes, BasicStats<float>& stats);
     void CacheCubeHistogram(int stokes, Histogram& hist);
+    bool GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);
 
     // Stats: image
     bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
@@ -163,7 +174,7 @@ public:
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void WaitForTaskCancellation();
     // Check flag if Frame is to be destroyed
-    bool IsConnected();
+    bool IsConnected() const;
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     std::shared_ptr<casacore::LCRegion> GetImageRegion(
@@ -201,7 +212,7 @@ public:
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
         std::shared_ptr<Region> image_region);
 
-    bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
+    bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg = false);
     std::string GetStokesType(int stokes_index);
 
     std::shared_mutex& GetActiveTaskMutex();
@@ -220,17 +231,20 @@ public:
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
+    bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
+    bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);
+
 protected:
-    // Validate z and stokes index values
-    bool CheckZ(int z);
-    bool CheckStokes(int stokes);
+    // Validate z and stokes values
+    bool ValidZ(int z) const;
+    bool ValidStokes(int stokes) const;
 
     // Check whether z or stokes has changed
-    bool ZStokesChanged(int z, int stokes);
+    bool ZStokesChanged(int z, int stokes) const;
 
     // Cache image plane data for current z, stokes
     bool FillImageCache();
-    void InvalidateImageCache();
 
     // Downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
@@ -240,12 +254,11 @@ protected:
     void GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes);
 
     // Histograms: z is single z index or ALL_Z for cube
-    int AutoBinSize();
+    int AutoBinSize() const;
     bool FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
     bool FillHistogramFromFrameCache(
         int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram);              // histogram message
     bool GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist); // internal histogram
-    bool GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);         // internal histogram
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
@@ -266,6 +279,25 @@ protected:
     // For vector field calculation
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
+    // For image cache
+    float* GetImageData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
+    bool ImageCacheAvailable(int z = CURRENT_Z, int stokes = CURRENT_STOKES) const;
+
+    // Image shape or sizes
+    casacore::IPosition _image_shape;
+    size_t _width;
+    size_t _height;
+    size_t _depth;
+    size_t _num_stokes;
+
+    int _x_axis; // Render x-axis
+    int _y_axis; // Render y-axis
+    int _z_axis; // Depth axis (non-render axis) that is not stokes (if any)
+    int _spectral_axis;
+    int _stokes_axis;
+    int _z;      // Current channel
+    int _stokes; // Current stokes
+
     // Setup
     uint32_t _session_id;
 
@@ -279,13 +311,6 @@ protected:
     // Image loader for image type
     std::shared_ptr<FileLoader> _loader;
 
-    // Shape and axis info: X, Y, Z, Stokes
-    casacore::IPosition _image_shape;
-    int _x_axis, _y_axis, _z_axis; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
-    int _spectral_axis, _stokes_axis;
-    int _z_index, _stokes_index; // current index
-    size_t _width, _height, _depth, _num_stokes;
-
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
 
@@ -296,14 +321,10 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    //    std::vector<float> _image_cache; // image data for current z, stokes
-    long long int _image_cache_size;
-    std::unique_ptr<float[]> _image_cache;
-    bool _image_cache_valid;       // cached image data is valid for current z and stokes
-    queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
-    std::mutex _image_mutex;       // only one disk access at a time
-    bool _cache_loaded;            // channel cache is set
-    TileCache _tile_cache;         // cache for full-resolution image tiles
+    std::unique_ptr<ImageCache> _image_cache; // Image cache for current z and stokes, or for the whole image
+    queuing_rw_mutex _cache_mutex;            // allow concurrent reads but lock for write
+    std::mutex _image_mutex;                  // only one disk access at a time
+    TileCache _tile_cache;                    // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 
@@ -319,8 +340,8 @@ protected:
     std::mutex _spectral_mutex;
 
     // Cache maps
-    // For image, key is cache key (z/stokes); for cube, key is stokes.
-    std::unordered_map<int, std::vector<Histogram>> _image_histograms, _cube_histograms;
+    std::unordered_map<int, std::vector<Histogram>> _image_histograms; // key is the hash of z and stokes
+    std::unordered_map<int, Histogram> _cube_histograms;               // key is stokes
     std::unordered_map<int, BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
 

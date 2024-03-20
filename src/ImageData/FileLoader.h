@@ -145,6 +145,9 @@ public:
         _history_beam = history_beam;
     }
 
+    // Basic flux density calculation
+    double CalculateBeamArea();
+
 protected:
     // Full name and characteristics of the image file
     std::string _filename, _directory;
@@ -197,9 +200,6 @@ protected:
     virtual void LoadStats3DBasic(FileInfo::Data ds);
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
-
-    // Basic flux density calculation
-    double CalculateBeamArea();
 
     // Set the image object and its parameters
     virtual void AllocateImage(const std::string& hdu) = 0;

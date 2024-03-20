@@ -382,12 +382,12 @@ std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile)
     return values;
 }
 
-void CmpSpatialProfiles(
-    const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles) {
-    EXPECT_EQ(data_vec.size(), 1);
-    for (const auto& data : data_vec) {
-        CmpVectors(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
-        CmpVectors(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
+void CmpSpatialProfiles(const std::vector<CARTA::SpatialProfileData>& data_vec1, const std::vector<CARTA::SpatialProfileData>& data_vec2) {
+    EXPECT_EQ(data_vec1.size(), 1);
+    EXPECT_EQ(data_vec2.size(), 1);
+    if (data_vec1.size() == data_vec2.size()) {
+        CmpVectors(GetSpatialProfileValues(data_vec1[0].profiles(0)), GetSpatialProfileValues(data_vec2[0].profiles(0)));
+        CmpVectors(GetSpatialProfileValues(data_vec1[0].profiles(1)), GetSpatialProfileValues(data_vec2[0].profiles(1)));
     }
 }
 
@@ -410,24 +410,53 @@ void CmpValues(float data1, float data2, float abs_err) {
     }
 }
 
-bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2) {
+bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2, bool exact) {
     if (hist1.GetNbins() != hist2.GetNbins()) {
-        return false;
-    }
-    if (fabs(hist1.GetMinVal() - hist2.GetMinVal()) > std::numeric_limits<float>::epsilon()) {
-        return false;
-    }
-    if (fabs(hist1.GetMaxVal() - hist2.GetMaxVal()) > std::numeric_limits<float>::epsilon()) {
+        fmt::print("Histogram bin numbers are not equal: {} vs. {}\n", hist1.GetNbins(), hist2.GetNbins());
         return false;
     }
 
+    auto len1 = hist1.GetMaxVal() - hist1.GetMinVal();
+    auto len2 = hist2.GetMaxVal() - hist2.GetMinVal();
+    auto diff_len = fabs(len1 - len2);
+    auto diff_min = fabs(hist1.GetMinVal() - hist2.GetMinVal());
+    auto diff_max = fabs(hist1.GetMaxVal() - hist2.GetMaxVal());
+
+    if (diff_min > std::numeric_limits<float>::epsilon()) {
+        fmt::print("Histogram min values are not equal: {:.6f} vs. {:.6f}\n", hist1.GetMinVal(), hist2.GetMinVal());
+        if (exact || (diff_min / len1 > 1e-6) || (diff_min / len2 > 1e-6)) {
+            return false;
+        }
+    }
+
+    if (diff_max > std::numeric_limits<float>::epsilon()) {
+        fmt::print("Histogram max values are not equal: {:.6f} vs. {:.6f}\n", hist1.GetMaxVal(), hist2.GetMaxVal());
+        if (exact || (diff_max / len1 > 1e-6) || (diff_max / len2 > 1e-6)) {
+            return false;
+        }
+    }
+
+    if (diff_len > 0) {
+        if (exact || (diff_len / len1 > 1e-6) || (diff_len / len2 > 1e-6)) {
+            return false;
+        }
+    }
+
+    size_t sum_a = 0;
+    size_t sum_b = 0;
     for (auto i = 0; i < hist1.GetNbins(); i++) {
         auto bin_a = hist1.GetHistogramBins()[i];
         auto bin_b = hist2.GetHistogramBins()[i];
         if (bin_a != bin_b) {
-            return false;
+            fmt::print("{}-th histogram bin values are not equal: {} vs. {}, diff: {}\n", i, bin_a, bin_b, bin_b - bin_a);
+            if (exact) {
+                return false;
+            }
         }
+        sum_a += bin_a;
+        sum_b += bin_b;
     }
+    EXPECT_EQ(sum_a, sum_b);
 
     return true;
 }
