@@ -8,6 +8,7 @@
 #define DEG_TO_RAD M_PI / 180.0
 
 #include "ImageFitter.h"
+#include "Deconvolver.h"
 #include "Util/Message.h"
 
 #include <gsl/gsl_rstat.h>
@@ -139,6 +140,19 @@ double ImageFitter::GetResidualRms() {
         gsl_rstat_free(rstat_p);
     }
     return residual_rms;
+}
+
+bool ImageFitter::GetDeconvolvedResults(
+    casacore::ImageInterface<float>* image, int channel, int stokes, CARTA::FittingResponse& fitting_response) {
+    if (image && image->imageInfo().hasBeam()) {
+        carta::Deconvolver deconvolver(image->coordinates(), image->imageInfo().restoringBeam(channel, stokes), GetResidualRms());
+        const std::vector<CARTA::GaussianComponent>& fit_results = {
+            fitting_response.result_values().begin(), fitting_response.result_values().end()};
+        auto* fit_log = fitting_response.mutable_log();
+        fit_log->append(deconvolver.GetDeconvolutionLog(fit_results));
+        return true;
+    }
+    return false;
 }
 
 void ImageFitter::CalculateNanNumAndStd() {

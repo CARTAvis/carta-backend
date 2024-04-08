@@ -103,6 +103,8 @@ public:
     void StopFitting();
     /** @brief Get RMS of residual data from the fit. */
     double GetResidualRms();
+    /** @brief Get fit results for the deconvolved beam image if any. */
+    bool GetDeconvolvedResults(casacore::ImageInterface<float>* image, int channel, int stokes, CARTA::FittingResponse& fitting_response);
 
 private:
     /** @brief Fitting-related data. */

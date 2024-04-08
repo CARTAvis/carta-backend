@@ -1817,15 +1817,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 
-        if (image->imageInfo().hasBeam()) {
-            carta::Deconvolver deconvolver(
-                image->coordinates(), image->imageInfo().restoringBeam(CurrentZ(), CurrentStokes()), _image_fitter->GetResidualRms());
-
-            const std::vector<CARTA::GaussianComponent>& fit_results = {
-                fitting_response.result_values().begin(), fitting_response.result_values().end()};
-            auto* fit_log = fitting_response.mutable_log();
-            fit_log->append(deconvolver.GetDeconvolutionLog(fit_results));
-        }
+        _image_fitter->GetDeconvolvedResults(image, CurrentZ(), CurrentStokes(), fitting_response);
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
             int file_id(fitting_request.file_id());
@@ -1835,9 +1827,9 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             } else {
                 GetImageRegion(file_id, AxisRange(CurrentZ()), CurrentStokes(), output_stokes_region);
             }
-            casa::SPIIF image(_loader->GetStokesImage(output_stokes_region.stokes_source));
+            casa::SPIIF in_image(_loader->GetStokesImage(output_stokes_region.stokes_source));
             success = _image_fitter->GetGeneratedImages(
-                image, output_stokes_region.image_region, GetFileName(), model_image, residual_image, fitting_response);
+                in_image, output_stokes_region.image_region, GetFileName(), model_image, residual_image, fitting_response);
         }
     }
 
