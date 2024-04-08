@@ -1818,8 +1818,8 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
         }
 
         if (image->imageInfo().hasBeam()) {
-            carta::Deconvolver deconvolver(image->coordinates(), image->units(),
-                image->imageInfo().restoringBeam(CurrentZ(), CurrentStokes()), CurrentStokes(), _image_fitter->GetResidualRms());
+            carta::Deconvolver deconvolver(
+                image->coordinates(), image->imageInfo().restoringBeam(CurrentZ(), CurrentStokes()), _image_fitter->GetResidualRms());
 
             const std::vector<CARTA::GaussianComponent>& fit_results = {
                 fitting_response.result_values().begin(), fitting_response.result_values().end()};

@@ -112,6 +112,19 @@ public:
         CompareResults(fitting_response, success, failed_message);
     }
 
+    static casacore::MDirection DirectionFromCartesian(casacore::Double width, casacore::Double pa,
+        const casacore::DirectionCoordinate& dir_coord, const casacore::Vector<casacore::Double>& pixel_center) {
+        casacore::Double z = width / 2.0;
+        casacore::Double x = -z * sin(pa);
+        casacore::Double y = z * cos(pa);
+        casacore::MDirection mdir;
+        casacore::Vector<casacore::Double> pixel_tip(2);
+        pixel_tip(0) = pixel_center(0) + x;
+        pixel_tip(1) = pixel_center(1) + y;
+        dir_coord.toWorld(mdir, pixel_tip);
+        return mdir;
+    }
+
 private:
     std::vector<CARTA::GaussianComponent> _initial_values;
     std::vector<bool> _fixed_params;
@@ -339,12 +352,11 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
     casa::SPIIF input_image(image);
 
     casacore::CoordinateSystem coord_sys = input_image->coordinates();
-    casacore::Unit brightness_unit = input_image->units();
     int chan(0);
     int stokes(0);
     casacore::GaussianBeam beam = input_image->imageInfo().restoringBeam(chan, stokes);
     double residue_rms(1.43619);
-    carta::Deconvolver deconvolver(coord_sys, brightness_unit, beam, stokes, residue_rms);
+    carta::Deconvolver deconvolver(coord_sys, beam, residue_rms);
 
     CARTA::GaussianComponent in_gauss;
     in_gauss.set_amp(77.8518);                 // kJy.m.s-1/beam
@@ -397,13 +409,15 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
     }
 
     // Input world coordinate for 2D Gaussian shape
+    casacore::Quantity center_x = result.center_x;
+    casacore::Quantity center_y = result.center_y;
     casacore::Quantity major(1.749, "arcsec");
     casacore::Quantity minor(1.464, "arcsec");
     casacore::Quantity pa(60.21, "deg");
 
     // Output pixel coordinate for 2D Gaussian shape
     casacore::Vector<casacore::Double> pixels;
-    bool pixels_available = deconvolver.WorldWidthToPixel(major, minor, pa, pixels);
+    bool pixels_available = deconvolver.WorldWidthToPixel(pixels, {center_x, center_y, major, minor, pa});
     EXPECT_TRUE(pixels_available);
 
     if (pixels_available) {
@@ -415,4 +429,23 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
         EXPECT_EQ(minor_str, "9.150");  // minor in pixel (compared to original input: 9.14887 pixel)
         EXPECT_EQ(pa_str, "2.622");     // pa in rad (compared to original input: 2.62175 rad)
     }
+}
+
+TEST_F(ImageFittingTest, TestCoordTrans) {
+    casacore::ImageInterface<casacore::Float>* image;
+    std::string file_path = FitsImagePath("spw25_mom0.fits");
+    casacore::ImageUtilities::openImage(image, file_path);
+    casa::SPIIF input_image(image);
+
+    casacore::CoordinateSystem coord_sys = input_image->coordinates();
+    int chan(0);
+    int stokes(0);
+    casacore::GaussianBeam beam = input_image->imageInfo().restoringBeam(chan, stokes);
+    double residue_rms(1.43619);
+    carta::Deconvolver deconvolver(coord_sys, beam, residue_rms);
+    auto gauss_shape = deconvolver.PixelToWorld(21.3636, 24.199, 10.9295, 9.14887, 60.21);
+
+    std::cerr << "major_axis = " << gauss_shape.fwhm_major << "\n";
+    std::cerr << "minor_axis = " << gauss_shape.fwhm_minor << "\n";
+    std::cerr << "pa = " << gauss_shape.pa << "\n";
 }
