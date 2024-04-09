@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['wstype_3874',['WSType',['../classcarta_1_1SessionManager.html#aaec90d9c096faa3ecd45b1a93276292c',1,'carta::SessionManager']]]
+  ['wstype_3875',['WSType',['../classcarta_1_1SessionManager.html#aaec90d9c096faa3ecd45b1a93276292c',1,'carta::SessionManager']]]
 ];

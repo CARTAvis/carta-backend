@@ -67,6 +67,7 @@ var classcarta_1_1Frame =
     [ "ImageShape", "classcarta_1_1Frame.html#aeff1a00d7f22df6f180888b1d9eaf457", null ],
     [ "InvalidateImageCache", "classcarta_1_1Frame.html#a03a1722c3e3ff0b2f84c4b734ccd3a02", null ],
     [ "IsConnected", "classcarta_1_1Frame.html#a54fc45adef933c9b039b39f21b0dd6d9", null ],
+    [ "IsCurrentZStokes", "classcarta_1_1Frame.html#afe9bbcad03f6343aba029f48c4e66dc7", null ],
     [ "IsValid", "classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117", null ],
     [ "NumStokes", "classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9", null ],
     [ "SaveFile", "classcarta_1_1Frame.html#a810937ee7606b48419b7f5d3ded16155", null ],
