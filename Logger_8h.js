@@ -9,7 +9,7 @@ var Logger_8h =
     [ "PERF_TAG", "Logger_8h.html#af83a37930db1378a80ee446f1242d3ae", null ],
     [ "ROTATED_LOG_FILES", "Logger_8h.html#a3a30c8519779f61e8148bc6bcc19a489", null ],
     [ "FlushLogFile", "Logger_8h.html#a7b334512783c98ccfdac74bd38aa2f9f", null ],
-    [ "InitLogger", "Logger_8h.html#a220224f8f0ac091a4555ac30dfc7619d", null ],
+    [ "InitLogger", "Logger_8h.html#a7df43780861a3694ed05db3026e0555f", null ],
     [ "LogReceivedEventType", "Logger_8h.html#a579b36ca7fa898b7052001d151fc34cd", null ],
     [ "LogSentEventType", "Logger_8h.html#ab9e339746ee51ea21696ab43b50841d5", null ],
     [ "performance", "Logger_8h.html#a670c6a63d98e715c33a6063e6e0c7b0c", null ]

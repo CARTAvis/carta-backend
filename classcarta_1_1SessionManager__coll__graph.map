@@ -1,6 +1,6 @@
 <map id="carta::SessionManager" name="carta::SessionManager">
-<area shape="rect" id="node1" title=" " alt="" coords="2092,347,2263,373"/>
-<area shape="rect" id="node2" title=" " alt="" coords="1761,339,1976,381"/>
+<area shape="rect" id="node1" title=" " alt="" coords="2092,311,2263,337"/>
+<area shape="rect" id="node2" title=" " alt="" coords="1761,303,1976,345"/>
 <area shape="rect" id="node3" title=" " alt="" coords="963,175,1037,201"/>
 <area shape="rect" id="node4" href="$classcarta_1_1Session.html" title=" " alt="" coords="1398,836,1511,863"/>
 <area shape="rect" id="node11" title=" " alt="" coords="1356,919,1553,961"/>
@@ -37,7 +37,7 @@
 <area shape="rect" id="node32" title=" " alt="" coords="193,2256,280,2283"/>
 <area shape="rect" id="node34" title=" " alt="" coords="433,183,598,209"/>
 <area shape="rect" id="node43" title=" " alt="" coords="679,2461,831,2517"/>
-<area shape="rect" id="node44" title=" " alt="" coords="1166,2551,1318,2607"/>
+<area shape="rect" id="node44" title=" " alt="" coords="1166,2549,1318,2605"/>
 <area shape="rect" id="node46" title=" " alt="" coords="1379,1921,1531,1977"/>
 <area shape="rect" id="node49" title=" " alt="" coords="661,2312,848,2339"/>
 <area shape="rect" id="node33" title=" " alt="" coords="5,2249,144,2290"/>

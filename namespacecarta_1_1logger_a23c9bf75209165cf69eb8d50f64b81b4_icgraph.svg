@@ -67,7 +67,7 @@ var sectionId = 'dynsection-3';
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="namespacecarta_1_1logger.html#a220224f8f0ac091a4555ac30dfc7619d" target="_top" xlink:title=" ">
+<g id="a_node2"><a xlink:href="namespacecarta_1_1logger.html#a7df43780861a3694ed05db3026e0555f" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1766,-1766.75 1766,-1785.75 1899,-1785.75 1899,-1766.75 1766,-1766.75"/>
 <text text-anchor="middle" x="1832.5" y="-1773.75" font-family="Helvetica,sans-Serif" font-size="10.00">carta::logger::InitLogger</text>
 </a>

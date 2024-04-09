@@ -1,6 +1,5 @@
 var NAVTREEINDEX9 =
 {
-"namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e":[2,0,0,135],
 "namespacecarta.html#aead2ccf135cb75c1b5d5f5d8b5a64849":[2,0,0,116],
 "namespacecarta.html#af7359c825e152777546c5e50b44b6e20":[2,0,0,143],
 "namespacecarta.html#af9830509695cfe9bd0ed310dec7033be":[2,0,0,153],
@@ -36,10 +35,10 @@ var NAVTREEINDEX9 =
 "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7ae8f134b8a52901141769a93f81f0e09f":[2,0,0,0,3,25],
 "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7afbeb48c1706b453b69da6dc6d867096d":[2,0,0,0,3,15],
 "namespacecarta_1_1logger.html":[2,0,0,1],
-"namespacecarta_1_1logger.html#a220224f8f0ac091a4555ac30dfc7619d":[2,0,0,1,1],
 "namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4":[2,0,0,1,2],
 "namespacecarta_1_1logger.html#a579b36ca7fa898b7052001d151fc34cd":[2,0,0,1,3],
 "namespacecarta_1_1logger.html#a7b334512783c98ccfdac74bd38aa2f9f":[2,0,0,1,0],
+"namespacecarta_1_1logger.html#a7df43780861a3694ed05db3026e0555f":[2,0,0,1,1],
 "namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5":[2,0,0,1,4],
 "namespacemembers.html":[2,1,0],
 "namespacemembers_enum.html":[2,1,4],
@@ -249,5 +248,6 @@ var NAVTREEINDEX9 =
 "structcarta_1_1PreviewCutParameters.html#aa4a54c3824767809268817a9c957c870":[3,0,0,56,0],
 "structcarta_1_1PreviewCutParameters.html#acac74ea0c62be2241afaf7b9584a7fa4":[3,0,0,56,7],
 "structcarta_1_1PreviewCutParameters.html#acd3a13f48a5959a71e5924c61b591b2d":[3,0,0,56,12],
-"structcarta_1_1PreviewCutParameters.html#adda0b79bd8f392f8f1603b9bf944d6e9":[3,0,0,56,11]
+"structcarta_1_1PreviewCutParameters.html#adda0b79bd8f392f8f1603b9bf944d6e9":[3,0,0,56,11],
+"structcarta_1_1PreviewCutParameters.html#afdb21764c8a7a6a258387480ea2ada5e":[3,0,0,56,3]
 };

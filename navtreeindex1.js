@@ -1,7 +1,7 @@
 var NAVTREEINDEX1 =
 {
-"Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce":[4,0,80,2],
 "Logger_8h.html#a7b334512783c98ccfdac74bd38aa2f9f":[4,0,80,8],
+"Logger_8h.html#a7df43780861a3694ed05db3026e0555f":[4,0,80,9],
 "Logger_8h.html#aae919ba7488e6353a8c239b5f081247c":[4,0,80,4],
 "Logger_8h.html#ab9e339746ee51ea21696ab43b50841d5":[4,0,80,11],
 "Logger_8h.html#ad4a0c9622fee38ec4d034e102a1f12d5":[4,0,80,5],

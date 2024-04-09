@@ -74,16 +74,16 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "AnimationObject_8h.html",
-"Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce",
+"Logger_8h.html#a7b334512783c98ccfdac74bd38aa2f9f",
 "classcarta_1_1AnimationObject.html#a4bc04ff332f3e18615a47b90fc57fae0",
 "classcarta_1_1CrtfImportExport.html#a7f76d93d28588ccf3fee2337902077a8",
 "classcarta_1_1Frame.html#a0253f61585e2ddbf5c0957d35ddbbf90",
 "classcarta_1_1Image2DConvolver.html#a9037bd39cfa7f4350f45bf61fb622d55",
 "classcarta_1_1Region.html#a1a2fb79566c14c07764aaf101398ac42",
-"classcarta_1_1Session.html#a6e3719e8d244e28cdf5a80725b0727ff",
-"classcarta_1_1TileCache.html#ac93cc128ac47219904ac19d9de4b1928",
-"namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e",
-"structcarta_1_1PreviewCutParameters.html#afdb21764c8a7a6a258387480ea2ada5e"
+"classcarta_1_1Session.html#a6f3187e3a8df59e5750672be1781c0cc",
+"classcarta_1_1TileCache.html#ade12cbdd722de568f333a6d735a205cd",
+"namespacecarta.html#aead2ccf135cb75c1b5d5f5d8b5a64849",
+"structcarta_1_1ProgramSettings.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

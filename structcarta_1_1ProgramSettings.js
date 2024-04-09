@@ -6,6 +6,8 @@ var structcarta_1_1ProgramSettings =
     [ "ApplyCommandLineSettings", "structcarta_1_1ProgramSettings.html#ae94eab4c3ac77d65ad880737b99c032f", null ],
     [ "ApplyJSONSettings", "structcarta_1_1ProgramSettings.html#af79fed2fb510be1e30123ce5f788b4a7", null ],
     [ "FlushMessages", "structcarta_1_1ProgramSettings.html#a7237c2ad003dee6fb3d7b72d26f589ed", null ],
+    [ "GetInstance", "structcarta_1_1ProgramSettings.html#ab2828deeb424ee497c1157cf7854acb7", null ],
+    [ "Initialise", "structcarta_1_1ProgramSettings.html#a6818a01f413e0b06ece8edf61a5c82bd", null ],
     [ "JSONSettingsFromFile", "structcarta_1_1ProgramSettings.html#a305fc41d1b2ef80ee55f9b5397d9e2d6", null ],
     [ "PushFilePaths", "structcarta_1_1ProgramSettings.html#a050edf157d560b52356b2b36af7ab69b", null ],
     [ "SetSettingsFromJSON", "structcarta_1_1ProgramSettings.html#ab508a2422b5783236e3c0a2174d3a138", null ],

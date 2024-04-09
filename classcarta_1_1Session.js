@@ -1,6 +1,6 @@
 var classcarta_1_1Session =
 [
-    [ "Session", "classcarta_1_1Session.html#ac27b5577b0497ac50a72b899590ffa29", null ],
+    [ "Session", "classcarta_1_1Session.html#a6fb00b3b72ea1c13b34f3ea29557c5c6", null ],
     [ "~Session", "classcarta_1_1Session.html#a8753bb9dee966b7d39abc9b7237cd665", null ],
     [ "AddCursorSetting", "classcarta_1_1Session.html#a6f3187e3a8df59e5750672be1781c0cc", null ],
     [ "AddToSetChannelQueue", "classcarta_1_1Session.html#a4690f022a25887573f406194d0feb2c5", null ],
@@ -97,7 +97,7 @@ var classcarta_1_1Session =
     [ "SendVectorFieldData", "classcarta_1_1Session.html#a2535a06bd2e8a13e99c775d895f6024a", null ],
     [ "SetAnimationActive", "classcarta_1_1Session.html#adc48fa2da283f2ece0ae232158891942", null ],
     [ "SetControllerDeploymentFlag", "classcarta_1_1Session.html#a78272e362e162a848d709f39120468c3", null ],
-    [ "SetExitTimeout", "classcarta_1_1Session.html#ab1d2ce7daa4e4dfd3a76a67297457b6c", null ],
+    [ "SetExitTimeout", "classcarta_1_1Session.html#aad3dd09f6cf1e8462b969af34a24577b", null ],
     [ "SetInitExitTimeout", "classcarta_1_1Session.html#ad8a393254598d44b7b2c518b57d667e0", null ],
     [ "SetWaitingTask", "classcarta_1_1Session.html#a11e3951ed077904a627355c1194ffdd5", null ],
     [ "StopAnimation", "classcarta_1_1Session.html#a50f48862a67578a8c056016e9f1e4ef5", null ],
@@ -143,7 +143,6 @@ var classcarta_1_1Session =
     [ "_scripting_mutex", "classcarta_1_1Session.html#a600ff790e6ac61c29246f4491b65a159", null ],
     [ "_set_channel_queues", "classcarta_1_1Session.html#a95fd8340769d98224e53cc818288bbcf", null ],
     [ "_socket", "classcarta_1_1Session.html#a5507e74f16bb11a4f153fe081b6ae061", null ],
-    [ "_starting_folder", "classcarta_1_1Session.html#a3d71b1d271371e6a35f0ba0ac771c2c7", null ],
     [ "_stokes_files_connector", "classcarta_1_1Session.html#a3ef31e8318a55ab57658bed5b7141a8b", null ],
     [ "_sync_id", "classcarta_1_1Session.html#ac4d32c51c4ae8714e4a050aa15c41449", null ],
     [ "_table_controller", "classcarta_1_1Session.html#aeb78096afd300df488c69b5561d5cad9", null ],

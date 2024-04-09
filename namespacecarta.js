@@ -3,7 +3,7 @@ var namespacecarta =
     [ "FileInfo", "namespacecarta_1_1FileInfo.html", "namespacecarta_1_1FileInfo" ],
     [ "logger", "namespacecarta_1_1logger.html", [
       [ "FlushLogFile", "namespacecarta_1_1logger.html#a7b334512783c98ccfdac74bd38aa2f9f", null ],
-      [ "InitLogger", "namespacecarta_1_1logger.html#a220224f8f0ac091a4555ac30dfc7619d", null ],
+      [ "InitLogger", "namespacecarta_1_1logger.html#a7df43780861a3694ed05db3026e0555f", null ],
       [ "log_protocol_messages", "namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4", null ],
       [ "LogReceivedEventType", "namespacecarta_1_1logger.html#a579b36ca7fa898b7052001d151fc34cd", null ],
       [ "LogSentEventType", "namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5", null ]
