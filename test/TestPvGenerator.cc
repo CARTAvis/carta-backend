@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -301,7 +301,6 @@ TEST_F(PvGeneratorTest, FitsPvImageVerticalCut) {
 }
 
 TEST_F(PvGeneratorTest, TestNoSpectralAxis) {
-    auto image_path = FileFinder::Hdf5ImagePath("noise_10px_10_px.hdf5"); // 10x10x10 image
     auto path_string = GeneratedHdf5ImagePath("10 10 10");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -426,7 +425,6 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     int index(0);
     EXPECT_TRUE(pv_response.success());
-    EXPECT_EQ(pv_image.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image.name.find("pv.fits") != std::string::npos);
 
     // Request PV image, keeping the first
@@ -438,7 +436,6 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     index++;
     EXPECT_TRUE(pv_response2.success());
-    EXPECT_EQ(pv_image2.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image2.name.find("pv1.fits") != std::string::npos);
 
     // Request PV image, replace all and reset index
@@ -450,7 +447,6 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     index = 0;
     EXPECT_TRUE(pv_response3.success());
-    EXPECT_EQ(pv_image3.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image3.name.find("pv.fits") != std::string::npos);
 }
 

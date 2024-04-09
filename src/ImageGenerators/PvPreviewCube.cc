@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -12,6 +12,7 @@
 #include <casacore/images/Images/RebinImage.h>
 
 #include "DataStream/Smoothing.h"
+#include "Logger/Logger.h"
 #include "Timer/Timer.h"
 
 #define LOAD_DATA_PROGRESS_INTERVAL 1000
@@ -162,8 +163,8 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
     auto box_start = region_bounding_box.start();
     auto box_length = region_bounding_box.length();
 
-    // Initialize profile
-    size_t nchan = box_length(_preview_image->coordinates().spectralAxisNumber());
+    // Initialize profile to channels in preview image
+    size_t nchan = _preview_image->shape()(_preview_image->coordinates().spectralAxisNumber());
     profile.resize(nchan, NAN);
     std::vector<double> npix_per_chan(nchan, 0.0);
     auto data_shape = _cube_data.shape();

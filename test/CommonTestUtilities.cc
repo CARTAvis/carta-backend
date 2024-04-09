@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -386,27 +386,8 @@ void CmpSpatialProfiles(
     const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles) {
     EXPECT_EQ(data_vec.size(), 1);
     for (const auto& data : data_vec) {
-        CmpVectors(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
-        CmpVectors(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
-    }
-}
-
-void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err) {
-    EXPECT_EQ(data1.size(), data2.size());
-    if (data1.size() == data2.size()) {
-        for (int i = 0; i < data1.size(); ++i) {
-            CmpValues(data1[i], data2[i], abs_err);
-        }
-    }
-}
-
-void CmpValues(float data1, float data2, float abs_err) {
-    if (!std::isnan(data1) || !std::isnan(data2)) {
-        if (abs_err > 0) {
-            EXPECT_NEAR(data1, data2, abs_err);
-        } else {
-            EXPECT_FLOAT_EQ(data1, data2);
-        }
+        CmpVectors<float>(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
+        CmpVectors<float>(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
     }
 }
 

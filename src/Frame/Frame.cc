@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -1827,7 +1827,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             }
             casa::SPIIF image(_loader->GetStokesImage(output_stokes_region.stokes_source));
             success = _image_fitter->GetGeneratedImages(
-                image, output_stokes_region.image_region, file_id, GetFileName(), model_image, residual_image, fitting_response);
+                image, output_stokes_region.image_region, GetFileName(), model_image, residual_image, fitting_response);
         }
     }
 
