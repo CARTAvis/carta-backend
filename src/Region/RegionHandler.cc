@@ -96,14 +96,6 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
     return valid_region;
 }
 
-bool RegionHandler::RegionChanged(int region_id) {
-    // Used to trigger sending profiles etc., so not for annotation regions
-    if (!RegionSet(region_id, true)) {
-        return false;
-    }
-    return GetRegion(region_id)->RegionChanged();
-}
-
 void RegionHandler::RemoveRegion(int region_id) {
     // Call destructor and erase from map
     if (!RegionSet(region_id)) {
@@ -258,10 +250,9 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         }
     }
 
-    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+    bool export_pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
     auto output_csys = frame->CoordinateSystem();
-
-    if (!pixel_coord && !output_csys->hasDirectionCoordinate()) {
+    if (!export_pixel_coord && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
         export_ack.set_success(false);
         export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
@@ -275,7 +266,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             exporter = std::unique_ptr<RegionImportExport>(new CrtfImportExport(output_csys, output_shape, frame->StokesAxis()));
             break;
         case CARTA::FileType::DS9_REG:
-            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, pixel_coord));
+            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, export_pixel_coord));
             break;
         default:
             break;
@@ -291,7 +282,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             auto region = GetRegion(region_id);
             auto region_state = region->GetRegionState();
 
-            if ((region_state.reference_file_id == file_id) && pixel_coord) {
+            if ((region_state.reference_file_id == file_id) && export_pixel_coord) {
                 // Use RegionState control points with reference file id for pixel export
                 region_added = exporter->AddExportRegion(region_state, region_style);
             } else {
@@ -299,7 +290,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                     // Use Record containing pixel coords of region converted to output image
                     casacore::TableRecord region_record = region->GetImageRegionRecord(file_id, output_csys, output_shape);
                     if (!region_record.empty()) {
-                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
+                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, export_pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
                     spdlog::error("Export region record failed: {}", err.getMesg());
@@ -2343,6 +2334,7 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
         spdlog::performance("Fill line spatial profile in {:.3f} ms", t.Elapsed().ms());
     }
 
+    spdlog::performance("Line spatial data in {:.3f} ms", t.Elapsed().ms());
     return profile_ok;
 }
 
@@ -2381,13 +2373,15 @@ bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::st
 }
 
 bool RegionHandler::IsPointRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
-        return GetRegion(region_id)->IsPoint();
+        return GetRegion(region_id)->IsPoint() && !GetRegion(region_id)->IsAnnotation();
     }
     return false;
 }
 
 bool RegionHandler::IsLineRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         return GetRegion(region_id)->IsLineType() && !GetRegion(region_id)->IsAnnotation();
     }
@@ -2395,6 +2389,7 @@ bool RegionHandler::IsLineRegion(int region_id) {
 }
 
 bool RegionHandler::IsClosedRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         auto type = GetRegion(region_id)->GetRegionState().type;
         return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON);

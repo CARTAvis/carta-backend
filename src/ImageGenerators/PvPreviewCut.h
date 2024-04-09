@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_IMAGEGENERATORS_PVPREVIEWCUT_H_
 #define CARTA_SRC_IMAGEGENERATORS_PVPREVIEWCUT_H_
 
+#include <carta-protobuf/pv_preview.pb.h>
+
 #include "Region/Region.h"
 #include "Util/File.h"
 

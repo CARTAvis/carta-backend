@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 
 #include "Logger/Logger.h"
+#include "Main/ProgramSettings.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/File.h"
 
@@ -18,8 +19,11 @@
 
 using namespace carta;
 
-TableController::TableController(const std::string& top_level_folder, const std::string& starting_folder)
-    : _top_level_folder(top_level_folder), _starting_folder(starting_folder) {}
+TableController::TableController() {
+    auto& settings = ProgramSettings::GetInstance();
+    _top_level_folder = settings.top_level_folder;
+    _starting_folder = settings.starting_folder;
+}
 
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
     int file_id = open_file_request.file_id();

@@ -12,6 +12,7 @@
 #include <casacore/images/Images/RebinImage.h>
 
 #include "DataStream/Smoothing.h"
+#include "Logger/Logger.h"
 #include "Timer/Timer.h"
 
 #define LOAD_DATA_PROGRESS_INTERVAL 1000
@@ -162,7 +163,7 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
     auto box_start = region_bounding_box.start();
     auto box_length = region_bounding_box.length();
 
-    // Initialize profile
+    // Initialize profile to channels in preview image
     size_t nchan = _preview_image->shape()(_preview_image->coordinates().spectralAxisNumber());
     profile.resize(nchan, NAN);
     std::vector<double> npix_per_chan(nchan, 0.0);
