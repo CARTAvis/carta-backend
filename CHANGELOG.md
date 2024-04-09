@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Improved file IDs for generated images ([#1224](https://github.com/CARTAvis/carta-frontend/issues/1224)).
 * Store global settings in a singleton class ([#1302](https://github.com/CARTAvis/carta-backend/issues/1302)).
 * Move Region code to RegionConverter for maintenance and performance ([#1347](https://github.com/CARTAvis/carta-backend/issues/1347)).
+* Improve performance of region spatial profiles and PV image generation ([#1339](https://github.com/CARTAvis/carta-backend/issues/1339)).
 
 ## [4.1.0]
 
