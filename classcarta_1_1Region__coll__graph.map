@@ -1,18 +1,15 @@
 <map id="carta::Region" name="carta::Region">
-<area shape="rect" id="node1" title=" " alt="" coords="923,224,1031,251"/>
-<area shape="rect" id="node2" title=" " alt="" coords="553,19,695,45"/>
-<area shape="rect" id="node3" title=" " alt="" coords="578,87,670,113"/>
-<area shape="rect" id="node4" title=" " alt="" coords="528,138,720,179"/>
-<area shape="rect" id="node5" href="$structcarta_1_1RegionState.html" title=" " alt="" coords="553,204,695,231"/>
-<area shape="rect" id="node6" title=" " alt="" coords="221,207,318,233"/>
-<area shape="rect" id="node7" title=" " alt="" coords="244,89,295,116"/>
-<area shape="rect" id="node8" title=" " alt="" coords="250,264,289,291"/>
-<area shape="rect" id="node15" title=" " alt="" coords="527,277,721,333"/>
-<area shape="rect" id="node9" title=" " alt="" coords="195,141,343,182"/>
-<area shape="rect" id="node10" title=" " alt="" coords="5,148,60,175"/>
-<area shape="rect" id="node11" title=" " alt="" coords="599,357,649,384"/>
-<area shape="rect" id="node12" title=" " alt="" coords="542,409,706,450"/>
-<area shape="rect" id="node13" title=" " alt="" coords="230,416,309,443"/>
-<area shape="rect" id="node14" title=" " alt="" coords="528,474,720,515"/>
-<area shape="rect" id="node16" title=" " alt="" coords="173,331,365,373"/>
+<area shape="rect" id="node1" title=" " alt="" coords="860,181,968,207"/>
+<area shape="rect" id="node2" title=" " alt="" coords="495,5,662,47"/>
+<area shape="rect" id="node3" title=" " alt="" coords="507,71,650,98"/>
+<area shape="rect" id="node4" title=" " alt="" coords="533,122,625,149"/>
+<area shape="rect" id="node5" title=" " alt="" coords="483,173,675,215"/>
+<area shape="rect" id="node6" href="$structcarta_1_1RegionState.html" title=" " alt="" coords="507,239,650,266"/>
+<area shape="rect" id="node7" title=" " alt="" coords="199,163,296,190"/>
+<area shape="rect" id="node8" title=" " alt="" coords="222,214,273,241"/>
+<area shape="rect" id="node9" title=" " alt="" coords="228,265,267,291"/>
+<area shape="rect" id="node10" title=" " alt="" coords="173,316,321,357"/>
+<area shape="rect" id="node11" title=" " alt="" coords="5,323,60,350"/>
+<area shape="rect" id="node12" title=" " alt="" coords="483,291,675,332"/>
+<area shape="rect" id="node13" title=" " alt="" coords="553,381,604,407"/>
 </map>

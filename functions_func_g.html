@@ -145,13 +145,13 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1CrtfImportExport.html#a5fdce414ca76f1a337f634c3d50e9426">carta::CrtfImportExport</a>
 </li>
 <li>GetAppliedPolygonRegion()
-: <a class="el" href="classcarta_1_1Region.html#ac4d35d2ebd7a1bc9365a5c75b6758d50">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#a9f6c7af12bcee56cb3a98c17637a68de">carta::RegionConverter</a>
 </li>
 <li>GetApproximateEllipsePoints()
-: <a class="el" href="classcarta_1_1Region.html#a6772d2cd106dcffca1a19790810c86e3">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#a8018d8b7af5c0be8cfdf3c55eb03bf6d">carta::RegionConverter</a>
 </li>
 <li>GetApproximatePolygonPoints()
-: <a class="el" href="classcarta_1_1Region.html#adda0bc2f7922e1a8b2f5defd4ba5857b">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#af3d0a6f1d47f24076c440c45e0492d7f">carta::RegionConverter</a>
 </li>
 <li>GetBasicStats()
 : <a class="el" href="classcarta_1_1Frame.html#a1bd6cad34fcc337311218150f6771850">carta::Frame</a>
@@ -184,10 +184,8 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1Frame.html#ac69e2783075a77c44ffc888d4e09a9b8">carta::Frame</a>
 </li>
 <li>GetCachedLCRegion()
-: <a class="el" href="classcarta_1_1Region.html#ac726a3a46d2c118fa8ec8eda945ebbfb">carta::Region</a>
-</li>
-<li>GetCachedPolygonRegion()
-: <a class="el" href="classcarta_1_1Region.html#a21a903efd4f7762226a3184fbd16aaf2">carta::Region</a>
+: <a class="el" href="classcarta_1_1Region.html#ad761974201dc977416905a55ed35fb86">carta::Region</a>
+, <a class="el" href="classcarta_1_1RegionConverter.html#a965e9d79e3c7f757b91ce3eca1c3b21f">carta::RegionConverter</a>
 </li>
 <li>GetCartaFileType()
 : <a class="el" href="classcarta_1_1FileInfoLoader.html#a5a934439a746e53660be9ce1681f13d3">carta::FileInfoLoader</a>
@@ -224,7 +222,7 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1Region.html#afeba24c3fc32647d614ed0fe8a2cb63d">carta::Region</a>
 </li>
 <li>GetConvertedLCRegion()
-: <a class="el" href="classcarta_1_1Region.html#adbd31c126ba3250aaab8f07e904836f1">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#a0363c9591e779bc148c9789512976633">carta::RegionConverter</a>
 </li>
 <li>GetCoordinateSystem()
 : <a class="el" href="classcarta_1_1FileLoader.html#a6c78d61804342a45dbf7e3e668357f2c">carta::FileLoader</a>
@@ -257,7 +255,7 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 , <a class="el" href="classcarta_1_1Hdf5Loader.html#a84d40698f366b751b66e5afe679b4a95">carta::Hdf5Loader</a>
 </li>
 <li>GetEllipseRecord()
-: <a class="el" href="classcarta_1_1Region.html#ac3cc3a5318e66e752da26ce9cf1cfedd">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#ad9c0a82a77f9ab97374620d7ff94b14b">carta::RegionConverter</a>
 </li>
 <li>GetErrorMessage()
 : <a class="el" href="classcarta_1_1Frame.html#a750810e310c88309c896074f0f3b5276">carta::Frame</a>
@@ -360,13 +358,15 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 </li>
 <li>GetImageRegion()
 : <a class="el" href="classcarta_1_1Frame.html#adf81c6e34d99da6b4238cde332b3c4cf">carta::Frame</a>
-, <a class="el" href="classcarta_1_1Region.html#a9ec0878ba3ff01974517769cbed3b352">carta::Region</a>
+, <a class="el" href="classcarta_1_1Region.html#a946ec39c21a09a141d917b553ba56551">carta::Region</a>
+, <a class="el" href="classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1">carta::RegionConverter</a>
 </li>
 <li>GetImageRegionMask()
 : <a class="el" href="classcarta_1_1Region.html#a6ec0e6a0c65e9bc6ed3b9213831f053f">carta::Region</a>
 </li>
 <li>GetImageRegionRecord()
-: <a class="el" href="classcarta_1_1Region.html#abb634583b379802b8712f1b7e2312a36">carta::Region</a>
+: <a class="el" href="classcarta_1_1Region.html#a64c23b1ecd08f94149ea575536e738f7">carta::Region</a>
+, <a class="el" href="classcarta_1_1RegionConverter.html#a27a07e5b73b1f32aefadb83b9ba61994">carta::RegionConverter</a>
 </li>
 <li>GetImageSlicer()
 : <a class="el" href="classcarta_1_1Frame.html#a9e748d02f7394ed01b69276b61a79825">carta::Frame</a>
@@ -399,7 +399,10 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1RegionHandler.html#acbbfca854da73c657e5257de954b7048">carta::RegionHandler</a>
 </li>
 <li>GetLineRecord()
-: <a class="el" href="classcarta_1_1Region.html#af22052c10d0059e65d3ef5a5f9ffa441">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#a77a82b99c8e7f2bcf84d1a78c1963005">carta::RegionConverter</a>
+</li>
+<li>GetLineRegionName()
+: <a class="el" href="structcarta_1_1RegionState.html#a66bbe95b7834f84fc0e106412708b929">carta::RegionState</a>
 </li>
 <li>GetLineRotation()
 : <a class="el" href="classcarta_1_1LineBoxRegions.html#a2e282e38eae566e015e13f72a9696e28">carta::LineBoxRegions</a>
@@ -408,7 +411,7 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1RegionHandler.html#ab65206f98fa5024447ab049a91cd4526">carta::RegionHandler</a>
 </li>
 <li>GetLoader()
-: <a class="el" href="classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f">carta::FileLoader</a>
+: <a class="el" href="classcarta_1_1FileLoader.html#a0343dd8864537b82ecaa280dec227923">carta::FileLoader</a>
 </li>
 <li>GetLoaderPointSpectralData()
 : <a class="el" href="classcarta_1_1Frame.html#a237c3e9f3498439753e895bb2bd0254a">carta::Frame</a>
@@ -465,13 +468,13 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1CartaMiriadImage.html#a4d2d63a75f2cf9238ada99bfeb6fde24">carta::CartaMiriadImage</a>
 </li>
 <li>GetPointRecord()
-: <a class="el" href="classcarta_1_1Region.html#afe2395f765e76c9cd81c775f9e151056">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#ac6b5e849111b0211fe52724f9a8792e2">carta::RegionConverter</a>
 </li>
 <li>GetPointSeparation()
 : <a class="el" href="classcarta_1_1LineBoxRegions.html#a427ea4115e09871b3b27e1be0201abc3">carta::LineBoxRegions</a>
 </li>
 <li>GetPolygonRecord()
-: <a class="el" href="classcarta_1_1Region.html#a7c5f833091a74779c77aadd9817a8a77">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#ae938e58bdba69178dd81f57bf9b6553f">carta::RegionConverter</a>
 </li>
 <li>GetPolygonRegionState()
 : <a class="el" href="classcarta_1_1LineBoxRegions.html#a984128ccf5350d17ce15c25bf001e5c7">carta::LineBoxRegions</a>
@@ -500,8 +503,11 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 <li>GetRasterTileData()
 : <a class="el" href="classcarta_1_1Frame.html#a3b8bcda7531d4fd25f6dbb7be1d4a35e">carta::Frame</a>
 </li>
+<li>GetRectangleCorners()
+: <a class="el" href="structcarta_1_1RegionState.html#a90efa1046cc65ceb9ae9a6f32d2cc8e6">carta::RegionState</a>
+</li>
 <li>GetRectangleMidpoints()
-: <a class="el" href="classcarta_1_1Region.html#a0448c1c39e20d1a5428b4ccc688a288c">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#a3af0b6c9f41c962149fa715d22a0b40f">carta::RegionConverter</a>
 </li>
 <li>GetRectBoxPoints()
 : <a class="el" href="classcarta_1_1CrtfImportExport.html#a0825242c8460b999da091ba1ee3b3762">carta::CrtfImportExport</a>
@@ -509,11 +515,8 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 <li>GetRefCount()
 : <a class="el" href="classcarta_1_1Session.html#a474a60a84b83ac33ffc32f8595690847">carta::Session</a>
 </li>
-<li>GetReferenceFileId()
-: <a class="el" href="classcarta_1_1Region.html#a94dae002eb286f96a62b56298e90e93b">carta::Region</a>
-</li>
 <li>GetReferencePolygonPoints()
-: <a class="el" href="classcarta_1_1Region.html#a32d9a2ea3526f6e914f4517a9c8ec011">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#a36104150d7b5ca14e604c07fc2afaae6">carta::RegionConverter</a>
 </li>
 <li>GetRegion()
 : <a class="el" href="classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b">carta::RegionHandler</a>
@@ -537,7 +540,7 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1CrtfImportExport.html#a373069692ab2205c2ca70040f888518b">carta::CrtfImportExport</a>
 </li>
 <li>GetRegionPointsRecord()
-: <a class="el" href="classcarta_1_1Region.html#a1a2fb79566c14c07764aaf101398ac42">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#ae5ee2134120de5a8facae68c4babebdc">carta::RegionConverter</a>
 </li>
 <li>GetRegionProfile()
 : <a class="el" href="classcarta_1_1PvPreviewCube.html#a5111b1569e7cf25cc3cd64a65da81f39">carta::PvPreviewCube</a>
@@ -573,7 +576,10 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1PvPreviewCut.html#adb14a36f084715532b96ee32203e8dc6">carta::PvPreviewCut</a>
 </li>
 <li>GetRotboxRecord()
-: <a class="el" href="classcarta_1_1Region.html#a790a5a5f3aee8797e2f2024b02dd4dce">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#aef302421fc95fc4d33c76e730e56d7f9">carta::RegionConverter</a>
+</li>
+<li>GetRotboxRecordForLCRegion()
+: <a class="el" href="classcarta_1_1Region.html#a6df7292ce53d0440835844bf74fee9ae">carta::Region</a>
 </li>
 <li>GetSeparationTolerance()
 : <a class="el" href="classcarta_1_1LineBoxRegions.html#a622d3a3a2a21711de9a278543fe0fc40">carta::LineBoxRegions</a>
@@ -677,7 +683,7 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 : <a class="el" href="classcarta_1_1RegionImportExport.html#ab14406bc47f8ef9a23afba269ed32634">carta::RegionImportExport</a>
 </li>
 <li>GetTotalSegmentLength()
-: <a class="el" href="classcarta_1_1Region.html#a2c3e29a5a30b7763f315d09cbe29c707">carta::Region</a>
+: <a class="el" href="classcarta_1_1RegionConverter.html#a88faa6c37bfe2d58cdb57af3b2e312dc">carta::RegionConverter</a>
 </li>
 <li>GetTotalSteps()
 : <a class="el" href="classcarta_1_1Image2DConvolver.html#a4f43d699940a9f4bd155bf8e2e5aef44">carta::Image2DConvolver&lt; T &gt;</a>

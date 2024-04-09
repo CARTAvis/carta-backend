@@ -1,5 +1,8 @@
 <map id="carta::Region::GetImageRegionMask" name="carta::Region::GetImageRegionMask">
-<area shape="rect" id="node1" title=" " alt="" coords="5,13,265,39"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="560,5,744,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Region.html#a9557b22b60d93d7d5933c08f3a2e19c2" title=" " alt="" coords="313,38,512,65"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,42,265,69"/>
+<area shape="rect" id="node2" href="$classcarta_1_1Region.html#ad761974201dc977416905a55ed35fb86" title=" " alt="" coords="313,35,500,76"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="801,5,985,47"/>
+<area shape="rect" id="node4" href="$classcarta_1_1Region.html#a3bcb4285b1e57b69ffe405073361b74c" title=" " alt="" coords="548,35,753,76"/>
+<area shape="rect" id="node5" href="$structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" title=" " alt="" coords="561,100,740,141"/>
+<area shape="rect" id="node6" href="$Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="822,107,965,134"/>
 </map>

@@ -48,7 +48,6 @@ var classcarta_1_1RegionHandler =
     [ "IsLineRegion", "classcarta_1_1RegionHandler.html#a0a88beca77cada14a4aba1dbb90b7e5f", null ],
     [ "IsPointRegion", "classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e", null ],
     [ "IsValid", "classcarta_1_1RegionHandler.html#a8f74993ebeac47b9031a2558833f3ee1", null ],
-    [ "RegionChanged", "classcarta_1_1RegionHandler.html#a5f4769d3d5118bca63da59b2f15bd68a", null ],
     [ "RegionFileIdsValid", "classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e", null ],
     [ "RegionSet", "classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae", null ],
     [ "RemoveFileRequirementsCache", "classcarta_1_1RegionHandler.html#a390e02b6d680c5b09e8957a65468c8d0", null ],

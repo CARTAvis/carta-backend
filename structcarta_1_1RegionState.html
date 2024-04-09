@@ -112,7 +112,7 @@ $(document).ready(function(){initNavTree('structcarta_1_1RegionState.html',''); 
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;Region.h&gt;</code></p>
+<p><code>#include &lt;RegionState.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for carta::RegionState:</div>
 <div class="dyncontent">
@@ -126,8 +126,6 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a1c8ce44805c320b1f908d35a7f431bd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa14a792c8983e148f76cf6656d480b46"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#aa14a792c8983e148f76cf6656d480b46">RegionState</a> (int ref_file_id_, CARTA::RegionType type_, const std::vector&lt; CARTA::Point &gt; &amp;control_points_, float rotation_)</td></tr>
 <tr class="separator:aa14a792c8983e148f76cf6656d480b46"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ea3d5cd9ad8c60cc3a71582a22c174b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#a3ea3d5cd9ad8c60cc3a71582a22c174b">operator=</a> (const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;other)</td></tr>
-<tr class="separator:a3ea3d5cd9ad8c60cc3a71582a22c174b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4adb7f8026c088e79334a406c652e1c6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#a4adb7f8026c088e79334a406c652e1c6">operator==</a> (const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;rhs)</td></tr>
 <tr class="separator:a4adb7f8026c088e79334a406c652e1c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c1ef2e15d82f95198ee446a6a1fd219"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#a8c1ef2e15d82f95198ee446a6a1fd219">operator!=</a> (const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;rhs)</td></tr>
@@ -138,6 +136,20 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aa31320add892313f438b6c344d99fe11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac7fc86b0c78d7486b6b1b1829e60b154"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#ac7fc86b0c78d7486b6b1b1829e60b154">PointsChanged</a> (const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;rhs)</td></tr>
 <tr class="separator:ac7fc86b0c78d7486b6b1b1829e60b154"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bad91889b88a92413ec04a5f990669f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#a1bad91889b88a92413ec04a5f990669f">IsPoint</a> ()</td></tr>
+<tr class="separator:a1bad91889b88a92413ec04a5f990669f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7139199adedd4b7c475aaa66cab8b541"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#a7139199adedd4b7c475aaa66cab8b541">IsLineType</a> ()</td></tr>
+<tr class="separator:a7139199adedd4b7c475aaa66cab8b541"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ac9fccccfe31860068c7c7e1a5219d6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#a7ac9fccccfe31860068c7c7e1a5219d6">IsBox</a> ()</td></tr>
+<tr class="separator:a7ac9fccccfe31860068c7c7e1a5219d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0d42fa8098fb452ff8b385808aa75a2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#af0d42fa8098fb452ff8b385808aa75a2">IsRotbox</a> ()</td></tr>
+<tr class="separator:af0d42fa8098fb452ff8b385808aa75a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb4d405523dc5b896a5f28ccaf707513"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#abb4d405523dc5b896a5f28ccaf707513">IsAnnotation</a> ()</td></tr>
+<tr class="separator:abb4d405523dc5b896a5f28ccaf707513"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90efa1046cc65ceb9ae9a6f32d2cc8e6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#a90efa1046cc65ceb9ae9a6f32d2cc8e6">GetRectangleCorners</a> (casacore::Vector&lt; casacore::Double &gt; &amp;x, casacore::Vector&lt; casacore::Double &gt; &amp;y, bool apply_rotation=true)</td></tr>
+<tr class="separator:a90efa1046cc65ceb9ae9a6f32d2cc8e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66bbe95b7834f84fc0e106412708b929"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html#a66bbe95b7834f84fc0e106412708b929">GetLineRegionName</a> ()</td></tr>
+<tr class="separator:a66bbe95b7834f84fc0e106412708b929"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -225,6 +237,252 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a66bbe95b7834f84fc0e106412708b929"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a66bbe95b7834f84fc0e106412708b929">&#9670;&nbsp;</a></span>GetLineRegionName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string carta::RegionState::GetLineRegionName </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_a66bbe95b7834f84fc0e106412708b929_cgraph.svg" width="366" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_a66bbe95b7834f84fc0e106412708b929_icgraph.svg" width="100%" height="427"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a90efa1046cc65ceb9ae9a6f32d2cc8e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90efa1046cc65ceb9ae9a6f32d2cc8e6">&#9670;&nbsp;</a></span>GetRectangleCorners()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::RegionState::GetRectangleCorners </td>
+          <td>(</td>
+          <td class="paramtype">casacore::Vector&lt; casacore::Double &gt; &amp;&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">casacore::Vector&lt; casacore::Double &gt; &amp;&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>apply_rotation</em> = <code>true</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_a90efa1046cc65ceb9ae9a6f32d2cc8e6_icgraph.svg" width="100%" height="486"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="abb4d405523dc5b896a5f28ccaf707513"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb4d405523dc5b896a5f28ccaf707513">&#9670;&nbsp;</a></span>IsAnnotation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::RegionState::IsAnnotation </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_abb4d405523dc5b896a5f28ccaf707513_icgraph.svg" width="100%" height="378"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a7ac9fccccfe31860068c7c7e1a5219d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7ac9fccccfe31860068c7c7e1a5219d6">&#9670;&nbsp;</a></span>IsBox()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::RegionState::IsBox </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_a7ac9fccccfe31860068c7c7e1a5219d6_icgraph.svg" width="100%" height="427"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a7139199adedd4b7c475aaa66cab8b541"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7139199adedd4b7c475aaa66cab8b541">&#9670;&nbsp;</a></span>IsLineType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::RegionState::IsLineType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_a7139199adedd4b7c475aaa66cab8b541_icgraph.svg" width="100%" height="514"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a1bad91889b88a92413ec04a5f990669f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1bad91889b88a92413ec04a5f990669f">&#9670;&nbsp;</a></span>IsPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::RegionState::IsPoint </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_a1bad91889b88a92413ec04a5f990669f_icgraph.svg" width="100%" height="505"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="af0d42fa8098fb452ff8b385808aa75a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0d42fa8098fb452ff8b385808aa75a2">&#9670;&nbsp;</a></span>IsRotbox()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::RegionState::IsRotbox </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_af0d42fa8098fb452ff8b385808aa75a2_cgraph.svg" width="344" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_af0d42fa8098fb452ff8b385808aa75a2_icgraph.svg" width="616" height="170"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
 <a id="a8c1ef2e15d82f95198ee446a6a1fd219"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8c1ef2e15d82f95198ee446a6a1fd219">&#9670;&nbsp;</a></span>operator!=()</h2>
 
@@ -254,32 +512,6 @@ Here is the call graph for this function:</div>
 <div class="center"><iframe scrolling="no" frameborder="0" src="structcarta_1_1RegionState_a8c1ef2e15d82f95198ee446a6a1fd219_cgraph.svg" width="535" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
-
-</div>
-</div>
-<a id="a3ea3d5cd9ad8c60cc3a71582a22c174b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3ea3d5cd9ad8c60cc3a71582a22c174b">&#9670;&nbsp;</a></span>operator=()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void carta::RegionState::operator= </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
 
 </div>
 </div>
@@ -474,7 +706,7 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li><a class="el" href="Region_8h.html">Region.h</a></li>
+<li><a class="el" href="RegionState_8h.html">RegionState.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

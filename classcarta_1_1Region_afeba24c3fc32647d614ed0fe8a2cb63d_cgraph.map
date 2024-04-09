@@ -1,5 +1,8 @@
 <map id="carta::Region::GetControlPointsRecord" name="carta::Region::GetControlPointsRecord">
-<area shape="rect" id="node1" title=" " alt="" coords="5,35,192,76"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Region.html#a767afdad502059e25bcf389d1fc42e89" title=" " alt="" coords="240,5,480,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="528,35,712,76"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,71,192,112"/>
+<area shape="rect" id="node2" href="$classcarta_1_1Region.html#a77abe84c6c73dbad663e8255e362a86f" title=" " alt="" coords="240,5,464,47"/>
+<area shape="rect" id="node4" href="$structcarta_1_1RegionState.html#a66bbe95b7834f84fc0e106412708b929" title=" " alt="" coords="270,71,434,112"/>
+<area shape="rect" id="node6" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="260,136,444,177"/>
+<area shape="rect" id="node3" href="$structcarta_1_1RegionState.html#a1bad91889b88a92413ec04a5f990669f" title=" " alt="" coords="512,5,655,47"/>
+<area shape="rect" id="node5" href="$structcarta_1_1RegionState.html#a7139199adedd4b7c475aaa66cab8b541" title=" " alt="" coords="512,71,655,112"/>
 </map>

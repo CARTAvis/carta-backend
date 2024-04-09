@@ -104,6 +104,7 @@ var hierarchy =
     [ "carta::queuing_rw_mutex", "classcarta_1_1queuing__rw__mutex.html", null ],
     [ "carta::queuing_rw_mutex_scoped", "classcarta_1_1queuing__rw__mutex__scoped.html", null ],
     [ "carta::Region", "classcarta_1_1Region.html", null ],
+    [ "carta::RegionConverter", "classcarta_1_1RegionConverter.html", null ],
     [ "carta::RegionHandler", "classcarta_1_1RegionHandler.html", null ],
     [ "carta::RegionHistogramConfig", "structcarta_1_1RegionHistogramConfig.html", null ],
     [ "carta::RegionImportExport", "classcarta_1_1RegionImportExport.html", [

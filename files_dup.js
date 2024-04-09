@@ -192,7 +192,11 @@ var files_dup =
       [ "PvPreviewCut", "classcarta_1_1PvPreviewCut.html", "classcarta_1_1PvPreviewCut" ]
     ] ],
     [ "Region.cc", "Region_8cc.html", null ],
-    [ "Region.h", "Region_8h.html", "Region_8h" ],
+    [ "Region.h", "Region_8h.html", [
+      [ "Region", "classcarta_1_1Region.html", "classcarta_1_1Region" ]
+    ] ],
+    [ "RegionConverter.cc", "RegionConverter_8cc.html", null ],
+    [ "RegionConverter.h", "RegionConverter_8h.html", "RegionConverter_8h" ],
     [ "RegionHandler.cc", "RegionHandler_8cc.html", "RegionHandler_8cc" ],
     [ "RegionHandler.h", "RegionHandler_8h.html", [
       [ "RegionProperties", "structcarta_1_1RegionProperties.html", "structcarta_1_1RegionProperties" ],
@@ -200,6 +204,9 @@ var files_dup =
     ] ],
     [ "RegionImportExport.cc", "RegionImportExport_8cc.html", null ],
     [ "RegionImportExport.h", "RegionImportExport_8h.html", "RegionImportExport_8h" ],
+    [ "RegionState.h", "RegionState_8h.html", [
+      [ "RegionState", "structcarta_1_1RegionState.html", "structcarta_1_1RegionState" ]
+    ] ],
     [ "RequirementsCache.h", "RequirementsCache_8h.html", [
       [ "ConfigId", "structcarta_1_1ConfigId.html", "structcarta_1_1ConfigId" ],
       [ "ConfigIdHash", "structcarta_1_1ConfigIdHash.html", "structcarta_1_1ConfigIdHash" ],
