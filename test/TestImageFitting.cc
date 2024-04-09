@@ -325,21 +325,21 @@ TEST_F(ImageFittingTest, RunImageFitter) {
     if (success) {
         auto fit_results = fitting_response.result_values();
         std::cout << "\nFit results: \n";
-        std::cout << "x = " << fit_results[0].center().x() << "\n";
-        std::cout << "y = " << fit_results[0].center().y() << "\n";
-        std::cout << "amp = " << fit_results[0].amp() << "\n";
-        std::cout << "fwhm-x = " << fit_results[0].fwhm().x() << "\n";
-        std::cout << "fwhm-y = " << fit_results[0].fwhm().y() << "\n";
-        std::cout << "pa = " << fit_results[0].pa() << "\n";
+        std::cout << "center x = " << fit_results[0].center().x() << "\n";
+        std::cout << "center y = " << fit_results[0].center().y() << "\n";
+        std::cout << "Amplitude = " << fit_results[0].amp() << "\n";
+        std::cout << "FWHM-x = " << fit_results[0].fwhm().x() << "\n";
+        std::cout << "FWHM-y = " << fit_results[0].fwhm().y() << "\n";
+        std::cout << "position angle = " << fit_results[0].pa() << "\n";
 
         std::cout << "\nFit errors: \n";
         auto fit_errors = fitting_response.result_errors();
-        std::cout << "x = " << fit_errors[0].center().x() << "\n";
-        std::cout << "y = " << fit_errors[0].center().y() << "\n";
-        std::cout << "amp = " << fit_errors[0].amp() << "\n";
-        std::cout << "fwhm-x = " << fit_errors[0].fwhm().x() << "\n";
-        std::cout << "fwhm-y = " << fit_errors[0].fwhm().y() << "\n";
-        std::cout << "pa = " << fit_errors[0].pa() << "\n";
+        std::cout << "center x = " << fit_errors[0].center().x() << "\n";
+        std::cout << "center y = " << fit_errors[0].center().y() << "\n";
+        std::cout << "Amplitude = " << fit_errors[0].amp() << "\n";
+        std::cout << "FWHM-x = " << fit_errors[0].fwhm().x() << "\n";
+        std::cout << "FWHM-y = " << fit_errors[0].fwhm().y() << "\n";
+        std::cout << "position angle = " << fit_errors[0].pa() << "\n";
 
         std::cout << "\nRMS of residual data = " << image_fitter->GetResidualRms() << "\n";
     }
@@ -402,10 +402,6 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
         EXPECT_EQ(unit_err_major, "arcsec");
         EXPECT_EQ(unit_err_minor, "arcsec");
         EXPECT_EQ(unit_err_pa, "deg");
-
-        std::cout << " --- major axis FWHM = " << result.major << " +/- " << result.major_err << "\n";
-        std::cout << " --- minor axis FWHM = " << result.minor << " +/- " << result.minor_err << "\n";
-        std::cout << " --- position angle = " << result.pa << " +/- " << result.pa_err << "\n";
     }
 
     // Input world coordinate for 2D Gaussian shape
@@ -445,7 +441,11 @@ TEST_F(ImageFittingTest, TestCoordTrans) {
     carta::Deconvolver deconvolver(coord_sys, beam, residue_rms);
     auto gauss_shape = deconvolver.PixelToWorld(21.3636, 24.199, 10.9295, 9.14887, 60.21);
 
-    std::cerr << "major_axis = " << gauss_shape.fwhm_major << "\n";
-    std::cerr << "minor_axis = " << gauss_shape.fwhm_minor << "\n";
-    std::cerr << "pa = " << gauss_shape.pa << "\n";
+    EXPECT_NEAR(gauss_shape.fwhm_major.getValue(), 1.74872, 1e-6);
+    EXPECT_NEAR(gauss_shape.fwhm_minor.getValue(), 1.46382, 1e-6);
+    EXPECT_NEAR(gauss_shape.pa.getValue(), 60.21, 1e-6);
+
+    EXPECT_EQ(gauss_shape.fwhm_major.getUnit(), "arcsec");
+    EXPECT_EQ(gauss_shape.fwhm_minor.getUnit(), "arcsec");
+    EXPECT_EQ(gauss_shape.pa.getUnit(), "deg");
 }

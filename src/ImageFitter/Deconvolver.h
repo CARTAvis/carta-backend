@@ -39,7 +39,8 @@ public:
 
     ~Deconvolver() = default;
 
-    std::string GetDeconvolutionLog(const std::vector<CARTA::GaussianComponent>& in_gauss_vec);
+    void GetDeconvolutionResults(
+        const std::vector<CARTA::GaussianComponent>& in_gauss_vec, std::string& log, std::vector<DeconvolutionResult>& results);
     bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result);
     bool GetWorldWidthToPixel(const DeconvolutionResult& world_coords, DeconvolutionResult& pixel_coords);
     bool WorldWidthToPixel(casacore::Vector<casacore::Double>& pixel_params, const casacore::Vector<casacore::Quantity>& world_params);

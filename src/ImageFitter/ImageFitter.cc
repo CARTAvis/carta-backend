@@ -148,8 +148,11 @@ bool ImageFitter::GetDeconvolvedResults(
         carta::Deconvolver deconvolver(image->coordinates(), image->imageInfo().restoringBeam(channel, stokes), GetResidualRms());
         const std::vector<CARTA::GaussianComponent>& fit_results = {
             fitting_response.result_values().begin(), fitting_response.result_values().end()};
+        std::string deconvolution_log;
+        std::vector<DeconvolutionResult> results;
+        deconvolver.GetDeconvolutionResults(fit_results, deconvolution_log, results);
         auto* fit_log = fitting_response.mutable_log();
-        fit_log->append(deconvolver.GetDeconvolutionLog(fit_results));
+        fit_log->append(deconvolution_log);
         return true;
     }
     return false;
