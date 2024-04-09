@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Normalize the style of guard names in header files ([#1023](https://github.com/CARTAvis/carta-backend/issues/1023)).
 * Improved file IDs for generated images ([#1224](https://github.com/CARTAvis/carta-frontend/issues/1224)).
 * Store global settings in a singleton class ([#1302](https://github.com/CARTAvis/carta-backend/issues/1302)).
+* Move Region code to RegionConverter for maintenance and performance ([#1347](https://github.com/CARTAvis/carta-backend/issues/1347)).
 
 ## [4.1.0]
 

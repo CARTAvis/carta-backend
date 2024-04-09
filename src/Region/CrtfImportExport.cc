@@ -451,7 +451,6 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         std::vector<std::string> parameters;
         std::unordered_map<std::string, std::string> properties;
         ParseRegionParameters(line, parameters, properties);
-
         // Coordinate frame for world coordinates conversion
         RegionState region_state;
         CARTA::RegionStyle region_style;
@@ -499,7 +498,13 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
                     if (region == "text") {
                         // Set text label for text region
                         if (parameters.size() == 4) { // text, x, y, "text"
-                            region_style.mutable_annotation_style()->set_text_label0(parameters[3]);
+                            std::string label(parameters[3]);
+                            if (!label.empty() &&
+                                ((label.front() == '"' && label.back() == '"') || (label.front() == '\'' && label.back() == '\''))) {
+                                label.pop_back();
+                                label = label.substr(1);
+                            }
+                            region_style.mutable_annotation_style()->set_text_label0(label);
                         }
                     } else {
                         // Set text position for textbox region
