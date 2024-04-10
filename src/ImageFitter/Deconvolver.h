@@ -16,6 +16,7 @@
 namespace carta {
 
 struct DeconvolutionResult {
+    double amplitude;
     casacore::Quantity center_x;
     casacore::Quantity center_y;
     casacore::Quantity major;
@@ -24,6 +25,21 @@ struct DeconvolutionResult {
     casacore::Quantity major_err;
     casacore::Quantity minor_err;
     casacore::Quantity pa_err;
+
+    DeconvolutionResult() : amplitude(0) {}
+
+    DeconvolutionResult(double amplitude_, casacore::Quantity center_x_, casacore::Quantity center_y_, casacore::Quantity major_,
+        casacore::Quantity minor_, casacore::Quantity pa_, casacore::Quantity major_err_, casacore::Quantity minor_err_,
+        casacore::Quantity pa_err_)
+        : amplitude(amplitude_),
+          center_x(center_x_),
+          center_y(center_y_),
+          major(major_),
+          minor(minor_),
+          pa(pa_),
+          major_err(major_err_),
+          minor_err(minor_err_),
+          pa_err(pa_err_) {}
 };
 
 struct GaussianShape {
@@ -40,7 +56,7 @@ public:
     ~Deconvolver() = default;
 
     void GetDeconvolutionResults(
-        const std::vector<CARTA::GaussianComponent>& in_gauss_vec, std::string& log, std::vector<DeconvolutionResult>& results);
+        const std::vector<CARTA::GaussianComponent>& in_gauss_vec, std::string& log, std::vector<DeconvolutionResult>& pixel_results);
     bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result);
     bool GetWorldWidthToPixel(const DeconvolutionResult& world_coords, DeconvolutionResult& pixel_coords);
     bool WorldWidthToPixel(casacore::Vector<casacore::Double>& pixel_params, const casacore::Vector<casacore::Quantity>& world_params);

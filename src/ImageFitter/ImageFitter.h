@@ -104,7 +104,8 @@ public:
     /** @brief Get RMS of residual data from the fit. */
     double GetResidualRms();
     /** @brief Get fit results for the deconvolved beam image if any. */
-    bool GetDeconvolvedResults(casacore::ImageInterface<float>* image, int channel, int stokes, CARTA::FittingResponse& fitting_response);
+    bool GetDeconvolvedResults(casacore::ImageInterface<float>* image, size_t width, size_t height, int channel, int stokes,
+        CARTA::FittingResponse& fitting_response);
 
 private:
     /** @brief Fitting-related data. */
@@ -135,6 +136,8 @@ private:
     bool _create_residual_data;
     /** @brief Model image data. */
     std::vector<float> _model_data;
+    /** @brief Model data for the deconvolved beam image. */
+    std::vector<float> _deconvolved_model_data;
     /** @brief Residual image data. */
     std::vector<float> _residual_data;
     /** @brief Maximum number of fitting iterations. */

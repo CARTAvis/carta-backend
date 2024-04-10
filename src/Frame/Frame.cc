@@ -1791,9 +1791,12 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             fitting_request.initial_values().begin(), fitting_request.initial_values().end());
         std::vector<bool> fixed_params(fitting_request.fixed_params().begin(), fitting_request.fixed_params().end());
 
+        size_t width, height;
         if (stokes_region != nullptr) {
             casacore::IPosition region_shape = GetRegionShape(*stokes_region);
-            spdlog::info("Creating region subimage data with shape {} x {}.", region_shape(0), region_shape(1));
+            width = region_shape(0);
+            height = region_shape(1);
+            spdlog::info("Creating region subimage data with shape {} x {}.", width, height);
 
             std::vector<float> region_data;
             if (!GetRegionData(*stokes_region, region_data)) {
@@ -1806,18 +1809,20 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             casacore::IPosition origin(2, 0, 0);
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
-            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), beam_size, unit, initial_values,
-                fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
+            success = _image_fitter->FitImage(width, height, region_data.data(), beam_size, unit, initial_values, fixed_params,
+                fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
+            width = _width;
+            height = _height;
 
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), beam_size, unit, initial_values, fixed_params,
+            success = _image_fitter->FitImage(width, height, _image_cache.get(), beam_size, unit, initial_values, fixed_params,
                 fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 
-        _image_fitter->GetDeconvolvedResults(image, CurrentZ(), CurrentStokes(), fitting_response);
+        _image_fitter->GetDeconvolvedResults(image, width, height, CurrentZ(), CurrentStokes(), fitting_response);
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
             int file_id(fitting_request.file_id());

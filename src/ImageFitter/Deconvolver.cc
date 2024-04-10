@@ -16,13 +16,12 @@ Deconvolver::Deconvolver(casacore::CoordinateSystem coord_sys, casacore::Gaussia
 }
 
 void Deconvolver::GetDeconvolutionResults(
-    const std::vector<CARTA::GaussianComponent>& in_gauss_vec, std::string& log, std::vector<DeconvolutionResult>& results) {
+    const std::vector<CARTA::GaussianComponent>& in_gauss_vec, std::string& log, std::vector<DeconvolutionResult>& pixel_results) {
     log += "\n------------- Deconvolved from beam -------------\n";
     for (int i = 0; i < in_gauss_vec.size(); ++i) {
         const CARTA::GaussianComponent& in_gauss = in_gauss_vec[i];
         DeconvolutionResult world_result;
         if (DoDeconvolution(in_gauss, world_result)) {
-            log += fmt::format("Component #{}:\n", i + 1);
             std::string major = fmt::format("{:.6f}", world_result.major.getValue());
             std::string minor = fmt::format("{:.6f}", world_result.minor.getValue());
             std::string pa = fmt::format("{:.6f}", world_result.pa.getValue());
@@ -35,25 +34,26 @@ void Deconvolver::GetDeconvolutionResults(
             std::string unit_minor = world_result.minor.getUnit();
             std::string unit_pa = world_result.pa.getUnit();
 
-            DeconvolutionResult pixel_results;
-            bool pixel_params_available = GetWorldWidthToPixel(world_result, pixel_results);
+            DeconvolutionResult pixel_result;
+            bool pixel_params_available = GetWorldWidthToPixel(world_result, pixel_result);
 
+            log += fmt::format("Component #{}:\n", i + 1);
             log += fmt::format("FWHM Major Axis = {} +/- {} ({})\n", major, err_major, unit_major);
             if (pixel_params_available) {
-                auto major_pixel = pixel_results.major.getValue();
-                auto major_err_pixel = pixel_results.major_err.getValue();
+                auto major_pixel = pixel_result.major.getValue();
+                auto major_err_pixel = pixel_result.major_err.getValue();
                 log += fmt::format("                = {:.6f} +/- {:.6f} (px)\n", major_pixel, major_err_pixel);
             }
             log += fmt::format("FWHM Minor Axis = {} +/- {} ({})\n", minor, err_minor, unit_minor);
             if (pixel_params_available) {
-                auto minor_pixel = pixel_results.minor.getValue();
-                auto minor_err_pixel = pixel_results.minor_err.getValue();
+                auto minor_pixel = pixel_result.minor.getValue();
+                auto minor_err_pixel = pixel_result.minor_err.getValue();
                 log += fmt::format("                = {:.6f} +/- {:.6f} (px)\n", minor_pixel, minor_err_pixel);
             }
             log += fmt::format("P.A.            = {} +/- {} ({})\n", pa, err_pa, unit_pa);
 
             if (pixel_params_available) {
-                results.emplace_back(pixel_results);
+                pixel_results.emplace_back(pixel_result);
             }
         }
     }
@@ -156,8 +156,9 @@ bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, Deco
             coord_dir.toWorld(center_world, {center_x, center_y});
             const casacore::Vector<casacore::String> world_units = coord_dir.worldAxisUnits();
 
-            result = {casacore::Quantity(center_world(0), world_units(0)), casacore::Quantity(center_world(1), world_units(1)),
-                best_decon_sol.getMajor(), best_decon_sol.getMinor(), best_decon_sol.getPA(true), err_major, err_minor, err_pa};
+            result = DeconvolutionResult(in_gauss.amp(), casacore::Quantity(center_world(0), world_units(0)),
+                casacore::Quantity(center_world(1), world_units(1)), best_decon_sol.getMajor(), best_decon_sol.getMinor(),
+                best_decon_sol.getPA(true), err_major, err_minor, err_pa);
         }
     }
     return success;
@@ -183,17 +184,30 @@ bool Deconvolver::GetWorldWidthToPixel(const DeconvolutionResult& world_coords, 
     casacore::Quantity major_err = world_coords.major_err;
     casacore::Quantity minor_err = world_coords.minor_err;
     casacore::Quantity pa_err = world_coords.pa_err;
-    bool pixels_available = WorldWidthToPixel(pixels, {world_coords.center_x, world_coords.center_y, major, minor, pa});
-    bool pixels_err1_available =
-        WorldWidthToPixel(pixels_err1, {world_coords.center_x, world_coords.center_y, major + major_err, minor + minor_err, pa});
-    bool pixels_err2_available =
-        WorldWidthToPixel(pixels_err2, {world_coords.center_x, world_coords.center_y, major - major_err, minor - minor_err, pa});
+
+    casacore::Vector<casacore::Quantity> world_params = {world_coords.center_x, world_coords.center_y, major, minor, pa};
+    bool pixels_available = WorldWidthToPixel(pixels, world_params);
+
+    casacore::Vector<casacore::Quantity> world_params_err1 = {
+        world_coords.center_x, world_coords.center_y, major + major_err, minor + minor_err, pa};
+    bool pixels_err1_available = WorldWidthToPixel(pixels_err1, world_params_err1);
+
+    casacore::Vector<casacore::Quantity> world_params_err2 = {
+        world_coords.center_x, world_coords.center_y, major - major_err, minor - minor_err, pa};
+    bool pixels_err2_available = WorldWidthToPixel(pixels_err2, world_params_err2);
 
     casacore::Vector<casacore::Double> pixels_err(3, 0);
     for (int i = 0; i < pixels_err.size(); ++i) {
         pixels_err(i) = std::abs(pixels_err1(i) - pixels_err2(i)) / 2;
     }
-    pixel_coords = {pixels(0), pixels(1), pixels(2), pixels_err(0), pixels_err(1), pixels_err(2)};
+
+    auto coord_dir = _coord_sys.directionCoordinate();
+    casacore::Vector<casacore::Double> center_pixel(2, 0);
+    casacore::Vector<casacore::Double> center_world = {world_coords.center_x.getValue(), world_coords.center_y.getValue()};
+    coord_dir.toPixel(center_pixel, center_world);
+
+    pixel_coords = DeconvolutionResult(world_coords.amplitude, center_pixel(0), center_pixel(1), pixels(0), pixels(1), pixels(2),
+        pixels_err(0), pixels_err(1), pixels_err(2));
 
     return pixels_available && pixels_err1_available && pixels_err2_available;
 }
