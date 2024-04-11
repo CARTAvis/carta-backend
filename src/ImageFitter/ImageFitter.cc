@@ -122,8 +122,8 @@ bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageReg
     if (_create_model_data) {
         model_image = GeneratedImage(GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
         if (_create_deconvolved_model_data) {
-            deconvolved_model_image =
-                GeneratedImage(GetFilename(filename, "beam_deconvolved_model"), GetImageData(image, image_region, _deconvolved_model_data));
+            deconvolved_model_image = GeneratedImage(
+                GetFilename(filename, "beam_deconvolved_model"), GetImageData(image, image_region, _deconvolved_model_data, true));
         }
     }
     if (_create_residual_data) {
@@ -445,7 +445,8 @@ std::string ImageFitter::GetLog() {
     return log;
 }
 
-casa::SPIIF ImageFitter::GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data) {
+casa::SPIIF ImageFitter::GetImageData(
+    casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data, bool remove_beam_info) {
     casa::SPIIF sub_image(new casacore::SubImage<casacore::Float>(*image, image_region));
     casacore::CoordinateSystem csys = sub_image->coordinates();
     casacore::IPosition shape = sub_image->shape();
@@ -455,7 +456,9 @@ casa::SPIIF ImageFitter::GetImageData(casa::SPIIF image, const casacore::ImageRe
     output_image->appendLog(sub_image->logger());
 
     auto image_info = sub_image->imageInfo();
-    if (image_info.hasMultipleBeams()) {
+    if (remove_beam_info) {
+        image_info.removeRestoringBeam();
+    } else if (image_info.hasMultipleBeams()) {
         // Use first beam, per imageanalysis ImageCollapser
         auto beam = *(image_info.getBeamSet().getBeams().begin());
         image_info.removeRestoringBeam();

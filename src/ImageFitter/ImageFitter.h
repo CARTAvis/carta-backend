@@ -183,9 +183,11 @@ private:
      * @param image The casacore ImageInterface object of the entire image
      * @param image_region The fitting region
      * @param image_data The image data for the generated casacore ImageInterface object
+     * @param remove_beam_info Whether to remove the beam information from image header
      * @return A casacore ImageInterface object
      */
-    casa::SPIIF GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data);
+    casa::SPIIF GetImageData(
+        casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data, bool remove_beam_info = false);
     /**
      * @brief Generate filenames by adding a suffix.
      * @param filename Name of the fitting image file
