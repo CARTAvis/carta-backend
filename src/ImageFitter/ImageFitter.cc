@@ -170,6 +170,7 @@ bool ImageFitter::GetDeconvolvedResults(casacore::ImageInterface<float>* image, 
                 double sigma_y = gauss.minor.getValue() / 2.355;
                 double theta = std::cos((casacore::C::pi * 90 / 180) - gauss.pa.getValue());
 
+#pragma omp parallel for
                 for (int i = 0; i < data_size; ++i) {
                     size_t row = i % width;
                     size_t col = i / width;
