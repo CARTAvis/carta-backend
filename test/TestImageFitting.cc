@@ -71,13 +71,14 @@ public:
 
         if (failed_message.length() == 0) {
             GeneratedImage model_image;
+            GeneratedImage deconvolved_model_image;
             GeneratedImage residual_image;
             int file_id(0);
             StokesRegion output_stokes_region;
             frame->GetImageRegion(file_id, AxisRange(frame->CurrentZ()), frame->CurrentStokes(), output_stokes_region);
             casa::SPIIF image(loader->GetStokesImage(output_stokes_region.stokes_source));
-            success = image_fitter->GetGeneratedImages(
-                image, output_stokes_region.image_region, frame->GetFileName(), model_image, residual_image, fitting_response);
+            success = image_fitter->GetGeneratedImages(image, output_stokes_region.image_region, frame->GetFileName(), model_image,
+                deconvolved_model_image, residual_image, fitting_response);
 
             EXPECT_TRUE(success);
             CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->GetImageCacheData());
@@ -104,9 +105,11 @@ public:
         CARTA::FittingResponse fitting_response;
         carta::RegionHandler region_handler;
         GeneratedImage model_image;
+        GeneratedImage deconvolved_model_image;
         GeneratedImage residual_image;
         auto progress_callback = [&](float progress) {};
-        bool success = region_handler.FitImage(fitting_request, fitting_response, frame, model_image, residual_image, progress_callback);
+        bool success = region_handler.FitImage(
+            fitting_request, fitting_response, frame, model_image, deconvolved_model_image, residual_image, progress_callback);
 
         // TODO: test generated model/residual images
         CompareResults(fitting_response, success, failed_message);

@@ -46,6 +46,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     _beam_size = beam_size;
     _unit = unit;
     _create_model_data = create_model_image;
+    _create_deconvolved_model_data = false;
     _create_residual_data = create_residual_image;
     _progress_callback = progress_callback;
 
@@ -116,9 +117,14 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
 }
 
 bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region, const std::string& filename,
-    GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response) {
+    GeneratedImage& model_image, GeneratedImage& deconvolved_model_image, GeneratedImage& residual_image,
+    CARTA::FittingResponse& fitting_response) {
     if (_create_model_data) {
         model_image = GeneratedImage(GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
+        if (_create_deconvolved_model_data) {
+            deconvolved_model_image =
+                GeneratedImage(GetFilename(filename, "beam_deconvolved_model"), GetImageData(image, image_region, _deconvolved_model_data));
+        }
     }
     if (_create_residual_data) {
         residual_image = GeneratedImage(GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
@@ -145,7 +151,7 @@ double ImageFitter::GetResidualRms() {
 
 bool ImageFitter::GetDeconvolvedResults(casacore::ImageInterface<float>* image, size_t width, size_t height, int channel, int stokes,
     CARTA::FittingResponse& fitting_response) {
-    if (image && image->imageInfo().hasBeam()) {
+    if (image && image->imageInfo().hasBeam() && !fitting_response.result_values().empty()) {
         carta::Deconvolver deconvolver(image->coordinates(), image->imageInfo().restoringBeam(channel, stokes), GetResidualRms());
         const std::vector<CARTA::GaussianComponent>& fit_results = {
             fitting_response.result_values().begin(), fitting_response.result_values().end()};
@@ -156,23 +162,26 @@ bool ImageFitter::GetDeconvolvedResults(casacore::ImageInterface<float>* image, 
         fit_log->append(deconvolution_log);
 
         // Create model data for deconvolved fit results
-        size_t data_size = width * height;
-        _deconvolved_model_data.resize(data_size, 0);
-        for (auto gauss : pixel_results) {
-            double sigma_x = gauss.major.getValue() / 2.355;
-            double sigma_y = gauss.minor.getValue() / 2.355;
-            double theta = std::cos((casacore::C::pi * 90 / 180) - gauss.pa.getValue());
+        if (_create_model_data) {
+            size_t data_size = width * height;
+            _deconvolved_model_data.resize(data_size, 0);
+            for (auto gauss : pixel_results) {
+                double sigma_x = gauss.major.getValue() / 2.355;
+                double sigma_y = gauss.minor.getValue() / 2.355;
+                double theta = std::cos((casacore::C::pi * 90 / 180) - gauss.pa.getValue());
 
-            for (int i = 0; i < data_size; ++i) {
-                size_t row = i % width;
-                size_t col = i / width;
-                double x = (double)row - gauss.center_x.getValue();
-                double y = (double)col - gauss.center_y.getValue();
-                double xp = x * std::cos(theta) - y * std::sin(theta);
-                double yp = x * std::sin(theta) + y * std::cos(theta);
-                _deconvolved_model_data[i] += 2 * casacore::C::pi * sigma_x * sigma_y * gauss.amplitude *
-                                              gsl_ran_gaussian_pdf(xp, sigma_x) * gsl_ran_gaussian_pdf(yp, sigma_y);
+                for (int i = 0; i < data_size; ++i) {
+                    size_t row = i % width;
+                    size_t col = i / width;
+                    double x = (double)row - gauss.center_x.getValue();
+                    double y = (double)col - gauss.center_y.getValue();
+                    double xp = x * std::cos(theta) - y * std::sin(theta);
+                    double yp = x * std::sin(theta) + y * std::cos(theta);
+                    _deconvolved_model_data[i] += 2 * casacore::C::pi * sigma_x * sigma_y * gauss.amplitude *
+                                                  gsl_ran_gaussian_pdf(xp, sigma_x) * gsl_ran_gaussian_pdf(yp, sigma_y);
+                }
             }
+            _create_deconvolved_model_data = true;
         }
         return true;
     }

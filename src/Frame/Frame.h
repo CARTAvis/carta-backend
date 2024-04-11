@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Frame.h: represents an open image file.  Handles slicing data and region calculations
-//# (profiles, histograms, stats)
+// # Frame.h: represents an open image file.  Handles slicing data and region calculations
+// # (profiles, histograms, stats)
 
 #ifndef CARTA_SRC_FRAME_FRAME_H_
 #define CARTA_SRC_FRAME_FRAME_H_
@@ -196,7 +196,8 @@ public:
 
     // Image fitting
     bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image,
-        GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, StokesRegion* stokes_region = nullptr);
+        GeneratedImage& deconvolved_model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback,
+        StokesRegion* stokes_region = nullptr);
     void StopFitting();
 
     // Save as a new file or export sub-image to CASA/FITS format
