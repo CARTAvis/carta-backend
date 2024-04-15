@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -94,14 +94,6 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
         }
     }
     return valid_region;
-}
-
-bool RegionHandler::RegionChanged(int region_id) {
-    // Used to trigger sending profiles etc., so not for annotation regions
-    if (!RegionSet(region_id, true)) {
-        return false;
-    }
-    return GetRegion(region_id)->RegionChanged();
 }
 
 void RegionHandler::RemoveRegion(int region_id) {
@@ -258,10 +250,9 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         }
     }
 
-    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+    bool export_pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
     auto output_csys = frame->CoordinateSystem();
-
-    if (!pixel_coord && !output_csys->hasDirectionCoordinate()) {
+    if (!export_pixel_coord && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
         export_ack.set_success(false);
         export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
@@ -275,7 +266,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             exporter = std::unique_ptr<RegionImportExport>(new CrtfImportExport(output_csys, output_shape, frame->StokesAxis()));
             break;
         case CARTA::FileType::DS9_REG:
-            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, pixel_coord));
+            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, export_pixel_coord));
             break;
         default:
             break;
@@ -291,7 +282,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             auto region = GetRegion(region_id);
             auto region_state = region->GetRegionState();
 
-            if ((region_state.reference_file_id == file_id) && pixel_coord) {
+            if ((region_state.reference_file_id == file_id) && export_pixel_coord) {
                 // Use RegionState control points with reference file id for pixel export
                 region_added = exporter->AddExportRegion(region_state, region_style);
             } else {
@@ -299,7 +290,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                     // Use Record containing pixel coords of region converted to output image
                     casacore::TableRecord region_record = region->GetImageRegionRecord(file_id, output_csys, output_shape);
                     if (!region_record.empty()) {
-                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
+                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, export_pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
                     spdlog::error("Export region record failed: {}", err.getMesg());
@@ -1306,7 +1297,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     int start_channel(0);                    // spectral range applied in preview image
     int stokes(preview_cube->GetStokes());
     PvGenerator pv_generator;
-    pv_generator.SetFileIdName(frame_id, preview_id, preview_cube->GetSourceFileName(), true);
+    pv_generator.SetFileName(preview_id, preview_cube->GetSourceFileName(), true);
 
     if (pv_generator.GetPvImage(preview_frame, no_preview_data, data_shape, increment, start_channel, stokes, reverse, pv_image, error)) {
         int width = data_shape(0);
@@ -1386,9 +1377,9 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
         std::shared_lock frame_lock(frame->GetActiveTaskMutex());
         auto source_filename = frame->GetFileName();
 
-        // Create GeneratedImage with id and name in PvGenerator
+        // Create GeneratedImage in PvGenerator
         PvGenerator pv_generator;
-        pv_generator.SetFileIdName(file_id, name_index, source_filename);
+        pv_generator.SetFileName(name_index, source_filename);
         pv_success =
             pv_generator.GetPvImage(frame, pv_data, pv_shape, offset_increment, start_chan, stokes_index, reverse, pv_image, message);
         cancelled &= _stop_pv[file_id];
@@ -2284,6 +2275,7 @@ bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std:
 
 bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb) {
     // Line spatial profiles.  Use callback to return each profile individually.
+    Timer t;
     if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
@@ -2342,6 +2334,7 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
             });
     }
 
+    spdlog::performance("Line spatial data in {:.3f} ms", t.Elapsed().ms());
     return profile_ok;
 }
 
@@ -2380,13 +2373,15 @@ bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::st
 }
 
 bool RegionHandler::IsPointRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
-        return GetRegion(region_id)->IsPoint();
+        return GetRegion(region_id)->IsPoint() && !GetRegion(region_id)->IsAnnotation();
     }
     return false;
 }
 
 bool RegionHandler::IsLineRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         return GetRegion(region_id)->IsLineType() && !GetRegion(region_id)->IsAnnotation();
     }
@@ -2394,6 +2389,7 @@ bool RegionHandler::IsLineRegion(int region_id) {
 }
 
 bool RegionHandler::IsClosedRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         auto type = GetRegion(region_id)->GetRegionState().type;
         return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON);

@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -48,17 +48,12 @@ bool Session::_controller_deployment = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode,
-    bool enable_scripting)
+    std::shared_ptr<FileListHandler> file_list_handler)
     : _socket(ws),
       _loop(loop),
       _id(id),
       _address(address),
-      _top_level_folder(top_level_folder),
-      _starting_folder(starting_folder),
-      _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
-      _read_only_mode(read_only_mode),
-      _enable_scripting(enable_scripting),
+      _table_controller(std::make_unique<TableController>()),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _sync_id(0),
@@ -66,6 +61,10 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _animation_active(false),
       _cursor_settings(this),
       _loaders(LOADER_CACHE_SIZE) {
+    auto& settings = ProgramSettings::GetInstance();
+    _top_level_folder = settings.top_level_folder;
+    _read_only_mode = settings.read_only_mode;
+    _enable_scripting = settings.enable_scripting;
     _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -123,6 +122,11 @@ Session::~Session() {
         }
     }
     logger::FlushLogFile();
+}
+
+void Session::SetExitTimeout(int secs) {
+    _exit_after_num_seconds = secs;
+    _exit_when_all_sessions_closed = true;
 }
 
 void Session::SetInitExitTimeout(int secs) {
@@ -525,6 +529,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 }
                 std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
                 _frames[file_id] = move(frame);
+                _last_file_id = file_id;
                 lock.unlock();
 
                 // copy file info, extended file info
@@ -596,6 +601,7 @@ bool Session::OnOpenFile(
             }
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);
+            _last_file_id = file_id;
             lock.unlock();
 
             // Set file info, extended file info
@@ -1259,10 +1265,11 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         }
 
         // Open moments images from the cache, open files acknowledgements will be sent to the frontend
+        int next_file_id = GetNextFileId();
         for (int i = 0; i < collapse_results.size(); ++i) {
             auto& collapse_result = collapse_results[i];
             auto* open_file_ack = moment_response.add_open_file_acks();
-            OnOpenFile(collapse_result.file_id, collapse_result.name, collapse_result.image, open_file_ack);
+            OnOpenFile(next_file_id++, collapse_result.name, collapse_result.image, open_file_ack);
         }
 
         // Send moment response message
@@ -1391,8 +1398,9 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
 
                 if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
                     // Fill response OpenFileAck
+                    int next_file_id = GetNextFileId();
                     auto* open_file_ack = pv_response.mutable_open_file_ack();
-                    OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+                    OnOpenFile(next_file_id, pv_image.name, pv_image.image, open_file_ack);
                 }
             }
             spdlog::performance("Generate pv response in {:.3f} ms", t.Elapsed().ms());
@@ -1454,13 +1462,14 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
         }
 
         if (success) {
+            int next_file_id = GetNextFileId();
             if (fitting_request.create_model_image()) {
                 auto* model_image_open_file_ack = fitting_response.mutable_model_image();
-                OnOpenFile(model_image.file_id, model_image.name, model_image.image, model_image_open_file_ack);
+                OnOpenFile(next_file_id, model_image.name, model_image.image, model_image_open_file_ack);
             }
             if (fitting_request.create_residual_image()) {
                 auto* residual_image_open_file_ack = fitting_response.mutable_residual_image();
-                OnOpenFile(residual_image.file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
+                OnOpenFile(++next_file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
             }
         }
 
