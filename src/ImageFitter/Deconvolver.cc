@@ -15,8 +15,11 @@ Deconvolver::Deconvolver(casacore::CoordinateSystem coord_sys, casacore::Gaussia
     _noise_FWHM = casacore::Quantity(casacore::sqrt(_beam.getMajor() * _beam.getMinor()).get("arcsec"));
 }
 
-void Deconvolver::GetDeconvolutionResults(
-    const std::vector<CARTA::GaussianComponent>& in_gauss_vec, std::string& log, std::vector<DeconvolutionResult>& pixel_results) {
+void Deconvolver::GetDeconvolutionResults(CARTA::FittingResponse& fitting_response, std::vector<DeconvolutionResult>& pixel_results) {
+    const std::vector<CARTA::GaussianComponent>& in_gauss_vec = {
+        fitting_response.result_values().begin(), fitting_response.result_values().end()};
+    std::string log;
+
     log += "\n------------- Deconvolved from beam -------------\n";
     for (int i = 0; i < in_gauss_vec.size(); ++i) {
         const CARTA::GaussianComponent& in_gauss = in_gauss_vec[i];
@@ -58,6 +61,9 @@ void Deconvolver::GetDeconvolutionResults(
         }
     }
     log += "---------------------- End ----------------------\n";
+
+    auto* fitting_response_log = fitting_response.mutable_log();
+    fitting_response_log->append(log);
 }
 
 bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result) {

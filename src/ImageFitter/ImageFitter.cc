@@ -153,13 +153,8 @@ bool ImageFitter::GetDeconvolvedResults(casacore::ImageInterface<float>* image, 
     CARTA::FittingResponse& fitting_response) {
     if (image && image->imageInfo().hasBeam() && !fitting_response.result_values().empty()) {
         carta::Deconvolver deconvolver(image->coordinates(), image->imageInfo().restoringBeam(channel, stokes), GetResidualRms());
-        const std::vector<CARTA::GaussianComponent>& fit_results = {
-            fitting_response.result_values().begin(), fitting_response.result_values().end()};
-        std::string deconvolution_log;
         std::vector<DeconvolutionResult> pixel_results;
-        deconvolver.GetDeconvolutionResults(fit_results, deconvolution_log, pixel_results);
-        auto* fit_log = fitting_response.mutable_log();
-        fit_log->append(deconvolution_log);
+        deconvolver.GetDeconvolutionResults(fitting_response, pixel_results);
 
         // Create model data for deconvolved fit results
         if (_create_model_data) {
