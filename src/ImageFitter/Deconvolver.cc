@@ -18,52 +18,42 @@ Deconvolver::Deconvolver(casacore::CoordinateSystem coord_sys, casacore::Gaussia
 void Deconvolver::GetDeconvolutionResults(CARTA::FittingResponse& fitting_response, std::vector<DeconvolutionResult>& pixel_results) {
     const std::vector<CARTA::GaussianComponent>& in_gauss_vec = {
         fitting_response.result_values().begin(), fitting_response.result_values().end()};
-    std::string log;
+    const std::vector<CARTA::GaussianComponent>& in_gauss_error_vec = {
+        fitting_response.result_errors().begin(), fitting_response.result_errors().end()};
 
-    log += "\n------------- Deconvolved from beam -------------\n";
-    for (int i = 0; i < in_gauss_vec.size(); ++i) {
+    for (int i = 0; i < in_gauss_vec.size() && i < in_gauss_error_vec.size(); ++i) {
         const CARTA::GaussianComponent& in_gauss = in_gauss_vec[i];
+        const CARTA::GaussianComponent& in_gauss_error = in_gauss_error_vec[i];
         DeconvolutionResult world_result;
         if (DoDeconvolution(in_gauss, world_result)) {
-            std::string major = fmt::format("{:.6f}", world_result.major.getValue());
-            std::string minor = fmt::format("{:.6f}", world_result.minor.getValue());
-            std::string pa = fmt::format("{:.6f}", world_result.pa.getValue());
-
-            std::string err_major = fmt::format("{:.6f}", world_result.major_err.getValue());
-            std::string err_minor = fmt::format("{:.6f}", world_result.minor_err.getValue());
-            std::string err_pa = fmt::format("{:.6f}", world_result.pa_err.getValue());
-
-            std::string unit_major = world_result.major.getUnit();
-            std::string unit_minor = world_result.minor.getUnit();
-            std::string unit_pa = world_result.pa.getUnit();
-
             DeconvolutionResult pixel_result;
-            bool pixel_params_available = GetWorldWidthToPixel(world_result, pixel_result);
+            if (GetWorldWidthToPixel(world_result, pixel_result)) {
+                // Add a deconvolved gaussian values in pixel unit
+                auto decon_values = fitting_response.add_result_decon_values();
+                auto decon_values_center = decon_values->mutable_center();
+                decon_values_center->set_x(in_gauss.center().x());
+                decon_values_center->set_y(in_gauss.center().y());
+                auto decon_values_fwhm = decon_values->mutable_fwhm();
+                decon_values_fwhm->set_x(pixel_result.major.getValue());
+                decon_values_fwhm->set_y(pixel_result.minor.getValue());
+                decon_values->set_amp(in_gauss.amp());
+                decon_values->set_pa(world_result.pa.getValue());
 
-            log += fmt::format("Component #{}:\n", i + 1);
-            log += fmt::format("FWHM Major Axis = {} +/- {} ({})\n", major, err_major, unit_major);
-            if (pixel_params_available) {
-                auto major_pixel = pixel_result.major.getValue();
-                auto major_err_pixel = pixel_result.major_err.getValue();
-                log += fmt::format("                = {:.6f} +/- {:.6f} (px)\n", major_pixel, major_err_pixel);
-            }
-            log += fmt::format("FWHM Minor Axis = {} +/- {} ({})\n", minor, err_minor, unit_minor);
-            if (pixel_params_available) {
-                auto minor_pixel = pixel_result.minor.getValue();
-                auto minor_err_pixel = pixel_result.minor_err.getValue();
-                log += fmt::format("                = {:.6f} +/- {:.6f} (px)\n", minor_pixel, minor_err_pixel);
-            }
-            log += fmt::format("P.A.            = {} +/- {} ({})\n", pa, err_pa, unit_pa);
+                // Add a deconvolved gaussian errors in pixel unit
+                auto decon_errors = fitting_response.add_result_decon_errors();
+                auto decon_errors_center = decon_errors->mutable_center();
+                decon_errors_center->set_x(in_gauss_error.center().x());
+                decon_errors_center->set_y(in_gauss_error.center().y());
+                auto decon_errors_fwhm = decon_errors->mutable_fwhm();
+                decon_errors_fwhm->set_x(pixel_result.major_err.getValue());
+                decon_errors_fwhm->set_y(pixel_result.minor_err.getValue());
+                decon_errors->set_amp(in_gauss_error.amp());
+                decon_errors->set_pa(world_result.pa_err.getValue());
 
-            if (pixel_params_available) {
                 pixel_results.emplace_back(pixel_result);
             }
         }
     }
-    log += "---------------------- End ----------------------\n";
-
-    auto* fitting_response_log = fitting_response.mutable_log();
-    fitting_response_log->append(log);
 }
 
 bool Deconvolver::DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result) {
