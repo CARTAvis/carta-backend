@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* Fix hdf5 image distortion after animation stops ([#1368](https://github.com/CARTAvis/carta-backend/issues/1368)).
+
 ### Changed
 * Move the loader cache to separate files ([#1021](https://github.com/CARTAvis/carta-backend/issues/1021)).
 * Improve the code style in HTTP server ([#1260](https://github.com/CARTAvis/carta-backend/issues/1260)).
