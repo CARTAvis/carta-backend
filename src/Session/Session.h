@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -29,12 +29,12 @@
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
 #include "ImageData/StokesFilesConnector.h"
+#include "Main/ProgramSettings.h"
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
+#include "Table/TableController.h"
 #include "ThreadingManager/Concurrency.h"
 #include "Util/Message.h"
-
-#include "Table/TableController.h"
 
 #define HISTOGRAM_CANCEL -1.0
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
@@ -52,9 +52,8 @@ struct PerSocketData {
 
 class Session {
 public:
-    Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode = false,
-        bool enable_scripting = false);
+    Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
+        std::shared_ptr<FileListHandler> file_list_handler);
     ~Session();
 
     // CARTA ICD
@@ -181,10 +180,8 @@ public:
         return _animation_object && !_animation_object->_stop_called;
     }
     int CalculateAnimationFlowWindow();
-    static void SetExitTimeout(int secs) {
-        _exit_after_num_seconds = secs;
-        _exit_when_all_sessions_closed = true;
-    }
+
+    static void SetExitTimeout(int secs);
     static void SetInitExitTimeout(int secs);
 
     static void SetControllerDeploymentFlag(bool controller_deployment) {
@@ -278,10 +275,6 @@ protected:
 
     uint32_t _id;
     std::string _address;
-    std::string _top_level_folder;
-    std::string _starting_folder;
-    bool _read_only_mode;
-    bool _enable_scripting;
 
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;
@@ -340,6 +333,11 @@ protected:
 
     // Timestamp for the last protobuf message
     std::chrono::high_resolution_clock::time_point _last_message_timestamp;
+
+    // Parameters which are copied from the global settings
+    std::string _top_level_folder;
+    bool _read_only_mode;
+    bool _enable_scripting;
 };
 
 } // namespace carta

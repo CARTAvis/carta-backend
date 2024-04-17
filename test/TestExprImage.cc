@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -74,10 +74,10 @@ public:
         EXPECT_EQ(image_shape, expr_shape);
         // Compare image xprofile * 2 to expr xprofile
         for_each(image_xprofile.begin(), image_xprofile.end(), [](float& a) { a *= 2; });
-        CmpVectors(image_xprofile, expr_xprofile.tovector());
+        CmpVectors<float>(image_xprofile, expr_xprofile.tovector());
         // Compare image yprofile * 2 to expr yprofile
         for_each(image_yprofile.begin(), image_yprofile.end(), [](float& a) { a *= 2; });
-        CmpVectors(image_yprofile, expr_yprofile.tovector());
+        CmpVectors<float>(image_yprofile, expr_yprofile.tovector());
     }
 
     void SaveImageExpr(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type) {

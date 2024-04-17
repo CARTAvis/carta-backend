@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -97,6 +97,13 @@ void CmpValues(float data1, float data2, float abs_err = 0);
 void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err = 0);
 void CmpSpatialProfiles(const std::vector<CARTA::SpatialProfileData>& data_vec1, const std::vector<CARTA::SpatialProfileData>& data_vec2);
 bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2, bool exact = true);
+void CmpSpatialProfiles(
+    const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles);
+
+template <typename T>
+void CmpValues(T data1, T data2, T abs_err = 0);
+template <typename T>
+void CmpVectors(const std::vector<T>& data1, const std::vector<T>& data2, T abs_err = 0);
 
 #include "CommonTestUtilities.tcc"
 

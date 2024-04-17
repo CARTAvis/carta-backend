@@ -237,6 +237,7 @@ set(SOURCE_FILES
         src/Region/Ds9ImportExport.cc
         src/Region/LineBoxRegions.cc
         src/Region/Region.cc
+        src/Region/RegionConverter.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
         src/Session/CursorSettings.cc
