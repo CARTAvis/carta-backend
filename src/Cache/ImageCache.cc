@@ -168,10 +168,6 @@ bool ImageCache::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
     return data_ok;
 }
 
-double ImageCache::GetBeamArea() {
-    return _loader->CalculateBeamArea();
-}
-
 bool ImageCache::GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg) {
     // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
     bool is_stokes_string = StokesStringTypes.find(coordinate) != StokesStringTypes.end();

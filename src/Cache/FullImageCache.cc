@@ -19,7 +19,7 @@ FullImageCache::FullImageCache(Frame* frame, std::shared_ptr<FileLoader> loader,
       _stokes_q(-1),
       _stokes_u(-1),
       _stokes_v(-1),
-      _beam_area(GetBeamArea()),
+      _beam_area(_loader->CalculateBeamArea()),
       _current_computed_stokes_channel(-1) {
     spdlog::info("Cache full cubes image data.");
 

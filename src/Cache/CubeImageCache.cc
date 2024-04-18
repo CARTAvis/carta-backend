@@ -14,7 +14,10 @@
 namespace carta {
 
 CubeImageCache::CubeImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex)
-    : ImageCache(frame, loader, image_mutex), _beam_area(GetBeamArea()), _stokes_data(nullptr), _stokes_image_cache_valid(false) {
+    : ImageCache(frame, loader, image_mutex),
+      _beam_area(_loader->CalculateBeamArea()),
+      _stokes_data(nullptr),
+      _stokes_image_cache_valid(false) {
     spdlog::info("Cache single cube image data.");
     _image_memory_size = ImageMemorySize(_width, _height, _depth, 1);
 

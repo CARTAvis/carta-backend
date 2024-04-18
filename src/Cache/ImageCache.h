@@ -55,7 +55,6 @@ protected:
     void DoStatisticsCalculations(const AxisRange& z_range, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, double beam_area, const std::function<float(size_t idx)>& get_value,
         std::map<CARTA::StatsType, std::vector<double>>& profiles);
-    double GetBeamArea();
 
     static float _full_image_cache_size_available; // MB
     static std::mutex _full_image_cache_size_available_mutex;
