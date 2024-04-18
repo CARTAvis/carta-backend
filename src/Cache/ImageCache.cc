@@ -233,7 +233,7 @@ bool ImageCache::IsValid() const {
     return _valid;
 }
 
-void ImageCache::AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg) {
+void ImageCache::SetFullImageCacheSize(int& full_image_cache_size_available, std::string& msg) {
     if (full_image_cache_size_available > 0) {
         // Check if required full image cache hits the upper limit based on the total system memory
         int memory_upper_limit = GetTotalSystemMemory() * 9 / 10;

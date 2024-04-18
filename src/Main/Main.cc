@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
             } else {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
-            ImageCache::AssignFullImageCacheSizeAvailable(settings.full_image_cache_size_available, start_info);
+            ImageCache::SetFullImageCacheSize(settings.full_image_cache_size_available, start_info);
             spdlog::info(start_info);
 
             if (http_server) {

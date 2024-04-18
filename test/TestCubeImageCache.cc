@@ -61,7 +61,7 @@ public:
         std::string msg;
         int full_image_cache_size_available =
             image_cache_type == ImageCacheType::All ? x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION : 0;
-        ImageCache::AssignFullImageCacheSizeAvailable(full_image_cache_size_available, msg);
+        ImageCache::SetFullImageCacheSize(full_image_cache_size_available, msg);
     }
 
     static std::string TextPrefix(const ImageCacheType& image_cache_type) {
