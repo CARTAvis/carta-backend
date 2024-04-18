@@ -28,12 +28,14 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(Frame* frame, std::shared_
 
         if (depth > 1) {
             auto full_image_memory_size = ImageCache::ImageMemorySize(width, height, depth, num_stokes);
+            std::unique_lock<std::mutex> ulock(_full_image_cache_size_available_mutex);
             if (_full_image_cache_size_available >= full_image_memory_size) {
                 if (num_stokes > 1) {
                     return std::make_unique<FullImageCache>(frame, loader, image_mutex);
                 }
                 return std::make_unique<CubeImageCache>(frame, loader, image_mutex);
             }
+            ulock.unlock();
             spdlog::info("Cube image too large ({:.0f} MB). Not cache the whole image data.", full_image_memory_size);
         }
     }

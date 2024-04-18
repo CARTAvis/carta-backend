@@ -42,9 +42,7 @@ FullImageCache::FullImageCache(Frame* frame, std::shared_ptr<FileLoader> loader,
     _image_memory_size = ImageMemorySize(_width, _height, _depth, _num_stokes);
 
     // Update the availability of full image cache size
-    std::unique_lock<std::mutex> ulock(_full_image_cache_size_available_mutex);
     _full_image_cache_size_available -= _image_memory_size;
-    ulock.unlock();
     spdlog::info("{:.0f} MB of full image cache are available.", _full_image_cache_size_available);
 }
 
