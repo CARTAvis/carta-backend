@@ -7,10 +7,10 @@
 #include "ImageCache.h"
 
 #include "ChannelCache.h"
-#include "CubeImageCache.h"
 #include "Frame/Frame.h"
 #include "FullImageCache.h"
 #include "Logger/Logger.h"
+#include "StokesCache.h"
 #include "Util/Stokes.h"
 #include "Util/System.h"
 
@@ -33,7 +33,7 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(Frame* frame, std::shared_
                 if (num_stokes > 1) {
                     return std::make_unique<FullImageCache>(frame, loader, image_mutex);
                 }
-                return std::make_unique<CubeImageCache>(frame, loader, image_mutex);
+                return std::make_unique<StokesCache>(frame, loader, image_mutex);
             }
             ulock.unlock();
             spdlog::info("Cube image too large ({:.0f} MB). Not cache the whole image data.", full_image_memory_size);

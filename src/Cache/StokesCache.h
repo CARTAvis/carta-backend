@@ -20,10 +20,10 @@
 
 namespace carta {
 
-class CubeImageCache : public ImageCache {
+class StokesCache : public ImageCache {
 public:
-    CubeImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
-    ~CubeImageCache() override;
+    StokesCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
+    ~StokesCache() override;
 
     float* GetChannelData(int z, int stokes) override;
     inline float GetValue(int x, int y, int z, int stokes) const override;

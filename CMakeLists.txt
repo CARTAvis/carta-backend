@@ -194,7 +194,7 @@ set(SOURCE_FILES
         ${SOURCE_FILES}
         third-party/pugixml/src/pugixml.cpp
         src/Cache/ChannelCache.cc
-        src/Cache/CubeImageCache.cc
+        src/Cache/StokesCache.cc
         src/Cache/FullImageCache.cc
         src/Cache/ImageCache.cc
         src/Cache/LoaderCache.cc
