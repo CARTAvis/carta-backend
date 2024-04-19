@@ -85,7 +85,7 @@ bool CubeImageCache::CachedChannelDataAvailable(int z, int stokes) const {
     return _frame->IsCurrentStokes(stokes) && _stokes_image_cache_valid;
 }
 
-bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
+bool CubeImageCache::UpdateChannelCache(int z, int stokes) {
     if (CachedChannelDataAvailable(z, stokes)) {
         return true;
     }

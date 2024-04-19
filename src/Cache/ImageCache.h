@@ -44,7 +44,7 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) = 0;
     virtual bool CachedChannelDataAvailable(int z, int stokes) const = 0;
 
-    virtual bool UpdateChannelImageCache(int z, int stokes) = 0;
+    virtual bool UpdateChannelCache(int z, int stokes) = 0;
     virtual void SetImageChannels(int z, int stokes) = 0;
 
     void LoadCachedPointSpatialData(

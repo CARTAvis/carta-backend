@@ -334,7 +334,7 @@ bool Frame::SetCursor(float x, float y) {
 bool Frame::FillImageCache() {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    return _image_cache->UpdateChannelImageCache(CurrentZ(), CurrentStokes());
+    return _image_cache->UpdateChannelCache(CurrentZ(), CurrentStokes());
 }
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {

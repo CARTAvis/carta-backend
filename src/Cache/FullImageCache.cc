@@ -201,7 +201,7 @@ bool FullImageCache::CachedChannelDataAvailable(int z, int stokes) const {
     return true;
 }
 
-bool FullImageCache::UpdateChannelImageCache(int z, int stokes) {
+bool FullImageCache::UpdateChannelCache(int z, int stokes) {
     return true;
 }
 

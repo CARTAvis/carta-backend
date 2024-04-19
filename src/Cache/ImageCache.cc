@@ -6,7 +6,7 @@
 
 #include "ImageCache.h"
 
-#include "ChannelImageCache.h"
+#include "ChannelCache.h"
 #include "CubeImageCache.h"
 #include "Frame/Frame.h"
 #include "FullImageCache.h"
@@ -39,7 +39,7 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(Frame* frame, std::shared_
             spdlog::info("Cube image too large ({:.0f} MB). Not cache the whole image data.", full_image_memory_size);
         }
     }
-    return std::make_unique<ChannelImageCache>(frame, loader, image_mutex);
+    return std::make_unique<ChannelCache>(frame, loader, image_mutex);
 }
 
 ImageCache::ImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex)

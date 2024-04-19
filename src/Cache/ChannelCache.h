@@ -20,9 +20,9 @@
 
 namespace carta {
 
-class ChannelImageCache : public ImageCache {
+class ChannelCache : public ImageCache {
 public:
-    ChannelImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
+    ChannelCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
 
     float* GetChannelData(int z, int stokes) override;
     inline float GetValue(int x, int y, int z, int stokes) const override;
@@ -32,11 +32,11 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
     bool CachedChannelDataAvailable(int z, int stokes) const override;
 
-    bool UpdateChannelImageCache(int z, int stokes) override;
+    bool UpdateChannelCache(int z, int stokes) override;
     void SetImageChannels(int z, int stokes) override;
 
 private:
-    bool FillChannelImageCache(std::unique_ptr<float[]>& channel_data, int z, int stokes);
+    bool FillChannelCache(std::unique_ptr<float[]>& channel_data, int z, int stokes);
 
     std::unique_ptr<float[]> _channel_data;
 
