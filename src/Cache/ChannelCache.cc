@@ -30,6 +30,8 @@ bool ChannelCache::FillChannelCache(std::unique_ptr<float[]>& channel_data, int 
 }
 
 float* ChannelCache::GetChannelData(int z, int stokes) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return CachedChannelDataAvailable(z, stokes) ? _channel_data.get() : nullptr;
 }
 
@@ -42,7 +44,9 @@ bool ChannelCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int st
     return false;
 }
 
-float ChannelCache::GetValue(int x, int y, int z, int stokes) const {
+float ChannelCache::GetValue(int x, int y, int z, int stokes) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return CachedChannelDataAvailable(z, stokes) ? _channel_data[(_width * y) + x] : FLOAT_NAN;
 }
 
@@ -51,6 +55,9 @@ bool ChannelCache::CachedChannelDataAvailable(int z, int stokes) const {
 }
 
 bool ChannelCache::UpdateChannelCache(int z, int stokes) {
+    bool write_lock(true);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
     if (CachedChannelDataAvailable(z, stokes)) {
         return true;
     }
@@ -69,6 +76,8 @@ bool ChannelCache::UpdateChannelCache(int z, int stokes) {
 }
 
 void ChannelCache::UpdateValidity(int stokes) {
+    bool write_lock(true);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     _channel_image_cache_valid = false;
 }
 

@@ -74,6 +74,9 @@ bool FullImageCache::FillFullImageCache(std::map<int, std::unique_ptr<float[]>>&
 }
 
 float* FullImageCache::GetChannelData(int z, int stokes) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
     if (IsComputedStokes(stokes)) {
         if (_stokes_data.count(stokes) && _current_computed_stokes_channel == z) {
             return _stokes_data[stokes].get();
@@ -135,7 +138,10 @@ float* FullImageCache::GetChannelData(int z, int stokes) {
     return _stokes_data[stokes].get() + (_width * _height * z);
 }
 
-float FullImageCache::GetValue(int x, int y, int z, int stokes) const {
+float FullImageCache::GetValue(int x, int y, int z, int stokes) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
     size_t idx = (_width * _height * z) + (_width * y) + x;
     if (IsComputedStokes(stokes)) {
         if (_stokes_data.count(stokes) && _current_computed_stokes_channel == z) {
@@ -187,6 +193,9 @@ bool FullImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, in
 
 bool FullImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
     // Region spectral profile for computed stokes can not be directly calculated from its pixel values. It is calculated from the
     // combination of spectral profiles for stokes I, Q, U, or V.
     if (!mask.shape().empty() && _stokes_data.count(stokes) && !IsComputedStokes(stokes)) {

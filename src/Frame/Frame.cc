@@ -88,11 +88,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // Create an image cache
-    bool write_lock(true);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     _image_cache = ImageCache::GetImageCache(this, _loader, _image_mutex);
-    cache_lock.release();
-
     if (!_image_cache->IsValid()) {
         return;
     }
@@ -385,10 +381,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
             bool z_ok(ValidZ(new_z));
             bool stokes_ok(ValidStokes(new_stokes));
             if (z_ok && stokes_ok) {
-                bool write_lock(true);
-                queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                 _image_cache->UpdateValidity(new_stokes);
-                cache_lock.release();
 
                 // Set current channel and stokes
                 _z = new_z;
@@ -422,8 +415,6 @@ bool Frame::SetCursor(float x, float y) {
 }
 
 bool Frame::UpdateChannelCache() {
-    bool write_lock(true);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->UpdateChannelCache(CurrentZ(), CurrentStokes());
 }
 
@@ -466,10 +457,6 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = Width();
     int num_image_rows = Height();
-
-    // read lock imageCache
-    bool write_lock(false);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
     Timer t;
     if (mean_filter && mip > 1) {
@@ -646,7 +633,6 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     bool smooth_successful = false;
     std::vector<std::vector<float>> vertex_data;
     std::vector<std::vector<int>> index_data;
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(GetImageData(), Width(), Height(), scale, offset, _contour_settings.levels, vertex_data, index_data,
@@ -665,7 +651,6 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         smooth_successful = GaussianSmooth(
             GetImageData(), dest_array.get(), source_width, source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
         // Can release lock early, as we're no longer using the image cache
-        cache_lock.release();
         if (smooth_successful) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
             offset = _contour_settings.smoothing_factor - 1;
@@ -678,7 +663,6 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         CARTA::ImageBounds image_bounds = Message::ImageBounds(0, Width(), 0, Height());
         std::vector<float> dest_vector;
         smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
-        cache_lock.release();
         if (smooth_successful) {
             // Perform contouring with an offset based on the block size, and a scale factor equal to block size
             offset = 0;
@@ -935,8 +919,6 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
 
     if (ImageCacheAvailable(z, stokes)) {
         // calculate histogram from image cache
-        bool write_lock(false);
-        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         hist = CalcHistogram(num_bins, bounds, GetImageData(z, stokes), Width() * Height());
     } else {
         // calculate histogram for z/stokes data
@@ -1092,8 +1074,6 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
     // Get the cursor value with current stokes
     if (ImageCacheAvailable()) {
-        bool write_lock(false);
-        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         cursor_value_with_current_stokes = _image_cache->GetValue(x, y, CurrentZ(), CurrentStokes());
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
@@ -1148,7 +1128,6 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
         // add profiles
         std::vector<float> profile;
-        bool write_lock(false);
 
         // for each widget config with the same stokes setting
         for (auto& config : point_regions_spatial_config.second) {
@@ -1207,10 +1186,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
                 auto get_spatial_profile_from_cache = [&](int required_stokes) {
                     if (ImageCacheAvailable(CurrentZ(), required_stokes)) {
-                        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                         _image_cache->LoadCachedPointSpatialData(
                             profile, config.coordinate().back(), point, start, end, CurrentZ(), required_stokes);
-                        cache_lock.release();
                         have_profile = true;
                     }
                 };
@@ -2437,21 +2414,15 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 float* Frame::GetImageData(int z, int stokes) {
     CheckCurrentZ(z);
     CheckCurrentStokes(stokes);
-    bool write_lock(false);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->GetChannelData(z, stokes);
 }
 
 bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    bool write_lock(false);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->LoadCachedPointSpectralData(profile, stokes, point);
 }
 
 bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    bool write_lock(false);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->LoadCachedRegionSpectralData(z_range, stokes, mask, origin, profiles);
 }
 

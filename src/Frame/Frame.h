@@ -321,7 +321,6 @@ protected:
 
     // Image data cache and mutex
     std::unique_ptr<ImageCache> _image_cache; // Image cache for current z and stokes, or for the whole image
-    queuing_rw_mutex _cache_mutex;            // allow concurrent reads but lock for write
     std::mutex _image_mutex;                  // only one disk access at a time
     TileCache _tile_cache;                    // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;

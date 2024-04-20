@@ -116,7 +116,9 @@ bool ImageCache::TileCacheAvailable() {
 }
 
 void ImageCache::LoadCachedPointSpatialData(
-    std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) const {
+    std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     profile.reserve(end - start);
     if (config == 'x') {
         for (unsigned int i = start; i < end; ++i) {

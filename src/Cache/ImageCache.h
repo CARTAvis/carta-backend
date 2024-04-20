@@ -8,6 +8,7 @@
 #define CARTA_SRC_CACHE_IMAGECACHE_H_
 
 #include "ImageData/FileLoader.h"
+#include "ThreadingManager/Concurrency.h"
 #include "Util/Image.h"
 
 #include <casacore/casa/Arrays/IPosition.h>
@@ -36,7 +37,7 @@ public:
     bool TileCacheAvailable();
 
     virtual float* GetChannelData(int z, int stokes) = 0;
-    virtual float GetValue(int x, int y, int z, int stokes) const = 0;
+    virtual float GetValue(int x, int y, int z, int stokes) = 0;
 
     virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;
     virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
@@ -46,8 +47,7 @@ public:
     virtual bool UpdateChannelCache(int z, int stokes) = 0;
     virtual void UpdateValidity(int stokes) = 0;
 
-    void LoadCachedPointSpatialData(
-        std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) const;
+    void LoadCachedPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
     bool IsValid() const;
 
 protected:
@@ -61,6 +61,7 @@ protected:
     Frame* _frame;
     std::shared_ptr<FileLoader> _loader;
     std::mutex& _image_mutex; // Reference of the image mutex for the file loader
+    queuing_rw_mutex _cache_mutex;
     bool _valid;
     float _image_memory_size;
 

@@ -26,7 +26,7 @@ public:
     ~FullImageCache() override;
 
     float* GetChannelData(int z, int stokes) override;
-    inline float GetValue(int x, int y, int z, int stokes) const override;
+    inline float GetValue(int x, int y, int z, int stokes) override;
 
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

@@ -46,16 +46,22 @@ bool StokesCache::FillCubeImageCache(std::unique_ptr<float[]>& stokes_data, int 
 }
 
 float* StokesCache::GetChannelData(int z, int stokes) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return CachedChannelDataAvailable(z, stokes) ? _stokes_data.get() + (_width * _height * z) : nullptr;
 }
 
-float StokesCache::GetValue(int x, int y, int z, int stokes) const {
+float StokesCache::GetValue(int x, int y, int z, int stokes) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     size_t idx = (_width * _height * z) + (_width * y) + x;
     return CachedChannelDataAvailable(z, stokes) ? _stokes_data[idx] : FLOAT_NAN;
 }
 
 bool StokesCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     if (CachedChannelDataAvailable(ALL_Z, stokes)) {
+        bool write_lock(false);
+        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         int x, y;
         point.ToIndex(x, y);
         profile.resize(_depth);
@@ -71,6 +77,9 @@ bool StokesCache::LoadCachedPointSpectralData(std::vector<float>& profile, int s
 
 bool StokesCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
     // Region spectral profile for computed stokes can not be directly calculated from its pixel values. It is calculated from the
     // combination of spectral profiles for stokes I, Q, U, or V.
     if (!mask.shape().empty() && CachedChannelDataAvailable(ALL_Z, stokes) && !IsComputedStokes(stokes)) {
@@ -86,6 +95,9 @@ bool StokesCache::CachedChannelDataAvailable(int z, int stokes) const {
 }
 
 bool StokesCache::UpdateChannelCache(int z, int stokes) {
+    bool write_lock(true);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
     if (CachedChannelDataAvailable(z, stokes)) {
         return true;
     }
@@ -104,6 +116,8 @@ bool StokesCache::UpdateChannelCache(int z, int stokes) {
 }
 
 void StokesCache::UpdateValidity(int stokes) {
+    bool write_lock(true);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     if (!_frame->IsCurrentStokes(stokes)) {
         _stokes_image_cache_valid = false;
     }
