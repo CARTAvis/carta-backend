@@ -101,8 +101,6 @@ public:
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
     casacore::IPosition OriginalImageShape() const; // Image shape from the original file
-    void SetCurrentZ(int z);
-    void SetCurrentStokes(int stokes);
     void CheckCurrentZ(int& z) const;
     void CheckCurrentStokes(int& stokes) const;
     bool IsCurrentChannel(int z, int stokes) const;

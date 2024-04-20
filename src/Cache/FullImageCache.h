@@ -34,7 +34,7 @@ public:
     bool CachedChannelDataAvailable(int z, int stokes) const override;
 
     bool UpdateChannelCache(int z, int stokes) override;
-    void SetImageChannels(int z, int stokes) override;
+    void UpdateValidity(int stokes) override;
 
 private:
     bool FillFullImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data);

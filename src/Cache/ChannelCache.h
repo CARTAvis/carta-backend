@@ -33,7 +33,7 @@ public:
     bool CachedChannelDataAvailable(int z, int stokes) const override;
 
     bool UpdateChannelCache(int z, int stokes) override;
-    void SetImageChannels(int z, int stokes) override;
+    void UpdateValidity(int stokes) override;
 
 private:
     bool FillChannelCache(std::unique_ptr<float[]>& channel_data, int z, int stokes);

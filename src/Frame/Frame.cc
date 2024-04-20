@@ -233,14 +233,6 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     return _image_cache->GetImageSlicer(x_range, y_range, z_range, stokes);
 }
 
-void Frame::SetCurrentZ(int z) {
-    _z = z;
-}
-
-void Frame::SetCurrentStokes(int stokes) {
-    _stokes = stokes;
-}
-
 void Frame::CheckCurrentZ(int& z) const {
     if (z == CURRENT_Z) {
         z = _z;
@@ -301,8 +293,12 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
             if (z_ok && stokes_ok) {
                 bool write_lock(true);
                 queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-                _image_cache->SetImageChannels(new_z, new_stokes);
+                _image_cache->UpdateValidity(new_stokes);
                 cache_lock.release();
+
+                // Set current channel and stokes
+                _z = new_z;
+                _stokes = new_stokes;
 
                 if (!_image_cache->TileCacheAvailable() || IsComputedStokes(CurrentStokes())) {
                     // Reload the full channel cache for loaders which use it

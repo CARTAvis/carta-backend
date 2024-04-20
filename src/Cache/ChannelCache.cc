@@ -68,10 +68,8 @@ bool ChannelCache::UpdateChannelCache(int z, int stokes) {
     return true;
 }
 
-void ChannelCache::SetImageChannels(int z, int stokes) {
+void ChannelCache::UpdateValidity(int stokes) {
     _channel_image_cache_valid = false;
-    _frame->SetCurrentZ(z);
-    _frame->SetCurrentStokes(stokes);
 }
 
 } // namespace carta

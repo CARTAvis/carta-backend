@@ -205,9 +205,6 @@ bool FullImageCache::UpdateChannelCache(int z, int stokes) {
     return true;
 }
 
-void FullImageCache::SetImageChannels(int z, int stokes) {
-    _frame->SetCurrentZ(z);
-    _frame->SetCurrentStokes(stokes);
-}
+void FullImageCache::UpdateValidity(int stokes) {}
 
 } // namespace carta
