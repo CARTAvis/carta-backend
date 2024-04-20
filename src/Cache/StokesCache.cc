@@ -48,18 +48,18 @@ bool StokesCache::FillCubeImageCache(std::unique_ptr<float[]>& stokes_data, int 
 float* StokesCache::GetChannelData(int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    return CachedChannelDataAvailable(z, stokes) ? _stokes_data.get() + (_width * _height * z) : nullptr;
+    return ChannelDataAvailable(z, stokes) ? _stokes_data.get() + (_width * _height * z) : nullptr;
 }
 
 float StokesCache::GetValue(int x, int y, int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     size_t idx = (_width * _height * z) + (_width * y) + x;
-    return CachedChannelDataAvailable(z, stokes) ? _stokes_data[idx] : FLOAT_NAN;
+    return ChannelDataAvailable(z, stokes) ? _stokes_data[idx] : FLOAT_NAN;
 }
 
-bool StokesCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    if (CachedChannelDataAvailable(ALL_Z, stokes)) {
+bool StokesCache::LoadPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+    if (ChannelDataAvailable(ALL_Z, stokes)) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         int x, y;
@@ -75,14 +75,14 @@ bool StokesCache::LoadCachedPointSpectralData(std::vector<float>& profile, int s
     return false;
 }
 
-bool StokesCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool StokesCache::LoadRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
     // Region spectral profile for computed stokes can not be directly calculated from its pixel values. It is calculated from the
     // combination of spectral profiles for stokes I, Q, U, or V.
-    if (!mask.shape().empty() && CachedChannelDataAvailable(ALL_Z, stokes) && !IsComputedStokes(stokes)) {
+    if (!mask.shape().empty() && ChannelDataAvailable(ALL_Z, stokes) && !IsComputedStokes(stokes)) {
         auto get_value = [&](size_t idx) { return _stokes_data[idx]; };
         DoStatisticsCalculations(z_range, mask, origin, _beam_area, get_value, profiles);
         return true;
@@ -90,7 +90,7 @@ bool StokesCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int sto
     return false;
 }
 
-bool StokesCache::CachedChannelDataAvailable(int z, int stokes) const {
+bool StokesCache::ChannelDataAvailable(int z, int stokes) const {
     return _frame->IsCurrentStokes(stokes) && _stokes_image_cache_valid;
 }
 
@@ -98,7 +98,7 @@ bool StokesCache::UpdateChannelCache(int z, int stokes) {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
-    if (CachedChannelDataAvailable(z, stokes)) {
+    if (ChannelDataAvailable(z, stokes)) {
         return true;
     }
 

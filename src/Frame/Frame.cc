@@ -1186,7 +1186,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
                 auto get_spatial_profile_from_cache = [&](int required_stokes) {
                     if (ImageCacheAvailable(CurrentZ(), required_stokes)) {
-                        _image_cache->LoadCachedPointSpatialData(
+                        _image_cache->LoadPointSpatialData(
                             profile, config.coordinate().back(), point, start, end, CurrentZ(), required_stokes);
                         have_profile = true;
                     }
@@ -2418,16 +2418,16 @@ float* Frame::GetImageData(int z, int stokes) {
 }
 
 bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    return _image_cache->LoadCachedPointSpectralData(profile, stokes, point);
+    return _image_cache->LoadPointSpectralData(profile, stokes, point);
 }
 
 bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    return _image_cache->LoadCachedRegionSpectralData(z_range, stokes, mask, origin, profiles);
+    return _image_cache->LoadRegionSpectralData(z_range, stokes, mask, origin, profiles);
 }
 
 bool Frame::ImageCacheAvailable(int z, int stokes) const {
-    return _image_cache->CachedChannelDataAvailable(z, stokes);
+    return _image_cache->ChannelDataAvailable(z, stokes);
 }
 
 } // namespace carta

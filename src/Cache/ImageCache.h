@@ -39,15 +39,15 @@ public:
     virtual float* GetChannelData(int z, int stokes) = 0;
     virtual float GetValue(int x, int y, int z, int stokes) = 0;
 
-    virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;
-    virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    virtual bool LoadPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;
+    virtual bool LoadRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) = 0;
-    virtual bool CachedChannelDataAvailable(int z, int stokes) const = 0;
+    virtual bool ChannelDataAvailable(int z, int stokes) const = 0;
 
     virtual bool UpdateChannelCache(int z, int stokes) = 0;
     virtual void UpdateValidity(int stokes) = 0;
 
-    void LoadCachedPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
+    void LoadPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
     bool IsValid() const;
 
 protected:

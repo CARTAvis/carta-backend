@@ -177,7 +177,7 @@ float FullImageCache::GetValue(int x, int y, int z, int stokes) {
     return _stokes_data.at(stokes)[idx];
 }
 
-bool FullImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+bool FullImageCache::LoadPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     if (_stokes_data.count(stokes) || IsComputedStokes(stokes)) {
         int x, y;
         point.ToIndex(x, y);
@@ -191,7 +191,7 @@ bool FullImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, in
     return false;
 }
 
-bool FullImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool FullImageCache::LoadRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
@@ -206,7 +206,7 @@ bool FullImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
     return false;
 }
 
-bool FullImageCache::CachedChannelDataAvailable(int z, int stokes) const {
+bool FullImageCache::ChannelDataAvailable(int z, int stokes) const {
     return true;
 }
 

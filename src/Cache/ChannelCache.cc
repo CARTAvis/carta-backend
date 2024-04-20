@@ -32,14 +32,14 @@ bool ChannelCache::FillChannelCache(std::unique_ptr<float[]>& channel_data, int 
 float* ChannelCache::GetChannelData(int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    return CachedChannelDataAvailable(z, stokes) ? _channel_data.get() : nullptr;
+    return ChannelDataAvailable(z, stokes) ? _channel_data.get() : nullptr;
 }
 
-bool ChannelCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+bool ChannelCache::LoadPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     return false;
 }
 
-bool ChannelCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool ChannelCache::LoadRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     return false;
 }
@@ -47,10 +47,10 @@ bool ChannelCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int st
 float ChannelCache::GetValue(int x, int y, int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    return CachedChannelDataAvailable(z, stokes) ? _channel_data[(_width * y) + x] : FLOAT_NAN;
+    return ChannelDataAvailable(z, stokes) ? _channel_data[(_width * y) + x] : FLOAT_NAN;
 }
 
-bool ChannelCache::CachedChannelDataAvailable(int z, int stokes) const {
+bool ChannelCache::ChannelDataAvailable(int z, int stokes) const {
     return _frame->IsCurrentChannel(z, stokes) && _channel_image_cache_valid;
 }
 
@@ -58,7 +58,7 @@ bool ChannelCache::UpdateChannelCache(int z, int stokes) {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
-    if (CachedChannelDataAvailable(z, stokes)) {
+    if (ChannelDataAvailable(z, stokes)) {
         return true;
     }
 

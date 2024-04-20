@@ -115,7 +115,7 @@ bool ImageCache::TileCacheAvailable() {
     return _loader->UseTileCache() && _loader->HasMip(2);
 }
 
-void ImageCache::LoadCachedPointSpatialData(
+void ImageCache::LoadPointSpatialData(
     std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
