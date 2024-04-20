@@ -62,7 +62,7 @@ bool FullImageCache::FillFullImageCache(std::map<int, std::unique_ptr<float[]>>&
     }
 
     for (int stokes = 0; stokes < _frame->NumStokes(); ++stokes) {
-        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
+        StokesSlicer stokes_slicer = _frame->GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
         auto data_size = stokes_slicer.slicer.length().product();
         stokes_data[stokes] = std::make_unique<float[]>(data_size);
         if (!GetSlicerData(stokes_slicer, stokes_data[stokes].get())) {

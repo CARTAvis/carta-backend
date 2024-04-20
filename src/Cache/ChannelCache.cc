@@ -19,7 +19,7 @@ ChannelCache::ChannelCache(Frame* frame, std::shared_ptr<FileLoader> loader, std
 }
 
 bool ChannelCache::FillChannelCache(std::unique_ptr<float[]>& channel_data, int z, int stokes) {
-    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(z), stokes);
+    StokesSlicer stokes_slicer = _frame->GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(z), stokes);
     auto data_size = stokes_slicer.slicer.length().product();
     channel_data = std::make_unique<float[]>(data_size);
     if (!GetSlicerData(stokes_slicer, channel_data.get())) {

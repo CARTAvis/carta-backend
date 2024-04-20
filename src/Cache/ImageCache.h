@@ -30,7 +30,6 @@ public:
     static void SetFullImageCacheSize(int& full_image_cache_size_available, std::string& msg);
     static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
 
-    StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
     casacore::IPosition OriginalImageShape() const;
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg);
