@@ -98,7 +98,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (!_image_cache->TileCacheAvailable() && !FillImageCache()) {
+    if (!_image_cache->TileCacheAvailable() && !UpdateChannelCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
@@ -396,7 +396,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
 
                 if (!_image_cache->TileCacheAvailable() || IsComputedStokes(CurrentStokes())) {
                     // Reload the full channel cache for loaders which use it
-                    FillImageCache();
+                    UpdateChannelCache();
                 } else {
                     // Don't reload the full channel cache here because we may not need it
 
@@ -421,7 +421,7 @@ bool Frame::SetCursor(float x, float y) {
     return changed;
 }
 
-bool Frame::FillImageCache() {
+bool Frame::UpdateChannelCache() {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->UpdateChannelCache(CurrentZ(), CurrentStokes());
@@ -639,7 +639,7 @@ bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
 
 bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     // Always use the full image cache (for now)
-    FillImageCache();
+    UpdateChannelCache();
 
     double scale = 1.0;
     double offset = 0;
@@ -1847,7 +1847,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
-            FillImageCache();
+            UpdateChannelCache();
 
             success = _image_fitter->FitImage(Width(), Height(), GetImageData(), beam_size, unit, initial_values, fixed_params,
                 fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),

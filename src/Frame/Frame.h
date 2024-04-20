@@ -243,7 +243,7 @@ protected:
     bool ZStokesChanged(int z, int stokes) const;
 
     // Cache image plane data for current z, stokes
-    bool FillImageCache();
+    bool UpdateChannelCache();
 
     // Downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
