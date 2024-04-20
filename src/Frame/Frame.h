@@ -17,8 +17,7 @@
 #include <shared_mutex>
 #include <unordered_map>
 
-#include "Cache/ChannelCache.h"
-#include "Cache/FullImageCache.h"
+#include "Cache/ImageCache.h"
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"
