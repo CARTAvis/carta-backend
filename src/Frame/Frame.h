@@ -278,8 +278,10 @@ protected:
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // For image cache
-    float* GetImageData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
-    bool ImageCacheAvailable(int z = CURRENT_Z, int stokes = CURRENT_STOKES) const;
+    float* GetImageData(int z, int stokes);
+    float* GetImageData();
+    bool ImageCacheAvailable(int z, int stokes) const;
+    bool ImageCacheAvailable() const;
 
     // Image shape or sizes
     casacore::IPosition _image_shape;
