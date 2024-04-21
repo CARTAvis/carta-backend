@@ -100,14 +100,10 @@ public:
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
     casacore::IPosition OriginalImageShape() const; // Image shape from the original file
-    void CheckCurrentZ(int& z) const;
-    void CheckCurrentStokes(int& stokes) const;
-    bool IsCurrentChannel(int z, int stokes) const;
-    bool IsCurrentStokes(int stokes) const;
-    size_t Width() const;     // length of x axis
-    size_t Height() const;    // length of y axis
-    size_t Depth() const;     // length of z axis
-    size_t NumStokes() const; // if no stokes axis, number of stokes = 1
+    size_t Width() const;                           // length of x axis
+    size_t Height() const;                          // length of y axis
+    size_t Depth() const;                           // length of z axis
+    size_t NumStokes() const;                       // if no stokes axis, number of stokes = 1
     int XAxis() const;
     int YAxis() const;
     int ZAxis() const;

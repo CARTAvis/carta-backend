@@ -91,7 +91,7 @@ bool StokesCache::LoadRegionSpectralData(const AxisRange& z_range, int stokes, c
 }
 
 bool StokesCache::ChannelDataAvailable(int z, int stokes) const {
-    return _frame->IsCurrentStokes(stokes) && _stokes_image_cache_valid;
+    return (z == ALL_Z) && (stokes == _frame->CurrentStokes()) && _stokes_image_cache_valid;
 }
 
 bool StokesCache::UpdateChannelCache(int z, int stokes) {
@@ -118,9 +118,7 @@ bool StokesCache::UpdateChannelCache(int z, int stokes) {
 void StokesCache::UpdateValidity(int stokes) {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    if (!_frame->IsCurrentStokes(stokes)) {
-        _stokes_image_cache_valid = false;
-    }
+    _stokes_image_cache_valid = (stokes == _frame->CurrentStokes());
 }
 
 } // namespace carta

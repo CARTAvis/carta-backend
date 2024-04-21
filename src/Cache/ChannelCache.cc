@@ -51,7 +51,7 @@ float ChannelCache::GetValue(int x, int y, int z, int stokes) {
 }
 
 bool ChannelCache::ChannelDataAvailable(int z, int stokes) const {
-    return _frame->IsCurrentChannel(z, stokes) && _channel_image_cache_valid;
+    return (z == _frame->CurrentZ()) && (stokes == _frame->CurrentStokes()) && _channel_image_cache_valid;
 }
 
 bool ChannelCache::UpdateChannelCache(int z, int stokes) {

@@ -306,7 +306,9 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     // Slice stokes axis
     if (StokesAxis() >= 0) {
         // Normalize stokes constant
-        CheckCurrentStokes(stokes);
+        if (stokes == CURRENT_STOKES) {
+            stokes = _stokes;
+        }
 
         if (stokes_source.IsOriginalImage()) {
             start(StokesAxis()) = stokes;
@@ -323,35 +325,12 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     return StokesSlicer(stokes_source, section);
 }
 
-void Frame::CheckCurrentZ(int& z) const {
-    if (z == CURRENT_Z) {
-        z = _z;
-    }
-}
-
-void Frame::CheckCurrentStokes(int& stokes) const {
-    if (stokes == CURRENT_STOKES) {
-        stokes = _stokes;
-    }
-}
-
 bool Frame::ValidZ(int z) const {
     return (z >= 0 && z < _depth);
 }
 
 bool Frame::ValidStokes(int stokes) const {
     return ((stokes >= 0 && stokes < _num_stokes) || IsComputedStokes(stokes));
-}
-
-bool Frame::IsCurrentChannel(int z, int stokes) const {
-    CheckCurrentZ(z);
-    CheckCurrentStokes(stokes);
-    return (z == _z && stokes == _stokes);
-}
-
-bool Frame::IsCurrentStokes(int stokes) const {
-    CheckCurrentStokes(stokes);
-    return (stokes == _stokes);
 }
 
 bool Frame::ZStokesChanged(int z, int stokes) const {
