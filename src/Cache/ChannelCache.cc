@@ -47,7 +47,7 @@ bool ChannelCache::LoadRegionSpectralData(const AxisRange& z_range, int stokes, 
 float ChannelCache::GetValue(int x, int y, int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    return ChannelDataAvailable(z, stokes) ? _channel_data[(_width * y) + x] : FLOAT_NAN;
+    return _channel_data[(_width * y) + x];
 }
 
 bool ChannelCache::ChannelDataAvailable(int z, int stokes) const {
