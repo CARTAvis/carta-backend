@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 
 #include "Logger/Logger.h"
+#include "Main/ProgramSettings.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/File.h"
 
@@ -18,8 +19,11 @@
 
 using namespace carta;
 
-TableController::TableController(const std::string& top_level_folder, const std::string& starting_folder)
-    : _top_level_folder(top_level_folder), _starting_folder(starting_folder) {}
+TableController::TableController() {
+    auto& settings = ProgramSettings::GetInstance();
+    _top_level_folder = settings.top_level_folder;
+    _starting_folder = settings.starting_folder;
+}
 
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
     int file_id = open_file_request.file_id();

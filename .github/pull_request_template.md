@@ -13,4 +13,4 @@
 - [ ] protobuf updated to the latest dev commit / no protobuf update needed
 - [ ] protobuf version bumped / protobuf version not bumped
 - [ ] added reviewers and assignee
-- [ ] added ZenHub estimate, milestone, and release
+- [ ] GitHub Project estimate added
