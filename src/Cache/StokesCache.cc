@@ -48,14 +48,14 @@ bool StokesCache::FillCubeImageCache(std::unique_ptr<float[]>& stokes_data, int 
 float* StokesCache::GetChannelData(int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    return ChannelDataAvailable(z, stokes) ? _stokes_data.get() + (_width * _height * z) : nullptr;
+    return _stokes_data.get() + (_width * _height * z);
 }
 
 float StokesCache::GetValue(int x, int y, int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     size_t idx = (_width * _height * z) + (_width * y) + x;
-    return ChannelDataAvailable(z, stokes) ? _stokes_data[idx] : FLOAT_NAN;
+    return _stokes_data[idx];
 }
 
 bool StokesCache::LoadPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
