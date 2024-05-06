@@ -48,17 +48,12 @@ bool Session::_controller_deployment = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode,
-    bool enable_scripting)
+    std::shared_ptr<FileListHandler> file_list_handler)
     : _socket(ws),
       _loop(loop),
       _id(id),
       _address(address),
-      _top_level_folder(top_level_folder),
-      _starting_folder(starting_folder),
-      _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
-      _read_only_mode(read_only_mode),
-      _enable_scripting(enable_scripting),
+      _table_controller(std::make_unique<TableController>()),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _sync_id(0),
@@ -66,6 +61,10 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _animation_active(false),
       _cursor_settings(this),
       _loaders(LOADER_CACHE_SIZE) {
+    auto& settings = ProgramSettings::GetInstance();
+    _top_level_folder = settings.top_level_folder;
+    _read_only_mode = settings.read_only_mode;
+    _enable_scripting = settings.enable_scripting;
     _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -123,6 +122,11 @@ Session::~Session() {
         }
     }
     logger::FlushLogFile();
+}
+
+void Session::SetExitTimeout(int secs) {
+    _exit_after_num_seconds = secs;
+    _exit_when_all_sessions_closed = true;
 }
 
 void Session::SetInitExitTimeout(int secs) {
