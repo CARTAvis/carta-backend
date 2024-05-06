@@ -39,7 +39,6 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         TestBlockSmooth.cc
         TestContour.cc
-        TestCubeImageCache.cc
         TestCursorSpatialProfiles.cc
         TestExprImage.cc
         TestFileInfo.cc
@@ -49,6 +48,7 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
+        TestImageCaches.cc
         TestImageFitting.cc
         TestMain.cc
         TestMoment.cc

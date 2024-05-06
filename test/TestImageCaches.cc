@@ -39,7 +39,7 @@ public:
     }
 };
 
-class CubeImageCacheTest : public ::testing::Test, public ImageGenerator {
+class TestImageCaches : public ::testing::Test, public ImageGenerator {
 public:
     enum FileType { FITS, HDF5 };
     enum ImageCacheType { Channel, All };
@@ -605,7 +605,7 @@ public:
     }
 };
 
-TEST_F(CubeImageCacheTest, SpatialProfile3D) {
+TEST_F(TestImageCaches, SpatialProfile3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
@@ -617,7 +617,7 @@ TEST_F(CubeImageCacheTest, SpatialProfile3D) {
     CmpSpatialProfiles(results1, results2);
 }
 
-TEST_F(CubeImageCacheTest, SpatialProfile4D) {
+TEST_F(TestImageCaches, SpatialProfile4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
@@ -634,7 +634,7 @@ TEST_F(CubeImageCacheTest, SpatialProfile4D) {
     }
 }
 
-TEST_F(CubeImageCacheTest, CursorSpectralProfile3D) {
+TEST_F(TestImageCaches, CursorSpectralProfile3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
@@ -643,7 +643,7 @@ TEST_F(CubeImageCacheTest, CursorSpectralProfile3D) {
     CmpVectors(spectral_profile1, spectral_profile2);
 }
 
-TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
+TEST_F(TestImageCaches, CursorSpectralProfile4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
@@ -654,7 +654,7 @@ TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
     }
 }
 
-TEST_F(CubeImageCacheTest, PointRegionSpectralProfile3D) {
+TEST_F(TestImageCaches, PointRegionSpectralProfile3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
@@ -663,7 +663,7 @@ TEST_F(CubeImageCacheTest, PointRegionSpectralProfile3D) {
     CmpVectors(spectral_profile1, spectral_profile2);
 }
 
-TEST_F(CubeImageCacheTest, PointRegionSpectralProfile4D) {
+TEST_F(TestImageCaches, PointRegionSpectralProfile4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
@@ -674,7 +674,7 @@ TEST_F(CubeImageCacheTest, PointRegionSpectralProfile4D) {
     }
 }
 
-TEST_F(CubeImageCacheTest, CubeHistogram3D) {
+TEST_F(TestImageCaches, CubeHistogram3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
@@ -683,7 +683,7 @@ TEST_F(CubeImageCacheTest, CubeHistogram3D) {
     EXPECT_TRUE(CmpHistograms(hist1, hist2));
 }
 
-TEST_F(CubeImageCacheTest, CubeHistogram4D) {
+TEST_F(TestImageCaches, CubeHistogram4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
@@ -703,7 +703,7 @@ TEST_F(CubeImageCacheTest, CubeHistogram4D) {
     }
 }
 
-TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile3D) {
+TEST_F(TestImageCaches, RectangleRegionSpectralProfile3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
     CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
@@ -713,7 +713,7 @@ TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile3D) {
     EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
 }
 
-TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile4D) {
+TEST_F(TestImageCaches, RectangleRegionSpectralProfile4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
     CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
@@ -725,7 +725,7 @@ TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile4D) {
     }
 }
 
-TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile3D) {
+TEST_F(TestImageCaches, EllipseRegionSpectralProfile3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
     CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
@@ -735,7 +735,7 @@ TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile3D) {
     EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
 }
 
-TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile4D) {
+TEST_F(TestImageCaches, EllipseRegionSpectralProfile4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
     CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
@@ -747,7 +747,7 @@ TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile4D) {
     }
 }
 
-TEST_F(CubeImageCacheTest, ImagePixelData3D) {
+TEST_F(TestImageCaches, ImagePixelData3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
@@ -758,7 +758,7 @@ TEST_F(CubeImageCacheTest, ImagePixelData3D) {
     }
 }
 
-TEST_F(CubeImageCacheTest, ImagePixelData4D) {
+TEST_F(TestImageCaches, ImagePixelData4D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
