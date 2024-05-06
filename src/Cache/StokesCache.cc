@@ -91,7 +91,7 @@ bool StokesCache::LoadRegionSpectralData(const AxisRange& z_range, int stokes, c
 }
 
 bool StokesCache::ChannelDataAvailable(int z, int stokes) const {
-    return (z == ALL_Z) && (stokes == _frame->CurrentStokes()) && _stokes_image_cache_valid;
+    return (stokes == _frame->CurrentStokes()) && _stokes_image_cache_valid;
 }
 
 bool StokesCache::UpdateChannelCache(int z, int stokes) {
