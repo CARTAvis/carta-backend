@@ -34,7 +34,7 @@ StokesCache::~StokesCache() {
     spdlog::info("{:.0f} MB of full image cache are available.", _full_image_cache_size_available);
 }
 
-bool StokesCache::FillCubeImageCache(std::unique_ptr<float[]>& stokes_data, int stokes) {
+bool StokesCache::FillStokesCache(std::unique_ptr<float[]>& stokes_data, int stokes) {
     StokesSlicer stokes_slicer = _frame->GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
     auto data_size = stokes_slicer.slicer.length().product();
     stokes_data = std::make_unique<float[]>(data_size);
@@ -103,7 +103,7 @@ bool StokesCache::UpdateChannelCache(int z, int stokes) {
     }
 
     Timer t;
-    if (!FillCubeImageCache(_stokes_data, stokes)) {
+    if (!FillStokesCache(_stokes_data, stokes)) {
         _valid = false;
         return false;
     }

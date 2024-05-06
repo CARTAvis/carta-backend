@@ -37,7 +37,7 @@ public:
     void UpdateValidity(int stokes) override;
 
 private:
-    bool FillCubeImageCache(std::unique_ptr<float[]>& stokes_data, int stokes);
+    bool FillStokesCache(std::unique_ptr<float[]>& stokes_data, int stokes);
 
     double _beam_area;
     std::unique_ptr<float[]> _stokes_data;
