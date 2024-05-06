@@ -414,6 +414,10 @@ void CompressedFits::AddHeaderEntry(
             } catch (std::invalid_argument) {
                 // Set string value only
                 entry->set_entry_type(CARTA::EntryType::STRING);
+            } catch (std::out_of_range) {
+                long lvalue = std::stol(value);
+                entry->set_numeric_value(lvalue);
+                entry->set_entry_type(CARTA::EntryType::INT);
             }
         }
     }
