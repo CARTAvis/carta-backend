@@ -234,9 +234,6 @@ protected:
     // Check whether z or stokes has changed
     bool ZStokesChanged(int z, int stokes) const;
 
-    // Cache image plane data for current z, stokes
-    bool UpdateChannelCache();
-
     // Downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
     bool GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height);

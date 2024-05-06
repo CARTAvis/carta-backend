@@ -94,7 +94,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (!_image_cache->TileCacheAvailable() && !UpdateChannelCache()) {
+    if (!_image_cache->TileCacheAvailable() && !_image_cache->UpdateChannelCache(_z, _stokes)) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
@@ -356,7 +356,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
 
                 if (!_image_cache->TileCacheAvailable() || IsComputedStokes(_stokes)) {
                     // Reload the full channel cache for loaders which use it
-                    UpdateChannelCache();
+                    _image_cache->UpdateChannelCache(_z, _stokes);
                 } else {
                     // Don't reload the full channel cache here because we may not need it
 
@@ -379,10 +379,6 @@ bool Frame::SetCursor(float x, float y) {
     bool changed = ((x != _cursor.x) || (y != _cursor.y));
     _cursor = PointXy(x, y);
     return changed;
-}
-
-bool Frame::UpdateChannelCache() {
-    return _image_cache->UpdateChannelCache(_z, _stokes);
 }
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
@@ -593,7 +589,7 @@ bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
 
 bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     // Always use the full image cache (for now)
-    UpdateChannelCache();
+    _image_cache->UpdateChannelCache(_z, _stokes);
 
     double scale = 1.0;
     double offset = 0;
@@ -1790,7 +1786,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
-            UpdateChannelCache();
+            _image_cache->UpdateChannelCache(_z, _stokes);
 
             success = _image_fitter->FitImage(_width, _height, GetImageData(), beam_size, unit, initial_values, fixed_params,
                 fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
