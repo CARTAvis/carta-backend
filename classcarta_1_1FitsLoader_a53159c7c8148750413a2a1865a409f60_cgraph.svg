@@ -114,18 +114,18 @@ var sectionId = 'dynsection-2';
 <!-- Node12 -->
 <g id="node12" class="node">
 <title>Node12</title>
-<g id="a_node12"><a xlink:href="classcarta_1_1FitsLoader.html#a0e0754a4dace9f12dd948513e73f2963" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="159.5,-171.5 159.5,-201.5 263.5,-201.5 263.5,-171.5 159.5,-171.5"/>
-<text text-anchor="start" x="167.5" y="-189.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FitsLoader::</text>
-<text text-anchor="middle" x="211.5" y="-178.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetNumHeaders</text>
+<g id="a_node12"><a xlink:href="classcarta_1_1FitsLoader.html#a71815a52ccd44370b952600cc6ad2cbb" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="147.5,-171.5 147.5,-201.5 275.5,-201.5 275.5,-171.5 147.5,-171.5"/>
+<text text-anchor="start" x="155.5" y="-189.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FitsLoader::</text>
+<text text-anchor="middle" x="211.5" y="-178.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetNumImageHeaders</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node12 -->
 <g id="edge15" class="edge">
 <title>Node1&#45;&gt;Node12</title>
-<path fill="none" stroke="midnightblue" d="M104.14,-186.5C118.51,-186.5 134.3,-186.5 149.2,-186.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="149.35,-190 159.35,-186.5 149.35,-183 149.35,-190"/>
+<path fill="none" stroke="midnightblue" d="M104.14,-186.5C114.66,-186.5 125.93,-186.5 137.07,-186.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="137.22,-190 147.22,-186.5 137.22,-183 137.22,-190"/>
 </g>
 <!-- Node13 -->
 <g id="node13" class="node">

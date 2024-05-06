@@ -119,7 +119,7 @@ var searchData=
   ['getnextregion_2656',['GetNextRegion',['../classcarta_1_1PvPreviewCut.html#ab5206f998e292cebe47ecb46fc00f631',1,'carta::PvPreviewCut']]],
   ['getnextregionid_2657',['GetNextRegionId',['../classcarta_1_1RegionHandler.html#a43a9a50fcbb0fb348cd8a10cd52922e8',1,'carta::RegionHandler']]],
   ['getnexttemporaryregionid_2658',['GetNextTemporaryRegionId',['../classcarta_1_1RegionHandler.html#a0aca77af88b2550b5b6f2a6e2d94e101',1,'carta::RegionHandler']]],
-  ['getnumheaders_2659',['GetNumHeaders',['../classcarta_1_1FitsLoader.html#a0e0754a4dace9f12dd948513e73f2963',1,'carta::FitsLoader']]],
+  ['getnumimageheaders_2659',['GetNumImageHeaders',['../classcarta_1_1FitsLoader.html#a71815a52ccd44370b952600cc6ad2cbb',1,'carta::FitsLoader']]],
   ['getnumitems_2660',['GetNumItems',['../File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5',1,'GetNumItems(const std::string &amp;path):&#160;File.cc'],['../File_8h.html#aa6f49a48edd9827968c16d1cc91e25f5',1,'GetNumItems(const std::string &amp;path):&#160;File.cc']]],
   ['getpath_2661',['GetPath',['../classcarta_1_1TableController.html#a5523c384eccdd225df0dddf7cec5e965',1,'carta::TableController']]],
   ['getpixelmask_2662',['GetPixelMask',['../classcarta_1_1CartaFitsImage.html#a02e17c0bbc3457b0352a6367fca62518',1,'carta::CartaFitsImage']]],
