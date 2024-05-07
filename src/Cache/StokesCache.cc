@@ -48,7 +48,7 @@ bool StokesCache::FillStokesCache(std::unique_ptr<float[]>& stokes_data, int sto
 float* StokesCache::GetChannelData(int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    return _stokes_data.get() + (_width * _height * z);
+    return ChannelDataAvailable(ALL_Z, stokes) ? _stokes_data.get() + (_width * _height * z) : nullptr;
 }
 
 float StokesCache::DoGetValue(int x, int y, int z, int stokes) {
@@ -66,8 +66,6 @@ bool StokesCache::LoadPointSpectralData(std::vector<float>& profile, int stokes,
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     if (ChannelDataAvailable(ALL_Z, stokes)) {
-        bool write_lock(false);
-        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         int x, y;
         point.ToIndex(x, y);
         profile.resize(_depth);
