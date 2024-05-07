@@ -529,7 +529,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                     DeleteFrame(file_id);
                 }
                 std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
-                _frames[file_id] = move(frame);
+                _frames[file_id] = std::move(frame);
                 _last_file_id = file_id;
                 lock.unlock();
 
@@ -601,7 +601,7 @@ bool Session::OnOpenFile(
                 DeleteFrame(file_id);
             }
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
-            _frames[file_id] = move(frame);
+            _frames[file_id] = std::move(frame);
             _last_file_id = file_id;
             lock.unlock();
 
