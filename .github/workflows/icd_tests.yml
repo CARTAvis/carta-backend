@@ -86,8 +86,8 @@ jobs:
           SRC_DIR=$GITHUB_WORKSPACE/source
           BUILD_DIR=$GITHUB_WORKSPACE/build-${{ matrix.os_version }}
           rm -rf $BUILD_DIR && mkdir -p $BUILD_DIR
+          cd source ; git submodule update --init --recursive
           apptainer exec --bind $GITHUB_WORKSPACE:$GITHUB_WORKSPACE --pwd $SRC_DIR ${{ matrix.image }} /bin/bash -c "\
-            git submodule update --init --recursive && \
             cd $BUILD_DIR && \
             cmake $SRC_DIR \
               -Dtest=on \
@@ -178,9 +178,11 @@ jobs:
           BUILD_DIR=$GITHUB_WORKSPACE/build-${{ matrix.os_version }}
           ICD_DIR=$GITHUB_WORKSPACE/ICD-RxJS
           cp -r $ICD_DIR $BUILD_DIR
+          cd $BUILD_DIR/ICD-RxJS
+          git submodule update --init --recursive
           apptainer exec --bind $GITHUB_WORKSPACE:$GITHUB_WORKSPACE --pwd $BUILD_DIR ${{ matrix.image }} /bin/bash -c "\
             cd ICD-RxJS && \
-            git submodule init && git submodule update && npm install && \
+            npm install && \
             cd protobuf && \
             ./build_proto.sh && \
             cd ../src/test && \
