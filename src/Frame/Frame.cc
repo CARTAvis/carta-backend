@@ -501,9 +501,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             return true;
         } else if (compression_type == CARTA::CompressionType::ZFP) {
             // GetNanEncodingsBlock changes tile data (cached in TileCache)!
-            std::vector<float> tile_data_to_compress;
-            tile_data_to_compress.assign(tile_data_ptr->begin(), tile_data_ptr->end());
-            auto nan_encodings = GetNanEncodingsBlock(tile_data_to_compress, 0, tile_width, tile_height);
+            auto nan_encodings = GetNanEncodingsBlock(*tile_data_ptr, 0, tile_width, tile_height);
             tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
 
             if (ZStokesChanged(z, stokes)) {
@@ -516,7 +514,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
-            Compress(tile_data_to_compress, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
+            Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             float compression_ratio = (float)tile_image_data_size / (float)compressed_size;
             bool use_high_precision(false);
 
@@ -524,8 +522,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 // re-compress the data with a higher precision
                 std::vector<char> compression_buffer_hq;
                 size_t compressed_size_hq;
-                Compress(
-                    tile_data_to_compress, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
+                Compress(*tile_data_ptr, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
                 float compression_ratio_hq = (float)tile_image_data_size / (float)compressed_size_hq;
 
                 if (compression_ratio_hq > 10) {
@@ -584,7 +581,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (!_image_cache_valid && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        tile_data_ptr = _tile_cache.GetCopy(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
         if (tile_data_ptr) {
             return true;
         }

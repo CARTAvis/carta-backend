@@ -53,6 +53,13 @@ public:
      *  @details This function locks the cache because it modifies the cache state.
      */
     TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
+
+    /** @brief Retrieve a tile from the cache and return a copy
+     *  @param key The tile key
+     *  @details This function locks the cache because it modifies the cache state.
+     */
+    TilePtr GetCopy(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
+
     /** @brief Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles.
      *  @param z The new Z coordinate
      *  @param stokes The new Stokes coordinate

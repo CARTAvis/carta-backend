@@ -46,6 +46,14 @@ TilePtr TileCache::Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& 
     return nullptr;
 }
 
+TilePtr TileCache::GetCopy(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
+    // Load or retrieve tile and return a shared_ptr of a copy to ensure it will not be changed in the cache.
+    auto tile_ptr = Get(key, loader, image_mutex);
+    std::vector<float> tile_data;
+    tile_data.assign(tile_ptr->begin(), tile_ptr->end());
+    return std::make_shared<std::vector<float>>(tile_data);
+}
+
 void TileCache::Reset(int32_t z, int32_t stokes, int capacity) {
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
     if (capacity > 0) {
