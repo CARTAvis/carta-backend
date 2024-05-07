@@ -25,17 +25,18 @@ public:
     ChannelCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
 
     float* GetChannelData(int z, int stokes) override;
-    inline float GetValue(int x, int y, int z, int stokes) override;
+    float DoGetValue(int x, int y, int z, int stokes) override;
 
     bool LoadPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;
     bool LoadRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
-    bool ChannelDataAvailable(int z, int stokes) const override;
 
     bool UpdateChannelCache(int z, int stokes) override;
     void UpdateValidity(int stokes) override;
 
 private:
+    inline float GetValue(int x, int y, int z, int stokes) override;
+    bool ChannelDataAvailable(int z, int stokes) const override;
     bool FillChannelCache(std::unique_ptr<float[]>& channel_data, int z, int stokes);
 
     std::unique_ptr<float[]> _channel_data;

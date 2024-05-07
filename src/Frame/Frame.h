@@ -270,8 +270,6 @@ protected:
     // For image cache
     float* GetImageData(int z, int stokes);
     float* GetImageData();
-    bool ImageCacheAvailable(int z, int stokes) const;
-    bool ImageCacheAvailable() const;
 
     // Image shape or sizes
     casacore::IPosition _image_shape;

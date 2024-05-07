@@ -138,10 +138,13 @@ float* FullImageCache::GetChannelData(int z, int stokes) {
     return _stokes_data[stokes].get() + (_width * _height * z);
 }
 
-float FullImageCache::GetValue(int x, int y, int z, int stokes) {
+float FullImageCache::DoGetValue(int x, int y, int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+    return GetValue(x, y, z, stokes);
+}
 
+float FullImageCache::GetValue(int x, int y, int z, int stokes) {
     size_t idx = (_width * _height * z) + (_width * y) + x;
     if (IsComputedStokes(stokes)) {
         if (_stokes_data.count(stokes) && _current_computed_stokes_channel == z) {
@@ -178,6 +181,8 @@ float FullImageCache::GetValue(int x, int y, int z, int stokes) {
 }
 
 bool FullImageCache::LoadPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     if (_stokes_data.count(stokes) || IsComputedStokes(stokes)) {
         int x, y;
         point.ToIndex(x, y);

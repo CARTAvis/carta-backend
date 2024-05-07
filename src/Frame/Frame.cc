@@ -393,7 +393,7 @@ void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
 
 bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
     // apply bounds and downsample image cache
-    if (!_valid || !ImageCacheAvailable()) {
+    if (!_valid) {
         return false;
     }
 
@@ -552,7 +552,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     if (mip > 1 && !IsComputedStokes(_stokes)) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _z, _stokes, bounds, mip, _image_mutex);
-    } else if (!ImageCacheAvailable() && _loader->UseTileCache()) {
+    } else if (_loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
         tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
         if (tile_data_ptr) {
@@ -817,9 +817,10 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
             return true;
         }
 
-        if (ImageCacheAvailable(z, stokes)) {
+        float* channel_data = GetImageData(z, stokes);
+        if (channel_data) {
             // calculate histogram from image cache
-            CalcBasicStats(stats, GetImageData(z, stokes), _width * _height);
+            CalcBasicStats(stats, channel_data, _width * _height);
             _image_basic_stats[cache_key] = stats;
             return true;
         }
@@ -880,9 +881,10 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
         num_bins = AutoBinSize();
     }
 
-    if (ImageCacheAvailable(z, stokes)) {
+    float* channel_data = GetImageData(z, stokes);
+    if (channel_data) {
         // calculate histogram from image cache
-        hist = CalcHistogram(num_bins, bounds, GetImageData(z, stokes), _width * _height);
+        hist = CalcHistogram(num_bins, bounds, channel_data, _width * _height);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
@@ -1036,14 +1038,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     float cursor_value_with_current_stokes(0.0);
 
     // Get the cursor value with current stokes
-    if (ImageCacheAvailable()) {
-        cursor_value_with_current_stokes = _image_cache->GetValue(x, y, _z, _stokes);
-    } else if (_loader->UseTileCache()) {
+    if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
         auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
         auto tile_width = tile_size(tile_x, _width);
         cursor_value_with_current_stokes = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
+    } else {
+        cursor_value_with_current_stokes = _image_cache->DoGetValue(x, y, _z, _stokes);
     }
 
     if (spatial_configs.empty()) { // Only send a spatial data message for the cursor value with current stokes
@@ -1147,13 +1149,6 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     end = config.coordinate().back() == 'x' ? std::min(end, _width) : std::min(end, _height);
                 }
 
-                auto get_spatial_profile_from_cache = [&](int required_stokes) {
-                    if (ImageCacheAvailable(_z, required_stokes)) {
-                        _image_cache->LoadPointSpatialData(profile, config.coordinate().back(), point, start, end, _z, required_stokes);
-                        have_profile = true;
-                    }
-                };
-
                 if (is_current_stokes) {
                     if (_loader->UseTileCache()) { // Use tile cache to return full resolution data or prepare data for decimation
                         profile.resize(end - start);
@@ -1209,13 +1204,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                             have_profile = true;
                         }
                     } else { // Use image cache to return full resolution data or prepare data for decimation
-                        get_spatial_profile_from_cache(_stokes);
+                        have_profile =
+                            _image_cache->LoadPointSpatialData(profile, config.coordinate().back(), point, start, end, _z, _stokes);
                     }
                 } else {
                     // Required stokes is not the current stokes or the stokes needs to be computed
-                    if (ImageCacheAvailable(_z, stokes)) {
-                        get_spatial_profile_from_cache(stokes);
-                    } else {
+                    have_profile = _image_cache->LoadPointSpatialData(profile, config.coordinate().back(), point, start, end, _z, stokes);
+
+                    if (!have_profile) {
                         profile.reserve(end - start);
 
                         StokesSlicer stokes_slicer;
@@ -2388,14 +2384,6 @@ bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes,
 bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     return _image_cache->LoadRegionSpectralData(z_range, stokes, mask, origin, profiles);
-}
-
-bool Frame::ImageCacheAvailable(int z, int stokes) const {
-    return _image_cache->ChannelDataAvailable(z, stokes);
-}
-
-bool Frame::ImageCacheAvailable() const {
-    return _image_cache->ChannelDataAvailable(_z, _stokes);
 }
 
 } // namespace carta

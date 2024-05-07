@@ -51,14 +51,20 @@ float* StokesCache::GetChannelData(int z, int stokes) {
     return _stokes_data.get() + (_width * _height * z);
 }
 
-float StokesCache::GetValue(int x, int y, int z, int stokes) {
+float StokesCache::DoGetValue(int x, int y, int z, int stokes) {
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+    return ChannelDataAvailable(z, stokes) ? GetValue(x, y, z, stokes) : std::numeric_limits<float>::quiet_NaN();
+}
+
+float StokesCache::GetValue(int x, int y, int z, int stokes) {
     size_t idx = (_width * _height * z) + (_width * y) + x;
     return _stokes_data[idx];
 }
 
 bool StokesCache::LoadPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+    bool write_lock(false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     if (ChannelDataAvailable(ALL_Z, stokes)) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
@@ -67,8 +73,7 @@ bool StokesCache::LoadPointSpectralData(std::vector<float>& profile, int stokes,
         profile.resize(_depth);
 #pragma omp parallel for
         for (int z = 0; z < _depth; ++z) {
-            size_t idx = (_width * _height * z) + (_width * y) + x;
-            profile[z] = _stokes_data[idx];
+            profile[z] = GetValue(x, y, z, stokes);
         }
         return true;
     }
