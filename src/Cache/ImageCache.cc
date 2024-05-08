@@ -20,6 +20,11 @@ float ImageCache::_full_image_cache_size_available = 0; // MB
 std::mutex ImageCache::_full_image_cache_size_available_mutex;
 
 std::unique_ptr<ImageCache> ImageCache::GetImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
+    if (!frame || !loader) {
+        spdlog::error("Can not get an image cache object!");
+        return nullptr;
+    }
+
     if (!(loader->UseTileCache() && loader->HasMip(2))) {
         auto width = frame->Width();
         auto height = frame->Height();
@@ -43,21 +48,12 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(Frame* frame, std::shared_
 }
 
 ImageCache::ImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex)
-    : _frame(frame), _loader(loader), _image_mutex(image_mutex), _valid(true), _image_memory_size(0) {
-    if (!_loader || !_frame) {
-        _valid = false;
-        spdlog::error("Image loader helper is invalid!");
-    }
-
+    : _frame(frame), _loader(loader), _image_mutex(image_mutex), _image_memory_size(0) {
     // Get image size
     _width = _frame->Width();
     _height = _frame->Height();
     _depth = _frame->Depth();
     _num_stokes = _frame->NumStokes();
-}
-
-casacore::IPosition ImageCache::OriginalImageShape() const {
-    return _frame->ImageShape();
 }
 
 bool ImageCache::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
@@ -135,10 +131,6 @@ bool ImageCache::LoadPointSpatialData(
         return true;
     }
     return false;
-}
-
-bool ImageCache::IsValid() const {
-    return _valid;
 }
 
 void ImageCache::SetFullImageCacheSize(int& full_image_cache_size_available, std::string& msg) {

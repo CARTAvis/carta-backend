@@ -106,7 +106,6 @@ bool StokesCache::ChannelDataAvailable(int z, int stokes) {
 bool StokesCache::UpdateChannelCache(int z, int stokes) {
     Timer t;
     if (!FillStokesCache(_stokes_data, stokes)) {
-        _valid = false;
         return false;
     }
     auto dt = t.Elapsed();

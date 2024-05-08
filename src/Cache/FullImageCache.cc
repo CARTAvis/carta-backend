@@ -15,6 +15,7 @@ namespace carta {
 
 FullImageCache::FullImageCache(Frame* frame, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex)
     : ImageCache(frame, loader, image_mutex),
+      _full_image_cache_valid(true),
       _stokes_i(-1),
       _stokes_q(-1),
       _stokes_u(-1),
@@ -25,7 +26,7 @@ FullImageCache::FullImageCache(Frame* frame, std::shared_ptr<FileLoader> loader,
 
     Timer t;
     if (!FillFullImageCache(_stokes_data)) {
-        _valid = false;
+        _full_image_cache_valid = false;
         return;
     }
     auto dt = t.Elapsed();
@@ -48,7 +49,7 @@ FullImageCache::FullImageCache(Frame* frame, std::shared_ptr<FileLoader> loader,
 
 FullImageCache::~FullImageCache() {
     // Update the availability of full image cache size
-    if (_valid) {
+    if (_full_image_cache_valid) {
         std::unique_lock<std::mutex> ulock(_full_image_cache_size_available_mutex);
         _full_image_cache_size_available += _image_memory_size;
         ulock.unlock();

@@ -89,7 +89,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // Create an image cache
     _image_cache = ImageCache::GetImageCache(this, _loader, _image_mutex);
-    if (!_image_cache->IsValid()) {
+    if (!_image_cache) {
         return;
     }
 

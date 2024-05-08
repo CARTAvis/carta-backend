@@ -67,7 +67,6 @@ bool ChannelCache::ChannelDataAvailable(int z, int stokes) {
 bool ChannelCache::UpdateChannelCache(int z, int stokes) {
     Timer t;
     if (!FillChannelCache(_channel_data, z, stokes)) {
-        _valid = false;
         return false;
     }
     auto dt = t.Elapsed();

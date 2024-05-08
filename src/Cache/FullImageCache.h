@@ -39,6 +39,7 @@ private:
     bool UpdateChannelCache(int z, int stokes) override;
     bool FillFullImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data);
 
+    bool _full_image_cache_valid;
     int _stokes_i; // stokes "I" index
     int _stokes_q; // stokes "Q" index
     int _stokes_u; // stokes "U" index

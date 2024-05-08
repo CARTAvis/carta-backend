@@ -31,7 +31,6 @@ public:
     static void SetFullImageCacheSize(int& full_image_cache_size_available, std::string& msg);
     static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
 
-    casacore::IPosition OriginalImageShape() const;
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg);
     bool TileCacheAvailable();
@@ -45,7 +44,6 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) = 0;
 
     bool LoadPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
-    bool IsValid() const;
 
 protected:
     virtual float GetValue(int x, int y, int z, int stokes) = 0;
@@ -63,7 +61,6 @@ protected:
     std::shared_ptr<FileLoader> _loader;
     std::mutex& _image_mutex; // Reference of the image mutex for the file loader
     queuing_rw_mutex _cache_mutex;
-    bool _valid;
     float _image_memory_size;
 
     // Cube image cache size
