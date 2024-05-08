@@ -93,18 +93,17 @@ bool StokesCache::LoadRegionSpectralData(const AxisRange& z_range, int stokes, c
     return false;
 }
 
-bool StokesCache::ChannelDataAvailable(int z, int stokes) const {
-    return (stokes == _frame->CurrentStokes()) && _stokes_image_cache_valid;
+bool StokesCache::ChannelDataAvailable(int z, int stokes) {
+    if (stokes == _frame->CurrentStokes()) {
+        if (!_stokes_image_cache_valid) {
+            return UpdateChannelCache(z, stokes);
+        }
+        return true;
+    }
+    return false;
 }
 
 bool StokesCache::UpdateChannelCache(int z, int stokes) {
-    bool write_lock(true);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-
-    if (ChannelDataAvailable(z, stokes)) {
-        return true;
-    }
-
     Timer t;
     if (!FillStokesCache(_stokes_data, stokes)) {
         _valid = false;
@@ -118,10 +117,12 @@ bool StokesCache::UpdateChannelCache(int z, int stokes) {
     return true;
 }
 
-void StokesCache::UpdateValidity(int stokes) {
-    bool write_lock(true);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    _stokes_image_cache_valid = (stokes == _frame->CurrentStokes());
+void StokesCache::UpdateValidity(bool stokes_changed) {
+    if (stokes_changed) {
+        bool write_lock(true);
+        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+        _stokes_image_cache_valid = false;
+    }
 }
 
 } // namespace carta

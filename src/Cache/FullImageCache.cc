@@ -211,7 +211,7 @@ bool FullImageCache::LoadRegionSpectralData(const AxisRange& z_range, int stokes
     return false;
 }
 
-bool FullImageCache::ChannelDataAvailable(int z, int stokes) const {
+bool FullImageCache::ChannelDataAvailable(int z, int stokes) {
     return true;
 }
 
@@ -219,6 +219,6 @@ bool FullImageCache::UpdateChannelCache(int z, int stokes) {
     return true;
 }
 
-void FullImageCache::UpdateValidity(int stokes) {}
+void FullImageCache::UpdateValidity(bool stokes_changed) {}
 
 } // namespace carta

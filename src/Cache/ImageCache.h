@@ -36,6 +36,7 @@ public:
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg);
     bool TileCacheAvailable();
 
+    virtual void UpdateValidity(bool stokes_changed) = 0;
     virtual float* GetChannelData(int z, int stokes) = 0;
     virtual float DoGetValue(int x, int y, int z, int stokes) = 0;
 
@@ -43,15 +44,13 @@ public:
     virtual bool LoadRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) = 0;
 
-    virtual bool UpdateChannelCache(int z, int stokes) = 0;
-    virtual void UpdateValidity(int stokes) = 0;
-
     bool LoadPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
     bool IsValid() const;
 
 protected:
     virtual float GetValue(int x, int y, int z, int stokes) = 0;
-    virtual bool ChannelDataAvailable(int z, int stokes) const = 0;
+    virtual bool ChannelDataAvailable(int z, int stokes) = 0;
+    virtual bool UpdateChannelCache(int z, int stokes) = 0;
 
     void DoStatisticsCalculations(const AxisRange& z_range, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, double beam_area, const std::function<float(size_t idx)>& get_value,

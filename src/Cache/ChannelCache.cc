@@ -54,18 +54,17 @@ float ChannelCache::GetValue(int x, int y, int z, int stokes) {
     return _channel_data[(_width * y) + x];
 }
 
-bool ChannelCache::ChannelDataAvailable(int z, int stokes) const {
-    return (z == _frame->CurrentZ()) && (stokes == _frame->CurrentStokes()) && _channel_image_cache_valid;
+bool ChannelCache::ChannelDataAvailable(int z, int stokes) {
+    if (z == _frame->CurrentZ() && stokes == _frame->CurrentStokes()) {
+        if (!_channel_image_cache_valid) {
+            return UpdateChannelCache(z, stokes);
+        }
+        return true;
+    }
+    return false;
 }
 
 bool ChannelCache::UpdateChannelCache(int z, int stokes) {
-    bool write_lock(true);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-
-    if (ChannelDataAvailable(z, stokes)) {
-        return true;
-    }
-
     Timer t;
     if (!FillChannelCache(_channel_data, z, stokes)) {
         _valid = false;
@@ -79,7 +78,7 @@ bool ChannelCache::UpdateChannelCache(int z, int stokes) {
     return true;
 }
 
-void ChannelCache::UpdateValidity(int stokes) {
+void ChannelCache::UpdateValidity(bool stokes_changed) {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     _channel_image_cache_valid = false;
