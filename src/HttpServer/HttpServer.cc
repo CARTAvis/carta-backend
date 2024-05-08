@@ -77,11 +77,14 @@ void HttpServer::RegisterRoutes() {
             const auto& object_type = elem.first;
             app.get(fmt::format("{}/api/database/list/{}s", _url_prefix, object_type),
                 [&](auto res, auto req) { HandleGetObjectList(object_type, res, req); });
-            app.get(fmt::format("{}/api/database/{}s", _url_prefix, object_type), [&](auto res, auto req) { HandleGetObjects(object_type, res, req); });
-            app.get(
-                fmt::format("{}/api/database/{}/:name", _url_prefix, object_type), [&](auto res, auto req) { HandleGetObject(object_type, res, req); });
-            app.put(fmt::format("{}/api/database/{}", _url_prefix, object_type), [&](auto res, auto req) { HandleSetObject(object_type, res, req); });
-            app.del(fmt::format("{}/api/database/{}", _url_prefix, object_type), [&](auto res, auto req) { HandleClearObject(object_type, res, req); });
+            app.get(fmt::format("{}/api/database/{}s", _url_prefix, object_type),
+                [&](auto res, auto req) { HandleGetObjects(object_type, res, req); });
+            app.get(fmt::format("{}/api/database/{}/:name", _url_prefix, object_type),
+                [&](auto res, auto req) { HandleGetObject(object_type, res, req); });
+            app.put(fmt::format("{}/api/database/{}", _url_prefix, object_type),
+                [&](auto res, auto req) { HandleSetObject(object_type, res, req); });
+            app.del(fmt::format("{}/api/database/{}", _url_prefix, object_type),
+                [&](auto res, auto req) { HandleClearObject(object_type, res, req); });
         }
     } else {
         app.get(fmt::format("{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
