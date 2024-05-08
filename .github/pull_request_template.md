@@ -9,6 +9,8 @@
 
 - [ ] changelog updated / no changelog update needed
 - [ ] e2e test passing / corresponding fix added / new e2e test created
+- [ ] ICD test passing / corresponding fix added / new ICD test created
 - [ ] protobuf updated to the latest dev commit / no protobuf update needed
+- [ ] protobuf version bumped / protobuf version not bumped
 - [ ] added reviewers and assignee
-- [ ] added ZenHub estimate, milestone, and release
+- [ ] GitHub Project estimate added

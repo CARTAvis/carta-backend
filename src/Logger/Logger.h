@@ -1,11 +1,11 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_LOGGER_LOGGER_H_
-#define CARTA_BACKEND_LOGGER_LOGGER_H_
+#ifndef CARTA_SRC_LOGGER_LOGGER_H_
+#define CARTA_SRC_LOGGER_LOGGER_H_
 
 #include <iostream>
 
@@ -19,12 +19,14 @@
 
 #include "Util/FileSystem.h"
 
+// Time format Z is zero UTC offset (ISO 8601)
 #define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
 #define ROTATED_LOG_FILES 5
 #define CARTA_LOGGER_TAG "CARTA"
-#define CARTA_LOGGER_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
+#define CARTA_LOGGER_PATTERN "[%Y-%m-%d %H:%M:%S.%eZ] [%n] [%^%l%$] %v"
+#define CARTA_FILE_LOGGER_PATTERN "[%Y-%m-%d %H:%M:%S.%eZ] [%^%l%$] %v"
 #define PERF_TAG "performance"
-#define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v"
+#define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%eZ] [%^%l%$] [%n] %v"
 
 // customize the log function for performance
 namespace spdlog {
@@ -48,7 +50,7 @@ public:
     carta_sink()
         : ansicolor_sink<details::console_mutex>(stdout, color_mode::automatic),
           mutex_(details::console_mutex::mutex()),
-          formatter_(details::make_unique<spdlog::pattern_formatter>(pattern_time_type::utc)) {
+          formatter_(details::make_unique<spdlog::pattern_formatter>(CARTA_LOGGER_PATTERN, pattern_time_type::utc)) {
         target_file_ = stdout;
         colors_[level::trace] = to_string_(white);
         colors_[level::debug] = to_string_(cyan);
@@ -108,11 +110,11 @@ private:
 
 namespace carta {
 namespace logger {
-void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_, fs::path user_directory);
+void InitLogger();
 void LogReceivedEventType(const CARTA::EventType& event_type);
 void LogSentEventType(const CARTA::EventType& event_type);
 void FlushLogFile();
 } // namespace logger
 } // namespace carta
 
-#endif // CARTA_BACKEND_LOGGER_LOGGER_H_
+#endif // CARTA_SRC_LOGGER_LOGGER_H_

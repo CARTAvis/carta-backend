@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -7,8 +7,8 @@
 //
 // Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/Image2DConvolver.h"
 //
-#ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
-#define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
+#ifndef CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_H_
+#define CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_H_
 
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/ArrayMath.h>
@@ -152,4 +152,4 @@ private:
 
 #include "Image2DConvolver.tcc"
 
-#endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
+#endif // CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_H_

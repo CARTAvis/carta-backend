@@ -1,13 +1,13 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 //# StatsCalculator.h: functions for calculating statistics and histograms
 
-#ifndef CARTA_BACKEND_IMAGESTATS_STATSCALCULATOR_H_
-#define CARTA_BACKEND_IMAGESTATS_STATSCALCULATOR_H_
+#ifndef CARTA_SRC_IMAGESTATS_STATSCALCULATOR_H_
+#define CARTA_SRC_IMAGESTATS_STATSCALCULATOR_H_
 
 #include <vector>
 
@@ -28,4 +28,4 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGESTATS_STATSCALCULATOR_H_
+#endif // CARTA_SRC_IMAGESTATS_STATSCALCULATOR_H_

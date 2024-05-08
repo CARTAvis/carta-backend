@@ -1,0 +1,52 @@
+name: 'Run ICD tests via Apptainer'
+description: 'Start carta_backend and run ICD tests'
+inputs:
+  os_version:
+    description: 'Platfrom'
+    required: true
+  image:
+    description: 'Apptainer image'
+    required: true
+  port:
+    description: 'Port number for carta_backend'
+    required: true
+  test_stage_name:
+    description: 'ICD test stage'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - run: |
+        SRC_DIR=$GITHUB_WORKSPACE/source
+        BUILD_DIR=$GITHUB_WORKSPACE/build-${{ inputs.os_version }}
+        TEST_STAGE="$BUILD_DIR/ICD-RxJS/ICD_test_stages/${{ inputs.test_stage_name }}.tests"
+        LOG_FILE="/tmp/carta_icd_${{ inputs.os_version }}_${{ inputs.test_stage_name }}.log"
+        apptainer exec \
+          --bind $GITHUB_WORKSPACE:$GITHUB_WORKSPACE \
+          --bind /images:/images \
+          --pwd $BUILD_DIR \
+          ${{ inputs.image }} /bin/bash -c "\
+            # Start the carta_backend
+            ASAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan.supp \
+            LSAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan-leaks.supp \
+            ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+            ./carta_backend /images \
+              --top_level_folder /images \
+              --port ${{ inputs.port }} \
+              --omp_threads=4 \
+              --debug_no_auth \
+              --no_frontend \
+              --no_database \
+              --no_log \
+              --verbosity=5 >> $LOG_FILE 2>&1 & \
+            CARTA_BACKEND_PID=\$(pgrep -f 'carta_backend.*${{ inputs.port }}' | head -n 1) && \
+            echo 'carta_backend started with PID' \$CARTA_BACKEND_PID && \
+            # Run the ICD tests
+            cd $BUILD_DIR/ICD-RxJS && \
+            pwd && \
+            cat $TEST_STAGE && \
+            while IFS= read -r test_file || [[ -n "\$test_file" ]]; do
+              CI=true npm test -- "\$test_file"
+            done < $TEST_STAGE"
+      shell: bash

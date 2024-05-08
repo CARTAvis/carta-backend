@@ -1,11 +1,11 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEGENERATORS_PVGENERATOR_H_
-#define CARTA_BACKEND_IMAGEGENERATORS_PVGENERATOR_H_
+#ifndef CARTA_SRC_IMAGEGENERATORS_PVGENERATOR_H_
+#define CARTA_SRC_IMAGEGENERATORS_PVGENERATOR_H_
 
 #include <casacore/images/Images/TempImage.h>
 #include <casacore/lattices/LRegions/LCRegion.h>
@@ -24,7 +24,7 @@ public:
     ~PvGenerator() = default;
 
     // For PV generator (not preview)
-    void SetFileIdName(int file_id, int index, const std::string& filename, bool is_preview = false);
+    void SetFileName(int index, const std::string& filename, bool is_preview = false);
 
     // Create generated PV image from input data. If reverse, [spectral, offset] instead of normal [offset, spectral].
     // Returns generated image and success, with message if failure.
@@ -49,4 +49,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEGENERATORS_PVGENERATOR_H_
+#endif // CARTA_SRC_IMAGEGENERATORS_PVGENERATOR_H_

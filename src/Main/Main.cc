@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -11,6 +11,7 @@
 
 #include "FileList/FileListHandler.h"
 #include "HttpServer/HttpServer.h"
+#include "Logger/CartaLogSink.h"
 #include "Logger/Logger.h"
 #include "ProgramSettings.h"
 #include "Session/SessionManager.h"
@@ -19,6 +20,9 @@
 #include "Util/FileSystem.h"
 #include "Util/Token.h"
 #include "WebBrowser.h"
+
+#include <casacore/casa/Logging/LogIO.h>
+#include <casacore/casa/Logging/NullLogSink.h>
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
@@ -42,15 +46,37 @@ int main(int argc, char* argv[]) {
         sigaction(SIGINT, &sig_handler, nullptr);
 
         // Main
-        carta::ProgramSettings settings(argc, argv);
+        auto settings = ProgramSettings::Initialise(argc, argv);
 
         if (settings.help || settings.version) {
             exit(0);
         }
 
-        carta::logger::InitLogger(
-            settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
+        carta::logger::InitLogger();
         settings.FlushMessages(); // flush log messages produced during Program Settings setup
+
+        // Send casacore log messages (global and local) to sink.
+        // CartaLogSink sends messages to spdlog, NullLogSink discards messages.
+        casacore::LogSinkInterface* carta_log_sink(nullptr);
+        switch (settings.verbosity) {
+            case 0:
+                carta_log_sink = new casacore::NullLogSink();
+                break;
+            case 1:
+            case 2:
+                carta_log_sink = new CartaLogSink(casacore::LogMessage::SEVERE);
+                break;
+            case 3:
+                carta_log_sink = new CartaLogSink(casacore::LogMessage::WARN);
+                break;
+            case 4:
+            case 5:
+            default:
+                carta_log_sink = new CartaLogSink(casacore::LogMessage::NORMAL);
+        }
+        casacore::LogSink log_sink(carta_log_sink->filter(), std::shared_ptr<casacore::LogSinkInterface>(carta_log_sink));
+        casacore::LogSink::globalSink(carta_log_sink);
+        casacore::LogIO casacore_log(log_sink);
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);

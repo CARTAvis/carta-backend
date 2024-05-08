@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -8,8 +8,8 @@
 // Created by angus on 2019/09/23.
 //
 
-#ifndef CARTA_BACKEND__SMOOTHING_H_
-#define CARTA_BACKEND__SMOOTHING_H_
+#ifndef CARTA_SRC_DATASTREAM_SMOOTHING_H_
+#define CARTA_SRC_DATASTREAM_SMOOTHING_H_
 
 #include <cstdint>
 #include <limits>
@@ -77,4 +77,4 @@ void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width,
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__SMOOTHING_H_
+#endif // CARTA_SRC_DATASTREAM_SMOOTHING_H_

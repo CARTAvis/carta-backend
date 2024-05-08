@@ -1,11 +1,11 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_HDF5LOADER_TCC_
-#define CARTA_BACKEND_IMAGEDATA_HDF5LOADER_TCC_
+#ifndef CARTA_SRC_IMAGEDATA_HDF5LOADER_TCC_
+#define CARTA_SRC_IMAGEDATA_HDF5LOADER_TCC_
 
 #include "Hdf5Loader.h"
 
@@ -66,4 +66,4 @@ std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsDataTyped(FileInfo::Dat
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_HDF5LOADER_TCC_
+#endif // CARTA_SRC_IMAGEDATA_HDF5LOADER_TCC_

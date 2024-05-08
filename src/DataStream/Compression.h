@@ -1,11 +1,11 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__COMPRESSION_H_
-#define CARTA_BACKEND__COMPRESSION_H_
+#ifndef CARTA_SRC_DATASTREAM_COMPRESSION_H_
+#define CARTA_SRC_DATASTREAM_COMPRESSION_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -24,4 +24,4 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided = false);
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__COMPRESSION_H_
+#endif // CARTA_SRC_DATASTREAM_COMPRESSION_H_

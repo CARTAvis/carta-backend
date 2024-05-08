@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -39,7 +39,7 @@ public:
     }
 
     static void TestAveragingWidthRange(int width, bool expected_width_range) {
-        auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+        auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
@@ -69,7 +69,7 @@ public:
 };
 
 TEST_F(PvGeneratorTest, FitsPvImage) {
-    auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -139,7 +139,7 @@ TEST_F(PvGeneratorTest, FitsPvImage) {
 }
 
 TEST_F(PvGeneratorTest, FitsPvImageHorizontalCut) {
-    auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -208,7 +208,7 @@ TEST_F(PvGeneratorTest, FitsPvImageHorizontalCut) {
     EXPECT_EQ(pv_data.shape()(1), frame->Depth());
 
     // Read image data slice
-    FitsDataReader reader(image_path.string());
+    FitsDataReader reader(image_path);
     auto image_data = reader.ReadRegion({1, 5, 0}, {10, 6, 10});
 
     EXPECT_EQ(pv_data.size(), image_data.size());
@@ -216,7 +216,7 @@ TEST_F(PvGeneratorTest, FitsPvImageHorizontalCut) {
 }
 
 TEST_F(PvGeneratorTest, FitsPvImageVerticalCut) {
-    auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -285,7 +285,7 @@ TEST_F(PvGeneratorTest, FitsPvImageVerticalCut) {
     EXPECT_EQ(pv_data.shape()(1), frame->Depth());
 
     // Read image data slice
-    FitsDataReader reader(image_path.string());
+    FitsDataReader reader(image_path);
     auto image_data = reader.ReadRegion({5, 1, 0}, {6, 10, 10});
 
     EXPECT_EQ(pv_data.size(), image_data.size());
@@ -293,7 +293,6 @@ TEST_F(PvGeneratorTest, FitsPvImageVerticalCut) {
 }
 
 TEST_F(PvGeneratorTest, TestNoSpectralAxis) {
-    auto image_path = TestRoot() / "data/images/hdf5/noise_10px_10px.hdf5";
     auto path_string = GeneratedHdf5ImagePath("10 10 10");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -327,7 +326,7 @@ TEST_F(PvGeneratorTest, AveragingWidthRange) {
 
 TEST_F(PvGeneratorTest, PvImageSpectralRange) {
     // FITS
-    auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     auto csys = frame->CoordinateSystem();
@@ -357,7 +356,7 @@ TEST_F(PvGeneratorTest, PvImageSpectralRange) {
 }
 
 TEST_F(PvGeneratorTest, PvImageReversedAxes) {
-    auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     auto csys = frame->CoordinateSystem();
@@ -397,7 +396,7 @@ TEST_F(PvGeneratorTest, PvImageReversedAxes) {
 }
 
 TEST_F(PvGeneratorTest, PvImageKeep) {
-    auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     auto csys = frame->CoordinateSystem();
@@ -419,7 +418,6 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     int index(0);
     EXPECT_EQ(pv_response.success(), true);
-    EXPECT_EQ(pv_image.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image.name.find("pv.fits") != std::string::npos);
 
     // Request PV image, keeping the first
@@ -431,7 +429,6 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     index++;
     EXPECT_EQ(pv_response2.success(), true);
-    EXPECT_EQ(pv_image2.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image2.name.find("pv1.fits") != std::string::npos);
 
     // Request PV image, replace all and reset index
@@ -443,12 +440,11 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     index = 0;
     EXPECT_EQ(pv_response3.success(), true);
-    EXPECT_EQ(pv_image3.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image3.name.find("pv.fits") != std::string::npos);
 }
 
 TEST_F(PvGeneratorTest, FitsPvAnnotationLine) {
-    auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     carta::RegionHandler region_handler;

@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -96,28 +96,26 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
     return valid_region;
 }
 
-bool RegionHandler::RegionChanged(int region_id) {
-    // Used to trigger sending profiles etc., so not for annotation regions
-    if (!RegionSet(region_id, true)) {
-        return false;
-    }
-    return GetRegion(region_id)->RegionChanged();
-}
-
 void RegionHandler::RemoveRegion(int region_id) {
     // Call destructor and erase from map
     if (!RegionSet(region_id)) {
         return;
     }
 
-    std::unique_lock<std::mutex> region_lock(_region_mutex);
+    // Disconnect region(s)
     if (region_id == ALL_REGIONS) {
         for (auto& region : _regions) {
             region.second->WaitForTaskCancellation();
         }
-        _regions.clear();
     } else {
         _regions.at(region_id)->WaitForTaskCancellation();
+    }
+
+    // Erase region(s)
+    std::unique_lock<std::mutex> region_lock(_region_mutex);
+    if (region_id == ALL_REGIONS) {
+        _regions.clear();
+    } else {
         _regions.erase(region_id);
     }
     region_lock.unlock();
@@ -252,10 +250,9 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         }
     }
 
-    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+    bool export_pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
     auto output_csys = frame->CoordinateSystem();
-
-    if (!pixel_coord && !output_csys->hasDirectionCoordinate()) {
+    if (!export_pixel_coord && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
         export_ack.set_success(false);
         export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
@@ -269,7 +266,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             exporter = std::unique_ptr<RegionImportExport>(new CrtfImportExport(output_csys, output_shape, frame->StokesAxis()));
             break;
         case CARTA::FileType::DS9_REG:
-            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, pixel_coord));
+            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, export_pixel_coord));
             break;
         default:
             break;
@@ -285,7 +282,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             auto region = GetRegion(region_id);
             auto region_state = region->GetRegionState();
 
-            if ((region_state.reference_file_id == file_id) && pixel_coord) {
+            if ((region_state.reference_file_id == file_id) && export_pixel_coord) {
                 // Use RegionState control points with reference file id for pixel export
                 region_added = exporter->AddExportRegion(region_state, region_style);
             } else {
@@ -293,7 +290,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                     // Use Record containing pixel coords of region converted to output image
                     casacore::TableRecord region_record = region->GetImageRegionRecord(file_id, output_csys, output_shape);
                     if (!region_record.empty()) {
-                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
+                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, export_pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
                     spdlog::error("Export region record failed: {}", err.getMesg());
@@ -1251,7 +1248,6 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
 
         // Get box region LCRegion and mask
         bool cancel(false);
-        casacore::Slicer box_bounding_box;
         auto box_lc_region = ApplyRegionToFile(box_region_id, frame_id);
 
         if (!box_lc_region) {
@@ -1274,10 +1270,11 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
             // Progress for loading data here if needed due to prior cancel
             if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, message)) {
                 // spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
+                casacore::Vector<float> const profile_v(profile);
                 if (reverse) {
-                    preview_data_matrix.column(iregion) = profile;
+                    preview_data_matrix.column(iregion) = profile_v;
                 } else {
-                    preview_data_matrix.row(iregion) = profile;
+                    preview_data_matrix.row(iregion) = profile_v;
                 }
             }
         }
@@ -1299,7 +1296,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     int start_channel(0);                    // spectral range applied in preview image
     int stokes(preview_cube->GetStokes());
     PvGenerator pv_generator;
-    pv_generator.SetFileIdName(frame_id, preview_id, preview_cube->GetSourceFileName(), true);
+    pv_generator.SetFileName(preview_id, preview_cube->GetSourceFileName(), true);
 
     if (pv_generator.GetPvImage(preview_frame, no_preview_data, data_shape, increment, start_channel, stokes, reverse, pv_image, error)) {
         int width = data_shape(0);
@@ -1379,9 +1376,9 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
         std::shared_lock frame_lock(frame->GetActiveTaskMutex());
         auto source_filename = frame->GetFileName();
 
-        // Create GeneratedImage with id and name in PvGenerator
+        // Create GeneratedImage in PvGenerator
         PvGenerator pv_generator;
-        pv_generator.SetFileIdName(file_id, name_index, source_filename);
+        pv_generator.SetFileName(name_index, source_filename);
         pv_success =
             pv_generator.GetPvImage(frame, pv_data, pv_shape, offset_increment, start_chan, stokes_index, reverse, pv_image, message);
         cancelled &= _stop_pv[file_id];
@@ -2277,6 +2274,7 @@ bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std:
 
 bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb) {
     // Line spatial profiles.  Use callback to return each profile individually.
+    Timer t;
     if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
@@ -2333,8 +2331,10 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
                     profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
                 cb(profile_message);
             });
+        spdlog::performance("Fill line spatial profile in {:.3f} ms", t.Elapsed().ms());
     }
 
+    spdlog::performance("Line spatial data in {:.3f} ms", t.Elapsed().ms());
     return profile_ok;
 }
 
@@ -2373,13 +2373,15 @@ bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::st
 }
 
 bool RegionHandler::IsPointRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
-        return GetRegion(region_id)->IsPoint();
+        return GetRegion(region_id)->IsPoint() && !GetRegion(region_id)->IsAnnotation();
     }
     return false;
 }
 
 bool RegionHandler::IsLineRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         return GetRegion(region_id)->IsLineType() && !GetRegion(region_id)->IsAnnotation();
     }
@@ -2387,6 +2389,7 @@ bool RegionHandler::IsLineRegion(int region_id) {
 }
 
 bool RegionHandler::IsClosedRegion(int region_id) {
+    // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         auto type = GetRegion(region_id)->GetRegionState().type;
         return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON);
@@ -2464,25 +2467,37 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     if (line_box_regions.GetLineBoxRegions(line_region_state, line_coord_sys, width, increment, box_regions, message)) {
         auto t_start = std::chrono::high_resolution_clock::now();
         auto num_profiles = box_regions.size();
+        size_t iprofile;
+        // Use completed profiles (not iprofile) for progress.
+        // iprofile not in order so progress is uneven.
+        size_t completed_profiles(0);
 
-        for (size_t iprofile = 0; iprofile < num_profiles; ++iprofile) {
+        // Return this to column 0 when uncomment (moved for format check):
+        // #pragma omp parallel for private(iprofile) shared(progress, t_start, completed_profiles)
+        for (iprofile = 0; iprofile < num_profiles; ++iprofile) {
+            if (cancelled) {
+                continue;
+            }
+
             // Frame/region closing, or line changed
             if (CancelLineProfiles(region_id, file_id, line_region_state)) {
                 cancelled = true;
-                return false;
             }
 
             // PV generator: check if user canceled
             if (per_z && _stop_pv[file_id]) {
                 spdlog::debug("Stopping line profiles: PV generator cancelled");
                 cancelled = true;
-                return false;
             }
 
             // Line spatial profile: check if requirements removed
             if (!per_z && !HasSpatialRequirements(region_id, file_id, coordinate, width)) {
                 cancelled = true;
-                return false;
+            }
+
+            if (cancelled) {
+                profiles.resize();
+                continue;
             }
 
             // Get mean profile for requested file_id and log number of pixels in region
@@ -2506,7 +2521,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
                 profiles.row(iprofile) = region_profile;
             }
 
-            progress = float(iprofile + 1) / float(num_profiles);
+            progress = float(++completed_profiles) / float(num_profiles);
 
             if (per_z) {
                 // Update progress if time interval elapsed
@@ -2521,7 +2536,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         }
     }
 
-    return (progress >= 1.0) && !allEQ(profiles, NAN);
+    return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, NAN);
 }
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {
@@ -2556,9 +2571,9 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
     }
 
     std::lock_guard<std::mutex> guard(_line_profile_mutex);
+    // Set temporary region
     int region_id(TEMP_REGION_ID);
     SetRegion(region_id, region_state, reference_csys);
-
     if (!RegionSet(region_id, true)) {
         return profile;
     }
@@ -2594,24 +2609,32 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
                     // Get mean spectral profile and max NumPixels for small region.
                     auto npix_per_chan = results[CARTA::StatsType::NumPixels];
                     num_pixels = *max_element(npix_per_chan.begin(), npix_per_chan.end());
-                    profile = results[CARTA::StatsType::Mean];
+                    profile = casacore::Vector<float>(results[CARTA::StatsType::Mean]); // TODO: use double for profile
                 }
             });
     } else {
         // Use BasicStats to get num_pixels and mean for current channel and stokes
-        // Get region
+        // Get region as LCRegion
         StokesRegion stokes_region;
         std::shared_ptr<casacore::LCRegion> lc_region;
         std::shared_lock frame_lock(_frames.at(file_id)->GetActiveTaskMutex());
         if (ApplyRegionToFile(region_id, file_id, z_range, stokes_index, lc_region, stokes_region)) {
-            // Get region data (report_performance = false, too much output)
+            // Get region data by applying LCRegion to image
             std::vector<float> region_data;
             if (_frames.at(file_id)->GetRegionData(stokes_region, region_data, false)) {
-                // Get BasicStats
-                BasicStats<float> basic_stats;
-                CalcBasicStats(basic_stats, region_data.data(), region_data.size());
-                num_pixels = basic_stats.num_pixels;
-                profile[0] = basic_stats.mean;
+                // Very small region, just calc needed stats here
+                num_pixels = 0;
+                double sum(0.0);
+                for (size_t i = 0; i < region_data.size(); ++i) {
+                    float val(region_data[i]);
+                    if (std::isfinite(val)) {
+                        num_pixels++;
+                        sum += (double)val;
+                    }
+                }
+                if (num_pixels > 0) {
+                    profile[0] = sum / num_pixels;
+                }
             }
         }
         frame_lock.unlock();

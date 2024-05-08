@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -7,8 +7,8 @@
 //# CartaFitsImage.h : FITS Image class derived from casacore::ImageInterface for images not supported by casacore,
 //# including compressed and Int64
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CARTAFITSIMAGE_H_
-#define CARTA_BACKEND_IMAGEDATA_CARTAFITSIMAGE_H_
+#ifndef CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_H_
+#define CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_H_
 
 #include <casacore/casa/Utilities/DataType.h>
 #include <casacore/images/Images/ImageInfo.h>
@@ -125,4 +125,4 @@ private:
 
 #include "CartaFitsImage.tcc"
 
-#endif // CARTA_BACKEND_IMAGEDATA_CARTAFITSIMAGE_H_
+#endif // CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_H_

@@ -37,9 +37,9 @@ find_program(CONVERTER, fits2idia)
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
-        BackendModel.cc
         TestBlockSmooth.cc
         TestContour.cc
+        TestCursorSpatialProfiles.cc
         TestExprImage.cc
         TestFileInfo.cc
         TestFileList.cc
@@ -48,16 +48,20 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
-        TestIcd.cc
         TestImageFitting.cc
-		TestLineSpatialProfiles.cc
         TestMain.cc
         TestMoment.cc
         TestNormalizedUnits.cc
         TestProgramSettings.cc
         TestPvGenerator.cc
+        TestRegion.cc
+        TestRegionImportExport.cc
+        TestRegionHistogram.cc
+        TestRegionMatched.cc
+        TestRegionSpatialProfiles.cc
+        TestRegionSpectralProfiles.cc
+        TestRegionStats.cc
         TestRestApi.cc
-        TestSpatialProfiles.cc
         TestTileEncoding.cc
         TestUtil.cc
         TestVoTable.cc)

@@ -1,11 +1,11 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_MESSAGE_TCC_
-#define CARTA_BACKEND__UTIL_MESSAGE_TCC_
+#ifndef CARTA_SRC_UTIL_MESSAGE_TCC_
+#define CARTA_SRC_UTIL_MESSAGE_TCC_
 
 template <typename T>
 T Message::DecodeMessage(std::vector<char>& message) {
@@ -16,4 +16,4 @@ T Message::DecodeMessage(std::vector<char>& message) {
     return decoded_message;
 }
 
-#endif // CARTA_BACKEND__UTIL_MESSAGE_TCC_
+#endif // CARTA_SRC_UTIL_MESSAGE_TCC_

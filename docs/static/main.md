@@ -7,6 +7,7 @@ Documentation for other CARTA components
 ----------------------------------------
 
 * [CARTA user manual](https://carta.readthedocs.io) (for users)
-* %CARTA frontend (TBD)
+* [CARTA frontend](https://cartavis.org/carta-frontend/) (for developers)
+* [CARTA interface control document](https://carta-protobuf.readthedocs.io) (for developers)
 * [CARTA controller](https://carta-controller.readthedocs.io) (for system administrators)
 * [CARTA Python scripting wrapper](https://carta-python.readthedocs.io) (for users of the scripting interface)

@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -55,6 +55,9 @@ void FileListHandler::GetRelativePath(std::string& folder) {
             folder = folder.substr(1); // remove leading '/'
         }
     }
+    if (folder.empty()) {
+        folder = ".";
+    }
 }
 
 void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, const std::string& folder, ResultMsg& result_msg,
@@ -72,65 +75,51 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
         requested_folder = folder_string;
     }
 
-    std::string absolute_path(requested_folder), directory;
+    // Normalize requested folder relative to top (top + requested = full path)
+    GetRelativePath(requested_folder);
 
-    if (requested_folder == _top_level_folder) {
-        // Set directory relative to top (current directory). Parent is empty string.
-        file_list_response.set_directory(".");
-    } else {
-        // Normalize folder relative to top, restore path
-        GetRelativePath(requested_folder);
-        casacore::Path path(_top_level_folder);
-        path.append(requested_folder);
+    // Resolve path (., .., ~, symlinks)
+    std::string message;
+    auto resolved_path = GetResolvedFilename(_top_level_folder, requested_folder, "", message);
 
-        // Resolve path (., .., ~, symlinks)
-        try {
-            absolute_path = path.resolvedName();
-        } catch (casacore::AipsError& err) {
-            try {
-                absolute_path = path.absoluteName();
-            } catch (casacore::AipsError& err) {
-                file_list_response.set_success(false);
-                file_list_response.set_message("Cannot resolve directory path for file list.");
-                return;
-            }
-        }
-
-        // Set parent relative to top
-        std::string parent(path.dirName());
-        GetRelativePath(parent);
-        file_list_response.set_parent(parent);
-
-        // Set directory relative to top
-        directory = absolute_path;
-        GetRelativePath(directory);
-        file_list_response.set_directory(directory);
-    }
-
-    if ((_top_level_folder.find(absolute_path) == 0) && (absolute_path.length() < _top_level_folder.length())) {
-        // absolute path is above top folder
+    // Check resolved path
+    if (resolved_path.empty()) {
+        file_list_response.set_success(false);
+        file_list_response.set_message("File list failed: " + message);
+        return;
+    } else if ((_top_level_folder.find(resolved_path) == 0) && (resolved_path.length() < _top_level_folder.length())) {
+        // path is above top folder!
         file_list_response.set_success(false);
         file_list_response.set_message("Forbidden path.");
         return;
     }
 
-    casacore::File folder_path(absolute_path);
-    std::string message;
+    casacore::File folder_path(resolved_path);
+    if (!folder_path.isDirectory()) {
+        file_list_response.set_success(false);
+        file_list_response.set_message("File list failed: requested path " + folder + " is not a directory.");
+        return;
+    }
 
+    // Set response parent and directory
+    if (requested_folder == ".") {
+        // is top folder; no directory
+        file_list_response.set_parent(requested_folder);
+    } else {
+        // Make full path to separate directory and base names
+        casacore::Path full_path(_top_level_folder);
+        full_path.append(requested_folder);
+        // parent
+        std::string parent(full_path.dirName());
+        GetRelativePath(parent);
+        file_list_response.set_parent(parent);
+        // directory
+        std::string directory(full_path.baseName());
+        file_list_response.set_directory(requested_folder);
+    }
+
+    // Iterate through directory to generate file list
     try {
-        if (!folder_path.exists()) {
-            file_list_response.set_success(false);
-            file_list_response.set_message("Requested directory " + directory + " does not exist.");
-            return;
-        }
-
-        if (!folder_path.isDirectory()) {
-            file_list_response.set_success(false);
-            file_list_response.set_message("Requested path " + directory + " is not a directory.");
-            return;
-        }
-
-        // Iterate through directory to generate file list
         casacore::Directory start_dir(folder_path);
         casacore::DirectoryIterator dir_iter(start_dir);
 
@@ -326,37 +315,38 @@ bool FileListHandler::FillRegionFileInfo(
 void FileListHandler::OnRegionFileInfoRequest(
     const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg) {
     // Fill response message with file info and contents
-    casacore::Path top_path(_top_level_folder);
-    top_path.append(request.directory());
-    auto filename = request.file();
-    top_path.append(filename);
-    casacore::File cc_file(top_path);
-    std::string message, contents;
-    bool success(false);
+    auto directory = request.directory();
+    auto file = request.file();
+    std::string message;
 
-    if (!cc_file.exists()) {
-        message = "File " + filename + " does not exist.";
-        response.add_contents(contents);
-    } else if (!cc_file.isRegular(true)) {
-        message = "File " + filename + " is not a region file.";
-        response.add_contents(contents);
-    } else if (!cc_file.isReadable()) {
-        message = "File " + filename + " is not readable.";
-        response.add_contents(contents);
-    } else {
-        casacore::String full_name(cc_file.path().resolvedName());
-        auto& file_info = *response.mutable_file_info();
-        FillRegionFileInfo(file_info, full_name);
-        std::vector<std::string> file_contents;
-        if (file_info.type() == CARTA::FileType::UNKNOWN) {
-            message = "File " + filename + " is not a region file.";
-            response.add_contents(contents);
+    casacore::String full_name = GetResolvedFilename(_top_level_folder, directory, file, message);
+
+    bool success(false), add_contents(true);
+    if (!full_name.empty()) {
+        casacore::File cc_file(full_name);
+        if (!cc_file.isRegular(true)) {
+            message = "File " + file + " is not a region file.";
         } else {
-            GetRegionFileContents(full_name, file_contents);
-            success = true;
-            *response.mutable_contents() = {file_contents.begin(), file_contents.end()};
+            auto& file_info = *response.mutable_file_info();
+            FillRegionFileInfo(file_info, full_name);
+
+            if (file_info.type() == CARTA::FileType::UNKNOWN) {
+                message = "File " + file + " is not a region file.";
+            } else {
+                std::vector<std::string> file_contents;
+                GetRegionFileContents(full_name, file_contents);
+                success = true;
+                *response.mutable_contents() = {file_contents.begin(), file_contents.end()};
+                add_contents = false;
+            }
         }
     }
+
+    if (add_contents) {
+        std::string contents;
+        response.add_contents(contents);
+    }
+
     response.set_success(success);
     response.set_message(message);
 }

@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -414,6 +414,10 @@ void CompressedFits::AddHeaderEntry(
             } catch (std::invalid_argument) {
                 // Set string value only
                 entry->set_entry_type(CARTA::EntryType::STRING);
+            } catch (std::out_of_range) {
+                long lvalue = std::stol(value);
+                entry->set_numeric_value(lvalue);
+                entry->set_entry_type(CARTA::EntryType::INT);
             }
         }
     }

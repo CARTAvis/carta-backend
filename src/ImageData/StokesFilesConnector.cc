@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -201,28 +201,28 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
     for (int i = 0; i < message.stokes_files_size(); ++i) {
         auto stokes_file = message.stokes_files(i);
         auto stokes_type = message.stokes_files(i).polarization_type();
-        casacore::String hdu(stokes_file.hdu());
-        casacore::String full_name(GetResolvedFilename(_top_level_folder, stokes_file.directory(), stokes_file.file()));
 
         if (_loaders.count(stokes_type)) {
             err = "Duplicate Stokes type found!";
             return false;
         }
 
+        casacore::String full_name(GetResolvedFilename(_top_level_folder, stokes_file.directory(), stokes_file.file(), err));
+
         // open an image file
-        if (!full_name.empty()) {
-            try {
-                if (hdu.empty()) { // use first when required
-                    hdu = "0";
-                }
-                _loaders[stokes_type].reset(FileLoader::GetLoader(full_name));
-                _loaders[stokes_type]->OpenFile(hdu);
-            } catch (casacore::AipsError& ex) {
-                err = fmt::format("Failed to open the file: {}", ex.getMesg());
-                return false;
+        if (full_name.empty()) {
+            return false;
+        }
+
+        try {
+            casacore::String hdu(stokes_file.hdu());
+            if (hdu.empty()) { // use first when required
+                hdu = "0";
             }
-        } else {
-            err = "File name is empty or does not exist!";
+            _loaders[stokes_type].reset(FileLoader::GetLoader(full_name));
+            _loaders[stokes_type]->OpenFile(hdu);
+        } catch (casacore::AipsError& ex) {
+            err = fmt::format("Failed to open the file: {}", ex.getMesg());
             return false;
         }
 

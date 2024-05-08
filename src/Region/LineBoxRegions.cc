@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -11,6 +11,7 @@
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
 #include "Logger/Logger.h"
+#include "Util/Message.h"
 
 namespace carta {
 
@@ -232,10 +233,11 @@ double LineBoxRegions::GetPointSeparation(
     std::shared_ptr<casacore::CoordinateSystem> coord_sys, const std::vector<double>& point1, const std::vector<double>& point2) {
     // Returns angular separation in arcsec. Both points must be inside image or returns zero (use GetWorldLength instead, not as accurate).
     double separation(0.0);
+    casacore::Vector<double> const point1_v(point1), point2_v(point2);
     std::lock_guard<std::mutex> guard(_mvdir_mutex);
     try {
-        casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(point1);
-        casacore::MVDirection mvdir2 = coord_sys->directionCoordinate().toWorld(point2);
+        casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(point1_v);
+        casacore::MVDirection mvdir2 = coord_sys->directionCoordinate().toWorld(point2_v);
         separation = mvdir1.separation(mvdir2, "arcsec").getValue();
     } catch (casacore::AipsError& err) {
         // invalid pixel coordinates - outside image

@@ -1,13 +1,13 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 //# CrtfImportExport.h: handle CRTF region file import and export
 
-#ifndef CARTA_BACKEND_REGION_CRTFIMPORTEXPORT_H_
-#define CARTA_BACKEND_REGION_CRTFIMPORTEXPORT_H_
+#ifndef CARTA_SRC_REGION_CRTFIMPORTEXPORT_H_
+#define CARTA_SRC_REGION_CRTFIMPORTEXPORT_H_
 
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
@@ -101,4 +101,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_REGION_CRTFIMPORTEXPORT_H_
+#endif // CARTA_SRC_REGION_CRTFIMPORTEXPORT_H_

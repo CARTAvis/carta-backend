@@ -109,6 +109,17 @@ endif ()
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 FIND_PACKAGE(Protobuf REQUIRED)
 INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
+
+if (Protobuf_VERSION VERSION_GREATER_EQUAL "4.25.3")
+    FIND_PACKAGE(absl REQUIRED)
+    set(PROTOBUF_LIBRARY
+            ${PROTOBUF_LIBRARY}
+            absl_hash
+            absl_log_internal_message
+            absl_log_internal_nullguard)
+    message(STATUS "Newer protobuf version (${Protobuf_VERSION}) includes abseil libraries")
+endif ()
+
 FIND_PACKAGE(Threads)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
@@ -192,7 +203,8 @@ set(LINK_LIBS
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-	third-party/pugixml/src/pugixml.cpp
+        third-party/pugixml/src/pugixml.cpp
+        src/Cache/LoaderCache.cc
         src/Cache/TileCache.cc
         src/Cache/TilePool.cc
         src/DataStream/Compression.cc
@@ -224,6 +236,7 @@ set(SOURCE_FILES
         src/ImageStats/Histogram.cc
         src/ImageStats/StatsCalculator.cc
         src/Logger/Logger.cc
+        src/Logger/CartaLogSink.cc
         src/Main/Main.cc
         src/Main/ProgramSettings.cc
         src/Main/WebBrowser.cc
@@ -231,6 +244,7 @@ set(SOURCE_FILES
         src/Region/Ds9ImportExport.cc
         src/Region/LineBoxRegions.cc
         src/Region/Region.cc
+        src/Region/RegionConverter.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
         src/Session/CursorSettings.cc

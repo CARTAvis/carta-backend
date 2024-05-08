@@ -1,11 +1,11 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_TILECACHEKEY_H
-#define CARTA_BACKEND_TILECACHEKEY_H
+#ifndef CARTA_SRC_CACHE_TILECACHEKEY_H_
+#define CARTA_SRC_CACHE_TILECACHEKEY_H_
 
 namespace carta {
 /** @brief Key for tiles used in TileCache
@@ -54,4 +54,4 @@ struct hash<carta::TileCacheKey> {
 };
 } // namespace std
 
-#endif // CARTA_BACKEND_TILECACHEKEY_H
+#endif // CARTA_SRC_CACHE_TILECACHEKEY_H_

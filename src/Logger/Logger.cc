@@ -1,10 +1,12 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 #include "Logger.h"
+
+#include "Main/ProgramSettings.h"
 
 #include <string>
 
@@ -13,8 +15,14 @@ namespace logger {
 
 static bool log_protocol_messages(false);
 
-void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_, fs::path user_directory) {
-    log_protocol_messages = log_protocol_messages_;
+void InitLogger() {
+    // Copy parameters from the global settings
+    auto& settings = ProgramSettings::GetInstance();
+    log_protocol_messages = settings.log_protocol_messages;
+    auto no_log = settings.no_log;
+    auto user_directory = settings.user_directory;
+    auto verbosity = settings.verbosity;
+    auto log_performance = settings.log_performance;
 
     // Set the stdout/stderr console
     auto console_sink = std::make_shared<spdlog::sinks::carta_sink>();
@@ -26,11 +34,11 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
 
     // Set a log file with its full name, maximum size and the number of rotated files
     std::string log_fullname;
-    if (!no_log_file) {
+    if (!no_log) {
         log_fullname = (user_directory / "log/carta.log").string();
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
         stdout_log_file_sink->set_formatter(
-            std::make_unique<spdlog::pattern_formatter>(CARTA_LOGGER_PATTERN, spdlog::pattern_time_type::utc));
+            std::make_unique<spdlog::pattern_formatter>(CARTA_FILE_LOGGER_PATTERN, spdlog::pattern_time_type::utc));
         console_sinks.push_back(stdout_log_file_sink);
     }
 
@@ -72,7 +80,7 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
     // Set as the default logger
     spdlog::set_default_logger(default_logger);
 
-    if (!no_log_file) {
+    if (!no_log) {
         spdlog::info("Writing to the log file: {}", log_fullname);
     }
 
@@ -87,7 +95,7 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
 
         // Set a log file with its full name, maximum size and the number of rotated files
         std::string perf_log_fullname;
-        if (!no_log_file) {
+        if (!no_log) {
             perf_log_fullname = (user_directory / "log/performance.log").string();
             auto perf_log_file_sink =
                 std::make_shared<spdlog::sinks::rotating_file_sink_mt>(perf_log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);

@@ -1,11 +1,11 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#ifndef CARTA_SRC_IMAGEDATA_CASALOADER_H_
+#define CARTA_SRC_IMAGEDATA_CASALOADER_H_
 
 #include <casacore/casa/IO/LockFile.h>
 #include <casacore/images/Images/ImageOpener.h>
@@ -129,4 +129,4 @@ casacore::TempImage<float>* CasaLoader::ConvertImageToFloat(casacore::LatticeBas
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#endif // CARTA_SRC_IMAGEDATA_CASALOADER_H_

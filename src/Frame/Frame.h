@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -7,8 +7,8 @@
 //# Frame.h: represents an open image file.  Handles slicing data and region calculations
 //# (profiles, histograms, stats)
 
-#ifndef CARTA_BACKEND__FRAME_H_
-#define CARTA_BACKEND__FRAME_H_
+#ifndef CARTA_SRC_FRAME_FRAME_H_
+#define CARTA_SRC_FRAME_FRAME_H_
 
 #include <algorithm>
 #include <atomic>
@@ -105,6 +105,7 @@ public:
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
     int CurrentStokes();
+    bool IsCurrentZStokes(const StokesSource& stokes_source);
     int SpectralAxis();
     int StokesAxis();
     bool GetBeams(std::vector<CARTA::Beam>& beams);
@@ -296,7 +297,6 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    //    std::vector<float> _image_cache; // image data for current z, stokes
     long long int _image_cache_size;
     std::unique_ptr<float[]> _image_cache;
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
@@ -337,4 +337,4 @@ protected:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FRAME_H_
+#endif // CARTA_SRC_FRAME_FRAME_H_

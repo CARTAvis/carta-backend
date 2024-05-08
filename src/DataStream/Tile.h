@@ -1,11 +1,11 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__TILE_H_
-#define CARTA_BACKEND__TILE_H_
+#ifndef CARTA_SRC_DATASTREAM_TILE_H_
+#define CARTA_SRC_DATASTREAM_TILE_H_
 
 #include <cmath>
 #include <cstdint>
@@ -52,4 +52,4 @@ struct Tile {
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__TILE_H_
+#endif // CARTA_SRC_DATASTREAM_TILE_H_
