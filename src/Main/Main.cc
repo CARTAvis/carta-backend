@@ -127,26 +127,8 @@ int main(int argc, char* argv[]) {
         carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server
-        auto carta_url_prefix = getenv("CARTA_URL_PREFIX");
-        std::string url_prefix = "";
-        if (carta_url_prefix && carta_url_prefix[0]) {
-            if (int(carta_url_prefix[0]) == 47) {
-                spdlog::critical("Custom url prefix is not allowed to start with '/'");
-                carta::logger::FlushLogFile();
-                return 1;
-            }
-            url_prefix = fmt::format("/{}", carta_url_prefix);
-            for (auto it = url_prefix.begin(); it < url_prefix.end(); it++) {
-                int iit = int(*it);
-                if ((iit < 48 || (iit < 65 && iit > 57) || (iit > 90 && iit < 97) || iit > 122) && // [0-9], [A-Z], [a-z]
-                    (iit != 43 && iit != 45 && iit != 47 && iit != 64 && iit != 95)                // +, -, /, @, _
-                ) {
-                    spdlog::critical("Custom prefix must be the following characters: [0-9], [A-Z], [a-z], +, -, /, @, _");
-                    carta::logger::FlushLogFile();
-                    return 1;
-                }
-            }
-        }
+
+        std::string url_prefix(settings.http_url_prefix);
         if (!settings.no_frontend || !settings.no_database || settings.enable_scripting) {
             fs::path frontend_path;
 
@@ -160,6 +142,22 @@ int main(int argc, char* argv[]) {
                     spdlog::warn(
                         "Failed to determine the default location of the CARTA frontend. Please specify a custom location using the "
                         "frontend_folder argument.");
+                }
+            }
+
+            if (!url_prefix.empty()) {
+                std::regex allowed_prefix("[0-9A-Za-z+/@_-]*");
+                if (!std::regex_match(url_prefix, allowed_prefix)) {
+                    spdlog::warn(
+                        "Ignoring invalid custom HTTP URL prefix '{}'. The prefix may only contain the following characters: [0-9], [A-Z], "
+                        "[a-z], +, -, /, @, _.",
+                        url_prefix);
+                    url_prefix = "";
+                } else {
+                    // normalize prefix by stripping leading and trailing slashes, and adding a single leading slash
+                    std::regex normalized_prefix("^/*(.*?)/*$");
+                    url_prefix = std::regex_replace(url_prefix, normalized_prefix, "/$1");
+                    spdlog::info("Using custom HTTP URL prefix '{}'.", url_prefix);
                 }
             }
 

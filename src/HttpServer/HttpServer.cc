@@ -112,33 +112,24 @@ void HttpServer::RegisterRoutes() {
 }
 
 void HttpServer::HandleGetConfig(Res* res, Req* req) {
-    json runtime_config = {{"apiAddress", "/api"}};
+    json runtime_config = {{"apiAddress", fmt::format("{}/api", _url_prefix)}};
     res->writeStatus(HTTP_200);
     res->writeHeader("Content-Type", "application/json");
     res->end(runtime_config.dump());
 }
 
 void HttpServer::HandleStaticRequest(Res* res, Req* req) {
-    std::string_view url = req->getUrl();
+    std::string url(req->getUrl());
     fs::path path = _http_root_folder;
 
-    // Trim all leading '/' and prefix
-    while (url.size() && url[0] == '/') {
-        url = url.substr(1);
-    }
-    // internal _url_prefix saved an additional '/'
-    if (_url_prefix.size()) {
-        url.remove_prefix(_url_prefix.size() - 1);
-    }
-    // Trim all '/' behind url_prefix
-    while (url.size() && url[0] == '/') {
-        url = url.substr(1);
-    }
+    // Trim prefix and any number of slashes before and after it
+    std::regex prefix(fmt::format("^/*{}/*", _url_prefix));
+    url = std::regex_replace(url, prefix, "");
 
     if (url.empty()) {
         path /= "index.html";
     } else {
-        path /= std::string(url);
+        path /= url;
     }
 
     std::error_code error_code;
