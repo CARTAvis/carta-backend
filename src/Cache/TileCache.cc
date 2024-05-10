@@ -46,10 +46,12 @@ TilePtr TileCache::Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& 
     return nullptr;
 }
 
-void TileCache::Put(Key key, TilePtr tile) {
-    // Add a tile to the cache
-    std::unique_lock<std::mutex> guard(_tile_cache_mutex);
-    AddTile(key, tile);
+TilePtr TileCache::GetCopy(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
+    // Load or retrieve tile and return a shared_ptr of a copy to ensure it will not be changed in the cache.
+    auto tile_ptr = Get(key, loader, image_mutex);
+    std::vector<float> tile_data;
+    tile_data.assign(tile_ptr->begin(), tile_ptr->end());
+    return std::make_shared<std::vector<float>>(tile_data);
 }
 
 void TileCache::Reset(int32_t z, int32_t stokes, int capacity) {
@@ -151,7 +153,15 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<FileLoader> loader, std
 
             // If the tile is not in the map
             if (_map.find(key) == _map.end()) { // add if not found
-                AddTile(key, t);
+                // Evict oldest tile if necessary
+                if (_map.size() == _capacity) {
+                    _map.erase(_queue.back().first);
+                    _queue.pop_back();
+                }
+
+                // Insert the new tile
+                _queue.push_front(std::make_pair(key, t));
+                _map[key] = _queue.begin();
 
             } else { // touch the tile
                 Touch(key);
@@ -162,17 +172,4 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<FileLoader> loader, std
     }
 
     return true;
-}
-
-void TileCache::AddTile(Key key, TilePtr tile) {
-    // Add a tile to the cache without locking. Caller should have locked the cache.
-    // Evict oldest tile if necessary
-    if (_map.size() == _capacity) {
-        _map.erase(_queue.back().first);
-        _queue.pop_back();
-    }
-
-    // Insert the new tile
-    _queue.push_front(std::make_pair(key, tile));
-    _map[key] = _queue.begin();
 }

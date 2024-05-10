@@ -54,12 +54,11 @@ public:
      */
     TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
 
-    /** @brief Add a tile to the cache
+    /** @brief Retrieve a tile from the cache and return a copy
      *  @param key The tile key
-     *  @param tile The tile
      *  @details This function locks the cache because it modifies the cache state.
      */
-    void Put(Key key, TilePtr tile);
+    TilePtr GetCopy(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
 
     /** @brief Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles.
      *  @param z The new Z coordinate
@@ -101,12 +100,6 @@ private:
      *  @see ChunkKey
      */
     bool LoadChunk(Key chunk_key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
-    /** @brief Add a tile to the cache.
-     *  @param key The tile key
-     *  @param tile The tile
-     *  @details This function does not lock the cache, and assumes that the tile is in the cache.
-     */
-    void AddTile(Key key, TilePtr tile);
 
     /** @brief The current Z coordinate. */
     int32_t _z;
