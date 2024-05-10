@@ -90,13 +90,11 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         return;
     }
 
-    // reset the tile cache if the loader will use it
-    if (_loader->UseTileCache()) {
-        int tiles_x = (_width - 1) / TILE_SIZE + 1;
-        int tiles_y = (_height - 1) / TILE_SIZE + 1;
-        int tile_cache_capacity = std::min(MAX_TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
-        _tile_cache.Reset(_z_index, _stokes_index, tile_cache_capacity);
-    }
+    // reset the tile cache
+    int tiles_x = (_width - 1) / TILE_SIZE + 1;
+    int tiles_y = (_height - 1) / TILE_SIZE + 1;
+    int tile_cache_capacity = std::min(MAX_TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
+    _tile_cache.Reset(_z_index, _stokes_index, tile_cache_capacity);
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
@@ -345,14 +343,10 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
                 if (!(_loader->UseTileCache() && _loader->HasMip(2)) || IsComputedStokes(_stokes_index)) {
                     // Reload the full channel cache for loaders which use it
                     FillImageCache();
-                } else {
-                    // Don't reload the full channel cache here because we may not need it
-
-                    if (_loader->UseTileCache()) {
-                        // invalidate / clear the full resolution tile cache
-                        _tile_cache.Reset(_z_index, _stokes_index);
-                    }
                 }
+
+                // invalidate / clear the full resolution tile cache
+                _tile_cache.Reset(_z_index, _stokes_index);
 
                 updated = true;
             } else {
@@ -574,16 +568,19 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     height = std::ceil((float)req_height / mip);
 
     std::vector<float> tile_data;
-    bool loaded_data(0);
+    bool loaded_data(0), cached_data(0);
+    TileCache::Key key(bounds.x_min(), bounds.y_min());
 
     if (mip > 1 && !IsComputedStokes(_stokes_index)) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
-    } else if (!_image_cache_valid && _loader->UseTileCache()) {
-        // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        tile_data_ptr = _tile_cache.GetCopy(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
-        if (tile_data_ptr) {
-            return true;
+    } else if (!_image_cache_valid) {
+        // Load a tile from the tile cache if the full image cache isn't populated
+        auto tile_ptr = _tile_cache.Get(key, _loader, _image_mutex);
+        if (tile_ptr) {
+            tile_data.assign(tile_ptr->begin(), tile_ptr->end());
+            loaded_data = true;
+            cached_data = true;
         }
     }
 
@@ -592,8 +589,13 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
         loaded_data = GetRasterData(tile_data, bounds, mip, true);
     }
 
+    // Set return value and cache if not already done
     if (loaded_data) {
         tile_data_ptr = std::make_shared<std::vector<float>>(tile_data);
+
+        if (!cached_data) {
+            _tile_cache.Put(key, tile_data_ptr);
+        }
     }
 
     return loaded_data;
