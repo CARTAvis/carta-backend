@@ -128,7 +128,7 @@ public:
 
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-        CARTA::CompressionType compression_type, float compression_quality);
+        CARTA::CompressionType compression_type, float compression_quality, int num_threads);
 
     // Functions used for smoothing and contouring
     bool SetContourParameters(const CARTA::SetContourParameters& message);
@@ -303,9 +303,13 @@ protected:
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;       // only one disk access at a time
     bool _cache_loaded;            // channel cache is set
-    TileCache _tile_cache;         // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
+
+    // Tile data
+    bool _use_tile_cache;
+    TileCache _tile_cache;                // cache for full-resolution image tiles
+    std::shared_ptr<TilePool> _tile_pool; // memory allocated for tile data
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
     mutable std::shared_mutex _active_task_mutex;

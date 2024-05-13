@@ -705,8 +705,8 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int ani
                 const auto& encoded_coordinate = message.tiles(i);
                 auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
                 auto tile = Tile::Decode(encoded_coordinate);
-                if (_frames.count(file_id) &&
-                    _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, z, stokes, compression_type, compression_quality)) {
+                if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(
+                                                  raster_tile_data, tile, z, stokes, compression_type, compression_quality, num_threads)) {
                     // Only use deflate on outgoing message if the raster image compression type is NONE
                     SendFileEvent(
                         file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
