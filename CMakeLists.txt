@@ -109,6 +109,17 @@ endif ()
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 FIND_PACKAGE(Protobuf REQUIRED)
 INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
+
+if (Protobuf_VERSION VERSION_GREATER_EQUAL "4.25.3")
+    FIND_PACKAGE(absl REQUIRED)
+    set(PROTOBUF_LIBRARY
+            ${PROTOBUF_LIBRARY}
+            absl_hash
+            absl_log_internal_message
+            absl_log_internal_nullguard)
+    message(STATUS "Newer protobuf version (${Protobuf_VERSION}) includes abseil libraries")
+endif ()
+
 FIND_PACKAGE(Threads)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
