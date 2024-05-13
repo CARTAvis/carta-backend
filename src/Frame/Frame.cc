@@ -45,6 +45,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _depth(1),
       _num_stokes(1),
       _image_cache_valid(false),
+      _tile_pool(std::make_shared<TilePool>()),
       _use_tile_cache(false),
       _moment_generator(nullptr),
       _moment_name_index(0) {
@@ -92,6 +93,9 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         _valid = false;
         return;
     }
+
+    // set the tile pool capacity
+    _tile_pool->Grow(omp_get_max_threads());
 
     // reset the tile cache if the loader will use it
     if (_use_tile_cache) {
@@ -469,7 +473,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
 // Tile data
 bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-    CARTA::CompressionType compression_type, float compression_quality, int num_threads) {
+    CARTA::CompressionType compression_type, float compression_quality) {
     // Early exit if z or stokes has changed
     if (ZStokesChanged(z, stokes)) {
         return false;
@@ -481,11 +485,6 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
 
     if (raster_tile_data.tiles_size()) {
         raster_tile_data.clear_tiles();
-    }
-
-    if (!_tile_pool) {
-        _tile_pool = std::make_shared<TilePool>();
-        _tile_pool->Grow(num_threads);
     }
 
     CARTA::TileData* tile_ptr = raster_tile_data.add_tiles();

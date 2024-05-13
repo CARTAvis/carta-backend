@@ -128,7 +128,7 @@ public:
 
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-        CARTA::CompressionType compression_type, float compression_quality, int num_threads);
+        CARTA::CompressionType compression_type, float compression_quality);
 
     // Functions used for smoothing and contouring
     bool SetContourParameters(const CARTA::SetContourParameters& message);
