@@ -1101,10 +1101,27 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
 }
 
 void Session::OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent) {
-    if (_frames.count(message.file_id())) {
+    int file_id(message.file_id());
+
+    if (_frames.count(file_id)) {
+        auto frame = _frames.at(file_id);
         const int num_levels = message.levels_size();
-        if (_frames.at(message.file_id())->SetContourParameters(message) && num_levels && !silent) {
-            SendContourData(message.file_id());
+
+        if (frame->SetContourParameters(message) && num_levels && !silent) {
+            if (message.has_channel_range()) {
+                int start_channel(message.channel_range().min());
+                int end_channel(message.channel_range().max());
+                int nchan(frame->Depth());
+#pragma omp parallel for
+                for (int chan = start_channel; chan <= end_channel; ++chan) {
+                    if (chan >= nchan) {
+                        continue;
+                    }
+                    SendContourData(file_id, true, chan);
+                }
+            } else {
+                SendContourData(file_id);
+            }
         }
     }
 }
@@ -1837,18 +1854,19 @@ void Session::StopPvPreviewUpdates(int preview_id) {
     }
 }
 
-bool Session::SendContourData(int file_id, bool ignore_empty) {
+bool Session::SendContourData(int file_id, bool ignore_empty, int channel) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         const ContourSettings settings = frame->GetContourParameters();
         int num_levels = settings.levels.size();
+        int contour_channel = channel == CURRENT_Z ? frame->CurrentZ() : channel;
 
         if (!num_levels) {
             if (ignore_empty) {
                 return false;
             } else {
                 auto empty_response =
-                    Message::ContourImageData(file_id, settings.reference_file_id, frame->CurrentZ(), frame->CurrentStokes(), 1.0);
+                    Message::ContourImageData(file_id, settings.reference_file_id, contour_channel, frame->CurrentStokes(), 1.0);
                 SendFileEvent(file_id, CARTA::EventType::CONTOUR_IMAGE_DATA, 0, empty_response);
                 return true;
             }
@@ -1859,7 +1877,7 @@ bool Session::SendContourData(int file_id, bool ignore_empty) {
         auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
             // Currently only supports identical reference file IDs
             auto partial_response =
-                Message::ContourImageData(file_id, settings.reference_file_id, frame->CurrentZ(), frame->CurrentStokes(), progress);
+                Message::ContourImageData(file_id, settings.reference_file_id, contour_channel, frame->CurrentStokes(), progress);
             std::vector<char> compression_buffer;
             const float pixel_rounding = std::max(1, std::min(32, settings.decimation));
 #if _DISABLE_CONTOUR_COMPRESSION_
