@@ -252,7 +252,7 @@ protected:
     bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
 
     // Send data streams
-    bool SendContourData(int file_id, bool ignore_empty = true);
+    bool SendContourData(int file_id, bool ignore_empty = true, int channel = CURRENT_Z);
     bool SendSpatialProfileData(int file_id, int region_id);
     void SendSpatialProfileDataByFileId(int file_id);
     void SendSpatialProfileDataByRegionId(int region_id);
