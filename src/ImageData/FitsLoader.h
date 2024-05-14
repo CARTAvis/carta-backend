@@ -21,7 +21,7 @@ private:
     casacore::uInt _hdu_num;
 
     void AllocateImage(const std::string& hdu) override;
-    int GetNumHeaders(const std::string& filename, int hdu);
+    int GetNumImageHeaders(const std::string& filename, int hdu, std::string& error);
 
     // Image beam headers/table
     bool Is64BitBeamsTable(const std::string& filename);
