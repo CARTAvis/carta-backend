@@ -451,7 +451,6 @@ casa::SPIIF ImageFitter::GetImageData(
     output_image->setUnits(sub_image->units());
     output_image->setMiscInfo(sub_image->miscInfo());
     output_image->appendLog(sub_image->logger());
-    output_image->makeMask("mask0", true, true);
 
     auto image_info = sub_image->imageInfo();
     if (remove_beam_info) {
@@ -466,9 +465,14 @@ casa::SPIIF ImageFitter::GetImageData(
 
     casacore::Array<float> data_array(shape, image_data.data());
     output_image->put(data_array);
-    casacore::Array<casacore::Bool> mask_array = sub_image->getMask();
-    casacore::Lattice<casacore::Bool>& mask_out = output_image->pixelMask();
-    mask_out.put(mask_array);
+
+    if (sub_image->isMasked()) {
+        output_image->makeMask("mask0", true, true);
+        casacore::Array<casacore::Bool> mask_array = sub_image->getMask();
+        casacore::Lattice<casacore::Bool>& mask_out = output_image->pixelMask();
+        mask_out.put(mask_array);
+    }
+
     output_image->flush();
     return output_image;
 }
