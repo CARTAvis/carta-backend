@@ -141,7 +141,9 @@ double ImageFitter::GetResidualRms() {
     if (_create_residual_data) {
         gsl_rstat_workspace* rstat_p = gsl_rstat_alloc();
         for (int i = 0; i < _residual_data.size(); ++i) {
-            gsl_rstat_add(_residual_data[i], rstat_p);
+            if (!std::isnan(_residual_data[i])) {
+                gsl_rstat_add(_residual_data[i], rstat_p);
+            }
         }
         residual_rms = gsl_rstat_rms(rstat_p);
         gsl_rstat_free(rstat_p);
@@ -449,6 +451,7 @@ casa::SPIIF ImageFitter::GetImageData(
     output_image->setUnits(sub_image->units());
     output_image->setMiscInfo(sub_image->miscInfo());
     output_image->appendLog(sub_image->logger());
+    output_image->makeMask("mask0", true, true);
 
     auto image_info = sub_image->imageInfo();
     if (remove_beam_info) {
@@ -463,6 +466,9 @@ casa::SPIIF ImageFitter::GetImageData(
 
     casacore::Array<float> data_array(shape, image_data.data());
     output_image->put(data_array);
+    casacore::Array<casacore::Bool> mask_array = sub_image->getMask();
+    casacore::Lattice<casacore::Bool>& mask_out = output_image->pixelMask();
+    mask_out.put(mask_array);
     output_image->flush();
     return output_image;
 }
