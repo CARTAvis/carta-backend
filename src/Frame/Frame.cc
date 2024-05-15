@@ -1868,15 +1868,19 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             success = _image_fitter->FitImage(width, height, region_data.data(), beam_size, unit, initial_values, fixed_params,
                 fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
-            _image_fitter->GetDeconvolvedResults(
-                image, width, height, CurrentZ(), CurrentStokes(), fitting_response, region_origin(0), region_origin(1));
+            if (success) {
+                _image_fitter->GetDeconvolvedResults(
+                    image, width, height, CurrentZ(), CurrentStokes(), fitting_response, region_origin(0), region_origin(1));
+            }
         } else {
             FillImageCache();
 
             success = _image_fitter->FitImage(_width, _height, _image_cache.get(), beam_size, unit, initial_values, fixed_params,
                 fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback);
-            _image_fitter->GetDeconvolvedResults(image, _width, _height, CurrentZ(), CurrentStokes(), fitting_response);
+            if (success) {
+                _image_fitter->GetDeconvolvedResults(image, _width, _height, CurrentZ(), CurrentStokes(), fitting_response);
+            }
         }
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {

@@ -100,7 +100,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
 
             size_t last_index = _fit_data.fit_values_indexes.size() - 1;
             int background_offset_index = _fit_data.fit_values_indexes[last_index];
-            double background_offset =
+            background_offset =
                 background_offset_index < 0 ? _fit_data.initial_values[last_index] : gsl_vector_get(_fit_values, background_offset_index);
             double background_offset_error = background_offset_index < 0 ? 0.0 : gsl_vector_get(_fit_errors, background_offset_index);
             fitting_response.set_offset_value(background_offset);
