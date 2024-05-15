@@ -106,7 +106,7 @@ public:
     double GetResidualRms();
     /** @brief Get fit results for the deconvolved beam image if any. */
     bool GetDeconvolvedResults(casacore::ImageInterface<float>* image, size_t width, size_t height, int channel, int stokes,
-        CARTA::FittingResponse& fitting_response);
+        CARTA::FittingResponse& fitting_response, size_t offset_x = 0, size_t offset_y = 0);
 
 private:
     /** @brief Fitting-related data. */

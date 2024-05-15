@@ -150,7 +150,7 @@ double ImageFitter::GetResidualRms() {
 }
 
 bool ImageFitter::GetDeconvolvedResults(casacore::ImageInterface<float>* image, size_t width, size_t height, int channel, int stokes,
-    CARTA::FittingResponse& fitting_response) {
+    CARTA::FittingResponse& fitting_response, size_t offset_x, size_t offset_y) {
     if (image && image->imageInfo().hasBeam() && !fitting_response.result_values().empty()) {
         carta::Deconvolver deconvolver(image->coordinates(), image->imageInfo().restoringBeam(channel, stokes), GetResidualRms());
         std::vector<DeconvolutionResult> pixel_results;
@@ -169,8 +169,8 @@ bool ImageFitter::GetDeconvolvedResults(casacore::ImageInterface<float>* image, 
                 for (int i = 0; i < data_size; ++i) {
                     size_t row = i % width;
                     size_t col = i / width;
-                    double x = (double)row - gauss.center_x.getValue();
-                    double y = (double)col - gauss.center_y.getValue();
+                    double x = offset_x + (double)row - gauss.center_x.getValue();
+                    double y = offset_y + (double)col - gauss.center_y.getValue();
                     double xp = x * std::cos(theta) - y * std::sin(theta);
                     double yp = x * std::sin(theta) + y * std::cos(theta);
                     _deconvolved_model_data[i] += 2 * casacore::C::pi * sigma_x * sigma_y * gauss.amplitude *
