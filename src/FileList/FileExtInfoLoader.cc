@@ -313,11 +313,18 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
             name = hdf5_keys[name];
         }
 
+        if (name == "SPECSYS") {
+            has_specsys = true;
+            specsys = value;
+        }
+
         if (name.startsWith("CTYPE")) {
             if ((value == "STOKES") || (value == "Stokes") || (value == "stokes")) {
                 stokes_ctype_num = name.back();
             } else if (value.startsWith("VELO-")) {
-                specsys = value.after('-');
+                if (specsys.empty()) {
+                    specsys = value.after('-');
+                }
                 value = "VELO";
             }
             is_string_value = true;
@@ -336,8 +343,6 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
                 // not numeric
             }
             is_string_value = true;
-        } else if (name == "SPECSYS") {
-            has_specsys = true;
         }
 
         // Set name
