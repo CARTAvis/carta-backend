@@ -443,8 +443,7 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
     int num_image_rows = _height;
 
     // read lock imageCache
-    bool write_lock(false);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     Timer t;
     float* z_data;
@@ -633,20 +632,31 @@ bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
     return false;
 }
 
-bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
-    // Always use the full image cache (for now)
-    FillImageCache();
+bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel) {
+    bool use_image_cache(channel == CurrentZ());
+    if (use_image_cache) {
+        // Always use the full image cache (for now)
+        FillImageCache();
+    }
 
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;
     std::vector<std::vector<float>> vertex_data;
     std::vector<std::vector<int>> index_data;
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
-        TraceContours(_image_cache.get(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-            _contour_settings.chunk_size, partial_contour_callback);
+        if (use_image_cache) {
+            queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
+            TraceContours(_image_cache.get(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
+                _contour_settings.chunk_size, partial_contour_callback);
+        } else {
+            // Get channel data
+            std::vector<float> channel_data;
+            GetZMatrix(channel_data, channel, CurrentStokes());
+            TraceContours(channel_data.data(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
+                _contour_settings.chunk_size, partial_contour_callback);
+        }
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -658,10 +668,20 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_width = _width - (2 * kernel_width);
         int64_t dest_height = _height - (2 * kernel_width);
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
-        smooth_successful = GaussianSmooth(
-            _image_cache.get(), dest_array.get(), source_width, source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
-        // Can release lock early, as we're no longer using the image cache
-        cache_lock.release();
+        if (use_image_cache) {
+            queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
+            smooth_successful = GaussianSmooth(_image_cache.get(), dest_array.get(), source_width, source_height, dest_width, dest_height,
+                _contour_settings.smoothing_factor);
+            // Can release lock early, as we're no longer using the image cache
+            cache_lock.release();
+        } else {
+            // Get channel data
+            std::vector<float> channel_data;
+            GetZMatrix(channel_data, channel, CurrentStokes());
+            smooth_successful = GaussianSmooth(channel_data.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
+                _contour_settings.smoothing_factor);
+        }
+
         if (smooth_successful) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
             offset = _contour_settings.smoothing_factor - 1;
@@ -673,9 +693,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         // Block averaging
         CARTA::ImageBounds image_bounds = Message::ImageBounds(0, _width, 0, _height);
         std::vector<float> dest_vector;
-        smooth_successful = GetRasterData(_z_index, dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
-        cache_lock.release();
-        if (smooth_successful) {
+        if (GetRasterData(channel, dest_vector, image_bounds, _contour_settings.smoothing_factor, true)) {
             // Perform contouring with an offset based on the block size, and a scale factor equal to block size
             offset = 0;
             scale = _contour_settings.smoothing_factor;

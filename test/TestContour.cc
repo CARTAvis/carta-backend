@@ -50,7 +50,7 @@ public:
             progresses[level] = progress;
             ulock.unlock();
         };
-        EXPECT_TRUE(frame->ContourImage(callback));
+        EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
 
         // Check the number of resulting contour levels
         EXPECT_EQ(progresses.size(), levels.size());

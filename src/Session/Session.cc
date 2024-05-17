@@ -1918,7 +1918,7 @@ bool Session::SendContourData(int file_id, bool ignore_empty, int channel) {
             SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response, compression_level < 1);
         };
 
-        if (frame->ContourImage(callback)) {
+        if (frame->ContourImage(callback, contour_channel)) {
             return true;
         }
         SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);

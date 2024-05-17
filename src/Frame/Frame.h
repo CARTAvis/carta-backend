@@ -135,7 +135,7 @@ public:
     inline ContourSettings& GetContourParameters() {
         return _contour_settings;
     };
-    bool ContourImage(ContourCallback& partial_contour_callback);
+    bool ContourImage(ContourCallback& partial_contour_callback, int channel);
 
     // Histograms: image and cube
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& histogram_configs);
