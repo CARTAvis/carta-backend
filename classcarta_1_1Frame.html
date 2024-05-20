@@ -359,12 +359,16 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a5a28e0a1557658a0b5ac1193a51eee27"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add23fba058d63973e275c6153a30f27b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#add23fba058d63973e275c6153a30f27b">_cache_loaded</a></td></tr>
 <tr class="separator:add23fba058d63973e275c6153a30f27b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6d347dc131b1401b91add00a037beeea"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1TileCache.html">TileCache</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a6d347dc131b1401b91add00a037beeea">_tile_cache</a></td></tr>
-<tr class="separator:a6d347dc131b1401b91add00a037beeea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5d20f4ff279364f45c6001cfabf28039"><td class="memItemLeft" align="right" valign="top">std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a5d20f4ff279364f45c6001cfabf28039">_ignore_interrupt_X_mutex</a></td></tr>
 <tr class="separator:a5d20f4ff279364f45c6001cfabf28039"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3af3e39534f36f88078bdd784535f24"><td class="memItemLeft" align="right" valign="top">std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#ae3af3e39534f36f88078bdd784535f24">_ignore_interrupt_Y_mutex</a></td></tr>
 <tr class="separator:ae3af3e39534f36f88078bdd784535f24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7dd6190bb4e555a5948504c2fe531356"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a7dd6190bb4e555a5948504c2fe531356">_use_tile_cache</a></td></tr>
+<tr class="separator:a7dd6190bb4e555a5948504c2fe531356"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d347dc131b1401b91add00a037beeea"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1TileCache.html">TileCache</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a6d347dc131b1401b91add00a037beeea">_tile_cache</a></td></tr>
+<tr class="separator:a6d347dc131b1401b91add00a037beeea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fa94653edd5bb684555b4ea7a6559eb"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="structcarta_1_1TilePool.html">TilePool</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a1fa94653edd5bb684555b4ea7a6559eb">_tile_pool</a></td></tr>
+<tr class="separator:a1fa94653edd5bb684555b4ea7a6559eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7857339508bacdf7e12d69de8c0a9619"><td class="memItemLeft" align="right" valign="top">std::shared_mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a7857339508bacdf7e12d69de8c0a9619">_active_task_mutex</a></td></tr>
 <tr class="separator:a7857339508bacdf7e12d69de8c0a9619"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e6362646aa6a3691a5e4085a2d65856"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a4e6362646aa6a3691a5e4085a2d65856">_image_histogram_configs</a></td></tr>
@@ -4451,6 +4455,50 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="classcarta_1_1TileCache.html">TileCache</a> carta::Frame::_tile_cache</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a1fa94653edd5bb684555b4ea7a6559eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1fa94653edd5bb684555b4ea7a6559eb">&#9670;&nbsp;</a></span>_tile_pool</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="structcarta_1_1TilePool.html">TilePool</a>&gt; carta::Frame::_tile_pool</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a7dd6190bb4e555a5948504c2fe531356"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7dd6190bb4e555a5948504c2fe531356">&#9670;&nbsp;</a></span>_use_tile_cache</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::Frame::_use_tile_cache</td>
         </tr>
       </table>
   </td>

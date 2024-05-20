@@ -127,6 +127,8 @@ var classcarta_1_1Frame =
     [ "_stokes_axis", "classcarta_1_1Frame.html#a200bb6d4b48d856b87ee75de88358d35", null ],
     [ "_stokes_index", "classcarta_1_1Frame.html#aeb3628ece6a38b44560a8ec6e50d1a46", null ],
     [ "_tile_cache", "classcarta_1_1Frame.html#a6d347dc131b1401b91add00a037beeea", null ],
+    [ "_tile_pool", "classcarta_1_1Frame.html#a1fa94653edd5bb684555b4ea7a6559eb", null ],
+    [ "_use_tile_cache", "classcarta_1_1Frame.html#a7dd6190bb4e555a5948504c2fe531356", null ],
     [ "_valid", "classcarta_1_1Frame.html#a20d81e47aee75afa8e6ce733aa5e886a", null ],
     [ "_vector_field", "classcarta_1_1Frame.html#a5cd16a584069531909999b70778e4b3d", null ],
     [ "_width", "classcarta_1_1Frame.html#a2d184d8bfa960b93bf6383835c531d1a", null ],
