@@ -227,7 +227,7 @@ GaussianShape Deconvolver::PixelToWorld(
     casacore::DirectionCoordinate dir_coord = _coord_sys.directionCoordinate();
     dir_coord.toWorld(mean_dir, center);
 
-    pa = (pa + 90) * casacore::C::pi / 180 - casacore::C::pi_2; // rotate 90 degrees and convert to radians
+    pa *= casacore::C::pi / 180.0; // convert to radians
     casacore::MDirection tip_major = DirectionFromCartesian(center_x, center_y, fwhm_x, pa, dir_coord);
     pa += casacore::C::pi_2;
     casacore::MDirection tip_minor = DirectionFromCartesian(center_x, center_y, fwhm_y, pa, dir_coord);

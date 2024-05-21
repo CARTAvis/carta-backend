@@ -165,16 +165,15 @@ bool ImageFitter::GetDeconvolvedResults(casacore::ImageInterface<float>* image, 
             for (auto gauss : pixel_results) {
                 double sigma_x = gauss.major.getValue() / 2.355;
                 double sigma_y = gauss.minor.getValue() / 2.355;
-                double theta = std::cos((casacore::C::pi * 90 / 180) - gauss.pa.getValue());
+                double theta = gauss.pa.getValue();
 
-#pragma omp parallel for
                 for (int i = 0; i < data_size; ++i) {
                     size_t row = i % width;
                     size_t col = i / width;
                     double x = offset_x + (double)row - gauss.center_x.getValue();
                     double y = offset_y + (double)col - gauss.center_y.getValue();
-                    double xp = x * std::cos(theta) - y * std::sin(theta);
-                    double yp = x * std::sin(theta) + y * std::cos(theta);
+                    double xp = x * std::cos(theta) + y * std::sin(theta);
+                    double yp = -x * std::sin(theta) + y * std::cos(theta);
                     _deconvolved_model_data[i] += 2 * casacore::C::pi * sigma_x * sigma_y * gauss.amplitude *
                                                   gsl_ran_gaussian_pdf(xp, sigma_x) * gsl_ran_gaussian_pdf(yp, sigma_y);
                 }
