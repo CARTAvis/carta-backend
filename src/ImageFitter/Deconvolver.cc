@@ -37,7 +37,8 @@ void Deconvolver::GetDeconvolutionResults(CARTA::FittingResponse& fitting_respon
                 decon_values_fwhm->set_x(pixel_result.major.getValue());
                 decon_values_fwhm->set_y(pixel_result.minor.getValue());
                 decon_values->set_amp(in_gauss.amp());
-                decon_values->set_pa(world_result.pa.getValue());
+                double pa = world_result.pa.getValue() < 0 ? -world_result.pa.getValue() + 90 : world_result.pa.getValue();
+                decon_values->set_pa(pa);
 
                 // Add a deconvolved gaussian errors in pixel unit
                 auto decon_errors = fitting_response.add_result_decon_errors();
