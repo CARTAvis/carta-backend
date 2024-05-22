@@ -34,6 +34,10 @@ bool IsCompressedFits(const std::string& filename) {
     return false;
 }
 
+bool IsRemoteHttpFile(const std::string& filename) {
+    return filename.find("http") == 0;
+}
+
 bool IsGzMagicNumber(uint32_t magic_number) {
     std::string hex_string = fmt::format("{:#x}", magic_number);
     return (hex_string.length() > 4) && (hex_string.substr(hex_string.length() - 4) == "8b1f");

@@ -2414,23 +2414,23 @@ void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint3
     bool success = GenerateUrlFromRequest(message, url, err_message);
     if (success) {
         spdlog::info("Fetching remote file from url {}", url);
-        auto loader = new FitsLoader(url, false, true);
+        auto loader = _loaders.Get(url, "");
 
         CARTA::OpenFileAck ack;
         try {
             loader->OpenFile("0");
             auto image = loader->GetImage();
             success = OnOpenFile(file_id, "remote_file.fits", image, response.mutable_open_file_ack());
+            if (success) {
+                response.set_message("File opened successfully");
+            }
         } catch (const casacore::AipsError& err) {
             err_message = err.getMesg();
+            response.set_message(err_message);
             success = false;
         }
-
-        if (success) {
-            response.set_message("File opened successfully");
-        } else {
-            response.set_message(err_message);
-        }
+    } else {
+        response.set_message(err_message);
     }
     response.set_success(success);
 

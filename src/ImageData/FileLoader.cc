@@ -32,6 +32,8 @@ FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string
         return new ExprLoader(filename, directory);
     } else if (IsCompressedFits(filename)) {
         return new FitsLoader(filename, true);
+    } else if (IsRemoteHttpFile(filename)) {
+        return new FitsLoader(filename, false, true);
     }
 
     switch (CasacoreImageType(filename)) {
