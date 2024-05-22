@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -31,6 +31,15 @@
 
 namespace carta {
 struct ProgramSettings {
+    static ProgramSettings& GetInstance() {
+        static ProgramSettings settings;
+        return settings;
+    }
+
+    static ProgramSettings& Initialise(int argc, char** argv) {
+        return GetInstance() = std::move(carta::ProgramSettings(argc, argv));
+    }
+
     bool version = false;
     bool help = false;
     std::vector<int> port;

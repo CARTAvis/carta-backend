@@ -6,12 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* Fixed crash when loading non-image HDU by URL ([#1365](https://github.com/CARTAvis/carta-backend/issues/1365)).
+* Fix crash when parsing FITS header long value ([#1366](https://github.com/CARTAvis/carta-backend/issues/1366)).
+* Fix hdf5 image distortion after animation stops ([#1368](https://github.com/CARTAvis/carta-backend/issues/1368)).
+
 ### Changed
 * Move the loader cache to separate files ([#1021](https://github.com/CARTAvis/carta-backend/issues/1021)).
 * Improve the code style in HTTP server ([#1260](https://github.com/CARTAvis/carta-backend/issues/1260)).
 * Remove program settings equality operators ([#1001](https://github.com/CARTAvis/carta-backend/issues/1001)).
 * Normalize the style of guard names in header files ([#1023](https://github.com/CARTAvis/carta-backend/issues/1023)).
 * Improved file IDs for generated images ([#1224](https://github.com/CARTAvis/carta-frontend/issues/1224)).
+* Store global settings in a singleton class ([#1302](https://github.com/CARTAvis/carta-backend/issues/1302)).
+* Move Region code to RegionConverter for maintenance and performance ([#1347](https://github.com/CARTAvis/carta-backend/issues/1347)).
+* Improve performance of region spatial profiles and PV image generation ([#1339](https://github.com/CARTAvis/carta-backend/issues/1339)).
 
 ## [4.1.0]
 

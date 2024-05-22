@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -22,7 +22,7 @@ private:
     bool _is_http;
 
     void AllocateImage(const std::string& hdu) override;
-    int GetNumHeaders(const std::string& filename, int hdu);
+    int GetNumImageHeaders(const std::string& filename, int hdu, std::string& error);
 
     // Image beam headers/table
     bool Is64BitBeamsTable(const std::string& filename);

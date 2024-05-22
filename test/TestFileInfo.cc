@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -179,7 +179,7 @@ public:
 
 class TestSession : public Session {
 public:
-    TestSession() : Session(nullptr, nullptr, 0, "", "/", "", nullptr, -1, false) {}
+    TestSession() : Session(nullptr, nullptr, 0, "", nullptr) {}
 
     void TestFileInfo(const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
         auto request = Message::FileInfoRequest(SAMPLE_FILES_PATH, request_filename, request_hdu);

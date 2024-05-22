@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -105,6 +105,7 @@ public:
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
     int CurrentStokes();
+    bool IsCurrentZStokes(const StokesSource& stokes_source);
     int SpectralAxis();
     int StokesAxis();
     bool GetBeams(std::vector<CARTA::Beam>& beams);
@@ -296,16 +297,19 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    //    std::vector<float> _image_cache; // image data for current z, stokes
     long long int _image_cache_size;
     std::unique_ptr<float[]> _image_cache;
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;       // only one disk access at a time
     bool _cache_loaded;            // channel cache is set
-    TileCache _tile_cache;         // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
+
+    // Tile data
+    bool _use_tile_cache;
+    TileCache _tile_cache;                // cache for full-resolution image tiles
+    std::shared_ptr<TilePool> _tile_pool; // memory allocated for tile data
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
     mutable std::shared_mutex _active_task_mutex;

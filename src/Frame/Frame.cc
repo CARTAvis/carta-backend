@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -45,6 +45,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _depth(1),
       _num_stokes(1),
       _image_cache_valid(false),
+      _tile_pool(std::make_shared<TilePool>()),
+      _use_tile_cache(false),
       _moment_generator(nullptr),
       _moment_name_index(0) {
     // Initialize for operator==
@@ -83,15 +85,20 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
+    _use_tile_cache = _loader->UseTileCache();
+
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (load_image_cache && !(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
+    if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
     }
 
+    // set the tile pool capacity
+    _tile_pool->Grow(omp_get_max_threads());
+
     // reset the tile cache if the loader will use it
-    if (_loader->UseTileCache()) {
+    if (_use_tile_cache) {
         int tiles_x = (_width - 1) / TILE_SIZE + 1;
         int tiles_y = (_height - 1) / TILE_SIZE + 1;
         int tile_cache_capacity = std::min(MAX_TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
@@ -180,6 +187,11 @@ int Frame::SpectralAxis() {
 
 int Frame::StokesAxis() {
     return _stokes_axis;
+}
+
+bool Frame::IsCurrentZStokes(const StokesSource& stokes_source) {
+    return (stokes_source.z_range.from == stokes_source.z_range.to) && (stokes_source.z_range.from == CurrentZ()) &&
+           (stokes_source.stokes == CurrentStokes());
 }
 
 bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
@@ -331,19 +343,19 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
             bool z_ok(CheckZ(new_z));
             bool stokes_ok(CheckStokes(new_stokes));
             if (z_ok && stokes_ok) {
-                _z_index = new_z;
-                _stokes_index = new_stokes;
-
                 // invalidate the image cache
                 InvalidateImageCache();
 
-                if (!(_loader->UseTileCache() && _loader->HasMip(2)) || IsComputedStokes(_stokes_index)) {
+                _z_index = new_z;
+                _stokes_index = new_stokes;
+
+                if (!(_use_tile_cache && _loader->HasMip(2)) || IsComputedStokes(_stokes_index)) {
                     // Reload the full channel cache for loaders which use it
                     FillImageCache();
                 } else {
                     // Don't reload the full channel cache here because we may not need it
 
-                    if (_loader->UseTileCache()) {
+                    if (_use_tile_cache) {
                         // invalidate / clear the full resolution tile cache
                         _tile_cache.Reset(_z_index, _stokes_index);
                     }
@@ -366,7 +378,6 @@ bool Frame::SetCursor(float x, float y) {
 
 bool Frame::FillImageCache() {
     // get image data for z, stokes
-
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
@@ -568,27 +579,24 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     width = std::ceil((float)req_width / mip);
     height = std::ceil((float)req_height / mip);
 
-    std::vector<float> tile_data;
+    tile_data_ptr = _tile_pool->Pull();
     bool loaded_data(0);
 
     if (mip > 1 && !IsComputedStokes(_stokes_index)) {
         // Try to load downsampled data from the image file
-        loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
-    } else if (!_image_cache_valid && _loader->UseTileCache()) {
-        // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
-        if (tile_data_ptr) {
+        loaded_data = _loader->GetDownsampledRasterData(*tile_data_ptr, _z_index, _stokes_index, bounds, mip, _image_mutex);
+    } else if (!_image_cache_valid && _use_tile_cache) {
+        // Load a tile from the tile cache if the full image cache isn't populated
+        auto cache_tile_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        if (cache_tile_ptr) {
+            tile_data_ptr->assign(cache_tile_ptr->begin(), cache_tile_ptr->end());
             return true;
         }
     }
 
     // Fall back to using the full image cache.
     if (!loaded_data) {
-        loaded_data = GetRasterData(tile_data, bounds, mip, true);
-    }
-
-    if (loaded_data) {
-        tile_data_ptr = std::make_shared<std::vector<float>>(tile_data);
+        loaded_data = GetRasterData(*tile_data_ptr, bounds, mip, true);
     }
 
     return loaded_data;
@@ -1076,7 +1084,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         cursor_value_with_current_stokes = _image_cache[(y * _width) + x];
         cache_lock.release();
-    } else if (_loader->UseTileCache()) {
+    } else if (_use_tile_cache) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
         auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
@@ -1187,7 +1195,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                 }
 
                 if (is_current_stokes) {
-                    if (_loader->UseTileCache()) { // Use tile cache to return full resolution data or prepare data for decimation
+                    if (_use_tile_cache) { // Use tile cache to return full resolution data or prepare data for decimation
                         profile.resize(end - start);
 
                         if (config.coordinate().back() == 'x') {
@@ -1605,68 +1613,120 @@ bool Frame::GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubIm
 bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data, bool report_performance) {
     // Get image data with a region applied
     Timer t;
-    casacore::SubImage<float> sub_image;
-    bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
+    std::vector<bool> region_mask;
 
-    if (!subimage_ok) {
-        return false;
-    }
+    if (IsCurrentZStokes(stokes_region.stokes_source)) {
+        try {
+            // Slice cached image data using LCRegion bounding box
+            casacore::Slicer bounding_box = stokes_region.image_region.asLCRegion().boundingBox();
+            StokesSlicer stokes_slicer(stokes_region.stokes_source, bounding_box);
+            data.resize(bounding_box.length().product());
 
-    casacore::IPosition subimage_shape = sub_image.shape();
-    if (subimage_shape.empty()) {
-        return false;
-    }
-
-    try {
-        casacore::IPosition start(subimage_shape.size(), 0);
-        casacore::IPosition count(subimage_shape);
-        casacore::Slicer slicer(start, count); // entire subimage
-        bool is_computed_stokes(!stokes_region.stokes_source.IsOriginalImage());
-
-        // Get image data
-        std::unique_lock<std::mutex> ulock(_image_mutex);
-        if (_loader->IsGenerated() || is_computed_stokes) { // For the image in memory
-            casacore::Array<float> tmp;
-            sub_image.doGetSlice(tmp, slicer);
-            data = tmp.tovector();
-        } else {
-            data.resize(subimage_shape.product()); // must size correctly before sharing
-            casacore::Array<float> tmp(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
-            sub_image.doGetSlice(tmp, slicer);
-        }
-
-        // Get mask that defines region in subimage bounding box
-        casacore::Array<bool> tmpmask;
-        sub_image.doGetMaskSlice(tmpmask, slicer);
-        ulock.unlock();
-
-        // Apply mask to data
-        std::vector<bool> datamask = tmpmask.tovector();
-        for (size_t i = 0; i < data.size(); ++i) {
-            if (!datamask[i]) {
-                data[i] = NAN;
+            if (GetSlicerData(stokes_slicer, data.data())) {
+                // Next get the LCRegion as a mask (LCRegion is a Lattice<bool>)
+                casacore::Array<bool> tmpmask = stokes_region.image_region.asLCRegion().get();
+                region_mask = tmpmask.tovector();
+            } else {
+                data.clear();
             }
+        } catch (const casacore::AipsError& err) {
+            // ImageRegion underlying region was not LCRegion
+            data.clear();
         }
-
-        if (report_performance) {
-            spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
-        }
-
-        return true;
-    } catch (casacore::AipsError& err) {
-        data.clear();
     }
 
-    return false;
+    if (data.empty()) {
+        // Apply region to image to get SubImage data
+        casacore::SubImage<float> sub_image;
+        bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
+
+        if (!subimage_ok) {
+            return false;
+        }
+
+        casacore::IPosition subimage_shape = sub_image.shape();
+        if (subimage_shape.empty()) {
+            return false;
+        }
+
+        try {
+            casacore::IPosition start(subimage_shape.size(), 0);
+            casacore::IPosition count(subimage_shape);
+            casacore::Slicer slicer(start, count); // entire subimage
+            bool is_computed_stokes(!stokes_region.stokes_source.IsOriginalImage());
+
+            // Get image data and mask, with image mutex locked
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            casacore::Array<float> tmpdata;
+            if (_loader->IsGenerated() || is_computed_stokes) { // For the image in memory
+                sub_image.doGetSlice(tmpdata, slicer);
+                data = tmpdata.tovector();
+            } else {
+                data.resize(subimage_shape.product()); // must size correctly before sharing
+                tmpdata = casacore::Array<float>(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+                sub_image.doGetSlice(tmpdata, slicer);
+            }
+
+            // Get mask that defines region in subimage bounding box
+            casacore::Array<bool> tmpmask;
+            sub_image.doGetMaskSlice(tmpmask, slicer);
+            ulock.unlock();
+            region_mask = tmpmask.tovector();
+        } catch (const casacore::AipsError& err) {
+            data.clear();
+            return false;
+        }
+    }
+
+    // Apply mask to data
+    for (size_t i = 0; i < data.size(); ++i) {
+        if (!region_mask[i]) {
+            data[i] = NAN;
+        }
+    }
+
+    if (report_performance) {
+        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
+    }
+
+    return true;
 }
 
 bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
-    // Get image data with a slicer applied
+    // Get image data with a slicer applied; data must be correctly resized
+    bool data_ok(false);
     casacore::Array<float> tmp(stokes_slicer.slicer.length(), data, casacore::StorageInitPolicy::SHARE);
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool data_ok = _loader->GetSlice(tmp, stokes_slicer);
-    _loader->CloseImageIfUpdated();
-    ulock.unlock();
+
+    if (_image_cache_valid && IsCurrentZStokes(stokes_slicer.stokes_source)) {
+        // Slice image cache
+        auto cache_shape = ImageShape();
+        auto slicer_start = stokes_slicer.slicer.start();
+        auto slicer_end = stokes_slicer.slicer.end();
+
+        // Adjust cache shape and slicer for single channel and stokes
+        if (_spectral_axis >= 0) {
+            cache_shape(_spectral_axis) = 1;
+            slicer_start(_spectral_axis) = 0;
+            slicer_end(_spectral_axis) = 0;
+        }
+        if (_stokes_axis >= 0) {
+            cache_shape(_stokes_axis) = 1;
+            slicer_start(_stokes_axis) = 0;
+            slicer_end(_stokes_axis) = 0;
+        }
+        casacore::Slicer cache_slicer(slicer_start, slicer_end, casacore::Slicer::endIsLast);
+
+        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false); // read lock
+        casacore::Array<float> image_cache_as_array(cache_shape, _image_cache.get(), casacore::StorageInitPolicy::SHARE);
+        tmp = image_cache_as_array(cache_slicer);
+        data_ok = true;
+    } else {
+        // Use loader to slice image
+        std::unique_lock<std::mutex> ulock(_image_mutex);
+        data_ok = _loader->GetSlice(tmp, stokes_slicer);
+        _loader->CloseImageIfUpdated();
+        ulock.unlock();
+    }
     return data_ok;
 }
 

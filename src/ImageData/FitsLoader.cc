@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -69,10 +69,11 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
         if (_is_http) {
             use_casacore_fits = false;
         } else {
-            auto num_headers = GetNumHeaders(_filename, hdu_num);
+            std::string error;
+            auto num_headers = GetNumImageHeaders(_filename, hdu_num, error);
 
             if (num_headers == 0) {
-                throw(casacore::AipsError("Error reading FITS file."));
+                throw(casacore::AipsError(error));
             }
 
             if (num_headers > 2000) {
@@ -143,8 +144,8 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
     }
 }
 
-int FitsLoader::GetNumHeaders(const std::string& filename, int hdu) {
-    // Return number of FITS headers, 0 if error.
+int FitsLoader::GetNumImageHeaders(const std::string& filename, int hdu, std::string& error) {
+    // Return number of FITS headers if image hdu, 0 if error.
     int num_headers(0);
 
     // Open file read-only
@@ -152,13 +153,29 @@ int FitsLoader::GetNumHeaders(const std::string& filename, int hdu) {
     int status(0);
     fits_open_file(&fptr, filename.c_str(), 0, &status);
     if (status) {
+        error = "Error reading FITS file.";
         return num_headers;
     }
 
-    // Advance to hdu (FITS hdu is 1-based)
-    int* hdutype(nullptr);
-    fits_movabs_hdu(fptr, hdu + 1, hdutype, &status);
+    // Advance to hdu (FITS hdu is 1-based) and check if image
+    int hdutype(-1);
+    fits_movabs_hdu(fptr, hdu + 1, &hdutype, &status);
     if (status) {
+        error = "Cannot advance to requested HDU.";
+        return num_headers;
+    }
+    if (hdutype != IMAGE_HDU) {
+        error = "HDU is not an image.";
+        return num_headers;
+    }
+
+    // Check if image exists in HDU
+    std::string key("NAXIS");
+    char* comment(nullptr); // unused
+    int naxis(0);
+    fits_read_key(fptr, TINT, key.c_str(), &naxis, comment, &status);
+    if (naxis == 0) {
+        error = "HDU image is empty.";
         return num_headers;
     }
 
