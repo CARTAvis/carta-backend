@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed crash when loading non-image HDU by URL ([#1365](https://github.com/CARTAvis/carta-backend/issues/1365)).
 * Fix crash when parsing FITS header long value ([#1366](https://github.com/CARTAvis/carta-backend/issues/1366)).
 * Fix hdf5 image distortion after animation stops ([#1368](https://github.com/CARTAvis/carta-backend/issues/1368)).
+* Fix save image bug which could cause directory deletion ([#1377](https://github.com/CARTAvis/carta-backend/issues/1377)).
 
 ### Changed
 * Move the loader cache to separate files ([#1021](https://github.com/CARTAvis/carta-backend/issues/1021)).
