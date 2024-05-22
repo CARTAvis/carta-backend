@@ -178,7 +178,7 @@ bool ImageFitter::GetDeconvolvedResults(casacore::ImageInterface<float>* image, 
                                                   gsl_ran_gaussian_pdf(xp, sigma_x) * gsl_ran_gaussian_pdf(yp, sigma_y);
                 }
             }
-            _create_deconvolved_model_data = true;
+            _create_deconvolved_model_data = !pixel_results.empty();
         }
         return true;
     }

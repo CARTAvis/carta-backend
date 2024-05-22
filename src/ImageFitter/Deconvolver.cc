@@ -26,32 +26,37 @@ void Deconvolver::GetDeconvolutionResults(CARTA::FittingResponse& fitting_respon
         const CARTA::GaussianComponent& in_gauss_error = in_gauss_error_vec[i];
         DeconvolutionResult world_result;
         if (DoDeconvolution(in_gauss, world_result)) {
-            DeconvolutionResult pixel_result;
-            if (GetWorldWidthToPixel(world_result, pixel_result)) {
-                // Add a deconvolved gaussian values in pixel unit
-                auto decon_values = fitting_response.add_result_decon_values();
-                auto decon_values_center = decon_values->mutable_center();
-                decon_values_center->set_x(in_gauss.center().x());
-                decon_values_center->set_y(in_gauss.center().y());
-                auto decon_values_fwhm = decon_values->mutable_fwhm();
-                decon_values_fwhm->set_x(pixel_result.major.getValue());
-                decon_values_fwhm->set_y(pixel_result.minor.getValue());
-                decon_values->set_amp(in_gauss.amp());
-                double pa = world_result.pa.getValue() < 0 ? -world_result.pa.getValue() + 90 : world_result.pa.getValue();
-                decon_values->set_pa(pa);
+            if (world_result.amplitude > 0) {
+                DeconvolutionResult pixel_result;
+                if (GetWorldWidthToPixel(world_result, pixel_result)) {
+                    // Add a deconvolved gaussian values in pixel unit
+                    auto decon_values = fitting_response.add_result_decon_values();
+                    auto decon_values_center = decon_values->mutable_center();
+                    decon_values_center->set_x(in_gauss.center().x());
+                    decon_values_center->set_y(in_gauss.center().y());
+                    auto decon_values_fwhm = decon_values->mutable_fwhm();
+                    decon_values_fwhm->set_x(pixel_result.major.getValue());
+                    decon_values_fwhm->set_y(pixel_result.minor.getValue());
+                    decon_values->set_amp(in_gauss.amp());
+                    double pa = world_result.pa.getValue() < 0 ? -world_result.pa.getValue() + 90 : world_result.pa.getValue();
+                    decon_values->set_pa(pa);
 
-                // Add a deconvolved gaussian errors in pixel unit
-                auto decon_errors = fitting_response.add_result_decon_errors();
-                auto decon_errors_center = decon_errors->mutable_center();
-                decon_errors_center->set_x(in_gauss_error.center().x());
-                decon_errors_center->set_y(in_gauss_error.center().y());
-                auto decon_errors_fwhm = decon_errors->mutable_fwhm();
-                decon_errors_fwhm->set_x(pixel_result.major_err.getValue());
-                decon_errors_fwhm->set_y(pixel_result.minor_err.getValue());
-                decon_errors->set_amp(in_gauss_error.amp());
-                decon_errors->set_pa(world_result.pa_err.getValue());
+                    // Add a deconvolved gaussian errors in pixel unit
+                    auto decon_errors = fitting_response.add_result_decon_errors();
+                    auto decon_errors_center = decon_errors->mutable_center();
+                    decon_errors_center->set_x(in_gauss_error.center().x());
+                    decon_errors_center->set_y(in_gauss_error.center().y());
+                    auto decon_errors_fwhm = decon_errors->mutable_fwhm();
+                    decon_errors_fwhm->set_x(pixel_result.major_err.getValue());
+                    decon_errors_fwhm->set_y(pixel_result.minor_err.getValue());
+                    decon_errors->set_amp(in_gauss_error.amp());
+                    decon_errors->set_pa(world_result.pa_err.getValue());
 
-                pixel_results.emplace_back(pixel_result);
+                    pixel_results.emplace_back(pixel_result);
+                }
+            } else {
+                auto fit_log = fitting_response.mutable_log();
+                fit_log->append("\nCan not deconvolved from beam: component is a point source\n");
             }
         }
     }
