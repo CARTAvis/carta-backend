@@ -1923,10 +1923,25 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     bool success(false);
     casacore::String message;
 
+    if (output_filename.empty()) {
+        message = "Cannot save image with no filename.";
+        save_file_ack.set_success(success);
+        save_file_ack.set_message(message);
+        return;
+    }
+
     // Get the full resolved name of the output image
     fs::path temp_path = fs::path(root_folder) / directory;
     fs::path abs_path = fs::absolute(temp_path);
     output_filename = abs_path / output_filename;
+
+    if (fs::exists(output_filename) && fs::is_directory(output_filename) &&
+        (CasacoreImageType(output_filename.string()) == casacore::ImageOpener::UNKNOWN)) {
+        message = "Cannot overwrite existing directory.";
+        save_file_ack.set_success(success);
+        save_file_ack.set_message(message);
+        return;
+    }
 
     if (output_filename.string() == in_file) {
         message = "The source file can not be overwritten!";
