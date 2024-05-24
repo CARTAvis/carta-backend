@@ -1916,6 +1916,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     fs::path output_filename(save_file_msg.output_file_name());
     fs::path directory(save_file_msg.output_file_directory());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
+    bool overwrite(save_file_msg.overwrite());
 
     // Set response message
     int file_id(save_file_msg.file_id());
@@ -1935,12 +1936,24 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     fs::path abs_path = fs::absolute(temp_path);
     output_filename = abs_path / output_filename;
 
-    if (fs::exists(output_filename) && fs::is_directory(output_filename) &&
-        (CasacoreImageType(output_filename.string()) == casacore::ImageOpener::UNKNOWN)) {
-        message = "Cannot overwrite existing directory.";
-        save_file_ack.set_success(success);
-        save_file_ack.set_message(message);
-        return;
+    if (fs::exists(output_filename)) {
+        if (output_filename.string() == in_file) {
+            message = "Cannot overwrite the source image.";
+	} else if (CasacoreImageType(output_filename.string()) == casacore::ImageOpener::UNKNOWN) {
+            // Not an image
+	    if (fs::is_directory(output_filename)) {
+                message = "Cannot overwrite existing directory.";
+            }
+        } else if (!overwrite) {
+            // Image requires overwrite
+            message = "Cannot overwrite existing image.";
+        }
+
+        if (!message.empty()) {
+            save_file_ack.set_success(success);
+            save_file_ack.set_message(message);
+            return;
+        }
     }
 
     if (output_filename.string() == in_file) {
