@@ -1939,9 +1939,9 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     if (fs::exists(output_filename)) {
         if (output_filename.string() == in_file) {
             message = "Cannot overwrite the source image.";
-	} else if (CasacoreImageType(output_filename.string()) == casacore::ImageOpener::UNKNOWN) {
+        } else if (CasacoreImageType(output_filename.string()) == casacore::ImageOpener::UNKNOWN) {
             // Not an image
-	    if (fs::is_directory(output_filename)) {
+            if (fs::is_directory(output_filename)) {
                 message = "Cannot overwrite existing directory.";
             }
         } else if (!overwrite) {
