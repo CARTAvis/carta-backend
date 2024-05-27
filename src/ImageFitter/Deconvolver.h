@@ -56,7 +56,7 @@ public:
     ~Deconvolver() = default;
 
     void GetDeconvolutionResults(CARTA::FittingResponse& fitting_response, std::vector<DeconvolutionResult>& pixel_results);
-    bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result);
+    bool DoDeconvolution(const CARTA::GaussianComponent& in_gauss, DeconvolutionResult& result, bool& is_point_source);
     bool GetWorldWidthToPixel(const DeconvolutionResult& world_coords, DeconvolutionResult& pixel_coords);
     bool WorldWidthToPixel(casacore::Vector<casacore::Double>& pixel_params, const casacore::Vector<casacore::Quantity>& world_params);
     GaussianShape PixelToWorld(

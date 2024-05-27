@@ -71,14 +71,13 @@ public:
 
         if (failed_message.length() == 0) {
             GeneratedImage model_image;
-            GeneratedImage deconvolved_model_image;
             GeneratedImage residual_image;
             int file_id(0);
             StokesRegion output_stokes_region;
             frame->GetImageRegion(file_id, AxisRange(frame->CurrentZ()), frame->CurrentStokes(), output_stokes_region);
             casa::SPIIF image(loader->GetStokesImage(output_stokes_region.stokes_source));
-            success = image_fitter->GetGeneratedImages(image, output_stokes_region.image_region, frame->GetFileName(), model_image,
-                deconvolved_model_image, residual_image, fitting_response);
+            success = image_fitter->GetGeneratedImages(
+                image, output_stokes_region.image_region, frame->GetFileName(), model_image, residual_image, fitting_response);
 
             EXPECT_TRUE(success);
             CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->GetImageCacheData());
@@ -105,11 +104,9 @@ public:
         CARTA::FittingResponse fitting_response;
         carta::RegionHandler region_handler;
         GeneratedImage model_image;
-        GeneratedImage deconvolved_model_image;
         GeneratedImage residual_image;
         auto progress_callback = [&](float progress) {};
-        bool success = region_handler.FitImage(
-            fitting_request, fitting_response, frame, model_image, deconvolved_model_image, residual_image, progress_callback);
+        bool success = region_handler.FitImage(fitting_request, fitting_response, frame, model_image, residual_image, progress_callback);
 
         // TODO: test generated model/residual images
         CompareResults(fitting_response, success, failed_message);
@@ -327,24 +324,22 @@ TEST_F(ImageFittingTest, RunImageFitter) {
     EXPECT_TRUE(success);
     if (success) {
         auto fit_results = fitting_response.result_values();
-        std::cout << "\nFit results: \n";
-        std::cout << "center x = " << fit_results[0].center().x() << "\n";
-        std::cout << "center y = " << fit_results[0].center().y() << "\n";
-        std::cout << "Amplitude = " << fit_results[0].amp() << "\n";
-        std::cout << "FWHM-x = " << fit_results[0].fwhm().x() << "\n";
-        std::cout << "FWHM-y = " << fit_results[0].fwhm().y() << "\n";
-        std::cout << "position angle = " << fit_results[0].pa() << "\n";
+        EXPECT_NEAR(fit_results[0].center().x(), 21.3337, 1e-4);
+        EXPECT_NEAR(fit_results[0].center().y(), 24.1942, 1e-4);
+        EXPECT_NEAR(fit_results[0].amp(), 76.29, 1e-4);
+        EXPECT_NEAR(fit_results[0].fwhm().x(), 10.925, 1e-4);
+        EXPECT_NEAR(fit_results[0].fwhm().y(), 9.34719, 1e-4);
+        EXPECT_NEAR(fit_results[0].pa(), 46.7645, 1e-4);
 
-        std::cout << "\nFit errors: \n";
         auto fit_errors = fitting_response.result_errors();
-        std::cout << "center x = " << fit_errors[0].center().x() << "\n";
-        std::cout << "center y = " << fit_errors[0].center().y() << "\n";
-        std::cout << "Amplitude = " << fit_errors[0].amp() << "\n";
-        std::cout << "FWHM-x = " << fit_errors[0].fwhm().x() << "\n";
-        std::cout << "FWHM-y = " << fit_errors[0].fwhm().y() << "\n";
-        std::cout << "position angle = " << fit_errors[0].pa() << "\n";
+        EXPECT_NEAR(fit_errors[0].center().x(), 0.0161953, 1e-4);
+        EXPECT_NEAR(fit_errors[0].center().y(), 0.0160417, 1e-4);
+        EXPECT_NEAR(fit_errors[0].amp(), 0.284821, 1e-4);
+        EXPECT_NEAR(fit_errors[0].fwhm().x(), 0.0407875, 1e-4);
+        EXPECT_NEAR(fit_errors[0].fwhm().y(), 0.0348968, 1e-4);
+        EXPECT_NEAR(fit_errors[0].pa(), 0.96578, 1e-4);
 
-        std::cout << "\nRMS of residual data = " << image_fitter->GetResidualRms() << "\n";
+        EXPECT_NEAR(image_fitter->GetResidualRms(), 1.51968, 1e-4);
     }
 }
 
@@ -370,7 +365,8 @@ TEST_F(ImageFittingTest, TestDeconvolver) {
     in_gauss.set_pa(60.21);                    // 2.62175 (rad) = 150.21 (degree) => 150.21 - 90 = 60.21 (degree)
 
     DeconvolutionResult result;
-    bool success = deconvolver.DoDeconvolution(in_gauss, result);
+    bool is_point_source;
+    bool success = deconvolver.DoDeconvolution(in_gauss, result, is_point_source);
     EXPECT_TRUE(success);
 
     if (success) {

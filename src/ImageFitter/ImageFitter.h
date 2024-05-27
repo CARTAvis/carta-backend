@@ -98,8 +98,7 @@ public:
      * @return Whether the images are successfully generated
      */
     bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region,
-        const std::string& filename, GeneratedImage& model_image, GeneratedImage& deconvolved_model_image, GeneratedImage& residual_image,
-        CARTA::FittingResponse& fitting_response);
+        const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response);
     /** @brief Stop the ongoing fitting process. */
     void StopFitting();
     /** @brief Get RMS of residual data from the fit. */
@@ -133,14 +132,10 @@ private:
     FitStatus _fit_status;
     /** @brief Whether to create a model image. */
     bool _create_model_data;
-    /** @brief Whether to create a deconvolved model image. */
-    bool _create_deconvolved_model_data;
     /** @brief Whether to create a residual image. */
     bool _create_residual_data;
     /** @brief Model image data. */
     std::vector<float> _model_data;
-    /** @brief Model data for the deconvolved beam image. */
-    std::vector<float> _deconvolved_model_data;
     /** @brief Residual image data. */
     std::vector<float> _residual_data;
     /** @brief Maximum number of fitting iterations. */

@@ -1427,7 +1427,6 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
         bool success(false);
         int region_id(fitting_request.region_id());
         GeneratedImage model_image;
-        GeneratedImage deconvolved_model_image;
         GeneratedImage residual_image;
 
         // Set fitting progress callback function
@@ -1440,11 +1439,10 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
             if (!_region_handler) {
                 _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
             }
-            success = _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id), model_image,
-                deconvolved_model_image, residual_image, progress_callback);
+            success = _region_handler->FitImage(
+                fitting_request, fitting_response, _frames.at(file_id), model_image, residual_image, progress_callback);
         } else {
-            success = _frames.at(file_id)->FitImage(
-                fitting_request, fitting_response, model_image, deconvolved_model_image, residual_image, progress_callback);
+            success = _frames.at(file_id)->FitImage(fitting_request, fitting_response, model_image, residual_image, progress_callback);
         }
 
         if (success) {
@@ -1452,11 +1450,6 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
             if (fitting_request.create_model_image()) {
                 auto* model_image_open_file_ack = fitting_response.mutable_model_image();
                 OnOpenFile(next_file_id, model_image.name, model_image.image, model_image_open_file_ack);
-                if (deconvolved_model_image.image) {
-                    auto* deconvolved_model_image_open_file_ack = fitting_response.mutable_deconvolved_model_image();
-                    OnOpenFile(
-                        ++next_file_id, deconvolved_model_image.name, deconvolved_model_image.image, deconvolved_model_image_open_file_ack);
-                }
             }
             if (fitting_request.create_residual_image()) {
                 auto* residual_image_open_file_ack = fitting_response.mutable_residual_image();

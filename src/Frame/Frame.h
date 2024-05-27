@@ -196,8 +196,7 @@ public:
 
     // Image fitting
     bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image,
-        GeneratedImage& deconvolved_model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback,
-        StokesRegion* stokes_region = nullptr);
+        GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, StokesRegion* stokes_region = nullptr);
     void StopFitting();
 
     // Save as a new file or export sub-image to CASA/FITS format
