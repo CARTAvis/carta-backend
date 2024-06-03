@@ -229,8 +229,10 @@ bool ImageFitter::SetInitialValues(
 }
 
 bool ImageFitter::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
-    // TODO: generate intial values
-    return false;
+    InitialValueCalculator* calculator = new InitialValueCalculator(_fit_data.data);
+    bool success = calculator->CalculateInitialValues(initial_values);
+
+    return success;
 }
 
 int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {

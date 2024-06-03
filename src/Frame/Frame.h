@@ -23,7 +23,7 @@
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
 #include "ImageData/FileLoader.h"
-#include "ImageFitter/ImageFitter.h"
+#include "ImageFitting/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"

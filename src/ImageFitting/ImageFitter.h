@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
-#define CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
+#ifndef CARTA_SRC_IMAGEFITTING_IMAGEFITTER_H_
+#define CARTA_SRC_IMAGEFITTING_IMAGEFITTER_H_
 
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multifit_nlinear.h>
@@ -19,6 +19,7 @@
 #include <casacore/images/Images/TempImage.h>
 #include <imageanalysis/ImageTypedefs.h>
 
+#include "ImageFitting/InitialValueCalculator.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 
@@ -154,7 +155,7 @@ private:
     /**
      * @brief Calculate initial fitting parameters from the provided image data.
      * @param initial_values Vector to store the resulting initial fitting parameters
-     * @return Whether the process if successful
+     * @return Whether the process is successful
      */
     bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values);
     /**
@@ -249,4 +250,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
+#endif // CARTA_SRC_IMAGEFITTING_IMAGEFITTER_H_
