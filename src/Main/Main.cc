@@ -200,19 +200,19 @@ int main(int argc, char* argv[]) {
                 if (!settings.no_frontend && http_server->CanServeFrontend()) {
                     string frontend_url = base_url;
 
-                    string query_url;
+                    string query_url("/");
+
                     if (!auth_token.empty()) {
-                        query_url += fmt::format("/?token={}", auth_token);
+                        query_url += fmt::format("?token={}", auth_token);
                     }
 
                     auto file_query_url = HttpServer::GetFileUrlString(settings.files);
+
                     if (!file_query_url.empty()) {
-                        query_url += (query_url.empty() ? "/?" : "&") + file_query_url;
+                        query_url += (auth_token.empty() ? "?" : "&") + file_query_url;
                     }
 
-                    if (!query_url.empty()) {
-                        frontend_url += query_url;
-                    }
+                    frontend_url += query_url;
 
                     if (!settings.no_browser) {
                         WebBrowser wb(frontend_url, settings.browser);
