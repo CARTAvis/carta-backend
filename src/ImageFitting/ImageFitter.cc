@@ -60,9 +60,11 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
         return false;
     }
 
+    std::string initialValueLog = "";
     if (!success) {
         success = CalculateInitialValues(initial_values);
         if (success) {
+            initialValueLog = InitialValueCalculator::GetLog(initial_values, _unit);
             success = SetInitialValues(initial_values, background_offset, fixed_params);
         }
     }
@@ -129,7 +131,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
             fitting_response.set_offset_value(background_offset);
             fitting_response.set_offset_error(background_offset_error);
 
-            fitting_response.set_log(GetLog());
+            fitting_response.set_log(initialValueLog + GetLog());
         }
     }
     fitting_response.set_success(success);
@@ -229,7 +231,7 @@ bool ImageFitter::SetInitialValues(
 }
 
 bool ImageFitter::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
-    InitialValueCalculator* calculator = new InitialValueCalculator(_fit_data.data);
+    InitialValueCalculator* calculator = new InitialValueCalculator(_fit_data.data, _fit_data.width, _fit_data.n / _fit_data.width);
     bool success = calculator->CalculateInitialValues(initial_values);
 
     return success;

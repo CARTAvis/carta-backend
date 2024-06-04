@@ -12,6 +12,7 @@
 #include <carta-protobuf/fitting_request.pb.h>
 
 #include "Logger/Logger.h"
+#include "Util/Message.h"
 
 namespace carta {
 
@@ -22,7 +23,7 @@ public:
      * @brief Constructor for the InitialValueCalculator class.
      * @param image Pointer to the image data
      */
-    InitialValueCalculator(float* image);
+    InitialValueCalculator(float* image, size_t width, size_t height);
     /**
      * @brief Calculate initial values from the provided image data.
      * @param initial_values Vector to store the resulting initial values
@@ -30,9 +31,17 @@ public:
      */
     bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values);
 
+    static std::string GetLog(std::vector<CARTA::GaussianComponent>& initial_values, std::string image_unit);
+
 private:
     /** @brief Pointer to the image data. */
     float* _image;
+
+    int _width;
+    int _height;
+
+    std::tuple<double, double, double, double, double, double> MethodOfMoments(
+        bool apply_filter = false, double center_x = 0, double center_y = 0, double radius = 0);
 };
 
 } // namespace carta
