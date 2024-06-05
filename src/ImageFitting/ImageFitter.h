@@ -161,7 +161,7 @@ private:
     /**
      * @brief Main function for the multiple Gaussian image fitting.
      * @param solver The type of solver to use
-     * @return The status of the fitting
+     * @return The status of the fitting: zero for success or non-zero for error codes
      */
     int SolveSystem(CARTA::FittingSolverType solver);
     /** @brief Calculate parameter errors after fitting. */

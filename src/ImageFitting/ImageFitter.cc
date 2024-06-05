@@ -90,6 +90,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
 
     spdlog::info("Fitting image ({} data points) with {} Gaussian component(s) ({} parameter(s)).", _fit_data.n_notnan, _num_components,
         _fit_values->size);
+    success = false;
     int status = SolveSystem(solver);
 
     if (_fit_data.stop_fitting) {
