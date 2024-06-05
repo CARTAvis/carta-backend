@@ -22,8 +22,12 @@ public:
     /**
      * @brief Constructor for the InitialValueCalculator class.
      * @param image Pointer to the image data
+     * @param width The width of the image
+     * @param height The height of the image
+     * @param offset_x X-axis offset from the fitting region to the entire image
+     * @param offset_y Y-axis offset from the fitting region to the entire image
      */
-    InitialValueCalculator(float* image, size_t width, size_t height);
+    InitialValueCalculator(float* image, size_t width, size_t height, size_t offset_x, size_t offset_y);
     /**
      * @brief Calculate initial values from the provided image data.
      * @param initial_values Vector to store the resulting initial values
@@ -36,9 +40,14 @@ public:
 private:
     /** @brief Pointer to the image data. */
     float* _image;
-
+    /** @brief The width of the image. */
     int _width;
+    /** @brief The height of the image. */
     int _height;
+    /** @brief X-axis offset from the fitting region to the entire image. */
+    size_t _offset_x;
+    /** @brief Y-axis offset from the fitting region to the entire image. */
+    size_t _offset_y;
 
     std::tuple<double, double, double, double, double, double> MethodOfMoments(
         bool apply_filter = false, double center_x = 0, double center_y = 0, double radius = 0);

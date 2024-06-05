@@ -10,10 +10,12 @@
 
 using namespace carta;
 
-InitialValueCalculator::InitialValueCalculator(float* image, size_t width, size_t height) {
+InitialValueCalculator::InitialValueCalculator(float* image, size_t width, size_t height, size_t offset_x, size_t offset_y) {
     _image = image;
     _width = width;
     _height = height;
+    _offset_x = offset_x;
+    _offset_y = offset_y;
 }
 
 bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
@@ -22,7 +24,7 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
         auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] =
             MethodOfMoments(true, center_x_tmp, center_y_tmp, std::max(fwhm_x_tmp, fwhm_y_tmp));
 
-        auto center = Message::DoublePoint(center_x, center_y);
+        auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
         auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
         auto component = Message::GaussianComponent(center, amp, fwhm, pa);
         initial_values.clear();
