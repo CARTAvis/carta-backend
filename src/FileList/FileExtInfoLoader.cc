@@ -247,6 +247,7 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
     // CartaHdf5Image shortens keywords to FITS length 8
     std::unordered_map<std::string, std::string> hdf5_keys = {
         {"H5SCHEMA", "SCHEMA_VERSION"}, {"H5CNVRTR", "HDF5_CONVERTER"}, {"H5CONVSN", "HDF5_CONVERTER_VERSION"}, {"H5DATE", "HDF5_DATE"}};
+    bool has_specsys(false);
 
     for (auto& header : headers) {
         // Parse header into name, value, comment
@@ -312,11 +313,18 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
             name = hdf5_keys[name];
         }
 
+        if (name == "SPECSYS") {
+            has_specsys = true;
+            specsys = value;
+        }
+
         if (name.startsWith("CTYPE")) {
             if ((value == "STOKES") || (value == "Stokes") || (value == "stokes")) {
                 stokes_ctype_num = name.back();
             } else if (value.startsWith("VELO-")) {
-                specsys = value.after('-');
+                if (specsys.empty()) {
+                    specsys = value.after('-');
+                }
                 value = "VELO";
             }
             is_string_value = true;
@@ -365,7 +373,7 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
         }
     }
 
-    if (!specsys.empty()) {
+    if (!has_specsys && !specsys.empty()) {
         // separated from VELO CTYPE
         auto entry = extended_info.add_header_entries();
         entry->set_name("SPECSYS");
