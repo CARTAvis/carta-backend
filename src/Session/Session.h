@@ -288,6 +288,9 @@ protected:
     int _last_file_id;
     std::mutex _frame_mutex;
 
+    // Suffix for opening multiple remote files
+    int _remote_file_index;
+
     const std::unique_ptr<TableController> _table_controller;
 
     // Handler for region creation, import/export, requirements, and data

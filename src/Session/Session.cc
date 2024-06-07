@@ -55,6 +55,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _loop(loop),
       _id(id),
       _address(address),
+      _remote_file_index(-1),
       _table_controller(std::make_unique<TableController>()),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
@@ -2419,8 +2420,19 @@ void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint3
         CARTA::OpenFileAck ack;
         try {
             loader->OpenFile("0");
+
+            std::string remote_file_name;
+            auto index = ++_remote_file_index;
+            if (index > 0) {
+                remote_file_name = fmt::format("remote_file{}.fits", index);
+            } else {
+                remote_file_name = "remote_file.fits";
+            }
+            spdlog::info("Opening remote file: {}", remote_file_name);
+
             auto image = loader->GetImage();
-            success = OnOpenFile(file_id, "remote_file.fits", image, response.mutable_open_file_ack());
+
+            success = OnOpenFile(file_id, remote_file_name, image, response.mutable_open_file_ack());
             if (success) {
                 response.set_message("File opened successfully");
             }
