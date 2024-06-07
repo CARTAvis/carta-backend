@@ -20,7 +20,7 @@ namespace carta {
 
 class PvGenerator {
 public:
-    enum PositionAxisType {OFFSET, DISTANCE};
+    enum PositionAxisType { OFFSET, DISTANCE };
 
     PvGenerator();
     ~PvGenerator() = default;
