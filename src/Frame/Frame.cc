@@ -1956,13 +1956,6 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         }
     }
 
-    if (output_filename.string() == in_file) {
-        message = "The source file can not be overwritten!";
-        save_file_ack.set_success(success);
-        save_file_ack.set_message(message);
-        return;
-    }
-
     double rest_freq(save_file_msg.rest_freq());
     bool change_rest_freq = !std::isnan(rest_freq);
 
