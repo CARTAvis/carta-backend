@@ -227,25 +227,30 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Check if any regions to export
     if (region_styles.empty()) {
         export_ack.set_success(false);
-        export_ack.set_message("Export failed: no regions requested.");
-        export_ack.add_contents();
+        export_ack.set_message("Export region failed: no regions requested.");
         return;
     }
 
     // Check ability to create export file if filename given
+    std::string message;
     if (!filename.empty()) {
         casacore::File export_file(filename);
+
         if (export_file.exists()) {
-            if (!export_file.isWritable()) {
-                export_ack.set_success(false);
-                export_ack.set_message("Export region failed: cannot overwrite file.");
-                export_ack.add_contents();
-                return;
+            if (export_file.isRegular(false)) {
+                if (!export_file.isWritable()) {
+                    message = "Export region failed: cannot overwrite read-only file.";
+                }
+            } else {
+                message = "Export region failed: path is not a file.";
             }
         } else if (!export_file.canCreate()) {
+            message = "Export region failed: cannot create file.";
+        }
+
+        if (!message.empty()) {
             export_ack.set_success(false);
-            export_ack.set_message("Export region failed: cannot create file.");
-            export_ack.add_contents();
+            export_ack.set_message(message);
             return;
         }
     }
@@ -272,7 +277,6 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             break;
     }
 
-    std::string error; // append region errors here
     for (auto& region_id_style : region_styles) {
         auto region_id = region_id_style.first;
         auto region_style = region_id_style.second;
@@ -299,11 +303,11 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 
             if (!region_added) {
                 std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
-                error.append(region_error);
+                message.append(region_error);
             }
         } else {
             std::string region_error = fmt::format("Region {} not found for export.\n", region_id);
-            error.append(region_error);
+            message.append(region_error);
         }
     }
 
@@ -311,20 +315,17 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     if (filename.empty()) {
         // Return contents
         std::vector<std::string> line_contents;
-        if (exporter->ExportRegions(line_contents, error)) {
-            success = true;
+        success = exporter->ExportRegions(line_contents, message);
+        if (success) {
             *export_ack.mutable_contents() = {line_contents.begin(), line_contents.end()};
         }
     } else {
         // Write to file
-        if (exporter->ExportRegions(filename, error)) {
-            success = true;
-        }
+        success = exporter->ExportRegions(filename, message);
     }
 
-    // Export failed
     export_ack.set_success(success);
-    export_ack.set_message(error);
+    export_ack.set_message(message);
 }
 
 // ********************************************************************
