@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Support PV image generation along a polyline region ([#1341](https://github.com/CARTAvis/carta-backend/issues/1341)).
+
 ### Fixed
 * Fixed crash when loading non-image HDU by URL ([#1365](https://github.com/CARTAvis/carta-backend/issues/1365)).
 * Fix crash when parsing FITS header long value ([#1366](https://github.com/CARTAvis/carta-backend/issues/1366)).
