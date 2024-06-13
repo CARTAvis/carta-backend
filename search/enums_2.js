@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['stokestypes_3881',['StokesTypes',['../classcarta_1_1PolarizationCalculator.html#afc9d48a46c208f167c451d9f640ddee1',1,'carta::PolarizationCalculator']]]
+  ['positionaxistype_3885',['PositionAxisType',['../classcarta_1_1PvGenerator.html#a27ddd8981d12949f293d2ca97b6a1ca3',1,'carta::PvGenerator']]]
 ];

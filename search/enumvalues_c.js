@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['yx_3915',['YX',['../namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a923db922542fbe09e7ff87bb31b2f310',1,'carta::FileInfo']]]
+  ['v_3918',['V',['../classcarta_1_1PolarizationCalculator.html#afc9d48a46c208f167c451d9f640ddee1a454c0648ff70ec7a64f16e66a5df0662',1,'carta::PolarizationCalculator']]]
 ];

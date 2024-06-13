@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['q_3888',['Q',['../classcarta_1_1PolarizationCalculator.html#afc9d48a46c208f167c451d9f640ddee1a635d9a41446a57b8464de02a5be79616',1,'carta::PolarizationCalculator']]]
+  ['none_3893',['None',['../namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2daca96caee694e40218f43d17fef2f9b7efc',1,'carta']]]
 ];

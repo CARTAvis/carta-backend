@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['ranks_3889',['RANKS',['../namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7acec3572bbb7f69ff61fc1a1f55762c76',1,'carta::FileInfo']]],
-  ['rightedge_3890',['RightEdge',['../namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2dacaf0be8e445f96a65381ba9c429d65cce5',1,'carta']]]
+  ['offset_3894',['OFFSET',['../classcarta_1_1PvGenerator.html#a27ddd8981d12949f293d2ca97b6a1ca3a4aa0199496ca379eaa799ad345c4cab0',1,'carta::PvGenerator']]]
 ];

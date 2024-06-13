@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['none_3887',['None',['../namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2daca96caee694e40218f43d17fef2f9b7efc',1,'carta']]]
+  ['mask_3892',['MASK',['../namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a0a9501840acacfc8efe7522f5340000c',1,'carta::FileInfo']]]
 ];

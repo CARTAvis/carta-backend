@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['xy_3912',['XY',['../namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a74c53bcd3dcb2bb79993b2fec37d362a',1,'carta::FileInfo']]],
-  ['xyz_3913',['XYZ',['../namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7ae65075d550f9b5bf9992fa1d71a131be',1,'carta::FileInfo']]],
-  ['xyzw_3914',['XYZW',['../namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a5b9d516ed57aa77d585a3cc0ab5ffb55',1,'carta::FileInfo']]]
+  ['u_3917',['U',['../classcarta_1_1PolarizationCalculator.html#afc9d48a46c208f167c451d9f640ddee1a23073f93094d0a05d490e18a28efb758',1,'carta::PolarizationCalculator']]]
 ];
