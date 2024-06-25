@@ -240,7 +240,10 @@ fitsfile* CartaFitsImage::OpenFile() {
         fits_open_file(&fptr, _filename.c_str(), iomode, &status);
 
         if (status) {
-            throw(casacore::AipsError("Error opening FITS file."));
+            char err_text[30];
+            fits_get_errstatus(status, err_text);
+            std::string error(err_text);
+            throw(casacore::AipsError("Error opening FITS file: " + error));
         }
 
         // Advance to requested hdu

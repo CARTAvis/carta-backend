@@ -115,7 +115,9 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
                     spdlog::error(err.getMesg());
                 }
             } else {
-                spdlog::error(err.getMesg());
+                auto error = err.getMesg();
+                spdlog::error(error);
+                throw(casacore::AipsError(error));
             }
         }
 
