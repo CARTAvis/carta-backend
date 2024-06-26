@@ -221,7 +221,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 }
 
 void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
-    CARTA::CoordinateType coord_type, std::map<int, CARTA::RegionStyle>& region_styles, std::string& filename,
+    CARTA::CoordinateType coord_type, std::map<int, CARTA::RegionStyle>& region_styles, std::string& filename, bool overwrite,
     CARTA::ExportRegionAck& export_ack) {
     // Export regions to given filename, or return export file contents in ack
     // Check if any regions to export
@@ -237,6 +237,13 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         casacore::File export_file(filename);
 
         if (export_file.exists()) {
+            if (!overwrite) {
+                message = "Cannot overwrite existing file.";
+                export_ack.set_success(false);
+                export_ack.set_message(message);
+                return;
+            }
+
             if (export_file.isRegular(false)) {
                 if (!export_file.isWritable()) {
                     message = "Export region failed: cannot overwrite read-only file.";
