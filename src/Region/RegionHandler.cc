@@ -235,21 +235,15 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     std::string message;
     if (!filename.empty()) {
         casacore::File export_file(filename);
-
         if (export_file.exists()) {
-            if (!overwrite) {
-                message = "Cannot overwrite existing file.";
-                export_ack.set_success(false);
-                export_ack.set_message(message);
-                return;
-            }
-
-            if (export_file.isRegular(false)) {
-                if (!export_file.isWritable()) {
-                    message = "Export region failed: cannot overwrite read-only file.";
-                }
-            } else {
-                message = "Export region failed: path is not a file.";
+            if (export_file.isDirectory()) {
+                message = "Export region failed: cannot overwrite existing directory.";
+            } else if (!export_file.isRegular()) {
+                message = "Export region failed: existing path is not a file.";
+            } else if (!overwrite) {
+                message = "Export region failed: cannot overwrite existing file.";
+            } else if (!export_file.isWritable()) {
+                message = "Export region failed: cannot overwrite read-only file.";
             }
         } else if (!export_file.canCreate()) {
             message = "Export region failed: cannot create file.";
