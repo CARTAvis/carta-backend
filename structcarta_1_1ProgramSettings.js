@@ -25,6 +25,7 @@ var structcarta_1_1ProgramSettings =
     [ "frontend_folder", "structcarta_1_1ProgramSettings.html#a3cf6f38321c0e0439b745db850cd94e8", null ],
     [ "help", "structcarta_1_1ProgramSettings.html#a7882aa5c14ce8c9c846e4f5658194add", null ],
     [ "host", "structcarta_1_1ProgramSettings.html#af05baa44d6fd4297093fb69b3a6a6597", null ],
+    [ "http_url_prefix", "structcarta_1_1ProgramSettings.html#a13972f8a4fed9129dbf038bb865dfd2a", null ],
     [ "idle_session_wait_time", "structcarta_1_1ProgramSettings.html#ae8ad035e85754d28f8cb6916f5c61575", null ],
     [ "init_wait_time", "structcarta_1_1ProgramSettings.html#a86baea7c14fc8b803706ffce0a5ccc6c", null ],
     [ "int_keys_map", "structcarta_1_1ProgramSettings.html#ac1c6dfc9acd40ce973f67ac3d72ff419", null ],

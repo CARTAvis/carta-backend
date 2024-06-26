@@ -127,8 +127,8 @@ Collaboration diagram for carta::HttpServer:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a73c859eecc3dd9561837e811c92fbfa8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a73c859eecc3dd9561837e811c92fbfa8">HttpServer</a> (std::shared_ptr&lt; <a class="el" href="classcarta_1_1SessionManager.html">SessionManager</a> &gt; session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token, bool read_only_mode=false, bool enable_frontend=true, bool enable_database=true, bool enable_scripting=false, bool enable_runtime_config=true)</td></tr>
-<tr class="separator:a73c859eecc3dd9561837e811c92fbfa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5675f5aa73af4ee975dac12606098d98"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a5675f5aa73af4ee975dac12606098d98">HttpServer</a> (std::shared_ptr&lt; <a class="el" href="classcarta_1_1SessionManager.html">SessionManager</a> &gt; session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token, bool read_only_mode=false, bool enable_frontend=true, bool enable_database=true, bool enable_scripting=false, bool enable_runtime_config=true, std::string url_prefix=&quot;&quot;)</td></tr>
+<tr class="separator:a5675f5aa73af4ee975dac12606098d98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a436d5a730e8ee382fe4d1227ecf03e45"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a436d5a730e8ee382fe4d1227ecf03e45">CanServeFrontend</a> ()</td></tr>
 <tr class="separator:a436d5a730e8ee382fe4d1227ecf03e45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a63128482ebdede9e4da3e24fd4bf0c7e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a63128482ebdede9e4da3e24fd4bf0c7e">RegisterRoutes</a> ()</td></tr>
@@ -230,6 +230,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a6ab8c8c6db033c626aa4f1488437d80a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5d2e6c7c9441fbe052e2e2f38e1f3517"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a5d2e6c7c9441fbe052e2e2f38e1f3517">_enable_runtime_config</a></td></tr>
 <tr class="separator:a5d2e6c7c9441fbe052e2e2f38e1f3517"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8854d97d0f4faadc33b259bc4c3d463"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#ad8854d97d0f4faadc33b259bc4c3d463">_url_prefix</a></td></tr>
+<tr class="separator:ad8854d97d0f4faadc33b259bc4c3d463"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ff023039d8b8cdba2b4e48b1d3542fe"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classcarta_1_1SessionManager.html">SessionManager</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a1ff023039d8b8cdba2b4e48b1d3542fe">_session_manager</a></td></tr>
 <tr class="separator:a1ff023039d8b8cdba2b4e48b1d3542fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -239,8 +241,8 @@ Static Private Attributes</h2></td></tr>
 <tr class="separator:ae4189d0268c0935346ccafb60e6366c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a73c859eecc3dd9561837e811c92fbfa8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a73c859eecc3dd9561837e811c92fbfa8">&#9670;&nbsp;</a></span>HttpServer()</h2>
+<a id="a5675f5aa73af4ee975dac12606098d98"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5675f5aa73af4ee975dac12606098d98">&#9670;&nbsp;</a></span>HttpServer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -297,7 +299,13 @@ Static Private Attributes</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>enable_runtime_config</em> = <code>true</code>&#160;</td>
+          <td class="paramname"><em>enable_runtime_config</em> = <code>true</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>url_prefix</em> = <code>&quot;&quot;</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -309,7 +317,7 @@ Static Private Attributes</h2></td></tr>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a73c859eecc3dd9561837e811c92fbfa8_cgraph.svg" width="363" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a5675f5aa73af4ee975dac12606098d98_cgraph.svg" width="363" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -1985,6 +1993,28 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">std::shared_ptr&lt;<a class="el" href="classcarta_1_1SessionManager.html">SessionManager</a>&gt; carta::HttpServer::_session_manager</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad8854d97d0f4faadc33b259bc4c3d463"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8854d97d0f4faadc33b259bc4c3d463">&#9670;&nbsp;</a></span>_url_prefix</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string carta::HttpServer::_url_prefix</td>
         </tr>
       </table>
   </td>

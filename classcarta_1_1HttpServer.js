@@ -1,6 +1,6 @@
 var classcarta_1_1HttpServer =
 [
-    [ "HttpServer", "classcarta_1_1HttpServer.html#a73c859eecc3dd9561837e811c92fbfa8", null ],
+    [ "HttpServer", "classcarta_1_1HttpServer.html#a5675f5aa73af4ee975dac12606098d98", null ],
     [ "AddCorsHeaders", "classcarta_1_1HttpServer.html#a3d73c3c23b0a75f2db9496c6a027d0e9", null ],
     [ "AddNoCacheHeaders", "classcarta_1_1HttpServer.html#a9f22cc64ac844efa362e5cae7e227b18", null ],
     [ "CanServeFrontend", "classcarta_1_1HttpServer.html#a436d5a730e8ee382fe4d1227ecf03e45", null ],
@@ -45,5 +45,6 @@ var classcarta_1_1HttpServer =
     [ "_http_root_folder", "classcarta_1_1HttpServer.html#a5691825667d6cedee3c0768851ac4911", null ],
     [ "_read_only_mode", "classcarta_1_1HttpServer.html#a9f03c6bfce6ef492c3bd659c42349997", null ],
     [ "_scripting_request_id", "classcarta_1_1HttpServer.html#ae4189d0268c0935346ccafb60e6366c4", null ],
-    [ "_session_manager", "classcarta_1_1HttpServer.html#a1ff023039d8b8cdba2b4e48b1d3542fe", null ]
+    [ "_session_manager", "classcarta_1_1HttpServer.html#a1ff023039d8b8cdba2b4e48b1d3542fe", null ],
+    [ "_url_prefix", "classcarta_1_1HttpServer.html#ad8854d97d0f4faadc33b259bc4c3d463", null ]
 ];

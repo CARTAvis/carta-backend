@@ -1,5 +1,6 @@
 var NAVTREEINDEX9 =
 {
+"namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2daca076615f5ef3b1465dbbc35e6920eb381":[2,0,0,113,2],
 "namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2daca4dfd5f04c4247881e1e54ccc7fddef11":[2,0,0,113,0],
 "namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2daca96caee694e40218f43d17fef2f9b7efc":[2,0,0,113,4],
 "namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2dacaed7b76497605be385d17f3e7c5e16fd8":[2,0,0,113,3],
@@ -248,6 +249,5 @@ var NAVTREEINDEX9 =
 "structcarta_1_1PreviewCubeParameters.html#a5b95d72542b212d4974e0c743e5d8ed8":[3,0,0,54,1],
 "structcarta_1_1PreviewCubeParameters.html#a7d7c6beebbd81e28e004f86472d9db32":[3,0,0,54,4],
 "structcarta_1_1PreviewCubeParameters.html#a81ad38433028c7bee18aeb670dbbdf78":[3,0,0,54,3],
-"structcarta_1_1PreviewCubeParameters.html#a97042303fd9725d2367c985dba869ab4":[3,0,0,54,5],
-"structcarta_1_1PreviewCubeParameters.html#aee452dfcc1f10a767d09d5a12bc01376":[3,0,0,54,8]
+"structcarta_1_1PreviewCubeParameters.html#a97042303fd9725d2367c985dba869ab4":[3,0,0,54,5]
 };
