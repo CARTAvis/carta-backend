@@ -440,8 +440,9 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetAppliedPolygonRegion(
                 return lc_region;
             }
 
-            if (has_distortion) {
-                // if ~horizontal then remove intermediate points to fix "kinks" in mask
+            // If short segment with only starting point, do not fix.
+            if (has_distortion && segment_x.size() > 1) {
+                // If ~horizontal segment, remove intermediate points to fix "kinks" in mask.
                 RemoveHorizontalPolygonPoints(segment_x, segment_y);
             }
 
