@@ -169,7 +169,7 @@ TEST_F(RegionMatchedTest, TestMatchedImagePolygonLCRegion) {
     ASSERT_EQ(lc_region->latticeShape(), image_shape);
     ASSERT_EQ(lc_region->shape(), casacore::IPosition(2, 5, 6));
 
-    // Set polygon with very short segment
+    // Set polygon with very short segment which is does not have points added in matched region approximation.
     region_id = -1;
     std::vector<float> points2 = {5.0, 5.0, 4.0, 3.0, 4.0, 3.01, 1.0, 6.0, 3.0, 8.0};
     ok = SetRegion(region_handler, file_id0, region_id, region_type, points2, rotation, csys0);
