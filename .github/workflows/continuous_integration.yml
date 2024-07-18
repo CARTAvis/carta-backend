@@ -28,11 +28,6 @@ jobs:
           uname -a
           lsb_release -a
 
-      # TODO temporary workaround for https://github.com/actions/runner-images/issues/9491
-      - name: Reduce ASLR entropy
-        run: |
-          sysctl -w vm.mmap_rnd_bits=28
-
       - name: Build backend
         shell: bash
         run: |
