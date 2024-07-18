@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix crash when parsing FITS header long value ([#1366](https://github.com/CARTAvis/carta-backend/issues/1366)).
 * Fix incorrect parsing of SPECSYS value for ATCA FITS header ([#1375](https://github.com/CARTAvis/carta-backend/issues/1375)).
 * Fix hdf5 image distortion after animation stops ([#1368](https://github.com/CARTAvis/carta-backend/issues/1368)).
+* Fix matched polygon region approximation crash ([#1383](https://github.com/CARTAvis/carta-backend/issues/1383)).
 
 ### Changed
 * Move the loader cache to separate files ([#1021](https://github.com/CARTAvis/carta-backend/issues/1021)).
