@@ -986,7 +986,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     }
 
     // 2. Region is line
-    if (GetRegion(region_id)->GetRegionState().type != CARTA::RegionType::LINE) {
+    if (!IsLineRegion(region_id)) {
         pv_response.set_message("Region type not supported for PV cut.");
         return false;
     }
@@ -1294,13 +1294,15 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     RemoveRegion(preview_cut_id);
 
     // Use PvGenerator to set PV image for headers only
+    PvGenerator::PositionAxisType pos_axis_type = (preview_cut_state.type == CARTA::LINE ? PvGenerator::OFFSET : PvGenerator::DISTANCE);
     casacore::Matrix<float> no_preview_data; // do not copy actual preview data into image
     int start_channel(0);                    // spectral range applied in preview image
     int stokes(preview_cube->GetStokes());
     PvGenerator pv_generator;
     pv_generator.SetFileName(preview_id, preview_cube->GetSourceFileName(), true);
 
-    if (pv_generator.GetPvImage(preview_frame, no_preview_data, data_shape, increment, start_channel, stokes, reverse, pv_image, error)) {
+    if (pv_generator.GetPvImage(
+            preview_frame, no_preview_data, data_shape, pos_axis_type, increment, start_channel, stokes, reverse, pv_image, error)) {
         int width = data_shape(0);
         int height = data_shape(1);
 
@@ -1343,12 +1345,19 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
 
 bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse, bool keep,
     std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
-    // Generate PV image by approximating line as box regions and getting spectral profile for each.
+    // Generate PV image by approximating line/polyline as box regions and getting spectral profile for each.
     // Sends updates via progress callback.
     // Return parameters: PvResponse, GeneratedImage, and preview data if is preview.
     // Returns whether PV image was generated.
     pv_response.set_success(false);
     pv_response.set_cancel(false);
+
+    auto region = GetRegion(region_id);
+    if (!region) {
+        pv_response.set_message("PV cut region not set");
+        return false;
+    }
+    auto cut_region_type = region->GetRegionState().type;
 
     // Reset stop flag
     _stop_pv[file_id] = false;
@@ -1366,6 +1375,7 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
     if (GetLineProfiles(file_id, region_id, width, spectral_range, per_z, stokes_index, "", progress_callback, pv_data, offset_increment,
             cancelled, message, reverse)) {
         auto pv_shape = pv_data.shape();
+        PvGenerator::PositionAxisType pos_axis_type = (cut_region_type == CARTA::LINE ? PvGenerator::OFFSET : PvGenerator::DISTANCE);
         int start_chan(spectral_range.from); // Used for reference value in returned PV image
 
         // Set PV index suffix (_pv1, _pv2, etc) to keep previously opened PV image
@@ -1381,8 +1391,8 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
         // Create GeneratedImage in PvGenerator
         PvGenerator pv_generator;
         pv_generator.SetFileName(name_index, source_filename);
-        pv_success =
-            pv_generator.GetPvImage(frame, pv_data, pv_shape, offset_increment, start_chan, stokes_index, reverse, pv_image, message);
+        pv_success = pv_generator.GetPvImage(
+            frame, pv_data, pv_shape, pos_axis_type, offset_increment, start_chan, stokes_index, reverse, pv_image, message);
         cancelled &= _stop_pv[file_id];
 
         // Cleanup
@@ -2448,11 +2458,6 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     auto line_region_state = line_region->GetRegionState();
     auto line_coord_sys = line_region->CoordinateSystem();
     region_lock.unlock();
-
-    if (per_z && (line_region_state.type == CARTA::RegionType::POLYLINE)) {
-        message = "Polyline region not supported for PV images.";
-        return false;
-    }
 
     if (CancelLineProfiles(region_id, file_id, line_region_state)) {
         cancelled = true;
