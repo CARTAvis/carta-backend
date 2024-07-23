@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Support PV image generation along a polyline region ([#1341](https://github.com/CARTAvis/carta-backend/issues/1341)).
+* Support setting rest frequency for moment image generation ([#1385](https://github.com/CARTAvis/carta-backend/issues/1385)).
 
 ### Fixed
 * Fixed crash when loading non-image HDU by URL ([#1365](https://github.com/CARTAvis/carta-backend/issues/1365)).
