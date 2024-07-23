@@ -36,7 +36,7 @@ uint32_t HttpServer::_scripting_request_id = 0;
 
 HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
     std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting,
-    bool enable_runtime_config)
+    bool enable_runtime_config, std::string url_prefix)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
       _auth_token(auth_token),
@@ -45,7 +45,8 @@ HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path
       _enable_frontend(enable_frontend),
       _enable_database(enable_database),
       _enable_scripting(enable_scripting),
-      _enable_runtime_config(enable_runtime_config) {
+      _enable_runtime_config(enable_runtime_config),
+      _url_prefix(url_prefix) {
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 
@@ -61,70 +62,74 @@ void HttpServer::RegisterRoutes() {
     uWS::App& app = _session_manager->App();
 
     if (_enable_scripting) {
-        app.post("/api/scripting/action", [&](auto res, auto req) { HandleScriptingAction(res, req); });
+        app.post(fmt::format("{}/api/scripting/action", _url_prefix), [&](auto res, auto req) { HandleScriptingAction(res, req); });
     } else {
-        app.post("/api/scripting/action", [&](auto res, auto req) { NotImplemented(res, req); });
+        app.post(fmt::format("{}/api/scripting/action", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
     }
 
     if (_enable_database) {
         // Dynamic routes for preferences, layouts, snippets and workspaces
-        app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
-        app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
-        app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
+        app.get(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleGetPreferences(res, req); });
+        app.put(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleSetPreferences(res, req); });
+        app.del(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleClearPreferences(res, req); });
 
         for (const auto& elem : SCHEMA_URLS) {
             const auto& object_type = elem.first;
-            app.get(fmt::format("/api/database/list/{}s", object_type),
+            app.get(fmt::format("{}/api/database/list/{}s", _url_prefix, object_type),
                 [&](auto res, auto req) { HandleGetObjectList(object_type, res, req); });
-            app.get(fmt::format("/api/database/{}s", object_type), [&](auto res, auto req) { HandleGetObjects(object_type, res, req); });
-            app.get(
-                fmt::format("/api/database/{}/:name", object_type), [&](auto res, auto req) { HandleGetObject(object_type, res, req); });
-            app.put(fmt::format("/api/database/{}", object_type), [&](auto res, auto req) { HandleSetObject(object_type, res, req); });
-            app.del(fmt::format("/api/database/{}", object_type), [&](auto res, auto req) { HandleClearObject(object_type, res, req); });
+            app.get(fmt::format("{}/api/database/{}s", _url_prefix, object_type),
+                [&](auto res, auto req) { HandleGetObjects(object_type, res, req); });
+            app.get(fmt::format("{}/api/database/{}/:name", _url_prefix, object_type),
+                [&](auto res, auto req) { HandleGetObject(object_type, res, req); });
+            app.put(fmt::format("{}/api/database/{}", _url_prefix, object_type),
+                [&](auto res, auto req) { HandleSetObject(object_type, res, req); });
+            app.del(fmt::format("{}/api/database/{}", _url_prefix, object_type),
+                [&](auto res, auto req) { HandleClearObject(object_type, res, req); });
         }
     } else {
-        app.get("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
-        app.put("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
-        app.del("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
+        app.get(fmt::format("{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
+        app.put(fmt::format("{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
+        app.del(fmt::format("{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
     }
 
     if (_enable_frontend) {
         if (_enable_runtime_config) {
-            app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+            app.get(fmt::format("{}/config", _url_prefix), [&](auto res, auto req) { HandleGetConfig(res, req); });
         } else {
-            app.get("/config", [&](auto res, auto req) { DefaultSuccess(res, req); });
+            app.get(fmt::format("{}/config", _url_prefix), [&](auto res, auto req) { DefaultSuccess(res, req); });
         }
         // Static routes for all other files
-        app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
+        app.get(fmt::format("{}/*", _url_prefix), [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
     } else {
-        app.get("/*", [&](auto res, auto req) { NotImplemented(res, req); });
+        app.get(fmt::format("{}/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
     }
 
     // CORS support for the API
-    app.options("/api/*", [&](auto res, auto req) {
+    app.options(fmt::format("{}/api/*", _url_prefix), [&](auto res, auto req) {
         AddCorsHeaders(res);
         res->end();
     });
 }
 
 void HttpServer::HandleGetConfig(Res* res, Req* req) {
-    json runtime_config = {{"apiAddress", "/api"}};
+    json runtime_config = {{"apiAddress", fmt::format("{}/api", _url_prefix)}};
     res->writeStatus(HTTP_200);
     res->writeHeader("Content-Type", "application/json");
     res->end(runtime_config.dump());
 }
 
 void HttpServer::HandleStaticRequest(Res* res, Req* req) {
-    std::string_view url = req->getUrl();
+    std::string url(req->getUrl());
     fs::path path = _http_root_folder;
-    if (url.empty() || url == "/") {
+
+    // Trim prefix and any number of slashes before and after it
+    std::regex prefix(fmt::format("^/*{}/*", _url_prefix));
+    url = std::regex_replace(url, prefix, "");
+
+    if (url.empty()) {
         path /= "index.html";
     } else {
-        // Trim all leading '/'
-        while (url.size() && url[0] == '/') {
-            url = url.substr(1);
-        }
-        path /= std::string(url);
+        path /= url;
     }
 
     std::error_code error_code;
