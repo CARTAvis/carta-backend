@@ -1949,10 +1949,12 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             } else if (!overwrite) {
                 // Only overwrite file or symlink with confirmation
                 message = "Cannot overwrite existing file or symlink.";
+                save_file_ack.set_overwrite_confirmation_required(true);
             }
         } else if (!overwrite) {
             // Only overwrite image with confirmation
             message = "Cannot overwrite existing image.";
+            save_file_ack.set_overwrite_confirmation_required(true);
         }
 
         if (!message.empty()) {

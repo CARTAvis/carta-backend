@@ -242,6 +242,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                 message = "Export region failed: existing path is not a file.";
             } else if (!overwrite) {
                 message = "Export region failed: cannot overwrite existing file.";
+                export_ack.set_overwrite_confirmation_required(true);
             } else if (!export_file.isWritable()) {
                 message = "Export region failed: cannot overwrite read-only file.";
             }
