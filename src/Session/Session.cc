@@ -741,7 +741,6 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             int start_channel(message.channel_range().min());
             int end_channel(message.channel_range().max());
             int nchan(frame->Depth());
-#pragma omp parallel for
             for (int chan = start_channel; chan <= end_channel; ++chan) {
                 if (chan >= nchan) {
                     continue;
