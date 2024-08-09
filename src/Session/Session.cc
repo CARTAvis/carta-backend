@@ -661,7 +661,7 @@ void Session::DeleteFrame(int file_id) {
     }
 }
 
-void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int animation_id, bool skip_data) {
+void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, int animation_id, bool skip_data) {
     auto file_id = message.file_id();
 
     if (!_frames.count(file_id)) {
@@ -682,12 +682,16 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int ani
         return;
     }
 
-    auto z = _frames.at(file_id)->CurrentZ();
+    int requested_z(z);
+    bool is_current_z(z == CURRENT_Z);
+    if (is_current_z) {
+        requested_z = _frames.at(file_id)->CurrentZ();
+    }
     auto stokes = _frames.at(file_id)->CurrentStokes();
     auto sync_id = ++_sync_id;
 
     int num_tiles = message.tiles_size();
-    auto start_message = Message::RasterTileSync(file_id, z, stokes, sync_id, animation_id, num_tiles, false);
+    auto start_message = Message::RasterTileSync(file_id, requested_z, stokes, sync_id, animation_id, num_tiles, false);
     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
 
     CARTA::CompressionType compression_type = message.compression_type();
@@ -705,13 +709,14 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int ani
                 const auto& encoded_coordinate = message.tiles(i);
                 auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
                 auto tile = Tile::Decode(encoded_coordinate);
-                if (_frames.count(file_id) &&
-                    _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, z, stokes, compression_type, compression_quality)) {
+                if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, requested_z, stokes,
+                                                  compression_type, compression_quality, is_current_z)) {
                     // Only use deflate on outgoing message if the raster image compression type is NONE
                     SendFileEvent(
                         file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
                 } else {
-                    spdlog::warn("Discarding stale tile request for channel={}, layer={}, x={}, y={}", z, tile.layer, tile.x, tile.y);
+                    spdlog::warn(
+                        "Discarding stale tile request for channel={}, layer={}, x={}, y={}", requested_z, tile.layer, tile.x, tile.y);
                 }
             }
         }
@@ -721,7 +726,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int ani
     spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed().ms());
 
     // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
-    auto final_message = Message::RasterTileSync(file_id, z, stokes, sync_id, animation_id, num_tiles, true);
+    auto final_message = Message::RasterTileSync(file_id, requested_z, stokes, sync_id, animation_id, num_tiles, true);
     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
 }
 
@@ -731,27 +736,41 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         std::string err_message;
-        auto z_target = message.channel();
-        auto stokes_target = message.stokes();
-        bool z_changed(z_target != frame->CurrentZ());
-        bool stokes_changed(stokes_target != frame->CurrentStokes());
-        if (frame->SetImageChannels(z_target, stokes_target, err_message)) {
-            // Send Contour data if required
-            SendContourData(file_id);
-            // Send vector field data if required
-            SendVectorFieldData(file_id);
-            bool send_histogram(true);
-            UpdateImageData(file_id, send_histogram, z_changed, stokes_changed);
-            UpdateRegionData(file_id, ALL_REGIONS, z_changed, stokes_changed);
-        } else {
-            if (!err_message.empty()) {
-                SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
-            }
-        }
 
-        // Send any required tiles if they have been requested
-        if (message.has_required_tiles()) {
-            OnAddRequiredTiles(message.required_tiles());
+        if (message.has_channel_range()) {
+            int start_channel(message.channel_range().min());
+            int end_channel(message.channel_range().max());
+            int nchan(frame->Depth());
+            for (int chan = start_channel; chan <= end_channel; ++chan) {
+                if (chan >= nchan) {
+                    continue;
+                }
+                OnAddRequiredTiles(message.required_tiles(), chan);
+            }
+        } else {
+            // Set new channel
+            auto z_target = message.channel();
+            auto stokes_target = message.stokes();
+            bool z_changed(z_target != frame->CurrentZ());
+            bool stokes_changed(stokes_target != frame->CurrentStokes());
+            if (frame->SetImageChannels(z_target, stokes_target, err_message)) {
+                // Send Contour data if required
+                SendContourData(file_id);
+                // Send vector field data if required
+                SendVectorFieldData(file_id);
+                bool send_histogram(true);
+                UpdateImageData(file_id, send_histogram, z_changed, stokes_changed);
+                UpdateRegionData(file_id, ALL_REGIONS, z_changed, stokes_changed);
+            } else {
+                if (!err_message.empty()) {
+                    SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
+                }
+            }
+
+            // Send any required tiles if they have been requested
+            if (message.has_required_tiles()) {
+                OnAddRequiredTiles(message.required_tiles());
+            }
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -1081,10 +1100,27 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
 }
 
 void Session::OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent) {
-    if (_frames.count(message.file_id())) {
+    int file_id(message.file_id());
+
+    if (_frames.count(file_id)) {
+        auto frame = _frames.at(file_id);
         const int num_levels = message.levels_size();
-        if (_frames.at(message.file_id())->SetContourParameters(message) && num_levels && !silent) {
-            SendContourData(message.file_id());
+
+        if (frame->SetContourParameters(message) && num_levels && !silent) {
+            if (message.has_channel_range()) {
+                int start_channel(message.channel_range().min());
+                int end_channel(message.channel_range().max());
+                int nchan(frame->Depth());
+#pragma omp parallel for
+                for (int chan = start_channel; chan <= end_channel; ++chan) {
+                    if (chan >= nchan) {
+                        continue;
+                    }
+                    SendContourData(file_id, true, chan);
+                }
+            } else {
+                SendContourData(file_id);
+            }
         }
     }
 }
@@ -1817,18 +1853,19 @@ void Session::StopPvPreviewUpdates(int preview_id) {
     }
 }
 
-bool Session::SendContourData(int file_id, bool ignore_empty) {
+bool Session::SendContourData(int file_id, bool ignore_empty, int channel) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         const ContourSettings settings = frame->GetContourParameters();
         int num_levels = settings.levels.size();
+        int contour_channel = channel == CURRENT_Z ? frame->CurrentZ() : channel;
 
         if (!num_levels) {
             if (ignore_empty) {
                 return false;
             } else {
                 auto empty_response =
-                    Message::ContourImageData(file_id, settings.reference_file_id, frame->CurrentZ(), frame->CurrentStokes(), 1.0);
+                    Message::ContourImageData(file_id, settings.reference_file_id, contour_channel, frame->CurrentStokes(), 1.0);
                 SendFileEvent(file_id, CARTA::EventType::CONTOUR_IMAGE_DATA, 0, empty_response);
                 return true;
             }
@@ -1839,7 +1876,7 @@ bool Session::SendContourData(int file_id, bool ignore_empty) {
         auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
             // Currently only supports identical reference file IDs
             auto partial_response =
-                Message::ContourImageData(file_id, settings.reference_file_id, frame->CurrentZ(), frame->CurrentStokes(), progress);
+                Message::ContourImageData(file_id, settings.reference_file_id, contour_channel, frame->CurrentStokes(), progress);
             std::vector<char> compression_buffer;
             const float pixel_rounding = std::max(1, std::min(32, settings.decimation));
 #if _DISABLE_CONTOUR_COMPRESSION_
@@ -1880,7 +1917,7 @@ bool Session::SendContourData(int file_id, bool ignore_empty) {
             SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response, compression_level < 1);
         };
 
-        if (frame->ContourImage(callback)) {
+        if (frame->ContourImage(callback, contour_channel)) {
             return true;
         }
         SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
@@ -2136,7 +2173,7 @@ void Session::ExecuteAnimationFrameInner(int animation_id) {
                     if (_animation_object->_stop_called) {
                         return;
                     }
-                    OnAddRequiredTiles(_frames.at(file_id)->GetAnimationViewSettings(), animation_id);
+                    OnAddRequiredTiles(_frames.at(file_id)->GetAnimationViewSettings(), CURRENT_Z, animation_id);
 
                     // Send region histograms and profiles
                     if (_animation_object->_stop_called) {
@@ -2169,7 +2206,7 @@ void Session::ExecuteAnimationFrameInner(int animation_id) {
                     if (_animation_object->_stop_called) {
                         return;
                     }
-                    OnAddRequiredTiles(active_frame->GetAnimationViewSettings(), animation_id);
+                    OnAddRequiredTiles(active_frame->GetAnimationViewSettings(), CURRENT_Z, animation_id);
 
                     // Send region histograms and profiles
                     if (_animation_object->_stop_called) {

@@ -64,7 +64,7 @@ public:
     bool OnOpenFile(int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
         CARTA::OpenFileAck* open_file_ack);
     void OnCloseFile(const CARTA::CloseFile& message);
-    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int animation_id = 0, bool skip_data = false);
+    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int channel = CURRENT_Z, int animation_id = 0, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);
@@ -252,7 +252,7 @@ protected:
     bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
 
     // Send data streams
-    bool SendContourData(int file_id, bool ignore_empty = true);
+    bool SendContourData(int file_id, bool ignore_empty = true, int channel = CURRENT_Z);
     bool SendSpatialProfileData(int file_id, int region_id);
     void SendSpatialProfileDataByFileId(int file_id);
     void SendSpatialProfileDataByRegionId(int region_id);
