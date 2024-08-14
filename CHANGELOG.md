@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* Support PV image generation along a polyline region ([#1341](https://github.com/CARTAvis/carta-backend/issues/1341)).
+* Added support for PV image generation along a polyline region ([#1341](https://github.com/CARTAvis/carta-backend/issues/1341)).
+* Added support for loading remote FITS files from the hips2fits server ([#1379](https://github.com/CARTAvis/carta-backend/issues/1379)).
 
 ### Fixed
 * Fixed crash when loading non-image HDU by URL ([#1365](https://github.com/CARTAvis/carta-backend/issues/1365)).

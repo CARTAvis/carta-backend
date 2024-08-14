@@ -8,6 +8,7 @@
 
 #include <spdlog/fmt/fmt.h>
 #include <fstream>
+#include <regex>
 
 #include "String.h"
 
@@ -32,6 +33,11 @@ bool IsCompressedFits(const std::string& filename) {
     }
 
     return false;
+}
+
+bool IsRemoteHttpFile(const std::string& filename) {
+    const std::regex is_http_url("^https?://");
+    return std::regex_search(filename, is_http_url);
 }
 
 bool IsGzMagicNumber(uint32_t magic_number) {

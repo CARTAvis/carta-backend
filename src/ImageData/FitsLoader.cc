@@ -19,7 +19,8 @@
 
 namespace carta {
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, "", is_gz) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz, bool is_http)
+    : FileLoader(filename, "", is_gz, is_http), _is_http(is_http) {}
 
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file
@@ -34,7 +35,7 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
     // Open image file as a casacore::ImageInterface<float>
 
     // Convert string to FITS hdu number
-    casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
+    casacore::uInt hdu_num(_is_http ? 0 : FileInfo::GetFitsHdu(hdu));
 
     if (!_image || (hdu_num != _hdu_num)) {
         bool gz_mem_ok(true);
@@ -62,17 +63,23 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
             }
         }
 
-        std::string error;
-        auto num_headers = GetNumImageHeaders(_filename, hdu_num, error);
-        if (num_headers == 0) {
-            throw(casacore::AipsError(error));
-        }
-
         // Default is casacore::FITSImage; if fails, try CartaFitsImage
         bool use_casacore_fits(true);
-        if (num_headers > 2000) {
-            // casacore::FITSImage parses HISTORY
+
+        if (_is_http) {
             use_casacore_fits = false;
+        } else {
+            std::string error;
+            auto num_headers = GetNumImageHeaders(_filename, hdu_num, error);
+
+            if (num_headers == 0) {
+                throw(casacore::AipsError(error));
+            }
+
+            if (num_headers > 2000) {
+                // casacore::FITSImage parses HISTORY
+                use_casacore_fits = false;
+            }
         }
 
         try {
@@ -86,6 +93,8 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
                     // use casacore for unzipped FITS file
                     _image.reset(new casacore::FITSImage(_unzip_file, 0, hdu_num));
                 }
+            } else if (_is_http) {
+                _image.reset(new CartaFitsImage(_filename, hdu_num, true));
             } else if (use_casacore_fits) {
                 if (Is64BitBeamsTable(_filename)) {
                     use_casacore_fits = false;
@@ -106,7 +115,9 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
                     spdlog::error(err.getMesg());
                 }
             } else {
-                spdlog::error(err.getMesg());
+                auto error = err.getMesg();
+                spdlog::error(error);
+                throw(casacore::AipsError(error));
             }
         }
 
@@ -179,7 +190,8 @@ int FitsLoader::GetNumImageHeaders(const std::string& filename, int hdu, std::st
 void FitsLoader::ResetImageBeam(unsigned int hdu_num) {
     // Remove restoring beam not if not in header entries.
     // If supporting AIPS beam, use last beam from history instead.
-    if (!_image) {
+    // Remote files can't have restoring beams
+    if (!_image || _is_http) {
         return;
     }
 
