@@ -1,7 +1,8 @@
 <map id="carta::FileLoader::GetLoader" name="carta::FileLoader::GetLoader">
-<area shape="rect" id="node1" title=" " alt="" coords="5,23,144,65"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,49,144,90"/>
 <area shape="rect" id="node2" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="192,5,345,32"/>
 <area shape="rect" id="node3" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="200,56,337,83"/>
+<area shape="rect" id="node7" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title=" " alt="" coords="201,107,336,133"/>
 <area shape="rect" id="node4" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="396,5,532,32"/>
 <area shape="rect" id="node5" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="422,56,506,83"/>
 <area shape="rect" id="node6" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="393,107,535,133"/>

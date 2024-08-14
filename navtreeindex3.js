@@ -1,5 +1,15 @@
 var NAVTREEINDEX3 =
 {
+"classcarta_1_1CrtfImportExport.html#a1c41a794e0c167f4016673beedfab1ba":[3,0,0,65,15],
+"classcarta_1_1CrtfImportExport.html#a203f570531da26a20c6806daf391b580":[3,0,0,65,24],
+"classcarta_1_1CrtfImportExport.html#a25d9fd2d0426b2473f70a764b741a28c":[3,0,0,65,26],
+"classcarta_1_1CrtfImportExport.html#a373069692ab2205c2ca70040f888518b":[3,0,0,65,22],
+"classcarta_1_1CrtfImportExport.html#a4dda042b0ce6f62290cc4cdebc047375":[3,0,0,65,0],
+"classcarta_1_1CrtfImportExport.html#a56822ffcdfaf92e84091ca60c84e0747":[3,0,0,65,31],
+"classcarta_1_1CrtfImportExport.html#a5fdce414ca76f1a337f634c3d50e9426":[3,0,0,65,13],
+"classcarta_1_1CrtfImportExport.html#a67d7c7f0e0f34b4fe446bbfed50d6d0b":[3,0,0,65,17],
+"classcarta_1_1CrtfImportExport.html#a6e92f1dfe9f41c03693d25e4ebe2508d":[3,0,0,65,20],
+"classcarta_1_1CrtfImportExport.html#a6f8b02eeb60d1bf7f42baf2232ef28c2":[3,0,0,65,11],
 "classcarta_1_1CrtfImportExport.html#a78b28b40825778ec319a7a91571bc7e8":[3,0,0,65,8],
 "classcarta_1_1CrtfImportExport.html#a7a413a234bd6a423dd1512f03474fd01":[3,0,0,65,2],
 "classcarta_1_1CrtfImportExport.html#a7f76d93d28588ccf3fee2337902077a8":[3,0,0,65,33],
@@ -239,15 +249,5 @@ var NAVTREEINDEX3 =
 "classcarta_1_1FitsHduList.html#a1f5eaed165f290dc1017fcbfef242486":[3,0,0,22,3],
 "classcarta_1_1FitsHduList.html#a55f0f93cc0c2dd4811cc702559455856":[3,0,0,22,1],
 "classcarta_1_1FitsHduList.html#aae758ae3882416bb039c090209fcf5ad":[3,0,0,22,2],
-"classcarta_1_1FitsHduList.html#abfd21506da39eeb612aaedd4475e81ea":[3,0,0,22,0],
-"classcarta_1_1FitsLoader.html":[3,0,0,39],
-"classcarta_1_1FitsLoader.html#a28038b8ae20faf4600d0fee7d6d66ae2":[3,0,0,39,9],
-"classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8":[3,0,0,39,5],
-"classcarta_1_1FitsLoader.html#a45ca0ae718eb9c8d925e43371e8c9af8":[3,0,0,39,1],
-"classcarta_1_1FitsLoader.html#a53159c7c8148750413a2a1865a409f60":[3,0,0,39,2],
-"classcarta_1_1FitsLoader.html#a6daba3f63c8e10c36a94779abba69a0f":[3,0,0,39,7],
-"classcarta_1_1FitsLoader.html#a71815a52ccd44370b952600cc6ad2cbb":[3,0,0,39,4],
-"classcarta_1_1FitsLoader.html#a79719a6116ffbf19e6ce56124b43728b":[3,0,0,39,0],
-"classcarta_1_1FitsLoader.html#a9fba46cca685f41b92dd4abe57c466fd":[3,0,0,39,6],
-"classcarta_1_1FitsLoader.html#acf150034b1de8ed3b98e596e17e9c2ef":[3,0,0,39,3]
+"classcarta_1_1FitsHduList.html#abfd21506da39eeb612aaedd4475e81ea":[3,0,0,22,0]
 };

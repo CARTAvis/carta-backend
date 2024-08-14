@@ -7,5 +7,6 @@ var File_8cc =
     [ "GuessTableType", "File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff", null ],
     [ "IsCompressedFits", "File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794", null ],
     [ "IsGzMagicNumber", "File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e", null ],
+    [ "IsRemoteHttpFile", "File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb", null ],
     [ "SearchPath", "File_8cc.html#add15dd288b07460bb502c1b6fa632371", null ]
 ];

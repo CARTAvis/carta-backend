@@ -207,6 +207,8 @@ var files_dup =
     [ "RegionState.h", "RegionState_8h.html", [
       [ "RegionState", "structcarta_1_1RegionState.html", "structcarta_1_1RegionState" ]
     ] ],
+    [ "RemoteFiles.cc", "RemoteFiles_8cc.html", "RemoteFiles_8cc" ],
+    [ "RemoteFiles.h", "RemoteFiles_8h.html", "RemoteFiles_8h" ],
     [ "RequirementsCache.h", "RequirementsCache_8h.html", [
       [ "ConfigId", "structcarta_1_1ConfigId.html", "structcarta_1_1ConfigId" ],
       [ "ConfigIdHash", "structcarta_1_1ConfigIdHash.html", "structcarta_1_1ConfigIdHash" ],

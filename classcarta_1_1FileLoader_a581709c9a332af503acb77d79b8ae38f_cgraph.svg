@@ -12,9 +12,9 @@
 <g id="node1" class="node">
 <title>Node1</title>
 <g id="a_node1"><a xlink:title=" ">
-<polygon fill="#bfbfbf" stroke="black" points="0,-52 0,-82 104,-82 104,-52 0,-52"/>
-<text text-anchor="start" x="8" y="-70" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileLoader::</text>
-<text text-anchor="middle" x="52" y="-59" font-family="Helvetica,sans-Serif" font-size="10.00">GetLoader</text>
+<polygon fill="#bfbfbf" stroke="black" points="0,-33 0,-63 104,-63 104,-33 0,-33"/>
+<text text-anchor="start" x="8" y="-51" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileLoader::</text>
+<text text-anchor="middle" x="52" y="-40" font-family="Helvetica,sans-Serif" font-size="10.00">GetLoader</text>
 </a>
 </g>
 </g>
@@ -30,8 +30,8 @@
 <!-- Node1&#45;&gt;Node2 -->
 <g id="edge1" class="edge">
 <title>Node1&#45;&gt;Node2</title>
-<path fill="none" stroke="midnightblue" d="M104.4,-73.81C112.52,-74.88 121.02,-76.01 129.43,-77.12"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="129.24,-80.63 139.62,-78.47 130.16,-73.69 129.24,-80.63"/>
+<path fill="none" stroke="midnightblue" d="M104.4,-61.61C119.43,-65.59 135.76,-69.91 150.43,-73.8"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="149.73,-77.24 160.29,-76.41 151.52,-70.47 149.73,-77.24"/>
 </g>
 <!-- Node3 -->
 <g id="node3" class="node">
@@ -45,8 +45,23 @@
 <!-- Node1&#45;&gt;Node3 -->
 <g id="edge2" class="edge">
 <title>Node1&#45;&gt;Node3</title>
-<path fill="none" stroke="midnightblue" d="M104.4,-60.19C114.64,-58.84 125.48,-57.4 135.99,-56.01"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="136.48,-59.48 145.94,-54.69 135.57,-52.54 136.48,-59.48"/>
+<path fill="none" stroke="midnightblue" d="M104.4,-48C114.53,-48 125.26,-48 135.67,-48"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="135.94,-51.5 145.94,-48 135.94,-44.5 135.94,-51.5"/>
+</g>
+<!-- Node7 -->
+<g id="node7" class="node">
+<title>Node7</title>
+<g id="a_node7"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="147,-0.5 147,-19.5 248,-19.5 248,-0.5 147,-0.5"/>
+<text text-anchor="middle" x="197.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsRemoteHttpFile</text>
+</a>
+</g>
+</g>
+<!-- Node1&#45;&gt;Node7 -->
+<g id="edge6" class="edge">
+<title>Node1&#45;&gt;Node7</title>
+<path fill="none" stroke="midnightblue" d="M104.4,-34.39C119.43,-30.41 135.76,-26.09 150.43,-22.2"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="151.52,-25.53 160.29,-19.59 149.73,-18.76 151.52,-25.53"/>
 </g>
 <!-- Node4 -->
 <g id="node4" class="node">

@@ -1,5 +1,5 @@
 <map id="String.h" name="String.h">
-<area shape="rect" id="node1" title=" " alt="" coords="691,5,763,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="783,5,855,32"/>
 <area shape="rect" id="node2" href="$HttpServer_8cc.html" title=" " alt="" coords="5,80,115,107"/>
 <area shape="rect" id="node3" href="$CartaHdf5Image_8cc.html" title=" " alt="" coords="139,80,285,107"/>
 <area shape="rect" id="node4" href="$CompressedFits_8cc.html" title=" " alt="" coords="309,80,453,107"/>
@@ -7,6 +7,7 @@
 <area shape="rect" id="node6" href="$Ds9ImportExport_8cc.html" title=" " alt="" coords="651,80,802,107"/>
 <area shape="rect" id="node7" href="$RegionImportExport_8cc.html" title=" " alt="" coords="827,80,997,107"/>
 <area shape="rect" id="node8" href="$File_8cc.html" title=" " alt="" coords="1022,80,1085,107"/>
-<area shape="rect" id="node9" href="$String_8cc.html" title=" " alt="" coords="1109,80,1187,107"/>
-<area shape="rect" id="node10" href="$Token_8cc.html" title=" " alt="" coords="1212,80,1289,107"/>
+<area shape="rect" id="node9" href="$RemoteFiles_8cc.html" title=" " alt="" coords="1109,80,1230,107"/>
+<area shape="rect" id="node10" href="$String_8cc.html" title=" " alt="" coords="1254,80,1333,107"/>
+<area shape="rect" id="node11" href="$Token_8cc.html" title=" " alt="" coords="1357,80,1435,107"/>
 </map>

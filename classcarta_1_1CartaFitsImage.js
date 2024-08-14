@@ -1,6 +1,6 @@
 var classcarta_1_1CartaFitsImage =
 [
-    [ "CartaFitsImage", "classcarta_1_1CartaFitsImage.html#a649f84fe0b691bcff9835e12769dd7d7", null ],
+    [ "CartaFitsImage", "classcarta_1_1CartaFitsImage.html#a298af28c7a2a40be0e9c756600e8bf91", null ],
     [ "CartaFitsImage", "classcarta_1_1CartaFitsImage.html#acbfef4fd07e0be204375f88817bd599e", null ],
     [ "~CartaFitsImage", "classcarta_1_1CartaFitsImage.html#a20a8d0f96fd1f3daee52bb8b2b67621a", null ],
     [ "AddDirectionCoordinate", "classcarta_1_1CartaFitsImage.html#a29b238d1e2378201c4cf7342491c5578", null ],
@@ -55,6 +55,7 @@ var classcarta_1_1CartaFitsImage =
     [ "_image_header_strings", "classcarta_1_1CartaFitsImage.html#adf1edb5f38dbdab23926337881b6aa8e", null ],
     [ "_is_compressed", "classcarta_1_1CartaFitsImage.html#a621bf2181f21d4ff0872f7a000193248", null ],
     [ "_is_copy", "classcarta_1_1CartaFitsImage.html#ad1fce1124d1e1775c199f4b5a329e8ba", null ],
+    [ "_is_http", "classcarta_1_1CartaFitsImage.html#a60fe45262c716898bcc6597a531b0637", null ],
     [ "_pixel_mask", "classcarta_1_1CartaFitsImage.html#aaea7f64bd244b32838e87c076cd54b25", null ],
     [ "_shape", "classcarta_1_1CartaFitsImage.html#a8a9f2aed413ebc7d4a1768008dc95ce8", null ],
     [ "_tiled_shape", "classcarta_1_1CartaFitsImage.html#a73a6d11a485b3f809c5d26c7b732162e", null ]

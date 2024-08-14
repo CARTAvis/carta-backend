@@ -66,36 +66,36 @@
 <path fill="none" stroke="midnightblue" d="M152.12,-106.31C160.6,-105.21 169.28,-104.09 177.87,-102.98"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="178.43,-106.44 187.9,-101.69 177.54,-99.5 178.43,-106.44"/>
 </g>
-<!-- Node14 -->
-<g id="node14" class="node">
-<title>Node14</title>
-<g id="a_node14"><a xlink:href="classcarta_1_1StokesFilesConnector.html#adf4cafd64661676a483c234b666335cc" target="_top" xlink:title=" ">
+<!-- Node15 -->
+<g id="node15" class="node">
+<title>Node15</title>
+<g id="a_node15"><a xlink:href="classcarta_1_1StokesFilesConnector.html#adf4cafd64661676a483c234b666335cc" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="188,-28 188,-58 340,-58 340,-28 188,-28"/>
 <text text-anchor="start" x="196" y="-46" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesFilesConnector</text>
 <text text-anchor="middle" x="264" y="-35" font-family="Helvetica,sans-Serif" font-size="10.00">::StokesFilesValid</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node14 -->
-<g id="edge14" class="edge">
-<title>Node1&#45;&gt;Node14</title>
-<path fill="none" stroke="midnightblue" d="M108.69,-100.94C130.69,-90.75 160.82,-77.31 188,-67 193.11,-65.06 198.46,-63.14 203.84,-61.28"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="205.17,-64.53 213.52,-58.01 202.93,-57.9 205.17,-64.53"/>
+<!-- Node1&#45;&gt;Node15 -->
+<g id="edge15" class="edge">
+<title>Node1&#45;&gt;Node15</title>
+<path fill="none" stroke="midnightblue" d="M109.72,-100.96C131.67,-91.1 161.33,-78.19 188,-68 193.81,-65.78 199.9,-63.57 206.01,-61.42"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="207.26,-64.69 215.57,-58.12 204.98,-58.08 207.26,-64.69"/>
 </g>
 <!-- Node5 -->
 <g id="node5" class="node">
 <title>Node5</title>
 <g id="a_node5"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="540,-147.5 540,-166.5 655,-166.5 655,-147.5 540,-147.5"/>
-<text text-anchor="middle" x="597.5" y="-154.5" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
+<polygon fill="none" stroke="black" points="540,-161.5 540,-180.5 655,-180.5 655,-161.5 540,-161.5"/>
+<text text-anchor="middle" x="597.5" y="-168.5" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
 </a>
 </g>
 </g>
 <!-- Node4&#45;&gt;Node5 -->
 <g id="edge4" class="edge">
 <title>Node4&#45;&gt;Node5</title>
-<path fill="none" stroke="midnightblue" d="M322.53,-107.01C328.71,-109.82 334.67,-113.12 340,-117 361.84,-132.91 351.89,-153.8 376,-166 434.16,-195.44 512.4,-181.77 558.35,-169.29"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="559.53,-172.6 568.2,-166.5 557.62,-165.86 559.53,-172.6"/>
+<path fill="none" stroke="midnightblue" d="M322.53,-107.01C328.71,-109.82 334.67,-113.12 340,-117 361.84,-132.91 352.03,-153.52 376,-166 428.37,-193.26 497.64,-189.5 544.46,-182.19"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="545.1,-185.63 554.39,-180.54 543.95,-178.73 545.1,-185.63"/>
 </g>
 <!-- Node6 -->
 <g id="node6" class="node">
@@ -129,101 +129,116 @@
 <path fill="none" stroke="midnightblue" d="M340.05,-92C352.63,-92 365.54,-92 377.72,-92"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="377.75,-95.5 387.75,-92 377.75,-88.5 377.75,-95.5"/>
 </g>
-<!-- Node12 -->
-<g id="node12" class="node">
-<title>Node12</title>
-<g id="a_node12"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="378,-38.5 378,-57.5 502,-57.5 502,-38.5 378,-38.5"/>
-<text text-anchor="middle" x="440" y="-45.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
-</a>
-</g>
-</g>
-<!-- Node4&#45;&gt;Node12 -->
-<g id="edge12" class="edge">
-<title>Node4&#45;&gt;Node12</title>
-<path fill="none" stroke="midnightblue" d="M324.39,-76.98C346.31,-71.44 370.83,-65.24 391.55,-60"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="392.55,-63.36 401.38,-57.51 390.83,-56.57 392.55,-63.36"/>
-</g>
 <!-- Node13 -->
 <g id="node13" class="node">
 <title>Node13</title>
-<g id="a_node13"><a xlink:href="Stokes_8cc.html#a231a322f47657ea555657510bc70bfac" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="393.5,-0.5 393.5,-19.5 486.5,-19.5 486.5,-0.5 393.5,-0.5"/>
-<text text-anchor="middle" x="440" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetStokesValue</text>
+<g id="a_node13"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="378,-38.5 378,-57.5 502,-57.5 502,-38.5 378,-38.5"/>
+<text text-anchor="middle" x="440" y="-45.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
 </g>
 </g>
 <!-- Node4&#45;&gt;Node13 -->
 <g id="edge13" class="edge">
 <title>Node4&#45;&gt;Node13</title>
+<path fill="none" stroke="midnightblue" d="M324.39,-76.98C346.31,-71.44 370.83,-65.24 391.55,-60"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="392.55,-63.36 401.38,-57.51 390.83,-56.57 392.55,-63.36"/>
+</g>
+<!-- Node14 -->
+<g id="node14" class="node">
+<title>Node14</title>
+<g id="a_node14"><a xlink:href="Stokes_8cc.html#a231a322f47657ea555657510bc70bfac" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="393.5,-0.5 393.5,-19.5 486.5,-19.5 486.5,-0.5 393.5,-0.5"/>
+<text text-anchor="middle" x="440" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetStokesValue</text>
+</a>
+</g>
+</g>
+<!-- Node4&#45;&gt;Node14 -->
+<g id="edge14" class="edge">
+<title>Node4&#45;&gt;Node14</title>
 <path fill="none" stroke="midnightblue" d="M320.51,-76.98C327.31,-74.14 333.98,-70.83 340,-67 359.62,-54.5 356.2,-41.21 376,-29 379.4,-26.9 383.05,-25.02 386.82,-23.34"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="388.34,-26.5 396.34,-19.55 385.76,-19.99 388.34,-26.5"/>
 </g>
 <!-- Node7&#45;&gt;Node5 -->
 <g id="edge7" class="edge">
 <title>Node7&#45;&gt;Node5</title>
-<path fill="none" stroke="midnightblue" d="M479.39,-107.02C487.53,-110.26 496.06,-113.71 504,-117 524.59,-125.54 547.6,-135.48 565.52,-143.32"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="564.34,-146.63 574.9,-147.44 567.15,-140.22 564.34,-146.63"/>
+<path fill="none" stroke="midnightblue" d="M481.72,-107.12C489.22,-110.19 496.91,-113.55 504,-117 528.31,-128.84 554.86,-144.65 573.25,-156.11"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="571.49,-159.14 581.82,-161.5 575.22,-153.21 571.49,-159.14"/>
 </g>
 <!-- Node8 -->
 <g id="node8" class="node">
 <title>Node8</title>
 <g id="a_node8"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="546,-82.5 546,-101.5 649,-101.5 649,-82.5 546,-82.5"/>
-<text text-anchor="middle" x="597.5" y="-89.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
+<polygon fill="none" stroke="black" points="546,-96.5 546,-115.5 649,-115.5 649,-96.5 546,-96.5"/>
+<text text-anchor="middle" x="597.5" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>
 </g>
 </g>
 <!-- Node7&#45;&gt;Node8 -->
 <g id="edge8" class="edge">
 <title>Node7&#45;&gt;Node8</title>
-<path fill="none" stroke="midnightblue" d="M492.35,-92C506.16,-92 521.23,-92 535.51,-92"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="535.74,-95.5 545.74,-92 535.74,-88.5 535.74,-95.5"/>
+<path fill="none" stroke="midnightblue" d="M492.35,-96.62C506.16,-97.87 521.23,-99.22 535.51,-100.51"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="535.46,-104.02 545.74,-101.43 536.09,-97.05 535.46,-104.02"/>
+</g>
+<!-- Node12 -->
+<g id="node12" class="node">
+<title>Node12</title>
+<g id="a_node12"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="547,-58.5 547,-77.5 648,-77.5 648,-58.5 547,-58.5"/>
+<text text-anchor="middle" x="597.5" y="-65.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsRemoteHttpFile</text>
+</a>
+</g>
+</g>
+<!-- Node7&#45;&gt;Node12 -->
+<g id="edge12" class="edge">
+<title>Node7&#45;&gt;Node12</title>
+<path fill="none" stroke="midnightblue" d="M492.35,-84.07C506.58,-81.88 522.15,-79.48 536.81,-77.21"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="537.44,-80.66 546.79,-75.67 536.38,-73.74 537.44,-80.66"/>
 </g>
 <!-- Node9 -->
 <g id="node9" class="node">
 <title>Node9</title>
 <g id="a_node9"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="693,-120.5 693,-139.5 795,-139.5 795,-120.5 693,-120.5"/>
-<text text-anchor="middle" x="744" y="-127.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
+<polygon fill="none" stroke="black" points="693,-134.5 693,-153.5 795,-153.5 795,-134.5 693,-134.5"/>
+<text text-anchor="middle" x="744" y="-141.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>
 </g>
 </g>
 <!-- Node8&#45;&gt;Node9 -->
 <g id="edge9" class="edge">
 <title>Node8&#45;&gt;Node9</title>
-<path fill="none" stroke="midnightblue" d="M634.96,-101.59C653.77,-106.54 676.91,-112.62 696.95,-117.89"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="696.24,-121.32 706.8,-120.48 698.02,-114.55 696.24,-121.32"/>
+<path fill="none" stroke="midnightblue" d="M634.96,-115.59C653.77,-120.54 676.91,-126.62 696.95,-131.89"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="696.24,-135.32 706.8,-134.48 698.02,-128.55 696.24,-135.32"/>
 </g>
 <!-- Node10 -->
 <g id="node10" class="node">
 <title>Node10</title>
 <g id="a_node10"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="712.5,-82.5 712.5,-101.5 775.5,-101.5 775.5,-82.5 712.5,-82.5"/>
-<text text-anchor="middle" x="744" y="-89.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
+<polygon fill="none" stroke="black" points="712.5,-96.5 712.5,-115.5 775.5,-115.5 775.5,-96.5 712.5,-96.5"/>
+<text text-anchor="middle" x="744" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>
 </g>
 </g>
 <!-- Node8&#45;&gt;Node10 -->
 <g id="edge10" class="edge">
 <title>Node8&#45;&gt;Node10</title>
-<path fill="none" stroke="midnightblue" d="M649.04,-92C666.4,-92 685.6,-92 702.1,-92"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="702.5,-95.5 712.5,-92 702.5,-88.5 702.5,-95.5"/>
+<path fill="none" stroke="midnightblue" d="M649.04,-106C666.4,-106 685.6,-106 702.1,-106"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="702.5,-109.5 712.5,-106 702.5,-102.5 702.5,-109.5"/>
 </g>
 <!-- Node11 -->
 <g id="node11" class="node">
 <title>Node11</title>
 <g id="a_node11"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="691,-44.5 691,-63.5 797,-63.5 797,-44.5 691,-44.5"/>
-<text text-anchor="middle" x="744" y="-51.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
+<polygon fill="none" stroke="black" points="691,-58.5 691,-77.5 797,-77.5 797,-58.5 691,-58.5"/>
+<text text-anchor="middle" x="744" y="-65.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
 </a>
 </g>
 </g>
 <!-- Node8&#45;&gt;Node11 -->
 <g id="edge11" class="edge">
 <title>Node8&#45;&gt;Node11</title>
-<path fill="none" stroke="midnightblue" d="M634.96,-82.41C653.77,-77.46 676.91,-71.38 696.95,-66.11"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="698.02,-69.45 706.8,-63.52 696.24,-62.68 698.02,-69.45"/>
+<path fill="none" stroke="midnightblue" d="M634.96,-96.41C653.77,-91.46 676.91,-85.38 696.95,-80.11"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="698.02,-83.45 706.8,-77.52 696.24,-76.68 698.02,-83.45"/>
 </g>
 </g>
 </svg>

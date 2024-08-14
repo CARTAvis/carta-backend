@@ -38,6 +38,7 @@ var classMessage =
     [ "RegionStatsData", "classMessage.html#a1641ebe3a971aa233d8621a1abe0bd76", null ],
     [ "RegisterViewer", "classMessage.html#afc2a3c83d6b506ed8b71e54dbce0f9ab", null ],
     [ "RegisterViewerAck", "classMessage.html#a8c590c77e9f0326e09ac0af465b58a86", null ],
+    [ "RemoteFileRequest", "classMessage.html#a1786c235bf5762e8cc2e5e6293fa46b2", null ],
     [ "ResumeSession", "classMessage.html#a6f84abf791a095ae8fc37e17d4e204c9", null ],
     [ "ScriptingRequest", "classMessage.html#a60da007fe3902ca53c342359ad9e29a0", null ],
     [ "SetContourParameters", "classMessage.html#a67b174f2dedf2f95388439d86ad2ed03", null ],

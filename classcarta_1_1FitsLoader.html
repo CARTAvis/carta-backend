@@ -129,8 +129,8 @@ Collaboration diagram for carta::FitsLoader:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a79719a6116ffbf19e6ce56124b43728b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a79719a6116ffbf19e6ce56124b43728b">FitsLoader</a> (const std::string &amp;filename, bool is_gz=false)</td></tr>
-<tr class="separator:a79719a6116ffbf19e6ce56124b43728b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a178f963208f963934a499bafdf64d94e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a178f963208f963934a499bafdf64d94e">FitsLoader</a> (const std::string &amp;filename, bool is_gz=false, bool is_http=false)</td></tr>
+<tr class="separator:a178f963208f963934a499bafdf64d94e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a45ca0ae718eb9c8d925e43371e8c9af8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a45ca0ae718eb9c8d925e43371e8c9af8">~FitsLoader</a> ()</td></tr>
 <tr class="separator:a45ca0ae718eb9c8d925e43371e8c9af8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classcarta_1_1FileLoader"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classcarta_1_1FileLoader')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classcarta_1_1FileLoader.html">carta::FileLoader</a></td></tr>
@@ -236,6 +236,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a28038b8ae20faf4600d0fee7d6d66ae2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec6024787a02e615ae4034391c8e14b4"><td class="memItemLeft" align="right" valign="top">casacore::uInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#aec6024787a02e615ae4034391c8e14b4">_hdu_num</a></td></tr>
 <tr class="separator:aec6024787a02e615ae4034391c8e14b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3beb6f9bc087f01d838d8e88bb03beda"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a3beb6f9bc087f01d838d8e88bb03beda">_is_http</a></td></tr>
+<tr class="separator:a3beb6f9bc087f01d838d8e88bb03beda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -331,8 +333,8 @@ Additional Inherited Members</h2></td></tr>
 <tr class="separator:affcdbaf30e60ffcd820449c7f107deb8 inherit pro_attribs_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a79719a6116ffbf19e6ce56124b43728b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a79719a6116ffbf19e6ce56124b43728b">&#9670;&nbsp;</a></span>FitsLoader()</h2>
+<a id="a178f963208f963934a499bafdf64d94e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a178f963208f963934a499bafdf64d94e">&#9670;&nbsp;</a></span>FitsLoader()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -347,7 +349,13 @@ Additional Inherited Members</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>is_gz</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>is_gz</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>is_http</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -633,6 +641,28 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">casacore::uInt carta::FitsLoader::_hdu_num</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3beb6f9bc087f01d838d8e88bb03beda"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3beb6f9bc087f01d838d8e88bb03beda">&#9670;&nbsp;</a></span>_is_http</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::FitsLoader::_is_http</td>
         </tr>
       </table>
   </td>

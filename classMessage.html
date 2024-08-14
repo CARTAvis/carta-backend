@@ -208,6 +208,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a0b7f372e72e3c2852fc3c77215e0c95e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac34ea433d655711badf7ac0a7a230179"><td class="memItemLeft" align="right" valign="top">static CARTA::PvProgress&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ac34ea433d655711badf7ac0a7a230179">PvProgress</a> (int32_t file_id, float progress, int32_t preview_id=0)</td></tr>
 <tr class="separator:ac34ea433d655711badf7ac0a7a230179"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1786c235bf5762e8cc2e5e6293fa46b2"><td class="memItemLeft" align="right" valign="top">static CARTA::RemoteFileRequest&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a1786c235bf5762e8cc2e5e6293fa46b2">RemoteFileRequest</a> (int32_t file_id, const std::string &amp;hips, const std::string &amp;wcs, int32_t width, int32_t height, const std::string &amp;projection, float fov, float ra, float dec, const std::string &amp;coordsys, float rotation_angle, const std::string &amp;object)</td></tr>
+<tr class="separator:a1786c235bf5762e8cc2e5e6293fa46b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acf019d8e44d9d951556251563d02a31b"><td class="memItemLeft" align="right" valign="top">static CARTA::FittingProgress&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#acf019d8e44d9d951556251563d02a31b">FittingProgress</a> (int32_t file_id, float progress)</td></tr>
 <tr class="separator:acf019d8e44d9d951556251563d02a31b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a730c49c8e93e27faf31796d44748088b"><td class="memItemLeft" align="right" valign="top">static CARTA::RegionHistogramData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a730c49c8e93e27faf31796d44748088b">RegionHistogramData</a> (int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress, const <a class="el" href="structcarta_1_1HistogramConfig.html">carta::HistogramConfig</a> &amp;hist_config)</td></tr>
@@ -767,7 +769,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a56ce2597eac9076f1a3e5dbe8ecc2e28_icgraph.svg" width="100%" height="553"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a56ce2597eac9076f1a3e5dbe8ecc2e28_icgraph.svg" width="100%" height="578"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1399,7 +1401,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a9d5199432a1267740c0ae22d436d5e30_icgraph.svg" width="100%" height="563"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a9d5199432a1267740c0ae22d436d5e30_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -2038,6 +2040,102 @@ Here is the caller graph for this function:</div>
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a8c590c77e9f0326e09ac0af465b58a86_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
+
+</div>
+</div>
+<a id="a1786c235bf5762e8cc2e5e6293fa46b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1786c235bf5762e8cc2e5e6293fa46b2">&#9670;&nbsp;</a></span>RemoteFileRequest()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::RemoteFileRequest Message::RemoteFileRequest </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>hips</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>wcs</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>projection</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>fov</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>ra</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>dec</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>coordsys</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>rotation_angle</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>object</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>

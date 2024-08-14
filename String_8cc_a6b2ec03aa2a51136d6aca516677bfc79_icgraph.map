@@ -1,4 +1,8 @@
 <map id="SafeStringEscape" name="SafeStringEscape">
-<area shape="rect" id="node1" title=" " alt="" coords="195,13,329,39"/>
-<area shape="rect" id="node2" href="$classcarta_1_1HttpServer.html#a81a867dc29b7be0f8d8e2f901ebbf688" title=" " alt="" coords="5,5,147,47"/>
+<area shape="rect" id="node1" title=" " alt="" coords="916,42,1051,69"/>
+<area shape="rect" id="node2" href="$RemoteFiles_8cc.html#a810fce65818eabe0741e639b2ff23619" title=" " alt="" coords="681,13,868,39"/>
+<area shape="rect" id="node6" href="$classcarta_1_1HttpServer.html#a81a867dc29b7be0f8d8e2f901ebbf688" title=" " alt="" coords="704,64,845,105"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Session.html#a45b9623e5dd0c0d54307ab148e8745aa" title=" " alt="" coords="443,5,633,47"/>
+<area shape="rect" id="node4" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,5,395,47"/>
+<area shape="rect" id="node5" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,5,176,47"/>
 </map>
