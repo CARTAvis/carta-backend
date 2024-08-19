@@ -931,8 +931,8 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
 
             std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
 
-            _region_handler->ExportRegion(
-                file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
+            _region_handler->ExportRegion(file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename,
+                message.overwrite(), export_ack);
         }
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
