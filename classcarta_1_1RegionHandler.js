@@ -15,7 +15,7 @@ var classcarta_1_1RegionHandler =
     [ "ClosePvPreview", "classcarta_1_1RegionHandler.html#a5266dcd3a9f0bb01ea1a2ee2feb53ab4", null ],
     [ "CombineStokes", "classcarta_1_1RegionHandler.html#ae0a961eac00f2fa71ffe76a7c4c19488", null ],
     [ "CombineStokes", "classcarta_1_1RegionHandler.html#a63047c5d563b8fb75ec430d47833ec11", null ],
-    [ "ExportRegion", "classcarta_1_1RegionHandler.html#acba43abdbbceecce5797d5fc79590ce8", null ],
+    [ "ExportRegion", "classcarta_1_1RegionHandler.html#ae213e33d178a432e3606ddc04eb624a2", null ],
     [ "FillLineSpatialProfileData", "classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19", null ],
     [ "FillPointSpatialProfileData", "classcarta_1_1RegionHandler.html#a0e7c8e5a778bb77b13dc9bdfe48f26bc", null ],
     [ "FillRegionHistogramData", "classcarta_1_1RegionHandler.html#a781809901786ab1cf5a4705a77ebe9bb", null ],

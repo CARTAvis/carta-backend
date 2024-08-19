@@ -1,18 +1,19 @@
 <map id="carta::Frame::SaveFile" name="carta::Frame::SaveFile">
-<area shape="rect" id="node1" title=" " alt="" coords="5,209,172,236"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#acd4afeecd3a841818b4be14b69f595ac" title=" " alt="" coords="220,5,451,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#afad0d3af4030d531a47e7e085ef25da3" title=" " alt="" coords="224,56,447,83"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Frame.html#ab8d23e30f45472bdf614e4830610289f" title=" " alt="" coords="226,107,445,149"/>
-<area shape="rect" id="node8" href="$classcarta_1_1Frame.html#aeff1a00d7f22df6f180888b1d9eaf457" title=" " alt="" coords="768,239,961,265"/>
-<area shape="rect" id="node12" href="$classcarta_1_1Frame.html#a789314994a5e12391e4e97d65bef436d" title=" " alt="" coords="224,173,447,214"/>
-<area shape="rect" id="node13" href="$classcarta_1_1Frame.html#a5beb07be23479551f0b88982bf72c290" title=" " alt="" coords="237,289,434,316"/>
-<area shape="rect" id="node14" href="$classcarta_1_1Frame.html#adf81c6e34d99da6b4238cde332b3c4cf" title=" " alt="" coords="499,297,720,324"/>
-<area shape="rect" id="node16" href="$classcarta_1_1Frame.html#ac7f0c67f2a09b79662fea052e406895b" title=" " alt="" coords="233,391,437,433"/>
-<area shape="rect" id="node4" href="$Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56" title=" " alt="" coords="503,56,716,83"/>
-<area shape="rect" id="node5" href="$classcarta_1_1CartaMiriadImage.html#abd3dc522a82db77196b31eaba8fb0970" title=" " alt="" coords="775,49,955,90"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Frame.html#a3c05bb486183edc6f1020a6428bb31e5" title=" " alt="" coords="500,173,719,214"/>
-<area shape="rect" id="node9" href="$structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" title=" " alt="" coords="1009,231,1188,273"/>
-<area shape="rect" id="node11" href="$classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117" title=" " alt="" coords="1021,297,1176,324"/>
-<area shape="rect" id="node10" href="$Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="1236,239,1379,265"/>
-<area shape="rect" id="node15" href="$classcarta_1_1Frame.html#ac2682be139a17f645032107d7170d4c4" title=" " alt="" coords="773,290,956,331"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,231,172,257"/>
+<area shape="rect" id="node2" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="259,5,412,32"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#a1d7ad9f43dbf5a5a50deb03c0b2ec75e" title=" " alt="" coords="220,56,451,83"/>
+<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#afa8f0f9632377d270f5e92deae4ff8a3" title=" " alt="" coords="224,107,447,133"/>
+<area shape="rect" id="node7" href="$classcarta_1_1Frame.html#ab8d23e30f45472bdf614e4830610289f" title=" " alt="" coords="226,158,445,199"/>
+<area shape="rect" id="node9" href="$classcarta_1_1Frame.html#aeff1a00d7f22df6f180888b1d9eaf457" title=" " alt="" coords="768,289,961,316"/>
+<area shape="rect" id="node13" href="$classcarta_1_1Frame.html#a789314994a5e12391e4e97d65bef436d" title=" " alt="" coords="224,223,447,265"/>
+<area shape="rect" id="node14" href="$classcarta_1_1Frame.html#a5beb07be23479551f0b88982bf72c290" title=" " alt="" coords="237,340,434,367"/>
+<area shape="rect" id="node15" href="$classcarta_1_1Frame.html#adf81c6e34d99da6b4238cde332b3c4cf" title=" " alt="" coords="499,348,720,375"/>
+<area shape="rect" id="node17" href="$classcarta_1_1Frame.html#ac7f0c67f2a09b79662fea052e406895b" title=" " alt="" coords="233,442,437,483"/>
+<area shape="rect" id="node5" href="$Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56" title=" " alt="" coords="503,107,716,133"/>
+<area shape="rect" id="node6" href="$classcarta_1_1CartaMiriadImage.html#abd3dc522a82db77196b31eaba8fb0970" title=" " alt="" coords="775,99,955,141"/>
+<area shape="rect" id="node8" href="$classcarta_1_1Frame.html#a3c05bb486183edc6f1020a6428bb31e5" title=" " alt="" coords="500,223,719,265"/>
+<area shape="rect" id="node10" href="$structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" title=" " alt="" coords="1009,282,1188,323"/>
+<area shape="rect" id="node12" href="$classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117" title=" " alt="" coords="1021,348,1176,375"/>
+<area shape="rect" id="node11" href="$Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="1236,289,1379,316"/>
+<area shape="rect" id="node16" href="$classcarta_1_1Frame.html#ac2682be139a17f645032107d7170d4c4" title=" " alt="" coords="773,341,956,382"/>
 </map>

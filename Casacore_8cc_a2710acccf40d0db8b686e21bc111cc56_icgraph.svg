@@ -66,7 +66,7 @@ var sectionId = 'dynsection-5';
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1Frame.html#afad0d3af4030d531a47e7e085ef25da3" target="_top" xlink:title=" ">
+<g id="a_node2"><a xlink:href="classcarta_1_1Frame.html#afa8f0f9632377d270f5e92deae4ff8a3" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1593,-155 1593,-174 1760,-174 1760,-155 1593,-155"/>
 <text text-anchor="middle" x="1676.5" y="-162" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::ExportFITSImage</text>
 </a>

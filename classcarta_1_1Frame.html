@@ -290,10 +290,10 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a135ea650915097a6c5aa463d1ba4e52c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a484fe0a17431676c96ec0a7562fd1a31"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a484fe0a17431676c96ec0a7562fd1a31">HasSpectralConfig</a> (const <a class="el" href="structcarta_1_1SpectralConfig.html">SpectralConfig</a> &amp;config)</td></tr>
 <tr class="separator:a484fe0a17431676c96ec0a7562fd1a31"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acd4afeecd3a841818b4be14b69f595ac"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#acd4afeecd3a841818b4be14b69f595ac">ExportCASAImage</a> (casacore::ImageInterface&lt; casacore::Float &gt; &amp;image, fs::path output_filename, casacore::String &amp;message)</td></tr>
-<tr class="separator:acd4afeecd3a841818b4be14b69f595ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afad0d3af4030d531a47e7e085ef25da3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#afad0d3af4030d531a47e7e085ef25da3">ExportFITSImage</a> (casacore::ImageInterface&lt; casacore::Float &gt; &amp;image, fs::path output_filename, casacore::String &amp;message)</td></tr>
-<tr class="separator:afad0d3af4030d531a47e7e085ef25da3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d7ad9f43dbf5a5a50deb03c0b2ec75e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a1d7ad9f43dbf5a5a50deb03c0b2ec75e">ExportCASAImage</a> (casacore::ImageInterface&lt; casacore::Float &gt; &amp;image, fs::path output_filename, std::string &amp;message)</td></tr>
+<tr class="separator:a1d7ad9f43dbf5a5a50deb03c0b2ec75e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa8f0f9632377d270f5e92deae4ff8a3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#afa8f0f9632377d270f5e92deae4ff8a3">ExportFITSImage</a> (casacore::ImageInterface&lt; casacore::Float &gt; &amp;image, fs::path output_filename, std::string &amp;message)</td></tr>
+<tr class="separator:afa8f0f9632377d270f5e92deae4ff8a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3c05bb486183edc6f1020a6428bb31e5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a3c05bb486183edc6f1020a6428bb31e5">ValidateChannelStokes</a> (std::vector&lt; int &gt; &amp;channels, std::vector&lt; int &gt; &amp;stokes, const CARTA::SaveFile &amp;save_file_msg)</td></tr>
 <tr class="separator:a3c05bb486183edc6f1020a6428bb31e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8d23e30f45472bdf614e4830610289f"><td class="memItemLeft" align="right" valign="top">casacore::Slicer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#ab8d23e30f45472bdf614e4830610289f">GetExportImageSlicer</a> (const CARTA::SaveFile &amp;save_file_msg, casacore::IPosition image_shape)</td></tr>
@@ -1017,8 +1017,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="acd4afeecd3a841818b4be14b69f595ac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acd4afeecd3a841818b4be14b69f595ac">&#9670;&nbsp;</a></span>ExportCASAImage()</h2>
+<a id="a1d7ad9f43dbf5a5a50deb03c0b2ec75e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d7ad9f43dbf5a5a50deb03c0b2ec75e">&#9670;&nbsp;</a></span>ExportCASAImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1041,7 +1041,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">casacore::String &amp;&#160;</td>
+          <td class="paramtype">std::string &amp;&#160;</td>
           <td class="paramname"><em>message</em>&#160;</td>
         </tr>
         <tr>
@@ -1059,14 +1059,14 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_acd4afeecd3a841818b4be14b69f595ac_icgraph.svg" width="456" height="38"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a1d7ad9f43dbf5a5a50deb03c0b2ec75e_icgraph.svg" width="456" height="38"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
 </div>
 </div>
-<a id="afad0d3af4030d531a47e7e085ef25da3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afad0d3af4030d531a47e7e085ef25da3">&#9670;&nbsp;</a></span>ExportFITSImage()</h2>
+<a id="afa8f0f9632377d270f5e92deae4ff8a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa8f0f9632377d270f5e92deae4ff8a3">&#9670;&nbsp;</a></span>ExportFITSImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1089,7 +1089,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">casacore::String &amp;&#160;</td>
+          <td class="paramtype">std::string &amp;&#160;</td>
           <td class="paramname"><em>message</em>&#160;</td>
         </tr>
         <tr>
@@ -1107,13 +1107,13 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_afad0d3af4030d531a47e7e085ef25da3_cgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_afa8f0f9632377d270f5e92deae4ff8a3_cgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_afad0d3af4030d531a47e7e085ef25da3_icgraph.svg" width="448" height="38"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_afa8f0f9632377d270f5e92deae4ff8a3_icgraph.svg" width="448" height="38"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
