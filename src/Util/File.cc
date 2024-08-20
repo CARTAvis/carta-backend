@@ -10,6 +10,7 @@
 #include <fstream>
 #include <regex>
 
+#include "Casacore.h"
 #include "String.h"
 
 uint32_t GetMagicNumber(const std::string& filename) {
@@ -101,6 +102,38 @@ CARTA::FileType GuessImageType(const std::string& path_string, bool check_conten
             return CARTA::FITS;
         } else if (HasSuffix(filename, ".hdf5")) {
             return CARTA::HDF5;
+        }
+    }
+
+    return CARTA::UNKNOWN;
+}
+
+CARTA::FileType GuessImageDirectoryType(const std::string& path_string, bool check_content) {
+    if (check_content) {
+        // Guess file type using casacore::ImageOpener
+        auto image_type = CasacoreImageType(path_string);
+
+        switch (image_type) {
+            case casacore::ImageOpener::AIPSPP:
+            case casacore::ImageOpener::IMAGECONCAT:
+            case casacore::ImageOpener::IMAGEEXPR:
+            case casacore::ImageOpener::COMPLISTIMAGE:
+                return CARTA::CASA;
+            case casacore::ImageOpener::MIRIAD:
+                return CARTA::MIRIAD;
+            default:
+                return CARTA::UNKNOWN;
+        }
+    } else {
+        // Guess file type by checking for files inside directory
+        fs::path dir(path_string);
+
+        if (fs::exists(dir / "table.info") || fs::exists(dir / "imageconcat.json") || fs::exists(dir / "imageexpr.json")) {
+            return CARTA::CASA;
+        }
+
+        if (fs::exists(dir / "image") && fs::exists(dir / "header")) {
+            return CARTA::MIRIAD;
         }
     }
 
