@@ -17,10 +17,12 @@
 
 namespace carta {
 
+// return value from gaussian distribution
 double NormPdf(double x, double sigma) {
     return exp(-0.5 * x * x / (sigma * sigma)) / sigma;
 }
 
+// get array with gaussian distribution, with mean at the middle of the array
 void MakeKernel(vector<float>& kernel, double sigma) {
     const int kernel_radius = (kernel.size() - 1) / 2;
     for (int j = 0; j <= kernel_radius; ++j) {
@@ -28,47 +30,69 @@ void MakeKernel(vector<float>& kernel, double sigma) {
     }
 }
 
+// apply kernel to data
+// the vertical parameter specifies if the kernel is applied in the vertical direction or in the horizontal direction
 bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_data, const int64_t src_width, const int64_t src_height,
     const int64_t dest_width, const int64_t dest_height, const bool vertical) {
     const int64_t kernel_radius = (kernel.size() - 1) / 2;
 
+    // if vertical, check if dest_height is large enough, else only check width
     if (vertical && dest_height < src_height - kernel_radius * 2) {
         return false;
     }
 
+    // width is always checked
     if (dest_width < src_width - kernel_radius * 2) {
         return false;
     }
 
+    // if vertical, the jump size is src_width, else 1
     const int64_t jump_size = vertical ? src_width : 1;
+    // round dest_width to the nearest multiple of SIMD_WIDTH, to run on parallel in steps of SIMD_WIDTH (4 or 8)
     const int64_t dest_block_limit = SIMD_WIDTH * ((dest_width) / SIMD_WIDTH);
     const int64_t x_offset = vertical ? 0 : kernel_radius;
     const int64_t y_offset = vertical ? kernel_radius : 0;
 
+    // manage threads
     ThreadManager::ApplyThreadLimit();
+    // Run on parallel threads
 #pragma omp parallel for
+    // define src_y and src_x to run over src_data in steps of 4 or 8 (SMID_WIDTH)
     for (int64_t dest_y = 0; dest_y < dest_height; dest_y++) {
         int64_t src_y = dest_y + y_offset;
-        // Handle row in steps of 4 or 8 using SSE or AVX
+        // Handle row in steps of 4 or 8 using SSE or AVX (see HEADER)
         for (int64_t dest_x = 0; dest_x < dest_block_limit; dest_x += SIMD_WIDTH) {
             int64_t dest_index = dest_x + dest_width * dest_y;
             int64_t src_x = dest_x + x_offset;
+// this if else block applies the kernel to the data
 #ifdef __AVX__
+            // __m256 is a vectorized data type that can hold 8 floats (256 bits)
+            // _mm256_setzero_ps() sets all 8 floats to 0
             __m256 sum = _mm256_setzero_ps();
             __m256 weight = _mm256_setzero_ps();
             for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
+                // define index of src_data to apply kernel
                 int64_t src_index = src_x + i * jump_size + src_width * src_y;
+                // load 8 floats from src_data at said index
                 __m256 val = _mm256_loadu_ps(src_data + src_index);
+                // load the required 8 floats from the kernel (looping)
                 __m256 w = _mm256_set1_ps(kernel[i + kernel_radius]);
+                // create a mask with infinites and NaNs (mm256_cmp_ps returns 1 if equal, 0 otherwise, also if both NaN)
                 __m256 mask = _mm256_andnot_ps(IsInfinity(val), _mm256_cmp_ps(val, val, _CMP_EQ_OQ));
+                // apply mask to kernel and src_data
                 w = _mm256_and_ps(w, mask);
                 val = _mm256_and_ps(val, mask);
+                // sum the weighted values
                 sum += val * w;
                 weight += w;
             }
+            // normalize
             sum /= weight;
+            // store the result in dest_data at required index
             _mm256_storeu_ps(dest_data + dest_index, sum);
 #else
+            // __m128 is a vectorized data type that can hold 4 floats (128 bits)
+            // _mm_setzero_ps() sets all 4 floats to 0
             __m128 sum = _mm_setzero_ps();
             __m128 weight = _mm_setzero_ps();
             for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
@@ -113,6 +137,8 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
     return true;
 }
 
+// apply gaussian smoothing to the data using previous functions
+// smoothing factor is the size of the block to be averaged at the downsampling stage
 bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
     int smoothing_factor) {
     float sigma = (smoothing_factor - 1) / 2.0f;
@@ -139,6 +165,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
 
     int64_t line_offset = 0;
     Timer t;
+    //create temporary array that will be deleted automatically when out of scope
     std::unique_ptr<float[]> temp_array(new float[dest_width * buffer_height]);
     auto source_ptr = src_data;
     auto dest_ptr = dest_data;
@@ -150,6 +177,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         if (line_offset + num_lines > dest_height) {
             num_lines = dest_height - line_offset;
         }
+        // Gaussian filters are separable, apply kernel in each direction (vertical and horizontal)
         RunKernel(kernel, source_ptr, temp_ptr, src_width, src_height, dest_width, num_lines + 2 * apron_height, false);
         RunKernel(kernel, temp_array.get(), dest_ptr, dest_width, num_lines + 2 * apron_height, dest_width, num_lines, true);
 
@@ -178,6 +206,8 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
 
     return true;
 }
+
+// blocksmooth functions downlample (averaging) the data, no gaussian kernel is applied
 
 bool BlockSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
     int64_t x_offset, int64_t y_offset, int smoothing_factor) {
@@ -351,5 +381,207 @@ void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width,
         }
     }
 }
+
+// ----------------------- 3D functions -----------------------
+// X : width, Y : height, Z : depth
+// vertical seems to be (NOOOO, ASK!) needed because the kernel needs to be applied in both directions, thats why RunKernel is called twice in GaussianSmooth, one with vertical = true and one with vertical = false
+
+//RunKernel3D. Should I use vertical? Not for now
+bool RunKernel3D(const vector<float>& kernel, const float* src_data, float* dest_data,
+    const int64_t src_width, const int64_t src_height, const int64_t src_depth,
+    const int64_t dest_width, const int64_t dest_height, const int64_t dest_depth, const int axis) {
+    // axis = 0 for x, 1 for y, 2 for z
+
+    const int64_t kernel_radius = (kernel.size() - 1) / 2;
+
+    if (dest_width < src_width - kernel_radius * 2) {
+        return false;
+    }
+
+    if (axis == 0) {
+        const int64_t x_offset = kernel_radius;
+        const int64_t y_offset = 0;
+        const int64_t z_offset = 0;
+        const int64_t jump_size = 1;
+    } else if (axis == 1) {
+        const int64_t x_offset = 0;
+        const int64_t y_offset = kernel_radius;
+        const int64_t z_offset = 0;
+        const int64_t jump_size = src_width;
+        if (dest_height < src_height - kernel_radius * 2) {
+            return false;
+        }
+    } else if (axis == 2) {
+        const int64_t x_offset = 0;
+        const int64_t y_offset = 0;
+        const int64_t z_offset = kernel_radius;
+        const int64_t jump_size = src_width * src_height;
+        if (dest_depth < src_depth - kernel_radius * 2) {
+            return false;
+        }
+    } else {
+        spdlog::error("Invalid axis value. Should be 0, 1 or 2 (got {})", axis);
+        return false;
+    }
+
+    const int64_t dest_block_limit = SIMD_WIDTH * ((dest_width) / SIMD_WIDTH);
+    
+    // manage threads
+    ThreadManager::ApplyThreadLimit();
+    // Run on parallel threads
+#pragma omp parallel for
+    for (int64_t dest_z = 0; dest_z < dest_depth; dest_z++) {
+        int64_t src_z = dest_z + z_offset;
+        // Handle row in steps of 4 or 8 using SSE or AVX
+        for (int64_t dest_y = 0; dest_y < dest_height; dest_y++) {
+            int64_t src_y = dest_y + y_offset;
+            for (int64_t dest_x = 0; dest_x < dest_block_limit; dest_x += SIMD_WIDTH) {
+                int64_t dest_index = dest_x + dest_width * dest_y + dest_width * dest_height * dest_z;
+                int64_t src_x = dest_x + x_offset;
+#ifdef __AVX__
+                __m256 sum = _mm256_setzero_ps();
+                __m256 weight = _mm256_setzero_ps();
+                for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
+                    // take indexes the at the same order as dest_index
+                    int64_t src_index = src_x + i * jump_size + src_width * src_y + src_width * src_height * src_z;
+                    __m256 val = _mm256_loadu_ps(src_data + src_index);
+                    __m256 w = _mm256_set1_ps(kernel[i + kernel_radius]);
+                    __m256 mask = _mm256_andnot_ps(IsInfinity(val), _mm256_cmp_ps(val, val, _CMP_EQ_OQ));
+                    w = _mm256_and_ps(w, mask);
+                    val = _mm256_and_ps(val, mask);
+                    sum += val * w;
+                    weight += w;
+                }
+                sum /= weight;
+                _mm256_storeu_ps(dest_data + dest_index, sum);
+#else
+                __m128 sum = _mm_setzero_ps();
+                __m128 weight = _mm_setzero_ps();
+                for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
+                    int64_t src_index = src_x + i * jump_size + src_width * src_y + src_width * src_height * src_z;
+                    __m128 val = _mm_loadu_ps(src_data + src_index);
+                    __m128 w = _mm_set_ps1(kernel[i + kernel_radius]);
+                    __m128 mask = _mm_andnot_ps(IsInfinity(val), _mm_cmpeq_ps(val, val));
+                    w = _mm_and_ps(w, mask);
+                    val = _mm_and_ps(val, mask);
+                    sum += val * w;
+                    weight += w;
+                }
+                sum /= weight;
+                _mm_storeu_ps(dest_data + dest_index, sum);
+#endif
+            }
+
+            // Handle remainder of each block
+            for (int64_t dest_x = dest_block_limit; dest_x < dest_width; dest_x++) {
+                int64_t dest_index = dest_x + dest_width * dest_y + dest_width * dest_height * dest_z;
+                int64_t src_x = dest_x + x_offset;
+                float sum = 0.0;
+                float weight = 0.0;
+                for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
+                    int64_t src_index = src_x + i * jump_size + src_width * src_y + src_width * src_height * src_z;
+                    float val = src_data[src_index];
+                    if (!isnan(val)) {
+                        float w = kernel[i + kernel_radius];
+                        sum += val * w;
+                        weight += w;
+                    }
+                }
+                if (weight > 0.0) {
+                    sum /= weight;
+                } else {
+                    sum = NAN;
+                }
+                dest_data[dest_index] = sum;
+            }
+        }
+    }
+    return true;
+}
+
+bool GaussianSmooth3D(const float* src_data, float* dest_data, int64_t src_width,
+int64_t src_height, int64_t src_depth, int64_t dest_width, int64_t dest_height,
+int64_t dest_depth, int smoothing_factor) {
+    float sigma = (smoothing_factor -1) / 2.0f;
+    int mask_size = (smoothing_factor -1 ) * 2 + 1;
+    const int apron_height = smoothing_factor - 1;
+    int64_t calculated_dest_width = src_width - 2 * (smoothing_factor - 1);
+    int64_t calculated_dest_height = src_height - 2 * (smoothing_factor - 1);
+    int64_t calculated_dest_depth = src_depth - 2 * (smoothing_factor - 1);
+
+    if (dest_width * dest_height * dest_width < calculated_dest_width * calculated_dest_height * calculated_dest_depth) {
+        spdlog::error("Incorrectly sized destination array. Should be at least{}x{}x{} (got {}x{}x{})",
+        calculated_dest_width, calculated_dest_height, calculated_dest_depth, dest_width, dest_height, dest_depth);
+        return false;
+    }
+
+    std::vector<float> kernel(mask_size);
+    MakeKernel(kernel, sigma);
+    
+    // make temp buffer size larger?? adapt code to work with smaller buffer?? (by not using whole width or height)
+    double target_pixels = (SMOOTHING_TEMP_BUFFER_SIZE_MB * 1e6) / sizeof(float);
+    int64_t target_buffer_height = target_pixels / dest_width;
+    // we know src_height is always > 4*apron_height otherwise smoothing_factor makes no sense.
+    if (target_buffer_height < 4 * apron_height) {
+        target_buffer_height = 4 * apron_height;
+    }
+    int64_t buffer_height = min(target_buffer_height, src_height);
+
+    int64_t target_buffer_depth = buffer_height / dest_height;
+    if (target_buffer_depth < 4 * apron_height) {
+        target_buffer_depth = 4 * apron_height;
+    }
+    int64_t buffer_depth = min(target_buffer_depth, src_depth);
+
+    int64_t line_offset = 0;
+    Timer t;
+    //create temporary array that will be deleted automatically when out of scope
+    std::unique_ptr<float[]> temp_array1(new float[dest_width * buffer_height * buffer_depth]);
+    std::unique_ptr<float[]> temp_array2(new float[dest_width * buffer_height * buffer_depth]);
+    auto source_ptr = src_data;
+    auto dest_ptr = dest_data;
+    const auto temp_ptr1 = temp_array1.get();
+    const auto temp_ptr2 = temp_array2.get();
+
+    while (line_offset < dest_height * dest_depth) {
+        int64_t num_lines = buffer_height - 2 * apron_height;
+        // clamp last iteration
+        if (line_offset + num_lines > dest_height * dest_depth) {
+            num_lines = dest_height * dest_depth - line_offset;
+        }
+        RunKernel3D(kernel, source_ptr, temp_ptr1, src_width, src_height, src_depth, dest_width, num_lines + 2 * apron_height, dest_depth, 0);
+        RunKernel3D(kernel, temp_array1.get(), temp_ptr2, dest_width, num_lines + 2 * apron_height, dest_width, num_lines, 1);
+        RunKernel3D(kernel, temp_array2.get(), dest_ptr, dest_width, dest_height, num_lines + 2 * apron_height, dest_width, dest_height, dest_depth, 2);
+    }
+
+    while (plane_offset < dest_depth) {
+        int64_t num_planes = buffer_depth - 2 * apron_height;
+        // clamp last iterations (depth)
+        if (plane_offset + num_planes > dest_depth) {
+            num_planes = dest_depth - plane_offset;
+        }
+        while (line_offset < dest_height) {
+            int64_t num_lines = buffer_height - 2 * apron_height;
+            // clamp last iterations (height)
+            if (line_offset + num_lines > dest_height) {
+                num_lines = dest_height - line_offset;
+            }
+            RunKernel3D(kernel, source_ptr, temp_ptr1, src_width, src_height, src_depth, dest_width, num_lines + 2 * apron_height, num_planes + 2 * apron_height, 0);
+            RunKernel3D(kernel, temp_array1.get(), temp_ptr2, dest_width, num_lines + 2 * apron_height, num_planes + 2 * apron_height, dest_width, num_lines, num_planes, 1);
+            RunKernel3D(kernel, temp_array2.get(), dest_ptr, dest_width, num_lines, num_planes, dest_width, num_lines - 2 * apron_height, num_planes - 2 * apron_height 2);
+
+            line_offset += num_lines;
+            source_ptr += num_lines * src_width;
+            dest_ptr += num_lines * dest_width;
+        }
+    }
+
+
+
+
+    
+
+}
+    
 
 } // namespace carta

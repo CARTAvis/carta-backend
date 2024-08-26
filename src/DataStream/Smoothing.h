@@ -75,6 +75,15 @@ bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, 
 void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width, int64_t dest_width, int64_t dest_height, int64_t x_offset,
     int64_t y_offset, int smoothing_factor);
 
+// 3D Functions
+
+bool RunKernel3D(const std::vector<float>& kernel, const float* src_data, float* dest_data,
+    int64_t src_width, int64_t src_height, int64_t src_depth, int64_t dest_width,
+    int64_t dest_height, int64_t dest_depth, const int axis);
+bool GaussianSmooth3D(const float* src_data, float* dest_data, int64_t src_width,
+    int64_t src_height, int64_t src_depth, int64_t dest_width, int64_t dest_height,
+    int64_t dest_depth, int smoothing_factor);
+
 } // namespace carta
 
 #endif // CARTA_SRC_DATASTREAM_SMOOTHING_H_
