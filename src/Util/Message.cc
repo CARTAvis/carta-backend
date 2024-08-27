@@ -692,6 +692,23 @@ CARTA::ListProgress Message::ListProgress(
     message.set_percentage(percentage);
     return message;
 }
+CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const string& hips, const string& wcs, int32_t width, int32_t height,
+    const string& projection, float fov, float ra, float dec, const string& coordsys, float rotation_angle, const string& object) {
+    CARTA::RemoteFileRequest message;
+    message.set_file_id(file_id);
+    message.set_hips(hips);
+    message.set_wcs(wcs);
+    message.set_width(width);
+    message.set_height(height);
+    message.set_projection(projection);
+    message.set_fov(fov);
+    message.set_ra(ra);
+    message.set_dec(dec);
+    message.set_coordsys(coordsys);
+    message.set_rotation_angle(rotation_angle);
+    message.set_object(object);
+    return message;
+}
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
     const std::vector<int32_t>& bins, double mean, double std_dev) {

@@ -95,6 +95,7 @@ public:
     void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
+    void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -286,6 +287,9 @@ protected:
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
     int _last_file_id;
     std::mutex _frame_mutex;
+
+    // Suffix for opening multiple remote files
+    int _remote_file_index;
 
     const std::unique_ptr<TableController> _table_controller;
 
