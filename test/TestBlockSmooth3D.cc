@@ -8,7 +8,7 @@
 #include <vector>
 
 #include <casa/Arrays/ArrayMath.h>
-#include <casa/Arrays/Matrix.h>
+#include <casa/Arrays/Cube.h>
 #include <gtest/gtest.h>
 
 #include "DataStream/Smoothing3D.h"
@@ -31,6 +31,14 @@ using namespace carta;
 
 // define the data type from casacore https://casacore.github.io/casacore/classcasacore_1_1Cube.html
 typedef casacore::Cube<float> Cube3D;
+
+class GaussianSmoothing3DTest : public ::testing::Test {
+public:
+    const std::vector<float> nan_fractions = {0.0f, 0.05f, 0.1f, 0.5f, 0.95f, 1.0f};
+
+    
+
+}
 
 class BlockSmoothing3DTest : public ::testing::Test {
 public:
@@ -55,7 +63,7 @@ public:
     }
 
     Cube3D RandomCube(size_t rows, size_t columns, size_t planes, float nan_fraction) {
-        Cube3d m(rows, columns, planes);
+        Cube3D m(rows, columns, planes);
 
         for (auto i = 0; i < m.nrow(); i++) {
             for (auto j = 0; j < m.ncolumn(); j++) {
@@ -132,6 +140,8 @@ public:
         }
         return has_vals ? max_val : NAN;
     }
+
+    // ABOVE THIS LINE CHANGES MADE
 
     Cube3D DownsampleTileScalar(const Cube3D& m, int downsample_factor) {
         int result_rows = ceil(m.nrow() / (float)(downsample_factor));

@@ -38,6 +38,7 @@ set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
         TestBlockSmooth.cc
+        TestBlockSmooth3D.cc
         TestContour.cc
         TestCursorSpatialProfiles.cc
         TestExprImage.cc

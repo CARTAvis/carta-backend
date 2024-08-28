@@ -83,6 +83,28 @@ bool RunKernel3D(const std::vector<float>& kernel, const float* src_data, float*
 bool GaussianSmooth3D(const float* src_data, float* dest_data, int64_t src_width,
     int64_t src_height, int64_t src_depth, int64_t dest_width, int64_t dest_height,
     int64_t dest_depth, int smoothing_factor);
+bool BlockSmooth3D(const float* src_data, float* dest_data, int64_t src_width,
+    int64_t src_height, int64_t src_depth, int64_t dest_width, int64_t dest_height,
+    int64_t dest_depth, int64_t x_offset, int64_t y_offset, int64_t z_offset,
+    int smoothing_factor);
+bool BlockSmoothScalar3D(const float* src_data, float* dest_data, int64_t src_width,
+    int64_t src_height, int64_t src_depth, int64_t dest_width, int64_t dest_height,
+    int64_t dest_depth, int64_t x_offset, int64_t y_offset, int64_t z_offset,
+    int smoothing_factor);
+bool BlockSmoothSSE3D(const float* src_data, float* dest_data, int64_t src_width, 
+    int64_t src_height, int64_t src_depth, int64_t dest_width, int64_t dest_height,
+    int64_t dest_depth, int64_t x_offset, int64_t y_offset, int64_t z_offset,
+    int smoothing_factor);
+#ifdef __AVX__
+    bool BlockSmoothAVX3D(const float* src_data, float* dest_data, int64_t src_width,
+        int64_t src_height, int64_t src_depth, int64_t dest_width, int64_t dest_height,
+        int64_t dest_depth, int64_t x_offset, int64_t y_offset, int64_t z_offset,
+        int smoothing_factor);
+#endif
+
+void NearestNeighbor3D(const float* src_data, float* dest_data, int64_t src_width,
+    int64_t src_height, int64_t dest_width, int64_t dest_height, int64_t dest_depth,
+    int64_t x_offset, int64_t y_offset, int64_t z_offset, int smoothing_factor);
 
 } // namespace carta
 
