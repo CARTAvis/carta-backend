@@ -735,15 +735,15 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
-        std::string err_message;
 
         if (message.has_channel_range()) {
             int start_channel(message.channel_range().min());
             int end_channel(message.channel_range().max());
             int nchan(frame->Depth());
             for (int chan = start_channel; chan <= end_channel; ++chan) {
-                if (chan >= nchan) {
-                    continue;
+                // Cancel if past last channel or new channel range has been set
+                if (chan >= nchan || !IsInChannelRange(file_id, chan)) {
+                    break;
                 }
                 OnAddRequiredTiles(message.required_tiles(), chan);
             }
@@ -753,6 +753,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             auto stokes_target = message.stokes();
             bool z_changed(z_target != frame->CurrentZ());
             bool stokes_changed(stokes_target != frame->CurrentStokes());
+            std::string err_message;
             if (frame->SetImageChannels(z_target, stokes_target, err_message)) {
                 // Send Contour data if required
                 SendContourData(file_id);
