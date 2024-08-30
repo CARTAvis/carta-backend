@@ -386,7 +386,8 @@ void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width,
 // X : width (column), Y : height (row), Z : depth (plane)
 // vertical seems to be (NOOOO, ASK!) needed because the kernel needs to be applied in both directions, thats why RunKernel is called twice in GaussianSmooth, one with vertical = true and one with vertical = false
 
-//RunKernel3D. Should I use vertical? Not for now
+//RunKernel3D.
+// Destination axes must be at least source axes - kernel_radius * 2
 bool RunKernel3D(const vector<float>& kernel, const float* src_data, float* dest_data,
     const int64_t src_width, const int64_t src_height, const int64_t src_depth,
     const int64_t dest_width, const int64_t dest_height, const int64_t dest_depth, const int axis) {
@@ -564,8 +565,8 @@ bool GaussianSmooth3D(const float* src_data, float* dest_data, int64_t src_width
     int64_t buffer_depth = min(target_buffer_depth, src_depth);
 
     Timer t;
-    std::unique_ptr<float[]> temp_array1(new float[buffer_width * buffer_height * buffer_depth]);
-    std::unique_ptr<float[]> temp_array2(new float[buffer_width * buffer_height * buffer_depth]);
+    std::unique_ptr<float[]> temp_array1(new float[(buffer_width - 2 * apron_height) * buffer_height * buffer_depth]);
+    std::unique_ptr<float[]> temp_array2(new float[(buffer_width - 2 * apron_height) * (buffer_height - 2 * apron_height) * buffer_depth]);
     auto source_ptr = src_data;
     auto dest_ptr = dest_data;
     const auto temp_ptr1 = temp_array1.get();
@@ -597,11 +598,14 @@ bool GaussianSmooth3D(const float* src_data, float* dest_data, int64_t src_width
                     num_columns = dest_width - column_offset;
                 }
 
-                 // RUNKERNEL3D
+                // RUNKERNEL3D
+                // The first iteration goes over the X axis. It only needs information from the horizontal pixels. There the source is the whole cube so no problem with that. The second iteration goes over the Y axes, therefore we need to include pixels up to apron_height in the vertical direction outside the cube. The third iteration goes over the Z axis, therefore we need to include pixels up to apron_height in the depth direction outside the cube. The src in the 1st iteration is the whole cube and dest is the 1st buffer with extra apron_height in Y and in Z. The src in the 2nd iteration is the 1st buffer and dest is the 2nd buffer with extra apron_height in Z. The src in the 3rd iteration is the 2nd buffer and dest is the final dest_data.
                 RunKernel3D(kernel, source_ptr, temp_ptr1, src_width, src_height, src_depth,
-                num_columns + 2 * apron_height, num_rows + 2 * apron_height,
-                num_planes + 2 * apron_height, 0);
-                RunKernel3D(kernel, temp_array1.get(), temp_ptr2, buffer_width, buffer_height, buffer_depth, buffer_width, buffer_height, buffer_depth, 1);
+                num_columns, num_rows + 2 * apron_height, num_planes + 2 * apron_height, 0);
+                RunKernel3D(kernel, temp_array1.get(), temp_ptr2, num_columns, num_rows + 2 * apron_height, num_planes + 2 * apron_height,
+                num_columns, num_rows, num_planes + 2 * apron_height, 1);
+                RunKernel3D(kernel, temp_array2.get(), dest_ptr, num_columns, num_rows, num_planes + 2 * apron_height,
+                num_columns, num_rows, num_planes, 2);
 
                 src_ptr += num_columns * i + src_width * num_rows * j + src_width * src_height * num_planes * k
                 dest_ptr += num_columns * i + dest_width * num_rows * j + dest_width * dest_height * num_planes * k
@@ -609,7 +613,7 @@ bool GaussianSmooth3D(const float* src_data, float* dest_data, int64_t src_width
             }
             row_offset += num_columns;
         }
-        depth_offset += num_planes;
+        plane_offset += num_planes;
     }
 
     // Fill in original NaNs
