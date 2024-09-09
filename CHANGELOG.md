@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* Added support for PV image generation along a polyline region ([#1341](https://github.com/CARTAvis/carta-backend/issues/1341)).
-* Added support for loading remote FITS files from the hips2fits server ([#1379](https://github.com/CARTAvis/carta-backend/issues/1379)).
+* Add support for PV image generation along a polyline region ([#1341](https://github.com/CARTAvis/carta-backend/issues/1341)).
+* Add support for loading remote FITS files from the hips2fits server ([#1379](https://github.com/CARTAvis/carta-backend/issues/1379)).
+* Add support for setting rest frequency for moment image generation ([#1385](https://github.com/CARTAvis/carta-backend/issues/1385)).
 
 ### Fixed
-* Fixed crash when loading non-image HDU by URL ([#1365](https://github.com/CARTAvis/carta-backend/issues/1365)).
+* Fix crash when loading non-image HDU by URL ([#1365](https://github.com/CARTAvis/carta-backend/issues/1365)).
 * Fix crash when parsing FITS header long value ([#1366](https://github.com/CARTAvis/carta-backend/issues/1366)).
 * Fix incorrect parsing of SPECSYS value for ATCA FITS header ([#1375](https://github.com/CARTAvis/carta-backend/issues/1375)).
 * Fix hdf5 image distortion after animation stops ([#1368](https://github.com/CARTAvis/carta-backend/issues/1368)).
