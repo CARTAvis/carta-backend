@@ -158,8 +158,12 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a30ecdaf742c16d7dafa01fcef4845845"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae6edcb070973e556bd3393b8e5f1c928"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#ae6edcb070973e556bd3393b8e5f1c928">SetPixelRange</a> (const CARTA::MomentRequest &amp;moment_request)</td></tr>
 <tr class="separator:ae6edcb070973e556bd3393b8e5f1c928"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee9c3947de88a344adc11f8003d6d55c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#aee9c3947de88a344adc11f8003d6d55c">SetRestFrequency</a> (const CARTA::MomentRequest &amp;moment_request)</td></tr>
+<tr class="separator:aee9c3947de88a344adc11f8003d6d55c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acaf7fc08b7ea9611c6524d8fdac4c8a9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#acaf7fc08b7ea9611c6524d8fdac4c8a9">ResetImageMoments</a> (const casacore::ImageRegion &amp;image_region)</td></tr>
 <tr class="separator:acaf7fc08b7ea9611c6524d8fdac4c8a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a068091531d2639f3f25dba4c7ce1d76a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#a068091531d2639f3f25dba4c7ce1d76a">SetImageRestFrequency</a> (double rest_frequency)</td></tr>
+<tr class="separator:a068091531d2639f3f25dba4c7ce1d76a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1595d5da6e76291c15ef5e954e4b77f"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#af1595d5da6e76291c15ef5e954e4b77f">GetMomentMode</a> (CARTA::Moment moment)</td></tr>
 <tr class="separator:af1595d5da6e76291c15ef5e954e4b77f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aefca675b86247cabd5021beb462d6a37"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#aefca675b86247cabd5021beb462d6a37">GetMomentSuffix</a> (casacore::Int moment)</td></tr>
@@ -195,6 +199,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:ac9aab48b31b1185c4ddaddd41c625315"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d2835e32bd00ee36836d43a36dafaa6"><td class="memItemLeft" align="right" valign="top">casacore::Vector&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#a3d2835e32bd00ee36836d43a36dafaa6">_exclude_pix</a></td></tr>
 <tr class="separator:a3d2835e32bd00ee36836d43a36dafaa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a003662b6f3c5ba167517020640c05628"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#a003662b6f3c5ba167517020640c05628">_rest_frequency</a></td></tr>
+<tr class="separator:a003662b6f3c5ba167517020640c05628"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b19d14803250d2252a307ec1edb2339"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#a7b19d14803250d2252a307ec1edb2339">_error_msg</a></td></tr>
 <tr class="separator:a7b19d14803250d2252a307ec1edb2339"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7dacc29de99745d31473e68cd33e2b8d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MomentGenerator.html#a7dacc29de99745d31473e68cd33e2b8d">_success</a></td></tr>
@@ -572,9 +578,47 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1MomentGenerator_acaf7fc08b7ea9611c6524d8fdac4c8a9_cgraph.svg" width="430" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1MomentGenerator_acaf7fc08b7ea9611c6524d8fdac4c8a9_icgraph.svg" width="424" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a068091531d2639f3f25dba4c7ce1d76a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a068091531d2639f3f25dba4c7ce1d76a">&#9670;&nbsp;</a></span>SetImageRestFrequency()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void MomentGenerator::SetImageRestFrequency </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>rest_frequency</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1MomentGenerator_a068091531d2639f3f25dba4c7ce1d76a_icgraph.svg" width="660" height="82"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -762,6 +806,38 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1MomentGenerator_ae6edcb070973e556bd3393b8e5f1c928_icgraph.svg" width="424" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="aee9c3947de88a344adc11f8003d6d55c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aee9c3947de88a344adc11f8003d6d55c">&#9670;&nbsp;</a></span>SetRestFrequency()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void MomentGenerator::SetRestFrequency </td>
+          <td>(</td>
+          <td class="paramtype">const CARTA::MomentRequest &amp;&#160;</td>
+          <td class="paramname"><em>moment_request</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1MomentGenerator_aee9c3947de88a344adc11f8003d6d55c_icgraph.svg" width="424" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -1162,6 +1238,28 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a> carta::MomentGenerator::_progress_callback</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a003662b6f3c5ba167517020640c05628"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a003662b6f3c5ba167517020640c05628">&#9670;&nbsp;</a></span>_rest_frequency</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double carta::MomentGenerator::_rest_frequency</td>
         </tr>
       </table>
   </td>

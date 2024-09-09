@@ -1,21 +1,22 @@
 <map id="carta::MomentGenerator" name="carta::MomentGenerator">
-<area shape="rect" id="node1" title=" " alt="" coords="945,459,1128,486"/>
+<area shape="rect" id="node1" title=" " alt="" coords="945,487,1128,514"/>
 <area shape="rect" id="node2" title=" " alt="" coords="515,5,734,47"/>
-<area shape="rect" id="node3" title=" " alt="" coords="537,71,713,98"/>
-<area shape="rect" id="node4" title=" " alt="" coords="599,122,650,149"/>
-<area shape="rect" id="node5" title=" " alt="" coords="497,268,752,339"/>
-<area shape="rect" id="node6" href="$classcarta_1_1ImageMoments.html" title=" " alt="" coords="219,265,384,307"/>
-<area shape="rect" id="node14" title=" " alt="" coords="522,173,727,244"/>
-<area shape="rect" id="node7" title=" " alt="" coords="5,265,169,307"/>
-<area shape="rect" id="node8" title=" " alt="" coords="271,349,331,375"/>
-<area shape="rect" id="node9" title=" " alt="" coords="579,441,671,467"/>
-<area shape="rect" id="node10" title=" " alt="" coords="541,491,709,518"/>
-<area shape="rect" id="node11" title=" " alt="" coords="605,549,644,575"/>
-<area shape="rect" id="node12" title=" " alt="" coords="599,605,650,631"/>
-<area shape="rect" id="node13" title=" " alt="" coords="523,656,726,697"/>
-<area shape="rect" id="node15" title=" " alt="" coords="263,195,339,222"/>
-<area shape="rect" id="node16" title=" " alt="" coords="522,722,727,778"/>
-<area shape="rect" id="node17" title=" " alt="" coords="570,802,679,829"/>
-<area shape="rect" id="node18" title=" " alt="" coords="563,853,686,879"/>
-<area shape="rect" id="node19" title=" " alt="" coords="523,903,726,959"/>
+<area shape="rect" id="node3" title=" " alt="" coords="591,71,658,98"/>
+<area shape="rect" id="node4" title=" " alt="" coords="537,122,713,149"/>
+<area shape="rect" id="node5" title=" " alt="" coords="599,173,650,199"/>
+<area shape="rect" id="node6" title=" " alt="" coords="497,319,752,389"/>
+<area shape="rect" id="node7" href="$classcarta_1_1ImageMoments.html" title=" " alt="" coords="219,316,384,357"/>
+<area shape="rect" id="node15" title=" " alt="" coords="522,224,727,295"/>
+<area shape="rect" id="node8" title=" " alt="" coords="5,316,169,357"/>
+<area shape="rect" id="node9" title=" " alt="" coords="271,399,331,426"/>
+<area shape="rect" id="node10" title=" " alt="" coords="579,491,671,518"/>
+<area shape="rect" id="node11" title=" " alt="" coords="541,542,709,569"/>
+<area shape="rect" id="node12" title=" " alt="" coords="605,599,644,626"/>
+<area shape="rect" id="node13" title=" " alt="" coords="599,655,650,682"/>
+<area shape="rect" id="node14" title=" " alt="" coords="523,707,726,748"/>
+<area shape="rect" id="node16" title=" " alt="" coords="263,246,339,273"/>
+<area shape="rect" id="node17" title=" " alt="" coords="522,773,727,829"/>
+<area shape="rect" id="node18" title=" " alt="" coords="570,853,679,879"/>
+<area shape="rect" id="node19" title=" " alt="" coords="563,903,686,930"/>
+<area shape="rect" id="node20" title=" " alt="" coords="523,954,726,1010"/>
 </map>

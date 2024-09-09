@@ -1,5 +1,7 @@
 var NAVTREEINDEX9 =
 {
+"namespacecarta.html#a6f90f0f5fadc7ab7bfad3fdc20058cef":[2,0,0,129],
+"namespacecarta.html#a724d5f79d7c1320592c011bd3bb57e98":[2,0,0,135],
 "namespacecarta.html#a734df587cce5cbf3b5b11348f2b1ff08":[2,0,0,107],
 "namespacecarta.html#a749005ecb48d6c06c1214277a719ae7f":[2,0,0,125],
 "namespacecarta.html#a7e1f615d908d735552aa446444b3fc72":[2,0,0,142],
@@ -247,7 +249,5 @@ var NAVTREEINDEX9 =
 "structcarta_1_1HistogramConfig.html#ad0dbf15f45db67eafc5e925583d147fb":[3,0,0,6,1],
 "structcarta_1_1HistogramConfig.html#adbecc0b3431c3a2d04a33bcf50139437":[3,0,0,6,3],
 "structcarta_1_1HistogramConfig.html#adc9801fecde5d4a2b3385d60fab3d586":[3,0,0,6,4],
-"structcarta_1_1HistogramConfig.html#ae625a69e48d46ef7887b9ee10cc04d53":[3,0,0,6,6],
-"structcarta_1_1HistogramConfig.html#aee3b990962e991922bcf9f3779401bcd":[3,0,0,6,2],
-"structcarta_1_1HistogramConfig.html#af5ace17c70be9743efac1cb4f2da8812":[3,0,0,6,8]
+"structcarta_1_1HistogramConfig.html#ae625a69e48d46ef7887b9ee10cc04d53":[3,0,0,6,6]
 };

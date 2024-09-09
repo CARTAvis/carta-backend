@@ -1,5 +1,7 @@
 var NAVTREEINDEX7 =
 {
+"classcarta_1_1Session.html#a4565eed986a6f5ed57ab3a0a6c5b6110":[3,0,0,85,81],
+"classcarta_1_1Session.html#a45b9623e5dd0c0d54307ab148e8745aa":[3,0,0,85,62],
 "classcarta_1_1Session.html#a4690f022a25887573f406194d0feb2c5":[3,0,0,85,3],
 "classcarta_1_1Session.html#a474a60a84b83ac33ffc32f8595690847":[3,0,0,85,32],
 "classcarta_1_1Session.html#a48f6d4b63a2857a38e9f286af0447d82":[3,0,0,85,135],
@@ -247,7 +249,5 @@ var NAVTREEINDEX7 =
 "classcarta_1_1TableView.html#ad4d7f9a4791b2151ddff48755353ec24":[3,0,0,94,9],
 "classcarta_1_1TableView.html#ad6058b2ef623e62b9f0e5d5c6c751541":[3,0,0,94,15],
 "classcarta_1_1TableView.html#ad628f76365fa1d0ecc018a32ddccb5cc":[3,0,0,94,14],
-"classcarta_1_1TableView.html#addd9c7cf7a1c17bb91788ba85f34769e":[3,0,0,94,2],
-"classcarta_1_1TableView.html#adf9dee6cf8ff10bf2ea71fa75f2744e3":[3,0,0,94,5],
-"classcarta_1_1ThreadManager.html":[3,0,0,98]
+"classcarta_1_1TableView.html#addd9c7cf7a1c17bb91788ba85f34769e":[3,0,0,94,2]
 };
