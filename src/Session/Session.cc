@@ -741,10 +741,14 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             int end_channel(message.channel_range().max());
             int nchan(frame->Depth());
             for (int chan = start_channel; chan <= end_channel; ++chan) {
-                // Cancel if past last channel or new channel range has been set
-                if (chan >= nchan || !IsInChannelRange(file_id, chan)) {
+                // Cancel if not in latest channel range or past last channel
+                ImageChannelLock(file_id);
+                bool cancel = !IsInChannelRange(file_id, chan);
+                ImageChannelUnlock(file_id);
+                if (cancel || chan >= nchan) {
                     break;
                 }
+
                 OnAddRequiredTiles(message.required_tiles(), chan);
             }
         } else {

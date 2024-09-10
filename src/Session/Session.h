@@ -97,15 +97,18 @@ public:
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
-        // Image channel mutex is locked so ok to update channel range.
+        // Image channel mutex has been locked by SessionManager.
+        // Set current channel or channel range, clear queue if new.
+        auto file_id(message.file_id());
         bool clear_queue(true);
-        if (message.has_channel_range()) {
+
+        if (message.has_current_range()) {
             // Clear queue if new range does not extend current range.
-            AxisRange new_range(message.channel_range().min(), message.channel_range().max());
-            clear_queue = SetChannelRange(new_range);
+            AxisRange new_range(message.current_range().min(), message.current_range().max());
+            clear_queue = SetChannelRange(file_id, new_range);
         } else {
             // Always clear queue and replace channel range (for cancel) for single channel.
-            _channel_range = AxisRange(message.channel(), message.channel());
+            _channel_range[file_id] = AxisRange(message.channel(), message.channel());
         }
 
         if (clear_queue) {
@@ -119,31 +122,19 @@ public:
         _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
     }
 
-    bool SetChannelRange(AxisRange& new_range) {
+    bool SetChannelRange(int file_id, AxisRange& new_range) {
         // Image channel mutex should be locked before calling this.
         // Extend or replace channel range with new range.
-        // Returns true if channel range was replaced.
-        bool is_new_range(false);
-        if (new_range.to == _channel_range.from - 1) {
-            // Extend lower range
-            _channel_range.from = new_range.from;
-        } else if (new_range.from == _channel_range.to + 1) {
-            // Extend upper range
-            _channel_range.to = new_range.to;
-        } else {
-            // Replace range with new range
-            _channel_range = new_range;
-            is_new_range = true;
-        }
+        // Returns true if new range does not overlap current channel range.
+        bool is_new_range = !IsInChannelRange(file_id, new_range.from) && !IsInChannelRange(file_id, new_range.to);
+        _channel_range[file_id] = new_range;
         return is_new_range;
     }
 
     bool IsInChannelRange(int file_id, int channel) {
-        // Lock image channel mutex and check if channel is in range
-        ImageChannelLock(file_id);
-        bool is_in_range = channel >= _channel_range.from && channel <= _channel_range.to;
-        ImageChannelUnlock(file_id);
-        return is_in_range;
+        // Image channel mutex should be locked before calling this.
+        // Check if channel is in channel range for file id.
+        return _channel_range[file_id].is_in_range(channel);
     }
 
     // Task handling
@@ -341,10 +332,10 @@ protected:
     // Individual stokes files connector
     std::unique_ptr<StokesFilesConnector> _stokes_files_connector;
 
-    // Manage image channel/z
+    // Manage image channel and range (including single channel). Key is file_id.
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
-    AxisRange _channel_range;
+    std::unordered_map<int, AxisRange> _channel_range;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;

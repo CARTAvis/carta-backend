@@ -84,6 +84,9 @@ struct AxisRange {
         }
         return false;
     }
+    bool is_in_range(int val) {
+        return val >= from && val <= to;
+    }
 };
 
 struct PointXy {
