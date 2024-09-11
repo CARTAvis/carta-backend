@@ -310,7 +310,7 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
         for (int i = 0; i < _num_stokes; ++i) {
             int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
             int stokes_value;
-            if (FileInfo::ConvertFitsStokesValue(stokes_fits_value, stokes_value)) {
+            if (Stokes::ConvertFits(stokes_fits_value, stokes_value)) {
                 auto stokes_type = static_cast<CARTA::PolarizationType>(stokes_value);
                 _stokes_indices[stokes_type] = i;
                 _stokes_types[i] = stokes_type;

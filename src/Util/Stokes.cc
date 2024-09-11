@@ -8,7 +8,7 @@
 
 using namespace carta;
 
-std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> Stokes::_to_casacore{
+std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> Stokes::_to_casa{
     {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, casacore::Stokes::StokesTypes::Undefined},
     {CARTA::PolarizationType::I, casacore::Stokes::StokesTypes::I}, {CARTA::PolarizationType::Q, casacore::Stokes::StokesTypes::Q},
     {CARTA::PolarizationType::U, casacore::Stokes::StokesTypes::U}, {CARTA::PolarizationType::V, casacore::Stokes::StokesTypes::V},
@@ -43,8 +43,20 @@ CARTA::PolarizationType Stokes::Get(std::string name) {
     return type;
 }
 
-casacore::Stokes::StokesTypes Stokes::ToCasacore(CARTA::PolarizationType type) {
-    return _to_casacore.at(type);
+casacore::Stokes::StokesTypes Stokes::ToCasa(CARTA::PolarizationType type) {
+    return _to_casa.at(type);
+}
+
+bool Stokes::ConvertFits(const int& in_stokes_value, int& out_stokes_value) {
+    if (in_stokes_value >= 1 && in_stokes_value <= 4) {
+        out_stokes_value = in_stokes_value;
+        return true;
+    } else if ((in_stokes_value >= 4 && in_stokes_value <= 12) || (in_stokes_value <= -1 && in_stokes_value >= -8)) {
+        // convert between [5, 6, ..., 12] and [-1, -2, ..., -8]
+        out_stokes_value = -in_stokes_value + 4;
+        return true;
+    }
+    return false;
 }
 
 std::string Stokes::Name(CARTA::PolarizationType type) {

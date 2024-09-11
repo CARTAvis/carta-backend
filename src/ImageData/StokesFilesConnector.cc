@@ -252,7 +252,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         for (int i = 0; i < message.stokes_files_size(); ++i) {
             int new_stokes_value = message.stokes_files(i).polarization_type();
             int new_stokes_fits_value;
-            if (FileInfo::ConvertFitsStokesValue(new_stokes_value, new_stokes_fits_value)) {
+            if (Stokes::ConvertFits(new_stokes_value, new_stokes_fits_value)) {
                 if (stokes_fits_value != 0) {
                     if (delt == 0) {
                         delt = new_stokes_fits_value - stokes_fits_value;
@@ -311,7 +311,7 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
 bool StokesFilesConnector::GetCasaStokesType(
     const CARTA::PolarizationType& in_stokes_type, casacore::Stokes::StokesTypes& out_stokes_type) {
     if (!Stokes::IsComputed(in_stokes_type)) {
-        out_stokes_type = Stokes::ToCasacore(in_stokes_type);
+        out_stokes_type = Stokes::ToCasa(in_stokes_type);
         return true;
     }
     return false;

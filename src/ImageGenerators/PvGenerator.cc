@@ -151,7 +151,7 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(const std::shared_
 
     // Add stokes coordinate if input image has one
     if (input_csys->hasPolarizationCoordinate()) {
-        auto casacore_stokes_type = Stokes::ToCasacore(Stokes::Get(stokes));
+        auto casacore_stokes_type = Stokes::ToCasa(Stokes::Get(stokes));
         casacore::Vector<casacore::Int> types(1, casacore_stokes_type);
         casacore::StokesCoordinate stokes_coord(types);
         pv_csys.addCoordinate(stokes_coord);

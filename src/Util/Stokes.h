@@ -21,14 +21,15 @@ class Stokes {
 public:
     static CARTA::PolarizationType Get(int value);
     static CARTA::PolarizationType Get(std::string name);
-    static casacore::Stokes::StokesTypes ToCasacore(CARTA::PolarizationType type);
+    static casacore::Stokes::StokesTypes ToCasa(CARTA::PolarizationType type);
+    static bool ConvertFits(const int& in_stokes_value, int& out_stokes_value);
     static std::string Name(CARTA::PolarizationType type);
     static std::string Description(CARTA::PolarizationType type);
     static bool IsComputed(int value);
 
     // TODO move FITS mappings here too
 protected:
-    static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> _to_casacore;
+    static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> _to_casa;
     static std::unordered_map<CARTA::PolarizationType, std::string> _description;
 };
 
