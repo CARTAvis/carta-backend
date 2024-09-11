@@ -28,20 +28,20 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
     _success = false;
     _cancel = false;
 
-    // Set moment axis
+    // Save request settings
     SetMomentAxis(moment_request);
-
-    // Set pixel range
     SetPixelRange(moment_request);
-
-    // Set moment types
     SetMomentTypes(moment_request);
+    SetRestFrequency(moment_request);
 
-    // Reset an ImageMoments
-    ResetImageMoments(image_region);
+    // Save image rest frequency for restore
+    double image_rest_freq = _image->coordinates().spectralCoordinate().restFrequency(); // Hz
 
     // Calculate moments
     try {
+        // Reset an ImageMoments rest frequency and subimage
+        ResetImageMoments(image_region);
+
         // Start the timer
         _start_time = std::chrono::high_resolution_clock::now();
 
@@ -90,8 +90,11 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
             }
         }
     } catch (AipsError& error) {
-        _error_msg = error.getLastMessage();
+        _error_msg = error.getMesg();
     }
+
+    // Restore original rest frequency
+    SetImageRestFrequency(image_rest_freq);
 
     // Set is the moment calculation successful or not
     moment_response.set_success(IsSuccess());
@@ -181,7 +184,14 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
     }
 }
 
+void MomentGenerator::SetRestFrequency(const CARTA::MomentRequest& moment_request) {
+    _rest_frequency = moment_request.rest_freq(); // Hz
+}
+
 void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_region) {
+    // Set the requested rest frequency in the image spectral coordinate
+    SetImageRestFrequency(_rest_frequency);
+
     // Reset the sub-image
     _sub_image.reset(new casacore::SubImage<casacore::Float>(*_image, image_region));
 
@@ -190,6 +200,19 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
 
     // Make an ImageMoments object and overwrite the output file if it already exists
     _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this, true));
+}
+
+void MomentGenerator::SetImageRestFrequency(double rest_frequency) {
+    auto csys = _image->coordinates();
+    if (rest_frequency != csys.spectralCoordinate().restFrequency()) {
+        casacore::String error;
+        casacore::Quantity new_rest_freq(rest_frequency, "Hz");
+        if (csys.setRestFrequency(error, new_rest_freq)) {
+            _image->setCoordinateInfo(csys);
+        } else {
+            throw(casacore::AipsError(error));
+        }
+    }
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
