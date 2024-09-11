@@ -2320,8 +2320,8 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
     // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
 
-    if (coordinate == 'x' || coordinate == 'y' || coordinate == 'z') {
-        // Profile only; use current Stokes
+    if (coordinate.empty() || coordinate == 'x' || coordinate == 'y' || coordinate == 'z') {
+        // Profile only or blank; use current Stokes
         stokes_index = CurrentStokes();
         return true;
     }
