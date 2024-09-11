@@ -121,6 +121,7 @@ public:
     virtual void SetStokesCrpix(float stokes_crpix);
     virtual void SetStokesCdelt(int stokes_cdelt);
     virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
+    virtual bool GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type);
     std::unordered_map<CARTA::PolarizationType, int> GetStokesIndices() {
         return _stokes_indices;
     };
@@ -180,6 +181,7 @@ protected:
 
     // Storage for the stokes type vs. stokes index
     std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;
+    std::unordered_map<int, CARTA::PolarizationType> _stokes_types;
     float _stokes_crval;
     float _stokes_crpix;
     int _stokes_cdelt;

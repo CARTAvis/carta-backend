@@ -15,49 +15,22 @@
 
 #include "Image.h"
 
-// stokes types and value conversion
-static std::unordered_map<CARTA::PolarizationType, int> StokesValues{{CARTA::PolarizationType::I, 1}, {CARTA::PolarizationType::Q, 2},
-    {CARTA::PolarizationType::U, 3}, {CARTA::PolarizationType::V, 4}, {CARTA::PolarizationType::RR, 5}, {CARTA::PolarizationType::LL, 6},
-    {CARTA::PolarizationType::RL, 7}, {CARTA::PolarizationType::LR, 8}, {CARTA::PolarizationType::XX, 9}, {CARTA::PolarizationType::YY, 10},
-    {CARTA::PolarizationType::XY, 11}, {CARTA::PolarizationType::YX, 12}, {CARTA::PolarizationType::Ptotal, 13},
-    {CARTA::PolarizationType::Plinear, 14}, {CARTA::PolarizationType::PFtotal, 15}, {CARTA::PolarizationType::PFlinear, 16},
-    {CARTA::PolarizationType::Pangle, 17}};
+namespace carta {
 
-// computed stokes using StokesValues
-#define COMPUTE_STOKES_PTOTAL StokesValues[CARTA::PolarizationType::Ptotal]     // Total polarization intensity: (Q^2+U^2+V^2)^(1/2)
-#define COMPUTE_STOKES_PLINEAR StokesValues[CARTA::PolarizationType::Plinear]   // Linear polarization intensity: (Q^2+U^2)^(1/2)
-#define COMPUTE_STOKES_PFTOTAL StokesValues[CARTA::PolarizationType::PFtotal]   // Fractional total polarization intensity: Ptotal/I
-#define COMPUTE_STOKES_PFLINEAR StokesValues[CARTA::PolarizationType::PFlinear] // Fractional linear polarization intensity: Plinear/I
-#define COMPUTE_STOKES_PANGLE StokesValues[CARTA::PolarizationType::Pangle]     // Polarization angle: (tan^-1(U/Q))/2
+class Stokes {
+public:
+    static CARTA::PolarizationType Get(int value);
+    static CARTA::PolarizationType Get(std::string name);
+    static casacore::Stokes::StokesTypes ToCasacore(CARTA::PolarizationType type);
+    static std::string Name(CARTA::PolarizationType type);
+    static std::string Description(CARTA::PolarizationType type);
+    static bool IsComputed(int value);
 
-static std::unordered_map<int, CARTA::PolarizationType> StokesTypes{{1, CARTA::PolarizationType::I}, {2, CARTA::PolarizationType::Q},
-    {3, CARTA::PolarizationType::U}, {4, CARTA::PolarizationType::V}, {5, CARTA::PolarizationType::RR}, {6, CARTA::PolarizationType::LL},
-    {7, CARTA::PolarizationType::RL}, {8, CARTA::PolarizationType::LR}, {9, CARTA::PolarizationType::XX}, {10, CARTA::PolarizationType::YY},
-    {11, CARTA::PolarizationType::XY}, {12, CARTA::PolarizationType::YX}, {13, CARTA::PolarizationType::Ptotal},
-    {14, CARTA::PolarizationType::Plinear}, {15, CARTA::PolarizationType::PFtotal}, {16, CARTA::PolarizationType::PFlinear},
-    {17, CARTA::PolarizationType::Pangle}};
-
-static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringTypes{{"I", CARTA::PolarizationType::I},
-    {"Q", CARTA::PolarizationType::Q}, {"U", CARTA::PolarizationType::U}, {"V", CARTA::PolarizationType::V},
-    {"RR", CARTA::PolarizationType::RR}, {"LL", CARTA::PolarizationType::LL}, {"RL", CARTA::PolarizationType::RL},
-    {"LR", CARTA::PolarizationType::LR}, {"XX", CARTA::PolarizationType::XX}, {"YY", CARTA::PolarizationType::YY},
-    {"XY", CARTA::PolarizationType::XY}, {"YX", CARTA::PolarizationType::YX}, {"Ptotal", CARTA::PolarizationType::Ptotal},
-    {"Plinear", CARTA::PolarizationType::Plinear}, {"PFtotal", CARTA::PolarizationType::PFtotal},
-    {"PFlinear", CARTA::PolarizationType::PFlinear}, {"Pangle", CARTA::PolarizationType::Pangle}};
-
-static std::unordered_map<int, casacore::Stokes::StokesTypes> StokesTypesToCasacore{{1, casacore::Stokes::StokesTypes::I},
-    {2, casacore::Stokes::StokesTypes::Q}, {3, casacore::Stokes::StokesTypes::U}, {4, casacore::Stokes::StokesTypes::V},
-    {5, casacore::Stokes::StokesTypes::RR}, {6, casacore::Stokes::StokesTypes::LL}, {7, casacore::Stokes::StokesTypes::RL},
-    {8, casacore::Stokes::StokesTypes::LR}, {9, casacore::Stokes::StokesTypes::XX}, {10, casacore::Stokes::StokesTypes::YY},
-    {11, casacore::Stokes::StokesTypes::XY}, {12, casacore::Stokes::StokesTypes::YX}, {13, casacore::Stokes::StokesTypes::Ptotal},
-    {14, casacore::Stokes::StokesTypes::Plinear}, {15, casacore::Stokes::StokesTypes::PFtotal},
-    {16, casacore::Stokes::StokesTypes::PFlinear}, {17, casacore::Stokes::StokesTypes::Pangle}};
-
-int GetStokesValue(const CARTA::PolarizationType& stokes_type);
-CARTA::PolarizationType GetStokesType(int stokes_value);
-casacore::Stokes::StokesTypes GetCasacoreStokesValue(const CARTA::PolarizationType& stokes_type);
-bool IsComputedStokes(int stokes);
-bool IsComputedStokes(const std::string& stokes);
+    // TODO move FITS mappings here too
+protected:
+    static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> _to_casacore;
+    static std::unordered_map<CARTA::PolarizationType, std::string> _description;
+};
 
 // The struct StokesSource is used to tell the file loader to get the original image interface, or get the computed stokes image interface.
 // The x, y, and z ranges from the StokesSource indicate the range of image data to be calculated (for the new stokes type image).
@@ -78,7 +51,7 @@ struct StokesSource {
         : stokes(stokes_), z_range(z_range_), x_range(x_range_), y_range(y_range_) {}
 
     bool IsOriginalImage() const {
-        return !IsComputedStokes(stokes);
+        return !Stokes::IsComputed(stokes);
     }
     bool operator==(const StokesSource& rhs) const {
         if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
@@ -93,5 +66,7 @@ struct StokesSource {
         return false;
     }
 };
+
+} // namespace carta
 
 #endif // CARTA_SRC_UTIL_STOKES_H_

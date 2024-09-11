@@ -13,14 +13,6 @@
 
 using namespace carta;
 
-static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> CasaStokesTypes{
-    {CARTA::PolarizationType::I, casacore::Stokes::I}, {CARTA::PolarizationType::Q, casacore::Stokes::Q},
-    {CARTA::PolarizationType::U, casacore::Stokes::U}, {CARTA::PolarizationType::V, casacore::Stokes::V},
-    {CARTA::PolarizationType::RR, casacore::Stokes::RR}, {CARTA::PolarizationType::LL, casacore::Stokes::LL},
-    {CARTA::PolarizationType::RL, casacore::Stokes::RL}, {CARTA::PolarizationType::LR, casacore::Stokes::LR},
-    {CARTA::PolarizationType::XX, casacore::Stokes::XX}, {CARTA::PolarizationType::YY, casacore::Stokes::YY},
-    {CARTA::PolarizationType::XY, casacore::Stokes::XY}, {CARTA::PolarizationType::YX, casacore::Stokes::YX}};
-
 StokesFilesConnector::StokesFilesConnector(const std::string& _top_level_folder) : _top_level_folder(_top_level_folder) {}
 
 StokesFilesConnector::~StokesFilesConnector() {
@@ -46,7 +38,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
     bool success(true);
 
     if (stokes_axis < 0) { // create a stokes coordinate and add it to the coordinate system
-        std::unordered_map<CARTA::PolarizationType, std::shared_ptr<casacore::ExtendImage<float>>> extended_images;
+        std::map<CARTA::PolarizationType, std::shared_ptr<casacore::ExtendImage<float>>> extended_images;
         std::unordered_map<CARTA::PolarizationType, std::shared_ptr<casacore::CoordinateSystem>> coord_sys;
         CARTA::PolarizationType carta_stokes_type;
 
@@ -95,46 +87,40 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         // concatenate images along the stokes axis
         concatenated_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
-        for (int i = 1; i <= StokesTypes.size(); ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
-            auto stokes_type = static_cast<CARTA::PolarizationType>(i);
-            if (extended_images.count(stokes_type)) {
-                try {
-                    concatenated_image->setImage(*extended_images[stokes_type], casacore::False);
-                } catch (const casacore::AipsError& error) {
-                    return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
-                }
+        for (const auto& image_entry : extended_images) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
+            try {
+                concatenated_image->setImage(*image_entry.second, casacore::False);
+            } catch (const casacore::AipsError& error) {
+                return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
             }
         }
     } else { // concatenate images along the stokes axis
         concatenated_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
-        for (int i = 1; i <= StokesTypes.size(); ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
-            auto stokes_type = static_cast<CARTA::PolarizationType>(i);
-            if (_loaders.count(stokes_type)) {
-                auto image = _loaders[stokes_type]->GetImage();
-                const casacore::CoordinateSystem& coordinates = image->coordinates();
-                if (!coordinates.hasPolarizationCoordinate()) {
-                    return fail_exit("Failed to get the stokes coordinate system!");
-                }
-                casacore::StokesCoordinate& stokes_coord = const_cast<casacore::StokesCoordinate&>(coordinates.stokesCoordinate());
-                if (stokes_coord.stokes().size() != 1) {
-                    return fail_exit("Stokes coordinate has no or multiple stokes types!");
-                }
+        for (const auto& [stokes_type, loader] : _loaders) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
+            auto image = loader->GetImage();
+            const casacore::CoordinateSystem& coordinates = image->coordinates();
+            if (!coordinates.hasPolarizationCoordinate()) {
+                return fail_exit("Failed to get the stokes coordinate system!");
+            }
+            casacore::StokesCoordinate& stokes_coord = const_cast<casacore::StokesCoordinate&>(coordinates.stokesCoordinate());
+            if (stokes_coord.stokes().size() != 1) {
+                return fail_exit("Stokes coordinate has no or multiple stokes types!");
+            }
 
-                // set stokes type in the stokes coordinate
-                casacore::Vector<casacore::Int> vec(1);
-                casacore::Stokes::StokesTypes casa_stokes_type;
+            // set stokes type in the stokes coordinate
+            casacore::Vector<casacore::Int> vec(1);
+            casacore::Stokes::StokesTypes casa_stokes_type;
 
-                if (GetCasaStokesType(stokes_type, casa_stokes_type)) {
-                    vec(0) = casa_stokes_type;
-                }
-                stokes_coord.setStokes(vec);
+            if (GetCasaStokesType(stokes_type, casa_stokes_type)) {
+                vec(0) = casa_stokes_type;
+            }
+            stokes_coord.setStokes(vec);
 
-                try {
-                    concatenated_image->setImage(*(image.get()), casacore::False);
-                } catch (const casacore::AipsError& error) {
-                    return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
-                }
+            try {
+                concatenated_image->setImage(*(image.get()), casacore::False);
+            } catch (const casacore::AipsError& error) {
+                return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
             }
         }
     }
@@ -146,24 +132,21 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
             int stokes_size = concatenated_image->shape()[stokes_axis];
             image_info.setAllBeams(image_info.nChannels(), stokes_size, casacore::GaussianBeam());
             unsigned int stokes(0);
-            for (int i = 1; i <= StokesTypes.size(); ++i) { // set beam information through stokes types I, Q, U, V (i.e., 1, 2, 3 ,4)
-                auto stokes_type = static_cast<CARTA::PolarizationType>(i);
-                if (_loaders.count(stokes_type)) {
-                    if (_loaders[stokes_type]->GetImage()->imageInfo().hasBeam() && stokes < stokes_size) {
-                        casacore::ImageBeamSet beam_set = _loaders[stokes_type]->GetImage()->imageInfo().getBeamSet();
-                        casacore::GaussianBeam gaussian_beam;
-                        for (unsigned int chan = 0; chan < beam_set.nchan(); ++chan) {
-                            gaussian_beam = beam_set.getBeam(chan, stokes);
-                            casacore::Quantity major_ax(gaussian_beam.getMajor("arcsec"), "arcsec");
-                            casacore::Quantity minor_ax(gaussian_beam.getMinor("arcsec"), "arcsec");
-                            casacore::Quantity pa(gaussian_beam.getPA("deg").getValue(), "deg");
-                            image_info.setBeam(chan, stokes, major_ax, minor_ax, pa);
-                        }
-                    } else {
-                        spdlog::warn("Stokes type {} has no beam information!", CARTA::PolarizationType_Name(stokes_type));
+            for (const auto& [stokes_type, loader] : _loaders) { // set beam information through stokes types I, Q, U, V (i.e., 1, 2, 3 ,4)
+                if (loader->GetImage()->imageInfo().hasBeam() && stokes < stokes_size) {
+                    casacore::ImageBeamSet beam_set = loader->GetImage()->imageInfo().getBeamSet();
+                    casacore::GaussianBeam gaussian_beam;
+                    for (unsigned int chan = 0; chan < beam_set.nchan(); ++chan) {
+                        gaussian_beam = beam_set.getBeam(chan, stokes);
+                        casacore::Quantity major_ax(gaussian_beam.getMajor("arcsec"), "arcsec");
+                        casacore::Quantity minor_ax(gaussian_beam.getMinor("arcsec"), "arcsec");
+                        casacore::Quantity pa(gaussian_beam.getPA("deg").getValue(), "deg");
+                        image_info.setBeam(chan, stokes, major_ax, minor_ax, pa);
                     }
-                    ++stokes;
+                } else {
+                    spdlog::warn("Stokes type {} has no beam information!", CARTA::PolarizationType_Name(stokes_type));
                 }
+                ++stokes;
             }
             concatenated_image->setImageInfo(image_info);
         } catch (const casacore::AipsError& error) {
@@ -256,13 +239,10 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         }
     }
 
-    _concatenated_name = "";                        // reset the name of concatenated image
-    for (int i = 1; i <= StokesTypes.size(); ++i) { // get stokes type in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
-        auto stokes_type = static_cast<CARTA::PolarizationType>(i);
-        if (_loaders.count(stokes_type)) {
-            // update the concatenated image name and insert a new stokes type
-            _concatenated_name += CARTA::PolarizationType_Name(stokes_type);
-        }
+    _concatenated_name = "";                    // reset the name of concatenated image
+    for (const auto& loader_entry : _loaders) { // get stokes type in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
+        // update the concatenated image name and insert a new stokes type
+        _concatenated_name += CARTA::PolarizationType_Name(loader_entry.first);
     }
 
     // check if FITS stokes axis is contiguous
@@ -270,7 +250,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         int delt = 0;
         int stokes_fits_value = 0;
         for (int i = 0; i < message.stokes_files_size(); ++i) {
-            int new_stokes_value = GetStokesValue(message.stokes_files(i).polarization_type());
+            int new_stokes_value = message.stokes_files(i).polarization_type();
             int new_stokes_fits_value;
             if (FileInfo::ConvertFitsStokesValue(new_stokes_value, new_stokes_fits_value)) {
                 if (stokes_fits_value != 0) {
@@ -330,8 +310,8 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
 
 bool StokesFilesConnector::GetCasaStokesType(
     const CARTA::PolarizationType& in_stokes_type, casacore::Stokes::StokesTypes& out_stokes_type) {
-    if (CasaStokesTypes.count(in_stokes_type)) {
-        out_stokes_type = CasaStokesTypes[in_stokes_type];
+    if (!Stokes::IsComputed(in_stokes_type)) {
+        out_stokes_type = Stokes::ToCasacore(in_stokes_type);
         return true;
     }
     return false;
