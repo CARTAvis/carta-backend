@@ -1,5 +1,6 @@
 var NAVTREEINDEX10 =
 {
+"structcarta_1_1HistogramConfig.html#ae625a69e48d46ef7887b9ee10cc04d53":[3,0,0,6,6],
 "structcarta_1_1HistogramConfig.html#aee3b990962e991922bcf9f3779401bcd":[3,0,0,6,2],
 "structcarta_1_1HistogramConfig.html#af5ace17c70be9743efac1cb4f2da8812":[3,0,0,6,8],
 "structcarta_1_1PerSocketData.html":[3,0,0,84],
@@ -208,6 +209,5 @@ var NAVTREEINDEX10 =
 "structcarta_1_1VectorField_1_1Valid.html":[3,0,0,18,4],
 "structcarta_1_1VectorField_1_1Valid.html#a2f69d65fb5bf06e685dabb449ad0c8cb":[3,0,0,18,4,0],
 "structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4.html":[3,0,2,0],
-"structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4.html#a135e68d6f7876a6f14eae7b4d3c1804d":[3,0,2,0,0],
-"":[2,0,3]
+"structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4.html#a135e68d6f7876a6f14eae7b4d3c1804d":[3,0,2,0,0]
 };

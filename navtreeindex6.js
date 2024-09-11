@@ -1,5 +1,6 @@
 var NAVTREEINDEX6 =
 {
+"classcarta_1_1PvPreviewCut.html#a78238a66c48bd5376bf05d5ab8acdfac":[3,0,0,57,10],
 "classcarta_1_1PvPreviewCut.html#a7f8af98e97ceb2377b7a9b8605d56c83":[3,0,0,57,3],
 "classcarta_1_1PvPreviewCut.html#a9deedaebef4161afc08520ff6a9a3a47":[3,0,0,57,11],
 "classcarta_1_1PvPreviewCut.html#aa52c6b23d9b460a0e71a4c796ce25e3a":[3,0,0,57,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX6 =
 "classcarta_1_1Session.html#a3ef31e8318a55ab57658bed5b7141a8b":[3,0,0,85,145],
 "classcarta_1_1Session.html#a3f71bbdd1c4727be1e0a6e6ab743af2b":[3,0,0,85,76],
 "classcarta_1_1Session.html#a4144fc60a739348e87357e6131ba2058":[3,0,0,85,130],
-"classcarta_1_1Session.html#a44647c44e04c9b96638cc87980efbf77":[3,0,0,85,93],
-"classcarta_1_1Session.html#a44b5161716cac5918d2060c568a8b7da":[3,0,0,85,120]
+"classcarta_1_1Session.html#a44647c44e04c9b96638cc87980efbf77":[3,0,0,85,93]
 };
