@@ -741,14 +741,20 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             int end_channel(message.channel_range().max());
             int nchan(frame->Depth());
             for (int chan = start_channel; chan <= end_channel; ++chan) {
-                // Cancel if not in latest channel range or past last channel
+                // Cancel if past last channel
+                if (chan >= nchan) {
+                    break;
+                }
+                // Cancel this channel but continue if not in latest channel range
                 ImageChannelLock(file_id);
                 bool cancel = !IsInChannelRange(file_id, chan);
                 ImageChannelUnlock(file_id);
-                if (cancel || chan >= nchan) {
-                    break;
+                if (cancel) {
+                    spdlog::debug("OnSetImageChannels: channel_range channel {} not in current_range", chan);
+                    continue;
                 }
 
+                spdlog::debug("OnSetImageChannels: sending tiles for channel_range channel {}", chan);
                 OnAddRequiredTiles(message.required_tiles(), chan);
             }
         } else {

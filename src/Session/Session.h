@@ -105,6 +105,7 @@ public:
         if (message.has_current_range()) {
             // Clear queue if new range does not extend current range.
             AxisRange new_range(message.current_range().min(), message.current_range().max());
+            spdlog::debug("Set current channel range {}-{}", new_range.from, new_range.to);
             clear_queue = SetChannelRange(file_id, new_range);
         } else {
             // Always clear queue and replace channel range (for cancel) for single channel.

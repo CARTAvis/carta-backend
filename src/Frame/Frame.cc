@@ -563,8 +563,10 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
             }
 
+            /*
             spdlog::debug(
                 "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
+            */
 
             // Measure duration for compress tile data
             auto dt = t.Elapsed();
