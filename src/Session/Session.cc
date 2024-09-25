@@ -24,6 +24,7 @@
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
 #include "ImageData/CompressedFits.h"
+#include "ImageData/FitsLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
@@ -32,6 +33,7 @@
 #include "Util/App.h"
 #include "Util/File.h"
 #include "Util/Message.h"
+#include "Util/RemoteFiles.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
@@ -53,6 +55,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _loop(loop),
       _id(id),
       _address(address),
+      _remote_file_index(-1),
       _table_controller(std::make_unique<TableController>()),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
@@ -928,8 +931,8 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
 
             std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
 
-            _region_handler->ExportRegion(
-                file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
+            _region_handler->ExportRegion(file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename,
+                message.overwrite(), export_ack);
         }
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
@@ -2409,4 +2412,45 @@ void Session::CloseCachedImage(const std::string& directory, const std::string& 
             frame.second->CloseCachedImage(fullname);
         }
     }
+}
+void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id) {
+    auto file_id(message.file_id());
+
+    CARTA::RemoteFileResponse response;
+    std::string url, err_message;
+    bool success = GenerateUrlFromRequest(message, url, err_message);
+    if (success) {
+        spdlog::info("Fetching remote file from url {}", url);
+        auto loader = _loaders.Get(url, "");
+
+        CARTA::OpenFileAck ack;
+        try {
+            loader->OpenFile("0");
+
+            std::string remote_file_name;
+            auto index = ++_remote_file_index;
+            if (index > 0) {
+                remote_file_name = fmt::format("remote_file{}.fits", index);
+            } else {
+                remote_file_name = "remote_file.fits";
+            }
+            spdlog::info("Opening remote file: {}", remote_file_name);
+
+            auto image = loader->GetImage();
+
+            success = OnOpenFile(file_id, remote_file_name, image, response.mutable_open_file_ack());
+            if (success) {
+                response.set_message("File opened successfully");
+            }
+        } catch (const casacore::AipsError& err) {
+            err_message = err.getMesg();
+            response.set_message(err_message);
+            success = false;
+        }
+    } else {
+        response.set_message(err_message);
+    }
+    response.set_success(success);
+
+    SendEvent(CARTA::REMOTE_FILE_RESPONSE, request_id, response);
 }
