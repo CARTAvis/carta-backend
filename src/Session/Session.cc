@@ -1334,6 +1334,12 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
     return success;
 }
 
+void: Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, uint32_t request_id) {
+    int file_id(render3d_request.file_id());
+    int region_id(render3d_request.region_id());
+    CARTA::Render3DResponse render3d_response;
+}
+
 void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {
     int file_id(pv_request.file_id());
     int region_id(pv_request.region_id());

@@ -452,6 +452,14 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     }
                     break;
                 }
+                case CARTA::EventType::RENDER3D_REQUEST: {
+                    CARTA::Render3DRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new GeneralMessageTask<CARTA::Render3DRequest>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
                 case CARTA::EventType::PV_REQUEST: {
                     CARTA::PvRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {

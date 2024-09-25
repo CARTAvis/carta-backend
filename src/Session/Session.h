@@ -88,6 +88,7 @@ public:
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
     bool OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
+    void OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, uint32_t request_id);
     void OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id);
     void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
     void OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id);
