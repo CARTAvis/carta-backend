@@ -1337,10 +1337,31 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
     return success;
 }
 
-void: Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, uint32_t request_id) {
+void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, uint32_t request_id) {
     int file_id(render3d_request.file_id());
     int region_id(render3d_request.region_id());
     CARTA::Render3DResponse render3d_response;
+
+    if (_frames.count(file_id)) {
+        // condition statement to check if the a region is selected. cursor_region is 0 and NONE, IMAGE and ACTIVE are < 0
+        // if (!_region_handler || (region_id <= CURSOR_REGION_ID)) {
+        //     pv_response.set_success(false);
+        //     pv_response.set_message("Invalid region id.");
+        // } else {
+        Timer t;
+        auto& frame = _frames.at(file_id);
+        casacore::Cube<float> render3d_data;
+
+        // Set render3d progress callback function
+        auto progress_callback = [&](float progress) {
+            auto render3d_progress = Message::Render3DProgress(file_id, region_id, progress);
+            SendEvent(CARTA::EventType::RENDER3D_PROGRESS, request_id, render3d_progress);
+        };
+
+        if (_region_handler->CalculateRender3DData(render3d_request, frame, progress_callback, render3d_response, render3d_data)) {
+
+        }
+    }
 }
 
 void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {

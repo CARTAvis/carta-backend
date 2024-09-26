@@ -607,8 +607,8 @@ bool GaussianSmooth3D(const float* src_data, float* dest_data, int64_t src_width
                 RunKernel3D(kernel, temp_array2.get(), dest_ptr, num_columns, num_rows, num_planes + 2 * apron_height,
                 num_columns, num_rows, num_planes, 2);
 
-                src_ptr += num_columns * i + src_width * num_rows * j + src_width * src_height * num_planes * k
-                dest_ptr += num_columns * i + dest_width * num_rows * j + dest_width * dest_height * num_planes * k
+                source_ptr += num_columns * i + src_width * num_rows * j + src_width * src_height * num_planes * k;
+                dest_ptr += num_columns * i + dest_width * num_rows * j + dest_width * dest_height * num_planes * k;
                 column_offset += num_rows;
             }
             row_offset += num_columns;

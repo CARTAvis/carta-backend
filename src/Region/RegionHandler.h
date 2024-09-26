@@ -79,6 +79,9 @@ public:
     std::vector<int> GetSpatialReqRegionsForFile(int file_id);
     std::vector<int> GetSpatialReqFilesForRegion(int region_id);
 
+    // Generate Render3D data
+    bool CalculateRender3DData()
+
     // Generate PV image or preview image
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);

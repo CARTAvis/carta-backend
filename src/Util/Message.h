@@ -27,6 +27,7 @@
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/remote_file_request.pb.h>
+#include <carta-protobuf/render3d_request.pb.h>
 #include <carta-protobuf/resume_session.pb.h>
 #include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/scripting.pb.h>
@@ -131,6 +132,7 @@ public:
     static CARTA::RegisterViewerAck RegisterViewerAck(
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
+    static CARTA::Render3DRequest Render3DRequest(int32_t file_id, int32_t region_id, CARTA::ImageBounds image_bounds, CARTA::IntBounds spectral_range, bool keep); 
     static CARTA::PvRequest PvRequest(
         int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false);
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress, int32_t preview_id = 0);

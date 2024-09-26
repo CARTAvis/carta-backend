@@ -551,6 +551,17 @@ CARTA::MomentProgress Message::MomentProgress(int32_t file_id, float progress) {
     return message;
 }
 
+CARTA::Render3DRequest Message::Render3DRequest(int32_t file_id, int32_t region_id, CARTA::ImageBounds image_bounds, CARTA::IntBounds spectral_range, bool keep) {
+    CARTA::Render3DRequest message;
+    // Probably wrong, image bounds and spectral range
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
+    *message.mutable_image_bounds() = image_bounds;
+    *message.mutable_spectral_range() = spectral_range;
+    message.set_keep(keep);
+    return message;
+}    
+
 CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t width, int z_min, int32_t z_max, bool reverse, bool keep) {
     CARTA::PvRequest message;
     message.set_file_id(file_id);

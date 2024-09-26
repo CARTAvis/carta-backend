@@ -185,7 +185,7 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
 }
 
 void MomentGenerator::SetRestFrequency(const CARTA::MomentRequest& moment_request) {
-    _rest_frequency = moment_request.rest_freq(); // Hz
+    // _rest_frequency = moment_request.rest_freq(); // Hz
 }
 
 void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_region) {

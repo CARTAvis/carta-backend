@@ -952,6 +952,54 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
     return !collapse_results.empty();
 }
 
+bool RegionHandler::CalculateRender3DData(const CARTA::Render3DRequest& render3d_request, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse render3d_response, CARTA::Render3DData render3d_data) {
+    // Unpack request message and send it along
+    int file_id(render3d_request.file_id());
+    int region_id(render3d_request.region_id());
+    bool keep(render3d_request.keep());
+    AxisRange spectral_range;
+    if (render3d_request.has_spectral_range()) {
+        spectral_range = AxisRange(render3d_request.spectral_range().min(), render3d_request.spectral_range().max());
+    } else {
+        spectral_range = AxisRange(0, frame->Depth() - 1);
+    }
+    CARTA::ImageBounds image_bounds;
+    if (render3d_request.has_image_bounds()) {
+    image_bounds = CARTA::ImageBounds(render3d_request.image_bounds().x_min(), render3d_request.image_bounds().x_max(), render3d_request.image_bounds().y_min(), render3d_request.image_bounds().y_max());
+    } else {
+        image_bounds = CARTA::ImageBounds(0, frame->Width() - 1, 0, frame->Height() - 1);
+    }
+    render3d_response.set_success(false);
+    render3d_response.set_cancel(false);
+
+    // Checks for valid request:
+    // 1. Region is set
+    if (!RegionSet(region_id, true)) {
+        render3d_response.set_message("3D Rendering requested for invalid region.");
+        return false;
+    }
+
+    // 2. Region is line
+    if (!IsClosedRegion(region_id)) {
+        render3d_response.set_message("Region type not supported for 3D Rendering.");
+        return false;
+    }
+
+    // 3. Image has spectral axis
+    if (!frame->CoordinateSystem()->hasSpectralAxis()) {
+        render3d_response.set_message("No spectral coordinate for generating 3D rendering.");
+        return false;
+    }
+
+    // Set frame
+    if (!FrameSet(file_id)) {
+        _frames[file_id] = frame;
+    }
+
+    return CalculateRender3DData(file_id, region_id, spectral_range, image_bounds, keep, frame, progress_callback, render3d_response, render3d_data);
+    
+}
+
 bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame,
     GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
     // Unpack request message and send it along
@@ -1342,6 +1390,22 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     }
 
     return true;
+}
+
+bool RegionHandler::CalculateRender3DData(int file_id, int region_id, CARTA::ImageBounds& image_bounds, AxisRange& spectral_range, bool keep, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response, CARTA::Render3DData& render3d_data) {
+    render3d_response.set_success(false);
+    render3d_response.set_cancel(false);
+
+    // use if region is mandatory
+    // auto region = GetRegion(region_id);
+    // if (!region) {
+    //     render3d_response.set_message("Render3D region not set");
+    //     return false;
+    // }
+
+    casacore::Cube<float> render3d_cube;
+
+    
 }
 
 bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse, bool keep,
