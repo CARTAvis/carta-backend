@@ -31,6 +31,47 @@ int Compress(std::vector<float>& array, size_t offset, std::vector<char>& compre
     type = zfp_type_float;
     field = zfp_field_2d(array.data() + offset, type, nx, ny);
 
+    // see https://github.com/idia-astro/idia_vr_quest/blob/main/Server/src/Compression.cc to modify function to compress 3D data
+
+    /* allocate meta data for a compressed stream */
+    zfp = zfp_stream_open(nullptr);
+
+    /* set compression mode and parameters via one of three functions */
+    zfp_stream_set_precision(zfp, precision);
+
+    /* allocate buffer for compressed data */
+    buffer_size = zfp_stream_maximum_size(zfp, field);
+    if (compression_buffer.size() < buffer_size) {
+        compression_buffer.resize(buffer_size);
+    }
+    stream = stream_open(compression_buffer.data(), buffer_size);
+    zfp_stream_set_bit_stream(zfp, stream);
+    zfp_stream_rewind(zfp);
+
+    compressed_size = zfp_compress(zfp, field);
+    if (!compressed_size) {
+        status = 1;
+    }
+
+    /* clean up */
+    zfp_field_free(field);
+    zfp_stream_close(zfp);
+    stream_close(stream);
+
+    return status;
+}
+
+int Compress3D(std::vector<float>& array, std::vector<char>& compression_buffer, size_t& compressed_size, uint32_t width, uint32_t height, uint32_t depth, uint32_t precision) {
+    int status = 0;     /* return value: 0 = success */
+    zfp_type type;      /* array scalar type */
+    zfp_field* field;   /* array meta data */
+    zfp_stream* zfp;    /* compressed stream */
+    size_t buffer_size; /* byte size of compressed buffer */
+    bitstream* stream;  /* bit stream to write to or read from */
+
+    type = zfp_type_float;
+    field = zfp_field_3d(array.data(), type, width, height, depth);
+
     /* allocate meta data for a compressed stream */
     zfp = zfp_stream_open(nullptr);
 

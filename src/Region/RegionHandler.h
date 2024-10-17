@@ -215,6 +215,10 @@ private:
     std::shared_mutex _pv_cut_mutex;
     std::shared_mutex _pv_cube_mutex;
 
+    // 3D rendering, key is viewer_id. Mutex to protect cube in use.
+    std::unordered_map<int, std::shared_ptr<PvPreviewCube>> _render3d_cubes;
+    std::shared_mutex _render3d_cube_mutex;
+
     // Prevent crash during line profiles
     std::mutex _line_profile_mutex;
 };
