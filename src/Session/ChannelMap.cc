@@ -76,7 +76,6 @@ bool ChannelMap::SetChannelMapParams(const CARTA::SetImageChannels& message) {
     AxisRange new_range;
     if (message.has_current_range()) {
         new_range = AxisRange(message.current_range().min(), message.current_range().max());
-        std::cerr << "Received SET_IMAGE_CHANNELS current_range=" << new_range.from << "-" << new_range.to << std::endl;
     } else {
         new_range = AxisRange(message.channel());
     }
