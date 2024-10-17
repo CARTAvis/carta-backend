@@ -25,6 +25,7 @@
 
 #include "AnimationObject.h"
 #include "Cache/LoaderCache.h"
+#include "ChannelMap.h"
 #include "CursorSettings.h"
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
@@ -98,44 +99,42 @@ public:
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         // Image channel mutex has been locked by SessionManager.
-        // Set current channel or channel range, clear queue if new.
-        auto file_id(message.file_id());
+        // Set current channel or channel range, clear queue if new channel/range.
         bool clear_queue(true);
-
         if (message.has_current_range()) {
-            // Clear queue if new range does not extend current range.
-            AxisRange new_range(message.current_range().min(), message.current_range().max());
-            spdlog::debug("Set current channel range {}-{}", new_range.from, new_range.to);
-            clear_queue = SetChannelRange(file_id, new_range);
+            if (!_channel_map) {
+                _channel_map = std::unique_ptr<ChannelMap>(new ChannelMap(message));
+            } else {
+                clear_queue = _channel_map->SetChannelMap(message);
+            }
         } else {
-            // Always clear queue and replace channel range (for cancel) for single channel.
-            _channel_range[file_id] = AxisRange(message.channel(), message.channel());
+            if (_channel_map) {
+                _channel_map->SetChannelMap(message);
+            }
         }
 
         if (clear_queue) {
-            // Empty current queue first.
             std::pair<CARTA::SetImageChannels, uint32_t> rp;
             while (_set_channel_queues[message.file_id()].try_pop(rp)) {
             }
         }
 
-        // Add message to queue.
-        _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
+        if (message.has_required_tiles()) {
+            _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
+        }
     }
 
-    bool SetChannelRange(int file_id, AxisRange& new_range) {
-        // Image channel mutex should be locked before calling this.
-        // Extend or replace channel range with new range.
-        // Returns true if new range does not overlap current channel range.
-        bool is_new_range = !IsInChannelRange(file_id, new_range.from) && !IsInChannelRange(file_id, new_range.to);
-        _channel_range[file_id] = new_range;
-        return is_new_range;
+    bool IsValidChannelMapTile(int file_id, int channel, int32_t tile) {
+        // Check if channel is in channel range and tile is in required tiles for file id.
+        // TODO: When user pans, needed tiles may not be in latest required tiles so do not check.
+        // We need to know current tiles not just required tiles.
+        // return IsInChannelMapRange(file_id, channel) && _channel_map->HasTile(file_id, tile);
+        return IsInChannelMapRange(file_id, channel);
     }
 
-    bool IsInChannelRange(int file_id, int channel) {
-        // Image channel mutex should be locked before calling this.
-        // Check if channel is in channel range for file id.
-        return _channel_range[file_id].is_in_range(channel);
+    bool IsInChannelMapRange(int file_id, int channel) {
+        // Check if channel is in channel map range for file id.
+        return _channel_map && _channel_map->IsInChannelRange(file_id, channel);
     }
 
     // Task handling
@@ -170,22 +169,22 @@ public:
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _cursor_settings.AddCursorSetting(message, request_id);
     }
-    void ImageChannelLock(int fileId) {
-        _image_channel_mutexes[fileId].lock();
+    void ImageChannelLock(int file_id) {
+        _image_channel_mutexes[file_id].lock();
     }
-    void ImageChannelUnlock(int fileId) {
-        _image_channel_mutexes[fileId].unlock();
+    void ImageChannelUnlock(int file_id) {
+        _image_channel_mutexes[file_id].unlock();
     }
-    bool ImageChannelTaskTestAndSet(int fileId) {
-        if (_image_channel_task_active[fileId]) {
+    bool ImageChannelTaskTestAndSet(int file_id) {
+        if (_image_channel_task_active[file_id]) {
             return true;
         } else {
-            _image_channel_task_active[fileId] = true;
+            _image_channel_task_active[file_id] = true;
             return false;
         }
     }
-    void ImageChannelTaskSetIdle(int fileId) {
-        _image_channel_task_active[fileId] = false;
+    void ImageChannelTaskSetIdle(int file_id) {
+        _image_channel_task_active[file_id] = false;
     }
     int IncreaseRefCount() {
         return ++_ref_count;
@@ -333,10 +332,10 @@ protected:
     // Individual stokes files connector
     std::unique_ptr<StokesFilesConnector> _stokes_files_connector;
 
-    // Manage image channel and range (including single channel). Key is file_id.
+    // Manage image channel and channel maps. Key is file_id.
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
-    std::unordered_map<int, AxisRange> _channel_range;
+    std::unique_ptr<ChannelMap> _channel_map;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;

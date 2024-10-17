@@ -53,22 +53,25 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _loop(loop),
       _id(id),
       _address(address),
+      _file_list_handler(file_list_handler),
+      _loaders(LOADER_CACHE_SIZE),
       _table_controller(std::make_unique<TableController>()),
       _region_handler(nullptr),
-      _file_list_handler(file_list_handler),
+      _animation_object(nullptr),
+      _animation_active(false),
+      _stokes_files_connector(nullptr),
+      _channel_map(nullptr),
+      _histogram_progress(1.0),
+      _ref_count(0),
       _sync_id(0),
       _animation_id(0),
-      _animation_active(false),
-      _cursor_settings(this),
-      _loaders(LOADER_CACHE_SIZE) {
+      _connected(true),
+      _cursor_settings(this) {
     auto& settings = ProgramSettings::GetInstance();
     _top_level_folder = settings.top_level_folder;
     _read_only_mode = settings.read_only_mode;
     _enable_scripting = settings.enable_scripting;
-    _histogram_progress = 1.0;
-    _ref_count = 0;
-    _animation_object = nullptr;
-    _connected = true;
+
     ++_num_sessions;
     UpdateLastMessageTimestamp();
     spdlog::info("{} ::Session ({}:{})", fmt::ptr(this), _id, _num_sessions);
@@ -633,9 +636,10 @@ bool Session::OnOpenFile(
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
-    CheckCancelAnimationOnFileClose(message.file_id());
-    _cursor_settings.ClearSettings(message.file_id());
-    DeleteFrame(message.file_id());
+    auto file_id = message.file_id();
+    CheckCancelAnimationOnFileClose(file_id);
+    _cursor_settings.ClearSettings(file_id);
+    DeleteFrame(file_id);
 }
 
 void Session::DeleteFrame(int file_id) {
@@ -658,6 +662,9 @@ void Session::DeleteFrame(int file_id) {
     }
     if (_region_handler) {
         _region_handler->RemoveFrame(file_id);
+    }
+    if (_channel_map) {
+        _channel_map->RemoveFile(file_id);
     }
 }
 
@@ -707,16 +714,28 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
         for (int j = 0; j < stride; j++) {
             for (int i = j; i < num_tiles; i += stride) {
                 const auto& encoded_coordinate = message.tiles(i);
+                // Check if channel and tile still valid for channel map
+                if (!is_current_z && !IsValidChannelMapTile(file_id, requested_z, encoded_coordinate)) {
+                    continue;
+                }
                 auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
                 auto tile = Tile::Decode(encoded_coordinate);
                 if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, requested_z, stokes,
                                                   compression_type, compression_quality, is_current_z)) {
+                    // Check if channel and tile still valid for channel map
+                    if (!is_current_z && !IsValidChannelMapTile(file_id, requested_z, encoded_coordinate)) {
+                        spdlog::warn(
+                            "Discarding stale tile request for channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y, tile.layer);
+
+                        continue;
+                    }
+
                     // Only use deflate on outgoing message if the raster image compression type is NONE
                     SendFileEvent(
                         file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
                 } else {
                     spdlog::warn(
-                        "Discarding stale tile request for channel={}, layer={}, x={}, y={}", requested_z, tile.layer, tile.x, tile.y);
+                        "Discarding stale tile request for channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y, tile.layer);
                 }
             }
         }
@@ -739,22 +758,17 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
         if (message.has_channel_range()) {
             int start_channel(message.channel_range().min());
             int end_channel(message.channel_range().max());
-            int nchan(frame->Depth());
+            int num_channel(frame->Depth());
             for (int chan = start_channel; chan <= end_channel; ++chan) {
-                // Cancel if past last channel
-                if (chan >= nchan) {
+                if (chan >= num_channel) {
                     break;
                 }
-                // Cancel this channel but continue if not in latest channel range
-                ImageChannelLock(file_id);
-                bool cancel = !IsInChannelRange(file_id, chan);
-                ImageChannelUnlock(file_id);
-                if (cancel) {
-                    spdlog::debug("OnSetImageChannels: channel_range channel {} not in current_range", chan);
+                if (!IsInChannelMapRange(file_id, chan)) {
+                    spdlog::debug("Skip channel {} in range {}-{}, not in current range", chan, start_channel, end_channel);
                     continue;
                 }
 
-                spdlog::debug("OnSetImageChannels: sending tiles for channel_range channel {}", chan);
+                spdlog::debug("Send channel {} in range {}-{}", chan, start_channel, end_channel);
                 OnAddRequiredTiles(message.required_tiles(), chan);
             }
         } else {
