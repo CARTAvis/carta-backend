@@ -95,10 +95,9 @@ void SessionManager::OnConnect(WSType* ws) {
 }
 
 void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message) {
-    // Skip server-forced disconnects
-
     spdlog::debug("WebSocket closed with code {} and message '{}'.", code, message);
 
+    // Skip server-forced disconnects
     if (code == 4003) {
         return;
     }
