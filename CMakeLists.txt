@@ -266,7 +266,9 @@ set(SOURCE_FILES
         src/Util/Stokes.cc
         src/Util/String.cc
         src/Util/Token.cc
-        src/ImageFitter/ImageFitter.cc)
+        src/ImageFitter/ImageFitter.cc
+        src/Util/RemoteFiles.cc
+        src/Util/RemoteFiles.h)
 
 add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
 add_executable(carta_backend ${SOURCE_FILES})

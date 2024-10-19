@@ -1956,23 +1956,52 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     fs::path output_filename(save_file_msg.output_file_name());
     fs::path directory(save_file_msg.output_file_directory());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
+    bool overwrite(save_file_msg.overwrite());
 
     // Set response message
     int file_id(save_file_msg.file_id());
     save_file_ack.set_file_id(file_id);
-    bool success(false);
-    casacore::String message;
+    std::string message;
+
+    if (output_filename.empty()) {
+        message = "Cannot save image with no filename.";
+        save_file_ack.set_success(false);
+        save_file_ack.set_message(message);
+        return;
+    }
 
     // Get the full resolved name of the output image
     fs::path temp_path = fs::path(root_folder) / directory;
     fs::path abs_path = fs::absolute(temp_path);
     output_filename = abs_path / output_filename;
 
-    if (output_filename.string() == in_file) {
-        message = "The source file can not be overwritten!";
-        save_file_ack.set_success(success);
-        save_file_ack.set_message(message);
-        return;
+    if (fs::exists(output_filename)) {
+        if (output_filename.string() == in_file) {
+            message = "Cannot overwrite the source image.";
+        } else if (fs::is_other(output_filename)) {
+            // Not a file, directory, or symlink
+            message = "Cannot overwrite existing path: not a file or directory.";
+        } else if (CasacoreImageType(output_filename.string()) == casacore::ImageOpener::UNKNOWN) {
+            // Not an image
+            if (fs::is_directory(output_filename)) {
+                // Never overwrite directory
+                message = "Cannot overwrite existing directory.";
+            } else if (!overwrite) {
+                // Only overwrite file or symlink with confirmation
+                message = "Cannot overwrite existing file or symlink.";
+                save_file_ack.set_overwrite_confirmation_required(true);
+            }
+        } else if (!overwrite) {
+            // Only overwrite image with confirmation
+            message = "Cannot overwrite existing image.";
+            save_file_ack.set_overwrite_confirmation_required(true);
+        }
+
+        if (!message.empty()) {
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(message);
+            return;
+        }
     }
 
     double rest_freq(save_file_msg.rest_freq());
@@ -2031,7 +2060,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             } else {
                 image = casacore::SubImage<float>(sub_image, casacore::AxesSpecifier(false), true).cloneII();
             }
-        } catch (casacore::AipsError error) {
+        } catch (const casacore::AipsError& error) {
             message = error.getMesg();
             save_file_ack.set_success(false);
             save_file_ack.set_message(message);
@@ -2044,16 +2073,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     if (change_rest_freq) {
         casacore::CoordinateSystem coord_sys = image->coordinates();
         casacore::String error_msg("");
-        bool success = coord_sys.setRestFrequency(error_msg, casacore::Quantity(rest_freq, casacore::Unit("Hz")));
-        if (success) {
-            success = image->setCoordinateInfo(coord_sys);
-        }
-        if (!success) {
-            spdlog::warn("Failed to set new rest freq; use header rest freq instead: {}", error_msg);
+        if (coord_sys.setRestFrequency(error_msg, casacore::Quantity(rest_freq, casacore::Unit("Hz")))) {
+            if (!image->setCoordinateInfo(coord_sys)) {
+                spdlog::warn("Failed to set new rest freq; using header rest freq instead: {}", error_msg);
+            }
         }
     }
 
     // Export image data to file
+    bool success(false);
     try {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
         {
@@ -2070,14 +2098,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             }
         }
         ulock.unlock(); // Unlock the image
-    } catch (casacore::AipsError error) {
+
+        if (success) {
+            spdlog::info("Exported a {} file \'{}\'.", FileTypeString[output_file_type], output_filename.string());
+        }
+    } catch (const casacore::AipsError& error) {
         message += error.getMesg();
         save_file_ack.set_success(false);
         save_file_ack.set_message(message);
         return;
-    }
-    if (success) {
-        spdlog::info("Exported a {} file \'{}\'.", FileTypeString[output_file_type], output_filename.string());
     }
 
     // Remove the root folder from the ack message
@@ -2097,7 +2126,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 // Input output_filename as file path
 // Input message as a return message, which may contain error message
 // Return a bool if this functionality success
-bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
+bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, std::string& message) {
     bool success(false);
 
     // Remove the old image file if it has a same file name
@@ -2144,7 +2173,7 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
 // Input output_filename as file path
 // Input message as a return message, which may contain error message
 // Return a bool if this functionality success
-bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
+bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, std::string& message) {
     bool success = false;
     bool prefer_velocity;
     bool optical_velocity;

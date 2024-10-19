@@ -252,8 +252,8 @@ protected:
     bool HasSpectralConfig(const SpectralConfig& config);
 
     // Export image
-    bool ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
-    bool ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
+    bool ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, std::string& message);
+    bool ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, std::string& message);
     void ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg);
     casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
