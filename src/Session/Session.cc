@@ -723,13 +723,13 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
                 }
                 auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
                 auto tile = Tile::Decode(encoded_coordinate);
+
                 if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, requested_z, stokes,
                                                   compression_type, compression_quality, is_current_z)) {
                     // Check if channel and tile still valid for channel map
                     if (!is_current_z && !IsValidChannelMapTile(file_id, requested_z, encoded_coordinate)) {
                         spdlog::warn(
-                            "Discarding stale tile request for channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y, tile.layer);
-
+                            "Discarding stale tile request for channel={}, tile=({}, {}, {})", requested_z, tile.x, tile.y, tile.layer);
                         continue;
                     }
 
@@ -762,6 +762,11 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             int start_channel(message.channel_range().min());
             int end_channel(message.channel_range().max());
             int num_channel(frame->Depth());
+
+            // Use animation limits for flow control
+            int max_frame_rate(15), max_gap(max_frame_rate / 3);
+            std::chrono::microseconds channel_interval(int64_t(1.0e6 / max_frame_rate));
+
             for (int chan = start_channel; chan <= end_channel; ++chan) {
                 if (chan >= num_channel) {
                     break;
@@ -771,8 +776,16 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                     continue;
                 }
 
+                auto start_time = std::chrono::high_resolution_clock::now();
                 spdlog::debug("Send channel {} in range {}-{}", chan, start_channel, end_channel);
                 OnAddRequiredTiles(message.required_tiles(), chan);
+
+                if (chan < end_channel) {
+                    // Wait until interval elapsed to execute next channel.
+                    auto wait_us = std::chrono::duration_cast<std::chrono::microseconds>(
+                        start_time + channel_interval - std::chrono::high_resolution_clock::now());
+                    std::this_thread::sleep_for(wait_us);
+                }
             }
         } else {
             // Set new channel
@@ -2055,6 +2068,8 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
                         auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
                         if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
                             spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
+                        } else if (status == uWS::WebSocket<false, true, PerSocketData>::BACKPRESSURE) {
+                            spdlog::warn("socket send status=BACKPRESSURE");
                         }
                     });
                 }
