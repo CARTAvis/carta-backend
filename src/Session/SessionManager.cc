@@ -95,10 +95,9 @@ void SessionManager::OnConnect(WSType* ws) {
 }
 
 void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message) {
-    // Skip server-forced disconnects
-
     spdlog::debug("WebSocket closed with code {} and message '{}'.", code, message);
 
+    // Skip server-forced disconnects
     if (code == 4003) {
         return;
     }
@@ -515,6 +514,14 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::RemoteFileRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRemoteFileRequest(message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL: {
+                    CARTA::ChannelMapFlowControl message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->HandleChannelMapFlowControlEvt(message);
                         message_parsed = true;
                     }
                     break;

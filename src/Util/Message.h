@@ -8,6 +8,7 @@
 #define CARTA_SRC_UTIL_MESSAGE_H_
 
 #include <carta-protobuf/animation.pb.h>
+#include <carta-protobuf/channel_map.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour_image.pb.h>
 #include <carta-protobuf/defs.pb.h>
@@ -115,6 +116,7 @@ public:
         const CARTA::DoublePoint& center, double amp, const CARTA::DoublePoint& fwhm, double pa);
     static CARTA::ScriptingRequest ScriptingRequest(uint32_t scripting_request_id, const std::string& target, const std::string& action,
         const std::string& parameters, bool async, const std::string& return_path);
+    static CARTA::ChannelMapFlowControl ChannelMapFlowControl(int32_t file_id, int32_t received_channel);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,

@@ -25,6 +25,7 @@
 
 #include "AnimationObject.h"
 #include "Cache/LoaderCache.h"
+#include "ChannelMapSettings.h"
 #include "CursorSettings.h"
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
@@ -64,7 +65,7 @@ public:
     bool OnOpenFile(int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
         CARTA::OpenFileAck* open_file_ack);
     void OnCloseFile(const CARTA::CloseFile& message);
-    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int animation_id = 0, bool skip_data = false);
+    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int channel = CURRENT_Z, int animation_id = 0, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);
@@ -97,18 +98,14 @@ public:
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
     void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
 
-    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
-        std::pair<CARTA::SetImageChannels, uint32_t> rp;
-        // Empty current queue first.
-        while (_set_channel_queues[message.file_id()].try_pop(rp)) {
-        }
-        _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
-    }
+    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id);
 
     // Task handling
     void ExecuteSetChannelEvt(std::pair<CARTA::SetImageChannels, uint32_t> request) {
         OnSetImageChannels(request.first);
     }
+    void HandleChannelMapFlowControlEvt(CARTA::ChannelMapFlowControl& message);
+
     void CancelSetHistRequirements() {
         _histogram_context.cancel_group_execution();
     }
@@ -137,22 +134,22 @@ public:
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _cursor_settings.AddCursorSetting(message, request_id);
     }
-    void ImageChannelLock(int fileId) {
-        _image_channel_mutexes[fileId].lock();
+    void ImageChannelLock(int file_id) {
+        _image_channel_mutexes[file_id].lock();
     }
-    void ImageChannelUnlock(int fileId) {
-        _image_channel_mutexes[fileId].unlock();
+    void ImageChannelUnlock(int file_id) {
+        _image_channel_mutexes[file_id].unlock();
     }
-    bool ImageChannelTaskTestAndSet(int fileId) {
-        if (_image_channel_task_active[fileId]) {
+    bool ImageChannelTaskTestAndSet(int file_id) {
+        if (_image_channel_task_active[file_id]) {
             return true;
         } else {
-            _image_channel_task_active[fileId] = true;
+            _image_channel_task_active[file_id] = true;
             return false;
         }
     }
-    void ImageChannelTaskSetIdle(int fileId) {
-        _image_channel_task_active[fileId] = false;
+    void ImageChannelTaskSetIdle(int file_id) {
+        _image_channel_task_active[file_id] = false;
     }
     int IncreaseRefCount() {
         return ++_ref_count;
@@ -253,7 +250,7 @@ protected:
     bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
 
     // Send data streams
-    bool SendContourData(int file_id, bool ignore_empty = true);
+    bool SendContourData(int file_id, bool ignore_empty = true, int channel = CURRENT_Z);
     bool SendSpatialProfileData(int file_id, int region_id);
     void SendSpatialProfileDataByFileId(int file_id);
     void SendSpatialProfileDataByRegionId(int region_id);
@@ -269,6 +266,11 @@ protected:
     void SendFileEvent(
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
+
+    // Channel map cancellation
+    bool IsValidChannelMapTile(int file_id, int channel, int tile);
+    bool IsInChannelMapRange(int file_id, int channel);
+    bool IsInChannelMapTiles(int file_id, int tile);
 
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;
@@ -303,9 +305,11 @@ protected:
     // Individual stokes files connector
     std::unique_ptr<StokesFilesConnector> _stokes_files_connector;
 
-    // Manage image channel/z
+    // Manage image channel and channel maps. Key is file_id.
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
+    std::unique_ptr<ChannelMapSettings> _channel_map_settings;
+    std::unordered_map<int, int> _channel_map_received_channel;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
