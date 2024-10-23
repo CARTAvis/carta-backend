@@ -768,7 +768,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             int num_channel(frame->Depth());
 
             // Use animation limits for flow control
-            int max_frame_rate(15), max_gap(max_frame_rate / 3);
+            int max_frame_rate(15), max_channel_gap(max_frame_rate / CARTA::InitialAnimationWaitsPerSecond);
             std::chrono::microseconds channel_interval(int64_t(1.0e6 / max_frame_rate));
 
             for (int chan = start_channel; chan <= end_channel; ++chan) {
@@ -778,6 +778,14 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                 if (!IsInChannelMapRange(file_id, chan)) {
                     spdlog::debug("Skip channel {} in range {}-{}, not in current range", chan, start_channel, end_channel);
                     continue;
+                }
+
+                if (_channel_map_received_channel.find(file_id) != _channel_map_received_channel.end()) {
+                    int received_channel = _channel_map_received_channel[file_id];
+                    while (chan - received_channel > max_channel_gap) {
+                        std::this_thread::sleep_for(channel_interval);
+                        received_channel = _channel_map_received_channel[file_id];
+                    }
                 }
 
                 auto start_time = std::chrono::high_resolution_clock::now();
@@ -2579,4 +2587,8 @@ bool Session::IsInChannelMapRange(int file_id, int channel) {
 bool Session::IsInChannelMapTiles(int file_id, int tile) {
     // Check if tile is in current channel map tiles for file id.
     return _channel_map_settings && _channel_map_settings->HasTile(file_id, tile);
+}
+
+void Session::HandleChannelMapFlowControlEvt(CARTA::ChannelMapFlowControl& message) {
+    _channel_map_received_channel[message.file_id()] = message.received_channel();
 }

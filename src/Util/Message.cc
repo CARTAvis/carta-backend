@@ -440,6 +440,13 @@ CARTA::ScriptingRequest Message::ScriptingRequest(uint32_t scripting_request_id,
     return message;
 }
 
+CARTA::ChannelMapFlowControl Message::ChannelMapFlowControl(int32_t file_id, int32_t received_channel) {
+    CARTA::ChannelMapFlowControl message;
+    message.set_file_id(file_id);
+    message.set_received_channel(received_channel);
+    return message;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

@@ -104,6 +104,8 @@ public:
     void ExecuteSetChannelEvt(std::pair<CARTA::SetImageChannels, uint32_t> request) {
         OnSetImageChannels(request.first);
     }
+    void HandleChannelMapFlowControlEvt(CARTA::ChannelMapFlowControl& message);
+
     void CancelSetHistRequirements() {
         _histogram_context.cancel_group_execution();
     }
@@ -307,6 +309,7 @@ protected:
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
     std::unique_ptr<ChannelMapSettings> _channel_map_settings;
+    std::unordered_map<int, int> _channel_map_received_channel;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
