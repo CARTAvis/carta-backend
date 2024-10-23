@@ -25,7 +25,7 @@
 
 #include "AnimationObject.h"
 #include "Cache/LoaderCache.h"
-#include "ChannelMap.h"
+#include "ChannelMapSettings.h"
 #include "CursorSettings.h"
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
@@ -98,45 +98,7 @@ public:
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
     void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
 
-    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
-        // Image channel mutex has been locked by SessionManager.
-        // Set current channel or channel range, clear queue if new channel/range.
-        bool clear_queue(true);
-        if (message.has_current_range()) {
-            if (!_channel_map) {
-                _channel_map = std::unique_ptr<ChannelMap>(new ChannelMap(message));
-            } else {
-                clear_queue = _channel_map->SetChannelMap(message);
-            }
-        } else {
-            if (_channel_map) {
-                _channel_map->SetChannelMap(message);
-            }
-        }
-
-        if (clear_queue) {
-            std::pair<CARTA::SetImageChannels, uint32_t> rp;
-            while (_set_channel_queues[message.file_id()].try_pop(rp)) {
-            }
-        }
-
-        if (message.has_required_tiles()) {
-            _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
-        }
-    }
-
-    bool IsValidChannelMapTile(int file_id, int channel, int32_t tile) {
-        // Check if channel is in channel range and tile is in required tiles for file id.
-        // TODO: When user pans, needed tiles may not be in latest required tiles so do not check.
-        // We need to know current tiles not just required tiles.
-        // return IsInChannelMapRange(file_id, channel) && _channel_map->HasTile(file_id, tile);
-        return IsInChannelMapRange(file_id, channel);
-    }
-
-    bool IsInChannelMapRange(int file_id, int channel) {
-        // Check if channel is in channel map range for file id.
-        return _channel_map && _channel_map->IsInChannelRange(file_id, channel);
-    }
+    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id);
 
     // Task handling
     void ExecuteSetChannelEvt(std::pair<CARTA::SetImageChannels, uint32_t> request) {
@@ -303,6 +265,11 @@ protected:
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
+    // Channel map cancellation
+    bool IsValidChannelMapTile(int file_id, int channel, int tile);
+    bool IsInChannelMapRange(int file_id, int channel);
+    bool IsInChannelMapTiles(int file_id, int tile);
+
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;
     uWS::Loop* _loop;
@@ -339,7 +306,7 @@ protected:
     // Manage image channel and channel maps. Key is file_id.
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
-    std::unique_ptr<ChannelMap> _channel_map;
+    std::unique_ptr<ChannelMapSettings> _channel_map_settings;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;

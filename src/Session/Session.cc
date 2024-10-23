@@ -63,7 +63,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _animation_object(nullptr),
       _animation_active(false),
       _stokes_files_connector(nullptr),
-      _channel_map(nullptr),
+      _channel_map_settings(nullptr),
       _histogram_progress(1.0),
       _ref_count(0),
       _sync_id(0),
@@ -666,8 +666,8 @@ void Session::DeleteFrame(int file_id) {
     if (_region_handler) {
         _region_handler->RemoveFrame(file_id);
     }
-    if (_channel_map) {
-        _channel_map->RemoveFile(file_id);
+    if (_channel_map_settings) {
+        _channel_map_settings->RemoveFile(file_id);
     }
 }
 
@@ -717,17 +717,21 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
         for (int j = 0; j < stride; j++) {
             for (int i = j; i < num_tiles; i += stride) {
                 const auto& encoded_coordinate = message.tiles(i);
-                // Check if channel and tile still valid for channel map
-                if (!is_current_z && !IsValidChannelMapTile(file_id, requested_z, encoded_coordinate)) {
+                auto tile = Tile::Decode(encoded_coordinate);
+
+                if (!is_current_z && !IsInChannelMapTiles(file_id, encoded_coordinate)) {
+                    // Check if tile still valid for channel map before creating tile
+                    spdlog::warn(
+                        "Discarding stale tile request for channel={}, tile=({}, {}, {})", requested_z, tile.x, tile.y, tile.layer);
                     continue;
                 }
+
                 auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
-                auto tile = Tile::Decode(encoded_coordinate);
 
                 if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, requested_z, stokes,
                                                   compression_type, compression_quality, is_current_z)) {
-                    // Check if channel and tile still valid for channel map
                     if (!is_current_z && !IsValidChannelMapTile(file_id, requested_z, encoded_coordinate)) {
+                        // Check if channel and tile still valid for channel map before sending
                         spdlog::warn(
                             "Discarding stale tile request for channel={}, tile=({}, {}, {})", requested_z, tile.x, tile.y, tile.layer);
                         continue;
@@ -1555,6 +1559,48 @@ void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParamete
     }
 }
 
+void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id) {
+    auto file_id(message.file_id());
+
+    CARTA::RemoteFileResponse response;
+    std::string url, err_message;
+    bool success = GenerateUrlFromRequest(message, url, err_message);
+    if (success) {
+        spdlog::info("Fetching remote file from url {}", url);
+        auto loader = _loaders.Get(url, "");
+
+        CARTA::OpenFileAck ack;
+        try {
+            loader->OpenFile("0");
+
+            std::string remote_file_name;
+            auto index = ++_remote_file_index;
+            if (index > 0) {
+                remote_file_name = fmt::format("remote_file{}.fits", index);
+            } else {
+                remote_file_name = "remote_file.fits";
+            }
+            spdlog::info("Opening remote file: {}", remote_file_name);
+
+            auto image = loader->GetImage();
+
+            success = OnOpenFile(file_id, remote_file_name, image, response.mutable_open_file_ack());
+            if (success) {
+                response.set_message("File opened successfully");
+            }
+        } catch (const casacore::AipsError& err) {
+            err_message = err.getMesg();
+            response.set_message(err_message);
+            success = false;
+        }
+    } else {
+        response.set_message(err_message);
+    }
+    response.set_success(success);
+
+    SendEvent(CARTA::REMOTE_FILE_RESPONSE, request_id, response);
+}
+
 // ******** SEND DATA STREAMS *********
 
 bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message) {
@@ -2054,7 +2100,6 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     // Skip compression on files smaller than 1 kB
     msg_vs_compress.second = compress && required_size > 1024;
     _out_msgs.push(msg_vs_compress);
-    // spdlog::debug("***** Queued message type={} queue size={}", event_type, _out_msgs.size());
 
     // uWS::Loop::defer(function) is the only thread-safe function.
     // Use it to defer the calling of a function to the thread that runs the Loop.
@@ -2418,6 +2463,9 @@ void Session::CancelExistingAnimation() {
     }
 }
 
+// *********************************************************************************
+// SCRIPTING
+
 void Session::SendScriptingRequest(
     CARTA::ScriptingRequest& message, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback) {
     int scripting_request_id(message.scripting_request_id());
@@ -2454,6 +2502,9 @@ void Session::CloseAllScriptingRequests() {
     _scripting_callbacks.clear();
 }
 
+// *********************************************************************************
+// Session Management
+
 void Session::StopImageFileList() {
     if (_file_list_handler) {
         _file_list_handler->StopGettingFileList();
@@ -2484,44 +2535,48 @@ void Session::CloseCachedImage(const std::string& directory, const std::string& 
         }
     }
 }
-void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id) {
-    auto file_id(message.file_id());
 
-    CARTA::RemoteFileResponse response;
-    std::string url, err_message;
-    bool success = GenerateUrlFromRequest(message, url, err_message);
-    if (success) {
-        spdlog::info("Fetching remote file from url {}", url);
-        auto loader = _loaders.Get(url, "");
+// *********************************************************************************
+// Image Channel and Channel Map
 
-        CARTA::OpenFileAck ack;
-        try {
-            loader->OpenFile("0");
-
-            std::string remote_file_name;
-            auto index = ++_remote_file_index;
-            if (index > 0) {
-                remote_file_name = fmt::format("remote_file{}.fits", index);
-            } else {
-                remote_file_name = "remote_file.fits";
-            }
-            spdlog::info("Opening remote file: {}", remote_file_name);
-
-            auto image = loader->GetImage();
-
-            success = OnOpenFile(file_id, remote_file_name, image, response.mutable_open_file_ack());
-            if (success) {
-                response.set_message("File opened successfully");
-            }
-        } catch (const casacore::AipsError& err) {
-            err_message = err.getMesg();
-            response.set_message(err_message);
-            success = false;
+void Session::AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
+    // Image channel mutex has been locked by SessionManager.
+    // Set current channel or channel range, clear queue if new channel/range.
+    bool clear_queue(true);
+    if (message.has_current_range()) {
+        if (!_channel_map_settings) {
+            _channel_map_settings = std::unique_ptr<ChannelMapSettings>(new ChannelMapSettings(message));
+        } else {
+            clear_queue = _channel_map_settings->SetChannelMap(message);
         }
     } else {
-        response.set_message(err_message);
+        if (_channel_map_settings) {
+            _channel_map_settings->SetChannelMap(message);
+        }
     }
-    response.set_success(success);
 
-    SendEvent(CARTA::REMOTE_FILE_RESPONSE, request_id, response);
+    if (clear_queue) {
+        std::pair<CARTA::SetImageChannels, uint32_t> rp;
+        while (_set_channel_queues[message.file_id()].try_pop(rp)) {
+        }
+    }
+
+    if (message.has_required_tiles()) {
+        _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
+    }
+}
+
+bool Session::IsValidChannelMapTile(int file_id, int channel, int tile) {
+    // Check if channel is in channel range and tile is in required tiles for file id.
+    return IsInChannelMapRange(file_id, channel) && IsInChannelMapTiles(file_id, tile);
+}
+
+bool Session::IsInChannelMapRange(int file_id, int channel) {
+    // Check if channel is in current channel map range for file id.
+    return _channel_map_settings && _channel_map_settings->IsInChannelRange(file_id, channel);
+}
+
+bool Session::IsInChannelMapTiles(int file_id, int tile) {
+    // Check if tile is in current channel map tiles for file id.
+    return _channel_map_settings && _channel_map_settings->HasTile(file_id, tile);
 }

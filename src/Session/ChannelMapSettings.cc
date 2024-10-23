@@ -4,24 +4,24 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # ChannelMap.h: Parameters related to channel map view
+// # ChannelMapSettings.h: Parameters related to channel map view
 
-#include "ChannelMap.h"
+#include "ChannelMapSettings.h"
 
-#include "Util/File.h" // ALL_FILES
+#include "Util/File.h" // ALL_FILES def
 
 namespace carta {
 
-ChannelMap::ChannelMap(const CARTA::SetImageChannels& message) {
+ChannelMapSettings::ChannelMapSettings(const CARTA::SetImageChannels& message) {
     SetChannelMapParams(message);
 }
 
-bool ChannelMap::SetChannelMap(const CARTA::SetImageChannels& message) {
+bool ChannelMapSettings::SetChannelMap(const CARTA::SetImageChannels& message) {
     // Returns true if it is an entirely new channel view, with new channel range and tiles.
     return SetChannelMapParams(message);
 }
 
-bool ChannelMap::IsInChannelRange(int file_id, int channel) {
+bool ChannelMapSettings::IsInChannelRange(int file_id, int channel) {
     // Returns true if input channel is in current channel range.
     std::unique_lock<std::mutex> lock(_file_mutexes[file_id]);
     if (_channel_ranges.find(file_id) == _channel_ranges.end()) {
@@ -30,7 +30,7 @@ bool ChannelMap::IsInChannelRange(int file_id, int channel) {
     return _channel_ranges[file_id].is_in_range(channel);
 }
 
-bool ChannelMap::HasRequiredTiles(int file_id, const CARTA::AddRequiredTiles& required_tiles) {
+bool ChannelMapSettings::HasRequiredTiles(int file_id, const CARTA::AddRequiredTiles& required_tiles) {
     // Returns true if any input tiles are in current tiles, and compression is same.
     std::unique_lock<std::mutex> lock(_file_mutexes[file_id]);
     if (_required_tiles.find(file_id) == _required_tiles.end()) {
@@ -42,7 +42,7 @@ bool ChannelMap::HasRequiredTiles(int file_id, const CARTA::AddRequiredTiles& re
         return false;
     }
 
-    for (auto tile : new_tiles.encoded_tiles) {
+    for (auto tile : new_tiles.tiles) {
         if (_required_tiles[file_id].HasTile(tile)) {
             return true;
         }
@@ -50,7 +50,7 @@ bool ChannelMap::HasRequiredTiles(int file_id, const CARTA::AddRequiredTiles& re
     return false;
 }
 
-bool ChannelMap::HasTile(int file_id, int32_t tile) {
+bool ChannelMapSettings::HasTile(int file_id, int tile) {
     std::unique_lock<std::mutex> lock(_file_mutexes[file_id]);
     if (_required_tiles.find(file_id) == _required_tiles.end()) {
         return false;
@@ -58,7 +58,7 @@ bool ChannelMap::HasTile(int file_id, int32_t tile) {
     return _required_tiles[file_id].HasTile(tile);
 }
 
-void ChannelMap::RemoveFile(int file_id) {
+void ChannelMapSettings::RemoveFile(int file_id) {
     if (file_id == ALL_FILES) {
         _file_mutexes.clear();
         _channel_ranges.clear();
@@ -70,7 +70,7 @@ void ChannelMap::RemoveFile(int file_id) {
     }
 }
 
-bool ChannelMap::SetChannelMapParams(const CARTA::SetImageChannels& message) {
+bool ChannelMapSettings::SetChannelMapParams(const CARTA::SetImageChannels& message) {
     // Set new channel range and required tiles.
     // Returns true if new params (for cancel).
     AxisRange new_range;
