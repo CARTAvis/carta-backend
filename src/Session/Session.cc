@@ -1340,7 +1340,9 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
 void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, uint32_t request_id) {
     int file_id(render3d_request.file_id());
     int region_id(render3d_request.region_id());
+    int viewer_id(render3d_request.viewer_id());
     CARTA::Render3DResponse render3d_response;
+    std::cout << "Render3D function called" << std::endl;
 
     if (_frames.count(file_id)) {
         // condition statement to check if the a region is selected. cursor_region is 0 and NONE, IMAGE and ACTIVE are < 0
@@ -1350,16 +1352,16 @@ void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, 
         // } else {
         Timer t;
         auto& frame = _frames.at(file_id);
-        casacore::Cube<float> render3d_data;
+        CARTA::Render3DData render3d_data;
 
         // Set render3d progress callback function
         auto progress_callback = [&](float progress) {
-            auto render3d_progress = Message::Render3DProgress(file_id, region_id, progress);
+            auto render3d_progress = Message::Render3DProgress(file_id, region_id, progress, viewer_id);
             SendEvent(CARTA::EventType::RENDER3D_PROGRESS, request_id, render3d_progress);
         };
 
         if (_region_handler->CalculateRender3DData(render3d_request, frame, progress_callback, render3d_response, render3d_data)) {
-
+            
         }
     }
 }
@@ -1445,6 +1447,20 @@ void Session::OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview) {
     int preview_id(close_pv_preview.preview_id());
     if (_region_handler) {
         _region_handler->ClosePvPreview(preview_id);
+    }
+}
+
+void Session::OnStopRender3D(const CARTA::StopRender3D& stop_render3d) {
+    int viewer_id(stop_render3d.viewer_id());
+    if (_region_handler) {
+        _region_handler->StopRender3D(viewer_id);
+    }
+}
+
+void Session::OnCloseRender3D(const CARTA::CloseRender3D& close_render3d) {
+    int viewer_id(close_render3d.viewer_id());
+    if (_region_handler) {
+        _region_handler->CloseRender3D(viewer_id);
     }
 }
 
@@ -1844,6 +1860,24 @@ bool Session::SendPvPreview(int file_id, int region_id, bool preview_region) {
 void Session::StopPvPreviewUpdates(int preview_id) {
     if (_region_handler) {
         _region_handler->StopPvPreviewUpdates(preview_id);
+    }
+}
+
+bool Session::SendRender3D(int file_id, int region_id) {
+    // return true if data sent
+    Timer t;
+    bool data_sent(false);
+    data_sent = _region_handler->FillRender3DData(
+        [&](CARTA::Render3DData render3d_data) {
+            
+        }
+    );
+    return true;
+}
+            
+void Session::StopRender3DUpdates(int viewer_id) {
+    if (_region_handler) {
+        _region_handler->StopRender3DUpdates(viewer_id);
     }
 }
 

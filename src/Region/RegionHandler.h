@@ -80,7 +80,19 @@ public:
     std::vector<int> GetSpatialReqFilesForRegion(int region_id);
 
     // Generate Render3D data
-    bool CalculateRender3DData()
+    bool CalculateRender3DData(const CARTA::Render3DRequest& render3d_request,
+    std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
+    CARTA::Render3DResponse render3d_response, CARTA::Render3DData render3d_data);
+    bool CalculateRender3DData(int file_id, int region_id, int viewer_id,
+    AxisRange& spectral_range, int rebin_xy, int rebin_z, bool keep, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response,
+    CARTA::Render3DData& render3d_data);
+    bool CalculateRender3DData(int file_id, int region_id, int viewer_id, std::shared_ptr<PvPreviewCube> render3d_cube,std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response);
+
+    void StopRender3D(int viewer_id);
+    void StopRender3DUpdates(int viewer_id);
+    void CloseRender3D(int viewer_id);
+
+    int GetRender3DViewerFrameId(int viewer_id);
 
     // Generate PV image or preview image
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,

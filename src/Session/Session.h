@@ -97,6 +97,8 @@ public:
     void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
     void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
+    void OnStopRender3D(const CARTA::StopRender3D& stop_render3d);
+    void OnCloseRender3D(const CARTA::CloseRender3D& close_render3d);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -203,6 +205,8 @@ public:
     bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
     bool SendPvPreview(int file_id, int region_id, bool preview_region);
     void StopPvPreviewUpdates(int preview_id);
+    bool SendRender3D(int file_id, int region_id);
+    void StopRender3DUpdates(int viewer_id);
 
     CursorSettings _cursor_settings;
     std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;

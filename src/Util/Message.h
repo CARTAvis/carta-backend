@@ -37,6 +37,7 @@
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/stop_pv_calc.pb.h>
+#include <carta-protobuf/stop_render3d.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
 #include <carta-protobuf/vector_overlay_tile.pb.h>
@@ -132,7 +133,8 @@ public:
     static CARTA::RegisterViewerAck RegisterViewerAck(
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
-    static CARTA::Render3DRequest Render3DRequest(int32_t file_id, int32_t region_id, CARTA::ImageBounds image_bounds, CARTA::IntBounds spectral_range, bool keep); 
+    static CARTA::Render3DRequest Render3DRequest(int32_t file_id, int32_t region_id, CARTA::ImageBounds image_bounds, CARTA::IntBounds spectral_range, bool keep);
+    static CARTA::Render3DProgress Render3DProgress(int32_t file_id, int32_t region_id, float progress, int32_t viewer_id = 0);
     static CARTA::PvRequest PvRequest(
         int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false);
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress, int32_t preview_id = 0);

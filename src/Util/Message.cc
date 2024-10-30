@@ -560,7 +560,16 @@ CARTA::Render3DRequest Message::Render3DRequest(int32_t file_id, int32_t region_
     *message.mutable_spectral_range() = spectral_range;
     message.set_keep(keep);
     return message;
-}    
+}
+
+CARTA::Render3DProgress Message::Render3DProgress(int32_t file_id, int32_t region_id, float progress, int32_t viewer_id,) {
+    CARTA::Render3DProgress message;
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
+    message.set_viewer_id(preview_id);
+    message.set_progress(progress);
+    return message;
+}
 
 CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t width, int z_min, int32_t z_max, bool reverse, bool keep) {
     CARTA::PvRequest message;

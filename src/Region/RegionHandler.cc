@@ -954,8 +954,9 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
     return !collapse_results.empty();
 }
 
-bool RegionHandler::CalculateRender3DData(const CARTA::Render3DRequest& render3d_request, std::shared_ptr<Frame>& frame,
-GeneratorProgressCallback progress_callback, CARTA::Render3DResponse render3d_response, CARTA::Render3DData render3d_data) {
+bool RegionHandler::CalculateRender3DData(const CARTA::Render3DRequest& render3d_request,
+    std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
+    CARTA::Render3DResponse render3d_response, CARTA::Render3DData render3d_data) {
     // Unpack request message and send it along
     int file_id(render3d_request.file_id());
     int region_id(render3d_request.region_id());
@@ -1009,8 +1010,8 @@ GeneratorProgressCallback progress_callback, CARTA::Render3DResponse render3d_re
     if (!FrameSet(file_id)) {
         _frames[file_id] = frame;
     }
-
-    return CalculateRender3DData(file_id, region_id, viewer_id, spectral_range, rebin_xy, rebin_z, compression, image_quality, keep, frame, progress_callback, render3d_response, render3d_data);
+    // compression, image_quality,
+    return CalculateRender3DData(file_id, region_id, viewer_id, spectral_range, rebin_xy, rebin_z, keep, frame, progress_callback, render3d_response, render3d_data);
     
 }
 
@@ -1407,7 +1408,9 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
 }
 
 // CARTA::ImageBounds& image_bounds,
-bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer_id, AxisRange& spectral_range, int rebin_xy, int rebin_z, bool keep, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response, CARTA::Render3DData& render3d_data) {
+bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer_id,
+    AxisRange& spectral_range, int rebin_xy, int rebin_z, bool keep, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response,
+    CARTA::Render3DData& render3d_data) {
 
     // use if region is mandatory
     // auto region = GetRegion(region_id);
@@ -1435,7 +1438,7 @@ bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer
     auto stokes = frame->CurrentStokes();
     PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, region_state);
     
-    auto frame_id = GetRender3DFrameId(viewer_id);
+    auto frame_id = GetRender3DViewerFrameId(viewer_id);
     bool viewer_frame_set = _frames.find(frame_id) != _frames.end();
 
     // Update cube settings for existing ID.
@@ -1462,10 +1465,12 @@ bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer
     auto render3d_cube = _render3d_cubes.at(viewer_id);
     bool render3d_cube_loaded = render3d_cube->CubeLoaded();
     render3d_cube_lock.unlock();
+
+    // FINISH FUNCTION!!
     
 }
 
-bool RegionHandler::CalculateRender3DData(int file_id, int region_id, std::shared_ptr<PvPreviewCube> render3d_cube,std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response) {
+bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer_id, std::shared_ptr<PvPreviewCube> render3d_cube,std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response) {
     // Prepare response; if error, add message.
     render3d_response.set_success(false);
     render3d_response.set_cancel(false);
@@ -1474,6 +1479,8 @@ bool RegionHandler::CalculateRender3DData(int file_id, int region_id, std::share
     render3d_data_message->set_width(0);
     render3d_data_message->set_height(0);
     render3d_data_message->set_depth(0);
+
+    return true;
 
 }
 
@@ -1659,6 +1666,36 @@ void RegionHandler::ClosePvPreview(int preview_id) {
     pv_cube_lock.unlock();
 
     auto frame_id = GetPvPreviewFrameId(preview_id);
+    _frames.erase(frame_id);
+}
+
+void RegionHandler::StopRender3D(int viewer_id) {
+    // Cancel loading render3d cube cache
+    if (_render3d_cubes.find(viewer_id) != _render3d_cubes.end()) {
+        _render3d_cubes.at(viewer_id)->StopCube();
+    }
+}
+
+void RegionHandler::StopRender3DUpdates(int viewer_id) {
+    // Clear region queue to stop render3d updates
+    if (_render3d_cubes.find(viewer_id) != _render3d_cubes.end()) {
+        // Safe because has internal mutex for queue
+        // _render3d_cubes.at(viewer_id)->ClearRegionQueue();
+    }
+}
+
+void RegionHandler::CloseRender3D(int viewer_id) {
+    // Cancel render3d calculations and remove render3d settings, frame, and stop flag
+    StopRender3DUpdates(viewer_id);
+    StopRender3D(viewer_id);
+
+    std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
+    if (_render3d_cubes.find(viewer_id) != _render3d_cubes.end()) {
+        _render3d_cubes.erase(viewer_id);
+    }
+    render3d_cube_lock.unlock();
+
+    auto frame_id = GetRender3DViewerFrameId(viewer_id);
     _frames.erase(frame_id);
 }
 
