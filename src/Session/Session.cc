@@ -2564,6 +2564,9 @@ void Session::AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t req
     // Set current channel or channel range, clear queue if new channel/range.
     bool clear_queue(true);
     if (message.has_current_range()) {
+        spdlog::debug("Set channel map current range {}-{} channel range {}-{}", message.current_range().min(),
+            message.current_range().max(), message.channel_range().min(), message.channel_range().max());
+
         if (!_channel_map_settings) {
             _channel_map_settings = std::unique_ptr<ChannelMapSettings>(new ChannelMapSettings(message));
         } else {
