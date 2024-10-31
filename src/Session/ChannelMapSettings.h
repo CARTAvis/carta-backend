@@ -9,6 +9,7 @@
 #ifndef CARTA_SRC_SESSION_CHANNELMAPSETTINGS_H_
 #define CARTA_SRC_SESSION_CHANNELMAPSETTINGS_H_
 
+#include <mutex>
 #include <vector>
 
 #include <carta-protobuf/set_image_channels.pb.h>
