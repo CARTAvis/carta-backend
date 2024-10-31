@@ -766,6 +766,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             int start_channel(message.channel_range().min());
             int end_channel(message.channel_range().max());
             int num_channel(frame->Depth());
+            bool skipped_channel(false);
 
             // Use animation limits for flow control
             int max_frame_rate(15), max_channel_gap(max_frame_rate / CARTA::InitialAnimationWaitsPerSecond);
@@ -777,20 +778,31 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                 }
                 if (!IsInChannelMapRange(file_id, chan)) {
                     spdlog::debug("Skip channel {} in range {}-{}, not in current range", chan, start_channel, end_channel);
+                    skipped_channel = true;
                     continue;
                 }
 
-                if (_channel_map_received_channel.find(file_id) != _channel_map_received_channel.end()) {
+                // Do not check received channel if start channel, or have skipped channels causing gap
+                if (chan > start_channel && !skipped_channel &&
+                    _channel_map_received_channel.find(file_id) != _channel_map_received_channel.end()) {
                     int received_channel = _channel_map_received_channel[file_id];
-                    while (chan - received_channel > max_channel_gap) {
+
+                    // Flow control for received channel gap
+                    while (IsInChannelMapRange(file_id, chan) && chan - received_channel > max_channel_gap) {
                         std::this_thread::sleep_for(channel_interval);
                         received_channel = _channel_map_received_channel[file_id];
+                    }
+
+                    if (!IsInChannelMapRange(file_id, chan)) {
+                        spdlog::debug("Skip channel {} in range {}-{}, not in current range", chan, start_channel, end_channel);
+                        continue;
                     }
                 }
 
                 auto start_time = std::chrono::high_resolution_clock::now();
                 spdlog::debug("Send channel {} in range {}-{}", chan, start_channel, end_channel);
                 OnAddRequiredTiles(message.required_tiles(), chan);
+                skipped_channel = false;
 
                 if (chan < end_channel) {
                     // Wait until interval elapsed to execute next channel.
