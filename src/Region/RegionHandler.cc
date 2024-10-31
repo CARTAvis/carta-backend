@@ -1931,6 +1931,54 @@ bool RegionHandler::GetRegionHistogramData(
     return true;
 }
 
+// ***** Fill 3d rendering *****
+// GeneratorProgressCallback progress_callback, CARTA::Render3DData& render3d_data
+
+
+bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id,
+    AxisRange& spectral_range, int rebin_xy, int rebin_z, std::shared_ptr<Frame>& frame, CARTA::Render3DResponse& render3d_response) {
+    
+    RegionState region_state = _regions.at(region_id)->GetRegionState();
+
+    auto stokes = frame->CurrentStokes();
+    PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, region_state);
+    
+    auto frame_id = GetRender3DViewerFrameId(viewer_id);
+    bool viewer_frame_set = _frames.find(frame_id) != _frames.end();
+
+    // Update cube settings for existing ID.
+    // Set unique locks so in-progress cubes are completed before update.
+    std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
+    if (_render3d_cubes.find(viewer_id) == _render3d_cubes.end() ||
+        !_render3d_cubes.at(viewer_id)->HasSameParameters(cube_parameters)) {
+        // Cube changed, see if set for another viewer ID
+        bool cube_found(false);
+        for (auto& render3d_cube : _render3d_cubes) {
+            if (render3d_cube.second->HasSameParameters(cube_parameters)) {
+                _render3d_cubes[viewer_id] = render3d_cube.second;
+                cube_found = true;
+                break;
+            }
+        }
+        if (!cube_found) {
+            _render3d_cubes[viewer_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+        }
+
+        // If preview cube changed, then frame for its preview image cube is invalid
+        viewer_frame_set = false;
+    }
+    auto render3d_cube = _render3d_cubes.at(viewer_id);
+    bool render3d_cube_loaded = render3d_cube->CubeLoaded();
+    render3d_cube_lock.unlock();
+
+    
+}
+
+bool RegionHandler::FillRender3DData(std::function<void(CARTA::Render3DData render3d_data)> cb) {
+
+
+}
+
 // ***** Fill spectral profile *****
 
 bool RegionHandler::FillSpectralProfileData(
