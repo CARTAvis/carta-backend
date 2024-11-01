@@ -189,6 +189,18 @@ int Frame::StokesAxis() {
     return _stokes_axis;
 }
 
+int Frame::XAxis() {
+    return _x_axis;
+}
+
+int Frame::YAxis() {
+    return _y_axis;
+}
+
+int Frame::ZAxis() {
+    return _z_axis;
+}
+
 bool Frame::IsCurrentZStokes(const StokesSource& stokes_source) {
     return (stokes_source.z_range.from == stokes_source.z_range.to) && (stokes_source.z_range.from == CurrentZ()) &&
            (stokes_source.stokes == CurrentStokes());

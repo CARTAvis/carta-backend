@@ -108,6 +108,9 @@ public:
     bool IsCurrentZStokes(const StokesSource& stokes_source);
     int SpectralAxis();
     int StokesAxis();
+    int XAxis();
+    int YAxis();
+    int ZAxis();
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
