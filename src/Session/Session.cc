@@ -2574,6 +2574,7 @@ void Session::AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t req
         }
     } else {
         if (_channel_map_settings) {
+            // Cancel channel map if go to single channel
             _channel_map_settings->SetChannelMap(message);
         }
     }
@@ -2582,6 +2583,10 @@ void Session::AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t req
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
         while (_set_channel_queues[message.file_id()].try_pop(rp)) {
         }
+    } else {
+        // Ensure queued messages are executed
+        OnMessageTask* tsk = new SetImageChannelsTask(this, message.file_id());
+        ThreadManager::QueueTask(tsk);
     }
 
     if (message.has_required_tiles()) {
