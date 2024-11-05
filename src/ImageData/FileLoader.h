@@ -79,9 +79,10 @@ public:
 
     // Image shape and coordinate system axes
     casacore::IPosition GetShape();
+    AxesInfo GetAxes();
+    DimsInfo GetDims();
     std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
-    bool FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& spatial_axes, int& spectral_axis, int& stokes_axis,
-        std::vector<int>& render_axes, int& z_axis, std::string& message);
+    bool FindCoordinateAxes(std::string& message);
 
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
@@ -166,9 +167,9 @@ protected:
 
     // Save image properties
     casacore::IPosition _image_shape;
-    size_t _num_dims, _image_plane_size;
-    size_t _width, _height, _depth, _num_stokes;
-    int _x_axis, _y_axis, _z_axis, _stokes_axis;
+    size_t _num_dims;
+    DimsInfo _dims;
+    AxesInfo _axes;
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
     bool _has_pixel_mask;
     casacore::DataType _data_type;

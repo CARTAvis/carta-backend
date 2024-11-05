@@ -123,4 +123,15 @@ struct PointXy {
     }
 };
 
+struct AxesInfo {
+    int x, y, z, spectral, stokes;
+    std::vector<int> render, spatial;
+    AxesInfo() : x(-1), y(-1), z(-1), spectral(-1), stokes(-1), render({-1, -1}), spatial({-1, -1}) {}
+};
+
+struct DimsInfo {
+    size_t width, height, depth, num_stokes;
+    DimsInfo() : width(1), height(1), depth(1), num_stokes(1) {}
+};
+
 #endif // CARTA_SRC_UTIL_IMAGE_H_

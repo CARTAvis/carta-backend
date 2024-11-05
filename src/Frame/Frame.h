@@ -99,6 +99,7 @@ public:
 
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
+    DimsInfo Dims();    // struct of all dimensions
     size_t Width();     // length of x axis
     size_t Height();    // length of y axis
     size_t Depth();     // length of z axis
@@ -111,6 +112,7 @@ public:
     int XAxis();
     int YAxis();
     int ZAxis();
+    AxesInfo Axes(); // struct of all axes
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
@@ -285,10 +287,9 @@ protected:
 
     // Shape and axis info: X, Y, Z, Stokes
     casacore::IPosition _image_shape;
-    int _x_axis, _y_axis, _z_axis; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
-    int _spectral_axis, _stokes_axis;
+    AxesInfo _axes; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
+    DimsInfo _dims;
     int _z_index, _stokes_index; // current index
-    size_t _width, _height, _depth, _num_stokes;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;

@@ -204,16 +204,17 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 AddDataTypeEntry(extended_info, data_type, equivalent_type);
 
-                std::vector<int> spatial_axes, render_axes;
-                int spectral_axis, stokes_axis, depth_axis;
-                if (_loader->FindCoordinateAxes(image_shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, message)) {
+                if (_loader->FindCoordinateAxes(message)) {
+                    auto image_shape = _loader->GetShape();
+                    auto axes = _loader->GetAxes();
+
                     casacore::Vector<casacore::String> axes_names;
-                    AddShapeEntries(
-                        extended_info, image_shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
+
+                    AddShapeEntries(extended_info, image_shape, axes.spatial, axes.spectral, axes.stokes, axes.render, axes.z, axes_names);
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
                     AddComputedEntries(
-                        extended_info, image.get(), render_axes, spectral_axis, stokes_axis, use_image_for_entries, is_history_beam);
+                        extended_info, image.get(), axes.render, axes.spectral, axes.stokes, use_image_for_entries, is_history_beam);
                     info_ok = true;
                 }
             } else { // image failed

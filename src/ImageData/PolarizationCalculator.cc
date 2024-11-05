@@ -10,7 +10,7 @@
 using namespace carta;
 
 PolarizationCalculator::PolarizationCalculator(
-    std::shared_ptr<casacore::ImageInterface<float>> image, std::vector<int> axes, AxisRange z_range, AxisRange x_range, AxisRange y_range)
+    std::shared_ptr<casacore::ImageInterface<float>> image, AxesInfo axes, AxisRange z_range, AxisRange x_range, AxisRange y_range)
     : _image(image), _image_valid(true) {
     const auto ndim = _image->ndim();
     if (ndim < 4) {
@@ -20,75 +20,69 @@ PolarizationCalculator::PolarizationCalculator(
     }
 
     const auto& coord_sys = _image->coordinates();
-
-    int x_axis = axes[0];
-    int y_axis = axes[1];
-    int z_axis = axes[2];
-    int stokes_axis = axes[3];
-
     const auto shape = _image->shape();
     casacore::IPosition blc(ndim, 0);
     casacore::IPosition trc = shape - 1;
 
     if (x_range.to == ALL_X) {
         x_range.from = 0;
-        x_range.to = shape(x_axis) - 1;
+        x_range.to = shape(axes.x) - 1;
     }
 
     if (y_range.to == ALL_Y) {
         y_range.from = 0;
-        y_range.to = shape(y_axis) - 1;
+        y_range.to = shape(axes.y) - 1;
     }
 
     if (z_range.to == ALL_Z) {
         z_range.from = 0;
-        z_range.to = shape(z_axis) - 1;
+        z_range.to = shape(axes.z) - 1;
     }
 
-    if (x_range.from < 0 || x_range.to >= shape(x_axis) || y_range.from < 0 || y_range.to >= shape(y_axis) || z_range.from < 0 ||
-        z_range.to >= shape(z_axis)) {
+    if (x_range.from < 0 || x_range.to >= shape(axes.x) || y_range.from < 0 || y_range.to >= shape(axes.y) || z_range.from < 0 ||
+        z_range.to >= shape(axes.z)) {
         spdlog::error("Invalid selection region.");
         _image_valid = false;
         return;
     }
 
     // Make a region
-    blc(x_axis) = x_range.from;
-    trc(x_axis) = x_range.to;
-    blc(y_axis) = y_range.from;
-    trc(y_axis) = y_range.to;
-    blc(z_axis) = z_range.from;
-    trc(z_axis) = z_range.to;
+    blc(axes.x) = x_range.from;
+    trc(axes.x) = x_range.to;
+    blc(axes.y) = y_range.from;
+    trc(axes.y) = y_range.to;
+    blc(axes.z) = z_range.from;
+    trc(axes.z) = z_range.to;
 
     // Get stokes indices and make stokes regions
     if (coord_sys.hasPolarizationCoordinate()) {
         const auto& stokes = coord_sys.stokesCoordinate();
         int stokes_index;
         if (stokes.toPixel(stokes_index, casacore::Stokes::I)) {
-            _stokes_images[I] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+            _stokes_images[I] = MakeSubImage(blc, trc, axes.stokes, stokes_index);
         }
         if (stokes.toPixel(stokes_index, casacore::Stokes::Q)) {
-            _stokes_images[Q] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+            _stokes_images[Q] = MakeSubImage(blc, trc, axes.stokes, stokes_index);
         }
         if (stokes.toPixel(stokes_index, casacore::Stokes::U)) {
-            _stokes_images[U] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+            _stokes_images[U] = MakeSubImage(blc, trc, axes.stokes, stokes_index);
         }
         if (stokes.toPixel(stokes_index, casacore::Stokes::V)) {
-            _stokes_images[V] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+            _stokes_images[V] = MakeSubImage(blc, trc, axes.stokes, stokes_index);
         }
     } else { // Assume stokes indices: I = 0, Q = 1, U = 2, and V = 3
-        auto stokes_axis_size = _image->shape()[stokes_axis];
+        auto stokes_axis_size = _image->shape()[axes.stokes];
         if (stokes_axis_size > 0) {
-            _stokes_images[I] = MakeSubImage(blc, trc, stokes_axis, 0);
+            _stokes_images[I] = MakeSubImage(blc, trc, axes.stokes, 0);
         }
         if (stokes_axis_size > 1) {
-            _stokes_images[Q] = MakeSubImage(blc, trc, stokes_axis, 1);
+            _stokes_images[Q] = MakeSubImage(blc, trc, axes.stokes, 1);
         }
         if (stokes_axis_size > 2) {
-            _stokes_images[U] = MakeSubImage(blc, trc, stokes_axis, 2);
+            _stokes_images[U] = MakeSubImage(blc, trc, axes.stokes, 2);
         }
         if (stokes_axis_size > 3) {
-            _stokes_images[V] = MakeSubImage(blc, trc, stokes_axis, 3);
+            _stokes_images[V] = MakeSubImage(blc, trc, axes.stokes, 3);
         }
     }
 }
