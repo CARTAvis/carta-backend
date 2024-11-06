@@ -933,7 +933,7 @@ typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& sto
     if (_stokes_source != stokes_source) {
         // compute new stokes image with respect to the channel range
         carta::PolarizationCalculator polarization_calculator(
-            GetImage(), _axes, AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
+            GetImage(), _axes, _dims, AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
 
         if (stokes_source.stokes == CARTA::PolarizationType::Ptotal) {
             _computed_stokes_image = polarization_calculator.ComputeTotalPolarizedIntensity();

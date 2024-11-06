@@ -24,7 +24,7 @@ class PolarizationCalculator {
 
 public:
     PolarizationCalculator(
-        std::shared_ptr<casacore::ImageInterface<float>> image, AxesInfo axes, AxisRange z_range, AxisRange x_range, AxisRange y_range);
+        std::shared_ptr<casacore::ImageInterface<float>> image, AxesInfo axes, DimsInfo dims, AxisRange z_range, AxisRange x_range, AxisRange y_range);
     ~PolarizationCalculator() = default;
 
     std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalPolarizedIntensity();
