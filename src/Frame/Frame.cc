@@ -75,9 +75,9 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _axes = _loader->GetAxes();
     _dims = _loader->GetDims();
 
-    _all_x = AxisRange(0, _width - 1);
-    _all_y = AxisRange(0, _height - 1);
-    _all_z = AxisRange(0, _depth - 1);
+    _all_x = AxisRange(0, _dims.width - 1);
+    _all_y = AxisRange(0, _dims.height - 1);
+    _all_z = AxisRange(0, _dims.depth - 1);
 
     _use_tile_cache = _loader->UseTileCache();
 
@@ -201,18 +201,6 @@ int Frame::YAxis() {
 
 int Frame::ZAxis() {
     return _axes.z;
-}
-
-int Frame::XAxis() {
-    return _x_axis;
-}
-
-int Frame::YAxis() {
-    return _y_axis;
-}
-
-int Frame::ZAxis() {
-    return _z_axis;
 }
 
 bool Frame::IsCurrentZStokes(const StokesSource& stokes_source) {
