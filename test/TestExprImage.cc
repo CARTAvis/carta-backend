@@ -11,6 +11,8 @@
 #include "ImageData/FileLoader.h"
 #include "Logger/Logger.h"
 
+using namespace carta;
+
 class ImageExprTest : public ::testing::Test {
 public:
     void GenerateImageExprTimesTwo(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type, bool invalid = false) {

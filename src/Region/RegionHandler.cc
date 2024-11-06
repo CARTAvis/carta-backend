@@ -1918,7 +1918,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                         get_stokes_profiles_data(tmp_results, tmp_stokes));
             };
 
-            if (IsComputedStokes(stokes_index)) { // For computed stokes
+            if (Stokes::IsComputed(stokes_index)) { // For computed stokes
                 if (!GetComputedStokesProfiles(results, stokes_index, get_profiles_data)) {
                     return false;
                 }
@@ -1970,7 +1970,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 };
 
                 ProfilesMap partial_profiles;
-                if (IsComputedStokes(stokes_index)) { // For computed stokes
+                if (Stokes::IsComputed(stokes_index)) { // For computed stokes
                     if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
                         return false;
                     }
@@ -2019,7 +2019,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
-    if (IsComputedStokes(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
+    if (Stokes::IsComputed(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
         lc_region = nullptr;
     }
 
@@ -2048,7 +2048,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         };
 
         ProfilesMap partial_profiles;
-        if (IsComputedStokes(stokes_index)) { // For computed stokes
+        if (Stokes::IsComputed(stokes_index)) { // For computed stokes
             if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
                 return false;
             }
@@ -2732,28 +2732,28 @@ bool RegionHandler::IsValid(double a, double b) {
 bool RegionHandler::GetComputedStokesProfiles(
     ProfilesMap& profiles, int stokes, const std::function<bool(ProfilesMap&, std::string)>& get_profiles_data) {
     ProfilesMap profile_i, profile_q, profile_u, profile_v;
-    if (stokes == COMPUTE_STOKES_PTOTAL) {
+    if (stokes == CARTA::PolarizationType::Ptotal) {
         if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") || !get_profiles_data(profile_v, "Vz")) {
             return false;
         }
         GetStokesPtotal(profile_q, profile_u, profile_v, profiles);
-    } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
+    } else if (stokes == CARTA::PolarizationType::PFtotal) {
         if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") ||
             !get_profiles_data(profile_v, "Vz")) {
             return false;
         }
         GetStokesPftotal(profile_i, profile_q, profile_u, profile_v, profiles);
-    } else if (stokes == COMPUTE_STOKES_PLINEAR) {
+    } else if (stokes == CARTA::PolarizationType::Plinear) {
         if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
             return false;
         }
         GetStokesPlinear(profile_q, profile_u, profiles);
-    } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
+    } else if (stokes == CARTA::PolarizationType::PFlinear) {
         if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
             return false;
         }
         GetStokesPflinear(profile_i, profile_q, profile_u, profiles);
-    } else if (stokes == COMPUTE_STOKES_PANGLE) {
+    } else if (stokes == CARTA::PolarizationType::Pangle) {
         if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
             return false;
         }
