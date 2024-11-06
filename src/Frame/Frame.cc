@@ -193,6 +193,18 @@ int Frame::StokesAxis() {
     return _stokes_axis;
 }
 
+int Frame::XAxis() {
+    return _x_axis;
+}
+
+int Frame::YAxis() {
+    return _y_axis;
+}
+
+int Frame::ZAxis() {
+    return _z_axis;
+}
+
 bool Frame::IsCurrentZStokes(const StokesSource& stokes_source) {
     return (stokes_source.z_range.from == stokes_source.z_range.to) && (stokes_source.z_range.from == CurrentZ()) &&
            (stokes_source.stokes == CurrentStokes());
@@ -1694,10 +1706,10 @@ bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
         auto slicer_end = stokes_slicer.slicer.end();
 
         // Adjust cache shape and slicer for single channel and stokes
-        if (_spectral_axis >= 0) {
-            cache_shape(_spectral_axis) = 1;
-            slicer_start(_spectral_axis) = 0;
-            slicer_end(_spectral_axis) = 0;
+        if (_z_axis >= 0) {
+            cache_shape(_z_axis) = 1;
+            slicer_start(_z_axis) = 0;
+            slicer_end(_z_axis) = 0;
         }
         if (_stokes_axis >= 0) {
             cache_shape(_stokes_axis) = 1;

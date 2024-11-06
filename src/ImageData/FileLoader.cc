@@ -232,6 +232,8 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
         }
     }
 
+    _x_axis = render_axes[0];
+    _y_axis = render_axes[1];
     _width = shape(render_axes[0]);
     _height = shape(render_axes[1]);
     _image_plane_size = _width * _height;
@@ -938,8 +940,8 @@ typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& sto
 
     if (_stokes_source != stokes_source) {
         // compute new stokes image with respect to the channel range
-        carta::PolarizationCalculator polarization_calculator(
-            GetImage(), AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
+        carta::PolarizationCalculator polarization_calculator(GetImage(), {_x_axis, _y_axis, _z_axis, _stokes_axis},
+            AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
 
         if (stokes_source.stokes == CARTA::PolarizationType::Ptotal) {
             _computed_stokes_image = polarization_calculator.ComputeTotalPolarizedIntensity();

@@ -169,7 +169,7 @@ protected:
     casacore::IPosition _image_shape;
     size_t _num_dims, _image_plane_size;
     size_t _width, _height, _depth, _num_stokes;
-    int _z_axis, _stokes_axis;
+    int _x_axis, _y_axis, _z_axis, _stokes_axis;
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
     bool _has_pixel_mask;
     casacore::DataType _data_type;
