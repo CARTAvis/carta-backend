@@ -84,6 +84,8 @@ var classcarta_1_1FileLoader =
     [ "_stokes_types", "classcarta_1_1FileLoader.html#ae37fa561f7da54b9637a54ba52bd3636", null ],
     [ "_support_aips_beam", "classcarta_1_1FileLoader.html#a7c77a8bba60591339aeac6fc4a7f3327", null ],
     [ "_width", "classcarta_1_1FileLoader.html#a55631158b8b53809393bb2c670c5abfb", null ],
+    [ "_x_axis", "classcarta_1_1FileLoader.html#aef99bef08354e22af53f9553c8cd4bdc", null ],
+    [ "_y_axis", "classcarta_1_1FileLoader.html#a26747c3fbe629abcaf9568c254d3bd26", null ],
     [ "_z_axis", "classcarta_1_1FileLoader.html#aa6c1c4caebba9e765ab9fd3cf65972e9", null ],
     [ "_z_stats", "classcarta_1_1FileLoader.html#aee67738d8b4037cd20dde90142c67ed3", null ]
 ];

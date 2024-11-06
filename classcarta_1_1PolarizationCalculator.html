@@ -124,8 +124,8 @@ Collaboration diagram for carta::PolarizationCalculator:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a7863a7e7858cfe4c1beebe429daa64a8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PolarizationCalculator.html#a7863a7e7858cfe4c1beebe429daa64a8">PolarizationCalculator</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, <a class="el" href="structAxisRange.html">AxisRange</a> z_range=<a class="el" href="structAxisRange.html">AxisRange</a>(<a class="el" href="Image_8h.html#a58337814bf6075cab1f0e1476eda4b4e">ALL_Z</a>), <a class="el" href="structAxisRange.html">AxisRange</a> x_range=<a class="el" href="structAxisRange.html">AxisRange</a>(<a class="el" href="Image_8h.html#a74b863f93b19c8a44646190f3385f855">ALL_X</a>), <a class="el" href="structAxisRange.html">AxisRange</a> y_range=<a class="el" href="structAxisRange.html">AxisRange</a>(<a class="el" href="Image_8h.html#a71ae956b3c1ebf675ec8d19f6c2115d1">ALL_Y</a>))</td></tr>
-<tr class="separator:a7863a7e7858cfe4c1beebe429daa64a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21e143d52b993a9cb44d8c0cf370355b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PolarizationCalculator.html#a21e143d52b993a9cb44d8c0cf370355b">PolarizationCalculator</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, std::vector&lt; int &gt; axes, <a class="el" href="structAxisRange.html">AxisRange</a> z_range, <a class="el" href="structAxisRange.html">AxisRange</a> x_range, <a class="el" href="structAxisRange.html">AxisRange</a> y_range)</td></tr>
+<tr class="separator:a21e143d52b993a9cb44d8c0cf370355b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c359295c19dacdd212ee6a2bf47632b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PolarizationCalculator.html#a0c359295c19dacdd212ee6a2bf47632b">~PolarizationCalculator</a> ()=default</td></tr>
 <tr class="separator:a0c359295c19dacdd212ee6a2bf47632b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c5c13e6761ffb096ac20ab00190367a"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PolarizationCalculator.html#a0c5c13e6761ffb096ac20ab00190367a">ComputeTotalPolarizedIntensity</a> ()</td></tr>
@@ -200,8 +200,8 @@ Private Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a7863a7e7858cfe4c1beebe429daa64a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7863a7e7858cfe4c1beebe429daa64a8">&#9670;&nbsp;</a></span>PolarizationCalculator()</h2>
+<a id="a21e143d52b993a9cb44d8c0cf370355b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a21e143d52b993a9cb44d8c0cf370355b">&#9670;&nbsp;</a></span>PolarizationCalculator()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -215,20 +215,26 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structAxisRange.html">AxisRange</a>&#160;</td>
-          <td class="paramname"><em>z_range</em> = <code><a class="el" href="structAxisRange.html">AxisRange</a>(<a class="el" href="Image_8h.html#a58337814bf6075cab1f0e1476eda4b4e">ALL_Z</a>)</code>, </td>
+          <td class="paramtype">std::vector&lt; int &gt;&#160;</td>
+          <td class="paramname"><em>axes</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structAxisRange.html">AxisRange</a>&#160;</td>
-          <td class="paramname"><em>x_range</em> = <code><a class="el" href="structAxisRange.html">AxisRange</a>(<a class="el" href="Image_8h.html#a74b863f93b19c8a44646190f3385f855">ALL_X</a>)</code>, </td>
+          <td class="paramname"><em>z_range</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structAxisRange.html">AxisRange</a>&#160;</td>
-          <td class="paramname"><em>y_range</em> = <code><a class="el" href="structAxisRange.html">AxisRange</a>(<a class="el" href="Image_8h.html#a71ae956b3c1ebf675ec8d19f6c2115d1">ALL_Y</a>)</code>&#160;</td>
+          <td class="paramname"><em>x_range</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structAxisRange.html">AxisRange</a>&#160;</td>
+          <td class="paramname"><em>y_range</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -240,7 +246,7 @@ Private Attributes</h2></td></tr>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a7863a7e7858cfe4c1beebe429daa64a8_cgraph.svg" width="472" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a21e143d52b993a9cb44d8c0cf370355b_cgraph.svg" width="472" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -292,12 +298,6 @@ Here is the call graph for this function:</div>
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_af6937bd807c038cf00fd0cc89ae9c2e8_cgraph.svg" width="546" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_af6937bd807c038cf00fd0cc89ae9c2e8_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
 
 </div>
 </div>
@@ -319,12 +319,6 @@ Here is the caller graph for this function:</div>
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_ab48307d44c2a4541caa908d24a3683a0_cgraph.svg" width="472" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_ab48307d44c2a4541caa908d24a3683a0_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -350,12 +344,6 @@ Here is the call graph for this function:</div>
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a2cb6200df64e7dde3eacf173a97f894c_cgraph.svg" width="482" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a2cb6200df64e7dde3eacf173a97f894c_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
 
 </div>
 </div>
@@ -379,12 +367,6 @@ Here is the call graph for this function:</div>
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a5285a6db684ea0071d71b95458923c4c_cgraph.svg" width="550" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a5285a6db684ea0071d71b95458923c4c_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
 
 </div>
 </div>
@@ -406,12 +388,6 @@ Here is the caller graph for this function:</div>
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a0c5c13e6761ffb096ac20ab00190367a_cgraph.svg" width="543" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a0c5c13e6761ffb096ac20ab00190367a_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -453,7 +429,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a972eab3776df84d99cbd231b49e3a969_icgraph.svg" width="100%" height="547"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a972eab3776df84d99cbd231b49e3a969_icgraph.svg" width="536" height="330"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -484,7 +460,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_af800918471188ab3eb863931a4f89dfe_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_af800918471188ab3eb863931a4f89dfe_icgraph.svg" width="546" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -569,7 +545,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a43f010357e88c2e9676ad43032e88f51_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_a43f010357e88c2e9676ad43032e88f51_icgraph.svg" width="550" height="134"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -611,7 +587,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_aa60a0830e45e2bef241b5ce2636a89a5_icgraph.svg" width="100%" height="498"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PolarizationCalculator_aa60a0830e45e2bef241b5ce2636a89a5_icgraph.svg" width="536" height="264"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 

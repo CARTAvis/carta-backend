@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['zstokeschanged_3295',['ZStokesChanged',['../classcarta_1_1Frame.html#a89b3f2ca9d5109c790cc30b64fc02bc6',1,'carta::Frame']]]
+  ['xaxis_3300',['XAxis',['../classcarta_1_1Frame.html#a6085431042b7668d8e87669482cf64f9',1,'carta::Frame']]]
 ];

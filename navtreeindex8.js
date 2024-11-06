@@ -1,5 +1,10 @@
 var NAVTREEINDEX8 =
 {
+"classcarta_1_1TableView.html#adf9dee6cf8ff10bf2ea71fa75f2744e3":[3,0,0,94,5],
+"classcarta_1_1ThreadManager.html":[3,0,0,98],
+"classcarta_1_1ThreadManager.html#a05009f095c2b9b20bbdca124e2a94d3e":[3,0,0,98,6],
+"classcarta_1_1ThreadManager.html#a1a4bd1d769ebed56da49f5f4a4bc6b69":[3,0,0,98,5],
+"classcarta_1_1ThreadManager.html#a23c512bd27014daf1cf31763e6b44720":[3,0,0,98,10],
 "classcarta_1_1ThreadManager.html#a5a2489e2d7dfb13701cda9077f3c1db7":[3,0,0,98,2],
 "classcarta_1_1ThreadManager.html#a7e1be2779e8ca2a4f4b34841b799715a":[3,0,0,98,1],
 "classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc":[3,0,0,98,0],
@@ -122,8 +127,8 @@ var NAVTREEINDEX8 =
 "classspdlog_1_1sinks_1_1carta__sink.html#aec54abf7200855956bded90932b0f703":[3,0,1,0,0,8],
 "classspdlog_1_1sinks_1_1carta__sink.html#aef1c8469ff5709af4659ac0d6cc13608":[3,0,1,0,0,5],
 "files.html":[4,0],
-"functions.html":[3,3,0],
 "functions.html":[3,3,0,0],
+"functions.html":[3,3,0],
 "functions_a.html":[3,3,0,1],
 "functions_b.html":[3,3,0,2],
 "functions_c.html":[3,3,0,3],
@@ -156,8 +161,10 @@ var NAVTREEINDEX8 =
 "functions_func_u.html":[3,3,1,20],
 "functions_func_v.html":[3,3,1,21],
 "functions_func_w.html":[3,3,1,22],
-"functions_func_z.html":[3,3,1,23],
-"functions_func_~.html":[3,3,1,24],
+"functions_func_x.html":[3,3,1,23],
+"functions_func_y.html":[3,3,1,24],
+"functions_func_z.html":[3,3,1,25],
+"functions_func_~.html":[3,3,1,26],
 "functions_g.html":[3,3,0,7],
 "functions_h.html":[3,3,0,8],
 "functions_i.html":[3,3,0,9],
@@ -242,12 +249,5 @@ var NAVTREEINDEX8 =
 "namespacecarta.html#a564d69915ebb8e5d130798efdf5fc32a":[2,0,0,133],
 "namespacecarta.html#a5e8e9ea12c8402698a665a81e97cf13f":[2,0,0,118],
 "namespacecarta.html#a64f1569d1c90db30af9f2d719f9ffe59":[2,0,0,134],
-"namespacecarta.html#a6ae770367fed7f2b28315cd997b3dae1":[2,0,0,151],
-"namespacecarta.html#a6e7de940705eaee735758c84974dc53b":[2,0,0,114],
-"namespacecarta.html#a6f90f0f5fadc7ab7bfad3fdc20058cef":[2,0,0,131],
-"namespacecarta.html#a724d5f79d7c1320592c011bd3bb57e98":[2,0,0,137],
-"namespacecarta.html#a734df587cce5cbf3b5b11348f2b1ff08":[2,0,0,109],
-"namespacecarta.html#a749005ecb48d6c06c1214277a719ae7f":[2,0,0,127],
-"namespacecarta.html#a7e1f615d908d735552aa446444b3fc72":[2,0,0,144],
-"namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6":[2,0,0,107]
+"namespacecarta.html#a6ae770367fed7f2b28315cd997b3dae1":[2,0,0,151]
 };
