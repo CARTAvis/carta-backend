@@ -1,7 +1,7 @@
 <map id="carta::Hdf5Loader::GetChunk" name="carta::Hdf5Loader::GetChunk">
 <area shape="rect" id="node1" title=" " alt="" coords="5,404,152,445"/>
 <area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#a1ef8462007320a75dcdc04929cdb28b0" title=" " alt="" coords="200,375,339,416"/>
-<area shape="rect" id="node18" href="$structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" title=" " alt="" coords="619,501,798,543"/>
+<area shape="rect" id="node18" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="633,501,784,543"/>
 <area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a5680d87d09f6ddb4cc1bb1a3d713d2c3" title=" " alt="" coords="387,339,525,380"/>
 <area shape="rect" id="node4" href="$classcarta_1_1PolarizationCalculator.html#af6937bd807c038cf00fd0cc89ae9c2e8" title=" " alt="" coords="573,305,844,347"/>
 <area shape="rect" id="node8" href="$classcarta_1_1PolarizationCalculator.html#ab48307d44c2a4541caa908d24a3683a0" title=" " alt="" coords="605,371,812,412"/>
@@ -17,5 +17,5 @@
 <area shape="rect" id="node15" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="946,35,1085,76"/>
 <area shape="rect" id="node16" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="1187,5,1325,47"/>
 <area shape="rect" id="node17" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="1198,71,1314,98"/>
-<area shape="rect" id="node19" href="$Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="944,509,1087,535"/>
+<area shape="rect" id="node19" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="919,509,1111,535"/>
 </map>

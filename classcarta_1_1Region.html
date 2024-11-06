@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aa5ba8bd1f2fd72b4de352881ebb28ff8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9891c6276749ba4296f7796c8c32f079"><td class="memItemLeft" align="right" valign="top">std::shared_mutex &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a9891c6276749ba4296f7796c8c32f079">GetActiveTaskMutex</a> ()</td></tr>
 <tr class="separator:a9891c6276749ba4296f7796c8c32f079"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a946ec39c21a09a141d917b553ba56551"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a946ec39c21a09a141d917b553ba56551">GetImageRegion</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; csys, const casacore::IPosition &amp;shape, const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structStokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
+<tr class="memitem:a946ec39c21a09a141d917b553ba56551"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a946ec39c21a09a141d917b553ba56551">GetImageRegion</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; csys, const casacore::IPosition &amp;shape, const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
 <tr class="separator:a946ec39c21a09a141d917b553ba56551"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ec0e6a0c65e9bc6ed3b9213831f053f"><td class="memItemLeft" align="right" valign="top">casacore::ArrayLattice&lt; casacore::Bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a6ec0e6a0c65e9bc6ed3b9213831f053f">GetImageRegionMask</a> (int file_id)</td></tr>
 <tr class="separator:a6ec0e6a0c65e9bc6ed3b9213831f053f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -164,7 +164,7 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a0c8c223a201694769ef446cee2a6015d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4035873b03a85d741404d08203d94fa1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a4035873b03a85d741404d08203d94fa1">ResetRegionCache</a> ()</td></tr>
 <tr class="separator:a4035873b03a85d741404d08203d94fa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad761974201dc977416905a55ed35fb86"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#ad761974201dc977416905a55ed35fb86">GetCachedLCRegion</a> (int file_id, const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;stokes_source)</td></tr>
+<tr class="memitem:ad761974201dc977416905a55ed35fb86"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#ad761974201dc977416905a55ed35fb86">GetCachedLCRegion</a> (int file_id, const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source)</td></tr>
 <tr class="separator:ad761974201dc977416905a55ed35fb86"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afeba24c3fc32647d614ed0fe8a2cb63d"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#afeba24c3fc32647d614ed0fe8a2cb63d">GetControlPointsRecord</a> (const casacore::IPosition &amp;shape)</td></tr>
 <tr class="separator:afeba24c3fc32647d614ed0fe8a2cb63d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -396,7 +396,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;&#160;</td>
           <td class="paramname"><em>stokes_source</em>&#160;</td>
         </tr>
         <tr>
@@ -491,8 +491,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;&#160;</td>
-          <td class="paramname"><em>stokes_source</em> = <code><a class="el" href="structStokesSource.html">StokesSource</a>()</code>, </td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;&#160;</td>
+          <td class="paramname"><em>stokes_source</em> = <code><a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>()</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

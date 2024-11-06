@@ -292,17 +292,17 @@
 <!-- Node20 -->
 <g id="node20" class="node">
 <title>Node20</title>
-<g id="a_node20"><a xlink:href="Stokes_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="409,-398 409,-417 516,-417 516,-398 409,-398"/>
-<text text-anchor="middle" x="462.5" y="-405" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
+<g id="a_node20"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="390.5,-398 390.5,-417 534.5,-417 534.5,-398 390.5,-398"/>
+<text text-anchor="middle" x="462.5" y="-405" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>
 </g>
 </g>
 <!-- Node9&#45;&gt;Node20 -->
 <g id="edge30" class="edge">
 <title>Node9&#45;&gt;Node20</title>
-<path fill="none" stroke="midnightblue" d="M329.21,-421.39C351.61,-419.04 376.44,-416.43 398.48,-414.12"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="399.14,-417.57 408.72,-413.04 398.4,-410.61 399.14,-417.57"/>
+<path fill="none" stroke="midnightblue" d="M329.21,-421.39C345.54,-419.68 363.16,-417.83 380.04,-416.05"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="380.86,-419.49 390.44,-414.96 380.13,-412.52 380.86,-419.49"/>
 </g>
 <!-- Node21 -->
 <g id="node21" class="node">

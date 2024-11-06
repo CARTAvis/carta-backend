@@ -234,9 +234,12 @@ var files_dup =
     [ "Smoothing.h", "Smoothing_8h.html", "Smoothing_8h" ],
     [ "StatsCalculator.cc", "StatsCalculator_8cc.html", "StatsCalculator_8cc" ],
     [ "StatsCalculator.h", "StatsCalculator_8h.html", "StatsCalculator_8h" ],
-    [ "Stokes.cc", "Stokes_8cc.html", "Stokes_8cc" ],
-    [ "Stokes.h", "Stokes_8h.html", "Stokes_8h" ],
-    [ "StokesFilesConnector.cc", "StokesFilesConnector_8cc.html", "StokesFilesConnector_8cc" ],
+    [ "Stokes.cc", "Stokes_8cc.html", null ],
+    [ "Stokes.h", "Stokes_8h.html", [
+      [ "Stokes", "classcarta_1_1Stokes.html", "classcarta_1_1Stokes" ],
+      [ "StokesSource", "structcarta_1_1StokesSource.html", "structcarta_1_1StokesSource" ]
+    ] ],
+    [ "StokesFilesConnector.cc", "StokesFilesConnector_8cc.html", null ],
     [ "StokesFilesConnector.h", "StokesFilesConnector_8h.html", [
       [ "StokesFilesConnector", "classcarta_1_1StokesFilesConnector.html", "classcarta_1_1StokesFilesConnector" ]
     ] ],

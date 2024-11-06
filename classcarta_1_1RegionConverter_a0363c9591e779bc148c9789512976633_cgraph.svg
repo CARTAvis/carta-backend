@@ -67,10 +67,10 @@ var sectionId = 'dynsection-11';
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="174,-147.5 174,-177.5 308,-177.5 308,-147.5 174,-147.5"/>
-<text text-anchor="start" x="182" y="-165.5" font-family="Helvetica,sans-Serif" font-size="10.00">StokesSource::IsOriginal</text>
-<text text-anchor="middle" x="241" y="-154.5" font-family="Helvetica,sans-Serif" font-size="10.00">Image</text>
+<g id="a_node2"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="184.5,-147.5 184.5,-177.5 297.5,-177.5 297.5,-147.5 184.5,-147.5"/>
+<text text-anchor="start" x="192.5" y="-165.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
+<text text-anchor="middle" x="241" y="-154.5" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
 </a>
 </g>
 </g>
@@ -115,17 +115,17 @@ var sectionId = 'dynsection-11';
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
-<g id="a_node3"><a xlink:href="Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="380,-153 380,-172 487,-172 487,-153 380,-153"/>
-<text text-anchor="middle" x="433.5" y="-160" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
+<g id="a_node3"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="361.5,-153 361.5,-172 505.5,-172 505.5,-153 361.5,-153"/>
+<text text-anchor="middle" x="433.5" y="-160" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>
 </g>
 </g>
 <!-- Node2&#45;&gt;Node3 -->
 <g id="edge2" class="edge">
 <title>Node2&#45;&gt;Node3</title>
-<path fill="none" stroke="midnightblue" d="M308.09,-162.5C328.04,-162.5 349.88,-162.5 369.61,-162.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="369.72,-166 379.72,-162.5 369.72,-159 369.72,-166"/>
+<path fill="none" stroke="midnightblue" d="M297.61,-162.5C314.31,-162.5 332.98,-162.5 350.98,-162.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="351.19,-166 361.19,-162.5 351.19,-159 351.19,-166"/>
 </g>
 <!-- Node6 -->
 <g id="node6" class="node">

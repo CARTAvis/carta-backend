@@ -32,6 +32,5 @@ var namespacecarta_1_1FileInfo =
       [ "STATS_3D_PERCENT", "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7ae8f134b8a52901141769a93f81f0e09f", null ],
       [ "MASK", "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a0a9501840acacfc8efe7522f5340000c", null ]
     ] ],
-    [ "ConvertFitsStokesValue", "namespacecarta_1_1FileInfo.html#adb5dd85385b249a9f718ee5c87dfd57e", null ],
     [ "GetFitsHdu", "namespacecarta_1_1FileInfo.html#a9d39a2471bd27de0ee08bc5d6d3af17e", null ]
 ];

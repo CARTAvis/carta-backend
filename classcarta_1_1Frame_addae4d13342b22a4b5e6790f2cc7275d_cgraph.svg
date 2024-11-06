@@ -46,7 +46,7 @@ if (edges && edges.length) {
         </defs>
 
 <script type="text/javascript">
-var viewWidth = 908;
+var viewWidth = 945;
 var viewHeight = 242;
 var sectionId = 'dynsection-42';
 </script>
@@ -209,18 +209,18 @@ var sectionId = 'dynsection-42';
 <!-- Node10 -->
 <g id="node10" class="node">
 <title>Node10</title>
-<g id="a_node10"><a xlink:href="structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="614,-115 614,-145 748,-145 748,-115 614,-115"/>
-<text text-anchor="start" x="622" y="-133" font-family="Helvetica,sans-Serif" font-size="10.00">StokesSource::IsOriginal</text>
-<text text-anchor="middle" x="681" y="-122" font-family="Helvetica,sans-Serif" font-size="10.00">Image</text>
+<g id="a_node10"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="624.5,-115 624.5,-145 737.5,-145 737.5,-115 624.5,-115"/>
+<text text-anchor="start" x="632.5" y="-133" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
+<text text-anchor="middle" x="681" y="-122" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
 </a>
 </g>
 </g>
 <!-- Node9&#45;&gt;Node10 -->
 <g id="edge10" class="edge">
 <title>Node9&#45;&gt;Node10</title>
-<path fill="none" stroke="midnightblue" d="M531.38,-98.51C552.87,-103.06 579.21,-108.64 603.71,-113.83"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="603.2,-117.31 613.71,-115.95 604.66,-110.46 603.2,-117.31"/>
+<path fill="none" stroke="midnightblue" d="M531.38,-98.51C556.04,-103.73 587.08,-110.31 614.41,-116.1"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="613.78,-119.55 624.29,-118.2 615.23,-112.7 613.78,-119.55"/>
 </g>
 <!-- Node12 -->
 <g id="node12" class="node">
@@ -240,17 +240,17 @@ var sectionId = 'dynsection-42';
 <!-- Node11 -->
 <g id="node11" class="node">
 <title>Node11</title>
-<g id="a_node11"><a xlink:href="Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="793,-120.5 793,-139.5 900,-139.5 900,-120.5 793,-120.5"/>
-<text text-anchor="middle" x="846.5" y="-127.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
+<g id="a_node11"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="793,-120.5 793,-139.5 937,-139.5 937,-120.5 793,-120.5"/>
+<text text-anchor="middle" x="865" y="-127.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>
 </g>
 </g>
 <!-- Node10&#45;&gt;Node11 -->
 <g id="edge11" class="edge">
 <title>Node10&#45;&gt;Node11</title>
-<path fill="none" stroke="midnightblue" d="M748.03,-130C759.43,-130 771.25,-130 782.57,-130"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="782.79,-133.5 792.79,-130 782.79,-126.5 782.79,-133.5"/>
+<path fill="none" stroke="midnightblue" d="M737.59,-130C751.78,-130 767.32,-130 782.51,-130"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="782.95,-133.5 792.95,-130 782.95,-126.5 782.95,-133.5"/>
 </g>
 <!-- Node14 -->
 <g id="node14" class="node">

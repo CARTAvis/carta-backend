@@ -334,6 +334,10 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Stokes.html">Stokes</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -439,8 +443,6 @@ Functions</h2></td></tr>
 Variables</h2></td></tr>
 <tr class="memitem:aa00c6e2a51560be72e87cad1c67f7d2a"><td class="memItemLeft" align="right" valign="top">static std::unordered_map&lt; CARTA::FileType, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aa00c6e2a51560be72e87cad1c67f7d2a">FileTypeString</a></td></tr>
 <tr class="separator:aa00c6e2a51560be72e87cad1c67f7d2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13be33c4c61fc2acef8d41a09410fd9e"><td class="memItemLeft" align="right" valign="top">static std::unordered_map&lt; CARTA::PolarizationType, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a13be33c4c61fc2acef8d41a09410fd9e">ComputedStokesName</a></td></tr>
-<tr class="separator:a13be33c4c61fc2acef8d41a09410fd9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0adeabfb442db034ca83092b1a2ee1e4"><td class="memItemLeft" align="right" valign="top">const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a0adeabfb442db034ca83092b1a2ee1e4">SUCCESS_STRING</a> = <a class="el" href="HttpServer_8cc.html#ab701e3ac61a85b337ec5c1abaad6742d">json</a>({{&quot;success&quot;, true}}).dump()</td></tr>
 <tr class="separator:a0adeabfb442db034ca83092b1a2ee1e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1507d2cefdaa01d5695e4fb962c01281"><td class="memItemLeft" align="right" valign="top">const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a1507d2cefdaa01d5695e4fb962c01281">LAYOUT</a> = &quot;layout&quot;</td></tr>
@@ -2327,33 +2329,6 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Variable Documentation</h2>
-<a id="a13be33c4c61fc2acef8d41a09410fd9e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a13be33c4c61fc2acef8d41a09410fd9e">&#9670;&nbsp;</a></span>ComputedStokesName</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::unordered_map&lt;CARTA::PolarizationType, std::string&gt; carta::ComputedStokesName</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">{</div>
-<div class="line">    {CARTA::PolarizationType::Ptotal, <span class="stringliteral">&quot;Total polarization intensity&quot;</span>}, {CARTA::PolarizationType::Plinear, <span class="stringliteral">&quot;Linear polarization intensity&quot;</span>},</div>
-<div class="line">    {CARTA::PolarizationType::PFtotal, <span class="stringliteral">&quot;Fractional total polarization intensity&quot;</span>},</div>
-<div class="line">    {CARTA::PolarizationType::PFlinear, <span class="stringliteral">&quot;Fractional linear polarization intensity&quot;</span>},</div>
-<div class="line">    {CARTA::PolarizationType::Pangle, <span class="stringliteral">&quot;Polarization angle&quot;</span>}}</div>
-</div><!-- fragment -->
-</div>
-</div>
 <a id="aa00c6e2a51560be72e87cad1c67f7d2a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa00c6e2a51560be72e87cad1c67f7d2a">&#9670;&nbsp;</a></span>FileTypeString</h2>
 

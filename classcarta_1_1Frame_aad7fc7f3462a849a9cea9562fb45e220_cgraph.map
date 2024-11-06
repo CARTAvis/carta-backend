@@ -1,6 +1,7 @@
 <map id="carta::Frame::GetStokesTypeIndex" name="carta::Frame::GetStokesTypeIndex">
-<area shape="rect" id="node1" title=" " alt="" coords="5,49,213,90"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,74,213,115"/>
 <area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="261,5,464,32"/>
-<area shape="rect" id="node3" href="$Stokes_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="291,56,434,83"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9" title=" " alt="" coords="269,107,456,133"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="294,56,431,83"/>
+<area shape="rect" id="node4" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="267,107,459,133"/>
+<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9" title=" " alt="" coords="269,157,456,184"/>
 </map>

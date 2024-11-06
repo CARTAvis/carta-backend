@@ -1,36 +1,37 @@
 <map id="carta::Hdf5Loader" name="carta::Hdf5Loader">
-<area shape="rect" id="node1" title=" " alt="" coords="1764,375,1903,401"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html" title=" " alt="" coords="1443,792,1573,819"/>
-<area shape="rect" id="node3" title=" " alt="" coords="470,293,669,349"/>
-<area shape="rect" id="node4" title=" " alt="" coords="203,308,333,335"/>
-<area shape="rect" id="node5" title=" " alt="" coords="249,539,287,565"/>
-<area shape="rect" id="node7" href="$structStokesSource.html" title=" " alt="" coords="997,792,1106,819"/>
-<area shape="rect" id="node8" href="$structAxisRange.html" title=" " alt="" coords="524,664,615,691"/>
-<area shape="rect" id="node17" title=" " alt="" coords="500,903,639,929"/>
-<area shape="rect" id="node31" href="$structcarta_1_1FileInfo_1_1RegionStatsId.html" title=" " alt="" coords="699,5,908,32"/>
-<area shape="rect" id="node32" title=" " alt="" coords="1417,138,1599,209"/>
-<area shape="rect" id="node6" title=" " alt="" coords="486,1261,653,1302"/>
-<area shape="rect" id="node24" title=" " alt="" coords="932,1221,1171,1262"/>
-<area shape="rect" id="node9" title=" " alt="" coords="243,1059,293,1085"/>
-<area shape="rect" id="node18" title=" " alt="" coords="494,1029,645,1056"/>
-<area shape="rect" id="node10" title=" " alt="" coords="530,401,609,428"/>
-<area shape="rect" id="node28" href="$structcarta_1_1FileInfo_1_1RegionSpectralStats.html" title=" " alt="" coords="943,135,1160,177"/>
-<area shape="rect" id="node11" title=" " alt="" coords="950,329,1153,385"/>
-<area shape="rect" id="node12" href="$structcarta_1_1FileInfo_1_1ImageStats.html" title=" " alt="" coords="955,964,1148,991"/>
-<area shape="rect" id="node13" title=" " alt="" coords="544,852,595,879"/>
-<area shape="rect" id="node14" title=" " alt="" coords="464,954,675,995"/>
-<area shape="rect" id="node15" title=" " alt="" coords="5,939,72,965"/>
-<area shape="rect" id="node30" title=" " alt="" coords="185,175,351,201"/>
-<area shape="rect" id="node16" title=" " alt="" coords="225,867,311,893"/>
-<area shape="rect" id="node29" title=" " alt="" coords="464,135,675,177"/>
-<area shape="rect" id="node19" title=" " alt="" coords="539,463,599,489"/>
-<area shape="rect" id="node20" title=" " alt="" coords="955,410,1147,451"/>
-<area shape="rect" id="node21" title=" " alt="" coords="950,590,1153,631"/>
-<area shape="rect" id="node22" title=" " alt="" coords="1008,1168,1095,1195"/>
-<area shape="rect" id="node23" title=" " alt="" coords="500,1161,639,1202"/>
-<area shape="rect" id="node25" title=" " alt="" coords="1010,1015,1093,1041"/>
-<area shape="rect" id="node26" title=" " alt="" coords="991,1116,1111,1143"/>
-<area shape="rect" id="node27" title=" " alt="" coords="1392,25,1624,81"/>
-<area shape="rect" id="node33" title=" " alt="" coords="955,201,1147,242"/>
-<area shape="rect" id="node34" title=" " alt="" coords="1453,1317,1563,1344"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1764,635,1903,661"/>
+<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html" title=" " alt="" coords="1443,987,1573,1013"/>
+<area shape="rect" id="node3" title=" " alt="" coords="470,1151,669,1207"/>
+<area shape="rect" id="node4" title=" " alt="" coords="203,1411,333,1437"/>
+<area shape="rect" id="node19" title=" " alt="" coords="475,1499,664,1555"/>
+<area shape="rect" id="node5" title=" " alt="" coords="249,1067,287,1093"/>
+<area shape="rect" id="node15" title=" " alt="" coords="500,311,639,337"/>
+<area shape="rect" id="node25" href="$structcarta_1_1StokesSource.html" title=" " alt="" coords="976,1088,1127,1115"/>
+<area shape="rect" id="node26" href="$structAxisRange.html" title=" " alt="" coords="524,1100,615,1127"/>
+<area shape="rect" id="node32" href="$structcarta_1_1FileInfo_1_1RegionStatsId.html" title=" " alt="" coords="699,739,908,765"/>
+<area shape="rect" id="node33" title=" " alt="" coords="1417,319,1599,390"/>
+<area shape="rect" id="node6" title=" " alt="" coords="486,962,653,1003"/>
+<area shape="rect" id="node23" title=" " alt="" coords="932,1022,1171,1063"/>
+<area shape="rect" id="node7" title=" " alt="" coords="243,196,293,223"/>
+<area shape="rect" id="node16" title=" " alt="" coords="494,237,645,264"/>
+<area shape="rect" id="node8" title=" " alt="" coords="530,565,609,592"/>
+<area shape="rect" id="node29" href="$structcarta_1_1FileInfo_1_1RegionSpectralStats.html" title=" " alt="" coords="943,393,1160,434"/>
+<area shape="rect" id="node9" title=" " alt="" coords="950,1252,1153,1308"/>
+<area shape="rect" id="node10" href="$structcarta_1_1FileInfo_1_1ImageStats.html" title=" " alt="" coords="955,291,1148,317"/>
+<area shape="rect" id="node11" title=" " alt="" coords="544,467,595,493"/>
+<area shape="rect" id="node12" title=" " alt="" coords="464,99,675,141"/>
+<area shape="rect" id="node13" title=" " alt="" coords="5,111,72,137"/>
+<area shape="rect" id="node31" title=" " alt="" coords="185,5,351,32"/>
+<area shape="rect" id="node14" title=" " alt="" coords="225,64,311,91"/>
+<area shape="rect" id="node30" title=" " alt="" coords="464,34,675,75"/>
+<area shape="rect" id="node17" title=" " alt="" coords="539,729,599,756"/>
+<area shape="rect" id="node18" title=" " alt="" coords="955,1333,1147,1374"/>
+<area shape="rect" id="node20" title=" " alt="" coords="950,585,1153,626"/>
+<area shape="rect" id="node21" title=" " alt="" coords="1008,1399,1095,1425"/>
+<area shape="rect" id="node22" title=" " alt="" coords="500,1363,639,1405"/>
+<area shape="rect" id="node24" title=" " alt="" coords="1010,908,1093,935"/>
+<area shape="rect" id="node27" title=" " alt="" coords="991,1201,1111,1228"/>
+<area shape="rect" id="node28" title=" " alt="" coords="1392,451,1624,507"/>
+<area shape="rect" id="node34" title=" " alt="" coords="955,90,1147,131"/>
+<area shape="rect" id="node35" title=" " alt="" coords="1453,1539,1563,1565"/>
 </map>

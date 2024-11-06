@@ -127,7 +127,7 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a562d8682a1205d0d6625ec09d787ff40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a965e9d79e3c7f757b91ce3eca1c3b21f"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionConverter.html#a965e9d79e3c7f757b91ce3eca1c3b21f">GetCachedLCRegion</a> (int file_id, bool use_approx_polygon=true)</td></tr>
 <tr class="separator:a965e9d79e3c7f757b91ce3eca1c3b21f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a89824e293ea029863be230ee9136a9c1"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1">GetImageRegion</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; csys, const casacore::IPosition &amp;shape, const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structStokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
+<tr class="memitem:a89824e293ea029863be230ee9136a9c1"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1">GetImageRegion</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; csys, const casacore::IPosition &amp;shape, const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
 <tr class="separator:a89824e293ea029863be230ee9136a9c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a27a07e5b73b1f32aefadb83b9ba61994"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionConverter.html#a27a07e5b73b1f32aefadb83b9ba61994">GetImageRegionRecord</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; csys, const casacore::IPosition &amp;shape)</td></tr>
 <tr class="separator:a27a07e5b73b1f32aefadb83b9ba61994"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -144,7 +144,7 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a07b2bf1f762d542111b7bf5a7b562f96"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f6aea4795947be463dd9cf3e8be4561"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionConverter.html#a0f6aea4795947be463dd9cf3e8be4561">CartaPointToWorld</a> (const CARTA::Point &amp;point, std::vector&lt; casacore::Quantity &gt; &amp;world_point)</td></tr>
 <tr class="separator:a0f6aea4795947be463dd9cf3e8be4561"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0363c9591e779bc148c9789512976633"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionConverter.html#a0363c9591e779bc148c9789512976633">GetConvertedLCRegion</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; output_csys, const casacore::IPosition &amp;output_shape, const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structStokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
+<tr class="memitem:a0363c9591e779bc148c9789512976633"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionConverter.html#a0363c9591e779bc148c9789512976633">GetConvertedLCRegion</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; output_csys, const casacore::IPosition &amp;output_shape, const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
 <tr class="separator:a0363c9591e779bc148c9789512976633"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad8cf08a897e85eb0bfc23ef07c8cebe5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionConverter.html#ad8cf08a897e85eb0bfc23ef07c8cebe5">UseApproximatePolygon</a> (std::shared_ptr&lt; casacore::CoordinateSystem &gt; output_csys)</td></tr>
 <tr class="separator:ad8cf08a897e85eb0bfc23ef07c8cebe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -568,8 +568,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;&#160;</td>
-          <td class="paramname"><em>stokes_source</em> = <code><a class="el" href="structStokesSource.html">StokesSource</a>()</code>, </td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;&#160;</td>
+          <td class="paramname"><em>stokes_source</em> = <code><a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>()</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -669,8 +669,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;&#160;</td>
-          <td class="paramname"><em>stokes_source</em> = <code><a class="el" href="structStokesSource.html">StokesSource</a>()</code>, </td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;&#160;</td>
+          <td class="paramname"><em>stokes_source</em> = <code><a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>()</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

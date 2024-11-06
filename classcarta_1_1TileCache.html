@@ -147,7 +147,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a4eda64cc5324f96a16c6b877ab4ce7cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve a tile from the cache.  <a href="classcarta_1_1TileCache.html#a4eda64cc5324f96a16c6b877ab4ce7cc">More...</a><br /></td></tr>
 <tr class="separator:a4eda64cc5324f96a16c6b877ab4ce7cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a30894b306a6ca80e895c5eef2a8671e5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5">Reset</a> (int32_t z, int32_t stokes, int capacity=0)</td></tr>
-<tr class="memdesc:a30894b306a6ca80e895c5eef2a8671e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles.  <a href="classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5">More...</a><br /></td></tr>
+<tr class="memdesc:a30894b306a6ca80e895c5eef2a8671e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset the cache for a new Z coordinate and/or <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> coordinate, clearing all tiles.  <a href="classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5">More...</a><br /></td></tr>
 <tr class="separator:a30894b306a6ca80e895c5eef2a8671e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
@@ -181,7 +181,7 @@ Private Attributes</h2></td></tr>
 <tr class="memdesc:abd21587759d89495cf7a548dcacd356b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The current Z coordinate.  <a href="classcarta_1_1TileCache.html#abd21587759d89495cf7a548dcacd356b">More...</a><br /></td></tr>
 <tr class="separator:abd21587759d89495cf7a548dcacd356b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a435a320d652dbd8e74e84beae36517f7"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1TileCache.html#a435a320d652dbd8e74e84beae36517f7">_stokes</a></td></tr>
-<tr class="memdesc:a435a320d652dbd8e74e84beae36517f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The current Stokes coordinate.  <a href="classcarta_1_1TileCache.html#a435a320d652dbd8e74e84beae36517f7">More...</a><br /></td></tr>
+<tr class="memdesc:a435a320d652dbd8e74e84beae36517f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The current <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> coordinate.  <a href="classcarta_1_1TileCache.html#a435a320d652dbd8e74e84beae36517f7">More...</a><br /></td></tr>
 <tr class="separator:a435a320d652dbd8e74e84beae36517f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9078c0a56c08064b02fbd8c9973be30c"><td class="memItemLeft" align="right" valign="top">std::list&lt; <a class="el" href="classcarta_1_1TileCache.html#ade12cbdd722de568f333a6d735a205cd">TilePair</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1TileCache.html#a9078c0a56c08064b02fbd8c9973be30c">_queue</a></td></tr>
 <tr class="memdesc:a9078c0a56c08064b02fbd8c9973be30c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The queue which stores tiles in order of access time.  <a href="classcarta_1_1TileCache.html#a9078c0a56c08064b02fbd8c9973be30c">More...</a><br /></td></tr>
@@ -550,11 +550,11 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles. </p>
+<p>Reset the cache for a new Z coordinate and/or <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> coordinate, clearing all tiles. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">z</td><td>The new Z coordinate </td></tr>
-    <tr><td class="paramname">stokes</td><td>The new Stokes coordinate </td></tr>
+    <tr><td class="paramname">stokes</td><td>The new <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> coordinate </td></tr>
     <tr><td class="paramname">capacity</td><td>The new capacity</td></tr>
   </table>
   </dd>
@@ -792,7 +792,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>The current Stokes coordinate. </p>
+<p>The current <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> coordinate. </p>
 
 </div>
 </div>

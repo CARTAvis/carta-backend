@@ -69,18 +69,18 @@
 <!-- Node17 -->
 <g id="node17" class="node">
 <title>Node17</title>
-<g id="a_node17"><a xlink:href="structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="374,-161.5 374,-191.5 508,-191.5 508,-161.5 374,-161.5"/>
-<text text-anchor="start" x="382" y="-179.5" font-family="Helvetica,sans-Serif" font-size="10.00">StokesSource::IsOriginal</text>
-<text text-anchor="middle" x="441" y="-168.5" font-family="Helvetica,sans-Serif" font-size="10.00">Image</text>
+<g id="a_node17"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="384.5,-161.5 384.5,-191.5 497.5,-191.5 497.5,-161.5 384.5,-161.5"/>
+<text text-anchor="start" x="392.5" y="-179.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
+<text text-anchor="middle" x="441" y="-168.5" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node17 -->
 <g id="edge28" class="edge">
 <title>Node1&#45;&gt;Node17</title>
-<path fill="none" stroke="midnightblue" d="M129.19,-185.97C141.09,-186.19 153.42,-186.38 165,-186.5 231.22,-187.17 247.83,-189.12 314,-186.5 330.07,-185.86 347.27,-184.77 363.63,-183.54"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="363.99,-187.02 373.69,-182.75 363.44,-180.04 363.99,-187.02"/>
+<path fill="none" stroke="midnightblue" d="M129.19,-185.97C141.09,-186.19 153.42,-186.38 165,-186.5 231.22,-187.17 247.83,-189.12 314,-186.5 333.52,-185.73 354.69,-184.28 374.01,-182.73"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="374.56,-186.19 384.23,-181.88 373.98,-179.22 374.56,-186.19"/>
 </g>
 <!-- Node23 -->
 <g id="node23" class="node">
@@ -346,8 +346,8 @@
 <!-- Node16&#45;&gt;Node17 -->
 <g id="edge17" class="edge">
 <title>Node16&#45;&gt;Node17</title>
-<path fill="none" stroke="midnightblue" d="M279.79,-235.48C290.96,-230.93 303.06,-225.75 314,-220.5 330.5,-212.58 333.03,-207.35 350,-200.5 355.06,-198.46 360.35,-196.53 365.72,-194.74"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="366.98,-198.01 375.45,-191.64 364.86,-191.34 366.98,-198.01"/>
+<path fill="none" stroke="midnightblue" d="M279.79,-235.48C290.96,-230.93 303.06,-225.75 314,-220.5 330.5,-212.58 333.03,-207.35 350,-200.5 357.76,-197.37 366.06,-194.52 374.36,-191.97"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="375.48,-195.29 384.08,-189.11 373.5,-188.57 375.48,-195.29"/>
 </g>
 <!-- Node19 -->
 <g id="node19" class="node">
@@ -384,17 +384,17 @@
 <!-- Node18 -->
 <g id="node18" class="node">
 <title>Node18</title>
-<g id="a_node18"><a xlink:href="Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="602,-167 602,-186 709,-186 709,-167 602,-167"/>
-<text text-anchor="middle" x="655.5" y="-174" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
+<g id="a_node18"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="583.5,-167 583.5,-186 727.5,-186 727.5,-167 583.5,-167"/>
+<text text-anchor="middle" x="655.5" y="-174" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>
 </g>
 </g>
 <!-- Node17&#45;&gt;Node18 -->
 <g id="edge18" class="edge">
 <title>Node17&#45;&gt;Node18</title>
-<path fill="none" stroke="midnightblue" d="M508.07,-176.5C534.75,-176.5 565.38,-176.5 591.72,-176.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="591.95,-180 601.95,-176.5 591.95,-173 591.95,-180"/>
+<path fill="none" stroke="midnightblue" d="M497.55,-176.5C520.58,-176.5 547.74,-176.5 572.95,-176.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="573.24,-180 583.24,-176.5 573.24,-173 573.24,-180"/>
 </g>
 <!-- Node20&#45;&gt;Node11 -->
 <g id="edge21" class="edge">

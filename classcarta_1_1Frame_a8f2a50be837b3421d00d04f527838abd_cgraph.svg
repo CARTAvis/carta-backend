@@ -187,17 +187,17 @@ var sectionId = 'dynsection-29';
 <!-- Node18 -->
 <g id="node18" class="node">
 <title>Node18</title>
-<g id="a_node18"><a xlink:href="Stokes_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="400.5,-57.5 400.5,-76.5 507.5,-76.5 507.5,-57.5 400.5,-57.5"/>
-<text text-anchor="middle" x="454" y="-64.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
+<g id="a_node18"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="382,-57.5 382,-76.5 526,-76.5 526,-57.5 382,-57.5"/>
+<text text-anchor="middle" x="454" y="-64.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>
 </g>
 </g>
 <!-- Node5&#45;&gt;Node18 -->
 <g id="edge21" class="edge">
 <title>Node5&#45;&gt;Node18</title>
-<path fill="none" stroke="midnightblue" d="M324.14,-171.39C329.83,-168.9 335.22,-165.81 340,-162 369.23,-138.7 347.06,-109.65 376,-86 380.4,-82.41 385.38,-79.48 390.64,-77.09"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="392.27,-80.22 400.34,-73.36 389.75,-73.68 392.27,-80.22"/>
+<path fill="none" stroke="midnightblue" d="M324.14,-171.39C329.83,-168.9 335.22,-165.81 340,-162 369.23,-138.7 347.06,-109.65 376,-86 378.05,-84.32 380.23,-82.79 382.51,-81.39"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="384.43,-84.34 391.69,-76.62 381.21,-78.12 384.43,-84.34"/>
 </g>
 <!-- Node19 -->
 <g id="node19" class="node">

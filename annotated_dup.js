@@ -107,7 +107,9 @@ var annotated_dup =
       [ "ListProgressReporter", "classcarta_1_1ListProgressReporter.html", "classcarta_1_1ListProgressReporter" ],
       [ "TimeDelta", "structcarta_1_1TimeDelta.html", "structcarta_1_1TimeDelta" ],
       [ "Timer", "classcarta_1_1Timer.html", "classcarta_1_1Timer" ],
-      [ "EventHeader", "structcarta_1_1EventHeader.html", "structcarta_1_1EventHeader" ]
+      [ "EventHeader", "structcarta_1_1EventHeader.html", "structcarta_1_1EventHeader" ],
+      [ "Stokes", "classcarta_1_1Stokes.html", "classcarta_1_1Stokes" ],
+      [ "StokesSource", "structcarta_1_1StokesSource.html", "structcarta_1_1StokesSource" ]
     ] ],
     [ "spdlog", "namespacespdlog.html", [
       [ "sinks", "namespacespdlog_1_1sinks.html", [
@@ -120,6 +122,5 @@ var annotated_dup =
     [ "ansicolor_sink", "classansicolor__sink.html", null ],
     [ "AxisRange", "structAxisRange.html", "structAxisRange" ],
     [ "Message", "classMessage.html", "classMessage" ],
-    [ "PointXy", "structPointXy.html", "structPointXy" ],
-    [ "StokesSource", "structStokesSource.html", "structStokesSource" ]
+    [ "PointXy", "structPointXy.html", "structPointXy" ]
 ];

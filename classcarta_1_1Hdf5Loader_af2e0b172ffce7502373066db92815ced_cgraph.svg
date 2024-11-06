@@ -83,18 +83,18 @@ var sectionId = 'dynsection-4';
 <!-- Node18 -->
 <g id="node18" class="node">
 <title>Node18</title>
-<g id="a_node18"><a xlink:href="structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="460.5,-0.5 460.5,-30.5 594.5,-30.5 594.5,-0.5 460.5,-0.5"/>
-<text text-anchor="start" x="468.5" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">StokesSource::IsOriginal</text>
-<text text-anchor="middle" x="527.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">Image</text>
+<g id="a_node18"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="471,-0.5 471,-30.5 584,-30.5 584,-0.5 471,-0.5"/>
+<text text-anchor="start" x="479" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
+<text text-anchor="middle" x="527.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node18 -->
 <g id="edge28" class="edge">
 <title>Node1&#45;&gt;Node18</title>
-<path fill="none" stroke="midnightblue" d="M110.43,-80.05C194.1,-67.07 354.62,-42.17 449.96,-27.38"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="450.77,-30.79 460.12,-25.8 449.7,-23.87 450.77,-30.79"/>
+<path fill="none" stroke="midnightblue" d="M110.43,-80.05C197.37,-66.57 367.27,-40.2 460.82,-25.69"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="461.39,-29.14 470.74,-24.15 460.32,-22.23 461.39,-29.14"/>
 </g>
 <!-- Node3 -->
 <g id="node3" class="node">
@@ -212,8 +212,8 @@ var sectionId = 'dynsection-4';
 <!-- Node3&#45;&gt;Node18 -->
 <g id="edge26" class="edge">
 <title>Node3&#45;&gt;Node18</title>
-<path fill="none" stroke="midnightblue" d="M352.89,-122.05C363.17,-110.6 377.49,-94.61 390,-80.5 406.08,-62.35 405.23,-52.02 426,-39.5 433.59,-34.93 442,-31.22 450.62,-28.23"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="451.93,-31.48 460.41,-25.13 449.82,-24.81 451.93,-31.48"/>
+<path fill="none" stroke="midnightblue" d="M352.89,-122.05C363.17,-110.6 377.49,-94.61 390,-80.5 406.08,-62.35 405.23,-52.02 426,-39.5 436.67,-33.07 448.94,-28.36 461.17,-24.92"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="462.11,-28.29 470.93,-22.42 460.37,-21.51 462.11,-28.29"/>
 </g>
 <!-- Node5 -->
 <g id="node5" class="node">
@@ -399,17 +399,17 @@ var sectionId = 'dynsection-4';
 <!-- Node19 -->
 <g id="node19" class="node">
 <title>Node19</title>
-<g id="a_node19"><a xlink:href="Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="704,-6 704,-25 811,-25 811,-6 704,-6"/>
-<text text-anchor="middle" x="757.5" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
+<g id="a_node19"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="685.5,-6 685.5,-25 829.5,-25 829.5,-6 685.5,-6"/>
+<text text-anchor="middle" x="757.5" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>
 </g>
 </g>
 <!-- Node18&#45;&gt;Node19 -->
 <g id="edge27" class="edge">
 <title>Node18&#45;&gt;Node19</title>
-<path fill="none" stroke="midnightblue" d="M594.75,-15.5C625.94,-15.5 662.94,-15.5 693.68,-15.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="693.85,-19 703.85,-15.5 693.85,-12 693.85,-19"/>
+<path fill="none" stroke="midnightblue" d="M584.28,-15.5C611.64,-15.5 645.11,-15.5 675.25,-15.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="675.33,-19 685.33,-15.5 675.33,-12 675.33,-19"/>
 </g>
 </g>
 </svg>

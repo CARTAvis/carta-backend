@@ -1,5 +1,7 @@
 <map id="carta::PvGenerator::GetPvImage" name="carta::PvGenerator::GetPvImage">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,149,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1PvGenerator.html#a5ee0b9e3920422d9ef9652262fddac84" title=" " alt="" coords="197,5,341,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1PvGenerator.html#a5a390c35d2e0f5fd1f8051fd2704f70d" title=" " alt="" coords="389,5,579,47"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,23,149,65"/>
+<area shape="rect" id="node2" href="$classcarta_1_1PvGenerator.html#a5ee0b9e3920422d9ef9652262fddac84" title=" " alt="" coords="197,23,341,65"/>
+<area shape="rect" id="node3" href="$classcarta_1_1PvGenerator.html#a5a390c35d2e0f5fd1f8051fd2704f70d" title=" " alt="" coords="389,23,579,65"/>
+<area shape="rect" id="node4" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="638,5,775,32"/>
+<area shape="rect" id="node5" href="$classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" title=" " alt="" coords="627,56,787,83"/>
 </map>
