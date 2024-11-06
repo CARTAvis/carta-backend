@@ -75,12 +75,6 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
     {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
     {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
-static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesName{
-    {CARTA::PolarizationType::Ptotal, "Total polarization intensity"}, {CARTA::PolarizationType::Plinear, "Linear polarization intensity"},
-    {CARTA::PolarizationType::PFtotal, "Fractional total polarization intensity"},
-    {CARTA::PolarizationType::PFlinear, "Fractional linear polarization intensity"},
-    {CARTA::PolarizationType::Pangle, "Polarization angle"}};
-
 class Frame {
 public:
     // Load image cache for default_z, except for PV preview image which needs cube
@@ -290,6 +284,7 @@ protected:
     AxesInfo _axes; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
     DimsInfo _dims;
     int _z_index, _stokes_index; // current index
+    AxisRange _all_x, _all_y, _all_z;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
