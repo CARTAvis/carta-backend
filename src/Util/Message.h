@@ -48,7 +48,7 @@
 #include "ImageStats/Histogram.h"
 
 namespace carta {
-const uint16_t ICD_VERSION = 28;
+const uint16_t ICD_VERSION = 30;
 struct EventHeader {
     uint16_t type;
     uint16_t icd_version;
