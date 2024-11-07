@@ -224,17 +224,17 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
     _axes.stokes = _coord_sys->polarizationAxisNumber();
 
     // Set render axes are the first two axes that are not stokes
-    _axes.render.resize(0);
-    for (int i = 0; i < _num_dims && _axes.render.size() < 2; ++i) {
+    std::vector<int> render_axes;
+    for (int i = 0; i < _num_dims && render_axes.size() < 2; ++i) {
         if (i != _axes.stokes) {
-            _axes.render.push_back(i);
+            render_axes.push_back(i);
         }
     }
 
-    _axes.x = _axes.render[0];
-    _axes.y = _axes.render[1];
-    _dims.width = _image_shape(_axes.render[0]);
-    _dims.height = _image_shape(_axes.render[1]);
+    _axes.x = render_axes[0];
+    _axes.y = render_axes[1];
+    _dims.width = _image_shape(_axes.x);
+    _dims.height = _image_shape(_axes.y);
 
     // Find spatial axes
     if (_coord_sys->hasDirectionCoordinate()) {
@@ -287,14 +287,15 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
 
     // Z axis is non-render axis that is not stokes (if any)
     for (size_t i = 0; i < _num_dims; ++i) {
-        if ((i != _axes.render[0]) && (i != _axes.render[1]) && (i != _axes.stokes)) {
+        if ((i != _axes.x) && (i != _axes.y) && (i != _axes.stokes)) {
             _axes.z = i;
             break;
         }
     }
 
-    // Save depth and num_stokes values
+    // Save depth, num_channels and num_stokes values
     _dims.depth = (_axes.z >= 0 ? _image_shape(_axes.z) : 1);
+    _dims.num_channels = (_axes.spectral >= 0 ? _image_shape(_axes.spectral) : 1);
     _dims.num_stokes = (_axes.stokes >= 0 ? _image_shape(_axes.stokes) : 1);
 
     // save stokes types with respect to the stokes index

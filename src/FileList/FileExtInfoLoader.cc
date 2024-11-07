@@ -210,11 +210,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                     casacore::Vector<casacore::String> axes_names;
 
-                    AddShapeEntries(extended_info, image_shape, axes.spatial, axes.spectral, axes.stokes, axes.render, axes.z, axes_names);
+                    AddShapeEntries(
+                        extended_info, image_shape, axes.spatial, axes.spectral, axes.stokes, {axes.x, axes.y}, axes.z, axes_names);
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
                     AddComputedEntries(
-                        extended_info, image.get(), axes.render, axes.spectral, axes.stokes, use_image_for_entries, is_history_beam);
+                        extended_info, image.get(), {axes.x, axes.y}, axes.spectral, axes.stokes, use_image_for_entries, is_history_beam);
                     info_ok = true;
                 }
             } else { // image failed
