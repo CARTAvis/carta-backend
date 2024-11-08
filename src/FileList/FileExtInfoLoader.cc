@@ -46,13 +46,13 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
         }
 
         for (auto& hdu_info : hdu_info_map) {
-            std::vector<int> render_axes = {0, 1}; // default
-            AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename, render_axes, &cfits);
+            AxesInfo axes;
+            axes.x = 0; // default
+            axes.y = 1; // default
+            AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename, axes, &cfits);
 
             // Use headers in FileInfoExtended to create computed entries
-            int spectral_axis = cfits.GetSpectralAxis();
-            int stokes_axis = cfits.GetStokesAxis();
-            AddComputedEntriesFromHeaders(hdu_info.second, render_axes, spectral_axis, stokes_axis, &cfits);
+            AddComputedEntriesFromHeaders(hdu_info.second, axes, &cfits);
         }
     } else {
         // Get list of image HDUs
@@ -207,15 +207,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 if (_loader->FindCoordinateAxes(message)) {
                     auto image_shape = _loader->GetShape();
                     auto axes = _loader->GetAxes();
-
                     casacore::Vector<casacore::String> axes_names;
 
-                    AddShapeEntries(
-                        extended_info, image_shape, axes.spatial, axes.spectral, axes.stokes, {axes.x, axes.y}, axes.z, axes_names);
+                    AddShapeEntries(extended_info, image_shape, axes, axes_names);
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
-                    AddComputedEntries(
-                        extended_info, image.get(), {axes.x, axes.y}, axes.spectral, axes.stokes, use_image_for_entries, is_history_beam);
+                    AddComputedEntries(extended_info, image.get(), axes, use_image_for_entries, is_history_beam);
                     info_ok = true;
                 }
             } else { // image failed
@@ -617,7 +614,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
 // ***** Computed entries *****
 
 void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info,
-    const std::string& filename, const std::vector<int>& render_axes, CompressedFits* compressed_fits) {
+    const std::string& filename, AxesInfo& axes, CompressedFits* compressed_fits) {
     // Add computed entries for filename, hdu, data type, shape, and axes
     fs::path filepath(filename);
     std::string filename_nopath = filepath.filename().string();
@@ -637,8 +634,6 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     int bitpix(0);
     double bscale(1.0), bzero(0.0);
     casacore::IPosition shape;
-    std::vector<int> spatial_axes(2, -1);
-    int spectral_axis(-1), stokes_axis(-1), depth_axis(-1);
     casacore::Vector<casacore::String> axes_names(4, "NA");
     std::vector<std::string> spectral_ctypes = {"FREQ", "WAV", "ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA", "FELO"};
 
@@ -678,20 +673,20 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
 
                 // Assign axis numbers for different types
                 if (entry_value.find("RA") == 0 || entry_value.find("GLON") == 0 || entry_value.find("UU") == 0) {
-                    spatial_axes[0] = axis_num;
+                    axes.spatial_x = axis_num;
                 } else if (entry_value.find("DEC") == 0 || entry_value.find("GLAT") == 0 || entry_value.find("VV") == 0) {
-                    spatial_axes[1] = axis_num;
+                    axes.spatial_y = axis_num;
                 } else if (entry_value.find("STOKES") == 0) {
-                    stokes_axis = axis_num;
+                    axes.stokes = axis_num;
                 } else if (std::any_of(spectral_ctypes.begin(), spectral_ctypes.end(),
                                [&](const std::string& key_word) { return (entry_value.find(key_word) != std::string::npos); })) {
-                    spectral_axis = axis_num;
+                    axes.spectral = axis_num;
                 }
             }
 
             // Depth axis is not the first two axes [0, 1], i.e., non-render axis that is not stokes (if any)
-            if (axis_num > 1 && axis_num != stokes_axis) {
-                depth_axis = axis_num;
+            if (axis_num > 1 && axis_num != axes.stokes) {
+                axes.z = axis_num;
             }
         } else if (entry_name.find("BITPIX") == 0) {
             bitpix = header_entry.numeric_value();
@@ -714,12 +709,12 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     }
     AddDataTypeEntry(extended_info, data_type, equivalent_type);
 
-    AddShapeEntries(extended_info, shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
+    AddShapeEntries(extended_info, shape, axes, axes_names);
 
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
-        compressed_fits->SetSpectralAxis(depth_axis);
-        compressed_fits->SetStokesAxis(stokes_axis);
+        compressed_fits->SetSpectralAxis(axes.spectral); // TODO: this was set to depth axis previously -- which is correct???
+        compressed_fits->SetStokesAxis(axes.stokes);
     }
 }
 
@@ -737,30 +732,25 @@ void FileExtInfoLoader::AddDataTypeEntry(
     entry->set_entry_type(CARTA::EntryType::STRING);
 }
 
-void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape,
-    const std::vector<int>& spatial_axes, int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis,
+void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const AxesInfo& axes,
     casacore::Vector<casacore::String>& axes_names) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
-    int width(shape(render_axes[0]));
-    int height(shape(render_axes[1]));
-    int depth(depth_axis >= 0 ? shape(depth_axis) : 1);
-    int channels(spectral_axis >= 0 ? shape(spectral_axis) : 1);
-    int stokes(stokes_axis >= 0 ? shape(stokes_axis) : 1);
+    DimsInfo dims(axes, shape);
 
     extended_info.set_dimensions(num_dims);
-    extended_info.set_width(width);
-    extended_info.set_height(height);
-    extended_info.set_depth(depth);
-    extended_info.set_stokes(stokes);
+    extended_info.set_width(dims.width);
+    extended_info.set_height(dims.height);
+    extended_info.set_depth(dims.depth);
+    extended_info.set_stokes(dims.num_stokes);
 
     auto* axes_numbers_info = extended_info.mutable_axes_numbers();
     // Change to 1-based axis indices
-    axes_numbers_info->set_spatial_x(spatial_axes[0] + 1);
-    axes_numbers_info->set_spatial_y(spatial_axes[1] + 1);
-    axes_numbers_info->set_spectral(spectral_axis + 1);
-    axes_numbers_info->set_stokes(stokes_axis + 1);
-    axes_numbers_info->set_depth(depth_axis + 1);
+    axes_numbers_info->set_spatial_x(axes.spatial_x + 1);
+    axes_numbers_info->set_spatial_y(axes.spatial_y + 1);
+    axes_numbers_info->set_spectral(axes.spectral + 1);
+    axes_numbers_info->set_stokes(axes.stokes + 1);
+    axes_numbers_info->set_depth(axes.z + 1);
 
     if (axes_names.empty()) {
         // Set axis names with respect to axis numbers 1~4
@@ -787,8 +777,8 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     }
 
     // In case if the stokes axis name is not available from the header info
-    if (stokes_axis > -1 && axes_names[stokes_axis] == "NA") {
-        axes_names[stokes_axis] = "STOKES";
+    if (axes.stokes > -1 && axes_names[axes.stokes] == "NA") {
+        axes_names[axes.stokes] = "STOKES";
     }
 
     // shape computed_entry
@@ -811,30 +801,29 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     shape_entry->set_value(shape_string);
     shape_entry->set_entry_type(CARTA::EntryType::STRING);
 
-    if (spectral_axis >= 0) {
+    if (axes.spectral >= 0) {
         // header entry for number of channels
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of channels");
-        entry->set_value(std::to_string(channels));
+        entry->set_value(std::to_string(dims.num_channels));
         entry->set_entry_type(CARTA::EntryType::INT);
-        entry->set_numeric_value(channels);
+        entry->set_numeric_value(dims.num_channels);
     }
-    if (stokes_axis >= 0) {
+    if (axes.stokes >= 0) {
         // header entry for number of stokes
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of polarizations");
-        entry->set_value(std::to_string(stokes));
+        entry->set_value(std::to_string(dims.num_stokes));
         entry->set_entry_type(CARTA::EntryType::INT);
-        entry->set_numeric_value(stokes);
+        entry->set_numeric_value(dims.num_stokes);
     }
 }
 
 void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-    const std::vector<int>& display_axes, int spectral_axis, int stokes_axis, bool use_image_for_entries, bool is_history_beam) {
+    const AxesInfo& axes, bool use_image_for_entries, bool is_history_beam) {
     // Add computed entries to extended file info
     if (use_image_for_entries) {
         // Use image coordinate system
-        int display_axis0(display_axes[0]), display_axis1(display_axes[1]);
 
         // add computed_entries to extended info (ensures the proper order in file browser)
         casacore::CoordinateSystem coord_system(image->coordinates());
@@ -845,7 +834,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         casacore::Vector<casacore::Double> increment = coord_system.increment();
 
         if (!axis_names.empty()) {
-            std::string coord_type = fmt::format("{}, {}", axis_names(display_axis0), axis_names(display_axis1));
+            std::string coord_type = fmt::format("{}, {}", axis_names(axes.x), axis_names(axes.y));
             auto entry = extended_info.add_computed_entries();
             entry->set_name("Coordinate type");
             entry->set_value(coord_type);
@@ -869,22 +858,20 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         if (!reference_pixels.empty()) {
             auto entry = extended_info.add_computed_entries();
             entry->set_name("Image reference pixels");
-            std::string ref_pix = fmt::format("[{}, {}]", reference_pixels(display_axis0) + 1.0, reference_pixels(display_axis1) + 1.0);
+            std::string ref_pix = fmt::format("[{}, {}]", reference_pixels(axes.x) + 1.0, reference_pixels(axes.y) + 1.0);
             entry->set_value(ref_pix);
             entry->set_entry_type(CARTA::EntryType::STRING);
         }
 
         if (!reference_values.empty() && !axis_units.empty() && !axis_names.empty()) {
             // Computed entries for reference coordinates
-            casacore::Quantity coord0(reference_values(display_axis0), axis_units(display_axis0));
-            casacore::Quantity coord1(reference_values(display_axis1), axis_units(display_axis1));
+            casacore::Quantity coord0(reference_values(axes.x), axis_units(axes.x));
+            casacore::Quantity coord1(reference_values(axes.y), axis_units(axes.y));
 
             // Add direction coord(s) converted to angle string (RA/Dec or Lat/Long)
             // Returns Quantity string if not angle type
-            std::string coord1angle =
-                MakeAngleString(axis_names(display_axis0), reference_values(display_axis0), axis_units(display_axis0));
-            std::string coord2angle =
-                MakeAngleString(axis_names(display_axis1), reference_values(display_axis1), axis_units(display_axis1));
+            std::string coord1angle = MakeAngleString(axis_names(axes.x), reference_values(axes.x), axis_units(axes.x));
+            std::string coord2angle = MakeAngleString(axis_names(axes.y), reference_values(axes.y), axis_units(axes.y));
             std::string formatted_coords = fmt::format("[{}, {}]", coord1angle, coord2angle);
             // Add reference coords (angle format if possible)
             auto entry = extended_info.add_computed_entries();
@@ -895,8 +882,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             bool is_coord0_dir(coord0.isConform("deg")), is_coord1_dir(coord1.isConform("deg"));
             if (is_coord0_dir || is_coord1_dir) {
                 // Reference coord(s) converted to deg
-                std::string ref_coords_deg = fmt::format("[{}, {}]", ConvertCoordsToDeg(axis_names(display_axis0), coord0),
-                    ConvertCoordsToDeg(axis_names(display_axis1), coord1));
+                std::string ref_coords_deg =
+                    fmt::format("[{}, {}]", ConvertCoordsToDeg(axis_names(axes.x), coord0), ConvertCoordsToDeg(axis_names(axes.y), coord1));
                 // Add ref coords in deg
                 entry = extended_info.add_computed_entries();
                 entry->set_name("Image ref coords (deg)");
@@ -906,8 +893,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         }
 
         if (!increment.empty() && !axis_units.empty()) {
-            casacore::Quantity inc0(increment(display_axis0), axis_units(display_axis0));
-            casacore::Quantity inc1(increment(display_axis1), axis_units(display_axis1));
+            casacore::Quantity inc0(increment(axes.x), axis_units(axes.x));
+            casacore::Quantity inc1(increment(axes.y), axis_units(axes.y));
             std::string pixel_inc = ConvertIncrementToArcsec(inc0, inc1);
             // Add increment entry
             auto entry = extended_info.add_computed_entries();
@@ -957,7 +944,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         }
     } else {
         // Use header_entries in extended info
-        AddComputedEntriesFromHeaders(extended_info, display_axes, spectral_axis, stokes_axis);
+        AddComputedEntriesFromHeaders(extended_info, axes);
     }
 
     casacore::ImageInfo image_info = image->imageInfo();
@@ -969,15 +956,15 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     AddCoordRanges(extended_info, image->coordinates(), image->shape());
 }
 
-void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes,
-    int spectral_axis, int stokes_axis, CompressedFits* compressed_fits) {
+void FileExtInfoLoader::AddComputedEntriesFromHeaders(
+    CARTA::FileInfoExtended& extended_info, const AxesInfo& axes, CompressedFits* compressed_fits) {
     // Convert display axis1 and axis2 header_entries into computed_entries;
     // For images with missing headers or headers which casacore/wcslib cannot process.
     // Axes are 1-based for header names (ctype, cunit, etc.), 0-based for display axes
-    casacore::String disp1_suffix(std::to_string(display_axes[0] + 1));
-    casacore::String disp2_suffix(std::to_string(display_axes[1] + 1));
-    casacore::String spectral_suffix(std::to_string(spectral_axis + 1));
-    casacore::String stokes_suffix(std::to_string(stokes_axis + 1));
+    casacore::String disp1_suffix(std::to_string(axes.x + 1));
+    casacore::String disp2_suffix(std::to_string(axes.y + 1));
+    casacore::String spectral_suffix(std::to_string(axes.spectral + 1));
+    casacore::String stokes_suffix(std::to_string(axes.stokes + 1));
 
     double min_double(std::numeric_limits<double>::min());
     int min_int(std::numeric_limits<int>::min());
@@ -1243,7 +1230,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
 
                 if (spectral_ctype == "WAV" || spectral_ctype == "AWAV" || spectral_ctype == "VELO") {
                     // Create spectral coordinate with values
-                    size_t num_chan = shape(spectral_axis);
+                    size_t num_chan = shape(axes.spectral);
                     casacore::Vector<casacore::Double> values(num_chan);
                     for (size_t i = 0; i < num_chan; ++i) {
                         values(i) = spectral_crval + (spectral_cdelt * (double(i) + fits_offset - spectral_crpix));
@@ -1278,7 +1265,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
                 stokes_crval -= stokes_cdelt * (stokes_crpix - 1);
             }
 
-            int stokes_size = shape[stokes_axis];
+            int stokes_size = shape[axes.stokes];
             casacore::Vector<casacore::Int> stokes_types(stokes_size);
             for (int i = 0; i < stokes_size; ++i) {
                 stokes_types[i] = stokes_crval + stokes_cdelt * i;

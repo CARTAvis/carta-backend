@@ -219,88 +219,89 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
         return false;
     }
 
+    int z_axis(-1), spectral_axis(-1), stokes_axis(-1);
+    std::vector<int> render_axes, spatial_axes{-1, -1};
+
     // Get spectral and stokes axis
-    _axes.spectral = _coord_sys->spectralAxisNumber();
-    _axes.stokes = _coord_sys->polarizationAxisNumber();
+    spectral_axis = _coord_sys->spectralAxisNumber();
+    stokes_axis = _coord_sys->polarizationAxisNumber();
 
     // Set render axes are the first two axes that are not stokes
-    std::vector<int> render_axes;
     for (int i = 0; i < _num_dims && render_axes.size() < 2; ++i) {
-        if (i != _axes.stokes) {
+        if (i != stokes_axis) {
             render_axes.push_back(i);
         }
     }
 
-    _axes.x = render_axes[0];
-    _axes.y = render_axes[1];
-    _dims.width = _image_shape(_axes.x);
-    _dims.height = _image_shape(_axes.y);
+    if (render_axes.size() < 2) {
+        message = "Image must have two render axes.";
+        return false;
+    }
 
     // Find spatial axes
     if (_coord_sys->hasDirectionCoordinate()) {
         auto tmp_axes = _coord_sys->directionAxesNumbers();
-        _axes.spatial[0] = tmp_axes[0];
-        _axes.spatial[1] = tmp_axes[1];
+        spatial_axes[0] = tmp_axes[0];
+        spatial_axes[1] = tmp_axes[1];
     } else if (_coord_sys->hasLinearCoordinate()) {
         auto tmp_axes = _coord_sys->linearAxesNumbers();
         for (int i = 0; i < casacore::min(tmp_axes.size(), 2); ++i) { // Assume the first two linear axes are spatial axes, if any
-            _axes.spatial[i] = tmp_axes[i];
+            spatial_axes[i] = tmp_axes[i];
         }
     }
 
     // 2D image
     if (_num_dims == 2) {
         // Keep Z axis and Stokes axis defaults of -1
+        _axes = AxesInfo(render_axes, spatial_axes, spectral_axis);
         // Keep depth and num_stokes defaults of 1
+        _dims = DimsInfo(_axes, _image_shape);
         return true;
     }
 
     // Cope with incomplete/invalid headers for 3D, 4D images
-    bool no_spectral(_axes.spectral < 0), no_stokes(_axes.stokes < 0);
+    bool no_spectral(spectral_axis < 0), no_stokes(stokes_axis < 0);
     if ((no_spectral && no_stokes) && (_num_dims == 3)) {
         // assume third is spectral with no stokes
-        _axes.spectral = 2;
+        spectral_axis = 2;
     }
 
     if ((no_spectral || no_stokes) && (_num_dims == 4)) {
         if (no_spectral && !no_stokes) { // stokes is known
-            _axes.spectral = (_axes.stokes == 3 ? 2 : 3);
+            spectral_axis = (stokes_axis == 3 ? 2 : 3);
         } else if (!no_spectral && no_stokes) { // spectral is known
-            _axes.stokes = (_axes.spectral == 3 ? 2 : 3);
+            stokes_axis = (spectral_axis == 3 ? 2 : 3);
         } else { // neither is known
             // guess by shape (max 4 stokes)
             if (_image_shape(2) > 4) {
-                _axes.spectral = 2;
-                _axes.stokes = 3;
+                spectral_axis = 2;
+                stokes_axis = 3;
             } else if (_image_shape(3) > 4) {
-                _axes.spectral = 3;
-                _axes.stokes = 2;
+                spectral_axis = 3;
+                stokes_axis = 2;
             }
 
-            if ((_axes.spectral < 0) && (_axes.stokes < 0)) {
+            if ((spectral_axis < 0) && (stokes_axis < 0)) {
                 // could not guess, assume [spectral, stokes]
-                _axes.spectral = 2;
-                _axes.stokes = 3;
+                spectral_axis = 2;
+                stokes_axis = 3;
             }
         }
     }
 
     // Z axis is non-render axis that is not stokes (if any)
     for (size_t i = 0; i < _num_dims; ++i) {
-        if ((i != _axes.x) && (i != _axes.y) && (i != _axes.stokes)) {
-            _axes.z = i;
+        if ((i != render_axes[0]) && (i != render_axes[1]) && (i != stokes_axis)) {
+            z_axis = i;
             break;
         }
     }
 
-    // Save depth, num_channels and num_stokes values
-    _dims.depth = (_axes.z >= 0 ? _image_shape(_axes.z) : 1);
-    _dims.num_channels = (_axes.spectral >= 0 ? _image_shape(_axes.spectral) : 1);
-    _dims.num_stokes = (_axes.stokes >= 0 ? _image_shape(_axes.stokes) : 1);
+    size_t num_stokes = DimsInfo::FromAxis(stokes_axis, _image_shape);
 
     // save stokes types with respect to the stokes index
     if (_stokes_cdelt != 0) {
-        for (int i = 0; i < _dims.num_stokes; ++i) {
+        for (int i = 0; i < num_stokes; ++i) {
             int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
             int stokes_value;
             if (Stokes::ConvertFits(stokes_fits_value, stokes_value)) {
@@ -310,6 +311,9 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
             }
         }
     }
+
+    _axes = AxesInfo(render_axes, spatial_axes, spectral_axis, z_axis, stokes_axis);
+    _dims = DimsInfo(_axes, _image_shape);
 
     return true;
 }
