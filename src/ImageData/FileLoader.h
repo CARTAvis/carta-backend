@@ -121,6 +121,7 @@ public:
     virtual void SetStokesCrpix(float stokes_crpix);
     virtual void SetStokesCdelt(int stokes_cdelt);
     virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
+    virtual bool GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type);
     std::unordered_map<CARTA::PolarizationType, int> GetStokesIndices() {
         return _stokes_indices;
     };
@@ -168,7 +169,7 @@ protected:
     casacore::IPosition _image_shape;
     size_t _num_dims, _image_plane_size;
     size_t _width, _height, _depth, _num_stokes;
-    int _z_axis, _stokes_axis;
+    int _x_axis, _y_axis, _z_axis, _stokes_axis;
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
     bool _has_pixel_mask;
     casacore::DataType _data_type;
@@ -180,6 +181,7 @@ protected:
 
     // Storage for the stokes type vs. stokes index
     std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;
+    std::unordered_map<int, CARTA::PolarizationType> _stokes_types;
     float _stokes_crval;
     float _stokes_crpix;
     int _stokes_cdelt;

@@ -232,6 +232,8 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
         }
     }
 
+    _x_axis = render_axes[0];
+    _y_axis = render_axes[1];
     _width = shape(render_axes[0]);
     _height = shape(render_axes[1]);
     _image_plane_size = _width * _height;
@@ -310,8 +312,10 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
         for (int i = 0; i < _num_stokes; ++i) {
             int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
             int stokes_value;
-            if (FileInfo::ConvertFitsStokesValue(stokes_fits_value, stokes_value)) {
-                _stokes_indices[GetStokesType(stokes_value)] = i;
+            if (Stokes::ConvertFits(stokes_fits_value, stokes_value)) {
+                auto stokes_type = static_cast<CARTA::PolarizationType>(stokes_value);
+                _stokes_indices[stokes_type] = i;
+                _stokes_types[i] = stokes_type;
             }
         }
     }
@@ -846,7 +850,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
 }
 
 FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int z) {
-    if (!IsComputedStokes(current_stokes)) { // Note: loader cache does not support the computed stokes
+    if (!Stokes::IsComputed(current_stokes)) { // Note: loader cache does not support the computed stokes
         return (z >= 0 ? _z_stats[current_stokes][z] : _cube_stats[current_stokes]);
     }
     return _empty_stats;
@@ -912,11 +916,21 @@ double FileLoader::CalculateBeamArea() {
 }
 
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
-    if (_stokes_indices.count(stokes_type)) {
-        stokes_index = _stokes_indices[stokes_type];
+    try {
+        stokes_index = _stokes_indices.at(stokes_type);
         return true;
+    } catch (const std::out_of_range& e) {
+        return false;
     }
-    return false;
+}
+
+bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type) {
+    try {
+        stokes_type = _stokes_types.at(stokes_index);
+        return true;
+    } catch (const std::out_of_range& e) {
+        return false;
+    }
 }
 
 typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stokes_source) {
@@ -926,18 +940,18 @@ typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& sto
 
     if (_stokes_source != stokes_source) {
         // compute new stokes image with respect to the channel range
-        carta::PolarizationCalculator polarization_calculator(
-            GetImage(), AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
+        carta::PolarizationCalculator polarization_calculator(GetImage(), {_x_axis, _y_axis, _z_axis, _stokes_axis},
+            AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
 
-        if (stokes_source.stokes == COMPUTE_STOKES_PTOTAL) {
+        if (stokes_source.stokes == CARTA::PolarizationType::Ptotal) {
             _computed_stokes_image = polarization_calculator.ComputeTotalPolarizedIntensity();
-        } else if (stokes_source.stokes == COMPUTE_STOKES_PFTOTAL) {
+        } else if (stokes_source.stokes == CARTA::PolarizationType::PFtotal) {
             _computed_stokes_image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
-        } else if (stokes_source.stokes == COMPUTE_STOKES_PLINEAR) {
+        } else if (stokes_source.stokes == CARTA::PolarizationType::Plinear) {
             _computed_stokes_image = polarization_calculator.ComputePolarizedIntensity();
-        } else if (stokes_source.stokes == COMPUTE_STOKES_PFLINEAR) {
+        } else if (stokes_source.stokes == CARTA::PolarizationType::PFlinear) {
             _computed_stokes_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
-        } else if (stokes_source.stokes == COMPUTE_STOKES_PANGLE) {
+        } else if (stokes_source.stokes == CARTA::PolarizationType::Pangle) {
             _computed_stokes_image = polarization_calculator.ComputePolarizedAngle();
         } else {
             spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
