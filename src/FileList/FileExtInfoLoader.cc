@@ -713,8 +713,6 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
 
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
-        compressed_fits->SetSpectralAxis(axes.spectral); // TODO: this was set to depth axis previously -- which is correct???
-        compressed_fits->SetStokesAxis(axes.stokes);
     }
 }
 
@@ -1201,6 +1199,8 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
+
+    std::cout << "+++++ Before  if (compressed_fits); projection is " << projection << std::endl;
 
     if (compressed_fits) {
         casacore::CoordinateSystem coordsys;
