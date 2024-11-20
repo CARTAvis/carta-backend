@@ -271,6 +271,7 @@ protected:
     bool IsValidChannelMapTile(int file_id, int channel, int tile);
     bool IsInChannelMapRange(int file_id, int channel);
     bool IsInChannelMapTiles(int file_id, int tile);
+    bool ChannelMapTilesValid(int file_id, const std::vector<int>& tiles);
 
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;

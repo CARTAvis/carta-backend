@@ -58,15 +58,25 @@ bool ChannelMapSettings::HasTile(int file_id, int tile) {
     return _required_tiles[file_id].HasTile(tile);
 }
 
+bool ChannelMapSettings::HasTiles(int file_id, const std::vector<int>& tiles) {
+    std::unique_lock<std::mutex> lock(_file_mutexes[file_id]);
+    if (_required_tiles.find(file_id) == _required_tiles.end()) {
+        return false;
+    }
+    return _required_tiles[file_id].HasTiles(tiles);
+}
+
 void ChannelMapSettings::RemoveFile(int file_id) {
     if (file_id == ALL_FILES) {
-        _file_mutexes.clear();
         _channel_ranges.clear();
         _required_tiles.clear();
+        _file_mutexes.clear();
     } else {
-        _file_mutexes.erase(file_id);
+        std::unique_lock<std::mutex> lock(_file_mutexes[file_id]);
         _channel_ranges.erase(file_id);
         _required_tiles.erase(file_id);
+        lock.unlock();
+        _file_mutexes.erase(file_id);
     }
 }
 

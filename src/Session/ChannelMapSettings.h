@@ -45,6 +45,16 @@ struct RequiredTiles {
     bool HasTile(int tile) {
         return std::find(current_tiles.begin(), current_tiles.end(), tile) != current_tiles.end();
     }
+
+    bool HasTiles(const std::vector<int>& tiles) {
+        // Returns true if any input tiles are in current tiles
+        for (auto tile : tiles) {
+            if (HasTile(tile)) {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 class ChannelMapSettings {
@@ -58,6 +68,7 @@ public:
     bool IsInChannelRange(int file_id, int channel);
     bool HasRequiredTiles(int file_id, const CARTA::AddRequiredTiles& required_tiles);
     bool HasTile(int file_id, int tile);
+    bool HasTiles(int file_id, const std::vector<int>& tiles);
 
     // Remove a file or all files from channel maps when closed in Session.
     void RemoveFile(int file_id);

@@ -158,6 +158,9 @@ void Session::WaitForTaskCancellation() {
         }
         _animation_object->CancelExecution();
     }
+    if (_channel_map_settings) {
+        _channel_map_settings->RemoveFile(ALL_FILES);
+    }
 }
 
 void Session::ConnectCalled() {
@@ -766,6 +769,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             int start_channel(message.channel_range().min());
             int end_channel(message.channel_range().max());
             int num_channel(frame->Depth());
+            std::vector<int> required_tiles = {message.required_tiles().tiles().begin(), message.required_tiles().tiles().end()};
             bool skipped_channel(false);
 
             // Use animation limits for flow control
@@ -782,7 +786,13 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                     continue;
                 }
 
-                // Do not check received channel if start channel, or have skipped channels causing gap
+                if (!ChannelMapTilesValid(file_id, required_tiles)) {
+                    spdlog::debug(
+                        "Cancel starting at channel {} in range {}-{}, tiles not in current tiles", chan, start_channel, end_channel);
+                    break;
+                }
+
+                // Check received channel gap if not start channel, or have not skipped channels causing gap
                 if (chan > start_channel && !skipped_channel &&
                     _channel_map_received_channel.find(file_id) != _channel_map_received_channel.end()) {
                     int received_channel = _channel_map_received_channel[file_id];
@@ -793,9 +803,15 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                         received_channel = _channel_map_received_channel[file_id];
                     }
 
+                    // Check valid channel/tiles again
                     if (!IsInChannelMapRange(file_id, chan)) {
                         spdlog::debug("Skip channel {} in range {}-{}, not in current range", chan, start_channel, end_channel);
                         continue;
+                    }
+                    if (!ChannelMapTilesValid(file_id, required_tiles)) {
+                        spdlog::debug(
+                            "Cancel starting at channel {} in range {}-{}, tiles not in current tiles", chan, start_channel, end_channel);
+                        break;
                     }
                 }
 
@@ -2609,6 +2625,10 @@ bool Session::IsInChannelMapTiles(int file_id, int tile) {
     return _channel_map_settings && _channel_map_settings->HasTile(file_id, tile);
 }
 
+bool Session::ChannelMapTilesValid(int file_id, const std::vector<int>& tiles) {
+    // Check if any tiles are in current channel map tiles for file id.
+    return _channel_map_settings && _channel_map_settings->HasTiles(file_id, tiles);
+}
 void Session::HandleChannelMapFlowControlEvt(CARTA::ChannelMapFlowControl& message) {
     _channel_map_received_channel[message.file_id()] = message.received_channel();
 }
