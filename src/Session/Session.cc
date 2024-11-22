@@ -1358,6 +1358,7 @@ void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, 
     float image_quality = render3d_request.image_compression_quality();
 
     CARTA::Render3DResponse render3d_response;
+    render3d_response.set_success(true);
     std::cout << "Render3D function called" << std::endl;
 
      // Checks for valid request:
@@ -1370,64 +1371,55 @@ void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, 
     if (!is_image_region) {
         if (!RegionSet(region_id)) {
             render3d_response.set_message("3D rendering cube requested for invalid region id.");
-            return false;
+            render3d_response.set_success(false);
         }
     }
 
     // 2. Region is closed
     if (!IsClosedRegion(region_id)) {
         render3d_response.set_message("Region type not supported for 3D Rendering.");
-        return false;
+        render3d_response.set_success(false);
     }
 
     // 3. Image has spectral axis
     if (!frame->CoordinateSystem()->hasSpectralAxis()) {
         render3d_response.set_message("No spectral coordinate for generating 3D rendering.");
-        return false;
+        render3d_response.set_success(false);
     }
 
     // 4. Image is smaller than limit
     if (frame->Width() * frame->Height() * frame->Depth() > MAX_RENDER3D_PIXELS) {
         render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Use smaller region or spectral range.");
+        render3d_response.set_success(false);
+    }
+
+    // Acknowledge if any of the checks failed
+    if (!render3d_response.success) {
+        SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
         return false;
     }
 
-    // Send acknowledgement. Create new class? Use response. delete progress_callback
-
     if (_frames.count(file_id)) {
+        // if all checks passed, send success message 
+        render3d_response.set_message("3D Rendering started.");
+        SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
         Timer t;
         auto& frame = _frames.at(file_id);
         CARTA::Render3DData render3d_data;
 
-        // Set render3d progress callback function
-        auto progress_callback = [&](float progress) {
-            auto render3d_progress = Message::Render3DProgress(file_id, region_id, progress, viewer_id);
-            SendEvent(CARTA::EventType::RENDER3D_PROGRESS, request_id, render3d_progress);
-        };
-
-        // data_sent = _region_handler->SendRender3DData(file_id, region_id, progress_callback, viewer_id, spectral_range, rebin_xy, rebin_z, frame, render3d_data);
-
-        data_sent = _region_handler->SendRender3DData(
+        data_sent = _region_handler->SendRender3DData(file_id, region_id, viewer_id, spectral_range, rebin_xy, rebin_z,
+        frame,
             [&](CARTA::Render3DData& render3d_data) {
-                // send (partial) render3d datacube to frontend
+                // send (partial) render3d datacube
                 SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
             },
-        )
-
-        // if (_region_handler->CalculateRender3DData(render3d_request, frame, progress_callback, render3d_response, render3d_data)) {
-            
-        // }
-        
-    }
-    // check if data was sent and send response accordingly
-    if (data_sent) {     
-        render3d_response.set_success(true);   
+        );
     } else {
+        render3d_response.set_message("File id not found.");
         render3d_response.set_success(false);
-        render3d_response.set_message("3D data not sent.");
+        SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
     }
-    
-    // SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
+    return data_sent;
 }
 
 void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {

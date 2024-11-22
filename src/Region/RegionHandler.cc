@@ -1935,8 +1935,7 @@ bool RegionHandler::GetRegionHistogramData(
 // GeneratorProgressCallback progress_callback, CARTA::Render3DData& render3d_data
 
 
-bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, GeneratorProgressCallback progress_callback,
-    AxisRange& spectral_range, int rebin_xy, int rebin_z, std::shared_ptr<Frame>& frame, CARTA::Render3DData& render3d_data) {
+bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, AxisRange& spectral_range, int rebin_xy, int rebin_z, std::shared_ptr<Frame>& frame, std::function<void(CARTA::Render3DData render3d_data)> cb) {
     
     RegionState region_state = _regions.at(region_id)->GetRegionState();
 
