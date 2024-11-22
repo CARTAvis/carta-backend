@@ -954,66 +954,66 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
     return !collapse_results.empty();
 }
 
-bool RegionHandler::CalculateRender3DData(const CARTA::Render3DRequest& render3d_request,
-    std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
-    CARTA::Render3DResponse render3d_response, CARTA::Render3DData render3d_data) {
-    // Unpack request message and send it along
-    int file_id(render3d_request.file_id());
-    int region_id(render3d_request.region_id());
-    int viewer_id(render3d_request.viewer_id());
-    bool keep(render3d_request.keep());
-    AxisRange spectral_range;
-    if (render3d_request.has_spectral_range()) {
-        spectral_range = AxisRange(render3d_request.spectral_range().min(), render3d_request.spectral_range().max());
-    } else {
-        spectral_range = AxisRange(0, frame->Depth() - 1);
-    }
-    int rebin_xy = std::max(render3d_request.rebin_xy(), 1);
-    int rebin_z = std::max(render3d_request.rebin_z(), 1);
-    auto compression = render3d_request.compression_type();
-    float image_quality = render3d_request.image_compression_quality();
-    // CARTA::ImageBounds image_bounds;
-    // if (render3d_request.has_image_bounds()) {
-    // image_bounds = CARTA::ImageBounds(render3d_request.image_bounds().x_min(), render3d_request.image_bounds().x_max(), render3d_request.image_bounds().y_min(), render3d_request.image_bounds().y_max());
-    // } else {
-    //     image_bounds = CARTA::ImageBounds(0, frame->Width() - 1, 0, frame->Height() - 1);
-    // }
-    render3d_response.set_success(false);
-    render3d_response.set_cancel(false);
+// bool RegionHandler::CalculateRender3DData(const CARTA::Render3DRequest& render3d_request,
+//     std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
+//     CARTA::Render3DResponse render3d_response, CARTA::Render3DData render3d_data) {
+//     // Unpack request message and send it along
+//     int file_id(render3d_request.file_id());
+//     int region_id(render3d_request.region_id());
+//     int viewer_id(render3d_request.viewer_id());
+//     bool keep(render3d_request.keep());
+//     AxisRange spectral_range;
+//     if (render3d_request.has_spectral_range()) {
+//         spectral_range = AxisRange(render3d_request.spectral_range().min(), render3d_request.spectral_range().max());
+//     } else {
+//         spectral_range = AxisRange(0, frame->Depth() - 1);
+//     }
+//     int rebin_xy = std::max(render3d_request.rebin_xy(), 1);
+//     int rebin_z = std::max(render3d_request.rebin_z(), 1);
+//     auto compression = render3d_request.compression_type();
+//     float image_quality = render3d_request.image_compression_quality();
+//     // CARTA::ImageBounds image_bounds;
+//     // if (render3d_request.has_image_bounds()) {
+//     // image_bounds = CARTA::ImageBounds(render3d_request.image_bounds().x_min(), render3d_request.image_bounds().x_max(), render3d_request.image_bounds().y_min(), render3d_request.image_bounds().y_max());
+//     // } else {
+//     //     image_bounds = CARTA::ImageBounds(0, frame->Width() - 1, 0, frame->Height() - 1);
+//     // }
+//     render3d_response.set_success(false);
+//     render3d_response.set_cancel(false);
 
-    // Checks for valid request:
-    // 1. Region is set. For Render3D Region is optional
-    // if (!RegionSet(region_id, true)) {
-    //     render3d_response.set_message("3D Rendering requested for invalid region.");
-    //     return false;
-    // }
+//     // Checks for valid request:
+//     // 1. Region is set. For Render3D Region is optional
+//     // if (!RegionSet(region_id, true)) {
+//     //     render3d_response.set_message("3D Rendering requested for invalid region.");
+//     //     return false;
+//     // }
 
-    // 2. Region is closed
-    if (!IsClosedRegion(region_id)) {
-        render3d_response.set_message("Region type not supported for 3D Rendering.");
-        return false;
-    }
+//     // 2. Region is closed
+//     if (!IsClosedRegion(region_id)) {
+//         render3d_response.set_message("Region type not supported for 3D Rendering.");
+//         return false;
+//     }
 
-    // 3. Image has spectral axis
-    if (!frame->CoordinateSystem()->hasSpectralAxis()) {
-        render3d_response.set_message("No spectral coordinate for generating 3D rendering.");
-        return false;
-    }
+//     // 3. Image has spectral axis
+//     if (!frame->CoordinateSystem()->hasSpectralAxis()) {
+//         render3d_response.set_message("No spectral coordinate for generating 3D rendering.");
+//         return false;
+//     }
 
-    // 4. Image is smaller than limit
-    if (frame->Width() * frame->Height() * frame->Depth() > MAX_RENDER3D_PIXELS) {
-        render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Please use smaller region or spectral range.");
-        return false;
-    }
+//     // 4. Image is smaller than limit
+//     if (frame->Width() * frame->Height() * frame->Depth() > MAX_RENDER3D_PIXELS) {
+//         render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Please use smaller region or spectral range.");
+//         return false;
+//     }
 
-    // Set frame
-    if (!FrameSet(file_id)) {
-        _frames[file_id] = frame;
-    }
-    // compression, image_quality,
-    return CalculateRender3DData(file_id, region_id, viewer_id, spectral_range, rebin_xy, rebin_z, keep, frame, progress_callback, render3d_response, render3d_data);
+//     // Set frame
+//     if (!FrameSet(file_id)) {
+//         _frames[file_id] = frame;
+//     }
+//     // compression, image_quality,
+//     return CalculateRender3DData(file_id, region_id, viewer_id, spectral_range, rebin_xy, rebin_z, keep, frame, progress_callback, render3d_response, render3d_data);
     
-}
+// }
 
 bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame,
     GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
@@ -1407,82 +1407,82 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     return true;
 }
 
-// CARTA::ImageBounds& image_bounds,
-bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer_id,
-    AxisRange& spectral_range, int rebin_xy, int rebin_z, bool keep, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response,
-    CARTA::Render3DData& render3d_data) {
+// // CARTA::ImageBounds& image_bounds,
+// bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer_id,
+//     AxisRange& spectral_range, int rebin_xy, int rebin_z, bool keep, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response,
+//     CARTA::Render3DData& render3d_data) {
 
-    // use if region is mandatory
-    // auto region = GetRegion(region_id);
-    // if (!region) {
-    //     render3d_response.set_message("Render3D region not set");
-    //     return false;
-    // }
-    // casacore::Cube<float> render3d_cube;
+//     // use if region is mandatory
+//     // auto region = GetRegion(region_id);
+//     // if (!region) {
+//     //     render3d_response.set_message("Render3D region not set");
+//     //     return false;
+//     // }
+//     // casacore::Cube<float> render3d_cube;
 
-    bool is_image_region(region_id == IMAGE_REGION_ID);
-    RegionState region_state;
-    if (!is_image_region) {
-        if (!RegionSet(region_id)) {
-            render3d_response.set_message("3D rendering cube requested for invalid region id.");
-            return false;
-        }
-        if (!IsClosedRegion(region_id)) {
-            render3d_response.set_message("3D rendering cube requested for invalid region type.");
-            return false;
-        }
+//     bool is_image_region(region_id == IMAGE_REGION_ID);
+//     RegionState region_state;
+//     if (!is_image_region) {
+//         if (!RegionSet(region_id)) {
+//             render3d_response.set_message("3D rendering cube requested for invalid region id.");
+//             return false;
+//         }
+//         if (!IsClosedRegion(region_id)) {
+//             render3d_response.set_message("3D rendering cube requested for invalid region type.");
+//             return false;
+//         }
 
-        region_state = _regions.at(region_id)->GetRegionState();
-    }
+//         region_state = _regions.at(region_id)->GetRegionState();
+//     }
 
-    auto stokes = frame->CurrentStokes();
-    PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, region_state);
+//     auto stokes = frame->CurrentStokes();
+//     PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, region_state);
     
-    auto frame_id = GetRender3DViewerFrameId(viewer_id);
-    bool viewer_frame_set = _frames.find(frame_id) != _frames.end();
+//     auto frame_id = GetRender3DViewerFrameId(viewer_id);
+//     bool viewer_frame_set = _frames.find(frame_id) != _frames.end();
 
-    // Update cube settings for existing ID.
-    // Set unique locks so in-progress cubes are completed before update.
-    std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
-    if (_render3d_cubes.find(viewer_id) == _render3d_cubes.end() ||
-        !_render3d_cubes.at(viewer_id)->HasSameParameters(cube_parameters)) {
-        // Cube changed, see if set for another viewer ID
-        bool cube_found(false);
-        for (auto& render3d_cube : _render3d_cubes) {
-            if (render3d_cube.second->HasSameParameters(cube_parameters)) {
-                _render3d_cubes[viewer_id] = render3d_cube.second;
-                cube_found = true;
-                break;
-            }
-        }
-        if (!cube_found) {
-            _render3d_cubes[viewer_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
-        }
+//     // Update cube settings for existing ID.
+//     // Set unique locks so in-progress cubes are completed before update.
+//     std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
+//     if (_render3d_cubes.find(viewer_id) == _render3d_cubes.end() ||
+//         !_render3d_cubes.at(viewer_id)->HasSameParameters(cube_parameters)) {
+//         // Cube changed, see if set for another viewer ID
+//         bool cube_found(false);
+//         for (auto& render3d_cube : _render3d_cubes) {
+//             if (render3d_cube.second->HasSameParameters(cube_parameters)) {
+//                 _render3d_cubes[viewer_id] = render3d_cube.second;
+//                 cube_found = true;
+//                 break;
+//             }
+//         }
+//         if (!cube_found) {
+//             _render3d_cubes[viewer_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+//         }
 
-        // If preview cube changed, then frame for its preview image cube is invalid
-        viewer_frame_set = false;
-    }
-    auto render3d_cube = _render3d_cubes.at(viewer_id);
-    bool render3d_cube_loaded = render3d_cube->CubeLoaded();
-    render3d_cube_lock.unlock();
+//         // If preview cube changed, then frame for its preview image cube is invalid
+//         viewer_frame_set = false;
+//     }
+//     auto render3d_cube = _render3d_cubes.at(viewer_id);
+//     bool render3d_cube_loaded = render3d_cube->CubeLoaded();
+//     render3d_cube_lock.unlock();
 
-    // FINISH FUNCTION!!
+//     // FINISH FUNCTION!!
     
-}
+// }
 
-bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer_id, std::shared_ptr<PvPreviewCube> render3d_cube,std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response) {
-    // Prepare response; if error, add message.
-    render3d_response.set_success(false);
-    render3d_response.set_cancel(false);
-    auto* render3d_data_message = render3d_response.mutable_render3d_data();
-    render3d_data_message->set_viewer_id(viewer_id);
-    render3d_data_message->set_width(0);
-    render3d_data_message->set_height(0);
-    render3d_data_message->set_depth(0);
+// bool RegionHandler::CalculateRender3DData(int file_id, int region_id, int viewer_id, std::shared_ptr<PvPreviewCube> render3d_cube,std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::Render3DResponse& render3d_response) {
+//     // Prepare response; if error, add message.
+//     render3d_response.set_success(false);
+//     render3d_response.set_cancel(false);
+//     auto* render3d_data_message = render3d_response.mutable_render3d_data();
+//     render3d_data_message->set_viewer_id(viewer_id);
+//     render3d_data_message->set_width(0);
+//     render3d_data_message->set_height(0);
+//     render3d_data_message->set_depth(0);
 
-    return true;
+//     return true;
 
-}
+// }
 
 bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse, bool keep,
     std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
@@ -1935,49 +1935,160 @@ bool RegionHandler::GetRegionHistogramData(
 // GeneratorProgressCallback progress_callback, CARTA::Render3DData& render3d_data
 
 
-bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id,
-    AxisRange& spectral_range, int rebin_xy, int rebin_z, std::shared_ptr<Frame>& frame, CARTA::Render3DResponse& render3d_response) {
+bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, GeneratorProgressCallback progress_callback,
+    AxisRange& spectral_range, int rebin_xy, int rebin_z, std::shared_ptr<Frame>& frame, CARTA::Render3DData& render3d_data) {
     
     RegionState region_state = _regions.at(region_id)->GetRegionState();
 
     auto stokes = frame->CurrentStokes();
-    PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, region_state);
+    // PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, region_state);
     
     auto frame_id = GetRender3DViewerFrameId(viewer_id);
-    bool viewer_frame_set = _frames.find(frame_id) != _frames.end();
+    bool preview_frame_set = _frames.find(frame_id) != _frames.end();
 
-    // Update cube settings for existing ID.
-    // Set unique locks so in-progress cubes are completed before update.
-    std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
-    if (_render3d_cubes.find(viewer_id) == _render3d_cubes.end() ||
-        !_render3d_cubes.at(viewer_id)->HasSameParameters(cube_parameters)) {
-        // Cube changed, see if set for another viewer ID
-        bool cube_found(false);
-        for (auto& render3d_cube : _render3d_cubes) {
-            if (render3d_cube.second->HasSameParameters(cube_parameters)) {
-                _render3d_cubes[viewer_id] = render3d_cube.second;
-                cube_found = true;
-                break;
+    int num_slices = 4;
+
+    for (int start = spectral_range.from; start <= spectral_range.to; start += num_slices) {
+        // Send data every 4 slices
+        float progress(0.0);
+        
+        AxisRange slices_range(start, std::min(start + num_slices - 1, spectral_range.to));
+
+        PreviewCubeParameters cube_parameters(file_id, region_id, slices_range, rebin_xy, rebin_z, stokes, region_state);
+
+        // Update cube settings for existing ID.
+        // Set unique locks so in-progress cubes are completed before update.
+        std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
+        if (_render3d_cubes.find(viewer_id) == _render3d_cubes.end() ||
+            !_render3d_cubes.at(viewer_id)->HasSameParameters(cube_parameters)) {
+            // Cube changed, see if set for another viewer ID
+            bool cube_found(false);
+            for (auto& render3d_cube : _render3d_cubes) {
+                if (render3d_cube.second->HasSameParameters(cube_parameters)) {
+                    _render3d_cubes[viewer_id] = render3d_cube.second;
+                    cube_found = true;
+                    break;
+                }
             }
-        }
-        if (!cube_found) {
-            _render3d_cubes[viewer_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
-        }
+            if (!cube_found) {
+                _render3d_cubes[viewer_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+            }
 
-        // If preview cube changed, then frame for its preview image cube is invalid
-        viewer_frame_set = false;
+            // If preview cube changed, then frame for its preview image cube is invalid
+            preview_frame_set = false;
+        }
+        auto preview_cube = _render3d_cubes.at(viewer_id);
+        bool preview_cube_loaded = preview_cube->CubeLoaded();
+        render3d_cube_lock.unlock();
+
+        // Set frame for preview image if needed
+        Timer t;
+        if (!preview_frame_set || !preview_cube_loaded) {
+            // Create or get cached preview image from PvPreviewCube. Progress callback for loading cube data if needed.
+            bool cancel(false);
+            std::string message;
+            auto preview_image = preview_cube->GetPreviewImage(progress_callback, cancel, message);
+            if (cancel) {
+                // render3d_response.set_cancel(cancel);
+                //render3d_response.set_message(message);
+                return false;
+            }
+
+            if (!preview_image) {
+                // Apply preview region or slicer to get SubImage, and set preview region origin.
+                bool is_image_region(region_id == IMAGE_REGION_ID);
+                casacore::SubImage<float> sub_image;
+                std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
+                if (is_image_region) {
+                    // Apply slicer to source image to get SubImage
+                    auto slicer = frame->GetImageSlicer(slices_range, frame->CurrentStokes());
+                    if (!frame->GetSlicerSubImage(slicer, sub_image)) {
+                        //render3d_response.set_message("Failed to set spectral range for preview cube (3D rendering).");
+                        return false;
+                    }
+                    casacore::IPosition origin(2, 0, 0);
+                    preview_cube->SetPreviewRegionOrigin(origin);
+                } else {
+                    // Apply preview region to source image (LCRegion) to get SubImage
+                    StokesSource stokes_source(stokes, slices_range);
+                    std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(region_id, file_id, stokes_source);
+                    if (!lc_region) {
+                        //render3d_response.set_message("Failed to set preview region for preview cube (3D rendering).");
+                        return false;
+                    }
+
+                    // Origin (blc) for setting pv cut in cube
+                    auto origin = lc_region->boundingBox().start();
+                    preview_cube->SetPreviewRegionOrigin(origin);
+
+                    // Apply LCRegion and spectral range to source image to get StokesRegion
+                    StokesRegion stokes_region;
+                    if (!ApplyRegionToFile(region_id, file_id, slices_range, stokes, lc_region, stokes_region)) {
+                        //render3d_response.set_message("Failed to set preview region or spectral range for preview cube (3D rendering).");
+                        return false;
+                    }
+
+                    // Apply StokesRegion to source image to get SubImage
+                    if (!frame->GetRegionSubImage(stokes_region, sub_image)) {
+                        //render3d_response.set_message("Failed to set preview region in image for preview cube (3D rendering).");
+                        return false;
+                    }
+                }
+
+                // Get preview image from SubImage and downsampling parameters
+                preview_image = preview_cube->GetPreviewImage(sub_image, progress_callback, cancel, message);
+                if (!preview_image || cancel) {
+                    // render3d_response.set_cancel(cancel);
+                    //render3d_response.set_message(message);
+                    return false;
+                }
+                profile_lock.unlock();
+
+                progress = (float)(slices_range.to - slices_range.from + 1) / (float)(spectral_range.to - spectral_range.from);
+                render3d_data.set_viewer_id(viewer_id);
+                casacore::Array<float> image_data;
+                sub_image.get(image_data);
+                
+                int width = frame->Width();
+                render3d_data.set_width(width);
+                int height = frame->Height();
+                render3d_data.set_height(height);
+                int depth = slices_range.to - slices_range.from + 1;
+                render3d_data.set_depth(depth);
+                render3d_data.set_progress(progress);
+                render3d_data.set_image_data(image_data);
+
+                // Move to Session, see SendSpectralProfileData
+                SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
+
+                 if (progress >= 1.0) {
+                    return true;
+        }
+            }
+
+            // // Preview image is now set, make frame to access it.
+            // // IS NEW FRAME NECESSARY?
+            // auto preview_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(preview_image, ""));
+            // auto preview_session_id(-1);
+            // auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
+
+            // if (!preview_frame->IsValid()) {
+            //     //render3d_response.set_message("Failed to load image from preview settings.");
+            // }
+
+            // _frames[frame_id] = preview_frame;
+
+           
+        }
     }
-    auto render3d_cube = _render3d_cubes.at(viewer_id);
-    bool render3d_cube_loaded = render3d_cube->CubeLoaded();
-    render3d_cube_lock.unlock();
-
-    
-}
-
-bool RegionHandler::FillRender3DData(std::function<void(CARTA::Render3DData render3d_data)> cb) {
 
 
 }
+
+// bool RegionHandler::FillRender3DData(std::function<void(CARTA::Render3DData render3d_data)> cb) {
+
+
+// }
 
 // ***** Fill spectral profile *****
 

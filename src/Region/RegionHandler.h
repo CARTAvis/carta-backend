@@ -65,7 +65,9 @@ public:
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
     bool FillPointSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
     bool FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb);
-    bool FillRender3DData();
+    // bool FillRender3DData();
+    bool SendRender3DData(int file_id, int region_id, int viewer_id, GeneratorProgressCallback progress_callback,
+    AxisRange& spectral_range, int rebin_xy, int rebin_z, std::shared_ptr<Frame>& frame, CARTA::Render3DData& render3d_data);
 
     // Calculate moments
     bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,

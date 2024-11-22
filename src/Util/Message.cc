@@ -571,6 +571,19 @@ CARTA::Render3DProgress Message::Render3DProgress(int32_t file_id, int32_t regio
     return message;
 }
 
+CARTA::Render3DData Message::Render3DData(int32_t viewer_id, casacore::Array<float> image_data, int32_t width, int32_t height, int32_t depth, CompressionType compression_type, float compression_quality, float progress) {
+    CARTA::Render3DData message;
+    message.set_viewer_id(viewer_id);
+    message.set_image_data(image_data);
+    message.set_width(width);
+    message.set_height(height);
+    message.set_depth(depth);
+    message.set_compression_type(compression_type);
+    message.set_compression_quality(compression_quality);
+    message.set_progress(progress);
+    return message;
+}
+
 CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t width, int z_min, int32_t z_max, bool reverse, bool keep) {
     CARTA::PvRequest message;
     message.set_file_id(file_id);

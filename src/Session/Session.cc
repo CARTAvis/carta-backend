@@ -1372,10 +1372,7 @@ void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, 
             render3d_response.set_message("3D rendering cube requested for invalid region id.");
             return false;
         }
-        if (!IsClosedRegion(region_id)) {
-            render3d_response.set_message("3D rendering cube requested for invalid region type.");
-            return false;
-        }
+    }
 
     // 2. Region is closed
     if (!IsClosedRegion(region_id)) {
@@ -1391,19 +1388,24 @@ void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, 
 
     // 4. Image is smaller than limit
     if (frame->Width() * frame->Height() * frame->Depth() > MAX_RENDER3D_PIXELS) {
-        render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Please use smaller region or spectral range.");
+        render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Use smaller region or spectral range.");
         return false;
     }
 
+    // Send acknowledgement. Create new class? Use response. delete progress_callback
+
     if (_frames.count(file_id)) {
-        // condition statement to check if the a region is selected. cursor_region is 0 and NONE, IMAGE and ACTIVE are < 0
-        // if (!_region_handler || (region_id <= CURSOR_REGION_ID)) {
-        //     pv_response.set_success(false);
-        //     pv_response.set_message("Invalid region id.");
-        // } else {
         Timer t;
         auto& frame = _frames.at(file_id);
         CARTA::Render3DData render3d_data;
+
+        // Set render3d progress callback function
+        auto progress_callback = [&](float progress) {
+            auto render3d_progress = Message::Render3DProgress(file_id, region_id, progress, viewer_id);
+            SendEvent(CARTA::EventType::RENDER3D_PROGRESS, request_id, render3d_progress);
+        };
+
+        // data_sent = _region_handler->SendRender3DData(file_id, region_id, progress_callback, viewer_id, spectral_range, rebin_xy, rebin_z, frame, render3d_data);
 
         data_sent = _region_handler->SendRender3DData(
             [&](CARTA::Render3DData& render3d_data) {
@@ -1411,12 +1413,6 @@ void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, 
                 SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
             },
         )
-
-        // Set render3d progress callback function
-        // auto progress_callback = [&](float progress) {
-        //     auto render3d_progress = Message::Render3DProgress(file_id, region_id, progress, viewer_id);
-        //     SendEvent(CARTA::EventType::RENDER3D_PROGRESS, request_id, render3d_progress);
-        // };
 
         // if (_region_handler->CalculateRender3DData(render3d_request, frame, progress_callback, render3d_response, render3d_data)) {
             
@@ -1430,7 +1426,8 @@ void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, 
         render3d_response.set_success(false);
         render3d_response.set_message("3D data not sent.");
     }
-    SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
+    
+    // SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
 }
 
 void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {
