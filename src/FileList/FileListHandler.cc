@@ -165,7 +165,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                 add_directory = true;
                             } else {
                                 // Determine if image or directory
-                                auto file_type = GuessImageDirectoryType(full_path, filter_mode == CARTA::Content);
+                                auto file_type = GuessImageDirectoryType(full_path);
                                 // This is a normal directory
                                 if (file_type == CARTA::UNKNOWN) {
                                     add_directory = true;
@@ -187,7 +187,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
                         if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                             // Determine if image or directory for image list
-                            file_type = GuessImageDirectoryType(full_path, filter_mode == CARTA::Content);
+                            file_type = GuessImageDirectoryType(full_path);
 
                             if (file_type == CARTA::UNKNOWN) {
                                 // This is a normal directory
