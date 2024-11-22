@@ -40,7 +40,7 @@ class HttpServer {
 public:
     HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token,
         bool read_only_mode = false, bool enable_frontend = true, bool enable_database = true, bool enable_scripting = false,
-        bool enable_runtime_config = true);
+        bool enable_runtime_config = true, std::string url_prefix = "");
     bool CanServeFrontend() {
         return _frontend_found;
     }
@@ -96,6 +96,7 @@ private:
     bool _enable_database;
     bool _enable_scripting;
     bool _enable_runtime_config;
+    std::string _url_prefix;
     std::shared_ptr<SessionManager> _session_manager;
     static uint32_t _scripting_request_id;
 };

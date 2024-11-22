@@ -127,6 +127,8 @@ int main(int argc, char* argv[]) {
         carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server
+
+        std::string url_prefix(settings.http_url_prefix);
         if (!settings.no_frontend || !settings.no_database || settings.enable_scripting) {
             fs::path frontend_path;
 
@@ -143,9 +145,25 @@ int main(int argc, char* argv[]) {
                 }
             }
 
+            if (!url_prefix.empty()) {
+                std::regex allowed_prefix("[0-9A-Za-z+/@_-]*");
+                if (!std::regex_match(url_prefix, allowed_prefix)) {
+                    spdlog::warn(
+                        "Ignoring invalid custom HTTP URL prefix '{}'. The prefix may only contain the following characters: [0-9], [A-Z], "
+                        "[a-z], +, -, /, @, _.",
+                        url_prefix);
+                    url_prefix = "";
+                } else {
+                    // normalize prefix by stripping leading and trailing slashes, and adding a single leading slash
+                    std::regex normalized_prefix("^/*(.*?)/*$");
+                    url_prefix = std::regex_replace(url_prefix, normalized_prefix, "/$1");
+                    spdlog::info("Using custom HTTP URL prefix '{}'.", url_prefix);
+                }
+            }
+
             http_server =
                 std::make_unique<HttpServer>(session_manager, frontend_path, settings.user_directory, auth_token, settings.read_only_mode,
-                    !settings.no_frontend, !settings.no_database, settings.enable_scripting, !settings.no_runtime_config);
+                    !settings.no_frontend, !settings.no_database, settings.enable_scripting, !settings.no_runtime_config, url_prefix);
             http_server->RegisterRoutes();
 
             if (!settings.no_frontend && !http_server->CanServeFrontend()) {
@@ -177,24 +195,24 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
-                string base_url = fmt::format("http://{}:{}", default_host_string, port);
+                string base_url = fmt::format("http://{}:{}{}", default_host_string, port, url_prefix);
 
                 if (!settings.no_frontend && http_server->CanServeFrontend()) {
                     string frontend_url = base_url;
 
-                    string query_url;
+                    string query_url("/");
+
                     if (!auth_token.empty()) {
-                        query_url += fmt::format("/?token={}", auth_token);
+                        query_url += fmt::format("?token={}", auth_token);
                     }
 
                     auto file_query_url = HttpServer::GetFileUrlString(settings.files);
+
                     if (!file_query_url.empty()) {
-                        query_url += (query_url.empty() ? "/?" : "&") + file_query_url;
+                        query_url += (auth_token.empty() ? "?" : "&") + file_query_url;
                     }
 
-                    if (!query_url.empty()) {
-                        frontend_url += query_url;
-                    }
+                    frontend_url += query_url;
 
                     if (!settings.no_browser) {
                         WebBrowser wb(frontend_url, settings.browser);

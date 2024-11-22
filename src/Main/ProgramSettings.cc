@@ -178,6 +178,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
         ("no_frontend", "disable built-in HTTP frontend interface", cxxopts::value<bool>())
         ("no_database", "disable built-in HTTP database interface", cxxopts::value<bool>())
+        ("http_url_prefix", "custom URL prefix for HTTP server", cxxopts::value<string>(), "")
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
         ("browser", "custom browser command", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
@@ -228,7 +229,9 @@ provides an interface to the CARTA database. These features can be disabled with
 'no_frontend' and 'no_database', for example if the CARTA backend is being 
 invoked by the CARTA controller, which manages access to the frontend and 
 database independently. The HTTP server also provides a scripting interface, but
-this must be enabled explicitly with 'enable_scripting'.
+this must be enabled explicitly with 'enable_scripting'. A custom prefix for all
+HTTP server URLs may be set with 'http_url_prefix' (leading and trailing slashes
+will be stripped, except for a single leading slash).
 
 Frontend files are served from '{}' (relative to the location of the backend 
 executable). A custom frontend location may be specified with 'frontend_folder'. 
@@ -313,6 +316,8 @@ global configuration files, respectively.
     applyOptionalArgument(frontend_folder, "frontend_folder", result);
     applyOptionalArgument(host, "host", result);
     applyOptionalArgument(port, "port", result);
+
+    applyOptionalArgument(http_url_prefix, "http_url_prefix", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);

@@ -147,27 +147,38 @@ TEST_F(RegionMatchedTest, TestMatchedImagePolygonLCRegion) {
 
     // Set region in frame0
     carta::RegionHandler region_handler;
-    int file_id(0), region_id(-1);
+    int file_id0(0), region_id(-1);
     CARTA::RegionType region_type = CARTA::RegionType::POLYGON;
     std::vector<float> points = {5.0, 5.0, 4.0, 3.0, 1.0, 6.0, 3.0, 8.0};
     float rotation(0.0);
-    auto csys = frame0->CoordinateSystem();
-    bool ok = SetRegion(region_handler, file_id, region_id, region_type, points, rotation, csys);
+    auto csys0 = frame0->CoordinateSystem();
+    bool ok = SetRegion(region_handler, file_id0, region_id, region_type, points, rotation, csys0);
     ASSERT_TRUE(ok);
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
 
     // Get Region as 2D LCRegion in frame1
-    file_id = 1;
-    csys = frame1->CoordinateSystem();
+    int file_id1(1);
+    auto csys1 = frame1->CoordinateSystem();
     auto image_shape = frame1->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+    auto lc_region = region->GetImageRegion(file_id1, csys1, image_shape);
 
     // Check LCRegion
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
     ASSERT_EQ(lc_region->ndim(), image_shape.size());
     ASSERT_EQ(lc_region->latticeShape(), image_shape);
     ASSERT_EQ(lc_region->shape(), casacore::IPosition(2, 5, 6));
+
+    // Set polygon with very short segment which is does not have points added in matched region approximation.
+    region_id = -1;
+    std::vector<float> points2 = {5.0, 5.0, 4.0, 3.0, 4.0, 3.01, 1.0, 6.0, 3.0, 8.0};
+    ok = SetRegion(region_handler, file_id0, region_id, region_type, points2, rotation, csys0);
+    ASSERT_TRUE(ok);
+    region = region_handler.GetRegion(region_id);
+    ASSERT_TRUE(region); // shared_ptr<Region>
+    // Get Region as 2D LCRegion in frame1
+    lc_region = region->GetImageRegion(file_id1, csys1, image_shape);
+    ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
 }
 
 TEST_F(RegionMatchedTest, TestMatchedImagePointRecord) {

@@ -55,6 +55,7 @@ struct ProgramSettings {
     bool no_frontend = false;
     bool no_database = false;
     bool no_runtime_config = false;
+    std::string http_url_prefix = "";
     bool debug_no_auth = false;
     bool no_browser = false;
     bool no_log = false;
@@ -107,7 +108,8 @@ struct ProgramSettings {
         {"top_level_folder", &top_level_folder},
         {"starting_folder", &starting_folder},
         {"frontend_folder", &frontend_folder},
-        {"browser", &browser}
+        {"browser", &browser},
+        {"http_url_prefix", &http_url_prefix}
     };
 
     std::unordered_map<std::string, std::vector<int>*> vector_int_keys_map {
