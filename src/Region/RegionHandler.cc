@@ -16,6 +16,7 @@
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
 #include "CrtfImportExport.h"
+#include "DataStream/Compression.h"
 #include "Ds9ImportExport.h"
 #include "ImageData/FileLoader.h"
 #include "ImageStats/StatsCalculator.h"
@@ -1945,7 +1946,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     auto frame_id = GetRender3DViewerFrameId(viewer_id);
     bool preview_frame_set = _frames.find(frame_id) != _frames.end();
 
-    int num_slices = 4;
+    int num_slices = 1; // Use 1 for now
 
     for (int start = spectral_range.from; start <= spectral_range.to; start += num_slices) {
         // Send data every 4 slices
@@ -1979,6 +1980,8 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         auto preview_cube = _render3d_cubes.at(viewer_id);
         bool preview_cube_loaded = preview_cube->CubeLoaded();
         render3d_cube_lock.unlock();
+
+        GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for render3d
 
         // Set frame for preview image if needed
         Timer t;
@@ -2044,44 +2047,47 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
                 profile_lock.unlock();
 
                 progress = (float)(slices_range.to - slices_range.from + 1) / (float)(spectral_range.to - spectral_range.from);
-                render3d_data.set_viewer_id(viewer_id);
-                casacore::Array<float> image_data;
-                sub_image.get(image_data);
-                
-                int width = frame->Width();
-                render3d_data.set_width(width);
-                int height = frame->Height();
-                render3d_data.set_height(height);
-                int depth = slices_range.to - slices_range.from + 1;
-                render3d_data.set_depth(depth);
-                render3d_data.set_progress(progress);
-                render3d_data.set_image_data(image_data);
+                cout << "Progress: " << progress << endl;
 
-                // Move to Session, see SendSpectralProfileData
-                SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
+                int width = frame->Width();
+                int height = frame->Height();
+
+                // make compression
+                CARTA::CompressionType compression_type = CARTA::CompressionType::ZFP;
+                int compression_quality = 20; // high is 32, use 20 for now
+                std::vector<char> compression_buffer;
+                size_t compressed_size;
+                // get data and transform to vector
+                casacore::Array<float> casa_data;
+                sub_image.get(casa_data);
+                std::vector<float> image_data(casa_data.begin(), casa_data.end());
+
+                auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+
+                Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
+
+                auto data_message = Message::Render3DData(
+                            viewer_id, compression_buffer, nan_encodings, compression_type,
+                            compression_quality, progress);
+
+                cb(data_message);
+
+                // render3d_data.set_viewer_id(viewer_id);
+                // 
+                // render3d_data.set_width(width);
+                // 
+                // render3d_data.set_height(height);
+                // int depth = slices_range.to - slices_range.from + 1;
+                // render3d_data.set_depth(depth);
+                // render3d_data.set_progress(progress);
+                // render3d_data.set_image_data(image_data);
 
                  if (progress >= 1.0) {
                     return true;
-        }
+                }
             }
-
-            // // Preview image is now set, make frame to access it.
-            // // IS NEW FRAME NECESSARY?
-            // auto preview_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(preview_image, ""));
-            // auto preview_session_id(-1);
-            // auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
-
-            // if (!preview_frame->IsValid()) {
-            //     //render3d_response.set_message("Failed to load image from preview settings.");
-            // }
-
-            // _frames[frame_id] = preview_frame;
-
-           
         }
     }
-
-
 }
 
 // bool RegionHandler::FillRender3DData(std::function<void(CARTA::Render3DData render3d_data)> cb) {

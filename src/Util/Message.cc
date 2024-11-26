@@ -562,22 +562,22 @@ CARTA::Render3DRequest Message::Render3DRequest(int32_t file_id, int32_t region_
     return message;
 }
 
-CARTA::Render3DProgress Message::Render3DProgress(int32_t file_id, int32_t region_id, float progress, int32_t viewer_id,) {
-    CARTA::Render3DProgress message;
-    message.set_file_id(file_id);
-    message.set_region_id(region_id);
-    message.set_viewer_id(preview_id);
-    message.set_progress(progress);
-    return message;
-}
+// CARTA::Render3DResponse Message::Render3DResponse(bool success, const std::string& message, bool cancel) {
+//     CARTA::Render3DResponse message;
+//     message.set_success(success);
+//     message.set_message(message);
+//     message.set_cancel(cancel);
+//     return message;
+// }
 
-CARTA::Render3DData Message::Render3DData(int32_t viewer_id, casacore::Array<float> image_data, int32_t width, int32_t height, int32_t depth, CompressionType compression_type, float compression_quality, float progress) {
+CARTA::Render3DData Message::Render3DData(int32_t viewer_id, const std::vector<char>& image_data, const std::vector<int32_t>& nan_encodings, CompressionType compression_type, float compression_quality, float progress) {
     CARTA::Render3DData message;
     message.set_viewer_id(viewer_id);
     message.set_image_data(image_data);
-    message.set_width(width);
-    message.set_height(height);
-    message.set_depth(depth);
+    message.set_nan_encodings(nan_encodings);
+    // message.set_width(width);
+    // message.set_height(height);
+    // message.set_depth(depth);
     message.set_compression_type(compression_type);
     message.set_compression_quality(compression_quality);
     message.set_progress(progress);

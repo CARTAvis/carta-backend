@@ -1346,70 +1346,73 @@ void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, 
     int region_id(render3d_request.region_id());
     int viewer_id(render3d_request.viewer_id());
     bool keep(render3d_request.keep());
-    AxisRange spectral_range;
-    if (render3d_request.has_spectral_range()) {
-        spectral_range = AxisRange(render3d_request.spectral_range().min(), render3d_request.spectral_range().max());
-    } else {
-        spectral_range = AxisRange(0, frame->Depth() - 1);
-    }
     int rebin_xy = std::max(render3d_request.rebin_xy(), 1);
     int rebin_z = std::max(render3d_request.rebin_z(), 1);
     auto compression = render3d_request.compression_type();
     float image_quality = render3d_request.image_compression_quality();
 
-    CARTA::Render3DResponse render3d_response;
-    render3d_response.set_success(true);
-    std::cout << "Render3D function called" << std::endl;
+    if (_frames.count(file_id)) {
 
-     // Checks for valid request:
-    // 1. Region is set. For Render3D Region is optional
-    // if (!RegionSet(region_id, true)) {
-    //     render3d_response.set_message("3D Rendering requested for invalid region.");
-    //     return false;
-    // }
-    bool is_image_region(region_id == IMAGE_REGION_ID);
-    if (!is_image_region) {
-        if (!RegionSet(region_id)) {
-            render3d_response.set_message("3D rendering cube requested for invalid region id.");
+        auto& frame = _frames.at(file_id);
+        
+        AxisRange spectral_range;
+        if (render3d_request.has_spectral_range()) {
+            spectral_range = AxisRange(render3d_request.spectral_range().min(), render3d_request.spectral_range().max());
+        } else {
+            spectral_range = AxisRange(0, frame->Depth() - 1);
+        }
+
+        CARTA::Render3DResponse render3d_response;
+        std::cout << "Render3D function called" << std::endl;
+
+        // Checks for valid request:
+        // 1. Region is set. For Render3D Region is optional
+        // if (!RegionSet(region_id, true)) {
+        //     render3d_response.set_message("3D Rendering requested for invalid region.");
+        //     return false;
+        // }
+        bool is_image_region(region_id == IMAGE_REGION_ID);
+        if (!is_image_region) {
+            if (!RegionSet(region_id)) {
+                render3d_response.set_message("3D rendering cube requested for invalid region id.");
+                render3d_response.set_success(false);
+            }
+        }
+
+        // 2. Region is closed
+        if (!IsClosedRegion(region_id)) {
+            render3d_response.set_message("Region type not supported for 3D Rendering.");
             render3d_response.set_success(false);
         }
-    }
 
-    // 2. Region is closed
-    if (!IsClosedRegion(region_id)) {
-        render3d_response.set_message("Region type not supported for 3D Rendering.");
-        render3d_response.set_success(false);
-    }
+        // 3. Image has spectral axis
+        if (!frame->CoordinateSystem()->hasSpectralAxis()) {
+            render3d_response.set_message("No spectral coordinate for generating 3D rendering.");
+            render3d_response.set_success(false);
+        }
 
-    // 3. Image has spectral axis
-    if (!frame->CoordinateSystem()->hasSpectralAxis()) {
-        render3d_response.set_message("No spectral coordinate for generating 3D rendering.");
-        render3d_response.set_success(false);
-    }
+        // 4. Image is smaller than limit
+        if (frame->Width() * frame->Height() * frame->Depth() > MAX_RENDER3D_PIXELS) {
+            render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Use smaller region or spectral range.");
+            render3d_response.set_success(false);
+        }
 
-    // 4. Image is smaller than limit
-    if (frame->Width() * frame->Height() * frame->Depth() > MAX_RENDER3D_PIXELS) {
-        render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Use smaller region or spectral range.");
-        render3d_response.set_success(false);
-    }
+        // Acknowledge if any of the checks failed
+        if (!render3d_response.success) {
+            SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
+            return false;
+        }
 
-    // Acknowledge if any of the checks failed
-    if (!render3d_response.success) {
-        SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
-        return false;
-    }
-
-    if (_frames.count(file_id)) {
         // if all checks passed, send success message 
         render3d_response.set_message("3D Rendering started.");
+        render3d_response.set_success(true);
         SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
         Timer t;
-        auto& frame = _frames.at(file_id);
         CARTA::Render3DData render3d_data;
 
         data_sent = _region_handler->SendRender3DData(file_id, region_id, viewer_id, spectral_range, rebin_xy, rebin_z,
         frame,
-            [&](CARTA::Render3DData& render3d_data) {
+            [&](CARTA::Render3DData render3d_data) {
                 // send (partial) render3d datacube
                 SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
             },
