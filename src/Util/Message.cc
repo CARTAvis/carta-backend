@@ -551,13 +551,17 @@ CARTA::MomentProgress Message::MomentProgress(int32_t file_id, float progress) {
     return message;
 }
 
-CARTA::Render3DRequest Message::Render3DRequest(int32_t file_id, int32_t region_id, CARTA::ImageBounds image_bounds, CARTA::IntBounds spectral_range, bool keep) {
+CARTA::Render3DRequest Message::Render3DRequest(int32_t file_id, int32_t region_id, int32_t viewer_id, CARTA::IntBounds spectral_range, int32_t rebin_xy, int32_t rebin_z, CARTA::CompressionType compression_type, float compression_quality,  bool keep) {
     CARTA::Render3DRequest message;
     // Probably wrong, image bounds and spectral range
     message.set_file_id(file_id);
     message.set_region_id(region_id);
-    *message.mutable_image_bounds() = image_bounds;
+    message.set_viewer_id(viewer_id);
     *message.mutable_spectral_range() = spectral_range;
+    message.set_rebin_xy(rebin_xy);
+    message.set_rebin_z(rebin_z);
+    message.set_compression_type(compression_type);
+    message.set_compression_quality(compression_quality);
     message.set_keep(keep);
     return message;
 }
@@ -570,7 +574,7 @@ CARTA::Render3DRequest Message::Render3DRequest(int32_t file_id, int32_t region_
 //     return message;
 // }
 
-CARTA::Render3DData Message::Render3DData(int32_t viewer_id, const std::vector<char>& image_data, const std::vector<int32_t>& nan_encodings, CompressionType compression_type, float compression_quality, float progress) {
+CARTA::Render3DData Message::Render3DData(int32_t viewer_id, const std::vector<char>& image_data, const std::vector<int32_t>& nan_encodings, CARTA::CompressionType compression_type, float compression_quality, float progress) {
     CARTA::Render3DData message;
     message.set_viewer_id(viewer_id);
     message.set_image_data(image_data);

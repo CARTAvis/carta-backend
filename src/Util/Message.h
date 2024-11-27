@@ -35,6 +35,7 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
+#include <carta-protobuf/render3d.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/stop_pv_calc.pb.h>
 #include <carta-protobuf/stop_render3d.pb.h>
@@ -134,7 +135,7 @@ public:
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
     static CARTA::Render3DRequest Render3DRequest(
-        int32_t file_id, int32_t region_id, CARTA::ImageBounds image_bounds, CARTA::IntBounds spectral_range, bool keep);
+        int32_t file_id, int32_t region_id, int32_t viewer_id, CARTA::IntBounds spectral_range, int32_t rebin_xy, int32_t rebin_z, CARTA::CompressionType compression_type, float compression_quality,  bool keep);
     // static CARTA::Render3DResponse Render3DResponse(
     //     bool success, const std::string& message, bool cancel);
     static CARTA::Render3DData Render3DData(
