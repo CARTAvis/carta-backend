@@ -1873,11 +1873,40 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     RegionState region_state = GetRegion(region_id)->GetRegionState();
 
     auto stokes = frame->CurrentStokes();
-    // PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, region_state);
-    
+    GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for render3d
     auto frame_id = GetRender3DViewerFrameId(viewer_id);
     bool preview_frame_set = _frames.find(frame_id) != _frames.end();
 
+    // Get PvPreviewCube
+    PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, region_state);
+
+    // Update cube settings for existing ID.
+    // Set unique locks so in-progress cubes are completed before update.
+    std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
+    if (_render3d_cubes.find(viewer_id) == _render3d_cubes.end() ||
+        !_render3d_cubes.at(viewer_id)->HasSameParameters(cube_parameters)) {
+        // Cube changed, see if set for another viewer ID
+        bool cube_found(false);
+        for (auto& render3d_cube : _render3d_cubes) {
+            if (render3d_cube.second->HasSameParameters(cube_parameters)) {
+                _render3d_cubes[viewer_id] = render3d_cube.second;
+                cube_found = true;
+                break;
+            }
+        }
+        if (!cube_found) {
+            _render3d_cubes[viewer_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+        }
+
+        // If preview cube changed, then frame for its preview image cube is invalid
+        preview_frame_set = false;
+    }
+    auto preview_cube = _render3d_cubes.at(viewer_id);
+    bool preview_cube_loaded = preview_cube->CubeLoaded();
+    render3d_cube_lock.unlock();
+    // end get PvPreviewCube
+
+    // iterate in spectral range to get subimages of PvPreviewCube
     int num_slices = 1; // Use 1 for now
 
     for (int start = spectral_range.from; start <= spectral_range.to; start += num_slices) {
@@ -1886,128 +1915,91 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         
         AxisRange slices_range(start, std::min(start + num_slices - 1, spectral_range.to));
 
-        PreviewCubeParameters cube_parameters(file_id, region_id, slices_range, rebin_xy, rebin_z, stokes, region_state);
-
-        // Update cube settings for existing ID.
-        // Set unique locks so in-progress cubes are completed before update.
-        std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
-        if (_render3d_cubes.find(viewer_id) == _render3d_cubes.end() ||
-            !_render3d_cubes.at(viewer_id)->HasSameParameters(cube_parameters)) {
-            // Cube changed, see if set for another viewer ID
-            bool cube_found(false);
-            for (auto& render3d_cube : _render3d_cubes) {
-                if (render3d_cube.second->HasSameParameters(cube_parameters)) {
-                    _render3d_cubes[viewer_id] = render3d_cube.second;
-                    cube_found = true;
-                    break;
-                }
-            }
-            if (!cube_found) {
-                _render3d_cubes[viewer_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
-            }
-
-            // If preview cube changed, then frame for its preview image cube is invalid
-            preview_frame_set = false;
-        }
-        auto preview_cube = _render3d_cubes.at(viewer_id);
-        bool preview_cube_loaded = preview_cube->CubeLoaded();
-        render3d_cube_lock.unlock();
-
-        GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for render3d
-
         // Set frame for preview image if needed
         Timer t;
-        if (!preview_frame_set || !preview_cube_loaded) {
-            // Create or get cached preview image from PvPreviewCube. Progress callback for loading cube data if needed.
-            bool cancel(false);
-            std::string message;
-            auto preview_image = preview_cube->GetPreviewImage(progress_callback, cancel, message);
-            if (cancel) {
-                // render3d_response.set_cancel(cancel);
-                //render3d_response.set_message(message);
+        
+        if (cancel) {
+            // render3d_response.set_cancel(cancel);
+            //render3d_response.set_message(message);
+            return false;
+        }
+
+        // Apply preview region or slicer to get SubImage, and set preview region origin.
+        bool is_image_region(region_id == IMAGE_REGION_ID);
+        casacore::SubImage<float> sub_image;
+        std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
+        if (is_image_region) {
+            // Apply slicer to source image to get SubImage
+            auto slicer = frame->GetImageSlicer(slices_range, frame->CurrentStokes());
+            if (!frame->GetSlicerSubImage(slicer, sub_image)) {
+                //render3d_response.set_message("Failed to set spectral range for preview cube (3D rendering).");
+                return false;
+            }
+            casacore::IPosition origin(2, 0, 0);
+            preview_cube->SetPreviewRegionOrigin(origin);
+        } else {
+            // Apply preview region to source image (LCRegion) to get SubImage
+            StokesSource stokes_source(stokes, slices_range);
+            std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(region_id, file_id, stokes_source);
+            if (!lc_region) {
+                //render3d_response.set_message("Failed to set preview region for preview cube (3D rendering).");
                 return false;
             }
 
-            if (!preview_image) {
-                // Apply preview region or slicer to get SubImage, and set preview region origin.
-                bool is_image_region(region_id == IMAGE_REGION_ID);
-                casacore::SubImage<float> sub_image;
-                std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
-                if (is_image_region) {
-                    // Apply slicer to source image to get SubImage
-                    auto slicer = frame->GetImageSlicer(slices_range, frame->CurrentStokes());
-                    if (!frame->GetSlicerSubImage(slicer, sub_image)) {
-                        //render3d_response.set_message("Failed to set spectral range for preview cube (3D rendering).");
-                        return false;
-                    }
-                    casacore::IPosition origin(2, 0, 0);
-                    preview_cube->SetPreviewRegionOrigin(origin);
-                } else {
-                    // Apply preview region to source image (LCRegion) to get SubImage
-                    StokesSource stokes_source(stokes, slices_range);
-                    std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(region_id, file_id, stokes_source);
-                    if (!lc_region) {
-                        //render3d_response.set_message("Failed to set preview region for preview cube (3D rendering).");
-                        return false;
-                    }
+            // Origin (blc) for setting pv cut in cube
+            auto origin = lc_region->boundingBox().start();
+            preview_cube->SetPreviewRegionOrigin(origin);
 
-                    // Origin (blc) for setting pv cut in cube
-                    auto origin = lc_region->boundingBox().start();
-                    preview_cube->SetPreviewRegionOrigin(origin);
-
-                    // Apply LCRegion and spectral range to source image to get StokesRegion
-                    StokesRegion stokes_region;
-                    if (!ApplyRegionToFile(region_id, file_id, slices_range, stokes, lc_region, stokes_region)) {
-                        //render3d_response.set_message("Failed to set preview region or spectral range for preview cube (3D rendering).");
-                        return false;
-                    }
-
-                    // Apply StokesRegion to source image to get SubImage
-                    if (!frame->GetRegionSubImage(stokes_region, sub_image)) {
-                        //render3d_response.set_message("Failed to set preview region in image for preview cube (3D rendering).");
-                        return false;
-                    }
-                }
-
-                // Get preview image from SubImage and downsampling parameters
-                preview_image = preview_cube->GetPreviewImage(sub_image, progress_callback, cancel, message);
-                if (!preview_image || cancel) {
-                    // render3d_response.set_cancel(cancel);
-                    //render3d_response.set_message(message);
-                    return false;
-                }
-                profile_lock.unlock();
-
-                progress = (float)(slices_range.to - slices_range.from + 1) / (float)(spectral_range.to - spectral_range.from);
-                cout << "Progress: " << progress << endl;
-
-                int width = frame->Width();
-                int height = frame->Height();
-
-                // make compression
-                compression_type = CARTA::CompressionType::ZFP;
-                compression_quality = 20; // high is 32, use 20 for now
-                std::vector<char> compression_buffer;
-                size_t compressed_size;
-                // get data and transform to vector
-                casacore::Array<float> casa_data;
-                sub_image.get(casa_data);
-                std::vector<float> image_data(casa_data.begin(), casa_data.end());
-
-                auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
-
-                Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
-
-                auto data_message = Message::Render3DData(
-                            viewer_id, compression_buffer.data(), nan_encodings, compression_type,
-                            compression_quality, progress);
-
-                cb(data_message);
-
-                 if (progress >= 1.0) {
-                    return true;
-                }
+            // Apply LCRegion and spectral range to source image to get StokesRegion
+            StokesRegion stokes_region;
+            if (!ApplyRegionToFile(region_id, file_id, slices_range, stokes, lc_region, stokes_region)) {
+                //render3d_response.set_message("Failed to set preview region or spectral range for preview cube (3D rendering).");
+                return false;
             }
+
+            // Apply StokesRegion to source image to get SubImage
+            if (!frame->GetRegionSubImage(stokes_region, sub_image)) {
+                //render3d_response.set_message("Failed to set preview region in image for preview cube (3D rendering).");
+                return false;
+            }
+        }
+
+        // preview_image = std::shared_ptr<casacore::ImageInterface<float>>
+        // sub_image = casacore::SubImage<float>
+        // we need casacore::Array<float> to compress
+        // after compression std::vector<float>?????
+        
+        // is profile lock needed?? what is it for?
+        profile_lock.unlock();
+
+        progress = (float)(slices_range.to - slices_range.from + 1) / (float)(spectral_range.to - spectral_range.from);
+        cout << "Progress: " << progress << endl;
+
+        int width = frame->Width();
+        int height = frame->Height();
+
+        // make compression
+        compression_type = CARTA::CompressionType::ZFP;
+        compression_quality = 20; // high is 32, use 20 for now
+        std::vector<char> compression_buffer;
+        size_t compressed_size;
+        // get data and transform to vector
+        casacore::Array<float> casa_data;
+        sub_image.get(casa_data);
+        std::vector<float> image_data(casa_data.begin(), casa_data.end());
+
+        auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+
+        Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
+
+        auto data_message = Message::Render3DData(
+                    viewer_id, compression_buffer.data(), nan_encodings, compression_type,
+                    compression_quality, progress);
+
+        cb(data_message);
+
+        if (progress >= 1.0) {
+            return true;
         }
     }
 }
