@@ -67,8 +67,7 @@ public:
     // Checks to support channel map cancel.
     bool IsInChannelRange(int file_id, int channel);
     bool HasRequiredTiles(int file_id, const CARTA::AddRequiredTiles& required_tiles);
-    bool HasTile(int file_id, int tile);
-    bool HasTiles(int file_id, const std::vector<int>& tiles);
+    bool GetValidTiles(int file_id, const CARTA::AddRequiredTiles& required_tiles, std::vector<int>& valid_tiles);
 
     // Remove a file or all files from channel maps when closed in Session.
     void RemoveFile(int file_id);

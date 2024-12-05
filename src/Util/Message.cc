@@ -100,7 +100,7 @@ CARTA::SetHistogramRequirements Message::SetHistogramRequirements(int32_t file_i
 }
 
 CARTA::AddRequiredTiles Message::AddRequiredTiles(
-    int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles) {
+    int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<int32_t>& tiles) {
     CARTA::AddRequiredTiles add_required_tiles;
     add_required_tiles.set_file_id(file_id);
     add_required_tiles.set_compression_type(compression_type);

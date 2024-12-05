@@ -50,20 +50,20 @@ bool ChannelMapSettings::HasRequiredTiles(int file_id, const CARTA::AddRequiredT
     return false;
 }
 
-bool ChannelMapSettings::HasTile(int file_id, int tile) {
+bool ChannelMapSettings::GetValidTiles(int file_id, const CARTA::AddRequiredTiles& required_tiles, std::vector<int>& valid_tiles) {
+    // Return valid tiles which are in current tiles for file id.
     std::unique_lock<std::mutex> lock(_file_mutexes[file_id]);
     if (_required_tiles.find(file_id) == _required_tiles.end()) {
         return false;
     }
-    return _required_tiles[file_id].HasTile(tile);
-}
 
-bool ChannelMapSettings::HasTiles(int file_id, const std::vector<int>& tiles) {
-    std::unique_lock<std::mutex> lock(_file_mutexes[file_id]);
-    if (_required_tiles.find(file_id) == _required_tiles.end()) {
-        return false;
+    for (int i = 0; i < required_tiles.tiles_size(); ++i) {
+        int tile = required_tiles.tiles(i);
+        if (_required_tiles[file_id].HasTile(tile)) {
+            valid_tiles.push_back(tile);
+        }
     }
-    return _required_tiles[file_id].HasTiles(tiles);
+    return !valid_tiles.empty();
 }
 
 void ChannelMapSettings::RemoveFile(int file_id) {

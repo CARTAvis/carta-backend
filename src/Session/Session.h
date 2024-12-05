@@ -268,10 +268,9 @@ protected:
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     // Channel map cancellation
-    bool IsValidChannelMapTile(int file_id, int channel, int tile);
     bool IsInChannelMapRange(int file_id, int channel);
-    bool IsInChannelMapTiles(int file_id, int tile);
-    bool ChannelMapTilesValid(int file_id, const std::vector<int>& tiles);
+    bool HasValidChannelMapTiles(int file_id, const CARTA::AddRequiredTiles& required_tiles);
+    bool GetValidChannelMapTiles(int file_id, const CARTA::AddRequiredTiles& required_tiles, std::vector<int>& valid_tiles);
 
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;
