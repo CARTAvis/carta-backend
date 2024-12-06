@@ -6,6 +6,7 @@
 
 #include "Casacore.h"
 
+#include <casacore/casa/Arrays/ArrayUtil.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
 
@@ -99,16 +100,14 @@ bool IsSubdirectory(string folder, string top_folder) {
 }
 
 casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file, string& message) {
-    // Given directory (relative to root folder) and file, return resolved path and filename
-    // (absolute pathname with symlinks resolved)
+    // Given directory (relative to root directory) and file, return resolved file path.
+    // Check if file path exists and is readable.
     casacore::String resolved_filename;
     casacore::Path path(root_dir);
-    if (directory != ".") {
-        path.append(directory);
-    }
+    path.append(directory);
     casacore::File cc_file(path);
 
-    // Check directory for error messages
+    // Check directory
     if (!cc_file.exists()) {
         message = "Directory " + directory + " does not exist.";
     } else if (!cc_file.isReadable()) {
@@ -125,14 +124,12 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
             try {
                 resolved_filename = path.resolvedName();
             } catch (const casacore::AipsError& err) {
-                try {
-                    resolved_filename = path.absoluteName();
-                    // Workaround for casacore parsing bug when path is "/"
-                    if (resolved_filename.empty()) {
-                        resolved_filename = path.originalName();
-                    }
-                } catch (const casacore::AipsError& err) {
-                    message = "Cannot resolve file path.";
+                // resolvedName() calls absoluteName(), which returns an empty path due to parsing bug to remove dots (., ..) from path,
+                // resulting in AipsError. Workaround just sets expanded name used for exists() and isReadable().
+                if (path.absoluteName().empty()) {
+                    resolved_filename = path.expandedName();
+                } else {
+                    message = err.getMesg();
                 }
             }
         }
