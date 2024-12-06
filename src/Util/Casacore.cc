@@ -6,7 +6,6 @@
 
 #include "Casacore.h"
 
-#include <casacore/casa/Arrays/ArrayUtil.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
 
