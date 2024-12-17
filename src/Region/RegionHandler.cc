@@ -1918,11 +1918,11 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         // Set frame for preview image if needed
         Timer t;
         
-        if (cancel) {
+        // if (cancel) {
             // render3d_response.set_cancel(cancel);
             //render3d_response.set_message(message);
-            return false;
-        }
+            // return false;
+        // }
 
         // Apply preview region or slicer to get SubImage, and set preview region origin.
         bool is_image_region(region_id == IMAGE_REGION_ID);
@@ -1993,7 +1993,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
 
         auto data_message = Message::Render3DData(
-                    viewer_id, compression_buffer.data(), nan_encodings, compression_type,
+                    viewer_id, compression_buffer, compressed_size, nan_encodings, compression_type,
                     compression_quality, progress);
 
         cb(data_message);
