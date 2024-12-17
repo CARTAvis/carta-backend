@@ -574,11 +574,13 @@ CARTA::Render3DRequest Message::Render3DRequest(int32_t file_id, int32_t region_
 //     return message;
 // }
 
-CARTA::Render3DData Message::Render3DData(int32_t viewer_id, const std::vector<char>& image_data, const std::vector<int32_t>& nan_encodings, CARTA::CompressionType compression_type, float compression_quality, float progress) {
+// give vectors image_data and nan_encodings. Then give .data() and size
+
+CARTA::Render3DData Message::Render3DData(int32_t viewer_id, const std::vector<char>& image_data, const size_t compressed_size, const std::vector<int32_t>& nan_encodings, CARTA::CompressionType compression_type, float compression_quality, float progress) {
     CARTA::Render3DData message;
     message.set_viewer_id(viewer_id);
-    message.set_image_data(image_data);
-    message.set_nan_encodings(nan_encodings);
+    message.set_image_data(image_data.data(), compressed_size);
+    message.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
     // message.set_width(width);
     // message.set_height(height);
     // message.set_depth(depth);

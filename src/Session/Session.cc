@@ -1339,19 +1339,32 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
 // VOID OR BOOL?
 void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, uint32_t request_id) {
 
-    CARTA::Render3DResponse render3d_response;
+    int file_id(render3d_request.file_id());
+
     std::cout << "Render3D function called" << std::endl;
+    std::cout << "Request ID: " << request_id << std::endl;
 
-    auto ack_callback = [&](CARTA::Render3DResponse render3d_response) {
-        SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
-    };
+    if (_frames.count(file_id)) {
+        auto& frame = _frames.at(file_id);
+        
+        auto ack_callback = [&](CARTA::Render3DResponse render3d_response) {
+            std::cout << "Request ID: " << request_id << std::endl;
+            std::cout << "esponse: " << render3d_response.DebugString() << std::endl;
+            std::cout << render3d_response.cancel() << std::endl;
+            SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
+        };
 
-    bool data_sent = _region_handler->FillRender3DData(render3d_request, render3d_response, ack_callback,
-        [&](CARTA::Render3DData render3d_data) {
-            // send (partial) render3d datacube
-            SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
-        }
-    );
+        bool data_sent = _region_handler->FillRender3DData(render3d_request, frame, ack_callback,
+            [&](CARTA::Render3DData render3d_data) {
+                // send (partial) render3d datacube
+                SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
+            }
+        );
+
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"3D Rendering"}, CARTA::ErrorSeverity::DEBUG);
+    }
 }
 
 void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {

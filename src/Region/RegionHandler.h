@@ -65,7 +65,7 @@ public:
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
     bool FillPointSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
     bool FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb);
-    bool FillRender3DData(const CARTA::Render3DRequest& render3d_request, CARTA::Render3DResponse& render3d_response, std::function<void(CARTA::Render3DResponse render3d_response)> ack_callback, std::function<void(CARTA::Render3DData render3d_data)> cb);
+    bool FillRender3DData(const CARTA::Render3DRequest& render3d_request, std::shared_ptr<Frame>& frame, std::function<void(CARTA::Render3DResponse render3d_response)> ack_callback, std::function<void(CARTA::Render3DData render3d_data)> cb);
     bool SendRender3DData(int file_id, int region_id, int viewer_id,
     AxisRange& spectral_range, int rebin_xy, int rebin_z, CARTA::CompressionType compression_type, float compression_quality, std::shared_ptr<Frame>& frame, std::function<void(CARTA::Render3DData render3d_data)> cb);
 
