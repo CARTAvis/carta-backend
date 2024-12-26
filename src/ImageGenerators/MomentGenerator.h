@@ -51,7 +51,9 @@ private:
     void SetMomentAxis(const CARTA::MomentRequest& moment_request);
     void SetMomentTypes(const CARTA::MomentRequest& moment_request);
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
+    void SetRestFrequency(const CARTA::MomentRequest& moment_request);
     void ResetImageMoments(const casacore::ImageRegion& image_region);
+    void SetImageRestFrequency(double rest_frequency);
     int GetMomentMode(CARTA::Moment moment);
     casacore::String GetMomentSuffix(casacore::Int moment);
     casacore::String GetInputFileName();
@@ -72,6 +74,7 @@ private:
     int _axis;                                // Moment axis
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;
+    double _rest_frequency; // Hz
     casacore::String _error_msg;
     bool _success;
     bool _cancel;

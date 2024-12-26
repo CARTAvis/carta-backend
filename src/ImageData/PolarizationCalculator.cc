@@ -10,7 +10,7 @@
 using namespace carta;
 
 PolarizationCalculator::PolarizationCalculator(
-    std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange z_range, AxisRange x_range, AxisRange y_range)
+    std::shared_ptr<casacore::ImageInterface<float>> image, std::vector<int> axes, AxisRange z_range, AxisRange x_range, AxisRange y_range)
     : _image(image), _image_valid(true) {
     const auto ndim = _image->ndim();
     if (ndim < 4) {
@@ -20,22 +20,11 @@ PolarizationCalculator::PolarizationCalculator(
     }
 
     const auto& coord_sys = _image->coordinates();
-    std::vector<int> dir_axes = {0, 1}; // By default, the spatial axes numbers are 0 and 1
-    if (coord_sys.hasDirectionCoordinate()) {
-        casacore::Vector<casacore::Int> tmp_axes = coord_sys.directionAxesNumbers();
-        dir_axes[0] = tmp_axes[0];
-        dir_axes[1] = tmp_axes[1];
-    }
 
-    auto spectral_axis = coord_sys.spectralAxisNumber();
-    if (spectral_axis < 0) {
-        spectral_axis = 2; // Assume spectral axis number = 2
-    }
-
-    auto stokes_axis = coord_sys.polarizationAxisNumber();
-    if (stokes_axis < 0) {
-        stokes_axis = 3; // Assume stokes axis number = 3
-    }
+    int x_axis = axes[0];
+    int y_axis = axes[1];
+    int z_axis = axes[2];
+    int stokes_axis = axes[3];
 
     const auto shape = _image->shape();
     casacore::IPosition blc(ndim, 0);
@@ -43,33 +32,33 @@ PolarizationCalculator::PolarizationCalculator(
 
     if (x_range.to == ALL_X) {
         x_range.from = 0;
-        x_range.to = shape(dir_axes[0]) - 1;
+        x_range.to = shape(x_axis) - 1;
     }
 
     if (y_range.to == ALL_Y) {
         y_range.from = 0;
-        y_range.to = shape(dir_axes[1]) - 1;
+        y_range.to = shape(y_axis) - 1;
     }
 
     if (z_range.to == ALL_Z) {
         z_range.from = 0;
-        z_range.to = shape(spectral_axis) - 1;
+        z_range.to = shape(z_axis) - 1;
     }
 
-    if (x_range.from < 0 || x_range.to >= shape(dir_axes[0]) || y_range.from < 0 || y_range.to >= shape(dir_axes[1]) || z_range.from < 0 ||
-        z_range.to >= shape(spectral_axis)) {
+    if (x_range.from < 0 || x_range.to >= shape(x_axis) || y_range.from < 0 || y_range.to >= shape(y_axis) || z_range.from < 0 ||
+        z_range.to >= shape(z_axis)) {
         spdlog::error("Invalid selection region.");
         _image_valid = false;
         return;
     }
 
     // Make a region
-    blc(dir_axes[0]) = x_range.from;
-    trc(dir_axes[0]) = x_range.to;
-    blc(dir_axes[1]) = y_range.from;
-    trc(dir_axes[1]) = y_range.to;
-    blc(spectral_axis) = z_range.from;
-    trc(spectral_axis) = z_range.to;
+    blc(x_axis) = x_range.from;
+    trc(x_axis) = x_range.to;
+    blc(y_axis) = y_range.from;
+    trc(y_axis) = y_range.to;
+    blc(z_axis) = z_range.from;
+    trc(z_axis) = z_range.to;
 
     // Get stokes indices and make stokes regions
     if (coord_sys.hasPolarizationCoordinate()) {

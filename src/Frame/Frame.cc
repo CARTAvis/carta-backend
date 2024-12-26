@@ -85,6 +85,10 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
+    _all_x = AxisRange(0, _width - 1);
+    _all_y = AxisRange(0, _height - 1);
+    _all_z = AxisRange(0, _depth - 1);
+
     _use_tile_cache = _loader->UseTileCache();
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
@@ -189,6 +193,18 @@ int Frame::StokesAxis() {
     return _stokes_axis;
 }
 
+int Frame::XAxis() {
+    return _x_axis;
+}
+
+int Frame::YAxis() {
+    return _y_axis;
+}
+
+int Frame::ZAxis() {
+    return _z_axis;
+}
+
 bool Frame::IsCurrentZStokes(const StokesSource& stokes_source) {
     return (stokes_source.z_range.from == stokes_source.z_range.to) && (stokes_source.z_range.from == CurrentZ()) &&
            (stokes_source.stokes == CurrentStokes());
@@ -207,7 +223,7 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
-    return GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), z_range, stokes);
+    return GetImageSlicer(_all_x, _all_y, z_range, stokes);
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
@@ -226,13 +242,6 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
         int start_x(x_range.from), end_x(x_range.to);
 
         // Normalize x constants
-        if (start_x == ALL_X) {
-            start_x = 0;
-        }
-        if (end_x == ALL_X) {
-            end_x = _width - 1;
-        }
-
         if (stokes_source.IsOriginalImage()) {
             start(_x_axis) = start_x;
             end(_x_axis) = end_x;
@@ -247,13 +256,6 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
         int start_y(y_range.from), end_y(y_range.to);
 
         // Normalize y constants
-        if (start_y == ALL_Y) {
-            start_y = 0;
-        }
-        if (end_y == ALL_Y) {
-            end_y = _height - 1;
-        }
-
         if (stokes_source.IsOriginalImage()) {
             start(_y_axis) = start_y;
             end(_y_axis) = end_y;
@@ -313,7 +315,7 @@ bool Frame::CheckZ(int z) {
 }
 
 bool Frame::CheckStokes(int stokes) {
-    return (((stokes >= 0) && (stokes < NumStokes())) || IsComputedStokes(stokes));
+    return (((stokes >= 0) && (stokes < NumStokes())) || Stokes::IsComputed(stokes));
 }
 
 bool Frame::ZStokesChanged(int z, int stokes) {
@@ -349,7 +351,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
                 _z_index = new_z;
                 _stokes_index = new_stokes;
 
-                if (!(_use_tile_cache && _loader->HasMip(2)) || IsComputedStokes(_stokes_index)) {
+                if (!(_use_tile_cache && _loader->HasMip(2)) || Stokes::IsComputed(_stokes_index)) {
                     // Reload the full channel cache for loaders which use it
                     FillImageCache();
                 } else {
@@ -582,7 +584,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     tile_data_ptr = _tile_pool->Pull();
     bool loaded_data(0);
 
-    if (mip > 1 && !IsComputedStokes(_stokes_index)) {
+    if (mip > 1 && !Stokes::IsComputed(_stokes_index)) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(*tile_data_ptr, _z_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (!_image_cache_valid && _use_tile_cache) {
@@ -1159,7 +1161,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             bool have_profile(false);
             bool downsample(mip >= 2);
 
-            if (downsample && _loader->HasMip(2) && !IsComputedStokes(stokes)) { // Use a mipmap dataset to return downsampled data
+            if (downsample && _loader->HasMip(2) && !Stokes::IsComputed(stokes)) { // Use a mipmap dataset to return downsampled data
                 while (!_loader->HasMip(mip)) {
                     mip /= 2;
                 }
@@ -1447,8 +1449,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
             std::vector<float> spectral_data;
             int xy_count(1);
-            if (!IsComputedStokes(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
-                                                 (start_cursor.y + 0.5), xy_count, _image_mutex)) {
+            if (!Stokes::IsComputed(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
+                                                   (start_cursor.y + 0.5), xy_count, _image_mutex)) {
                 // Use loader data
                 spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                 cb(profile_message);
@@ -1704,10 +1706,10 @@ bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
         auto slicer_end = stokes_slicer.slicer.end();
 
         // Adjust cache shape and slicer for single channel and stokes
-        if (_spectral_axis >= 0) {
-            cache_shape(_spectral_axis) = 1;
-            slicer_start(_spectral_axis) = 0;
-            slicer_end(_spectral_axis) = 0;
+        if (_z_axis >= 0) {
+            cache_shape(_z_axis) = 1;
+            slicer_start(_z_axis) = 0;
+            slicer_end(_z_axis) = 0;
         }
         if (_stokes_axis >= 0) {
             cache_shape(_stokes_axis) = 1;
@@ -1916,23 +1918,52 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     fs::path output_filename(save_file_msg.output_file_name());
     fs::path directory(save_file_msg.output_file_directory());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
+    bool overwrite(save_file_msg.overwrite());
 
     // Set response message
     int file_id(save_file_msg.file_id());
     save_file_ack.set_file_id(file_id);
-    bool success(false);
-    casacore::String message;
+    std::string message;
+
+    if (output_filename.empty()) {
+        message = "Cannot save image with no filename.";
+        save_file_ack.set_success(false);
+        save_file_ack.set_message(message);
+        return;
+    }
 
     // Get the full resolved name of the output image
     fs::path temp_path = fs::path(root_folder) / directory;
     fs::path abs_path = fs::absolute(temp_path);
     output_filename = abs_path / output_filename;
 
-    if (output_filename.string() == in_file) {
-        message = "The source file can not be overwritten!";
-        save_file_ack.set_success(success);
-        save_file_ack.set_message(message);
-        return;
+    if (fs::exists(output_filename)) {
+        if (output_filename.string() == in_file) {
+            message = "Cannot overwrite the source image.";
+        } else if (fs::is_other(output_filename)) {
+            // Not a file, directory, or symlink
+            message = "Cannot overwrite existing path: not a file or directory.";
+        } else if (CasacoreImageType(output_filename.string()) == casacore::ImageOpener::UNKNOWN) {
+            // Not an image
+            if (fs::is_directory(output_filename)) {
+                // Never overwrite directory
+                message = "Cannot overwrite existing directory.";
+            } else if (!overwrite) {
+                // Only overwrite file or symlink with confirmation
+                message = "Cannot overwrite existing file or symlink.";
+                save_file_ack.set_overwrite_confirmation_required(true);
+            }
+        } else if (!overwrite) {
+            // Only overwrite image with confirmation
+            message = "Cannot overwrite existing image.";
+            save_file_ack.set_overwrite_confirmation_required(true);
+        }
+
+        if (!message.empty()) {
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(message);
+            return;
+        }
     }
 
     double rest_freq(save_file_msg.rest_freq());
@@ -1991,7 +2022,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             } else {
                 image = casacore::SubImage<float>(sub_image, casacore::AxesSpecifier(false), true).cloneII();
             }
-        } catch (casacore::AipsError error) {
+        } catch (const casacore::AipsError& error) {
             message = error.getMesg();
             save_file_ack.set_success(false);
             save_file_ack.set_message(message);
@@ -2004,16 +2035,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     if (change_rest_freq) {
         casacore::CoordinateSystem coord_sys = image->coordinates();
         casacore::String error_msg("");
-        bool success = coord_sys.setRestFrequency(error_msg, casacore::Quantity(rest_freq, casacore::Unit("Hz")));
-        if (success) {
-            success = image->setCoordinateInfo(coord_sys);
-        }
-        if (!success) {
-            spdlog::warn("Failed to set new rest freq; use header rest freq instead: {}", error_msg);
+        if (coord_sys.setRestFrequency(error_msg, casacore::Quantity(rest_freq, casacore::Unit("Hz")))) {
+            if (!image->setCoordinateInfo(coord_sys)) {
+                spdlog::warn("Failed to set new rest freq; using header rest freq instead: {}", error_msg);
+            }
         }
     }
 
     // Export image data to file
+    bool success(false);
     try {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
         {
@@ -2030,14 +2060,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             }
         }
         ulock.unlock(); // Unlock the image
-    } catch (casacore::AipsError error) {
+
+        if (success) {
+            spdlog::info("Exported a {} file \'{}\'.", FileTypeString[output_file_type], output_filename.string());
+        }
+    } catch (const casacore::AipsError& error) {
         message += error.getMesg();
         save_file_ack.set_success(false);
         save_file_ack.set_message(message);
         return;
-    }
-    if (success) {
-        spdlog::info("Exported a {} file \'{}\'.", FileTypeString[output_file_type], output_filename.string());
     }
 
     // Remove the root folder from the ack message
@@ -2057,7 +2088,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 // Input output_filename as file path
 // Input message as a return message, which may contain error message
 // Return a bool if this functionality success
-bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
+bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, std::string& message) {
     bool success(false);
 
     // Remove the old image file if it has a same file name
@@ -2104,7 +2135,7 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
 // Input output_filename as file path
 // Input message as a return message, which may contain error message
 // Return a bool if this functionality success
-bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
+bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, std::string& message) {
     bool success = false;
     bool prefer_velocity;
     bool optical_velocity;
@@ -2300,60 +2331,61 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
     // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
-    bool is_stokes_string = StokesStringTypes.find(coordinate) != StokesStringTypes.end();
-    bool is_combination = (coordinate.size() > 1 && (coordinate.back() == 'x' || coordinate.back() == 'y' || coordinate.back() == 'z'));
 
-    if (is_combination || is_stokes_string) {
-        bool stokes_ok(false);
+    if (coordinate.empty() || coordinate == 'x' || coordinate == 'y' || coordinate == 'z') {
+        // Profile only or blank; use current Stokes
+        stokes_index = CurrentStokes();
+        return true;
+    }
 
-        std::string stokes_string;
-        if (is_stokes_string) {
-            stokes_string = coordinate;
+    std::string stokes_string;
+    if (coordinate.size() > 1 && (coordinate.back() == 'x' || coordinate.back() == 'y' || coordinate.back() == 'z')) {
+        // Combination Stokes and profile string
+        stokes_string = coordinate.substr(0, coordinate.size() - 1);
+    } else {
+        // Stokes string
+        stokes_string = coordinate;
+    }
+
+    bool stokes_ok(false);
+
+    auto stokes_type = Stokes::Get(stokes_string);
+    if (stokes_type) {
+        if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
+            stokes_ok = true;
+        } else if (Stokes::IsComputed(stokes_type)) {
+            stokes_index = stokes_type;
+            stokes_ok = true;
         } else {
-            stokes_string = coordinate.substr(0, coordinate.size() - 1);
-        }
-
-        if (StokesStringTypes.count(stokes_string)) {
-            CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
-            if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
+            int assumed_stokes_index = (stokes_type - 1) % 4;
+            if (NumStokes() > assumed_stokes_index) {
+                stokes_index = assumed_stokes_index;
                 stokes_ok = true;
-            } else if (IsComputedStokes(stokes_string)) {
-                stokes_index = StokesStringTypes.at(stokes_string);
-                stokes_ok = true;
-            } else {
-                int assumed_stokes_index = (StokesValues[stokes_type] - 1) % 4;
-                if (NumStokes() > assumed_stokes_index) {
-                    stokes_index = assumed_stokes_index;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
-                }
+                spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
             }
         }
-        if (!stokes_ok) {
-            spdlog::error("Spectral or spatial requirement {} failed: invalid stokes axis for image.", coordinate);
-            return false;
-        }
-    } else {
-        stokes_index = CurrentStokes(); // current stokes
     }
+
+    if (!stokes_ok) {
+        spdlog::error("Spectral or spatial requirement {} failed: invalid stokes axis for image.", coordinate);
+        return false;
+    }
+
     return true;
 }
 
 std::string Frame::GetStokesType(int stokes_index) {
-    for (auto stokes_type : StokesStringTypes) {
-        int tmp_stokes_index;
-        if (_loader->GetStokesTypeIndex(stokes_type.second, tmp_stokes_index) && (tmp_stokes_index == stokes_index)) {
-            std::string stokes = (stokes_type.first.length() == 1) ? fmt::format("Stokes {}", stokes_type.first) : stokes_type.first;
-            return stokes;
-        }
+    auto stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
+
+    // Computed stokes: stokes index is equal to numeric value
+    if (Stokes::IsComputed(stokes_index)) {
+        stokes_type = Stokes::Get(stokes_index);
     }
-    if (IsComputedStokes(stokes_index)) {
-        CARTA::PolarizationType stokes_type = StokesTypes[stokes_index];
-        if (ComputedStokesName.count(stokes_type)) {
-            return ComputedStokesName[stokes_type];
-        }
-    }
-    return "Unknown";
+
+    // Otherwise try to map index to type with loader
+    _loader->GetStokesType(stokes_index, stokes_type);
+
+    return Stokes::Description(stokes_type);
 }
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {

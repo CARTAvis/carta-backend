@@ -161,10 +161,11 @@ TEST_F(RegionImportExportTest, TestCrtfPixExportImport) {
         region_style_map[region_id] = style;
     }
     std::string filename; // do not export to file
+    bool overwrite(false);
 
     // Export all regions in frame0 (reference image)
     CARTA::ExportRegionAck export_ack0;
-    region_handler.ExportRegion(file_id, frame0, CARTA::CRTF, CARTA::PIXEL, region_style_map, filename, export_ack0);
+    region_handler.ExportRegion(file_id, frame0, CARTA::CRTF, CARTA::PIXEL, region_style_map, filename, overwrite, export_ack0);
     // Check that all regions were exported
     ASSERT_EQ(export_ack0.contents_size(), num_regions + 2); // header, textbox for text
 
@@ -180,7 +181,7 @@ TEST_F(RegionImportExportTest, TestCrtfPixExportImport) {
     // Export all regions in frame1 (matched image)
     file_id = 1;
     CARTA::ExportRegionAck export_ack1;
-    region_handler.ExportRegion(file_id, frame1, CARTA::CRTF, CARTA::PIXEL, region_style_map, filename, export_ack1);
+    region_handler.ExportRegion(file_id, frame1, CARTA::CRTF, CARTA::PIXEL, region_style_map, filename, overwrite, export_ack1);
     // Check that all regions were exported
     ASSERT_EQ(export_ack1.contents_size(), num_regions + 2); // header, textbox for text
 
@@ -219,8 +220,9 @@ TEST_F(RegionImportExportTest, TestCrtfWorldExportImport) {
         region_style_map[region_id] = style;
     }
     std::string filename; // do not export to file
+    bool overwrite(false);
     CARTA::ExportRegionAck export_ack0;
-    region_handler.ExportRegion(file_id, frame0, CARTA::CRTF, CARTA::WORLD, region_style_map, filename, export_ack0);
+    region_handler.ExportRegion(file_id, frame0, CARTA::CRTF, CARTA::WORLD, region_style_map, filename, overwrite, export_ack0);
     // Check that all regions were exported
     ASSERT_EQ(export_ack0.contents_size(), num_regions + 2); // header, textbox for text
 
@@ -236,7 +238,7 @@ TEST_F(RegionImportExportTest, TestCrtfWorldExportImport) {
     // Export all regions in frame1 (matched image)
     file_id = 1;
     CARTA::ExportRegionAck export_ack1;
-    region_handler.ExportRegion(file_id, frame1, CARTA::CRTF, CARTA::WORLD, region_style_map, filename, export_ack1);
+    region_handler.ExportRegion(file_id, frame1, CARTA::CRTF, CARTA::WORLD, region_style_map, filename, overwrite, export_ack1);
     // Check that all regions were exported
     ASSERT_EQ(export_ack1.contents_size(), num_regions + 2); // header, textbox for text
 
@@ -275,8 +277,9 @@ TEST_F(RegionImportExportTest, TestDs9PixExportImport) {
         region_style_map[region_id] = style;
     }
     std::string filename; // do not export to file
+    bool overwrite(false);
     CARTA::ExportRegionAck export_ack0;
-    region_handler.ExportRegion(file_id, frame0, CARTA::DS9_REG, CARTA::PIXEL, region_style_map, filename, export_ack0);
+    region_handler.ExportRegion(file_id, frame0, CARTA::DS9_REG, CARTA::PIXEL, region_style_map, filename, overwrite, export_ack0);
     // Check that all regions were exported
     ASSERT_EQ(export_ack0.contents_size(), num_regions + 3); // header + globals, coord sys, textbox for text
 
@@ -292,7 +295,7 @@ TEST_F(RegionImportExportTest, TestDs9PixExportImport) {
     // Export all regions in frame1 (matched image)
     file_id = 1;
     CARTA::ExportRegionAck export_ack1;
-    region_handler.ExportRegion(file_id, frame1, CARTA::DS9_REG, CARTA::PIXEL, region_style_map, filename, export_ack1);
+    region_handler.ExportRegion(file_id, frame1, CARTA::DS9_REG, CARTA::PIXEL, region_style_map, filename, overwrite, export_ack1);
     // Check that all regions were exported
     ASSERT_EQ(export_ack1.contents_size(), num_regions + 2); // header + globals, coord sys (textbox + text in same string)
 
@@ -331,8 +334,9 @@ TEST_F(RegionImportExportTest, TestDs9WorldExportImport) {
         region_style_map[region_id] = style;
     }
     std::string filename; // do not export to file
+    bool overwrite(false);
     CARTA::ExportRegionAck export_ack0;
-    region_handler.ExportRegion(file_id, frame0, CARTA::DS9_REG, CARTA::WORLD, region_style_map, filename, export_ack0);
+    region_handler.ExportRegion(file_id, frame0, CARTA::DS9_REG, CARTA::WORLD, region_style_map, filename, overwrite, export_ack0);
     // Check that all regions were exported
     ASSERT_EQ(export_ack0.contents_size(), num_regions + 2); // header + globals, coord sys (textbox + text in same string)
 
@@ -348,7 +352,7 @@ TEST_F(RegionImportExportTest, TestDs9WorldExportImport) {
     // Export all regions in frame1 (matched image)
     file_id = 1;
     CARTA::ExportRegionAck export_ack1;
-    region_handler.ExportRegion(file_id, frame1, CARTA::DS9_REG, CARTA::WORLD, region_style_map, filename, export_ack1);
+    region_handler.ExportRegion(file_id, frame1, CARTA::DS9_REG, CARTA::WORLD, region_style_map, filename, overwrite, export_ack1);
     // Check that all regions were exported
     ASSERT_EQ(export_ack1.contents_size(), num_regions + 2); // header + globals, coord sys (textbox + text in same string)
 
