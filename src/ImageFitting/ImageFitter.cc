@@ -50,16 +50,6 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     CalculateNanNumAndStd();
     success = SetInitialValues(initial_values, background_offset, fixed_params);
 
-    // TODO: allow multiple components with invalid initial value
-    if (!success && _num_components > 1) {
-        fitting_response.set_message("invalid initial value");
-        fitting_response.set_success(success);
-
-        gsl_vector_free(_fit_values);
-        gsl_vector_free(_fit_errors);
-        return false;
-    }
-
     std::string initialValueLog = "";
     if (!success) {
         success = CalculateInitialValues(initial_values);
@@ -78,6 +68,8 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
         return false;
     }
 
+    success = false;
+
     // avoid SolveSystem crashes with insufficient data points
     if (_fit_data.n_notnan < _fit_values->size) {
         fitting_response.set_message("insufficient data points");
@@ -90,7 +82,6 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
 
     spdlog::info("Fitting image ({} data points) with {} Gaussian component(s) ({} parameter(s)).", _fit_data.n_notnan, _num_components,
         _fit_values->size);
-    success = false;
     int status = SolveSystem(solver);
 
     if (_fit_data.stop_fitting) {

@@ -7,6 +7,7 @@
 #ifndef CARTA_SRC_IMAGEFITTING_INITIALVALUECALCULATOR_H_
 #define CARTA_SRC_IMAGEFITTING_INITIALVALUECALCULATOR_H_
 
+#include <random>
 #include <vector>
 
 #include <carta-protobuf/fitting_request.pb.h>
@@ -51,6 +52,7 @@ private:
 
     std::tuple<double, double, double, double, double, double> MethodOfMoments(
         bool apply_filter = false, double center_x = 0, double center_y = 0, double radius = 0);
+    std::vector<int> KMeansPlusPlus(size_t num_components);
 };
 
 } // namespace carta

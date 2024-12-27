@@ -34,6 +34,7 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     }
 
     // TODO: support multi components
+    std::vector<int> centroid_indexes = KMeansPlusPlus(initial_values.size());
 
     return false;
 }
@@ -73,6 +74,105 @@ std::tuple<double, double, double, double, double, double> InitialValueCalculato
     double pa = -0.5 * std::atan2(2.0 * mxy, myy - mxx) * 180.0 / M_PI;
 
     return {mx, my, amp, fwhm_x, fwhm_y, pa};
+}
+
+std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
+    size_t size = _width * _height;
+    size_t trial_num = 2 + std::floor(std::log(num_components));
+
+    std::vector<int> centroid_indexes;
+    centroid_indexes.reserve(num_components);
+
+    float first_centroid_index = rand() % size;
+    // Generate a random number between 0 and the total sum of the weights
+    float sum = 0.0;
+    for (size_t i = 0; i < size; ++i) {
+        sum += _image[i];
+    }
+    std::default_random_engine generator;
+    std::uniform_real_distribution<float> distribution(0.0, sum);
+    float random_value = distribution(generator);
+    // Find the index where the random number falls in the cumulative distribution
+    sum = 0.0;
+    for (size_t i = 0; i < size; ++i) {
+        sum += _image[i];
+        if (random_value <= sum) {
+            first_centroid_index = i;
+            break;
+        }
+    }
+    centroid_indexes.push_back(first_centroid_index);
+
+    float current_potential = 0.0;
+    for (int i = 0; i < size; ++i) {
+        float distance =
+            std::pow(i % _width - centroid_indexes[0] % _width, 2.0) + std::pow(i / _width - centroid_indexes[0] / _width, 2.0);
+        current_potential += _image[i] * distance;
+    }
+
+    for (size_t k = 1; k < num_components; ++k) {
+        float next_centroid_index = rand() % size;
+        float min_potential = std::numeric_limits<float>::max();
+
+        for (size_t t = 0; t < trial_num; ++t) {
+            int centroid_index_candidate = 0;
+
+            // Generate a random number between 0 and the weighted potential
+            std::uniform_real_distribution<float> distribution(0.0, current_potential);
+            random_value = distribution(generator);
+            // Find the index where the random number falls in the cumulative distribution
+            float sum = 0.0;
+            for (int i = 0; i < size; ++i) {
+                float min_distance = std::numeric_limits<float>::max();
+                for (size_t j = 0; j < centroid_indexes.size(); ++j) {
+                    float distance =
+                        std::pow(i % _width - centroid_indexes[j] % _width, 2.0) + std::pow(i / _width - centroid_indexes[j] / _width, 2.0);
+                    if (distance < min_distance) {
+                        min_distance = distance;
+                    }
+                }
+                sum += _image[i] * min_distance;
+                if (random_value <= sum) {
+                    centroid_index_candidate = i;
+                    break;
+                }
+            }
+
+            float candidate_potential = 0.0;
+            for (int i = 0; i < size; ++i) {
+                float min_distance = std::numeric_limits<float>::max();
+                for (size_t j = 0; j < centroid_indexes.size(); ++j) {
+                    float distance =
+                        std::pow(i % _width - centroid_indexes[j] % _width, 2.0) + std::pow(i / _width - centroid_indexes[j] / _width, 2.0);
+                    if (distance < min_distance) {
+                        min_distance = distance;
+                    }
+                }
+                float distance_to_candidate = std::pow(i % _width - centroid_index_candidate % _width, 2.0) +
+                                              std::pow(i / _width - centroid_index_candidate / _width, 2.0);
+                if (distance_to_candidate < min_distance) {
+                    min_distance = distance_to_candidate;
+                }
+
+                candidate_potential += _image[i] * min_distance;
+            }
+
+            if (candidate_potential < min_potential) {
+                min_potential = candidate_potential;
+                next_centroid_index = centroid_index_candidate;
+            }
+        }
+
+        current_potential = min_potential;
+        centroid_indexes.push_back(next_centroid_index);
+    }
+
+    spdlog::info("Generated {} centroids.", centroid_indexes.size());
+    for (size_t i = 0; i < centroid_indexes.size(); ++i) {
+        spdlog::info("Centroid #{}: ({}, {})", i, centroid_indexes[i] % _width, centroid_indexes[i] / _width);
+    }
+
+    return centroid_indexes;
 }
 
 std::string InitialValueCalculator::GetLog(std::vector<CARTA::GaussianComponent>& initial_values, std::string image_unit) {
