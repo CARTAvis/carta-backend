@@ -85,17 +85,17 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
 
     float first_centroid_index = rand() % size;
     // Generate a random number between 0 and the total sum of the weights
-    float sum = 0.0;
+    double sum = 0.0;
     for (size_t i = 0; i < size; ++i) {
-        sum += _image[i];
+        sum += std::abs(_image[i]);
     }
     std::default_random_engine generator;
-    std::uniform_real_distribution<float> distribution(0.0, sum);
-    float random_value = distribution(generator);
+    std::uniform_real_distribution<double> distribution(0.0, sum);
+    double random_value = distribution(generator);
     // Find the index where the random number falls in the cumulative distribution
     sum = 0.0;
     for (size_t i = 0; i < size; ++i) {
-        sum += _image[i];
+        sum += std::abs(_image[i]);
         if (random_value <= sum) {
             first_centroid_index = i;
             break;
@@ -107,7 +107,7 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
     for (int i = 0; i < size; ++i) {
         float distance =
             std::pow(i % _width - centroid_indexes[0] % _width, 2.0) + std::pow(i / _width - centroid_indexes[0] / _width, 2.0);
-        current_potential += _image[i] * distance;
+        current_potential += std::abs(_image[i]) * distance;
     }
 
     for (size_t k = 1; k < num_components; ++k) {
@@ -131,7 +131,7 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
                         min_distance = distance;
                     }
                 }
-                sum += _image[i] * min_distance;
+                sum += std::abs(_image[i]) * min_distance;
                 if (random_value <= sum) {
                     centroid_index_candidate = i;
                     break;
@@ -154,7 +154,7 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
                     min_distance = distance_to_candidate;
                 }
 
-                candidate_potential += _image[i] * min_distance;
+                candidate_potential += std::abs(_image[i]) * min_distance;
             }
 
             if (candidate_potential < min_potential) {
