@@ -225,7 +225,7 @@ bool ImageFitter::SetInitialValues(
 bool ImageFitter::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
     InitialValueCalculator* calculator =
         new InitialValueCalculator(_fit_data.data, _fit_data.width, _fit_data.n / _fit_data.width, _fit_data.offset_x, _fit_data.offset_y);
-    bool success = calculator->CalculateInitialValues(initial_values);
+    bool success = calculator->CalculateInitialValues(initial_values, _image_std);
     return success;
 }
 

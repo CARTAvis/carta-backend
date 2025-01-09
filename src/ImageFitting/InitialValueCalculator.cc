@@ -18,7 +18,7 @@ InitialValueCalculator::InitialValueCalculator(float* image, size_t width, size_
     _offset_y = offset_y;
 }
 
-bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
+bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, float image_std) {
     if (initial_values.size() == 1) {
         auto [center_x_tmp, center_y_tmp, amp_tmp, fwhm_x_tmp, fwhm_y_tmp, pa_tmp] = MethodOfMoments();
         auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] =
@@ -34,7 +34,7 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     }
 
     // TODO: support multi components
-    std::vector<int> centroid_indexes = KMeansPlusPlus(initial_values.size());
+    std::vector<int> centroid_indexes = KMeansPlusPlus(initial_values.size(), image_std * 4.0);
 
     return false;
 }
@@ -76,7 +76,7 @@ std::tuple<double, double, double, double, double, double> InitialValueCalculato
     return {mx, my, amp, fwhm_x, fwhm_y, pa};
 }
 
-std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
+std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, float threshold) {
     size_t size = _width * _height;
     size_t trial_num = 2 + std::floor(std::log(num_components));
 
@@ -87,6 +87,9 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
     // Generate a random number between 0 and the total sum of the weights
     double sum = 0.0;
     for (size_t i = 0; i < size; ++i) {
+        if (std::abs(_image[i]) < threshold) {
+            continue;
+        }
         sum += std::abs(_image[i]);
     }
     std::default_random_engine generator;
@@ -95,6 +98,9 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
     // Find the index where the random number falls in the cumulative distribution
     sum = 0.0;
     for (size_t i = 0; i < size; ++i) {
+        if (std::abs(_image[i]) < threshold) {
+            continue;
+        }
         sum += std::abs(_image[i]);
         if (random_value <= sum) {
             first_centroid_index = i;
@@ -105,6 +111,9 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
 
     float current_potential = 0.0;
     for (int i = 0; i < size; ++i) {
+        if (std::abs(_image[i]) < threshold) {
+            continue;
+        }
         float distance =
             std::pow(i % _width - centroid_indexes[0] % _width, 2.0) + std::pow(i / _width - centroid_indexes[0] / _width, 2.0);
         current_potential += std::abs(_image[i]) * distance;
@@ -123,6 +132,10 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
             // Find the index where the random number falls in the cumulative distribution
             float sum = 0.0;
             for (int i = 0; i < size; ++i) {
+                if (std::abs(_image[i]) < threshold) {
+                    continue;
+                }
+
                 float min_distance = std::numeric_limits<float>::max();
                 for (size_t j = 0; j < centroid_indexes.size(); ++j) {
                     float distance =
@@ -140,6 +153,10 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components) {
 
             float candidate_potential = 0.0;
             for (int i = 0; i < size; ++i) {
+                if (std::abs(_image[i]) < threshold) {
+                    continue;
+                }
+
                 float min_distance = std::numeric_limits<float>::max();
                 for (size_t j = 0; j < centroid_indexes.size(); ++j) {
                     float distance =

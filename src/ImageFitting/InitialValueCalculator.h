@@ -34,7 +34,7 @@ public:
      * @param initial_values Vector to store the resulting initial values
      * @return Whether the parameters are successfully generated
      */
-    bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values);
+    bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, float image_std);
 
     static std::string GetLog(std::vector<CARTA::GaussianComponent>& initial_values, std::string image_unit);
 
@@ -52,7 +52,7 @@ private:
 
     std::tuple<double, double, double, double, double, double> MethodOfMoments(
         bool apply_filter = false, double center_x = 0, double center_y = 0, double radius = 0);
-    std::vector<int> KMeansPlusPlus(size_t num_components);
+    std::vector<int> KMeansPlusPlus(size_t num_components, float threshold);
 };
 
 } // namespace carta
