@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: ./scripts/style.py all check
+      - run: ./scripts/style.py --clang-format clang-format-14 all check
 
 
   Ubuntu-Focal:
