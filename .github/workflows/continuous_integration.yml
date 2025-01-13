@@ -9,9 +9,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install clang-format 14
-        run: |
-          sudo apt-get update
-          sudo apt-get install clang-format-14
+        run: sudo apt-get install clang-format-14
       - name: Run format check
         run: ./scripts/style.py --clang-format clang-format-14 all check
 
