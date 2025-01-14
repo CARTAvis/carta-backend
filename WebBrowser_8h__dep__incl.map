@@ -1,5 +1,7 @@
 <map id="WebBrowser.h" name="WebBrowser.h">
-<area shape="rect" id="node1" title=" " alt="" coords="44,5,159,32"/>
-<area shape="rect" id="node2" href="$Main_8cc.html" title=" " alt="" coords="5,80,77,107"/>
-<area shape="rect" id="node3" href="$WebBrowser_8cc.html" title=" " alt="" coords="101,80,221,107"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="44,5,159,31"/>
+<area shape="rect" id="Node000002" href="$Main_8cc.html" title=" " alt="" coords="5,79,77,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="85,43,53,80,49,77,81,40"/>
+<area shape="rect" id="Node000003" href="$WebBrowser_8cc.html" title=" " alt="" coords="101,79,221,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="122,40,154,77,150,80,118,43"/>
 </map>

@@ -1,7 +1,12 @@
 <map id="carta::RegionHandler::CancelLineProfiles" name="carta::RegionHandler::CancelLineProfiles">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,164,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="212,5,371,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="212,71,371,112"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="419,5,577,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="419,71,577,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,164,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="212,5,371,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,42,198,37,199,42,165,48"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="212,69,371,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="165,67,199,72,198,78,164,72"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="419,5,577,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="371,23,405,23,405,28,371,28"/>
+<area shape="poly" id="edge5_Node000004_Node000003" title=" " alt="" coords="356,67,419,47,421,52,357,72"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="419,69,577,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="371,87,405,87,405,92,371,92"/>
 </map>

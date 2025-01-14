@@ -1,7 +1,15 @@
 <map id="carta::RegionHandler::SetSpectralRequirements" name="carta::RegionHandler::SetSpectralRequirements">
-<area shape="rect" id="node1" title=" " alt="" coords="5,78,200,120"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="248,13,407,54"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="661,57,820,98"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="248,78,407,120"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="455,28,613,69"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,77,200,117"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="248,13,407,53"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,75,243,55,244,60,174,80"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="661,56,820,96"/>
+<area shape="poly" id="edge8_Node000001_Node000004" title=" " alt="" coords="180,115,248,127,355,131,463,125,563,111,647,95,648,101,563,116,463,130,355,137,248,132,179,120"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="248,77,407,117"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="200,95,234,95,234,100,200,100"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="455,27,613,67"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="407,36,441,38,441,43,407,41"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="407,14,506,3,561,4,614,12,658,27,698,47,695,52,656,32,613,17,560,10,506,9,407,19"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="614,55,648,60,648,66,613,61"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="406,75,441,67,442,72,408,81"/>
+<area shape="poly" id="edge7_Node000005_Node000004" title=" " alt="" coords="407,91,647,78,648,84,407,96"/>
 </map>

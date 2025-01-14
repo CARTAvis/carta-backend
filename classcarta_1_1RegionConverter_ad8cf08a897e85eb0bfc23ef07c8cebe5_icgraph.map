@@ -1,4 +1,5 @@
 <map id="carta::RegionConverter::UseApproximatePolygon" name="carta::RegionConverter::UseApproximatePolygon">
-<area shape="rect" id="node1" title=" " alt="" coords="225,5,416,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1" title=" " alt="" coords="5,5,177,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="225,5,416,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1" title=" " alt="" coords="5,5,177,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="212,28,177,28,177,23,212,23"/>
 </map>

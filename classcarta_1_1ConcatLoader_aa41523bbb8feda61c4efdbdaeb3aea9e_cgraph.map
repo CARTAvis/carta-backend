@@ -1,4 +1,5 @@
 <map id="carta::ConcatLoader::AllocateImage" name="carta::ConcatLoader::AllocateImage">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,157,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#ad268ad4fe20a4b1b473a31202f6a8eba" title=" " alt="" coords="205,5,344,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,157,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#ad268ad4fe20a4b1b473a31202f6a8eba" title=" " alt="" coords="205,5,344,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,23,191,23,191,28,157,28"/>
 </map>

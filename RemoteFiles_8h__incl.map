@@ -1,5 +1,7 @@
 <map id="RemoteFiles.h" name="RemoteFiles.h">
-<area shape="rect" id="node1" title=" " alt="" coords="99,5,214,32"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,80,172,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="197,87,255,114"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="99,5,214,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,172,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,33,116,70,112,66,145,29"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="197,86,255,111"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="169,29,209,74,205,77,165,33"/>
 </map>

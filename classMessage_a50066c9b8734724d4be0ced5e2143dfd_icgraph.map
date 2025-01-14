@@ -1,4 +1,5 @@
 <map id="Message::Beam" name="Message::Beam">
-<area shape="rect" id="node1" title=" " alt="" coords="192,13,319,39"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#a2a3ed90a3e52af565ba3f80f3b5b66b5" title=" " alt="" coords="5,5,144,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="192,13,319,38"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a2a3ed90a3e52af565ba3f80f3b5b66b5" title=" " alt="" coords="5,5,144,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,28,145,28,145,23,178,23"/>
 </map>

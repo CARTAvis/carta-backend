@@ -1,7 +1,15 @@
 <map id="carta::TilePool" name="carta::TilePool">
-<area shape="rect" id="node1" title="This struct stores the memory allocated for cached tile data." alt="" coords="267,109,381,136"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,179,47"/>
-<area shape="rect" id="node3" title=" " alt="" coords="203,13,295,39"/>
-<area shape="rect" id="node4" title=" " alt="" coords="320,13,477,39"/>
-<area shape="rect" id="node5" title=" " alt="" coords="502,13,541,39"/>
+<area shape="rect" id="Node000001" title="This struct stores the memory allocated for cached tile data." alt="" coords="267,284,381,309"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,181,179,221"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="153,224,296,281,294,286,151,229"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="203,189,295,214"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="248,227,249,244,254,259,267,272,284,282,281,286,264,276,250,261,243,245,242,228"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="320,189,477,214"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="392,228,371,262,344,286,341,282,367,258,387,225"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="320,93,477,119"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="401,132,401,189,396,189,396,132"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="379,5,418,31"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="401,45,401,93,396,93,396,45"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="502,189,541,214"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="496,224,432,262,367,286,366,281,430,258,494,220"/>
 </map>

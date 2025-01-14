@@ -1,6 +1,6 @@
 var Message_8h =
 [
-    [ "EventHeader", "structcarta_1_1EventHeader.html", "structcarta_1_1EventHeader" ],
+    [ "carta::EventHeader", "structcarta_1_1EventHeader.html", "structcarta_1_1EventHeader" ],
     [ "Message", "classMessage.html", "classMessage" ],
     [ "FillHistogram", "Message_8h.html#a81aeddd3fd63ca11895205bbeafee045", null ],
     [ "FillHistogram", "Message_8h.html#aadf644bd365f0198b09a7196f9990511", null ],

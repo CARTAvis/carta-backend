@@ -1,9 +1,16 @@
 <map id="carta::Stokes" name="carta::Stokes">
-<area shape="rect" id="node1" title=" " alt="" coords="807,81,913,107"/>
-<area shape="rect" id="node2" title=" " alt="" coords="456,26,655,82"/>
-<area shape="rect" id="node3" title=" " alt="" coords="193,81,323,107"/>
-<area shape="rect" id="node6" title=" " alt="" coords="436,106,675,162"/>
-<area shape="rect" id="node4" title=" " alt="" coords="215,13,301,39"/>
-<area shape="rect" id="node5" title=" " alt="" coords="5,5,144,47"/>
-<area shape="rect" id="node7" title=" " alt="" coords="207,149,309,175"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="807,75,913,100"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="436,20,675,75"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="689,62,807,78,806,83,688,67"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="193,73,323,99"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="336,73,436,60,436,65,337,79"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="456,99,655,153"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="337,94,456,110,455,115,336,99"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="207,5,309,31"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="323,22,436,33,436,38,323,27"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="668,112,782,98,806,94,807,100,783,103,668,118"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="215,141,301,167"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="315,153,412,150,455,144,456,149,412,155,315,159"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="5,134,144,174"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="158,151,214,151,214,157,158,157"/>
 </map>

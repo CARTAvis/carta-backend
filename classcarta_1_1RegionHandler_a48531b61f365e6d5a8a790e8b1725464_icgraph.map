@@ -1,5 +1,7 @@
 <map id="carta::RegionHandler::StopPvCalc" name="carta::RegionHandler::StopPvCalc">
-<area shape="rect" id="node1" title=" " alt="" coords="419,5,577,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a63f395d4e7fa9500f951598eaab516c7" title=" " alt="" coords="212,5,371,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#ab51161364a45784bb0f864f517d12a3f" title=" " alt="" coords="5,5,164,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="419,5,577,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a63f395d4e7fa9500f951598eaab516c7" title=" " alt="" coords="212,5,371,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="405,28,371,28,371,23,405,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#ab51161364a45784bb0f864f517d12a3f" title=" " alt="" coords="5,5,164,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="198,28,164,28,164,23,198,23"/>
 </map>

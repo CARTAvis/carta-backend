@@ -8,7 +8,7 @@ var classcarta_1_1CompressedFits =
     [ "GetDecompressSize", "classcarta_1_1CompressedFits.html#adb90e88cc345989dbc87a11d93471b4b", null ],
     [ "GetFirstImageHdu", "classcarta_1_1CompressedFits.html#a265e6e3df28f138336939ae3f4c09e2a", null ],
     [ "GetFitsHeaderInfo", "classcarta_1_1CompressedFits.html#a94e623f08d835889943c9d7a2fcb7f76", null ],
-    [ "GetShape", "classcarta_1_1CompressedFits.html#a067a3b895e9c95ecec6ebef781b5b002", null ],
+    [ "GetShape", "classcarta_1_1CompressedFits.html#a4bd8ce5412d89f601493adccd4aa5c17", null ],
     [ "GetSpectralAxis", "classcarta_1_1CompressedFits.html#afb710ed6d8dee8ba147499f0a90f8e38", null ],
     [ "GetStokesAxis", "classcarta_1_1CompressedFits.html#acc6a89cc0b72899ca08bd053ea40ef77", null ],
     [ "GetTransformMatrix", "classcarta_1_1CompressedFits.html#a08d166346f4e5dd3261602727205943d", null ],

@@ -1,10 +1,17 @@
 <map id="carta::queuing_rw_mutex_scoped" name="carta::queuing_rw_mutex_scoped">
-<area shape="rect" id="node1" title=" " alt="" coords="69,317,255,359"/>
-<area shape="rect" id="node2" title=" " alt="" coords="95,213,146,240"/>
-<area shape="rect" id="node3" href="$classcarta_1_1queuing__rw__mutex.html" title=" " alt="" coords="170,213,357,240"/>
-<area shape="rect" id="node4" title=" " alt="" coords="5,102,148,129"/>
-<area shape="rect" id="node5" title=" " alt="" coords="172,102,227,129"/>
-<area shape="rect" id="node6" title=" " alt="" coords="281,102,373,129"/>
-<area shape="rect" id="node7" title=" " alt="" coords="398,95,571,136"/>
-<area shape="rect" id="node8" title=" " alt="" coords="408,5,561,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="243,313,430,353"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1queuing__rw__mutex.html" title=" " alt="" coords="173,211,359,236"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="283,246,326,312,322,315,279,249"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,101,97,126"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="81,131,123,158,171,184,231,208,229,213,169,189,120,162,78,136"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="121,101,264,126"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="204,137,231,185,254,209,250,212,227,188,200,140"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="289,93,462,133"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="353,146,313,189,284,213,280,209,310,185,349,142"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="299,5,452,31"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="378,44,378,93,373,93,373,44"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="487,101,541,126"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="502,139,480,166,451,189,411,202,354,213,353,208,409,197,449,184,477,162,498,136"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="383,211,434,236"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="397,249,370,291,353,315,348,312,365,288,392,246"/>
 </map>

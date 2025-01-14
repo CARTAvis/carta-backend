@@ -1,4 +1,5 @@
 <map id="carta::Session::DecreaseRefCount" name="carta::Session::DecreaseRefCount">
-<area shape="rect" id="node1" title=" " alt="" coords="221,5,404,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1OnMessageTask.html#a0379a954357d75279596084d9ff18e16" title=" " alt="" coords="5,5,173,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="221,5,404,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1OnMessageTask.html#a0379a954357d75279596084d9ff18e16" title=" " alt="" coords="5,5,173,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="208,28,173,28,173,23,208,23"/>
 </map>

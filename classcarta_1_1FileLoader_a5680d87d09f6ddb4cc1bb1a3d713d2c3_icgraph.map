@@ -1,7 +1,13 @@
 <map id="carta::FileLoader::GetStokesImage" name="carta::FileLoader::GetStokesImage">
-<area shape="rect" id="node1" title=" " alt="" coords="413,71,552,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#a6c78d61804342a45dbf7e3e668357f2c" title=" " alt="" coords="200,5,365,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a1ef8462007320a75dcdc04929cdb28b0" title=" " alt="" coords="213,71,352,112"/>
-<area shape="rect" id="node5" href="$classcarta_1_1FileLoader.html#a96c849a9ee61ae91b8f8e7393d54133c" title=" " alt="" coords="213,136,352,177"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Hdf5Loader.html#af2e0b172ffce7502373066db92815ced" title=" " alt="" coords="5,71,152,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="413,101,552,141"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a6c78d61804342a45dbf7e3e668357f2c" title=" " alt="" coords="200,5,365,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="434,97,364,60,337,48,339,43,366,55,437,92"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FileLoader.html#a1ef8462007320a75dcdc04929cdb28b0" title=" " alt="" coords="213,69,352,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="399,111,352,103,353,98,400,105"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1FileLoader.html#ac79c14eb03e346904ded08b47282323f" title=" " alt="" coords="213,133,352,173"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="400,137,353,145,352,140,399,132"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1FileLoader.html#a96c849a9ee61ae91b8f8e7393d54133c" title=" " alt="" coords="213,197,352,237"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="437,151,366,188,339,200,337,195,364,183,434,146"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Hdf5Loader.html#af2e0b172ffce7502373066db92815ced" title=" " alt="" coords="5,69,152,109"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="200,92,152,92,152,87,200,87"/>
 </map>

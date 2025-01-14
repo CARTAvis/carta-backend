@@ -1,14 +1,27 @@
 <map id="carta::AnimationObject" name="carta::AnimationObject">
-<area shape="rect" id="node1" title=" " alt="" coords="797,384,969,411"/>
-<area shape="rect" id="node2" href="$classcarta_1_1SessionContext.html" title=" " alt="" coords="453,147,617,173"/>
-<area shape="rect" id="node3" title=" " alt="" coords="219,109,270,136"/>
-<area shape="rect" id="node4" title=" " alt="" coords="455,197,614,253"/>
-<area shape="rect" id="node5" title=" " alt="" coords="211,196,278,223"/>
-<area shape="rect" id="node6" title=" " alt="" coords="169,247,320,273"/>
-<area shape="rect" id="node7" title=" " alt="" coords="5,247,56,273"/>
-<area shape="rect" id="node8" title=" " alt="" coords="225,391,264,417"/>
-<area shape="rect" id="node9" title=" " alt="" coords="465,428,604,455"/>
-<area shape="rect" id="node10" title=" " alt="" coords="469,535,600,561"/>
-<area shape="rect" id="node11" title=" " alt="" coords="441,587,628,629"/>
-<area shape="rect" id="node12" title=" " alt="" coords="479,653,591,680"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="797,374,969,399"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="225,142,264,167"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="277,142,368,121,430,111,498,105,569,105,641,114,710,133,775,164,801,186,823,213,841,242,855,273,874,331,883,373,878,374,869,332,850,275,837,244,819,216,798,190,772,169,709,138,640,119,569,111,498,111,430,116,369,126,278,148"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="465,186,604,211"/>
+<area shape="poly" id="edge13_Node000012_Node000002" title=" " alt="" coords="278,157,344,168,465,186,465,191,344,173,277,163"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="469,271,600,297"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="602,298,629,305,653,315,713,330,774,345,849,371,848,376,773,351,712,336,651,320,627,311,601,303"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="455,321,614,375"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="628,357,652,360,798,376,797,381,652,365,628,362"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="211,313,278,338"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="292,326,455,339,455,344,292,332"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="169,362,320,387"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="333,365,417,357,454,354,455,359,418,363,334,370"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="5,362,56,387"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="70,372,169,372,169,377,70,377"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="479,399,591,425"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="604,411,685,411,773,405,827,397,827,402,774,411,686,416,604,417"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="441,449,628,489"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="642,468,707,461,772,447,824,423,864,397,867,402,826,428,774,452,708,467,642,473"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="219,613,270,638"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="284,620,478,606,573,596,627,587,667,568,706,544,777,490,833,437,869,398,873,402,837,441,780,494,709,549,670,573,629,592,574,602,478,611,284,626"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1SessionContext.html" title=" " alt="" coords="453,650,617,675"/>
+<area shape="poly" id="edge11_Node000011_Node000010" title=" " alt="" coords="284,628,453,649,452,655,283,633"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="631,670,667,668,704,662,740,651,772,633,799,607,821,577,839,544,853,510,871,445,878,399,883,400,876,446,858,511,844,546,826,580,803,611,775,637,742,656,705,667,667,673,631,675"/>
+<area shape="poly" id="edge12_Node000001_Node000012" title=" " alt="" coords="618,184,656,183,697,186,737,196,775,212,797,229,817,249,848,294,869,339,881,373,876,375,864,341,843,297,813,252,794,233,772,217,735,201,696,192,656,188,618,189"/>
 </map>

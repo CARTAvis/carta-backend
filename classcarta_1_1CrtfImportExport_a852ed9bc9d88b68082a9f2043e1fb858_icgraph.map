@@ -1,0 +1,8 @@
+<map id="carta::CrtfImportExport::GetCenterBoxPoints" name="carta::CrtfImportExport::GetCenterBoxPoints">
+<area shape="rect" id="Node000001" title=" " alt="" coords="445,5,617,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImportExport.html#a22c5c79848ebbd4b25e49ca1ae644927" title=" " alt="" coords="5,5,177,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="432,25,397,24,225,24,178,25,178,20,225,19,397,19,432,19"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfImportExport.html#a4506daa100df829d03ced8e74a6edc5d" title=" " alt="" coords="225,33,397,73"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="432,41,398,45,397,40,431,35"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="211,43,177,39,178,34,212,38"/>
+</map>

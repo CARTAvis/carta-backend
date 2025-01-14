@@ -1,6 +1,9 @@
 <map id="Casacore.h" name="Casacore.h">
-<area shape="rect" id="node1" title=" " alt="" coords="258,5,353,32"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,80,189,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="213,80,397,121"/>
-<area shape="rect" id="node4" title=" " alt="" coords="422,80,647,121"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="258,5,353,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,189,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="276,33,161,76,159,71,274,28"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="213,79,397,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="308,31,308,65,303,65,303,31"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="422,79,647,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="340,28,468,72,466,77,338,33"/>
 </map>

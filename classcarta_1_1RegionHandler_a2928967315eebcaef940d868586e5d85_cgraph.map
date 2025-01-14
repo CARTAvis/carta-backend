@@ -1,5 +1,7 @@
 <map id="carta::RegionHandler::RemoveRegion" name="carta::RegionHandler::RemoveRegion">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,164,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="263,5,421,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a772046cac78b7c01f5562e68a07c7447" title=" " alt="" coords="212,71,472,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,164,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="263,5,421,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,45,249,34,249,40,164,50"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a772046cac78b7c01f5562e68a07c7447" title=" " alt="" coords="212,69,472,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="164,65,199,69,198,74,164,70"/>
 </map>

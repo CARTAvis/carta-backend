@@ -1,8 +1,14 @@
 <map id="carta::Region::GetImageRegionMask" name="carta::Region::GetImageRegionMask">
-<area shape="rect" id="node1" title=" " alt="" coords="5,42,265,69"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Region.html#ad761974201dc977416905a55ed35fb86" title=" " alt="" coords="313,35,500,76"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="805,5,989,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Region.html#a3bcb4285b1e57b69ffe405073361b74c" title=" " alt="" coords="548,35,753,76"/>
-<area shape="rect" id="node5" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="575,100,726,141"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="801,107,993,134"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,41,265,66"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Region.html#ad761974201dc977416905a55ed35fb86" title=" " alt="" coords="313,33,500,73"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="265,51,300,51,300,56,265,56"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="805,5,989,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="481,31,548,19,674,12,792,15,792,20,674,17,548,24,482,36"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Region.html#a3bcb4285b1e57b69ffe405073361b74c" title=" " alt="" coords="548,33,753,73"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="500,51,534,51,534,56,500,56"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="575,97,726,137"/>
+<area shape="poly" id="edge5_Node000002_Node000005" title=" " alt="" coords="484,71,563,92,561,97,483,76"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="753,39,791,35,792,40,754,44"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="801,105,993,130"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="727,115,788,115,788,120,727,120"/>
 </map>

@@ -1,5 +1,7 @@
 <map id="carta::Ds9ImportExport::ParamToQuantity" name="carta::Ds9ImportExport::ParamToQuantity">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,179,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Ds9ImportExport.html#a4a6b4a25d131ae9fc0a4f3380e6b6521" title=" " alt="" coords="227,5,437,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Ds9ImportExport.html#a59d1155bdf996a30a72faed8fc5ef384" title=" " alt="" coords="245,71,419,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,179,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9ImportExport.html#a4a6b4a25d131ae9fc0a4f3380e6b6521" title=" " alt="" coords="227,5,437,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,43,213,39,213,44,179,48"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#a59d1155bdf996a30a72faed8fc5ef384" title=" " alt="" coords="245,69,419,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="179,66,232,73,232,79,178,71"/>
 </map>

@@ -1,4 +1,5 @@
 <map id="carta::Hdf5Loader::GetCursorSpectralData" name="carta::Hdf5Loader::GetCursorSpectralData">
-<area shape="rect" id="node1" title=" " alt="" coords="228,5,399,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Hdf5Loader.html#a52cdfeb4f3e4b658a28a84bcf4219f04" title=" " alt="" coords="5,5,180,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="228,5,399,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Hdf5Loader.html#a02aa1004502395ca555a03247e88e284" title=" " alt="" coords="5,5,180,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="214,28,180,28,180,23,214,23"/>
 </map>

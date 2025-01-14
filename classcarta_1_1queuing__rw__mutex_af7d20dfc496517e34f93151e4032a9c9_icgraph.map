@@ -1,12 +1,22 @@
 <map id="carta::queuing_rw_mutex::dequeue_one_writer" name="carta::queuing_rw_mutex::dequeue_one_writer">
-<area shape="rect" id="node1" title=" " alt="" coords="944,122,1131,163"/>
-<area shape="rect" id="node2" href="$classcarta_1_1queuing__rw__mutex.html#a604cdab74206f5521604334d5dc0d634" title=" " alt="" coords="709,57,896,98"/>
-<area shape="rect" id="node9" href="$classcarta_1_1queuing__rw__mutex.html#ae90899b9fc49562d1c53fac3b786b12d" title=" " alt="" coords="709,122,896,163"/>
-<area shape="rect" id="node10" href="$classcarta_1_1queuing__rw__mutex.html#aa7025173ce9c50622e41989f94e7a77b" title=" " alt="" coords="709,187,896,229"/>
-<area shape="rect" id="node3" href="$classcarta_1_1queuing__rw__mutex__scoped.html#a54adaa778387baae91e6da63ae892ca6" title=" " alt="" coords="475,90,661,131"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#a958f69761afea8b1388de6bea20f8b78" title=" " alt="" coords="215,5,419,32"/>
-<area shape="rect" id="node5" href="$classcarta_1_1CursorSettings.html#a0d6e27c8a1772bede7d5d4276df452bd" title=" " alt="" coords="238,57,397,98"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Frame.html#a3d1f8594ec63ae8f16524981c5f21ce2" title=" " alt="" coords="229,122,405,163"/>
-<area shape="rect" id="node8" href="$classcarta_1_1queuing__rw__mutex__scoped.html#a03861967ae0801c5e90f185aebd9e7dc" title=" " alt="" coords="208,188,427,244"/>
-<area shape="rect" id="node6" href="$classcarta_1_1SetCursorTask.html#a4ae7952b66399be7c43433ef94d4ae39" title=" " alt="" coords="5,57,160,98"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="944,119,1131,159"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1queuing__rw__mutex.html#a604cdab74206f5521604334d5dc0d634" title=" " alt="" coords="709,55,896,95"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="950,118,876,98,877,93,951,113"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1queuing__rw__mutex.html#ae90899b9fc49562d1c53fac3b786b12d" title=" " alt="" coords="709,119,896,159"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="931,142,896,142,896,137,931,137"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1queuing__rw__mutex.html#aa7025173ce9c50622e41989f94e7a77b" title=" " alt="" coords="709,183,896,223"/>
+<area shape="poly" id="edge10_Node000001_Node000010" title=" " alt="" coords="951,166,877,186,876,181,950,160"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1queuing__rw__mutex__scoped.html#a54adaa778387baae91e6da63ae892ca6" title=" " alt="" coords="475,87,661,127"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="696,93,662,97,661,92,696,87"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Frame.html#a958f69761afea8b1388de6bea20f8b78" title=" " alt="" coords="215,5,419,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="515,84,426,46,382,33,383,28,428,41,517,79"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CursorSettings.html#a0d6e27c8a1772bede7d5d4276df452bd" title=" " alt="" coords="238,55,397,95"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="461,96,397,88,397,83,461,91"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Frame.html#a3d1f8594ec63ae8f16524981c5f21ce2" title=" " alt="" coords="229,119,405,159"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="461,124,406,131,405,126,461,118"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1queuing__rw__mutex__scoped.html#a03861967ae0801c5e90f185aebd9e7dc" title=" " alt="" coords="208,184,427,239"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="514,136,428,174,396,186,394,181,426,169,511,131"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1SetCursorTask.html#a4ae7952b66399be7c43433ef94d4ae39" title=" " alt="" coords="5,55,160,95"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="224,78,160,78,160,73,224,73"/>
+<area shape="poly" id="edge9_Node000009_Node000003" title=" " alt="" coords="696,127,661,123,662,117,696,122"/>
 </map>

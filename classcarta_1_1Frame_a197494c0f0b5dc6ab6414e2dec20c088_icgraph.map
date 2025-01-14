@@ -1,5 +1,7 @@
 <map id="carta::Frame::CheckZ" name="carta::Frame::CheckZ">
-<area shape="rect" id="node1" title=" " alt="" coords="288,31,449,57"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a79ce1feaf284a71a3f640073c1012246" title=" " alt="" coords="12,5,233,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#ab9d76715b355e3d68f6280bc031ba7da" title=" " alt="" coords="5,56,240,83"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="288,31,449,56"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a79ce1feaf284a71a3f640073c1012246" title=" " alt="" coords="12,5,233,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="274,36,233,32,234,27,275,31"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ab9d76715b355e3d68f6280bc031ba7da" title=" " alt="" coords="5,55,240,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="275,55,241,59,240,53,274,50"/>
 </map>

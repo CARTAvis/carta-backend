@@ -1,6 +1,9 @@
 <map id="carta::FileLoader::LoadStats3DHist" name="carta::FileLoader::LoadStats3DHist">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,144,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#a73a053cfcde68783b97d10675f83cc4c" title=" " alt="" coords="197,5,336,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a50ec5a4c8e9e962cfd7824b6fa8fafac" title=" " alt="" coords="192,71,341,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#aa240e8e3019302df9f2ab7b24d4c5c04" title=" " alt="" coords="197,136,336,177"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,144,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a73a053cfcde68783b97d10675f83cc4c" title=" " alt="" coords="197,5,336,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="135,67,192,47,194,52,136,72"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FileLoader.html#a50ec5a4c8e9e962cfd7824b6fa8fafac" title=" " alt="" coords="192,69,341,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="144,87,179,87,179,92,144,92"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileLoader.html#aa240e8e3019302df9f2ab7b24d4c5c04" title=" " alt="" coords="197,133,336,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="136,107,194,126,192,131,135,112"/>
 </map>

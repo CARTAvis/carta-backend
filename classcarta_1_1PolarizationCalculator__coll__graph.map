@@ -1,7 +1,15 @@
 <map id="carta::PolarizationCalculator" name="carta::PolarizationCalculator">
-<area shape="rect" id="node1" title=" " alt="" coords="705,85,912,112"/>
-<area shape="rect" id="node2" title=" " alt="" coords="339,5,530,61"/>
-<area shape="rect" id="node3" title=" " alt="" coords="409,85,460,112"/>
-<area shape="rect" id="node4" title=" " alt="" coords="321,136,548,192"/>
-<area shape="rect" id="node5" title=" " alt="" coords="5,143,208,185"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="956,99,1163,124"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="572,5,799,60"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="813,57,998,96,997,101,812,62"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="256,13,459,53"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="473,30,572,30,572,35,473,35"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,20,185,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="199,30,256,30,256,35,199,35"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="590,84,781,139"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="794,109,955,109,955,114,794,114"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="267,99,447,124"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="461,109,590,109,590,114,461,114"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="660,163,711,188"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="724,166,984,121,985,127,725,171"/>
 </map>

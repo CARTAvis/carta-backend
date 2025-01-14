@@ -1,11 +1,24 @@
 <map id="carta::RegionState::RegionDefined" name="carta::RegionState::RegionDefined">
-<area shape="rect" id="node1" title=" " alt="" coords="945,116,1088,157"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#ab69f418daea6a6ecf8c58ed9434a6242" title=" " alt="" coords="689,57,897,99"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588" title=" " alt="" coords="468,161,641,203"/>
-<area shape="rect" id="node9" href="$classcarta_1_1Ds9ImportExport.html#aa2a42c3190f56fc57565646a5b98a45d" title=" " alt="" coords="707,175,880,216"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#acbbfca854da73c657e5257de954b7048" title=" " alt="" coords="475,57,634,99"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a981ef720799967df543e0b272a17f6cb" title=" " alt="" coords="254,5,413,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#ab65206f98fa5024447ab049a91cd4526" title=" " alt="" coords="254,71,413,112"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" title=" " alt="" coords="5,71,199,112"/>
-<area shape="rect" id="node8" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="247,161,420,203"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="945,131,1088,171"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#ab69f418daea6a6ecf8c58ed9434a6242" title=" " alt="" coords="689,37,897,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="967,126,896,92,864,80,866,75,898,87,970,121"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1CrtfImportExport.html#a8c42abb411b254f52088f70ca8c51a63" title=" " alt="" coords="707,101,879,141"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="931,142,879,135,880,130,932,137"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588" title=" " alt="" coords="468,191,641,231"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="932,164,642,202,641,197,931,159"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1Ds9ImportExport.html#aa2a42c3190f56fc57565646a5b98a45d" title=" " alt="" coords="707,216,880,256"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="953,178,898,200,849,218,848,213,896,195,951,173"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#acbbfca854da73c657e5257de954b7048" title=" " alt="" coords="475,37,634,77"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="676,60,634,60,634,55,676,55"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a981ef720799967df543e0b272a17f6cb" title=" " alt="" coords="254,5,413,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="461,47,412,39,413,34,462,41"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHandler.html#ab65206f98fa5024447ab049a91cd4526" title=" " alt="" coords="254,69,413,109"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="462,73,413,81,412,75,461,68"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" title=" " alt="" coords="5,69,199,109"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="240,92,199,92,199,87,240,87"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1CrtfImportExport.html#a4dda042b0ce6f62290cc4cdebc047375" title=" " alt="" coords="469,101,641,141"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="693,124,641,124,641,119,693,119"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="247,191,420,231"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="454,213,420,213,420,208,454,208"/>
+<area shape="poly" id="edge11_Node000011_Node000009" title=" " alt="" coords="693,228,641,223,642,217,693,223"/>
 </map>

@@ -1,9 +1,15 @@
 <map id="FileInfo.cc" name="FileInfo.cc">
-<area shape="rect" id="node1" title=" " alt="" coords="216,5,304,32"/>
-<area shape="rect" id="node2" href="$FileInfo_8h.html" title=" " alt="" coords="219,80,301,107"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,162,56,189"/>
-<area shape="rect" id="node4" title=" " alt="" coords="81,162,143,189"/>
-<area shape="rect" id="node5" title=" " alt="" coords="168,155,352,196"/>
-<area shape="rect" id="node6" title=" " alt="" coords="376,155,560,196"/>
-<area shape="rect" id="node7" title=" " alt="" coords="584,162,763,189"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="216,5,304,31"/>
+<area shape="rect" id="Node000002" href="$FileInfo_8h.html" title=" " alt="" coords="219,79,301,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="263,31,263,65,257,65,257,31"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,159,56,185"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="219,106,148,127,69,154,66,156,64,151,67,150,147,122,218,101"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="81,159,143,185"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="239,107,147,155,145,150,237,102"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="168,152,352,192"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="263,104,263,138,257,138,257,104"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="376,152,560,192"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="291,102,406,145,405,150,289,107"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="584,159,763,185"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="302,98,600,154,599,159,301,103"/>
 </map>

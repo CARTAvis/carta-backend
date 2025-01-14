@@ -1,9 +1,21 @@
 <map id="carta::HistogramCache" name="carta::HistogramCache">
-<area shape="rect" id="node1" title=" " alt="" coords="25,421,195,448"/>
-<area shape="rect" id="node2" href="$structcarta_1_1BasicStats.html" title=" " alt="" coords="5,317,148,359"/>
-<area shape="rect" id="node3" title=" " alt="" coords="173,317,359,359"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Histogram.html" title=" " alt="" coords="114,228,245,255"/>
-<area shape="rect" id="node5" title=" " alt="" coords="43,95,94,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="133,95,271,121"/>
-<area shape="rect" id="node7" title=" " alt="" coords="249,5,288,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="126,445,297,471"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1BasicStats.html" title=" " alt="" coords="113,240,256,280"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="192,293,212,445,207,445,186,294"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,93,65,119"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="35,133,38,174,45,196,56,214,82,235,114,247,112,252,80,240,52,218,40,198,33,175,30,133"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="111,93,178,119"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="143,133,141,173,143,194,148,215,165,238,160,241,144,217,138,195,135,173,137,133"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="257,93,307,119"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="246,127,225,144,207,187,192,241,187,239,202,185,221,141,242,123"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1Histogram.html" title=" " alt="" coords="285,247,415,273"/>
+<area shape="poly" id="edge8_Node000008_Node000005" title=" " alt="" coords="289,131,300,171,318,215,341,246,337,249,313,217,295,173,284,132"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="257,343,443,383"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="312,392,230,447,227,443,309,388"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="477,5,516,31"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="529,34,545,53,548,56,553,55,569,46,604,24,611,25,614,31,608,60,585,119,540,217,512,260,474,296,433,324,395,345,392,340,430,320,470,292,507,257,536,215,581,117,603,58,609,32,608,29,605,29,572,50,555,60,547,61,541,57,525,38"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="370,93,509,119"/>
+<area shape="poly" id="edge10_Node000009_Node000007" title=" " alt="" coords="484,44,450,94,445,91,479,41"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="353,286,353,343,347,343,347,286"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="433,133,398,217,367,249,363,245,393,215,428,131"/>
 </map>

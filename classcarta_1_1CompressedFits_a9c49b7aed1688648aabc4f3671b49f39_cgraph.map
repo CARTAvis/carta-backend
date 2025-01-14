@@ -1,8 +1,13 @@
 <map id="carta::CompressedFits::DecompressGzFile" name="carta::CompressedFits::DecompressGzFile">
-<area shape="rect" id="node1" title=" " alt="" coords="5,89,172,131"/>
-<area shape="rect" id="node2" href="$classcarta_1_1CompressedFits.html#a7d1a86de8246054b56ff34759f89c974" title=" " alt="" coords="220,5,409,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="235,71,395,98"/>
-<area shape="rect" id="node5" href="$structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58" title=" " alt="" coords="235,122,394,149"/>
-<area shape="rect" id="node6" href="$classcarta_1_1CompressedFits.html#ab9ca1735c175f61848ebf768295ccc5c" title=" " alt="" coords="231,173,398,215"/>
-<area shape="rect" id="node3" href="$classcarta_1_1CompressedFits.html#a2c28421b2571b6b00d81c79e426a821e" title=" " alt="" coords="457,5,649,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,88,172,128"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CompressedFits.html#a7d1a86de8246054b56ff34759f89c974" title=" " alt="" coords="220,5,409,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="139,85,219,55,240,47,242,52,221,60,141,90"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="235,70,395,95"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="172,96,221,90,221,96,173,101"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58" title=" " alt="" coords="235,119,394,145"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="173,114,222,120,221,125,172,120"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1CompressedFits.html#ab9ca1735c175f61848ebf768295ccc5c" title=" " alt="" coords="231,169,398,209"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="145,126,221,153,245,162,243,167,219,159,143,131"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CompressedFits.html#a2c28421b2571b6b00d81c79e426a821e" title=" " alt="" coords="457,5,649,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="410,23,443,23,443,28,410,28"/>
 </map>

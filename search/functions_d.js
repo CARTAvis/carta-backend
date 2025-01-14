@@ -1,18 +1,16 @@
 var searchData=
 [
-  ['name_2926',['name',['../classcarta_1_1CartaHdf5Image.html#a3b9ca60ae8616bc15fa88a76719f8083',1,'carta::CartaHdf5Image::name()'],['../classcarta_1_1CartaMiriadImage.html#a5baebbd7731bbf1f0f7e8d0591d9c720',1,'carta::CartaMiriadImage::name()']]],
-  ['name_2927',['Name',['../classcarta_1_1Stokes.html#ac6e9651a6bcb9a06f8a9d6bd013e5fc1',1,'carta::Stokes']]],
-  ['name_2928',['name',['../classcarta_1_1CartaFitsImage.html#abb24134c684eb0c903ffb78b3d5f11e8',1,'carta::CartaFitsImage']]],
-  ['nativetype_2929',['NativeType',['../classcarta_1_1CartaMiriadImage.html#abd3dc522a82db77196b31eaba8fb0970',1,'carta::CartaMiriadImage']]],
-  ['nearestneighbor_2930',['NearestNeighbor',['../namespacecarta.html#a724d5f79d7c1320592c011bd3bb57e98',1,'carta']]],
-  ['newauthtoken_2931',['NewAuthToken',['../Token_8h.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc'],['../Token_8cc.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc']]],
-  ['normalizeunit_2932',['NormalizeUnit',['../Casacore_8h.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc'],['../Casacore_8cc.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc']]],
-  ['normpdf_2933',['NormPdf',['../namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e',1,'carta']]],
-  ['notimplemented_2934',['NotImplemented',['../classcarta_1_1HttpServer.html#a47a6ce88bed3ea5dcc9630b6439b86c6',1,'carta::HttpServer']]],
-  ['numberofsessions_2935',['NumberOfSessions',['../classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d',1,'carta::Session']]],
-  ['numcolumns_2936',['NumColumns',['../classcarta_1_1Table.html#a82123011be41e2f34f3840099e3790b6',1,'carta::Table']]],
-  ['numentries_2937',['NumEntries',['../classcarta_1_1DataColumn.html#a9a38514c2abb47f8081e95754eeb974d',1,'carta::DataColumn::NumEntries()'],['../classcarta_1_1Column.html#a67245941f2ccebabd2e37de41acc55ec',1,'carta::Column::NumEntries()']]],
-  ['numericfilter_2938',['NumericFilter',['../classcarta_1_1TableView.html#a0e5b9336c7ab649c04e138c3e1b35608',1,'carta::TableView']]],
-  ['numrows_2939',['NumRows',['../classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b',1,'carta::Table::NumRows()'],['../classcarta_1_1TableView.html#ad085ef6d1fb7b1918ed7a82650850ab2',1,'carta::TableView::NumRows()']]],
-  ['numstokes_2940',['NumStokes',['../classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9',1,'carta::Frame']]]
+  ['name_0',['name',['../classcarta_1_1CartaHdf5Image.html#a3b9ca60ae8616bc15fa88a76719f8083',1,'carta::CartaHdf5Image::name()'],['../classcarta_1_1CartaMiriadImage.html#a5baebbd7731bbf1f0f7e8d0591d9c720',1,'carta::CartaMiriadImage::name()'],['../classcarta_1_1Stokes.html#ac6e9651a6bcb9a06f8a9d6bd013e5fc1',1,'carta::Stokes::Name()'],['../classcarta_1_1CartaFitsImage.html#abb24134c684eb0c903ffb78b3d5f11e8',1,'carta::CartaFitsImage::name()']]],
+  ['nativetype_1',['NativeType',['../classcarta_1_1CartaMiriadImage.html#abd3dc522a82db77196b31eaba8fb0970',1,'carta::CartaMiriadImage']]],
+  ['nearestneighbor_2',['NearestNeighbor',['../namespacecarta.html#a724d5f79d7c1320592c011bd3bb57e98',1,'carta']]],
+  ['newauthtoken_3',['newauthtoken',['../Token_8h.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc'],['../Token_8cc.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc']]],
+  ['normalizeunit_4',['normalizeunit',['../Casacore_8h.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc'],['../Casacore_8cc.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc']]],
+  ['normpdf_5',['NormPdf',['../namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e',1,'carta']]],
+  ['notimplemented_6',['NotImplemented',['../classcarta_1_1HttpServer.html#a47a6ce88bed3ea5dcc9630b6439b86c6',1,'carta::HttpServer']]],
+  ['numberofsessions_7',['NumberOfSessions',['../classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d',1,'carta::Session']]],
+  ['numcolumns_8',['NumColumns',['../classcarta_1_1Table.html#a82123011be41e2f34f3840099e3790b6',1,'carta::Table']]],
+  ['numentries_9',['numentries',['../classcarta_1_1DataColumn.html#a9a38514c2abb47f8081e95754eeb974d',1,'carta::DataColumn::NumEntries()'],['../classcarta_1_1Column.html#a67245941f2ccebabd2e37de41acc55ec',1,'carta::Column::NumEntries()']]],
+  ['numericfilter_10',['NumericFilter',['../classcarta_1_1TableView.html#a0e5b9336c7ab649c04e138c3e1b35608',1,'carta::TableView']]],
+  ['numrows_11',['numrows',['../classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b',1,'carta::Table::NumRows()'],['../classcarta_1_1TableView.html#ad085ef6d1fb7b1918ed7a82650850ab2',1,'carta::TableView::NumRows()']]],
+  ['numstokes_12',['NumStokes',['../classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9',1,'carta::Frame']]]
 ];

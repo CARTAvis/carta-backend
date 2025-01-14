@@ -6,7 +6,5 @@ var namespaces_dup =
       [ "InitialWindowScale", "namespaceCARTA.html#aa4c49ddab4b04a2c6ccf74e8884890df", null ]
     ] ],
     [ "spdlog", "namespacespdlog.html", "namespacespdlog" ],
-    [ "std", null, [
-      [ "hash< carta::TileCacheKey >", "structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4.html", "structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4" ]
-    ] ]
+    [ "std", "namespacestd.html", "namespacestd" ]
 ];

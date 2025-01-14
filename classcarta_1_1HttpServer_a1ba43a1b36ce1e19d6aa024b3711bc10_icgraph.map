@@ -1,5 +1,7 @@
 <map id="carta::HttpServer::GetExistingObjects" name="carta::HttpServer::GetExistingObjects">
-<area shape="rect" id="node1" title=" " alt="" coords="384,5,531,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1HttpServer.html#a94f3006427469ddabb14f8dce474b4fc" title=" " alt="" coords="195,5,336,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1HttpServer.html#a63128482ebdede9e4da3e24fd4bf0c7e" title=" " alt="" coords="5,5,147,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="384,5,531,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1HttpServer.html#a94f3006427469ddabb14f8dce474b4fc" title=" " alt="" coords="195,5,336,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="370,28,336,28,336,23,370,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1HttpServer.html#a63128482ebdede9e4da3e24fd4bf0c7e" title=" " alt="" coords="5,5,147,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="181,28,147,28,147,23,181,23"/>
 </map>

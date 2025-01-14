@@ -1,4 +1,5 @@
 <map id="carta::FileLoader::LoadStats2DHist" name="carta::FileLoader::LoadStats2DHist">
-<area shape="rect" id="node1" title=" " alt="" coords="192,5,331,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#a4577664e7e2107a923c02da856c93b8d" title=" " alt="" coords="5,5,144,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="192,5,331,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a4577664e7e2107a923c02da856c93b8d" title=" " alt="" coords="5,5,144,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,28,145,28,145,23,178,23"/>
 </map>

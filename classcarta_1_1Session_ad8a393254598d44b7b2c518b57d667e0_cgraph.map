@@ -1,7 +1,11 @@
 <map id="carta::Session::SetInitExitTimeout" name="carta::Session::SetInitExitTimeout">
-<area shape="rect" id="node1" title=" " alt="" coords="5,64,193,105"/>
-<area shape="rect" id="node2" href="$Session_8cc.html#a9f98a9b01427a3b3c835601d903bc205" title=" " alt="" coords="241,71,364,98"/>
-<area shape="rect" id="node3" href="$classcarta_1_1ThreadManager.html#a7e1be2779e8ca2a4f4b34841b799715a" title=" " alt="" coords="412,5,615,47"/>
-<area shape="rect" id="node4" href="$namespacecarta_1_1logger.html#a7b334512783c98ccfdac74bd38aa2f9f" title=" " alt="" coords="417,71,610,98"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d" title=" " alt="" coords="419,123,607,164"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,63,193,103"/>
+<area shape="rect" id="Node000002" href="$Session_8cc.html#a9f98a9b01427a3b3c835601d903bc205" title=" " alt="" coords="241,70,364,95"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="193,80,228,80,228,85,193,85"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1ThreadManager.html#a7e1be2779e8ca2a4f4b34841b799715a" title=" " alt="" coords="412,5,615,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="349,67,426,46,427,52,351,73"/>
+<area shape="rect" id="Node000004" href="$namespacecarta_1_1logger.html#a7b334512783c98ccfdac74bd38aa2f9f" title=" " alt="" coords="417,70,610,95"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="364,80,403,80,403,85,364,85"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d" title=" " alt="" coords="419,120,607,160"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="351,93,427,114,426,119,349,98"/>
 </map>

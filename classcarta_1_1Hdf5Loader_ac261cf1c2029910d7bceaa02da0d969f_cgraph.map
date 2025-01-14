@@ -1,5 +1,10 @@
 <map id="carta::Hdf5Loader::AllocateImage" name="carta::Hdf5Loader::AllocateImage">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,152,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Hdf5Loader.html#afa5d819caee85e90912fece54d1896b4" title=" " alt="" coords="395,5,541,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Hdf5Loader.html#abb9de4af6432b5108e5870a67dfda5bb" title=" " alt="" coords="200,35,347,76"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,29,152,69"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Hdf5Loader.html#afa5d819caee85e90912fece54d1896b4" title=" " alt="" coords="395,29,541,69"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="152,35,200,31,273,27,347,31,381,34,381,39,346,36,273,33,200,36,152,41"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Hdf5Loader.html#abb9de4af6432b5108e5870a67dfda5bb" title=" " alt="" coords="200,69,347,109"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="153,62,187,69,186,74,151,67"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="431,30,429,20,435,11,448,5,468,3,491,6,503,13,501,17,489,11,468,8,449,10,438,15,434,21,436,28"/>
+<area shape="poly" id="edge4_Node000003_Node000002" title=" " alt="" coords="346,72,380,65,381,70,347,77"/>
+<area shape="poly" id="edge5_Node000003_Node000003" title=" " alt="" coords="237,70,234,60,240,51,253,45,273,43,296,46,309,53,306,57,295,51,273,48,255,50,244,55,240,61,242,68"/>
 </map>

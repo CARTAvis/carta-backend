@@ -1,6 +1,9 @@
 <map id="ExitNoSessions" name="ExitNoSessions">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,128,98"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ThreadManager.html#a7e1be2779e8ca2a4f4b34841b799715a" title=" " alt="" coords="176,5,379,47"/>
-<area shape="rect" id="node3" href="$namespacecarta_1_1logger.html#a7b334512783c98ccfdac74bd38aa2f9f" title=" " alt="" coords="181,71,374,98"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d" title=" " alt="" coords="183,123,371,164"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,70,128,95"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1ThreadManager.html#a7e1be2779e8ca2a4f4b34841b799715a" title=" " alt="" coords="176,5,379,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,67,190,46,191,52,115,73"/>
+<area shape="rect" id="Node000003" href="$namespacecarta_1_1logger.html#a7b334512783c98ccfdac74bd38aa2f9f" title=" " alt="" coords="181,70,374,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="128,80,167,80,167,85,128,85"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d" title=" " alt="" coords="183,120,371,160"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="115,93,191,114,190,119,113,98"/>
 </map>

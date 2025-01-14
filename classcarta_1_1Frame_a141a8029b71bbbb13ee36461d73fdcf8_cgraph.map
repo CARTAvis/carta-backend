@@ -1,11 +1,19 @@
 <map id="carta::Frame::CalculateMoments" name="carta::Frame::CalculateMoments">
-<area shape="rect" id="node1" title=" " alt="" coords="5,123,240,149"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="291,5,493,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#a782b43032306bd215aed9f3b24ae8af6" title=" " alt="" coords="289,57,495,98"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#a5beb07be23479551f0b88982bf72c290" title=" " alt="" coords="293,123,491,149"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#aee72393b7b1a3e676815cbf65cc23f48" title=" " alt="" coords="288,173,496,200"/>
-<area shape="rect" id="node9" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="331,224,453,251"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Stokes.html#a4f3f6776d4df43dc430c1aa77d58b0d7" title=" " alt="" coords="546,123,734,149"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="571,173,709,200"/>
-<area shape="rect" id="node8" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="544,224,736,251"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,120,240,145"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="291,5,493,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="142,118,205,80,287,41,314,32,316,37,289,46,208,85,145,122"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a782b43032306bd215aed9f3b24ae8af6" title=" " alt="" coords="289,55,495,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="183,117,284,96,285,101,184,123"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Frame.html#a5beb07be23479551f0b88982bf72c290" title=" " alt="" coords="293,120,491,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="240,130,280,130,280,135,240,135"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Frame.html#aee72393b7b1a3e676815cbf65cc23f48" title=" " alt="" coords="288,169,496,195"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="193,143,309,164,308,169,192,148"/>
+<area shape="rect" id="Node000009" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="331,219,453,244"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="150,143,212,173,289,203,319,213,318,218,287,209,210,178,148,148"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a4f3f6776d4df43dc430c1aa77d58b0d7" title=" " alt="" coords="546,120,734,145"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="456,167,562,145,563,151,457,172"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="571,169,709,195"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="496,179,558,179,558,185,496,185"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="544,219,736,244"/>
+<area shape="poly" id="edge7_Node000005_Node000008" title=" " alt="" coords="457,192,563,213,562,219,456,197"/>
 </map>

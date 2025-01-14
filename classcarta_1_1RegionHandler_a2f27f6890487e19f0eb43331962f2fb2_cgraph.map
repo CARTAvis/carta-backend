@@ -1,6 +1,11 @@
 <map id="carta::RegionHandler::SetStatsRequirements" name="carta::RegionHandler::SetStatsRequirements">
-<area shape="rect" id="node1" title=" " alt="" coords="5,85,180,127"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="228,56,387,97"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="641,64,800,105"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="435,5,593,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,85,180,125"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="228,56,387,96"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="180,91,214,86,215,91,181,96"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="641,63,800,103"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="180,105,228,105,307,107,387,105,628,89,628,94,387,111,307,112,228,111,180,110"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="435,5,593,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="386,54,421,45,422,51,388,59"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="387,75,627,79,627,84,387,80"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="587,43,635,56,634,61,586,48"/>
 </map>

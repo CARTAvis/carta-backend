@@ -1,4 +1,5 @@
 <map id="carta::Frame::GetStokesType" name="carta::Frame::GetStokesType">
-<area shape="rect" id="node1" title=" " alt="" coords="288,5,496,32"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a141a8029b71bbbb13ee36461d73fdcf8" title=" " alt="" coords="5,5,240,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="288,5,496,31"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a141a8029b71bbbb13ee36461d73fdcf8" title=" " alt="" coords="5,5,240,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="274,21,240,21,240,15,274,15"/>
 </map>

@@ -8,7 +8,7 @@ var classcarta_1_1VectorField =
     [ "VectorField", "classcarta_1_1VectorField.html#a4cbdaeb4038dfe64d3ef957da9948306", null ],
     [ "CalculatePa", "classcarta_1_1VectorField.html#a8052152add4b017199530f668be73159", null ],
     [ "CalculatePi", "classcarta_1_1VectorField.html#a877ebbedc732501a20f18f7a261d375c", null ],
-    [ "CalculatePiPa", "classcarta_1_1VectorField.html#a647fc9c5e7323efef169a741c30a97cf", null ],
+    [ "CalculatePiPa", "classcarta_1_1VectorField.html#a65f9436bb4ed2cb311a206e1a4937201", null ],
     [ "ClearParameters", "classcarta_1_1VectorField.html#a66fd5ffea85cc5ce6a06763c54e5ba22", null ],
     [ "ClearSettings", "classcarta_1_1VectorField.html#ab803cb915fc3f3f7f9c510e0f4d6fe6a", null ],
     [ "CurrStokesAsPa", "classcarta_1_1VectorField.html#a29c6a993e3558b242cdcd445aa464f24", null ],

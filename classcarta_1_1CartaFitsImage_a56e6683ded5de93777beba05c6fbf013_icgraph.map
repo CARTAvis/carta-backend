@@ -1,5 +1,7 @@
 <map id="carta::CartaFitsImage::doGetSlice" name="carta::CartaFitsImage::doGetSlice">
-<area shape="rect" id="node1" title=" " alt="" coords="427,5,589,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1CartaFitsImage.html#a65d1691d3c6e882f277db664d4d9def9" title=" " alt="" coords="216,5,379,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1CartaFitsImage.html#aba5163ae6bab1b755a775e61245e7bc3" title=" " alt="" coords="5,5,168,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="427,5,589,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CartaFitsImage.html#a65d1691d3c6e882f277db664d4d9def9" title=" " alt="" coords="216,5,379,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="413,28,379,28,379,23,413,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CartaFitsImage.html#aba5163ae6bab1b755a775e61245e7bc3" title=" " alt="" coords="5,5,168,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="202,28,168,28,168,23,202,23"/>
 </map>

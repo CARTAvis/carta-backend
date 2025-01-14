@@ -1,9 +1,15 @@
 <map id="carta::Histogram::Add" name="carta::Histogram::Add">
-<area shape="rect" id="node1" title=" " alt="" coords="5,111,169,137"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Histogram.html#a81787c73b6b71a8495c8c3ffcf4d7c46" title=" " alt="" coords="237,74,456,115"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Histogram.html#a1efcb688ab3b0d60a6216d14d87fef5e" title=" " alt="" coords="217,140,476,167"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Histogram.html#a1002f37e381eb1de20add01e234a8083" title=" " alt="" coords="524,5,735,32"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Histogram.html#ae1f537df539939fde102e25b0b42a9aa" title=" " alt="" coords="524,56,735,83"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Histogram.html#a751eb7e111b661cf77a44995db151a3b" title=" " alt="" coords="526,107,733,133"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206" title=" " alt="" coords="530,157,729,184"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,109,169,135"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Histogram.html#a81787c73b6b71a8495c8c3ffcf4d7c46" title=" " alt="" coords="237,73,456,113"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="169,110,223,104,224,109,170,115"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Histogram.html#a936adf02e45fce7f353783ba6699493a" title=" " alt="" coords="217,137,476,163"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="170,128,216,133,216,139,169,133"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Histogram.html#a1002f37e381eb1de20add01e234a8083" title=" " alt="" coords="524,5,735,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="414,70,523,39,556,31,557,36,525,45,415,75"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Histogram.html#ae1f537df539939fde102e25b0b42a9aa" title=" " alt="" coords="524,55,735,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="456,80,510,75,510,81,456,86"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Histogram.html#a751eb7e111b661cf77a44995db151a3b" title=" " alt="" coords="526,104,733,129"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="456,99,512,104,512,109,456,105"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206" title=" " alt="" coords="530,153,729,179"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="429,110,477,123,525,139,556,148,555,153,523,145,475,129,428,115"/>
 </map>

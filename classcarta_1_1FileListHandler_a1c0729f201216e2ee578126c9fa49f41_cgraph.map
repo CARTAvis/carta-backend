@@ -1,18 +1,35 @@
 <map id="carta::FileListHandler::GetFileList" name="carta::FileListHandler::GetFileList">
-<area shape="rect" id="node1" title=" " alt="" coords="5,261,165,302"/>
-<area shape="rect" id="node2" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="236,5,389,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4" title=" " alt="" coords="235,57,390,98"/>
-<area shape="rect" id="node5" href="$classcarta_1_1FileListHandler.html#a7f4f8c5ad7eb30ad51a712446752283d" title=" " alt="" coords="233,122,393,163"/>
-<area shape="rect" id="node6" href="$File_8cc.html#af9947f7bb03abff3412672068ab7acdf" title=" " alt="" coords="475,188,612,215"/>
-<area shape="rect" id="node8" href="$File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5" title=" " alt="" coords="256,239,369,265"/>
-<area shape="rect" id="node9" href="$classcarta_1_1FileListHandler.html#a17d989234776d56309c835ffdc8a8906" title=" " alt="" coords="233,290,393,331"/>
-<area shape="rect" id="node10" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="230,356,395,383"/>
-<area shape="rect" id="node11" href="$File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" title=" " alt="" coords="246,407,379,433"/>
-<area shape="rect" id="node14" href="$classcarta_1_1ListProgressReporter.html#a10a2db7d423b702b8a3f7537b348de1d" title=" " alt="" coords="213,458,412,499"/>
-<area shape="rect" id="node16" href="$classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b" title=" " alt="" coords="213,523,412,565"/>
-<area shape="rect" id="node4" href="$classcarta_1_1FileInfoLoader.html#a3395971925347571f4724f7ee714a85a" title=" " alt="" coords="466,57,621,98"/>
-<area shape="rect" id="node7" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="675,231,759,257"/>
-<area shape="rect" id="node12" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="475,360,611,387"/>
-<area shape="rect" id="node13" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="473,411,614,437"/>
-<area shape="rect" id="node15" href="$classMessage.html#a03594461e68b148a3398fbaad3d651a7" title=" " alt="" coords="460,465,627,492"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,257,165,297"/>
+<area shape="rect" id="Node000002" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="236,5,389,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="89,256,103,211,127,153,163,93,186,65,212,41,222,34,225,39,215,45,190,69,168,96,132,155,108,213,94,257"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4" title=" " alt="" coords="235,55,390,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="94,255,138,182,172,141,212,105,222,99,225,103,215,109,176,145,143,185,99,258"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1FileListHandler.html#a7f4f8c5ad7eb30ad51a712446752283d" title=" " alt="" coords="233,119,393,159"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="107,254,154,215,212,176,239,162,241,167,215,180,157,220,110,258"/>
+<area shape="rect" id="Node000006" href="$File_8cc.html#af9947f7bb03abff3412672068ab7acdf" title=" " alt="" coords="475,184,612,209"/>
+<area shape="poly" id="edge14_Node000001_Node000006" title=" " alt="" coords="123,254,165,235,213,219,277,207,343,199,461,193,461,198,343,204,278,212,214,225,167,240,125,259"/>
+<area shape="rect" id="Node000008" href="$File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5" title=" " alt="" coords="256,235,369,260"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="166,264,242,254,243,259,166,269"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1FileListHandler.html#a17d989234776d56309c835ffdc8a8906" title=" " alt="" coords="233,285,393,325"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="166,284,219,291,219,296,166,289"/>
+<area shape="rect" id="Node000010" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="230,349,395,375"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="125,294,214,334,242,343,241,348,212,339,123,299"/>
+<area shape="rect" id="Node000011" href="$File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" title=" " alt="" coords="246,399,379,424"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="106,295,152,341,182,365,215,385,234,393,232,398,212,390,179,369,148,345,102,299"/>
+<area shape="rect" id="Node000014" href="$classcarta_1_1ListProgressReporter.html#a10a2db7d423b702b8a3f7537b348de1d" title=" " alt="" coords="213,449,412,489"/>
+<area shape="poly" id="edge15_Node000001_Node000014" title=" " alt="" coords="100,296,144,364,177,402,215,435,224,440,221,444,212,439,173,406,140,367,95,298"/>
+<area shape="rect" id="Node000016" href="$classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b" title=" " alt="" coords="213,513,412,553"/>
+<area shape="poly" id="edge17_Node000001_Node000016" title=" " alt="" coords="95,296,110,339,135,393,170,450,191,476,215,499,221,503,218,508,212,503,187,479,165,453,130,396,105,341,90,298"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileInfoLoader.html#a3395971925347571f4724f7ee714a85a" title=" " alt="" coords="466,55,621,95"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="391,73,452,73,452,78,391,78"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="394,157,479,178,478,183,392,162"/>
+<area shape="rect" id="Node000007" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="675,227,759,252"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="596,207,662,223,660,228,595,212"/>
+<area shape="poly" id="edge12_Node000011_Node000007" title=" " alt="" coords="379,398,411,385,425,375,434,364,444,352,458,340,510,311,564,287,661,252,663,257,566,291,512,316,462,344,448,356,438,367,429,379,413,390,381,403"/>
+<area shape="rect" id="Node000012" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="475,353,611,379"/>
+<area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="378,396,464,379,465,384,379,401"/>
+<area shape="rect" id="Node000013" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="473,403,614,428"/>
+<area shape="poly" id="edge13_Node000011_Node000013" title=" " alt="" coords="379,410,459,411,459,417,379,415"/>
+<area shape="rect" id="Node000015" href="$classMessage.html#a03594461e68b148a3398fbaad3d651a7" title=" " alt="" coords="460,456,627,481"/>
+<area shape="poly" id="edge16_Node000014_Node000015" title=" " alt="" coords="412,466,446,466,446,471,412,471"/>
 </map>

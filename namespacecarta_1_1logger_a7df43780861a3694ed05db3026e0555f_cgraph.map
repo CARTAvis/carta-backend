@@ -1,5 +1,7 @@
 <map id="carta::logger::InitLogger" name="carta::logger::InitLogger">
-<area shape="rect" id="node1" title=" " alt="" coords="5,46,183,73"/>
-<area shape="rect" id="node2" href="$structcarta_1_1ProgramSettings.html#ab2828deeb424ee497c1157cf7854acb7" title=" " alt="" coords="231,5,401,47"/>
-<area shape="rect" id="node3" href="$namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" title=" " alt="" coords="239,71,393,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,45,183,70"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1ProgramSettings.html#a97807f0274502e490bec84c4eb22823c" title=" " alt="" coords="231,5,401,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,42,217,37,218,42,183,47"/>
+<area shape="rect" id="Node000003" href="$namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" title=" " alt="" coords="239,69,393,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="183,67,226,74,225,79,182,73"/>
 </map>

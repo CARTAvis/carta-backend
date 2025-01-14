@@ -1,7 +1,11 @@
 <map id="carta::ImageFitter::SolveSystem" name="carta::ImageFitter::SolveSystem">
-<area shape="rect" id="node1" title="Main function for the multiple Gaussian image fitting." alt="" coords="5,71,144,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29" title="Calculate parameter errors after fitting." alt="" coords="204,5,343,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5" title="Calculate the model and residual image data after fitting." alt="" coords="192,71,355,112"/>
-<area shape="rect" id="node5" href="$classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b" title="Called after each iteration of the fitting." alt="" coords="204,136,343,177"/>
-<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" title="Extract Gaussian parameters from a vector." alt="" coords="403,5,564,47"/>
+<area shape="rect" id="Node000001" title="Main function for the multiple Gaussian image fitting." alt="" coords="5,69,144,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29" title="Calculate parameter errors after fitting." alt="" coords="204,5,343,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="137,67,197,47,199,52,138,72"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5" title="Calculate the model and residual image data after fitting." alt="" coords="192,69,355,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="144,87,178,87,178,92,144,92"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b" title="Called after each iteration of the fitting." alt="" coords="204,133,343,173"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="138,107,199,127,197,132,137,112"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" title="Extract Gaussian parameters from a vector." alt="" coords="403,5,564,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="343,23,389,23,389,28,343,28"/>
 </map>

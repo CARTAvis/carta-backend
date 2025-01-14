@@ -1,18 +1,38 @@
 <map id="carta::Ds9ImportExport::ImportRulerRegion" name="carta::Ds9ImportExport::ImportRulerRegion">
-<area shape="rect" id="node1" title=" " alt="" coords="5,243,179,284"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Ds9ImportExport.html#a3f073f7079cfc236df596a6741297240" title=" " alt="" coords="227,103,424,144"/>
-<area shape="rect" id="node8" href="$classcarta_1_1RegionImportExport.html#ae1228bb4a6dc5f9b25e981217651ae58" title=" " alt="" coords="229,208,422,249"/>
-<area shape="rect" id="node10" href="$classcarta_1_1Ds9ImportExport.html#a1d17ac2c72ac487331c6bdd997df56da" title=" " alt="" coords="235,323,415,364"/>
-<area shape="rect" id="node15" href="$classcarta_1_1Ds9ImportExport.html#a24098fce6d296906d3afa1e7127d54c7" title=" " alt="" coords="235,447,416,488"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionImportExport.html#a4dbf1bb6405ba5cbc0dea6803c3d2eef" title=" " alt="" coords="482,5,675,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Ds9ImportExport.html#ac467f316f95fb7df1f782c59834cc104" title=" " alt="" coords="492,71,665,112"/>
-<area shape="rect" id="node7" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="518,137,639,163"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Ds9ImportExport.html#a4a6b4a25d131ae9fc0a4f3380e6b6521" title=" " alt="" coords="733,39,944,80"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Ds9ImportExport.html#a59d1155bdf996a30a72faed8fc5ef384" title=" " alt="" coords="752,104,925,145"/>
-<area shape="rect" id="node9" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="794,267,883,294"/>
-<area shape="rect" id="node11" href="$classcarta_1_1RegionImportExport.html#af21c3543b73c915a0a007b3472a74b0f" title=" " alt="" coords="482,420,675,461"/>
-<area shape="rect" id="node12" href="$classcarta_1_1Ds9ImportExport.html#a4579ce073b1c5b91a9c62e38e48d4944" title=" " alt="" coords="475,289,683,331"/>
-<area shape="rect" id="node13" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title=" " alt="" coords="793,362,884,389"/>
-<area shape="rect" id="node14" href="$classcarta_1_1Ds9ImportExport.html#a38914b11d3f6461aab91779d74e6e364" title=" " alt="" coords="472,355,685,396"/>
-<area shape="rect" id="node16" href="$classcarta_1_1Ds9ImportExport.html#a6567342006ecbbae65a144260c12cd16" title=" " alt="" coords="479,537,678,579"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,239,179,279"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9ImportExport.html#a3f073f7079cfc236df596a6741297240" title=" " alt="" coords="227,100,424,140"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="126,236,277,145,280,150,128,241"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1RegionImportExport.html#ae1228bb4a6dc5f9b25e981217651ae58" title=" " alt="" coords="229,204,422,244"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="179,243,214,238,215,243,180,248"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1Ds9ImportExport.html#a1d17ac2c72ac487331c6bdd997df56da" title=" " alt="" coords="235,317,415,357"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="153,276,253,310,251,315,151,281"/>
+<area shape="rect" id="Node000015" href="$classcarta_1_1Ds9ImportExport.html#a24098fce6d296906d3afa1e7127d54c7" title=" " alt="" coords="235,439,416,479"/>
+<area shape="poly" id="edge19_Node000001_Node000015" title=" " alt="" coords="118,277,292,427,289,431,115,281"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionImportExport.html#a4dbf1bb6405ba5cbc0dea6803c3d2eef" title=" " alt="" coords="482,5,675,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="369,97,471,55,494,47,495,52,473,60,371,102"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9ImportExport.html#ac467f316f95fb7df1f782c59834cc104" title=" " alt="" coords="492,69,665,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="424,105,478,99,479,104,425,111"/>
+<area shape="rect" id="Node000007" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="518,134,639,159"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="425,128,505,136,504,142,424,133"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9ImportExport.html#a4a6b4a25d131ae9fc0a4f3380e6b6521" title=" " alt="" coords="733,37,944,77"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="665,76,720,69,720,75,666,81"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Ds9ImportExport.html#a59d1155bdf996a30a72faed8fc5ef384" title=" " alt="" coords="752,101,925,141"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="666,97,738,106,738,112,665,103"/>
+<area shape="rect" id="Node000009" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="794,265,883,290"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="422,215,548,215,617,218,686,227,743,240,794,257,793,262,741,245,685,232,617,224,548,220,422,221"/>
+<area shape="poly" id="edge17_Node000010_Node000009" title=" " alt="" coords="360,315,411,290,471,271,555,259,639,257,717,260,781,267,780,272,717,266,639,262,556,265,473,276,413,295,362,320"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1RegionImportExport.html#af21c3543b73c915a0a007b3472a74b0f" title=" " alt="" coords="482,413,675,453"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="370,355,473,399,495,407,494,412,471,404,368,360"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1Ds9ImportExport.html#a4579ce073b1c5b91a9c62e38e48d4944" title=" " alt="" coords="475,285,683,325"/>
+<area shape="poly" id="edge11_Node000010_Node000012" title=" " alt="" coords="415,323,461,318,461,323,416,329"/>
+<area shape="rect" id="Node000013" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title=" " alt="" coords="793,357,884,382"/>
+<area shape="poly" id="edge18_Node000010_Node000013" title=" " alt="" coords="350,355,424,421,473,463,530,481,578,485,626,479,685,463,721,449,756,429,811,389,814,393,758,434,723,453,686,468,627,484,578,490,529,486,471,468,420,426,347,359"/>
+<area shape="rect" id="Node000014" href="$classcarta_1_1Ds9ImportExport.html#a38914b11d3f6461aab91779d74e6e364" title=" " alt="" coords="472,349,685,389"/>
+<area shape="poly" id="edge14_Node000010_Node000014" title=" " alt="" coords="416,346,459,352,458,357,415,351"/>
+<area shape="poly" id="edge12_Node000012_Node000009" title=" " alt="" coords="683,291,780,281,781,286,683,297"/>
+<area shape="poly" id="edge13_Node000012_Node000013" title=" " alt="" coords="661,323,780,352,779,358,660,328"/>
+<area shape="poly" id="edge15_Node000014_Node000009" title=" " alt="" coords="648,347,684,335,794,293,796,298,686,340,650,352"/>
+<area shape="poly" id="edge16_Node000014_Node000013" title=" " alt="" coords="685,367,779,367,779,372,685,372"/>
+<area shape="rect" id="Node000016" href="$classcarta_1_1Ds9ImportExport.html#a6567342006ecbbae65a144260c12cd16" title=" " alt="" coords="479,528,678,568"/>
+<area shape="poly" id="edge20_Node000015_Node000016" title=" " alt="" coords="384,476,509,521,507,526,382,481"/>
 </map>

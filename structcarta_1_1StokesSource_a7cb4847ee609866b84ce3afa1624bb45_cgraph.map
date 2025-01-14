@@ -1,4 +1,5 @@
 <map id="carta::StokesSource::IsOriginalImage" name="carta::StokesSource::IsOriginalImage">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,156,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="204,13,396,39"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,156,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="204,13,396,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,23,190,23,190,28,157,28"/>
 </map>

@@ -1,12 +1,21 @@
 <map id="carta::HttpServer::HandleSetPreferences" name="carta::HttpServer::HandleSetPreferences">
-<area shape="rect" id="node1" title=" " alt="" coords="5,104,172,145"/>
-<area shape="rect" id="node2" href="$classcarta_1_1HttpServer.html#a9f22cc64ac844efa362e5cae7e227b18" title=" " alt="" coords="249,5,408,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" title=" " alt="" coords="258,71,399,112"/>
-<area shape="rect" id="node7" href="$classcarta_1_1HttpServer.html#a18e362a5de3bde7f163d2c0382a9b848" title=" " alt="" coords="220,136,437,177"/>
-<area shape="rect" id="node10" href="$classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" title=" " alt="" coords="258,201,399,243"/>
-<area shape="rect" id="node3" href="$classcarta_1_1HttpServer.html#a3d73c3c23b0a75f2db9496c6a027d0e9" title=" " alt="" coords="502,5,643,47"/>
-<area shape="rect" id="node5" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="501,78,644,105"/>
-<area shape="rect" id="node6" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title=" " alt="" coords="708,78,919,105"/>
-<area shape="rect" id="node8" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="485,132,660,173"/>
-<area shape="rect" id="node9" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="494,197,651,239"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,101,172,141"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1HttpServer.html#a9f22cc64ac844efa362e5cae7e227b18" title=" " alt="" coords="249,5,408,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="126,99,219,55,240,47,242,52,221,60,128,104"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" title=" " alt="" coords="258,69,399,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="172,108,244,98,245,103,173,113"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1HttpServer.html#a18e362a5de3bde7f163d2c0382a9b848" title=" " alt="" coords="220,133,437,173"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="173,130,207,134,206,140,172,135"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" title=" " alt="" coords="258,197,399,237"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="128,139,221,183,245,192,244,197,219,188,126,144"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1HttpServer.html#a3d73c3c23b0a75f2db9496c6a027d0e9" title=" " alt="" coords="502,5,643,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="408,23,488,23,488,28,408,28"/>
+<area shape="rect" id="Node000005" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="501,77,644,102"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="400,87,488,87,488,92,400,92"/>
+<area shape="rect" id="Node000006" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title=" " alt="" coords="708,77,919,102"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="644,87,694,87,694,92,644,92"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="485,129,660,169"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="438,149,472,148,472,154,438,154"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="494,193,651,233"/>
+<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="411,171,481,188,480,193,410,176"/>
 </map>

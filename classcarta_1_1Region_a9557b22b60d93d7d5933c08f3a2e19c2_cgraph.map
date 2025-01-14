@@ -1,5 +1,7 @@
 <map id="carta::Region::IsAnnotation" name="carta::Region::IsAnnotation">
-<area shape="rect" id="node1" title=" " alt="" coords="5,46,204,73"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="252,5,436,47"/>
-<area shape="rect" id="node3" href="$structcarta_1_1RegionState.html#abb4d405523dc5b896a5f28ccaf707513" title=" " alt="" coords="273,71,415,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,45,204,70"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="252,5,436,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="200,42,238,37,239,42,200,47"/>
+<area shape="rect" id="Node000003" href="$structcarta_1_1RegionState.html#abb4d405523dc5b896a5f28ccaf707513" title=" " alt="" coords="273,69,415,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="200,67,259,75,259,81,200,73"/>
 </map>

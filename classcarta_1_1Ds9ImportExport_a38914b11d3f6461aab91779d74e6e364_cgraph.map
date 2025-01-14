@@ -1,5 +1,7 @@
 <map id="carta::Ds9ImportExport::ImportPointStyleParameters" name="carta::Ds9ImportExport::ImportPointStyleParameters">
-<area shape="rect" id="node1" title=" " alt="" coords="5,23,219,65"/>
-<area shape="rect" id="node2" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="267,5,357,32"/>
-<area shape="rect" id="node3" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title=" " alt="" coords="267,56,357,83"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,23,219,63"/>
+<area shape="rect" id="Node000002" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="267,5,357,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,27,253,23,254,28,219,32"/>
+<area shape="rect" id="Node000003" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title=" " alt="" coords="267,55,357,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="219,54,253,58,252,63,219,59"/>
 </map>

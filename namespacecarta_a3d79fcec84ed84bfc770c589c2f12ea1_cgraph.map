@@ -1,5 +1,7 @@
 <map id="carta::BlockSmoothSSE" name="carta::BlockSmoothSSE">
-<area shape="rect" id="node1" title=" " alt="" coords="5,42,179,69"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc" title=" " alt="" coords="227,5,392,47"/>
-<area shape="rect" id="node3" href="$namespacecarta.html#a64f1569d1c90db30af9f2d719f9ffe59" title=" " alt="" coords="250,71,369,98"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,42,179,67"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc" title=" " alt="" coords="227,5,392,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,40,213,36,213,41,179,46"/>
+<area shape="rect" id="Node000003" href="$namespacecarta.html#a64f1569d1c90db30af9f2d719f9ffe59" title=" " alt="" coords="250,70,369,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="179,63,237,71,236,76,178,68"/>
 </map>

@@ -1,7 +1,22 @@
 <map id="carta::RegionImportExport::ParseRegionParameters" name="carta::RegionImportExport::ParseRegionParameters">
-<area shape="rect" id="node1" title=" " alt="" coords="669,39,863,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Ds9ImportExport.html#abefe6703d0bec4704f263bc3aea9e55c" title=" " alt="" coords="448,5,621,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Ds9ImportExport.html#aa2a42c3190f56fc57565646a5b98a45d" title=" " alt="" coords="448,71,621,112"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588" title=" " alt="" coords="227,39,400,80"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="5,39,179,80"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="889,116,1083,156"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImportExport.html#a1bd7d55dfc8714003a0d44e1ade6cc89" title=" " alt="" coords="669,29,841,69"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="918,114,808,72,810,67,920,109"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CrtfImportExport.html#a8c42abb411b254f52088f70ca8c51a63" title=" " alt="" coords="226,56,398,96"/>
+<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="876,129,398,86,399,81,876,124"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Ds9ImportExport.html#abefe6703d0bec4704f263bc3aea9e55c" title=" " alt="" coords="668,144,841,184"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="876,152,842,156,841,151,875,147"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1Ds9ImportExport.html#aa2a42c3190f56fc57565646a5b98a45d" title=" " alt="" coords="668,208,841,248"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="926,164,842,198,811,210,809,206,840,194,924,159"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="792,18,779,11,755,8,733,10,721,15,716,21,718,28,713,30,711,20,717,10,732,5,755,3,781,6,795,13"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfImportExport.html#a510c2dca5ec485cb43b135e52233a0d3" title=" " alt="" coords="447,29,619,69"/>
+<area shape="poly" id="edge3_Node000002_Node000003" title=" " alt="" coords="655,52,620,52,620,47,655,47"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="434,64,399,68,398,63,433,59"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CrtfImportExport.html#a4dda042b0ce6f62290cc4cdebc047375" title=" " alt="" coords="5,56,177,96"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="212,79,177,79,177,73,212,73"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588" title=" " alt="" coords="447,147,620,187"/>
+<area shape="poly" id="edge8_Node000006_Node000007" title=" " alt="" coords="654,168,620,168,620,163,654,163"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="225,147,399,187"/>
+<area shape="poly" id="edge9_Node000007_Node000008" title=" " alt="" coords="433,169,399,169,399,164,433,164"/>
+<area shape="poly" id="edge11_Node000009_Node000007" title=" " alt="" coords="668,207,605,189,607,184,669,202"/>
 </map>

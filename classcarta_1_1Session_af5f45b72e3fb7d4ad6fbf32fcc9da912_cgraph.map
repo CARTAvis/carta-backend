@@ -1,7 +1,11 @@
 <map id="carta::Session::SendEvent" name="carta::Session::SendEvent">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,196,98"/>
-<area shape="rect" id="node2" href="$namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" title=" " alt="" coords="244,13,475,39"/>
-<area shape="rect" id="node4" href="$classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" title=" " alt="" coords="270,64,449,105"/>
-<area shape="rect" id="node5" href="$classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d" title=" " alt="" coords="270,129,449,171"/>
-<area shape="rect" id="node3" href="$namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" title=" " alt="" coords="523,5,677,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,70,196,95"/>
+<area shape="rect" id="Node000002" href="$namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" title=" " alt="" coords="244,13,475,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="158,67,243,48,287,38,288,44,245,53,159,73"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" title=" " alt="" coords="270,63,449,103"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="196,80,256,80,256,85,196,85"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d" title=" " alt="" coords="270,127,449,167"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="154,93,265,121,264,126,153,98"/>
+<area shape="rect" id="Node000003" href="$namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" title=" " alt="" coords="523,5,677,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="475,23,509,23,509,28,475,28"/>
 </map>

@@ -1,5 +1,7 @@
 <map id="carta::Session::Session" name="carta::Session::Session">
-<area shape="rect" id="node1" title=" " alt="" coords="5,46,176,73"/>
-<area shape="rect" id="node2" href="$structcarta_1_1ProgramSettings.html#ab2828deeb424ee497c1157cf7854acb7" title=" " alt="" coords="236,5,407,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Session.html#a4f229e71ff8f733f169ed29da7866082" title=" " alt="" coords="224,71,419,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,45,176,70"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1ProgramSettings.html#a97807f0274502e490bec84c4eb22823c" title=" " alt="" coords="236,5,407,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,43,222,36,223,42,177,48"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#a4f229e71ff8f733f169ed29da7866082" title=" " alt="" coords="224,69,419,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="177,67,211,71,210,77,176,72"/>
 </map>

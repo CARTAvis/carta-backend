@@ -1,7 +1,11 @@
 <map id="carta::PreviewCutParameters" name="carta::PreviewCutParameters">
-<area shape="rect" id="node1" title=" " alt="" coords="137,153,348,180"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,56,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="115,5,253,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="283,5,322,32"/>
-<area shape="rect" id="node5" title=" " alt="" coords="419,5,469,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="111,152,322,177"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,44,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="21,44,19,87,24,108,35,126,46,134,64,141,112,152,110,157,62,146,44,139,31,130,19,110,14,87,16,44"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="123,5,174,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="152,44,157,85,164,106,174,127,184,139,197,150,194,154,181,143,169,129,159,108,152,86,146,45"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="199,5,336,31"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="261,45,223,153,218,151,256,43"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="361,5,411,31"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="386,45,375,88,364,111,348,130,327,144,304,154,302,149,325,140,344,126,359,108,370,86,381,44"/>
 </map>

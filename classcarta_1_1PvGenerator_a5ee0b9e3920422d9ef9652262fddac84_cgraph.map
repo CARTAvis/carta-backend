@@ -1,6 +1,0 @@
-<map id="carta::PvGenerator::SetupPvImage" name="carta::PvGenerator::SetupPvImage">
-<area shape="rect" id="node1" title=" " alt="" coords="5,23,149,65"/>
-<area shape="rect" id="node2" href="$classcarta_1_1PvGenerator.html#a5a390c35d2e0f5fd1f8051fd2704f70d" title=" " alt="" coords="197,23,387,65"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="446,5,583,32"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" title=" " alt="" coords="435,56,595,83"/>
-</map>

@@ -1,5 +1,7 @@
 <map id="carta::RegionConverter::GetCachedLCRegion" name="carta::RegionConverter::GetCachedLCRegion">
-<area shape="rect" id="node1" title=" " alt="" coords="237,39,409,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1" title=" " alt="" coords="11,5,183,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionConverter.html#a27a07e5b73b1f32aefadb83b9ba61994" title=" " alt="" coords="5,71,189,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="237,37,409,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1" title=" " alt="" coords="11,5,183,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="223,46,183,40,184,35,224,41"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionConverter.html#a27a07e5b73b1f32aefadb83b9ba61994" title=" " alt="" coords="5,69,189,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="224,74,190,79,189,74,223,69"/>
 </map>

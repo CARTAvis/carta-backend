@@ -1,7 +1,11 @@
 <map id="carta::SpectralCache" name="carta::SpectralCache">
-<area shape="rect" id="node1" title=" " alt="" coords="33,288,189,315"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,184,216,225"/>
-<area shape="rect" id="node3" title=" " alt="" coords="15,95,100,121"/>
-<area shape="rect" id="node4" title=" " alt="" coords="124,95,289,121"/>
-<area shape="rect" id="node5" title=" " alt="" coords="173,5,240,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="33,284,189,309"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,181,216,221"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,235,113,284,108,284,108,235"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="15,93,100,119"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="73,129,102,180,98,182,68,132"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="124,93,289,119"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="187,130,132,183,128,179,183,126"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="173,5,240,31"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="209,45,209,93,204,93,204,45"/>
 </map>

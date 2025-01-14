@@ -1,8 +1,13 @@
 <map id="carta::ContourSettings" name="carta::ContourSettings">
-<area shape="rect" id="node1" title=" " alt="" coords="179,228,346,255"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,95,80,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="167,95,206,121"/>
-<area shape="rect" id="node4" title=" " alt="" coords="276,95,404,121"/>
-<area shape="rect" id="node5" title=" " alt="" coords="428,95,593,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="477,5,544,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="249,225,415,251"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,93,171,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="110,127,150,164,201,199,234,213,268,223,266,228,232,218,199,204,147,168,106,131"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="55,5,121,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="91,45,91,93,85,93,85,45"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="195,93,323,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="255,133,253,167,255,184,262,200,275,213,291,223,289,228,272,217,258,203,250,186,247,167,250,132"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="387,93,426,119"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="406,133,397,167,379,203,354,227,350,223,375,200,392,166,401,132"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="523,93,597,119"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="561,134,552,170,543,188,530,203,511,214,483,222,416,233,415,227,482,217,509,209,526,199,538,185,547,168,556,132"/>
 </map>

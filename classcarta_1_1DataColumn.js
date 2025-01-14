@@ -9,7 +9,7 @@ var classcarta_1_1DataColumn =
     [ "FillFromBuffer", "classcarta_1_1DataColumn.html#a620147f83e0c0d1e75d366814c3e8498", null ],
     [ "FilterIndices", "classcarta_1_1DataColumn.html#aa45b56b620e2b07b10c522533b09b721", null ],
     [ "FromText", "classcarta_1_1DataColumn.html#a34bafc86e0e1fe9c838dca2c82d18afe", null ],
-    [ "GetColumnData", "classcarta_1_1DataColumn.html#acc8b64b4f365faed0348c3e7aabb3953", null ],
+    [ "GetColumnData", "classcarta_1_1DataColumn.html#a52c882c62904df66f1c9e0948342df1b", null ],
     [ "NumEntries", "classcarta_1_1DataColumn.html#a9a38514c2abb47f8081e95754eeb974d", null ],
     [ "Resize", "classcarta_1_1DataColumn.html#ab5b3fcb983a7f56c40cba3acd265ff60", null ],
     [ "SetEmpty", "classcarta_1_1DataColumn.html#afcd532deb4b217a0d612c6ab6ceacd90", null ],
@@ -17,6 +17,6 @@ var classcarta_1_1DataColumn =
     [ "SetFromValue", "classcarta_1_1DataColumn.html#a6f44ec392ff83f763ccf7bde8fa5a32d", null ],
     [ "SortIndices", "classcarta_1_1DataColumn.html#ad1bb047f77eb35a22d20f3a947fb5969", null ],
     [ "SortIndices", "classcarta_1_1DataColumn.html#adc5a3e9aa02735a42da33a2a16bb8a2f", null ],
-    [ "TryCast", "classcarta_1_1DataColumn.html#ad8041f37686aa5add5dd1515e5e088b6", null ],
+    [ "TryCast", "classcarta_1_1DataColumn.html#a9ee54f3fb58e28a423fb84418a0c178d", null ],
     [ "entries", "classcarta_1_1DataColumn.html#a5e0508c0706809c23a0a458cddf61d85", null ]
 ];

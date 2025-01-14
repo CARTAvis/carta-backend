@@ -1,12 +1,21 @@
 <map id="carta::CompressedFits" name="carta::CompressedFits">
-<area shape="rect" id="node1" title=" " alt="" coords="672,176,839,203"/>
-<area shape="rect" id="node2" title=" " alt="" coords="257,8,464,35"/>
-<area shape="rect" id="node3" title=" " alt="" coords="321,59,400,85"/>
-<area shape="rect" id="node4" title=" " alt="" coords="279,110,443,151"/>
-<area shape="rect" id="node5" title=" " alt="" coords="45,117,105,144"/>
-<area shape="rect" id="node6" title=" " alt="" coords="341,176,380,203"/>
-<area shape="rect" id="node7" title=" " alt="" coords="335,236,386,263"/>
-<area shape="rect" id="node8" title=" " alt="" coords="317,293,404,320"/>
-<area shape="rect" id="node9" title=" " alt="" coords="5,286,144,327"/>
-<area shape="rect" id="node10" title=" " alt="" coords="299,344,422,371"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="672,183,839,209"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="317,27,404,53"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="417,32,469,31,528,35,591,47,649,70,684,95,713,126,750,182,745,185,709,129,680,99,647,74,589,52,528,40,469,36,418,37"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,20,144,60"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="158,37,317,37,317,43,158,43"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="299,77,422,102"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="436,86,538,94,595,104,649,120,677,133,702,150,742,181,739,185,699,154,674,138,647,125,593,109,538,99,435,91"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="335,126,386,151"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="400,141,648,176,678,181,677,186,648,181,399,146"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="279,176,443,216"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="456,193,672,193,672,199,456,199"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="45,183,105,209"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="119,193,278,193,278,199,119,199"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="257,241,464,266"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="477,237,648,213,689,206,690,211,648,219,478,242"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="321,290,400,315"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="413,298,523,285,586,273,647,255,696,232,735,207,738,211,699,236,649,260,587,278,524,290,414,303"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="341,347,380,373"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="394,361,445,363,510,361,581,349,615,338,647,323,681,297,709,265,745,208,750,210,714,269,685,301,649,328,617,343,582,354,511,366,445,369,394,366"/>
 </map>

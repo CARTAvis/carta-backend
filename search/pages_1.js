@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['welcome_20to_20the_20_25carta_20backend_20documentation_4038',['Welcome to the %CARTA backend documentation',['../index.html',1,'']]]
+  ['backend_20documentation_0',['Welcome to the CARTA backend documentation',['../index.html',1,'']]]
 ];

@@ -1,5 +1,7 @@
 <map id="carta::PvGenerator::GetPvCoordinateSystem" name="carta::PvGenerator::GetPvCoordinateSystem">
-<area shape="rect" id="node1" title=" " alt="" coords="5,23,195,65"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="254,5,391,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" title=" " alt="" coords="243,56,403,83"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,23,195,63"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="254,5,391,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="195,30,240,25,240,30,196,35"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" title=" " alt="" coords="243,55,403,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="196,51,229,55,229,60,195,56"/>
 </map>

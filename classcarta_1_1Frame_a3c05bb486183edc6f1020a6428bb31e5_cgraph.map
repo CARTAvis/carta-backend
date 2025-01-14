@@ -1,7 +1,11 @@
 <map id="carta::Frame::ValidateChannelStokes" name="carta::Frame::ValidateChannelStokes">
-<area shape="rect" id="node1" title=" " alt="" coords="5,35,224,76"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#aeff1a00d7f22df6f180888b1d9eaf457" title=" " alt="" coords="272,42,465,69"/>
-<area shape="rect" id="node3" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="515,5,666,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117" title=" " alt="" coords="513,71,668,98"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="716,13,908,39"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,35,224,75"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#aeff1a00d7f22df6f180888b1d9eaf457" title=" " alt="" coords="272,42,465,67"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="224,52,258,52,258,57,224,57"/>
+<area shape="rect" id="Node000003" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="515,5,666,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="465,39,501,34,502,40,465,45"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117" title=" " alt="" coords="513,70,668,95"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="466,64,500,69,499,74,465,70"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="716,13,908,38"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="666,23,702,23,702,28,666,28"/>
 </map>

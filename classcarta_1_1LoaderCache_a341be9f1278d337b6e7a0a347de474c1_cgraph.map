@@ -1,11 +1,19 @@
 <map id="carta::LoaderCache::Get" name="carta::LoaderCache::Get">
-<area shape="rect" id="node1" title=" " alt="" coords="5,46,184,73"/>
-<area shape="rect" id="node2" href="$classcarta_1_1LoaderCache.html#a266bb1e531c331928d9af7f7c3c5b05d" title=" " alt="" coords="232,5,379,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f" title=" " alt="" coords="236,71,375,112"/>
-<area shape="rect" id="node4" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="427,27,580,54"/>
-<area shape="rect" id="node5" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="435,78,572,105"/>
-<area shape="rect" id="node9" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title=" " alt="" coords="436,129,571,155"/>
-<area shape="rect" id="node6" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="631,27,767,54"/>
-<area shape="rect" id="node7" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="657,78,741,105"/>
-<area shape="rect" id="node8" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="628,129,769,155"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,45,184,70"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1LoaderCache.html#a266bb1e531c331928d9af7f7c3c5b05d" title=" " alt="" coords="232,5,379,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,42,218,36,219,41,179,47"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f" title=" " alt="" coords="236,69,375,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="179,67,222,74,222,79,178,73"/>
+<area shape="rect" id="Node000004" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="427,27,580,53"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="374,69,438,53,439,59,376,75"/>
+<area shape="rect" id="Node000005" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="435,77,572,102"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="375,87,420,87,420,92,375,92"/>
+<area shape="rect" id="Node000009" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title=" " alt="" coords="436,126,571,151"/>
+<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="376,104,439,120,438,125,374,109"/>
+<area shape="rect" id="Node000006" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="631,27,767,53"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="554,74,634,54,635,59,555,79"/>
+<area shape="rect" id="Node000007" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="657,77,741,102"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="572,87,643,87,643,92,572,92"/>
+<area shape="rect" id="Node000008" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="628,126,769,151"/>
+<area shape="poly" id="edge7_Node000005_Node000008" title=" " alt="" coords="555,99,635,120,634,125,554,105"/>
 </map>

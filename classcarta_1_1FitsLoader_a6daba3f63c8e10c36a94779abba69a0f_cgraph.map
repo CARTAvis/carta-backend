@@ -1,6 +1,9 @@
 <map id="carta::FitsLoader::ResetImageBeam" name="carta::FitsLoader::ResetImageBeam">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,144,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FitsLoader.html#acf150034b1de8ed3b98e596e17e9c2ef" title=" " alt="" coords="192,5,349,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8" title=" " alt="" coords="201,71,340,112"/>
-<area shape="rect" id="node3" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title=" " alt="" coords="397,13,587,39"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,144,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FitsLoader.html#acf150034b1de8ed3b98e596e17e9c2ef" title=" " alt="" coords="192,5,349,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="144,43,178,38,179,43,145,49"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8" title=" " alt="" coords="201,69,340,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="145,66,188,73,187,78,144,71"/>
+<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title=" " alt="" coords="397,13,587,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="350,23,384,23,384,28,350,28"/>
 </map>

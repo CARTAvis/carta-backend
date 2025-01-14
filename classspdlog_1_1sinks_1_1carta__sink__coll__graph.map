@@ -1,10 +1,19 @@
 <map id="spdlog::sinks::carta_sink" name="spdlog::sinks::carta_sink">
-<area shape="rect" id="node1" title=" " alt="" coords="696,137,879,163"/>
-<area shape="rect" id="node2" href="$classansicolor__sink.html" title=" " alt="" coords="395,5,569,47"/>
-<area shape="rect" id="node3" title=" " alt="" coords="398,71,566,112"/>
-<area shape="rect" id="node4" title=" " alt="" coords="193,78,280,105"/>
-<area shape="rect" id="node5" title=" " alt="" coords="5,71,144,112"/>
-<area shape="rect" id="node6" title=" " alt="" coords="437,137,527,163"/>
-<area shape="rect" id="node7" title=" " alt="" coords="452,187,512,214"/>
-<area shape="rect" id="node8" title=" " alt="" coords="393,239,571,280"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="696,119,879,145"/>
+<area shape="rect" id="Node000002" href="$classansicolor__sink.html" title=" " alt="" coords="395,5,569,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="573,46,673,79,761,117,759,122,671,84,571,52"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="452,70,512,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="526,86,672,109,715,117,714,122,672,115,525,92"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="437,119,527,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="541,129,696,129,696,135,541,135"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="393,169,571,209"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="584,168,718,142,719,147,585,173"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="195,177,279,202"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="293,187,393,187,393,192,293,192"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="398,233,566,273"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="559,227,671,186,761,142,764,147,673,190,561,232"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="193,241,280,266"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="294,251,398,251,398,256,294,256"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="5,233,144,273"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="157,251,193,251,193,256,157,256"/>
 </map>

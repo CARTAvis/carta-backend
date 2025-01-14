@@ -1,9 +1,15 @@
 <map id="carta::CartaHdf5Image" name="carta::CartaHdf5Image">
-<area shape="rect" id="node1" title=" " alt="" coords="385,147,556,174"/>
-<area shape="rect" id="node2" title=" " alt="" coords="11,5,197,47"/>
-<area shape="rect" id="node3" title=" " alt="" coords="37,71,171,98"/>
-<area shape="rect" id="node4" title=" " alt="" coords="65,122,143,149"/>
-<area shape="rect" id="node5" title=" " alt="" coords="23,173,185,199"/>
-<area shape="rect" id="node6" title=" " alt="" coords="47,223,161,250"/>
-<area shape="rect" id="node7" title=" " alt="" coords="5,274,203,301"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="385,145,556,170"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="11,5,197,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="212,34,287,49,362,75,417,108,458,142,454,146,414,113,360,80,286,54,211,39"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="47,70,161,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="175,87,264,100,362,119,437,142,435,147,361,124,263,105,174,92"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="23,119,185,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="198,136,385,149,385,154,198,141"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="37,169,171,194"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="186,180,270,179,361,173,405,167,405,173,362,179,271,184,186,185"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="65,218,143,243"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="157,227,253,219,307,211,361,200,405,185,444,168,446,173,407,190,362,205,308,217,253,225,157,232"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="5,267,203,293"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="216,276,289,265,325,256,360,243,390,227,417,206,456,168,460,172,420,211,393,231,362,248,327,261,290,270,217,281"/>
 </map>

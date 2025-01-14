@@ -1,4 +1,5 @@
 <map id="carta::Frame::FillHistogramFromLoaderCache" name="carta::Frame::FillHistogramFromLoaderCache">
-<area shape="rect" id="node1" title=" " alt="" coords="229,5,428,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" title=" " alt="" coords="5,5,181,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="229,5,428,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" title=" " alt="" coords="5,5,181,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="216,28,182,28,182,23,216,23"/>
 </map>

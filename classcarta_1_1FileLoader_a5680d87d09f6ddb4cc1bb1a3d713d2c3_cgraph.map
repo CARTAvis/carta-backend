@@ -1,10 +1,25 @@
 <map id="carta::FileLoader::GetStokesImage" name="carta::FileLoader::GetStokesImage">
-<area shape="rect" id="node1" title=" " alt="" coords="5,100,144,141"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#ad006f05ccd020be05834212598e3a38b" title=" " alt="" coords="198,67,337,108"/>
-<area shape="rect" id="node7" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="192,132,343,173"/>
-<area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="411,5,563,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="417,71,556,112"/>
-<area shape="rect" id="node5" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="631,41,769,83"/>
-<area shape="rect" id="node6" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="642,107,758,134"/>
-<area shape="rect" id="node8" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="391,139,583,166"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,205,144,245"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1PolarizationCalculator.html#a0c5c13e6761ffb096ac20ab00190367a" title=" " alt="" coords="192,127,429,167"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="135,203,236,168,238,173,136,208"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1FileLoader.html#ad006f05ccd020be05834212598e3a38b" title=" " alt="" coords="241,205,380,245"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="144,223,228,223,228,228,144,228"/>
+<area shape="rect" id="Node000011" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="235,297,386,337"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="128,243,246,290,245,295,126,248"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1PolarizationCalculator.html#a972eab3776df84d99cbd231b49e3a969" title=" " alt="" coords="497,5,704,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="343,124,403,89,476,55,499,47,501,52,478,60,406,94,345,129"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1PolarizationCalculator.html#a43f010357e88c2e9676ad43032e88f51" title=" " alt="" coords="477,69,724,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="412,124,485,109,486,115,413,129"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1PolarizationCalculator.html#aa60a0830e45e2bef241b5ce2636a89a5" title=" " alt="" coords="497,133,704,173"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="430,147,484,148,483,153,430,152"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="525,197,677,237"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="380,221,511,217,511,222,380,226"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="531,261,670,301"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="381,236,519,263,518,268,380,241"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="772,233,911,273"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="670,271,758,260,759,266,671,276"/>
+<area shape="rect" id="Node000010" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="783,298,899,323"/>
+<area shape="poly" id="edge9_Node000008_Node000010" title=" " alt="" coords="671,287,770,299,769,305,670,292"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="505,326,697,351"/>
+<area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="387,320,491,328,491,333,386,326"/>
 </map>

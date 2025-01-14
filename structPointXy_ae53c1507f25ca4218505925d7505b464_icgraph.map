@@ -1,5 +1,7 @@
 <map id="PointXy::InImage" name="PointXy::InImage">
-<area shape="rect" id="node1" title=" " alt="" coords="237,46,369,73"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a3d1f8594ec63ae8f16524981c5f21ce2" title=" " alt="" coords="9,5,185,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101" title=" " alt="" coords="5,71,189,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="237,45,369,70"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a3d1f8594ec63ae8f16524981c5f21ce2" title=" " alt="" coords="9,5,185,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="223,48,185,42,186,36,224,42"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101" title=" " alt="" coords="5,69,189,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="224,72,190,78,189,72,223,67"/>
 </map>

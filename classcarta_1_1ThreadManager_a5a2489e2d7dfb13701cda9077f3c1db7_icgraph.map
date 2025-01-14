@@ -1,11 +1,23 @@
 <map id="carta::ThreadManager::QueueTask" name="carta::ThreadManager::QueueTask">
-<area shape="rect" id="node1" title=" " alt="" coords="979,155,1144,196"/>
-<area shape="rect" id="node2" href="$classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" title=" " alt="" coords="749,5,907,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1StartAnimationTask.html#aa6912d730537456c57621bd7d5dcb5af" title=" " alt="" coords="733,71,923,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Session.html#a5738e575acc2761f8fa66254811b38e4" title=" " alt="" coords="443,121,677,163"/>
-<area shape="rect" id="node5" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,231,395,272"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Session.html#a0be4f9fed44a55d06ade047901083710" title=" " alt="" coords="725,238,931,265"/>
-<area shape="rect" id="node9" href="$classcarta_1_1Session.html#a5dfe97b76414c785e8a35d56659c4148" title=" " alt="" coords="453,355,667,396"/>
-<area shape="rect" id="node6" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,231,176,272"/>
-<area shape="rect" id="node8" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="464,289,656,331"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="979,152,1144,192"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" title=" " alt="" coords="749,5,907,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1031,144,986,100,929,60,904,48,907,43,932,55,989,96,1035,140"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1StartAnimationTask.html#aa6912d730537456c57621bd7d5dcb5af" title=" " alt="" coords="733,69,923,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="991,150,885,112,886,107,992,145"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Session.html#a5738e575acc2761f8fa66254811b38e4" title=" " alt="" coords="443,120,677,160"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="964,169,677,150,678,145,965,163"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,228,395,268"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="965,182,728,203,443,232,395,238,394,233,442,227,727,197,965,177"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Session.html#a0be4f9fed44a55d06ade047901083710" title=" " alt="" coords="725,235,931,261"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="990,199,931,219,871,238,870,233,930,213,988,194"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1Session.html#a5dfe97b76414c785e8a35d56659c4148" title=" " alt="" coords="453,349,667,389"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="1031,203,986,240,932,274,866,303,796,325,667,356,666,351,795,320,864,298,929,270,983,236,1028,199"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="480,167,444,181,346,230,344,225,442,176,479,162"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,228,176,268"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="210,251,176,251,176,245,210,245"/>
+<area shape="poly" id="edge8_Node000007_Node000005" title=" " alt="" coords="711,251,395,251,395,245,711,245"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="464,285,656,325"/>
+<area shape="poly" id="edge9_Node000007_Node000008" title=" " alt="" coords="755,266,654,288,653,283,754,261"/>
+<area shape="poly" id="edge10_Node000008_Node000005" title=" " alt="" coords="458,285,394,270,395,265,459,280"/>
+<area shape="poly" id="edge12_Node000009_Node000005" title=" " alt="" coords="460,347,441,340,382,305,333,270,337,266,385,301,444,335,462,342"/>
 </map>

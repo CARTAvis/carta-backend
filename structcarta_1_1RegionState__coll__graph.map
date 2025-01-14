@@ -1,8 +1,13 @@
 <map id="carta::RegionState" name="carta::RegionState">
-<area shape="rect" id="node1" title=" " alt="" coords="124,199,267,225"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,102,103,129"/>
-<area shape="rect" id="node3" title=" " alt="" coords="127,102,178,129"/>
-<area shape="rect" id="node4" title=" " alt="" coords="220,102,259,129"/>
-<area shape="rect" id="node5" title=" " alt="" coords="309,95,457,136"/>
-<area shape="rect" id="node6" title=" " alt="" coords="356,5,411,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="143,196,285,221"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,101,44,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="35,138,45,155,58,170,99,191,143,201,142,206,97,196,55,174,40,158,30,140"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="93,101,191,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="161,135,207,194,203,198,157,139"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="215,93,363,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="267,146,225,197,221,194,263,143"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="261,5,316,31"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="291,44,291,93,286,93,286,44"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="387,101,438,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="398,139,379,158,357,174,322,190,286,200,285,195,320,185,354,170,376,154,394,135"/>
 </map>

@@ -1,6 +1,9 @@
 <map id="carta::BasicStats&lt; T &gt;" name="carta::BasicStats&lt; T &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="42,153,211,180"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,72,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="97,5,157,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="217,5,255,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="60,152,229,177"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,65,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="38,44,43,86,51,107,63,126,79,140,98,150,95,154,76,144,59,130,46,110,38,87,32,45"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="111,5,178,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="147,45,147,152,142,152,142,45"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="203,5,241,31"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="223,45,214,86,206,109,195,130,182,143,168,154,165,150,179,139,190,126,201,106,209,85,217,44"/>
 </map>

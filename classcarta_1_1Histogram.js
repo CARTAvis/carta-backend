@@ -9,7 +9,7 @@ var classcarta_1_1Histogram =
     [ "GetBinCenter", "classcarta_1_1Histogram.html#aee8343f06560ffa74f4a21bff1f42d7f", null ],
     [ "GetBinWidth", "classcarta_1_1Histogram.html#aa90c785ed1c27cf59d527c060f080eb5", null ],
     [ "GetBounds", "classcarta_1_1Histogram.html#a1002f37e381eb1de20add01e234a8083", null ],
-    [ "GetHistogramBins", "classcarta_1_1Histogram.html#a1efcb688ab3b0d60a6216d14d87fef5e", null ],
+    [ "GetHistogramBins", "classcarta_1_1Histogram.html#a936adf02e45fce7f353783ba6699493a", null ],
     [ "GetMaxVal", "classcarta_1_1Histogram.html#ae1f537df539939fde102e25b0b42a9aa", null ],
     [ "GetMinVal", "classcarta_1_1Histogram.html#a751eb7e111b661cf77a44995db151a3b", null ],
     [ "GetNbins", "classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206", null ],

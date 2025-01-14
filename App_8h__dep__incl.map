@@ -1,8 +1,13 @@
 <map id="App.h" name="App.h">
-<area shape="rect" id="node1" title=" " alt="" coords="320,5,379,32"/>
-<area shape="rect" id="node2" href="$Main_8cc.html" title=" " alt="" coords="5,80,77,107"/>
-<area shape="rect" id="node3" href="$ProgramSettings_8cc.html" title=" " alt="" coords="102,80,250,107"/>
-<area shape="rect" id="node4" href="$Ds9ImportExport_8cc.html" title=" " alt="" coords="274,80,425,107"/>
-<area shape="rect" id="node5" href="$Session_8cc.html" title=" " alt="" coords="449,80,540,107"/>
-<area shape="rect" id="node6" href="$App_8cc.html" title=" " alt="" coords="565,80,630,107"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="277,5,335,31"/>
+<area shape="rect" id="Node000002" href="$App_8cc.html" title=" " alt="" coords="5,79,71,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="264,33,71,84,70,79,263,28"/>
+<area shape="rect" id="Node000003" href="$Ds9ImportExport_8cc.html" title=" " alt="" coords="95,79,245,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="274,39,193,81,191,76,271,34"/>
+<area shape="rect" id="Node000004" href="$Main_8cc.html" title=" " alt="" coords="270,79,342,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="309,44,309,79,303,79,303,44"/>
+<area shape="rect" id="Node000005" href="$ProgramSettings_8cc.html" title=" " alt="" coords="367,79,515,104"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="341,35,420,76,417,81,338,39"/>
+<area shape="rect" id="Node000006" href="$Session_8cc.html" title=" " alt="" coords="539,79,630,104"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="349,28,541,76,539,81,348,33"/>
 </map>

@@ -11,7 +11,7 @@ var classcarta_1_1ImageFitter =
     [ "GetFilename", "classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562", null ],
     [ "GetGaussianComponent", "classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175", null ],
     [ "GetGaussianParams", "classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043", null ],
-    [ "GetGeneratedImages", "classcarta_1_1ImageFitter.html#a80d07c79b6d88abc9de2b4fca9954dc7", null ],
+    [ "GetGeneratedImages", "classcarta_1_1ImageFitter.html#af3d0c501d804cc7eb931e241006e4b97", null ],
     [ "GetGeneratedMomentFilename", "classcarta_1_1ImageFitter.html#aa75c9a39995194ed580c52d27a9fd6ab", null ],
     [ "GetImageData", "classcarta_1_1ImageFitter.html#a6de0511604f66daf077814e64edb5c69", null ],
     [ "GetLog", "classcarta_1_1ImageFitter.html#af94fd497184c191cee7e2ccfed44c085", null ],

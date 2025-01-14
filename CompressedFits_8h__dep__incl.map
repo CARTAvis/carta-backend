@@ -1,8 +1,14 @@
 <map id="CompressedFits.h" name="CompressedFits.h">
-<area shape="rect" id="node1" title=" " alt="" coords="212,5,351,32"/>
-<area shape="rect" id="node2" href="$FileExtInfoLoader_8h.html" title=" " alt="" coords="43,80,189,107"/>
-<area shape="rect" id="node4" href="$Session_8cc.html" title=" " alt="" coords="181,155,272,181"/>
-<area shape="rect" id="node5" href="$CompressedFits_8cc.html" title=" " alt="" coords="264,80,408,107"/>
-<area shape="rect" id="node6" href="$FitsLoader_8cc.html" title=" " alt="" coords="432,80,539,107"/>
-<area shape="rect" id="node3" href="$FileExtInfoLoader_8cc.html" title=" " alt="" coords="5,155,157,181"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="232,5,371,31"/>
+<area shape="rect" id="Node000002" href="$CompressedFits_8cc.html" title=" " alt="" coords="5,79,149,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="253,37,114,81,113,76,252,32"/>
+<area shape="rect" id="Node000003" href="$FileExtInfoLoader_8h.html" title=" " alt="" coords="173,79,320,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="286,43,258,80,253,77,282,40"/>
+<area shape="rect" id="Node000005" href="$Session_8cc.html" title=" " alt="" coords="312,152,403,177"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="317,41,334,78,357,151,352,152,330,80,312,44"/>
+<area shape="rect" id="Node000006" href="$FitsLoader_8cc.html" title=" " alt="" coords="395,79,501,104"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="338,34,425,76,423,81,336,39"/>
+<area shape="rect" id="Node000004" href="$FileExtInfoLoader_8cc.html" title=" " alt="" coords="136,152,288,177"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="237,118,220,153,215,151,233,115"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="277,109,341,150,338,154,275,114"/>
 </map>

@@ -1,8 +1,13 @@
 <map id="SafeStringEscape" name="SafeStringEscape">
-<area shape="rect" id="node1" title=" " alt="" coords="916,42,1051,69"/>
-<area shape="rect" id="node2" href="$RemoteFiles_8cc.html#a810fce65818eabe0741e639b2ff23619" title=" " alt="" coords="681,13,868,39"/>
-<area shape="rect" id="node6" href="$classcarta_1_1HttpServer.html#a81a867dc29b7be0f8d8e2f901ebbf688" title=" " alt="" coords="704,64,845,105"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Session.html#a45b9623e5dd0c0d54307ab148e8745aa" title=" " alt="" coords="443,5,633,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,5,395,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,5,176,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="916,42,1051,67"/>
+<area shape="rect" id="Node000002" href="$RemoteFiles_8cc.html#a810fce65818eabe0741e639b2ff23619" title=" " alt="" coords="681,13,868,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="902,46,865,41,865,35,903,41"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1HttpServer.html#a81a867dc29b7be0f8d8e2f901ebbf688" title=" " alt="" coords="704,63,845,103"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="903,68,846,76,845,71,902,63"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#a45b9623e5dd0c0d54307ab148e8745aa" title=" " alt="" coords="443,5,633,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="668,28,634,28,634,23,668,23"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,5,395,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="429,28,395,28,395,23,429,23"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,5,176,45"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="210,28,176,28,176,23,210,23"/>
 </map>

@@ -1,6 +1,9 @@
 <map id="File.h" name="File.h">
-<area shape="rect" id="node1" title=" " alt="" coords="161,5,218,32"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,80,200,107"/>
-<area shape="rect" id="node3" href="$FileSystem_8h.html" title=" " alt="" coords="224,80,331,107"/>
-<area shape="rect" id="node4" title=" " alt="" coords="232,155,323,181"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="161,5,218,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,200,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="177,33,129,72,126,68,174,29"/>
+<area shape="rect" id="Node000003" href="$FileSystem_8h.html" title=" " alt="" coords="224,79,331,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="205,29,254,68,251,72,202,33"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="232,152,323,177"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="280,104,280,138,275,138,275,104"/>
 </map>

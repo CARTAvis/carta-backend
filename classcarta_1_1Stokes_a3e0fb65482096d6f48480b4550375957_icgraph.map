@@ -1,6 +1,9 @@
 <map id="carta::Stokes::ConvertFits" name="carta::Stokes::ConvertFits">
-<area shape="rect" id="node1" title=" " alt="" coords="507,46,695,73"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#a4dee3765eea34c506f862e25afe8ccfe" title=" " alt="" coords="282,5,433,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1StokesFilesConnector.html#a293ad12a37f9da0da1f6bcd140c68bd8" title=" " alt="" coords="256,71,459,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1StokesFilesConnector.html#a99f6cac79a12711d8e47b4a1c6b4f381" title=" " alt="" coords="5,71,208,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="507,45,695,70"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a4dee3765eea34c506f862e25afe8ccfe" title=" " alt="" coords="282,5,433,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="493,46,433,38,433,33,494,41"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1StokesFilesConnector.html#a293ad12a37f9da0da1f6bcd140c68bd8" title=" " alt="" coords="256,69,459,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="494,74,459,79,459,73,493,69"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1StokesFilesConnector.html#afcad0a55f47a973363a027960be305c0" title=" " alt="" coords="5,69,208,109"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="242,92,208,92,208,87,242,87"/>
 </map>

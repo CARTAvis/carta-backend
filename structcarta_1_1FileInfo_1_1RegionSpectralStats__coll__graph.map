@@ -1,10 +1,17 @@
 <map id="carta::FileInfo::RegionSpectralStats" name="carta::FileInfo::RegionSpectralStats">
-<area shape="rect" id="node1" title=" " alt="" coords="73,303,291,344"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,191,84,218"/>
-<area shape="rect" id="node3" title=" " alt="" coords="108,191,168,218"/>
-<area shape="rect" id="node4" title=" " alt="" coords="201,191,251,218"/>
-<area shape="rect" id="node5" title=" " alt="" coords="275,184,486,225"/>
-<area shape="rect" id="node6" title=" " alt="" coords="285,95,370,121"/>
-<area shape="rect" id="node7" title=" " alt="" coords="394,95,559,121"/>
-<area shape="rect" id="node8" title=" " alt="" coords="443,5,510,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="211,299,428,339"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,189,84,214"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,217,208,272,269,296,267,301,206,277,80,222"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="107,181,318,221"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="242,230,304,297,300,300,238,234"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="117,93,202,119"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="175,129,204,180,200,182,170,132"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="226,93,391,119"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="289,130,234,183,230,179,285,126"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="275,5,342,31"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="311,45,311,93,306,93,306,45"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="342,189,393,214"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="360,228,330,299,325,297,355,225"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="429,189,489,214"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="456,229,447,253,431,277,413,290,393,301,391,296,410,286,427,273,442,251,451,227"/>
 </map>

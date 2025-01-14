@@ -1,10 +1,22 @@
 <map id="carta::FileLoader::GetStatsDataShape" name="carta::FileLoader::GetStatsDataShape">
-<area shape="rect" id="node1" title=" " alt="" coords="393,169,543,211"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#a0d423ad3facab8a1ada980ff0d7e0981" title=" " alt="" coords="199,5,338,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#a030ffb2d91352c7df5b30d8181389742" title=" " alt="" coords="199,71,338,112"/>
-<area shape="rect" id="node5" href="$classcarta_1_1FileLoader.html#a1c069ac85889a39847b937aa3bc0c64a" title=" " alt="" coords="192,136,345,177"/>
-<area shape="rect" id="node6" href="$classcarta_1_1FileLoader.html#ac3c508064740ec630eb3587e2a6de6c9" title=" " alt="" coords="199,201,338,243"/>
-<area shape="rect" id="node7" href="$classcarta_1_1FileLoader.html#afdd8cff4d25da29318d5c793c5f0f373" title=" " alt="" coords="199,267,338,308"/>
-<area shape="rect" id="node8" href="$classcarta_1_1FileLoader.html#a4fadf35c964777024ad46e991944c2fb" title=" " alt="" coords="192,332,345,373"/>
-<area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a4577664e7e2107a923c02da856c93b8d" title=" " alt="" coords="5,169,144,211"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="393,165,543,205"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a0d423ad3facab8a1ada980ff0d7e0981" title=" " alt="" coords="199,5,338,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="441,156,399,107,344,60,324,48,326,43,347,55,402,103,445,152"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileLoader.html#a030ffb2d91352c7df5b30d8181389742" title=" " alt="" coords="199,69,338,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="417,161,344,124,318,112,320,107,346,119,420,156"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1FileLoader.html#a1c069ac85889a39847b937aa3bc0c64a" title=" " alt="" coords="192,133,345,173"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="379,174,345,168,346,163,380,169"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1FileLoader.html#ac3c508064740ec630eb3587e2a6de6c9" title=" " alt="" coords="199,197,338,237"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="380,202,339,209,338,204,379,197"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1FileLoader.html#afdd8cff4d25da29318d5c793c5f0f373" title=" " alt="" coords="199,261,338,301"/>
+<area shape="poly" id="edge9_Node000001_Node000007" title=" " alt="" coords="420,214,346,252,320,264,318,259,344,247,417,209"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1FileLoader.html#a4fadf35c964777024ad46e991944c2fb" title=" " alt="" coords="192,325,345,365"/>
+<area shape="poly" id="edge11_Node000001_Node000008" title=" " alt="" coords="445,218,402,267,347,316,326,327,324,323,344,311,399,263,441,215"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FileLoader.html#a4577664e7e2107a923c02da856c93b8d" title=" " alt="" coords="5,165,144,205"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="202,54,194,59,162,85,134,114,92,167,88,163,130,111,159,81,190,55,199,50"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="207,117,193,124,112,167,109,163,191,119,205,113"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="179,171,145,177,144,171,178,166"/>
+<area shape="poly" id="edge8_Node000006_Node000003" title=" " alt="" coords="185,206,144,199,144,194,186,201"/>
+<area shape="poly" id="edge10_Node000007_Node000003" title=" " alt="" coords="205,258,191,252,109,208,112,203,193,247,207,253"/>
+<area shape="poly" id="edge12_Node000008_Node000003" title=" " alt="" coords="199,321,190,315,159,289,130,260,88,207,92,204,134,256,162,285,194,311,202,317"/>
 </map>

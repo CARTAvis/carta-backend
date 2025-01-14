@@ -1,4 +1,5 @@
 <map id="carta::MomentGenerator::SetMomentImageLogger" name="carta::MomentGenerator::SetMomentImageLogger">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,196,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1MomentGenerator.html#a2e57bd8fb8135af526944dc3db30749d" title=" " alt="" coords="244,5,427,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,196,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1MomentGenerator.html#a2e57bd8fb8135af526944dc3db30749d" title=" " alt="" coords="244,5,427,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="196,23,231,23,231,28,196,28"/>
 </map>

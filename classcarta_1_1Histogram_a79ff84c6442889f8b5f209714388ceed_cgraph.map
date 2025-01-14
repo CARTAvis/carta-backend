@@ -1,5 +1,7 @@
 <map id="carta::Histogram::Fill" name="carta::Histogram::Fill">
-<area shape="rect" id="node1" title=" " alt="" coords="5,42,164,69"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc" title=" " alt="" coords="229,5,394,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206" title=" " alt="" coords="212,71,411,98"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,42,164,67"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc" title=" " alt="" coords="229,5,394,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,42,215,35,216,40,165,47"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206" title=" " alt="" coords="212,70,411,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="165,62,199,66,198,71,164,67"/>
 </map>

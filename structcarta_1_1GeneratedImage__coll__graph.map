@@ -1,6 +1,11 @@
 <map id="carta::GeneratedImage" name="carta::GeneratedImage">
-<area shape="rect" id="node1" title=" " alt="" coords="58,215,230,241"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,96,208,152"/>
-<area shape="rect" id="node3" title=" " alt="" coords="233,111,319,137"/>
-<area shape="rect" id="node4" title=" " alt="" coords="207,5,345,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="78,225,250,251"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="37,123,123,148"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,157,157,224,152,227,96,160"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,5,144,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="79,59,82,122,77,122,74,59"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="159,108,361,163"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="227,175,177,227,173,223,223,171"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="168,5,363,45"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="266,59,264,108,259,108,261,59"/>
 </map>

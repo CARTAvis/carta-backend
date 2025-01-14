@@ -1,5 +1,7 @@
 <map id="carta::RegionState::RegionChanged" name="carta::RegionState::RegionChanged">
-<area shape="rect" id="node1" title=" " alt="" coords="196,39,339,80"/>
-<area shape="rect" id="node2" href="$structcarta_1_1RegionState.html#a8c1ef2e15d82f95198ee446a6a1fd219" title=" " alt="" coords="5,5,148,47"/>
-<area shape="rect" id="node3" href="$structcarta_1_1RegionState.html#a4adb7f8026c088e79334a406c652e1c6" title=" " alt="" coords="5,71,148,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="196,37,339,77"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1RegionState.html#a8c1ef2e15d82f95198ee446a6a1fd219" title=" " alt="" coords="5,5,148,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,46,148,40,149,35,183,41"/>
+<area shape="rect" id="Node000003" href="$structcarta_1_1RegionState.html#a4adb7f8026c088e79334a406c652e1c6" title=" " alt="" coords="5,69,148,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="183,74,149,80,148,75,182,69"/>
 </map>

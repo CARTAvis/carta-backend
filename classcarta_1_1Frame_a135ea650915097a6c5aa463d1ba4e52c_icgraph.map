@@ -1,5 +1,7 @@
 <map id="carta::Frame::GetCachedCubeHistogram" name="carta::Frame::GetCachedCubeHistogram">
-<area shape="rect" id="node1" title=" " alt="" coords="476,5,692,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a3a4bc30034d44066062d5794044da1b6" title=" " alt="" coords="229,5,428,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" title=" " alt="" coords="5,5,181,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="476,5,692,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a3a4bc30034d44066062d5794044da1b6" title=" " alt="" coords="229,5,428,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="463,28,428,28,428,23,463,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" title=" " alt="" coords="5,5,181,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="216,28,182,28,182,23,216,23"/>
 </map>

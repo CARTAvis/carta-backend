@@ -1,5 +1,7 @@
 <map id="carta::CartaHdf5Image::OpenCartaHdf5Image" name="carta::CartaHdf5Image::OpenCartaHdf5Image">
-<area shape="rect" id="node1" title=" " alt="" coords="419,5,589,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1CartaHdf5Image.html#aa6d40fb4a674d41a64c73408e8c05b89" title=" " alt="" coords="197,5,371,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1ExprLoader.html#a943465cbb762bee71bc1d451d31eab01" title=" " alt="" coords="5,5,149,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="419,5,589,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CartaHdf5Image.html#aa6d40fb4a674d41a64c73408e8c05b89" title=" " alt="" coords="197,5,371,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="405,28,371,28,371,23,405,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1ExprLoader.html#a943465cbb762bee71bc1d451d31eab01" title=" " alt="" coords="5,5,149,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="183,28,150,28,150,23,183,23"/>
 </map>

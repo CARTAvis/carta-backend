@@ -1,10 +1,17 @@
 <map id="carta::OnMessageTask" name="carta::OnMessageTask">
-<area shape="rect" id="node1" title=" " alt="" coords="5,157,173,184"/>
-<area shape="rect" id="node2" href="$classcarta_1_1AnimationTask.html" title=" " alt="" coords="253,5,412,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1PvPreviewUpdateTask.html" title=" " alt="" coords="229,56,436,83"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionDataStreamsTask.html" title=" " alt="" coords="221,107,444,133"/>
-<area shape="rect" id="node5" href="$classcarta_1_1SetCursorTask.html" title=" " alt="" coords="255,157,410,184"/>
-<area shape="rect" id="node6" href="$classcarta_1_1SetImageChannelsTask.html" title=" " alt="" coords="225,208,440,235"/>
-<area shape="rect" id="node7" href="$classcarta_1_1SpectralProfileTask.html" title=" " alt="" coords="239,259,426,285"/>
-<area shape="rect" id="node8" href="$classcarta_1_1StartAnimationTask.html" title=" " alt="" coords="237,309,428,336"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,153,173,179"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1AnimationTask.html" title=" " alt="" coords="253,5,412,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,141,154,89,185,62,220,40,252,27,254,32,223,44,189,66,158,93,110,144"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1PvPreviewUpdateTask.html" title=" " alt="" coords="229,55,436,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="119,144,165,115,220,89,257,77,259,83,222,94,168,120,121,148"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionDataStreamsTask.html" title=" " alt="" coords="221,104,444,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="165,148,269,127,270,132,167,153"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1SetCursorTask.html" title=" " alt="" coords="255,153,410,179"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="187,163,255,163,255,169,187,169"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1SetImageChannelsTask.html" title=" " alt="" coords="225,203,440,228"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="167,179,270,200,269,205,165,184"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1SpectralProfileTask.html" title=" " alt="" coords="239,252,426,277"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="122,184,168,211,222,237,263,249,262,255,220,242,166,216,119,188"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1StartAnimationTask.html" title=" " alt="" coords="237,301,428,327"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="111,187,158,238,189,264,223,286,254,299,252,304,220,291,186,269,154,242,107,191"/>
 </map>

@@ -1,0 +1,11 @@
+<map id="carta::CrtfImportExport::GetRectBoxPoints" name="carta::CrtfImportExport::GetRectBoxPoints">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,63,177,103"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImportExport.html#a852ed9bc9d88b68082a9f2043e1fb858" title=" " alt="" coords="225,63,397,103"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,80,212,80,212,85,178,85"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionImportExport.html#a4dbf1bb6405ba5cbc0dea6803c3d2eef" title=" " alt="" coords="445,5,639,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="392,60,447,46,448,51,393,65"/>
+<area shape="rect" id="Node000004" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="481,70,603,95"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="398,80,468,80,468,85,398,85"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionImportExport.html#a316dd4dbbc4907464ac3ed89c6b41cf5" title=" " alt="" coords="445,120,639,160"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="393,100,448,114,447,119,392,105"/>
+</map>

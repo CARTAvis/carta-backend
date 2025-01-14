@@ -1,10 +1,17 @@
 <map id="CartaMiriadImage.cc" name="CartaMiriadImage.cc">
-<area shape="rect" id="node1" title=" " alt="" coords="583,5,741,32"/>
-<area shape="rect" id="node2" href="$CartaMiriadImage_8h.html" title=" " alt="" coords="291,80,441,107"/>
-<area shape="rect" id="node6" title=" " alt="" coords="465,80,645,107"/>
-<area shape="rect" id="node7" title=" " alt="" coords="669,80,868,107"/>
-<area shape="rect" id="node8" title=" " alt="" coords="892,80,1072,107"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,155,249,196"/>
-<area shape="rect" id="node4" title=" " alt="" coords="274,155,458,196"/>
-<area shape="rect" id="node5" title=" " alt="" coords="482,155,666,196"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="583,5,741,31"/>
+<area shape="rect" id="Node000002" href="$CartaMiriadImage_8h.html" title=" " alt="" coords="291,79,441,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="615,33,428,78,427,73,614,28"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="465,79,645,104"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="646,33,586,73,583,69,643,28"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="669,79,868,104"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="681,28,741,69,738,73,678,33"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="892,79,1072,104"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="714,28,918,73,916,78,713,33"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,152,249,192"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="332,107,198,150,197,145,330,101"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="274,152,458,192"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="369,104,369,138,363,138,363,104"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="482,152,666,192"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="397,102,512,145,511,150,395,107"/>
 </map>

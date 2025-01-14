@@ -1,5 +1,7 @@
 <map id="carta::Ds9ImportExport::ExportStyleParameters" name="carta::Ds9ImportExport::ExportStyleParameters">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,184,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Ds9ImportExport.html#ac4334c8d1cc00739767a3df50cd6c775" title=" " alt="" coords="241,5,416,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionImportExport.html#af21c3543b73c915a0a007b3472a74b0f" title=" " alt="" coords="232,71,425,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,184,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9ImportExport.html#ac4334c8d1cc00739767a3df50cd6c775" title=" " alt="" coords="241,5,416,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="184,43,227,36,228,42,184,48"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionImportExport.html#af21c3543b73c915a0a007b3472a74b0f" title=" " alt="" coords="232,69,425,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="184,67,219,72,218,77,184,72"/>
 </map>

@@ -1,4 +1,5 @@
 <map id="carta::Histogram::GetBinCenter" name="carta::Histogram::GetBinCenter">
-<area shape="rect" id="node1" title=" " alt="" coords="163,5,345,47"/>
-<area shape="rect" id="node2" href="$Message_8cc.html#a81aeddd3fd63ca11895205bbeafee045" title=" " alt="" coords="5,13,115,39"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="163,5,345,45"/>
+<area shape="rect" id="Node000002" href="$Message_8cc.html#a81aeddd3fd63ca11895205bbeafee045" title=" " alt="" coords="5,13,115,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,28,115,28,115,23,149,23"/>
 </map>

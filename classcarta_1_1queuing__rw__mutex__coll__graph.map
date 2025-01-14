@@ -1,8 +1,13 @@
 <map id="carta::queuing_rw_mutex" name="carta::queuing_rw_mutex">
-<area shape="rect" id="node1" title=" " alt="" coords="170,213,357,240"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,102,148,129"/>
-<area shape="rect" id="node3" title=" " alt="" coords="172,102,227,129"/>
-<area shape="rect" id="node4" title=" " alt="" coords="281,102,373,129"/>
-<area shape="rect" id="node5" title=" " alt="" coords="398,95,571,136"/>
-<area shape="rect" id="node6" title=" " alt="" coords="408,5,561,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="173,211,359,236"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,101,97,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="81,132,122,158,170,184,230,208,228,213,168,189,119,163,78,136"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="121,101,264,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="204,137,231,185,254,209,250,212,227,188,200,140"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="289,93,462,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="353,146,313,189,284,213,280,209,310,185,349,142"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="299,5,452,31"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="378,44,378,93,373,93,373,44"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="487,101,541,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="501,140,479,166,450,189,406,207,360,218,359,213,404,202,447,184,475,162,497,136"/>
 </map>

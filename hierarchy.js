@@ -67,6 +67,7 @@ var hierarchy =
     ] ],
     [ "carta::FileInfo::ImageStats", "structcarta_1_1FileInfo_1_1ImageStats.html", null ],
     [ "casa::ImageTask", null, [
+      [ "carta::Image2DConvolver< casacore::Float >", "classcarta_1_1Image2DConvolver.html", null ],
       [ "carta::Image2DConvolver< T >", "classcarta_1_1Image2DConvolver.html", null ]
     ] ],
     [ "carta::LineBoxRegions", "classcarta_1_1LineBoxRegions.html", null ],

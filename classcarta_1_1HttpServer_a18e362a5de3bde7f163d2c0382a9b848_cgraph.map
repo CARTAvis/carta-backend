@@ -1,5 +1,7 @@
 <map id="carta::HttpServer::UpdatePreferencesFromString" name="carta::HttpServer::UpdatePreferencesFromString">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,223,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="271,5,445,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="279,71,437,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,223,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="271,5,445,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="223,40,257,36,257,41,223,46"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="279,69,437,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="223,69,266,75,266,80,223,74"/>
 </map>

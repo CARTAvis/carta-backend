@@ -1,8 +1,13 @@
 <map id="carta::Ds9ImportExport::ImportPointRegion" name="carta::Ds9ImportExport::ImportPointRegion">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,179,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionImportExport.html#a4dbf1bb6405ba5cbc0dea6803c3d2eef" title=" " alt="" coords="227,5,420,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Ds9ImportExport.html#ac467f316f95fb7df1f782c59834cc104" title=" " alt="" coords="237,71,410,112"/>
-<area shape="rect" id="node6" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="263,137,384,163"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Ds9ImportExport.html#a4a6b4a25d131ae9fc0a4f3380e6b6521" title=" " alt="" coords="468,37,679,79"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Ds9ImportExport.html#a59d1155bdf996a30a72faed8fc5ef384" title=" " alt="" coords="487,103,660,144"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,179,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionImportExport.html#a4dbf1bb6405ba5cbc0dea6803c3d2eef" title=" " alt="" coords="227,5,420,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,67,237,46,238,52,166,72"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#ac467f316f95fb7df1f782c59834cc104" title=" " alt="" coords="237,69,410,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="179,87,223,87,223,92,179,92"/>
+<area shape="rect" id="Node000006" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="263,134,384,159"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="174,107,259,128,258,133,173,112"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9ImportExport.html#a4a6b4a25d131ae9fc0a4f3380e6b6521" title=" " alt="" coords="468,37,679,77"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="410,76,454,70,455,75,410,81"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9ImportExport.html#a59d1155bdf996a30a72faed8fc5ef384" title=" " alt="" coords="487,101,660,141"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="410,98,473,106,473,111,410,103"/>
 </map>

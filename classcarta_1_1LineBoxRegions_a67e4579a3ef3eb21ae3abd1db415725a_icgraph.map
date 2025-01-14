@@ -1,0 +1,17 @@
+<map id="carta::LineBoxRegions::CheckLinearOffsets" name="carta::LineBoxRegions::CheckLinearOffsets">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1135,37,1301,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1LineBoxRegions.html#a9d3e0a811025ef9dba3b3aaa75289b96" title=" " alt="" coords="916,37,1087,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1121,60,1087,60,1087,55,1121,55"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1LineBoxRegions.html#aae7e0083e6c7541ed0121160bb1c8266" title=" " alt="" coords="701,37,868,77"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="902,60,868,60,868,55,902,55"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a7d419cae3ba9a6b3f2435cde1d6838ee" title=" " alt="" coords="453,5,653,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="687,47,653,42,654,37,688,41"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHandler.html#acbbfca854da73c657e5257de954b7048" title=" " alt="" coords="474,69,633,109"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="687,73,633,81,633,76,687,68"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1RegionHandler.html#a981ef720799967df543e0b272a17f6cb" title=" " alt="" coords="247,37,405,77"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="459,79,405,71,406,66,460,74"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1RegionHandler.html#ab65206f98fa5024447ab049a91cd4526" title=" " alt="" coords="247,101,405,141"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="460,105,406,113,405,108,459,100"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" title=" " alt="" coords="5,101,199,141"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="233,124,199,124,199,119,233,119"/>
+</map>

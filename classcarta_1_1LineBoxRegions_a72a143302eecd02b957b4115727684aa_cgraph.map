@@ -1,8 +1,15 @@
 <map id="carta::LineBoxRegions::GetFixedAngularRegions" name="carta::LineBoxRegions::GetFixedAngularRegions">
-<area shape="rect" id="node1" title=" " alt="" coords="5,56,195,97"/>
-<area shape="rect" id="node2" href="$classcarta_1_1LineBoxRegions.html#aa1bb79738d6d9bd46aa5907c0493f7be" title=" " alt="" coords="475,35,689,76"/>
-<area shape="rect" id="node3" href="$classcarta_1_1LineBoxRegions.html#a427ea4115e09871b3b27e1be0201abc3" title=" " alt="" coords="737,5,904,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1LineBoxRegions.html#a2e282e38eae566e015e13f72a9696e28" title=" " alt="" coords="251,85,418,127"/>
-<area shape="rect" id="node5" href="$classcarta_1_1LineBoxRegions.html#a984128ccf5350d17ce15c25bf001e5c7" title=" " alt="" coords="243,151,427,192"/>
-<area shape="rect" id="node6" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="521,158,643,185"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,56,195,96"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1LineBoxRegions.html#aa1bb79738d6d9bd46aa5907c0493f7be" title=" " alt="" coords="475,33,689,73"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="195,69,461,56,461,62,195,74"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1LineBoxRegions.html#a427ea4115e09871b3b27e1be0201abc3" title=" " alt="" coords="737,5,904,45"/>
+<area shape="poly" id="edge4_Node000001_Node000003" title=" " alt="" coords="186,53,242,43,367,25,465,18,563,17,689,19,724,19,724,25,689,24,563,22,465,23,368,31,243,48,187,59"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1LineBoxRegions.html#a2e282e38eae566e015e13f72a9696e28" title=" " alt="" coords="251,84,418,124"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="195,85,238,90,237,95,194,90"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1LineBoxRegions.html#a984128ccf5350d17ce15c25bf001e5c7" title=" " alt="" coords="243,148,427,188"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="148,94,244,134,263,141,261,146,242,138,146,99"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="689,38,723,34,724,39,690,43"/>
+<area shape="poly" id="edge6_Node000005_Node000002" title=" " alt="" coords="396,145,426,134,534,78,536,83,428,138,398,150"/>
+<area shape="rect" id="Node000006" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="521,155,643,181"/>
+<area shape="poly" id="edge7_Node000005_Node000006" title=" " alt="" coords="427,165,508,165,508,171,427,171"/>
 </map>

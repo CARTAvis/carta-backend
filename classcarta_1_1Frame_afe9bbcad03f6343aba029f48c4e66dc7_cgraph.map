@@ -1,5 +1,7 @@
 <map id="carta::Frame::IsCurrentZStokes" name="carta::Frame::IsCurrentZStokes">
-<area shape="rect" id="node1" title=" " alt="" coords="5,31,228,57"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="276,5,479,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#a1eda290558f3e9a6be5d4149c06e1b7b" title=" " alt="" coords="293,56,462,83"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,228,56"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="276,5,479,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="228,30,262,27,262,32,228,35"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a1eda290558f3e9a6be5d4149c06e1b7b" title=" " alt="" coords="293,55,462,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="228,51,279,56,278,61,228,56"/>
 </map>

@@ -1,7 +1,11 @@
 <map id="carta::CartaMiriadImage::CartaMiriadImage" name="carta::CartaMiriadImage::CartaMiriadImage">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,185,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1CartaMiriadImage.html#af239cfd5e7f335f45a08a2ec13dfad48" title=" " alt="" coords="233,71,413,112"/>
-<area shape="rect" id="node3" href="$classcarta_1_1CartaMiriadImage.html#a73bf4121a48bbc995d9c05e772133047" title=" " alt="" coords="461,5,641,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1CartaMiriadImage.html#a238db5b3708aec7255b3bddd6bd73dbb" title=" " alt="" coords="461,71,641,112"/>
-<area shape="rect" id="node5" href="$classcarta_1_1CartaMiriadImage.html#af3ba1aaed3472db8ad4919a2f4579a8a" title=" " alt="" coords="461,136,641,177"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,185,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CartaMiriadImage.html#af239cfd5e7f335f45a08a2ec13dfad48" title=" " alt="" coords="233,69,413,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="186,87,220,87,220,92,186,92"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CartaMiriadImage.html#a73bf4121a48bbc995d9c05e772133047" title=" " alt="" coords="461,5,641,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="395,67,465,47,467,52,396,72"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CartaMiriadImage.html#a238db5b3708aec7255b3bddd6bd73dbb" title=" " alt="" coords="461,69,641,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="414,87,448,87,448,92,414,92"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CartaMiriadImage.html#af3ba1aaed3472db8ad4919a2f4579a8a" title=" " alt="" coords="461,133,641,173"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="396,107,467,127,465,132,395,112"/>
 </map>

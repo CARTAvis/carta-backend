@@ -1,4 +1,5 @@
 <map id="carta::Frame::IsConnected" name="carta::Frame::IsConnected">
-<area shape="rect" id="node1" title=" " alt="" coords="237,13,429,39"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101" title=" " alt="" coords="5,5,189,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="237,13,429,38"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101" title=" " alt="" coords="5,5,189,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="224,28,189,28,189,23,224,23"/>
 </map>

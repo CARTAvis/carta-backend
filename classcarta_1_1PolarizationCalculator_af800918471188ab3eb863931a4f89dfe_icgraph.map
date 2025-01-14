@@ -1,5 +1,7 @@
 <map id="carta::PolarizationCalculator::MakePolarizedIntensityNode" name="carta::PolarizationCalculator::MakePolarizedIntensityNode">
-<area shape="rect" id="node1" title=" " alt="" coords="324,39,540,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1PolarizationCalculator.html#af6937bd807c038cf00fd0cc89ae9c2e8" title=" " alt="" coords="5,5,276,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1PolarizationCalculator.html#a2cb6200df64e7dde3eacf173a97f894c" title=" " alt="" coords="37,71,244,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="324,37,540,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1PolarizationCalculator.html#af6937bd807c038cf00fd0cc89ae9c2e8" title=" " alt="" coords="5,5,276,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="310,47,276,43,276,38,311,41"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1PolarizationCalculator.html#a2cb6200df64e7dde3eacf173a97f894c" title=" " alt="" coords="37,69,244,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="311,73,245,81,244,75,310,68"/>
 </map>

@@ -1,6 +1,9 @@
 <map id="StatsCalculator.h" name="StatsCalculator.h">
-<area shape="rect" id="node1" title=" " alt="" coords="115,5,247,32"/>
-<area shape="rect" id="node2" href="$Frame_8cc.html" title=" " alt="" coords="5,80,87,107"/>
-<area shape="rect" id="node3" href="$StatsCalculator_8cc.html" title=" " alt="" coords="111,80,250,107"/>
-<area shape="rect" id="node4" href="$RegionHandler_8cc.html" title=" " alt="" coords="275,80,409,107"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="112,5,244,31"/>
+<area shape="rect" id="Node000002" href="$Frame_8cc.html" title=" " alt="" coords="5,79,87,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="146,39,69,81,66,76,144,35"/>
+<area shape="rect" id="Node000003" href="$RegionHandler_8cc.html" title=" " alt="" coords="111,79,245,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="181,44,181,79,175,79,175,44"/>
+<area shape="rect" id="Node000004" href="$StatsCalculator_8cc.html" title=" " alt="" coords="270,79,409,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="217,34,314,76,312,81,215,39"/>
 </map>

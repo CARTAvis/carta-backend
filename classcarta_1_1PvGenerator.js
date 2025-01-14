@@ -10,7 +10,7 @@ var classcarta_1_1PvGenerator =
     [ "GetPvImage", "classcarta_1_1PvGenerator.html#a1cb7b3ae34f47f2d766f5f22b6ff11a1", null ],
     [ "SetFileName", "classcarta_1_1PvGenerator.html#a6c0e13a64bd9e928976f7254715d7a76", null ],
     [ "SetPvImageName", "classcarta_1_1PvGenerator.html#ac786651b1af13ce59575ca6a36f5057c", null ],
-    [ "SetupPvImage", "classcarta_1_1PvGenerator.html#a5ee0b9e3920422d9ef9652262fddac84", null ],
+    [ "SetupPvImage", "classcarta_1_1PvGenerator.html#acb8bac5a8aa0866966279c935dcc5dbd", null ],
     [ "_file_id", "classcarta_1_1PvGenerator.html#a35fb810cc14436c5e18d8c674cc4296a", null ],
     [ "_name", "classcarta_1_1PvGenerator.html#aaf9c29d2502a4bb9ebeb7d08ab00b159", null ]
 ];

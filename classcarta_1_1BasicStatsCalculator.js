@@ -1,7 +1,7 @@
 var classcarta_1_1BasicStatsCalculator =
 [
     [ "BasicStatsCalculator", "classcarta_1_1BasicStatsCalculator.html#a86286bcf369a465db3688037d81f84a8", null ],
-    [ "GetStats", "classcarta_1_1BasicStatsCalculator.html#a29d141b4a8a8e26a6ef58c982447efea", null ],
+    [ "GetStats", "classcarta_1_1BasicStatsCalculator.html#a884fc3cea2905271fd40a289efda0321", null ],
     [ "join", "classcarta_1_1BasicStatsCalculator.html#a9355eb7795f04f04a682a2efb1d8dbc0", null ],
     [ "reduce", "classcarta_1_1BasicStatsCalculator.html#a14873f9d84d2abb0fabe85f4b70d0a44", null ],
     [ "_data", "classcarta_1_1BasicStatsCalculator.html#ad3b06f8d0c5a23e31792427579528223", null ],

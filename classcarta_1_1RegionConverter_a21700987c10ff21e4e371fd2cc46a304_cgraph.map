@@ -1,4 +1,5 @@
 <map id="carta::RegionConverter::RemoveHorizontalPolygonPoints" name="carta::RegionConverter::RemoveHorizontalPolygonPoints">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,248,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionConverter.html#ad6c7e6d3a1c967cb7bc28d7618bd94a6" title=" " alt="" coords="296,5,468,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,248,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionConverter.html#ad6c7e6d3a1c967cb7bc28d7618bd94a6" title=" " alt="" coords="296,5,468,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="248,23,282,23,282,28,248,28"/>
 </map>

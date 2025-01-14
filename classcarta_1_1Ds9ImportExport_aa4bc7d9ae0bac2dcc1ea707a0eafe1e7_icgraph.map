@@ -1,5 +1,9 @@
 <map id="carta::Ds9ImportExport::ExportAnnPointParameters" name="carta::Ds9ImportExport::ExportAnnPointParameters">
-<area shape="rect" id="node1" title=" " alt="" coords="525,5,729,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Ds9ImportExport.html#a3d28d3f0cf0682dccfc5a9deb38a8f42" title=" " alt="" coords="227,5,477,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Ds9ImportExport.html#a8f71641b2f5ae77a8bee318c1d82b83d" title=" " alt="" coords="5,5,179,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="525,37,729,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9ImportExport.html#a3d28d3f0cf0682dccfc5a9deb38a8f42" title=" " alt="" coords="227,37,477,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="512,60,478,60,478,55,512,55"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#aeec2cf3cc6ee29a094b4cd0283ec2a7e" title=" " alt="" coords="5,5,179,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="213,43,178,39,179,33,214,38"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9ImportExport.html#a8f71641b2f5ae77a8bee318c1d82b83d" title=" " alt="" coords="5,69,179,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="214,77,179,81,178,76,213,72"/>
 </map>

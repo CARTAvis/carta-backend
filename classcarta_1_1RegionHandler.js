@@ -31,7 +31,7 @@ var classcarta_1_1RegionHandler =
     [ "GetPvPreviewFrameId", "classcarta_1_1RegionHandler.html#ab0b3358b46e9265c92310a735aa44156", null ],
     [ "GetRegion", "classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b", null ],
     [ "GetRegionHistogramData", "classcarta_1_1RegionHandler.html#a7797d9c5eca341dcb490a338fc66967a", null ],
-    [ "GetRegionSpectralData", "classcarta_1_1RegionHandler.html#aa5624138d4060512518d54f2b6709a25", null ],
+    [ "GetRegionSpectralData", "classcarta_1_1RegionHandler.html#a32e479940a3721ce03fd2fb2076b40d9", null ],
     [ "GetRegionStatsData", "classcarta_1_1RegionHandler.html#a5400b6dee0622f4ce2060ae424e1e559", null ],
     [ "GetSpatialReqFilesForRegion", "classcarta_1_1RegionHandler.html#a3de66887f1781fe1d346106e475b521c", null ],
     [ "GetSpatialReqRegionsForFile", "classcarta_1_1RegionHandler.html#ad6d28b44cd711c8c202d53b3564cad3a", null ],

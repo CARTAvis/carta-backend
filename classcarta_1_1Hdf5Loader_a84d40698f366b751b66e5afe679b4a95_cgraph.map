@@ -1,5 +1,7 @@
 <map id="carta::Hdf5Loader::GetDownsampledRasterData" name="carta::Hdf5Loader::GetDownsampledRasterData">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,216,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Hdf5Loader.html#a50e10744800a38d36c8bd6118f849223" title=" " alt="" coords="264,5,411,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Hdf5Loader.html#aa872fe5a14124def3216a5e688492320" title=" " alt="" coords="264,71,411,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,216,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Hdf5Loader.html#a50e10744800a38d36c8bd6118f849223" title=" " alt="" coords="264,5,411,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="216,40,250,35,250,40,217,45"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Hdf5Loader.html#aa872fe5a14124def3216a5e688492320" title=" " alt="" coords="264,69,411,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="217,70,250,74,250,80,216,75"/>
 </map>

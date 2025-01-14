@@ -1,8 +1,13 @@
 <map id="carta::Session::OnSetImageChannels" name="carta::Session::OnSetImageChannels">
-<area shape="rect" id="node1" title=" " alt="" coords="728,39,929,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4" title=" " alt="" coords="487,5,680,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="487,71,679,112"/>
-<area shape="rect" id="node3" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="224,5,439,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="246,71,417,112"/>
-<area shape="rect" id="node6" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,71,176,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="728,37,929,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4" title=" " alt="" coords="487,5,680,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="714,45,680,41,681,35,715,40"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="487,69,679,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="715,75,680,79,679,74,714,70"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="224,5,439,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="473,28,439,28,439,23,473,23"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="246,69,417,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="473,92,417,92,417,87,473,87"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,69,176,109"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="232,92,176,92,176,87,232,87"/>
 </map>

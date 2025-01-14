@@ -1,7 +1,12 @@
 <map id="carta::ProgramSettings::AddDeprecationWarning" name="carta::ProgramSettings::AddDeprecationWarning">
-<area shape="rect" id="node1" title=" " alt="" coords="705,39,892,80"/>
-<area shape="rect" id="node2" href="$structcarta_1_1ProgramSettings.html#ae94eab4c3ac77d65ad880737b99c032f" title=" " alt="" coords="224,5,439,47"/>
-<area shape="rect" id="node4" href="$structcarta_1_1ProgramSettings.html#a305fc41d1b2ef80ee55f9b5397d9e2d6" title=" " alt="" coords="487,68,657,109"/>
-<area shape="rect" id="node3" href="$structcarta_1_1ProgramSettings.html#a508188c0f555b31180deafb1298093fb" title=" " alt="" coords="5,39,176,80"/>
-<area shape="rect" id="node5" href="$structcarta_1_1ProgramSettings.html#af79fed2fb510be1e30123ce5f788b4a7" title=" " alt="" coords="246,71,417,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="705,39,892,79"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1ProgramSettings.html#ae94eab4c3ac77d65ad880737b99c032f" title=" " alt="" coords="224,5,439,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="691,54,439,36,439,30,692,48"/>
+<area shape="rect" id="Node000004" href="$structcarta_1_1ProgramSettings.html#a305fc41d1b2ef80ee55f9b5397d9e2d6" title=" " alt="" coords="487,67,657,107"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="692,75,658,79,657,73,691,69"/>
+<area shape="rect" id="Node000003" href="$structcarta_1_1ProgramSettings.html#a508188c0f555b31180deafb1298093fb" title=" " alt="" coords="5,37,176,77"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="211,44,176,49,176,43,210,39"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1ProgramSettings.html#af79fed2fb510be1e30123ce5f788b4a7" title=" " alt="" coords="246,69,417,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="473,90,417,91,417,86,473,85"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="232,79,176,71,176,66,233,74"/>
 </map>

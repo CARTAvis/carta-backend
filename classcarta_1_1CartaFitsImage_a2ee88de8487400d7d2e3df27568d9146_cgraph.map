@@ -1,4 +1,5 @@
 <map id="carta::CartaFitsImage::internalDataType" name="carta::CartaFitsImage::internalDataType">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,168,47"/>
-<area shape="rect" id="node2" href="$namespacecarta.html#aca3cf2a9ea68bea36091f387d35c3911" title=" " alt="" coords="216,13,359,39"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,168,45"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a6fd1aefcf08b3fb1c823b3d76943d365" title=" " alt="" coords="216,13,359,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="169,23,202,23,202,28,169,28"/>
 </map>

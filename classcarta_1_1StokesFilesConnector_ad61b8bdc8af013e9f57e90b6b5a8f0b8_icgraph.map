@@ -1,5 +1,7 @@
 <map id="carta::StokesFilesConnector::ClearCache" name="carta::StokesFilesConnector::ClearCache">
-<area shape="rect" id="node1" title=" " alt="" coords="256,39,459,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1StokesFilesConnector.html#a99f6cac79a12711d8e47b4a1c6b4f381" title=" " alt="" coords="5,5,208,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1StokesFilesConnector.html#abe3e3e249bb380ab9cd0c0d4a092ca2c" title=" " alt="" coords="5,71,208,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="256,37,459,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1StokesFilesConnector.html#afcad0a55f47a973363a027960be305c0" title=" " alt="" coords="5,5,208,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="242,45,208,41,208,36,243,40"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1StokesFilesConnector.html#abe3e3e249bb380ab9cd0c0d4a092ca2c" title=" " alt="" coords="5,69,208,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="243,75,208,79,208,74,242,69"/>
 </map>

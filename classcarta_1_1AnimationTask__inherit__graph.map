@@ -1,4 +1,5 @@
 <map id="carta::AnimationTask" name="carta::AnimationTask">
-<area shape="rect" id="node1" title=" " alt="" coords="10,80,169,107"/>
-<area shape="rect" id="node2" href="$classcarta_1_1OnMessageTask.html" title=" " alt="" coords="5,5,173,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="10,79,169,104"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1OnMessageTask.html" title=" " alt="" coords="5,5,173,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,44,92,79,87,79,87,44"/>
 </map>

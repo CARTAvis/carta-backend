@@ -1,7 +1,11 @@
 <map id="carta::FileLoader::GetImage" name="carta::FileLoader::GetImage">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,144,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="192,5,344,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="199,71,337,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="392,41,531,83"/>
-<area shape="rect" id="node5" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="403,107,519,134"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,144,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="192,5,344,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="144,43,178,38,179,43,145,49"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="199,69,337,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="145,66,185,73,184,78,144,71"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="392,40,531,80"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="337,76,378,70,379,75,338,81"/>
+<area shape="rect" id="Node000005" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="403,105,519,130"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="338,97,390,104,389,110,337,102"/>
 </map>

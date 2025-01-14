@@ -1,6 +1,9 @@
 <map id="carta::ThreadManager::ExitEventHandlingThreads" name="carta::ThreadManager::ExitEventHandlingThreads">
-<area shape="rect" id="node1" title=" " alt="" coords="412,35,615,76"/>
-<area shape="rect" id="node2" href="$Session_8cc.html#a9f98a9b01427a3b3c835601d903bc205" title=" " alt="" coords="241,42,364,69"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Session.html#ad8a393254598d44b7b2c518b57d667e0" title=" " alt="" coords="5,5,193,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Session.html#a8753bb9dee966b7d39abc9b7237cd665" title=" " alt="" coords="8,71,191,98"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="412,35,615,75"/>
+<area shape="rect" id="Node000002" href="$Session_8cc.html#a9f98a9b01427a3b3c835601d903bc205" title=" " alt="" coords="241,42,364,67"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="398,57,364,57,364,52,398,52"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#ad8a393254598d44b7b2c518b57d667e0" title=" " alt="" coords="5,5,193,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="227,47,193,42,194,36,228,41"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Session.html#a8753bb9dee966b7d39abc9b7237cd665" title=" " alt="" coords="8,70,191,95"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="228,68,191,73,191,67,227,62"/>
 </map>

@@ -1,6 +1,9 @@
 <map id="carta::PolarizationCalculator::ComputeFractionalPolarizedIntensity" name="carta::PolarizationCalculator::ComputeFractionalPolarizedIntensity">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,276,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1PolarizationCalculator.html#a972eab3776df84d99cbd231b49e3a969" title=" " alt="" coords="329,5,535,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1PolarizationCalculator.html#af800918471188ab3eb863931a4f89dfe" title=" " alt="" coords="324,71,540,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1PolarizationCalculator.html#aa60a0830e45e2bef241b5ce2636a89a5" title=" " alt="" coords="329,136,535,177"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,276,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1PolarizationCalculator.html#a972eab3776df84d99cbd231b49e3a969" title=" " alt="" coords="329,5,535,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="232,67,327,46,328,51,233,72"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1PolarizationCalculator.html#af800918471188ab3eb863931a4f89dfe" title=" " alt="" coords="324,69,540,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="276,87,310,87,310,92,276,92"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1PolarizationCalculator.html#aa60a0830e45e2bef241b5ce2636a89a5" title=" " alt="" coords="329,133,535,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="233,107,328,128,327,133,232,112"/>
 </map>

@@ -1,8 +1,13 @@
 <map id="carta::Frame::GetImageSlicer" name="carta::Frame::GetImageSlicer">
-<area shape="rect" id="node1" title=" " alt="" coords="5,81,217,108"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="265,5,468,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#a1eda290558f3e9a6be5d4149c06e1b7b" title=" " alt="" coords="282,56,451,83"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#ad0db7c41f9da68619616cccb059edbb4" title=" " alt="" coords="291,107,442,133"/>
-<area shape="rect" id="node5" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="291,158,442,199"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="516,165,708,192"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,80,217,105"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="265,5,468,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="147,77,265,39,295,31,296,37,266,45,149,82"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a1eda290558f3e9a6be5d4149c06e1b7b" title=" " alt="" coords="282,55,451,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="217,79,268,74,268,80,218,85"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Frame.html#ad0db7c41f9da68619616cccb059edbb4" title=" " alt="" coords="291,104,442,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="218,100,278,106,277,111,217,105"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="291,154,442,194"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="153,103,291,147,289,152,151,108"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="516,161,708,187"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="442,171,502,171,502,177,442,177"/>
 </map>

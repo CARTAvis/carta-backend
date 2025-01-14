@@ -18,7 +18,7 @@ var classcarta_1_1FileExtInfoLoader =
     [ "FitsHeaderInfoToHeaderEntries", "classcarta_1_1FileExtInfoLoader.html#a3f73d0fb1820aaf9b2eda5fa8af4465f", null ],
     [ "FitsHeaderStrings", "classcarta_1_1FileExtInfoLoader.html#a7cb64132f92a7f2c68bdcdae4a25491d", null ],
     [ "GetCoordNames", "classcarta_1_1FileExtInfoLoader.html#a3b46f3add8328b7c49712851a4c26de2", null ],
-    [ "GetFITSHeader", "classcarta_1_1FileExtInfoLoader.html#ac86bdc3adc7d180ed0f3a98ebb95f412", null ],
+    [ "GetFITSHeader", "classcarta_1_1FileExtInfoLoader.html#af7a7a74555418ae24774de6ec75f5d7e", null ],
     [ "MakeAngleString", "classcarta_1_1FileExtInfoLoader.html#afa0abc9c6dd40164f472c7554adc32b6", null ],
     [ "SplitCtypeDescriptor", "classcarta_1_1FileExtInfoLoader.html#a91a1a282afb4ad16afc2940da18735d2", null ],
     [ "StripHduName", "classcarta_1_1FileExtInfoLoader.html#a52af5bc1b2fbb1cbeb91ceb48d8ba685", null ],

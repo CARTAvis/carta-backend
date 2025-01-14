@@ -1,8 +1,13 @@
 <map id="carta::CartaHdf5Image::CartaHdf5Image" name="carta::CartaHdf5Image::CartaHdf5Image">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,176,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1CartaHdf5Image.html#aa65f2118cfdb1ac57b10f4237b211e59" title=" " alt="" coords="224,71,395,112"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Hdf5Attributes.html#aa67e6a53484aa895b42f414a42c3cc08" title=" " alt="" coords="449,5,607,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1CartaHdf5Image.html#ac8ff052eb1036a7fb701497d25df6092" title=" " alt="" coords="443,71,613,112"/>
-<area shape="rect" id="node6" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="483,137,573,163"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Hdf5Attributes.html#a7d0a7d0f4924978b3a0bf430284d13dd" title=" " alt="" coords="661,5,820,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,176,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CartaHdf5Image.html#aa65f2118cfdb1ac57b10f4237b211e59" title=" " alt="" coords="224,69,395,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,87,210,87,210,92,176,92"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Hdf5Attributes.html#aa67e6a53484aa895b42f414a42c3cc08" title=" " alt="" coords="449,5,607,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="378,67,445,47,447,52,379,72"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CartaHdf5Image.html#ac8ff052eb1036a7fb701497d25df6092" title=" " alt="" coords="443,69,613,109"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="395,87,429,87,429,92,395,92"/>
+<area shape="rect" id="Node000006" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="483,134,573,159"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="387,107,471,129,469,134,386,112"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Hdf5Attributes.html#a7d0a7d0f4924978b3a0bf430284d13dd" title=" " alt="" coords="661,5,820,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="608,23,647,23,647,28,608,28"/>
 </map>

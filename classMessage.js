@@ -57,7 +57,7 @@ var classMessage =
     [ "SpatialProfileData", "classMessage.html#afc5c954ad1784b8c550c42331df6dd2c", null ],
     [ "SpatialProfileData", "classMessage.html#a53123b6b3d094f6c9b05445a55bfb45f", null ],
     [ "SpectralConfig", "classMessage.html#a0b2cc23716faa76064b935b1a24020ea", null ],
-    [ "SpectralProfileData", "classMessage.html#acd6c0876d2ddfa1432a63d0cb5443fd5", null ],
+    [ "SpectralProfileData", "classMessage.html#af0ee1f2c4e8dc91a09b2ee7a31020566", null ],
     [ "SpectralProfileData", "classMessage.html#a4e7fcbdfac275064dfd1a3f3582d2bcc", null ],
     [ "StartAnimation", "classMessage.html#a1dcda15dd079ae04209f6e8e28bd3980", null ],
     [ "StartAnimationAck", "classMessage.html#aaec7bf7eebf4becb13bb7d65ed54bfb6", null ],

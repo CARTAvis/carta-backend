@@ -1,7 +1,11 @@
 <map id="CartaMiriadImage.h" name="CartaMiriadImage.h">
-<area shape="rect" id="node1" title=" " alt="" coords="171,5,322,32"/>
-<area shape="rect" id="node2" href="$CartaMiriadImage_8cc.html" title=" " alt="" coords="5,80,163,107"/>
-<area shape="rect" id="node3" href="$MiriadLoader_8h.html" title=" " alt="" coords="187,80,306,107"/>
-<area shape="rect" id="node5" href="$Casacore_8cc.html" title=" " alt="" coords="330,80,430,107"/>
-<area shape="rect" id="node4" href="$FileLoader_8cc.html" title=" " alt="" coords="193,155,300,181"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="162,5,313,31"/>
+<area shape="rect" id="Node000002" href="$CartaMiriadImage_8cc.html" title=" " alt="" coords="5,79,163,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="202,39,110,81,108,76,199,34"/>
+<area shape="rect" id="Node000003" href="$Casacore_8cc.html" title=" " alt="" coords="187,79,287,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="240,44,240,79,235,79,235,44"/>
+<area shape="rect" id="Node000004" href="$MiriadLoader_8h.html" title=" " alt="" coords="311,79,430,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="272,35,350,76,348,81,269,39"/>
+<area shape="rect" id="Node000005" href="$FileLoader_8cc.html" title=" " alt="" coords="317,152,424,177"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="373,118,373,152,368,152,368,118"/>
 </map>

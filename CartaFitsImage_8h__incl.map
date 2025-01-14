@@ -1,19 +1,35 @@
 <map id="CartaFitsImage.h" name="CartaFitsImage.h">
-<area shape="rect" id="node1" title=" " alt="" coords="642,5,775,32"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,80,175,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="199,80,383,121"/>
-<area shape="rect" id="node4" title=" " alt="" coords="407,80,591,121"/>
-<area shape="rect" id="node5" title=" " alt="" coords="615,80,802,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="826,87,893,114"/>
-<area shape="rect" id="node7" href="$Logger_8h.html" title=" " alt="" coords="917,87,1055,114"/>
-<area shape="rect" id="node17" href="$CartaFitsImage_8tcc.html" title=" " alt="" coords="1079,87,1223,114"/>
-<area shape="rect" id="node8" title=" " alt="" coords="390,177,470,203"/>
-<area shape="rect" id="node9" title=" " alt="" coords="494,177,633,203"/>
-<area shape="rect" id="node10" title=" " alt="" coords="657,169,795,211"/>
-<area shape="rect" id="node11" title=" " alt="" coords="819,169,977,211"/>
-<area shape="rect" id="node12" title=" " alt="" coords="1001,169,1149,211"/>
-<area shape="rect" id="node13" title=" " alt="" coords="1173,177,1297,203"/>
-<area shape="rect" id="node14" title=" " alt="" coords="1322,177,1517,203"/>
-<area shape="rect" id="node15" href="$FileSystem_8h.html" title=" " alt="" coords="1541,177,1674,203"/>
-<area shape="rect" id="node16" title=" " alt="" coords="1562,259,1653,285"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="642,5,775,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,175,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="642,28,443,48,189,81,188,76,443,43,642,23"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="199,79,383,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="648,33,398,80,397,75,647,28"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="407,79,591,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="679,33,563,76,561,71,677,28"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="615,79,802,119"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="711,31,711,65,706,65,706,31"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="826,86,893,111"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="732,28,826,77,824,82,730,33"/>
+<area shape="rect" id="Node000007" href="$Logger_8h.html" title=" " alt="" coords="917,86,1055,111"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="750,28,933,80,932,85,748,33"/>
+<area shape="rect" id="Node000017" href="$CartaFitsImage_8tcc.html" title=" " alt="" coords="1079,86,1223,111"/>
+<area shape="poly" id="edge16_Node000001_Node000017" title=" " alt="" coords="776,27,1068,76,1090,80,1089,86,1067,81,775,32"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="390,174,470,199"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="941,114,905,121,786,136,693,141,600,148,483,169,472,172,470,167,481,164,599,143,692,136,786,131,904,116,940,109"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="494,174,633,199"/>
+<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="938,114,905,121,647,169,626,174,625,168,645,164,904,116,937,109"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="657,167,795,207"/>
+<area shape="poly" id="edge9_Node000007_Node000010" title=" " alt="" coords="952,114,797,165,796,160,950,109"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="819,167,977,207"/>
+<area shape="poly" id="edge10_Node000007_Node000011" title=" " alt="" coords="976,113,929,159,926,155,972,110"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="1001,167,1149,207"/>
+<area shape="poly" id="edge11_Node000007_Node000012" title=" " alt="" coords="1000,110,1048,155,1044,159,996,113"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="1173,174,1297,199"/>
+<area shape="poly" id="edge12_Node000007_Node000013" title=" " alt="" coords="1020,109,1190,167,1188,172,1019,114"/>
+<area shape="rect" id="Node000014" title=" " alt="" coords="1322,174,1517,199"/>
+<area shape="poly" id="edge13_Node000007_Node000014" title=" " alt="" coords="1035,109,1068,116,1342,169,1341,174,1067,121,1034,114"/>
+<area shape="rect" id="Node000015" href="$FileSystem_8h.html" title=" " alt="" coords="1541,174,1674,199"/>
+<area shape="poly" id="edge14_Node000007_Node000015" title=" " alt="" coords="1032,109,1068,116,1197,133,1298,140,1400,147,1529,164,1551,168,1550,174,1528,169,1399,152,1298,145,1196,138,1067,121,1030,114"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="1562,255,1653,280"/>
+<area shape="poly" id="edge15_Node000015_Node000016" title=" " alt="" coords="1610,200,1610,241,1605,241,1605,200"/>
 </map>

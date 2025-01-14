@@ -1,8 +1,13 @@
 <map id="carta::Region::GetControlPointsRecord" name="carta::Region::GetControlPointsRecord">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,192,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Region.html#a77abe84c6c73dbad663e8255e362a86f" title=" " alt="" coords="240,5,464,47"/>
-<area shape="rect" id="node4" href="$structcarta_1_1RegionState.html#a66bbe95b7834f84fc0e106412708b929" title=" " alt="" coords="270,71,434,112"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="260,136,444,177"/>
-<area shape="rect" id="node3" href="$structcarta_1_1RegionState.html#a1bad91889b88a92413ec04a5f990669f" title=" " alt="" coords="512,5,655,47"/>
-<area shape="rect" id="node5" href="$structcarta_1_1RegionState.html#a7139199adedd4b7c475aaa66cab8b541" title=" " alt="" coords="512,71,655,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,192,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Region.html#a77abe84c6c73dbad663e8255e362a86f" title=" " alt="" coords="240,5,464,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,67,258,46,260,51,179,72"/>
+<area shape="rect" id="Node000004" href="$structcarta_1_1RegionState.html#a66bbe95b7834f84fc0e106412708b929" title=" " alt="" coords="270,69,434,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="192,87,256,87,256,92,192,92"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="260,133,444,173"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="179,107,260,127,258,133,178,112"/>
+<area shape="rect" id="Node000003" href="$structcarta_1_1RegionState.html#a1bad91889b88a92413ec04a5f990669f" title=" " alt="" coords="512,5,655,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="464,23,498,23,498,28,464,28"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1RegionState.html#a7139199adedd4b7c475aaa66cab8b541" title=" " alt="" coords="512,69,655,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="435,87,499,87,499,92,435,92"/>
 </map>

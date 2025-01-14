@@ -1,6 +1,9 @@
 <map id="GuessImageType" name="GuessImageType">
-<area shape="rect" id="node1" title=" " alt="" coords="5,56,139,83"/>
-<area shape="rect" id="node2" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="189,5,325,32"/>
-<area shape="rect" id="node3" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="215,56,299,83"/>
-<area shape="rect" id="node4" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="187,107,328,133"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,55,139,80"/>
+<area shape="rect" id="Node000002" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="189,5,325,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,52,195,32,196,37,121,57"/>
+<area shape="rect" id="Node000003" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="215,55,299,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="139,65,201,65,201,70,139,70"/>
+<area shape="rect" id="Node000004" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="187,104,328,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="121,77,196,98,195,103,120,83"/>
 </map>

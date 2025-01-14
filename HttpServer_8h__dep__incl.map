@@ -1,5 +1,7 @@
 <map id="HttpServer.h" name="HttpServer.h">
-<area shape="rect" id="node1" title=" " alt="" coords="66,5,169,32"/>
-<area shape="rect" id="node2" href="$HttpServer_8cc.html" title=" " alt="" coords="5,80,115,107"/>
-<area shape="rect" id="node3" href="$Main_8cc.html" title=" " alt="" coords="139,80,211,107"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="66,5,169,31"/>
+<area shape="rect" id="Node000002" href="$HttpServer_8cc.html" title=" " alt="" coords="5,79,115,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,43,71,80,67,77,97,40"/>
+<area shape="rect" id="Node000003" href="$Main_8cc.html" title=" " alt="" coords="139,79,211,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="137,40,167,77,163,80,133,43"/>
 </map>

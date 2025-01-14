@@ -1,5 +1,7 @@
 <map id="carta::CartaMiriadImage::GetPlaneFlags" name="carta::CartaMiriadImage::GetPlaneFlags">
-<area shape="rect" id="node1" title=" " alt="" coords="461,5,641,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1CartaMiriadImage.html#aefa809cf7674b68eab2d2652ccceb532" title=" " alt="" coords="233,5,413,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1CartaMiriadImage.html#a00ae37d43c55ba3b42a68a829c6cf1f1" title=" " alt="" coords="5,5,185,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="461,5,641,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CartaMiriadImage.html#aefa809cf7674b68eab2d2652ccceb532" title=" " alt="" coords="233,5,413,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="447,28,413,28,413,23,447,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CartaMiriadImage.html#a00ae37d43c55ba3b42a68a829c6cf1f1" title=" " alt="" coords="5,5,185,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="219,28,185,28,185,23,219,23"/>
 </map>

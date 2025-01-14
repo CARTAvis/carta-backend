@@ -1,6 +1,9 @@
 <map id="carta::StatsCache" name="carta::StatsCache">
-<area shape="rect" id="node1" title=" " alt="" coords="43,199,179,225"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,95,216,136"/>
-<area shape="rect" id="node3" title=" " alt="" coords="28,5,95,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="119,5,204,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="43,196,179,221"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,93,216,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,147,113,196,108,196,108,147"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="19,5,104,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="76,41,103,92,98,94,71,44"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="128,5,195,31"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="151,44,123,94,119,92,146,41"/>
 </map>

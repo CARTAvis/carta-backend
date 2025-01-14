@@ -1,8 +1,13 @@
 <map id="carta::Session::OnCatalogFileInfo" name="carta::Session::OnCatalogFileInfo">
-<area shape="rect" id="node1" title=" " alt="" coords="5,64,195,105"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Session.html#af5f45b72e3fb7d4ad6fbf32fcc9da912" title=" " alt="" coords="243,71,433,98"/>
-<area shape="rect" id="node3" href="$namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" title=" " alt="" coords="481,13,712,39"/>
-<area shape="rect" id="node5" href="$classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" title=" " alt="" coords="507,64,686,105"/>
-<area shape="rect" id="node6" href="$classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d" title=" " alt="" coords="507,129,686,171"/>
-<area shape="rect" id="node4" href="$namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" title=" " alt="" coords="760,5,915,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,63,195,103"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#af5f45b72e3fb7d4ad6fbf32fcc9da912" title=" " alt="" coords="243,70,433,95"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="195,80,229,80,229,85,195,85"/>
+<area shape="rect" id="Node000003" href="$namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" title=" " alt="" coords="481,13,712,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="395,67,481,48,524,38,525,44,482,53,396,73"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" title=" " alt="" coords="507,63,686,103"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="434,80,494,80,494,85,434,85"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d" title=" " alt="" coords="507,127,686,167"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="391,93,503,121,501,126,390,98"/>
+<area shape="rect" id="Node000004" href="$namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" title=" " alt="" coords="760,5,915,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="712,23,746,23,746,28,712,28"/>
 </map>

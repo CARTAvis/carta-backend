@@ -1,6 +1,9 @@
 <map id="carta::Histogram" name="carta::Histogram">
-<area shape="rect" id="node1" title=" " alt="" coords="23,228,153,255"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,95,56,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="80,95,219,121"/>
-<area shape="rect" id="node4" title=" " alt="" coords="130,5,169,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="23,225,153,251"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,93,56,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="29,133,29,166,32,184,38,200,49,213,63,223,60,227,46,217,34,203,27,185,23,167,24,133"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="80,93,219,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="146,133,135,167,118,203,101,227,97,223,114,200,130,165,140,131"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="130,5,169,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="152,45,152,93,147,93,147,45"/>
 </map>

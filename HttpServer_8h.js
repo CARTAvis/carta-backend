@@ -1,6 +1,6 @@
 var HttpServer_8h =
 [
-    [ "HttpServer", "classcarta_1_1HttpServer.html", "classcarta_1_1HttpServer" ],
+    [ "carta::HttpServer", "classcarta_1_1HttpServer.html", "classcarta_1_1HttpServer" ],
     [ "CARTA_LAYOUT_SCHEMA_URL", "HttpServer_8h.html#a9b3d6bc5a4ab900cf721b725b2d295fe", null ],
     [ "CARTA_PREFERENCES_SCHEMA_URL", "HttpServer_8h.html#ae9a82634a8bc9e1fa5212dc71d2c9395", null ],
     [ "CARTA_SNIPPET_SCHEMA_URL", "HttpServer_8h.html#a03de961a098b39862343b6df887057c1", null ],

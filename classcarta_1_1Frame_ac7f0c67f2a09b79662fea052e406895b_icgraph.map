@@ -1,7 +1,11 @@
 <map id="carta::Frame::GetRegionSubImage" name="carta::Frame::GetRegionSubImage">
-<area shape="rect" id="node1" title=" " alt="" coords="484,49,688,90"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#abdae48af7ad841100f029acbc0734007" title=" " alt="" coords="224,5,435,32"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#a299822e6a515161ad36738b7d115702b" title=" " alt="" coords="223,56,436,83"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#a810937ee7606b48419b7f5d3ded16155" title=" " alt="" coords="246,107,413,133"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#aeb6afc8204ae9f00c0517b4f28be32d5" title=" " alt="" coords="5,5,175,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="484,47,688,87"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#abdae48af7ad841100f029acbc0734007" title=" " alt="" coords="224,5,435,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="470,48,396,33,397,28,471,43"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Frame.html#acc57df405598c16cab73eb62915824db" title=" " alt="" coords="223,55,436,80"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="470,70,436,70,436,65,470,65"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Frame.html#a810937ee7606b48419b7f5d3ded16155" title=" " alt="" coords="246,104,413,129"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="471,92,397,107,396,101,470,87"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#aeb6afc8204ae9f00c0517b4f28be32d5" title=" " alt="" coords="5,5,175,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="210,21,175,21,175,15,210,15"/>
 </map>

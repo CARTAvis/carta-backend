@@ -1,4 +1,5 @@
 <map id="carta::Table::ConstructFromXML" name="carta::Table::ConstructFromXML">
-<area shape="rect" id="node1" title=" " alt="" coords="192,5,420,32"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Table.html#af157765f3632349e5656375aedf4d94f" title=" " alt="" coords="5,5,144,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="192,5,420,31"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Table.html#af157765f3632349e5656375aedf4d94f" title=" " alt="" coords="5,5,144,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,21,144,21,144,15,178,15"/>
 </map>

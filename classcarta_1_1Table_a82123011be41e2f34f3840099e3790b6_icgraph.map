@@ -1,6 +1,10 @@
 <map id="carta::Table::NumColumns" name="carta::Table::NumColumns">
-<area shape="rect" id="node1" title=" " alt="" coords="424,71,617,98"/>
-<area shape="rect" id="node2" href="$classcarta_1_1TableController.html#a25fa9a736bfe637e1eb3bdab1a4283ea" title=" " alt="" coords="215,5,376,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1TableController.html#a3057e31ec0c81bb9f4bde8b7371cb8e0" title=" " alt="" coords="5,93,167,135"/>
-<area shape="rect" id="node4" href="$classcarta_1_1TableController.html#aa0e46226cef6d02b88687e370d7a2c21" title=" " alt="" coords="215,123,376,164"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="424,70,617,95"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1TableController.html#a25fa9a736bfe637e1eb3bdab1a4283ea" title=" " alt="" coords="215,5,376,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="456,69,374,48,375,43,458,64"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1TableController.html#a3057e31ec0c81bb9f4bde8b7371cb8e0" title=" " alt="" coords="5,92,167,132"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="411,93,167,109,167,104,410,87"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1TableController.html#aa0e46226cef6d02b88687e370d7a2c21" title=" " alt="" coords="215,120,376,160"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="458,101,375,123,374,117,456,96"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="200,130,166,125,167,120,201,125"/>
 </map>

@@ -1,5 +1,7 @@
 <map id="Token.h" name="Token.h">
-<area shape="rect" id="node1" title=" " alt="" coords="149,5,219,32"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,80,208,107"/>
-<area shape="rect" id="node3" title=" " alt="" coords="232,80,291,107"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="149,5,219,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,208,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,33,131,71,128,67,170,29"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="232,79,291,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="198,29,240,67,237,71,195,33"/>
 </map>

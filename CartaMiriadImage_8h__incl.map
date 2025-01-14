@@ -1,6 +1,9 @@
 <map id="CartaMiriadImage.h" name="CartaMiriadImage.h">
-<area shape="rect" id="node1" title=" " alt="" coords="291,5,441,32"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,80,249,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="274,80,458,121"/>
-<area shape="rect" id="node4" title=" " alt="" coords="482,80,666,121"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="291,5,441,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,249,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="332,33,198,77,197,72,330,28"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="274,79,458,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="369,31,369,65,363,65,363,31"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="482,79,666,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="397,28,512,71,511,76,395,33"/>
 </map>

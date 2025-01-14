@@ -1,6 +1,9 @@
 <map id="Contouring.h" name="Contouring.h">
-<area shape="rect" id="node1" title=" " alt="" coords="87,5,193,32"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,80,72,107"/>
-<area shape="rect" id="node3" title=" " alt="" coords="97,80,183,107"/>
-<area shape="rect" id="node4" title=" " alt="" coords="207,80,270,107"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="87,5,193,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,72,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="125,33,68,73,65,68,122,28"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="97,79,183,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="143,31,143,65,137,65,137,31"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="207,79,270,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="157,29,213,68,210,73,154,33"/>
 </map>

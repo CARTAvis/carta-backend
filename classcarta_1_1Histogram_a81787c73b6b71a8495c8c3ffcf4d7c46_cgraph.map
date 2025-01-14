@@ -1,7 +1,11 @@
 <map id="carta::Histogram::ConsistencyCheck" name="carta::Histogram::ConsistencyCheck">
-<area shape="rect" id="node1" title=" " alt="" coords="5,74,224,115"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Histogram.html#a1002f37e381eb1de20add01e234a8083" title=" " alt="" coords="272,5,483,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Histogram.html#ae1f537df539939fde102e25b0b42a9aa" title=" " alt="" coords="272,56,483,83"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Histogram.html#a751eb7e111b661cf77a44995db151a3b" title=" " alt="" coords="274,107,481,133"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206" title=" " alt="" coords="278,157,477,184"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,73,224,113"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Histogram.html#a1002f37e381eb1de20add01e234a8083" title=" " alt="" coords="272,5,483,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,70,271,39,303,31,304,36,273,45,175,75"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Histogram.html#ae1f537df539939fde102e25b0b42a9aa" title=" " alt="" coords="272,55,483,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="224,79,258,76,259,81,224,85"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Histogram.html#a751eb7e111b661cf77a44995db151a3b" title=" " alt="" coords="274,104,481,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="224,100,260,103,260,109,224,105"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206" title=" " alt="" coords="278,153,477,179"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="179,110,273,138,309,148,308,153,271,143,177,115"/>
 </map>

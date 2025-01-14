@@ -1,5 +1,7 @@
 <map id="Message::DoublePoint" name="Message::DoublePoint">
-<area shape="rect" id="node1" title=" " alt="" coords="428,13,595,39"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175" title="Create a Gaussian component sub&#45;message from Gaussian parameters." alt="" coords="192,5,380,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="428,13,595,38"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175" title="Create a Gaussian component sub&#45;message from Gaussian parameters." alt="" coords="192,5,380,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="414,28,380,28,380,23,414,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="178,28,144,28,144,23,178,23"/>
 </map>

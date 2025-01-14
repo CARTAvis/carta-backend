@@ -1,5 +1,7 @@
 <map id="carta::Table::PopulateCoosys" name="carta::Table::PopulateCoosys">
-<area shape="rect" id="node1" title=" " alt="" coords="468,5,677,32"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Table.html#a3991348408dd1a1e016abbfcab82f457" title=" " alt="" coords="192,5,420,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Table.html#af157765f3632349e5656375aedf4d94f" title=" " alt="" coords="5,5,144,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="468,5,677,31"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Table.html#a3991348408dd1a1e016abbfcab82f457" title=" " alt="" coords="192,5,420,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="454,21,420,21,420,15,454,15"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Table.html#af157765f3632349e5656375aedf4d94f" title=" " alt="" coords="5,5,144,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="178,21,144,21,144,15,178,15"/>
 </map>

@@ -1,15 +1,28 @@
 <map id="carta::TableController::OnOpenFileRequest" name="carta::TableController::OnOpenFileRequest">
-<area shape="rect" id="node1" title=" " alt="" coords="5,267,167,309"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Table.html#aff77a97f8f92cbcea7ced9fe78bede7a" title=" " alt="" coords="238,5,390,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Table.html#a06cf1ddd0f75f66b71a0903d3aa45f77" title=" " alt="" coords="225,56,403,83"/>
-<area shape="rect" id="node4" href="$classcarta_1_1TableView.html#ab37fd435400ce7b95589c10beb003bc0" title=" " alt="" coords="215,107,413,133"/>
-<area shape="rect" id="node6" href="$classcarta_1_1TableController.html#a5523c384eccdd225df0dddf7cec5e965" title=" " alt="" coords="233,158,395,199"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Table.html#a0f4ae1773d077ea3827df217cb6e8360" title=" " alt="" coords="240,224,388,251"/>
-<area shape="rect" id="node8" href="$classcarta_1_1Table.html#a82123011be41e2f34f3840099e3790b6" title=" " alt="" coords="475,355,669,381"/>
-<area shape="rect" id="node9" href="$classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b" title=" " alt="" coords="229,325,399,352"/>
-<area shape="rect" id="node10" href="$classcarta_1_1Table.html#a49b8a4da70de7ff9aa55b78e210c01f6" title=" " alt="" coords="229,376,399,403"/>
-<area shape="rect" id="node11" href="$classcarta_1_1TableController.html#aa0e46226cef6d02b88687e370d7a2c21" title=" " alt="" coords="233,427,395,469"/>
-<area shape="rect" id="node12" href="$classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001" title=" " alt="" coords="247,493,381,520"/>
-<area shape="rect" id="node13" href="$classcarta_1_1Table.html#a6a02978fe00a695f91ce2f58877d840d" title=" " alt="" coords="245,544,383,571"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Column.html#a6e3693ce04580591856dae1fce2db4cd" title=" " alt="" coords="461,107,683,133"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,262,167,302"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Table.html#aff77a97f8f92cbcea7ced9fe78bede7a" title=" " alt="" coords="238,5,390,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="89,261,103,215,127,155,163,93,186,64,213,40,224,33,227,37,216,44,190,68,168,96,132,158,108,217,95,263"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Table.html#a06cf1ddd0f75f66b71a0903d3aa45f77" title=" " alt="" coords="225,55,403,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="93,261,109,223,135,177,170,129,213,89,222,84,225,88,216,93,174,133,139,180,114,226,97,263"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1TableView.html#ab37fd435400ce7b95589c10beb003bc0" title=" " alt="" coords="215,104,413,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="98,260,144,200,176,168,213,140,229,132,231,137,216,144,180,172,148,204,102,264"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1TableController.html#a5523c384eccdd225df0dddf7cec5e965" title=" " alt="" coords="233,154,395,194"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="115,260,161,231,214,204,231,196,233,201,216,208,163,236,118,264"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Table.html#a0f4ae1773d077ea3827df217cb6e8360" title=" " alt="" coords="240,219,388,244"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="166,262,243,244,244,250,167,267"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1Table.html#a82123011be41e2f34f3840099e3790b6" title=" " alt="" coords="475,348,669,373"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="167,280,284,287,350,294,414,305,475,321,529,340,527,345,473,326,413,310,349,299,284,292,167,285"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b" title=" " alt="" coords="229,320,399,345"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="167,297,244,314,243,320,166,302"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1Table.html#a49b8a4da70de7ff9aa55b78e210c01f6" title=" " alt="" coords="229,369,399,395"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="118,300,163,328,216,354,240,363,239,368,214,359,160,333,115,305"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1TableController.html#aa0e46226cef6d02b88687e370d7a2c21" title=" " alt="" coords="233,419,395,459"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="105,301,151,353,182,381,216,405,227,411,224,416,213,410,179,385,148,356,101,304"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001" title=" " alt="" coords="247,484,381,509"/>
+<area shape="poly" id="edge12_Node000001_Node000012" title=" " alt="" coords="98,301,114,338,140,383,174,430,216,469,235,480,233,484,213,473,170,433,135,386,109,340,93,303"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1Table.html#a6a02978fe00a695f91ce2f58877d840d" title=" " alt="" coords="245,533,383,559"/>
+<area shape="poly" id="edge13_Node000001_Node000013" title=" " alt="" coords="95,301,108,347,132,406,168,468,190,496,216,520,234,530,231,535,213,524,186,500,163,471,127,409,103,349,89,303"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Column.html#a6e3693ce04580591856dae1fce2db4cd" title=" " alt="" coords="461,104,683,129"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="414,114,448,114,448,119,414,119"/>
+<area shape="poly" id="edge11_Node000011_Node000008" title=" " alt="" coords="380,417,516,375,517,380,381,422"/>
 </map>

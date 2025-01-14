@@ -1,7 +1,12 @@
 <map id="carta::WebBrowser" name="carta::WebBrowser">
-<area shape="rect" id="node1" title=" " alt="" coords="139,307,283,333"/>
-<area shape="rect" id="node2" title=" " alt="" coords="31,96,118,123"/>
-<area shape="rect" id="node5" title=" " alt="" coords="117,194,304,221"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,144,47"/>
-<area shape="rect" id="node4" title=" " alt="" coords="328,194,379,221"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="65,304,209,329"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,192,56,217"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="27,231,26,256,34,279,48,292,66,302,64,307,45,296,30,281,21,257,22,231"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="115,95,202,120"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="158,134,152,183,141,304,136,304,147,182,153,133"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="201,192,388,217"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="188,126,280,190,277,194,185,130"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="89,5,228,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="161,59,161,94,156,94,156,59"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="268,228,156,306,153,302,265,223"/>
 </map>

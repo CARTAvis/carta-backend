@@ -1,8 +1,13 @@
 <map id="carta::RegionHandler::RemoveFrame" name="carta::RegionHandler::RemoveFrame">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,164,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a390e02b6d680c5b09e8957a65468c8d0" title=" " alt="" coords="212,5,451,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a2928967315eebcaef940d868586e5d85" title=" " alt="" coords="252,71,411,112"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a48531b61f365e6d5a8a790e8b1725464" title=" " alt="" coords="252,136,411,177"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="549,39,708,80"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a772046cac78b7c01f5562e68a07c7447" title=" " alt="" coords="499,104,759,145"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,164,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a390e02b6d680c5b09e8957a65468c8d0" title=" " alt="" coords="212,5,451,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="162,67,240,46,241,51,163,72"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a2928967315eebcaef940d868586e5d85" title=" " alt="" coords="252,69,411,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="164,87,238,87,238,92,164,92"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1RegionHandler.html#a48531b61f365e6d5a8a790e8b1725464" title=" " alt="" coords="252,133,411,173"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="163,107,241,127,240,132,162,112"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="549,37,708,77"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="411,78,536,65,536,70,411,83"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHandler.html#a772046cac78b7c01f5562e68a07c7447" title=" " alt="" coords="499,101,759,141"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="411,95,486,103,485,109,411,100"/>
 </map>

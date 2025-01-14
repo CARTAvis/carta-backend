@@ -1,8 +1,13 @@
 <map id="carta::FileListHandler" name="carta::FileListHandler">
-<area shape="rect" id="node1" title=" " alt="" coords="214,244,374,271"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,103,97,130"/>
-<area shape="rect" id="node3" title=" " alt="" coords="182,103,233,130"/>
-<area shape="rect" id="node4" title=" " alt="" coords="333,103,420,130"/>
-<area shape="rect" id="node5" title=" " alt="" coords="307,5,446,47"/>
-<area shape="rect" id="node6" title=" " alt="" coords="445,96,610,137"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="199,241,359,267"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,102,97,127"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="50,141,52,180,58,199,69,215,89,227,121,236,199,246,199,252,120,241,87,232,66,219,53,201,47,181,45,141"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="164,102,251,127"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="203,141,201,179,203,198,211,216,223,229,240,239,237,244,220,233,206,219,198,200,195,179,198,141"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="138,5,277,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="210,59,210,102,205,102,205,59"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="326,102,377,127"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="351,142,342,180,324,219,300,243,296,239,320,216,337,178,346,141"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="442,95,607,135"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="526,149,517,186,508,204,494,219,472,231,439,240,360,251,359,245,438,235,470,226,491,215,503,201,512,184,520,148"/>
 </map>

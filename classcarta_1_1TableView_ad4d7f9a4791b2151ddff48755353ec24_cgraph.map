@@ -1,5 +1,7 @@
 <map id="carta::TableView::SortByColumn" name="carta::TableView::SortByColumn">
-<area shape="rect" id="node1" title=" " alt="" coords="5,23,184,65"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b" title=" " alt="" coords="243,5,414,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Column.html#a98290f4faaf24784702aa9062d0c0ff5" title=" " alt="" coords="232,56,425,83"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,23,184,63"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b" title=" " alt="" coords="243,5,414,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="184,31,229,26,230,31,184,36"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Column.html#a98290f4faaf24784702aa9062d0c0ff5" title=" " alt="" coords="232,55,425,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="184,50,219,53,218,59,184,55"/>
 </map>

@@ -1,8 +1,8 @@
 var namespacecarta_1_1FileInfo =
 [
     [ "ImageStats", "structcarta_1_1FileInfo_1_1ImageStats.html", "structcarta_1_1FileInfo_1_1ImageStats" ],
-    [ "RegionStatsId", "structcarta_1_1FileInfo_1_1RegionStatsId.html", "structcarta_1_1FileInfo_1_1RegionStatsId" ],
     [ "RegionSpectralStats", "structcarta_1_1FileInfo_1_1RegionSpectralStats.html", "structcarta_1_1FileInfo_1_1RegionSpectralStats" ],
+    [ "RegionStatsId", "structcarta_1_1FileInfo_1_1RegionStatsId.html", "structcarta_1_1FileInfo_1_1RegionStatsId" ],
     [ "Data", "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7", [
       [ "Image", "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7abe53a0541a6d36f6ecb879fa2c584b08", null ],
       [ "XY", "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a74c53bcd3dcb2bb79993b2fec37d362a", null ],

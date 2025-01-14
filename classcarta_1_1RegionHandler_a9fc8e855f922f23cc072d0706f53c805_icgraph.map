@@ -1,5 +1,9 @@
 <map id="carta::RegionHandler::CalculatePvPreviewImage" name="carta::RegionHandler::CalculatePvPreviewImage">
-<area shape="rect" id="node1" title=" " alt="" coords="240,39,440,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a53807aa22abb92b35725054a015e12aa" title=" " alt="" coords="19,5,178,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#ab556b1d44e6a4ca48fba195023769038" title=" " alt="" coords="5,71,192,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="240,61,440,101"/>
+<area shape="poly" id="edge3_Node000001_Node000001" title=" " alt="" coords="381,50,366,43,340,40,317,42,303,47,298,53,300,60,295,62,293,52,300,42,316,37,340,35,368,38,383,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a53807aa22abb92b35725054a015e12aa" title=" " alt="" coords="19,29,178,69"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="226,69,178,62,179,57,227,64"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#ab556b1d44e6a4ca48fba195023769038" title=" " alt="" coords="5,93,192,133"/>
+<area shape="poly" id="edge4_Node000001_Node000003" title=" " alt="" coords="227,99,193,104,192,98,226,94"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="140,18,125,11,99,8,75,10,62,15,56,21,59,28,54,30,51,20,58,10,74,5,99,3,127,6,142,13"/>
 </map>

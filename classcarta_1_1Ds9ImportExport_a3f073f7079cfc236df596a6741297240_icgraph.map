@@ -1,7 +1,12 @@
 <map id="carta::Ds9ImportExport::ImportPolygonLineRegion" name="carta::Ds9ImportExport::ImportPolygonLineRegion">
-<area shape="rect" id="node1" title=" " alt="" coords="891,35,1088,76"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Ds9ImportExport.html#a507821ef3a4c8908c429c7294880d29b" title=" " alt="" coords="669,5,843,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Ds9ImportExport.html#aa2a42c3190f56fc57565646a5b98a45d" title=" " alt="" coords="448,35,621,76"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588" title=" " alt="" coords="227,35,400,76"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="5,35,179,76"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="891,35,1088,75"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9ImportExport.html#a507821ef3a4c8908c429c7294880d29b" title=" " alt="" coords="669,5,843,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="877,43,842,39,843,34,877,38"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#aa2a42c3190f56fc57565646a5b98a45d" title=" " alt="" coords="448,35,621,75"/>
+<area shape="poly" id="edge5_Node000001_Node000003" title=" " alt="" coords="877,60,843,60,669,60,621,59,621,54,669,55,843,55,877,54"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="656,41,622,46,621,41,655,36"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588" title=" " alt="" coords="227,35,400,75"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="434,57,400,57,400,52,434,52"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="5,35,179,75"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="213,57,179,57,179,52,213,52"/>
 </map>

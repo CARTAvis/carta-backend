@@ -1,7 +1,12 @@
 <map id="carta::FileListHandler::ResultMsg" name="carta::FileListHandler::ResultMsg">
-<area shape="rect" id="node1" title=" " alt="" coords="80,275,240,316"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,185,112,212"/>
-<area shape="rect" id="node3" title=" " alt="" coords="138,96,225,123"/>
-<area shape="rect" id="node5" title=" " alt="" coords="248,185,435,212"/>
-<area shape="rect" id="node4" title=" " alt="" coords="112,5,251,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="155,271,315,311"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="31,95,118,120"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="67,134,60,170,61,189,68,207,85,228,106,245,156,269,153,273,103,249,81,231,63,209,56,190,54,170,62,133"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="141,183,328,208"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="110,124,214,180,212,185,107,129"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,5,144,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="77,59,77,94,72,94,72,59"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="237,222,237,270,232,270,232,222"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="352,183,459,208"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="374,217,271,273,268,268,371,212"/>
 </map>

@@ -1,10 +1,18 @@
 <map id="carta::RegionConverter::UseApproximatePolygon" name="carta::RegionConverter::UseApproximatePolygon">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,196,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionConverter.html#a8018d8b7af5c0be8cfdf3c55eb03bf6d" title=" " alt="" coords="244,5,464,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionConverter.html#a3af0b6c9f41c962149fa715d22a0b40f" title=" " alt="" coords="263,71,445,112"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionConverter.html#ad09346a7964a687c402f4ef8c29173f6" title=" " alt="" coords="268,136,440,177"/>
-<area shape="rect" id="node3" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="548,15,669,42"/>
-<area shape="rect" id="node5" href="$structcarta_1_1RegionState.html#a90efa1046cc65ceb9ae9a6f32d2cc8e6" title=" " alt="" coords="525,71,693,112"/>
-<area shape="rect" id="node7" href="$classcarta_1_1RegionConverter.html#a0f6aea4795947be463dd9cf3e8be4561" title=" " alt="" coords="523,136,695,177"/>
-<area shape="rect" id="node8" href="$classcarta_1_1RegionConverter.html#ac39257df92defdcc7bbd460d724da66e" title=" " alt="" coords="512,201,705,243"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,196,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionConverter.html#a8018d8b7af5c0be8cfdf3c55eb03bf6d" title=" " alt="" coords="244,5,464,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="180,67,260,46,262,51,181,72"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionConverter.html#a3af0b6c9f41c962149fa715d22a0b40f" title=" " alt="" coords="263,69,445,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="196,87,249,87,249,92,196,92"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1RegionConverter.html#ad09346a7964a687c402f4ef8c29173f6" title=" " alt="" coords="268,133,440,173"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="181,107,262,127,260,133,180,112"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="548,15,669,41"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="464,24,535,25,535,30,464,29"/>
+<area shape="poly" id="edge5_Node000004_Node000003" title=" " alt="" coords="437,67,541,41,543,47,438,72"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1RegionState.html#a90efa1046cc65ceb9ae9a6f32d2cc8e6" title=" " alt="" coords="525,69,693,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="446,87,511,87,511,92,446,92"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1RegionConverter.html#a0f6aea4795947be463dd9cf3e8be4561" title=" " alt="" coords="523,133,695,173"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="440,151,508,151,508,156,440,156"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1RegionConverter.html#ac39257df92defdcc7bbd460d724da66e" title=" " alt="" coords="512,197,705,237"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="435,171,516,191,515,197,434,176"/>
 </map>

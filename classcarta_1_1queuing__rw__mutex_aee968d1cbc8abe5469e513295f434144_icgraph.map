@@ -1,5 +1,7 @@
 <map id="carta::queuing_rw_mutex::queue_writer" name="carta::queuing_rw_mutex::queue_writer">
-<area shape="rect" id="node1" title=" " alt="" coords="495,13,681,54"/>
-<area shape="rect" id="node2" href="$classcarta_1_1queuing__rw__mutex.html#a214fb47b8f06320ef0a5f182a40ece6d" title=" " alt="" coords="260,13,447,54"/>
-<area shape="rect" id="node3" href="$classcarta_1_1queuing__rw__mutex__scoped.html#a666630086a9f8181c43ea73368fe038b" title=" " alt="" coords="5,5,212,61"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="495,13,681,53"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1queuing__rw__mutex.html#a214fb47b8f06320ef0a5f182a40ece6d" title=" " alt="" coords="260,13,447,53"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="481,35,447,35,447,30,481,30"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1queuing__rw__mutex__scoped.html#a666630086a9f8181c43ea73368fe038b" title=" " alt="" coords="5,5,212,60"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="246,35,212,35,212,30,246,30"/>
 </map>

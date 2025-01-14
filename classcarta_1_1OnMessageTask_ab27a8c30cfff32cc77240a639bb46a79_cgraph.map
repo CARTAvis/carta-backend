@@ -1,4 +1,5 @@
 <map id="carta::OnMessageTask::OnMessageTask" name="carta::OnMessageTask::OnMessageTask">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,173,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Session.html#aa8700ef4efe32de89e1ff78b50c607b6" title=" " alt="" coords="221,5,397,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,173,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#aa8700ef4efe32de89e1ff78b50c607b6" title=" " alt="" coords="221,5,397,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,23,208,23,208,28,173,28"/>
 </map>

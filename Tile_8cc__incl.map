@@ -1,7 +1,11 @@
 <map id="Tile.cc" name="Tile.cc">
-<area shape="rect" id="node1" title=" " alt="" coords="94,5,158,32"/>
-<area shape="rect" id="node2" href="$Tile_8h.html" title=" " alt="" coords="97,80,155,107"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,155,68,181"/>
-<area shape="rect" id="node4" title=" " alt="" coords="93,155,159,181"/>
-<area shape="rect" id="node5" title=" " alt="" coords="183,155,263,181"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="94,5,158,31"/>
+<area shape="rect" id="Node000002" href="$Tile_8h.html" title=" " alt="" coords="97,79,155,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="129,31,129,65,123,65,123,31"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,152,68,177"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="113,106,64,145,60,141,110,102"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="93,152,159,177"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="129,104,129,138,123,138,123,104"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="183,152,263,177"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="143,102,198,141,195,146,140,106"/>
 </map>

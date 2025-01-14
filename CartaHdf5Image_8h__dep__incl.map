@@ -1,9 +1,16 @@
 <map id="CartaHdf5Image.h" name="CartaHdf5Image.h">
-<area shape="rect" id="node1" title=" " alt="" coords="259,5,400,32"/>
-<area shape="rect" id="node2" href="$FileExtInfoLoader_8cc.html" title=" " alt="" coords="5,80,157,107"/>
-<area shape="rect" id="node3" href="$CartaHdf5Image_8cc.html" title=" " alt="" coords="181,80,328,107"/>
-<area shape="rect" id="node4" href="$ExprLoader_8h.html" title=" " alt="" coords="352,80,459,107"/>
-<area shape="rect" id="node6" href="$Hdf5Loader_8h.html" title=" " alt="" coords="483,80,591,107"/>
-<area shape="rect" id="node5" href="$FileLoader_8cc.html" title=" " alt="" coords="352,155,459,181"/>
-<area shape="rect" id="node7" href="$Hdf5Loader_8cc.html" title=" " alt="" coords="483,155,597,181"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="235,5,376,31"/>
+<area shape="rect" id="Node000002" href="$CartaHdf5Image_8cc.html" title=" " alt="" coords="5,79,152,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="257,37,116,81,115,76,255,32"/>
+<area shape="rect" id="Node000003" href="$ExprLoader_8h.html" title=" " alt="" coords="176,79,283,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="285,42,244,80,240,76,281,38"/>
+<area shape="rect" id="Node000005" href="$FileExtInfoLoader_8cc.html" title=" " alt="" coords="307,79,459,104"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="330,38,372,76,368,80,326,42"/>
+<area shape="rect" id="Node000006" href="$Hdf5Loader_8h.html" title=" " alt="" coords="483,79,591,104"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="356,32,501,76,499,81,355,37"/>
+<area shape="rect" id="Node000004" href="$FileLoader_8cc.html" title=" " alt="" coords="263,152,369,177"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="255,110,304,150,300,154,252,115"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="490,111,353,154,351,149,488,106"/>
+<area shape="rect" id="Node000007" href="$Hdf5Loader_8cc.html" title=" " alt="" coords="480,152,595,177"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="540,118,540,152,535,152,535,118"/>
 </map>

@@ -1,7 +1,12 @@
 <map id="carta::Region::IsInReferenceImage" name="carta::Region::IsInReferenceImage">
-<area shape="rect" id="node1" title=" " alt="" coords="587,53,792,94"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Region.html#ad761974201dc977416905a55ed35fb86" title=" " alt="" coords="333,53,519,94"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Region.html#a946ec39c21a09a141d917b553ba56551" title=" " alt="" coords="23,5,248,32"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Region.html#a64c23b1ecd08f94149ea575536e738f7" title=" " alt="" coords="313,118,539,159"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Region.html#a6ec0e6a0c65e9bc6ed3b9213831f053f" title=" " alt="" coords="5,60,265,87"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="587,51,792,91"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Region.html#ad761974201dc977416905a55ed35fb86" title=" " alt="" coords="333,51,519,91"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="573,74,520,74,520,69,573,69"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Region.html#a946ec39c21a09a141d917b553ba56551" title=" " alt="" coords="23,5,248,31"/>
+<area shape="poly" id="edge4_Node000001_Node000003" title=" " alt="" coords="592,51,538,42,387,28,248,22,248,17,387,22,539,37,593,46"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Region.html#a64c23b1ecd08f94149ea575536e738f7" title=" " alt="" coords="313,115,539,155"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="594,97,509,118,508,113,593,92"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="319,54,205,33,206,28,320,49"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Region.html#a6ec0e6a0c65e9bc6ed3b9213831f053f" title=" " alt="" coords="5,59,265,84"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="319,74,266,74,266,69,319,69"/>
 </map>

@@ -1,6 +1,9 @@
 <map id="carta::LineBoxRegions::GetPolygonRegionState" name="carta::LineBoxRegions::GetPolygonRegionState">
-<area shape="rect" id="node1" title=" " alt="" coords="5,35,189,76"/>
-<area shape="rect" id="node2" href="$classcarta_1_1LineBoxRegions.html#aa1bb79738d6d9bd46aa5907c0493f7be" title=" " alt="" coords="237,5,452,47"/>
-<area shape="rect" id="node4" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="284,71,405,98"/>
-<area shape="rect" id="node3" href="$classcarta_1_1LineBoxRegions.html#a427ea4115e09871b3b27e1be0201abc3" title=" " alt="" coords="500,5,667,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,35,189,75"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1LineBoxRegions.html#aa1bb79738d6d9bd46aa5907c0493f7be" title=" " alt="" coords="237,5,452,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="189,41,223,37,224,42,190,46"/>
+<area shape="rect" id="Node000004" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="284,70,405,95"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="190,62,271,72,270,77,189,68"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1LineBoxRegions.html#a427ea4115e09871b3b27e1be0201abc3" title=" " alt="" coords="500,5,667,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="452,23,486,23,486,28,452,28"/>
 </map>

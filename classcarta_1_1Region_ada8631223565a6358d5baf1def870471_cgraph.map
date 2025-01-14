@@ -1,5 +1,7 @@
 <map id="carta::Region::IsLineType" name="carta::Region::IsLineType">
-<area shape="rect" id="node1" title=" " alt="" coords="5,46,189,73"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="237,5,421,47"/>
-<area shape="rect" id="node3" href="$structcarta_1_1RegionState.html#a7139199adedd4b7c475aaa66cab8b541" title=" " alt="" coords="258,71,401,112"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,45,189,70"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1" title=" " alt="" coords="237,5,421,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,42,223,37,224,43,190,47"/>
+<area shape="rect" id="Node000003" href="$structcarta_1_1RegionState.html#a7139199adedd4b7c475aaa66cab8b541" title=" " alt="" coords="258,69,401,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="190,67,245,75,244,80,190,73"/>
 </map>

@@ -1,8 +1,13 @@
 <map id="carta::FileListHandler::OnRegionFileInfoRequest" name="carta::FileListHandler::OnRegionFileInfoRequest">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,200,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1FileListHandler.html#a7f4f8c5ad7eb30ad51a712446752283d" title=" " alt="" coords="257,5,417,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1FileListHandler.html#a8223ce481f66e64ce47913d80d870ccd" title=" " alt="" coords="248,71,427,112"/>
-<area shape="rect" id="node6" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="255,137,420,163"/>
-<area shape="rect" id="node3" href="$File_8cc.html#af9947f7bb03abff3412672068ab7acdf" title=" " alt="" coords="475,13,612,39"/>
-<area shape="rect" id="node4" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="660,13,744,39"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,200,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileListHandler.html#a7f4f8c5ad7eb30ad51a712446752283d" title=" " alt="" coords="257,5,417,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,67,250,46,251,51,177,72"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1FileListHandler.html#a8223ce481f66e64ce47913d80d870ccd" title=" " alt="" coords="248,69,427,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="200,87,234,87,234,92,200,92"/>
+<area shape="rect" id="Node000006" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="255,134,420,159"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="186,107,272,128,271,133,185,112"/>
+<area shape="rect" id="Node000003" href="$File_8cc.html#af9947f7bb03abff3412672068ab7acdf" title=" " alt="" coords="475,13,612,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="418,23,461,23,461,28,418,28"/>
+<area shape="rect" id="Node000004" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="660,13,744,38"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="612,23,646,23,646,28,612,28"/>
 </map>

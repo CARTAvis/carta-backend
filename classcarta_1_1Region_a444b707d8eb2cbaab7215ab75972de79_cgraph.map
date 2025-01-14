@@ -1,4 +1,5 @@
 <map id="carta::Region::CheckPoints" name="carta::Region::CheckPoints">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,201,32"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Region.html#a0c8c223a201694769ef446cee2a6015d" title=" " alt="" coords="249,5,441,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,201,31"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Region.html#a0c8c223a201694769ef446cee2a6015d" title=" " alt="" coords="249,5,441,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="202,15,236,15,236,21,202,21"/>
 </map>

@@ -1,6 +1,9 @@
 <map id="carta::CartaFitsImage::AddSpectralCoordinate" name="carta::CartaFitsImage::AddSpectralCoordinate">
-<area shape="rect" id="node1" title=" " alt="" coords="5,64,184,105"/>
-<area shape="rect" id="node2" href="$classcarta_1_1CartaFitsImage.html#a5e0332702a5666d04fc33597c3485a6e" title=" " alt="" coords="244,5,407,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1CartaFitsImage.html#a16d3fdc222553528b79b761a6f14e14b" title=" " alt="" coords="232,71,419,98"/>
-<area shape="rect" id="node4" href="$classcarta_1_1CartaFitsImage.html#a86de5f9be94faf098f3529bb1afc506b" title=" " alt="" coords="244,123,407,164"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,63,184,103"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CartaFitsImage.html#a5e0332702a5666d04fc33597c3485a6e" title=" " alt="" coords="244,5,407,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="175,60,230,46,232,51,176,65"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CartaFitsImage.html#a16d3fdc222553528b79b761a6f14e14b" title=" " alt="" coords="232,70,419,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="184,80,219,80,219,85,184,85"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CartaFitsImage.html#a86de5f9be94faf098f3529bb1afc506b" title=" " alt="" coords="244,120,407,160"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="176,100,232,114,230,119,175,105"/>
 </map>
