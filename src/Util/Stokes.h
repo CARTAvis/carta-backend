@@ -19,18 +19,22 @@ namespace carta {
 
 class Stokes {
 public:
-    static CARTA::PolarizationType Get(int value);
-    static CARTA::PolarizationType Get(std::string name);
-    static casacore::Stokes::StokesTypes ToCasa(CARTA::PolarizationType type);
+    using Pol = CARTA::PolarizationType;
+    using CasaPol = casacore::Stokes::StokesTypes;
+    static Pol Get(int value);
+    static Pol Get(std::string name);
+    static CasaPol ToCasa(Pol type);
     static bool ConvertFits(const int& in_stokes_value, int& out_stokes_value);
-    static std::string Name(CARTA::PolarizationType type);
-    static std::string Description(CARTA::PolarizationType type);
+    static std::string Name(Pol type);
+    static std::string Description(Pol type);
     static bool IsComputed(int value);
+    static std::vector<Pol> Components(Pol type);
 
     // TODO move FITS mappings here too
 protected:
-    static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> _to_casa;
-    static std::unordered_map<CARTA::PolarizationType, std::string> _description;
+    static std::unordered_map<Pol, std::vector<Pol>> _components;
+    static std::unordered_map<Pol, CasaPol> _to_casa;
+    static std::unordered_map<Pol, std::string> _description;
 };
 
 // The struct StokesSource is used to tell the file loader to get the original image interface, or get the computed stokes image interface.

@@ -18,7 +18,62 @@
 #include "Util/Image.h"
 
 namespace carta {
+    
+class PolarizationCalculator {
+public:
+    using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
+    PolarizationCalculator(std::shared_ptr<FileLoader> loader, CARTA::PolarizationType calculated_type);
+    virtual ~PolarizationCalculator() = default;
+    static std::shared_ptr<PolarizationCalculator> GetCalculator(std::shared_ptr<FileLoader> loader, CARTA::PolarizationType calculated_type);
+    ImageRef GetImage(casacore::Slicer slicer);
+protected:
+    virtual ImageRef Calculate();
+    std::shared_ptr<FileLoader> _loader;
+    CARTA::PolarizationType _computed_type;
+    std::vector<CARTA::PolarizationType> _component_types;
+    std::map<CARTA::PolarizationType, ImageRef> _component_images;
+};
 
+class PtotalCalculator : public PolarizationCalculator {
+public:
+    PtotalCalculator(std::shared_ptr<FileLoader> loader);
+protected:
+    ImageRef Calculate() override;
+};
+
+class PlinearCalculator : public PolarizationCalculator {
+public:
+    PlinearCalculator(std::shared_ptr<FileLoader> loader);
+protected:
+    ImageRef Calculate() override;
+};
+
+class PFtotalCalculator : public PolarizationCalculator {
+public:
+    PFtotalCalculator(std::shared_ptr<FileLoader> loader);
+protected:
+    ImageRef Calculate() override;
+};
+
+class PFlinearCalculator : public PolarizationCalculator {
+public:
+    PFlinearCalculator(std::shared_ptr<FileLoader> loader);
+protected:
+    ImageRef Calculate() override;
+};
+
+class PangleCalculator : public PolarizationCalculator {
+public:
+    PangleCalculator(std::shared_ptr<FileLoader> loader);
+protected:
+    ImageRef Calculate() override;
+};
+
+
+
+
+
+//-------------------------- TODO OLD BELOW THIS LINE
 class PolarizationCalculator {
     enum StokesTypes { I, Q, U, V };
 

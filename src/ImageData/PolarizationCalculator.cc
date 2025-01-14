@@ -9,6 +9,55 @@
 
 using namespace carta;
 
+PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loader, CARTA::PolarizationType computed_type) : _loader(loader)), _computed_type(computed_type) _component_types(Stokes::Components(type)) {}
+
+
+std::shared_ptr<PolarizationCalculator> PolarizationCalculator::GetCalculator(std::shared_ptr<FileLoader> loader, CARTA::PolarizationType type) {
+    switch(type) {
+        case CARTA::PolarizationType::Ptotal:
+            return std::make_shared<PtotalCalculator>(loader);
+        case CARTA::PolarizationType::Plinear:
+            return std::make_shared<PlinearCalculator>(loader);
+        case CARTA::PolarizationType::PFtotal:
+            return std::make_shared<PFtotalCalculator>(loader);
+        case CARTA::PolarizationType::PFlinear:
+            return std::make_shared<PFlinearCalculator>(loader);
+        case CARTA::PolarizationType::Pangle:
+            return std::make_shared<PangleCalculator>(loader);
+        default: {
+            spdlog::error("Cannot calculate polarization {}", CARTA::PolarizationType_Name(type));
+            return nullptr;
+        }
+    }
+}
+
+
+ImageRef PolarizationCalculator::GetImage(casacore::Slicer slicer) {
+    // TODO: have to make sure slicer passed in here is valid (no placeholders)
+    // get blc and trc
+    // get interfaces for needed components only
+    // call calculate
+}
+
+
+
+PtotalCalculator::PtotalCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::Ptotal) {}
+PlinearCalculator::PlinearCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::Plinear) {}
+PFtotalCalculator::PFtotalCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::PFtotal) {}
+PFlinearCalculator::PFlinearCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::PFlinear) {}
+PangleCalculator::PangleCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::Pangle) {}
+
+
+
+
+
+
+
+
+//-------------------------- TODO OLD BELOW THIS LINE
+
+
+
 PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxesInfo axes, DimsInfo dims,
     AxisRange z_range, AxisRange x_range, AxisRange y_range)
     : _image(image), _image_valid(true) {

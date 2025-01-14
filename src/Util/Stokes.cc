@@ -8,42 +8,49 @@
 
 using namespace carta;
 
-std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> Stokes::_to_casa{
-    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, casacore::Stokes::StokesTypes::Undefined},
-    {CARTA::PolarizationType::I, casacore::Stokes::StokesTypes::I}, {CARTA::PolarizationType::Q, casacore::Stokes::StokesTypes::Q},
-    {CARTA::PolarizationType::U, casacore::Stokes::StokesTypes::U}, {CARTA::PolarizationType::V, casacore::Stokes::StokesTypes::V},
-    {CARTA::PolarizationType::RR, casacore::Stokes::StokesTypes::RR}, {CARTA::PolarizationType::LL, casacore::Stokes::StokesTypes::LL},
-    {CARTA::PolarizationType::RL, casacore::Stokes::StokesTypes::RL}, {CARTA::PolarizationType::LR, casacore::Stokes::StokesTypes::LR},
-    {CARTA::PolarizationType::XX, casacore::Stokes::StokesTypes::XX}, {CARTA::PolarizationType::YY, casacore::Stokes::StokesTypes::YY},
-    {CARTA::PolarizationType::XY, casacore::Stokes::StokesTypes::XY}, {CARTA::PolarizationType::YX, casacore::Stokes::StokesTypes::YX},
-    {CARTA::PolarizationType::Ptotal, casacore::Stokes::StokesTypes::Ptotal},
-    {CARTA::PolarizationType::Plinear, casacore::Stokes::StokesTypes::Plinear},
-    {CARTA::PolarizationType::PFtotal, casacore::Stokes::StokesTypes::PFtotal},
-    {CARTA::PolarizationType::PFlinear, casacore::Stokes::StokesTypes::PFlinear},
-    {CARTA::PolarizationType::Pangle, casacore::Stokes::StokesTypes::Pangle}};
+std::unordered_map<Pol, std::vector<Pol>> Stokes::_components{
+    {Pol::Ptotal, {Pol::Q, Pol::U, Pol::V}},
+    {Pol::Plinear, {Pol::Q, Pol::U}},
+    {Pol::PFtotal, {Pol::I, Pol::Q, Pol::U, Pol::V}},
+    {Pol::PFlinear, {Pol::I, Pol::Q, Pol::U}},
+    {Pol::Pangle, {Pol::Q, Pol::U}}};
 
-std::unordered_map<CARTA::PolarizationType, std::string> Stokes::_description{{CARTA::PolarizationType::POLARIZATION_TYPE_NONE, "Unknown"},
-    {CARTA::PolarizationType::I, "Stokes I"}, {CARTA::PolarizationType::Q, "Stokes Q"}, {CARTA::PolarizationType::U, "Stokes U"},
-    {CARTA::PolarizationType::V, "Stokes V"}, {CARTA::PolarizationType::Ptotal, "Total polarization intensity"},
-    {CARTA::PolarizationType::Plinear, "Linear polarization intensity"},
-    {CARTA::PolarizationType::PFtotal, "Fractional total polarization intensity"},
-    {CARTA::PolarizationType::PFlinear, "Fractional linear polarization intensity"},
-    {CARTA::PolarizationType::Pangle, "Polarization angle"}};
+std::unordered_map<Pol, CasaPol> Stokes::_to_casa{
+    {Pol::POLARIZATION_TYPE_NONE, CasaPol::Undefined},
+    {Pol::I, CasaPol::I}, {Pol::Q, CasaPol::Q},
+    {Pol::U, CasaPol::U}, {Pol::V, CasaPol::V},
+    {Pol::RR, CasaPol::RR}, {Pol::LL, CasaPol::LL},
+    {Pol::RL, CasaPol::RL}, {Pol::LR, CasaPol::LR},
+    {Pol::XX, CasaPol::XX}, {Pol::YY, CasaPol::YY},
+    {Pol::XY, CasaPol::XY}, {Pol::YX, CasaPol::YX},
+    {Pol::Ptotal, CasaPol::Ptotal},
+    {Pol::Plinear, CasaPol::Plinear},
+    {Pol::PFtotal, CasaPol::PFtotal},
+    {Pol::PFlinear, CasaPol::PFlinear},
+    {Pol::Pangle, CasaPol::Pangle}};
 
-CARTA::PolarizationType Stokes::Get(int value) {
-    if (CARTA::PolarizationType_IsValid(value)) {
-        return static_cast<CARTA::PolarizationType>(value);
+std::unordered_map<Pol, std::string> Stokes::_description{{Pol::POLARIZATION_TYPE_NONE, "Unknown"},
+    {Pol::I, "Stokes I"}, {Pol::Q, "Stokes Q"}, {Pol::U, "Stokes U"},
+    {Pol::V, "Stokes V"}, {Pol::Ptotal, "Total polarization intensity"},
+    {Pol::Plinear, "Linear polarization intensity"},
+    {Pol::PFtotal, "Fractional total polarization intensity"},
+    {Pol::PFlinear, "Fractional linear polarization intensity"},
+    {Pol::Pangle, "Polarization angle"}};
+
+Pol Stokes::Get(int value) {
+    if (Pol_IsValid(value)) {
+        return static_cast<Pol>(value);
     }
-    return CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
+    return Pol::POLARIZATION_TYPE_NONE;
 }
 
-CARTA::PolarizationType Stokes::Get(std::string name) {
-    auto type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
-    CARTA::PolarizationType_Parse(name, &type);
+Pol Stokes::Get(std::string name) {
+    auto type = Pol::POLARIZATION_TYPE_NONE;
+    Pol_Parse(name, &type);
     return type;
 }
 
-casacore::Stokes::StokesTypes Stokes::ToCasa(CARTA::PolarizationType type) {
+CasaPol Stokes::ToCasa(Pol type) {
     return _to_casa.at(type);
 }
 
@@ -59,11 +66,11 @@ bool Stokes::ConvertFits(const int& in_stokes_value, int& out_stokes_value) {
     return false;
 }
 
-std::string Stokes::Name(CARTA::PolarizationType type) {
+std::string Stokes::Name(Pol type) {
     return CARTA::PolarizationType_Name(type);
 }
 
-std::string Stokes::Description(CARTA::PolarizationType type) {
+std::string Stokes::Description(Pol type) {
     try {
         return _description.at(type);
     } catch (const std::out_of_range& e) {
@@ -72,5 +79,13 @@ std::string Stokes::Description(CARTA::PolarizationType type) {
 }
 
 bool Stokes::IsComputed(int value) {
-    return (value >= CARTA::PolarizationType::Ptotal) && (value <= CARTA::PolarizationType::Pangle);
+    return (value >= Pol::Ptotal) && (value <= Pol::Pangle);
+}
+
+std::vector<Pol> Stokes::Components(Pol type) {
+    try {
+        return _components.at(type);
+    } catch (const std::out_of_range& e) {
+        return std::vector<Pol>();
+    }
 }
