@@ -247,7 +247,7 @@ class HeaderGuards(Test):
                     cls.out("Can't find header guard in", filename)
                     cls.out("Fixing...")
 
-                    data = re.sub("(/\*.*?\*/\n)", rf"\1\n#ifndef {new_guard_name}\n#define {new_guard_name}\n", data, count=1, flags=re.DOTALL)
+                    data = re.sub(r"(/\*.*?\*/\n)", rf"\1\n#ifndef {new_guard_name}\n#define {new_guard_name}\n", data, count=1, flags=re.DOTALL)
                     data = re.sub(r"\n$", rf"\n{new_endif}\n", data)
                     data_changed = True
 
