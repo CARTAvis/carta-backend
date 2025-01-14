@@ -302,6 +302,8 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
         }
         ++ref_index;
     }
+
+    stokes_axis = ref_stokes_axis;
     return true;
 }
 
