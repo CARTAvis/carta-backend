@@ -12,16 +12,15 @@
 #include <spdlog/fmt/fmt.h>
 #include <cxxopts/cxxopts.hpp>
 
-#include <casacore/images/Images/ImageOpener.h>
-
 #include "Util/App.h"
+#include "Util/File.h"
 
 using json = nlohmann::json;
 
 namespace carta {
 
 template <class T>
-void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::ParseResult& results) {
+void applyOptionalArgument(T& val, const std::string& argument_name, const cxxopts::ParseResult& results) {
     if (results.count(argument_name)) {
         val = results[argument_name].as<T>();
     }
@@ -163,7 +162,7 @@ void ProgramSettings::SetSettingsFromJSON(const json& j) {
 }
 
 void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
-    std::vector<string> positional_arguments;
+    std::vector<std::string> positional_arguments;
 
     cxxopts::Options options("carta", "Cube Analysis and Rendering Tool for Astronomy");
     // clang-format off
@@ -178,20 +177,20 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
         ("no_frontend", "disable built-in HTTP frontend interface", cxxopts::value<bool>())
         ("no_database", "disable built-in HTTP database interface", cxxopts::value<bool>())
-        ("http_url_prefix", "custom URL prefix for HTTP server", cxxopts::value<string>(), "")
+        ("http_url_prefix", "custom URL prefix for HTTP server", cxxopts::value<std::string>(), "")
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
-        ("browser", "custom browser command", cxxopts::value<string>(), "<browser>")
-        ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
+        ("browser", "custom browser command", cxxopts::value<std::string>(), "<browser>")
+        ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<std::string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<std::vector<int>>(), "<port>")
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
-        ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
-        ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
+        ("top_level_folder", "set top-level folder for data files", cxxopts::value<std::string>(), "<dir>")
+        ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<std::string>(), "<dir>")
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
         ("read_only_mode", "disable write requests", cxxopts::value<bool>())
         ("enable_scripting", "enable HTTP scripting interface", cxxopts::value<bool>())
-        ("files", "files to load", cxxopts::value<std::vector<string>>(positional_arguments))
+        ("files", "files to load", cxxopts::value<std::vector<std::string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
 
@@ -200,8 +199,8 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("no_runtime_config", "do not send a runtime config object to frontend clients", cxxopts::value<bool>())
         ("controller_deployment", "used when the backend is launched by carta-controller", cxxopts::value<bool>())
         ("threads", "[deprecated] manually set number of event processing threads (no longer supported)", cxxopts::value<int>(), "<threads>")
-        ("base", "[deprecated] set starting folder for data files (use the positional parameter instead)", cxxopts::value<string>(), "<dir>")
-        ("root", "[deprecated] use 'top_level_folder' instead", cxxopts::value<string>(), "<dir>")
+        ("base", "[deprecated] set starting folder for data files (use the positional parameter instead)", cxxopts::value<std::string>(), "<dir>")
+        ("root", "[deprecated] use 'top_level_folder' instead", cxxopts::value<std::string>(), "<dir>")
         ("no_http", "[deprecated] disable built-in HTTP frontend and database interfaces (use 'no_frontend' and/or 'no_database' instead)", cxxopts::value<bool>());
     // clang-format on
 
@@ -335,10 +334,8 @@ global configuration files, respectively.
         std::error_code error_code;
         if (fs::exists(p, error_code)) {
             if (fs::is_directory(p, error_code)) {
-                auto image_type = casacore::ImageOpener::imageType(p.string());
-                if (image_type == casacore::ImageOpener::AIPSPP || image_type == casacore::ImageOpener::MIRIAD ||
-                    image_type == casacore::ImageOpener::IMAGECONCAT || image_type == casacore::ImageOpener::IMAGEEXPR ||
-                    image_type == casacore::ImageOpener::COMPLISTIMAGE) {
+                auto image_type = GuessImageDirectoryType(p.string());
+                if (image_type != CARTA::UNKNOWN) {
                     file_paths.push_back(p);
                 } else {
                     starting_folder = p.string();
