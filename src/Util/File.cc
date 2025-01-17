@@ -10,7 +10,6 @@
 #include <fstream>
 #include <regex>
 
-#include "Casacore.h"
 #include "String.h"
 
 uint32_t GetMagicNumber(const std::string& filename) {
