@@ -74,9 +74,8 @@ int main(int argc, char* argv[]) {
             default:
                 carta_log_sink = new CartaLogSink(casacore::LogMessage::NORMAL);
         }
-        casacore::LogSink log_sink(carta_log_sink->filter(), std::shared_ptr<casacore::LogSinkInterface>(carta_log_sink));
         casacore::LogSink::globalSink(carta_log_sink);
-        casacore::LogIO casacore_log(log_sink);
+        casacore::LogIO casacore_log;
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);
