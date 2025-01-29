@@ -6,8 +6,12 @@ jobs:
   format-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - run: ./scripts/style.py all check
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install clang-format 14
+        run: sudo apt-get install clang-format-14
+      - name: Run format check
+        run: ./scripts/style.py --clang-format clang-format-14 all check
 
 
   Ubuntu-Focal:
