@@ -75,7 +75,6 @@ int main(int argc, char* argv[]) {
                 carta_log_sink = new CartaLogSink(casacore::LogMessage::NORMAL);
         }
         casacore::LogSink::globalSink(carta_log_sink);
-        casacore::LogIO casacore_log;
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);
