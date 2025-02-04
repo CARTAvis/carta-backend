@@ -339,8 +339,10 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 bool RegionHandler::FrameSet(int file_id) {
     // Check whether a particular file is set or any files are set
     if (file_id == ALL_FILES) {
+        // std::cout << "file_id: " << file_id << " == " << ALL_FILES << std::endl;
         return _frames.size();
     } else {
+        // std::cout << "file_id: " << file_id << " != " << ALL_FILES << std::endl;
         return _frames.count(file_id) && _frames.at(file_id)->IsConnected();
     }
 }
@@ -966,7 +968,9 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
     // Unpack request message and send it along
     int file_id(pv_request.file_id());
+    std::cout << "file_id: " << file_id << std::endl;
     int region_id(pv_request.region_id());
+    std::cout << "region_id: " << region_id << std::endl;
     int line_width(pv_request.width());
     bool reverse(pv_request.reverse());
     bool keep(pv_request.keep());
@@ -1078,7 +1082,16 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
     pv_cut_lock.unlock();
 
     auto frame_id = GetPvPreviewFrameId(preview_id);
+
+    std::cout << "frame_id is " << frame_id << std::endl;
+
+    auto a = _frames.size();
+
+    std::cout << "frame size is " << a << std::endl;
+
     bool preview_frame_set = _frames.find(frame_id) != _frames.end();
+
+    std::cout << "preview_frame_set is " << preview_frame_set << std::endl;
 
     std::unique_lock pv_cube_lock(_pv_cube_mutex);
     if (_pv_preview_cubes.find(preview_id) == _pv_preview_cubes.end() ||
@@ -1546,17 +1559,17 @@ void RegionHandler::StopRender3D(int viewer_id) {
     }
 }
 
-void RegionHandler::StopRender3DUpdates(int viewer_id) {
-    // Clear region queue to stop render3d updates
-    if (_render3d_cubes.find(viewer_id) != _render3d_cubes.end()) {
-        // Safe because has internal mutex for queue
-        // _render3d_cubes.at(viewer_id)->ClearRegionQueue();
-    }
-}
+// void RegionHandler::StopRender3DUpdates(int viewer_id) {
+//     // Clear region queue to stop render3d updates
+//     if (_render3d_cubes.find(viewer_id) != _render3d_cubes.end()) {
+//         // Safe because has internal mutex for queue
+//         // _render3d_cubes.at(viewer_id)->ClearRegionQueue();
+//     }
+// }
 
 void RegionHandler::CloseRender3D(int viewer_id) {
     // Cancel render3d calculations and remove render3d settings, frame, and stop flag
-    StopRender3DUpdates(viewer_id);
+    //StopRender3DUpdates(viewer_id);
     StopRender3D(viewer_id);
 
     std::unique_lock render3d_cube_lock(_render3d_cube_mutex);
@@ -1813,6 +1826,7 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
     int file_id(render3d_request.file_id());
     int region_id(render3d_request.region_id());
     int viewer_id(render3d_request.viewer_id());
+    std::cout << "viewer_id" << viewer_id << std::endl;
     AxisRange spectral_range;
     spectral_range = AxisRange(render3d_request.spectral_range().min(), render3d_request.spectral_range().max());
     bool keep(render3d_request.keep());
@@ -1837,7 +1851,7 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
     // Checks for 3D rendering
 
     bool is_image_region(region_id == IMAGE_REGION_ID);
-    std::cout << region_id << "or" << IMAGE_REGION_ID << std::endl;
+    std::cout << region_id << " or " << IMAGE_REGION_ID << std::endl;
     if (!is_image_region) {
         if (!RegionSet(region_id)) {
             render3d_response.set_message("3D rendering cube requested for invalid region id.");
@@ -1871,6 +1885,12 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
 
     std::cout << "check 4 passed" << std::endl;
 
+    // Set frame
+    if (!FrameSet(file_id)) {
+        std:cout << "frame is not set" << std::endl;
+        _frames[file_id] = frame;
+    }
+
     render3d_response.set_success(true);
     render3d_response.set_message("3D rendering started");
     ack_callback(render3d_response);
@@ -1897,6 +1917,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
     bool is_image_region(region_id == IMAGE_REGION_ID);
     RegionState viewer_region_state;
+
     if (!is_image_region) {
         if (!RegionSet(region_id)) {
             // pv_response.set_message("PV preview cube requested for invalid preview region id.");
@@ -1912,8 +1933,29 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     
     auto stokes = frame->CurrentStokes();
     GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for render3d
+
+    std::cout << "cp 2.2" << std::endl;
+
     auto frame_id = GetRender3DViewerFrameId(viewer_id);
+
+    std::cout << "file_id: " << file_id << std::endl;
+    std::cout << "region_id: " << region_id << std::endl;
+    std::cout << "frame_id: " << frame_id << std::endl;
+
+    // auto a = _frames.size();
+
+    // std::cout << "frame size is " << a << std::endl;
+
+    for (auto const& [key, val] : _frames)
+        {
+            std::cout << "key: " << key << std::endl; // string (key)
+            std::cout << "val: " << val << std::endl; // string's value
+                    
+        }
+
     bool viewer_frame_set = _frames.find(frame_id) != _frames.end();
+
+    std::cout << "viewer_frame_set: " << viewer_frame_set << std::endl;
 
     // Get PvPreviewCube
     PreviewCubeParameters cube_parameters(file_id, region_id, spectral_range, rebin_xy, rebin_z, stokes, viewer_region_state);
@@ -1946,6 +1988,8 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
     // iterate in spectral range to get subimages of PvPreviewCube
     int num_slices = 1; // Use 1 for now
+    int width;
+    int height;
 
     float progress(0.0);
     for (int start = spectral_range.from; start <= spectral_range.to; start += num_slices) {       
@@ -1964,6 +2008,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         // Apply preview region or slicer to get SubImage, and set preview region origin.
         casacore::SubImage<float> sub_image;
         if (is_image_region) {
+            // std::cout << "is image_region" << std::endl;
             // Apply slicer to source image to get SubImage
             auto slicer = frame->GetImageSlicer(slices_range, frame->CurrentStokes());
             if (!frame->GetSlicerSubImage(slicer, sub_image)) {
@@ -1972,13 +2017,18 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             }
             casacore::IPosition origin(2, 0, 0);
             preview_cube->SetPreviewRegionOrigin(origin);
+
+            width = frame->Width();
+            height = frame->Height();
+
         } else {
+            // std::cout << "is square region" << std::endl;
             // Apply preview region to source image (LCRegion) to get SubImage
             StokesSource stokes_source(stokes, slices_range);
-            std::cout << "file_id: " << file_id << std::endl;
-            std::cout << "region_id: " << region_id << std::endl;
+            //std::cout << "file_id: " << file_id << std::endl;
+            //std::cout << "region_id: " << region_id << std::endl;
             std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(region_id, file_id, stokes_source);
-            std::cout << lc_region << std::endl;
+            // std::cout << "lc_region: " << lc_region << std::endl;
             if (!lc_region) {
                 //render3d_response.set_message("Failed to set preview region for preview cube (3D rendering).");
                 std::cout << "Failed to set preview region for preview cube (3D rendering)." << std::endl;
@@ -1987,7 +2037,11 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
             // Origin (blc) for setting pv cut in cube
             auto origin = lc_region->boundingBox().start();
+            auto ending = lc_region->boundingBox().end();
             preview_cube->SetPreviewRegionOrigin(origin);
+
+            width = ending(0)-origin(0)+1;
+            height = ending(1)-origin(1)+1;
 
             // Apply LCRegion and spectral range to source image to get StokesRegion
             StokesRegion stokes_region;
@@ -2010,12 +2064,12 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         // we need casacore::Array<float> to compress
         // after compression std::vector<float>?????
 
-        std::cout << "reaches here??" << std::endl;
-
         progress = (float)slices_range.to / (float)(spectral_range.to - spectral_range.from);
 
-        int width = frame->Width();
-        int height = frame->Height();
+        int is = 0;
+        if (progress != 0) {
+            is = 1;
+        }
 
         // make compression
 
@@ -2028,9 +2082,27 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         sub_image.get(casa_data);
         std::vector<float> image_data(casa_data.begin(), casa_data.end());
 
+        if (is == 0) {
+            std::cout << "progress: " << progress << std::endl;
+            std::cout << "start nan_encodings" << std::endl;
+            std::cout << "image_data size: " << image_data.size() << std::endl;
+
+            std::cout << "width: " << width << std::endl;
+            std::cout << "height: " << height << std::endl;
+        }
+
         auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
 
+        if (is == 0) {
+            std::cout << "nan_encodings size: " << nan_encodings.size() << std::endl;
+        }	
+
         Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
+
+        if (is == 0) {
+            std::cout << "image_data size: " << image_data.size() << std::endl;
+            std::cout << "compressed_size: " << compressed_size << std::endl;
+        }
 
         auto data_message = Message::Render3DData(
                     viewer_id, compression_buffer, compressed_size, nan_encodings, compression_type,
@@ -2043,6 +2115,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             return true;
         }
     }
+    return false;
 }
 
 // ***** Fill spectral profile *****

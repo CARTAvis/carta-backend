@@ -1340,27 +1340,42 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
 void Session::OnRender3DRequest(const CARTA::Render3DRequest& render3d_request, uint32_t request_id) {
 
     int file_id(render3d_request.file_id());
+    int region_id(render3d_request.region_id());
+    CARTA::Render3DResponse render3d_response;
 
     std::cout << "Render3D function called" << std::endl;
     std::cout << "Request ID: " << request_id << std::endl;
+    std::cout << "file_id: " << file_id << std::endl;
+    std::cout << "region_id: " << region_id << std::endl;
 
     if (_frames.count(file_id)) {
-        auto& frame = _frames.at(file_id);
-        
-        auto ack_callback = [&](CARTA::Render3DResponse render3d_response) {
-            std::cout << "Request ID: " << request_id << std::endl;
-            std::cout << "esponse: " << render3d_response.DebugString() << std::endl;
-            std::cout << render3d_response.cancel() << std::endl;
+        if (region_id == CURSOR_REGION_ID) {
+            render3d_response.set_success(false);
+            render3d_response.set_message("Invalid region id.");
             SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
-        };
-
-        bool data_sent = _region_handler->FillRender3DData(render3d_request, frame, ack_callback,
-            [&](CARTA::Render3DData render3d_data) {
-                // send (partial) render3d datacube
-                SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
+        } else {
+            if (!_region_handler) {
+                _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
             }
-        );
 
+            auto& frame = _frames.at(file_id);
+
+            std::cout << "width: " << frame->ImageShape()[0] << std::endl;
+            
+            auto ack_callback = [&](CARTA::Render3DResponse render3d_response) {
+                std::cout << "Request ID: " << request_id << std::endl;
+                std::cout << "esponse: " << render3d_response.DebugString() << std::endl;
+                std::cout << render3d_response.cancel() << std::endl;
+                SendEvent(CARTA::EventType::RENDER3D_RESPONSE, request_id, render3d_response);
+            };
+
+            bool data_sent = _region_handler->FillRender3DData(render3d_request, frame, ack_callback,
+                [&](CARTA::Render3DData render3d_data) {
+                    // send (partial) render3d datacube
+                    SendEvent(CARTA::EventType::RENDER3D_DATA, request_id, render3d_data);
+                }
+            );
+        }
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"3D Rendering"}, CARTA::ErrorSeverity::DEBUG);
@@ -1380,6 +1395,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             Timer t;
             bool is_preview(pv_request.has_preview_settings());
             auto& frame = _frames.at(file_id);
+            std::cout << "width: " << frame->ImageShape()[0] << std::endl;
             GeneratedImage pv_image;
 
             if (is_preview) {

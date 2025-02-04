@@ -519,6 +519,22 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     }
                     break;
                 }
+                case CARTA::EventType::STOP_RENDER3D: {
+                    CARTA::StopRender3D message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnStopRender3D(message);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::CLOSE_RENDER3D: {
+                    CARTA::CloseRender3D message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCloseRender3D(message);
+                        message_parsed = true;
+                    }
+                    break;
+                }
                 case CARTA::EventType::REMOTE_FILE_REQUEST: {
                     CARTA::RemoteFileRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
