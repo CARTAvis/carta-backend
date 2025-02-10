@@ -1,0 +1,15 @@
+<map id="carta::PolarizationCalculator::ComputePolarizedAngle" name="carta::PolarizationCalculator::ComputePolarizedAngle">
+<area shape="rect" id="Node000001" title=" " alt="" coords="600,101,807,141"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a5680d87d09f6ddb4cc1bb1a3d713d2c3" title=" " alt="" coords="413,101,552,141"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="586,124,552,124,552,119,586,119"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FileLoader.html#a6c78d61804342a45dbf7e3e668357f2c" title=" " alt="" coords="200,5,365,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="434,97,364,60,337,48,339,43,366,55,437,92"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileLoader.html#a1ef8462007320a75dcdc04929cdb28b0" title=" " alt="" coords="213,69,352,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="399,111,352,103,353,98,400,105"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1FileLoader.html#ac79c14eb03e346904ded08b47282323f" title=" " alt="" coords="213,133,352,173"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="400,137,353,145,352,140,399,132"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1FileLoader.html#a96c849a9ee61ae91b8f8e7393d54133c" title=" " alt="" coords="213,197,352,237"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="437,151,366,188,339,200,337,195,364,183,434,146"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Hdf5Loader.html#af2e0b172ffce7502373066db92815ced" title=" " alt="" coords="5,69,152,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="200,92,152,92,152,87,200,87"/>
+</map>

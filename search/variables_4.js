@@ -8,5 +8,6 @@ var searchData=
   ['debug_5fno_5fauth_5',['debug_no_auth',['../structcarta_1_1ProgramSettings.html#a7ec7930c75c7ed449ebb6ee1d392a2ec',1,'carta::ProgramSettings']]],
   ['decimation_6',['decimation',['../structcarta_1_1ContourSettings.html#ad9820f7fe61304404ef9d6d152d93fea',1,'carta::ContourSettings']]],
   ['deprecated_5foptions_7',['deprecated_options',['../structcarta_1_1ProgramSettings.html#aefe071713ac70beff41353d48328c362',1,'carta::ProgramSettings']]],
-  ['description_8',['description',['../classcarta_1_1Column.html#a41e678823a6ef30983a90129d5276d91',1,'carta::Column::description'],['../structcarta_1_1TableParam.html#a6119f45b0539ab409a9b2543bb411f14',1,'carta::TableParam::description']]]
+  ['depth_8',['depth',['../structDimsInfo.html#ad5290b27cfc785af3749b6b8b637311e',1,'DimsInfo']]],
+  ['description_9',['description',['../classcarta_1_1Column.html#a41e678823a6ef30983a90129d5276d91',1,'carta::Column::description'],['../structcarta_1_1TableParam.html#a6119f45b0539ab409a9b2543bb411f14',1,'carta::TableParam::description']]]
 ];

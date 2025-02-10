@@ -18,6 +18,8 @@ var searchData=
   ['npol_15',['npol',['../structcarta_1_1BeamTableInfo.html#adc5a39931c558c650e1afce5e0ad1e5c',1,'carta::BeamTableInfo']]],
   ['nrow_16',['nrow',['../structcarta_1_1BeamTableInfo.html#a97c9c7947c461aa3cb60ebe92023167a',1,'carta::BeamTableInfo']]],
   ['num_5fbins_17',['num_bins',['../structcarta_1_1HistogramConfig.html#ab7c21f83a75ac7d72f5c2962e137bb9f',1,'carta::HistogramConfig']]],
-  ['num_5fiter_18',['num_iter',['../structcarta_1_1FitStatus.html#ae08494841b31270364591d7a175d6939',1,'carta::FitStatus']]],
-  ['num_5fpixels_19',['num_pixels',['../structcarta_1_1BasicStats.html#a905cc84cff0d027b70dc3816058d771b',1,'carta::BasicStats']]]
+  ['num_5fchannels_18',['num_channels',['../structDimsInfo.html#ae22d14fabe7a1db8a799fd976f34fe5f',1,'DimsInfo']]],
+  ['num_5fiter_19',['num_iter',['../structcarta_1_1FitStatus.html#ae08494841b31270364591d7a175d6939',1,'carta::FitStatus']]],
+  ['num_5fpixels_20',['num_pixels',['../structcarta_1_1BasicStats.html#a905cc84cff0d027b70dc3816058d771b',1,'carta::BasicStats']]],
+  ['num_5fstokes_21',['num_stokes',['../structDimsInfo.html#a055565def87a8c8f1e144f9e70f48803',1,'DimsInfo']]]
 ];

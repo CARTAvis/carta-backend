@@ -1,12 +1,12 @@
 <map id="carta::FileExtInfoLoader::FillFileInfoFromImage" name="carta::FileExtInfoLoader::FillFileInfoFromImage">
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,863,181,903"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1FileExtInfoLoader.html#affaa06fa3899ed316c5afff483869fd7" title=" " alt="" coords="257,319,433,359"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileExtInfoLoader.html#a70696eaf23232d6b278f941dcfe701bb" title=" " alt="" coords="257,319,433,359"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="101,862,326,370,331,372,106,864"/>
 <area shape="rect" id="Node000016" href="$classcarta_1_1FileExtInfoLoader.html#a1e5d73b90a01fb2eac64c9e186c99348" title=" " alt="" coords="257,671,433,711"/>
 <area shape="poly" id="edge21_Node000001_Node000016" title=" " alt="" coords="104,861,152,792,187,753,228,720,242,712,245,717,231,725,191,757,156,795,108,864"/>
 <area shape="rect" id="Node000017" href="$classcarta_1_1FileExtInfoLoader.html#a9a7099a65e803d42d6da0619f83bfd7c" title=" " alt="" coords="232,607,457,647"/>
 <area shape="poly" id="edge22_Node000001_Node000017" title=" " alt="" coords="99,861,115,819,142,763,179,706,202,679,228,657,235,651,239,656,231,661,206,683,183,709,146,766,120,821,104,863"/>
-<area shape="rect" id="Node000019" href="$classcarta_1_1FileExtInfoLoader.html#ae0eb44133b06ce14972f8b0b94ca7eee" title=" " alt="" coords="257,735,433,775"/>
+<area shape="rect" id="Node000019" href="$classcarta_1_1FileExtInfoLoader.html#ab582a4be78221eeeadcff03c7f63dc63" title=" " alt="" coords="257,735,433,775"/>
 <area shape="poly" id="edge25_Node000001_Node000019" title=" " alt="" coords="116,861,165,822,228,784,245,777,247,782,231,789,168,826,119,865"/>
 <area shape="rect" id="Node000020" href="$classcarta_1_1CartaFitsImage.html#a4633816d0ab77523c236fb1afae746e8" title=" " alt="" coords="263,799,426,839"/>
 <area shape="poly" id="edge26_Node000001_Node000020" title=" " alt="" coords="172,860,252,839,253,845,173,865"/>
@@ -24,7 +24,7 @@
 <area shape="poly" id="edge40_Node000001_Node000032" title=" " alt="" coords="101,902,114,953,139,1022,177,1094,202,1127,231,1155,246,1165,243,1170,228,1159,198,1130,173,1097,134,1024,109,955,96,903"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1FileExtInfoLoader.html#a52df8914847de227ba7be055b5c24d21" title=" " alt="" coords="825,5,1001,45"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="357,317,416,239,458,195,507,156,582,115,662,83,740,58,810,41,812,46,741,63,663,88,584,120,509,161,462,199,420,243,361,320"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1FileExtInfoLoader.html#aef51db70dd4f72d6f222e833a5c68b58" title=" " alt="" coords="508,319,763,359"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileExtInfoLoader.html#a5f5a330e631e555679c7356ac1f71f23" title=" " alt="" coords="508,319,763,359"/>
 <area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="433,336,494,336,494,341,433,341"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1FileExtInfoLoader.html#a02cd16701178cf515aca3f5623537611" title=" " alt="" coords="825,69,1001,109"/>
 <area shape="poly" id="edge17_Node000002_Node000005" title=" " alt="" coords="368,316,429,270,507,222,585,186,666,155,814,110,815,115,668,160,587,191,509,226,432,274,371,321"/>

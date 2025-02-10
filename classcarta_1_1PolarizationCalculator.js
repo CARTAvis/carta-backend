@@ -6,7 +6,7 @@ var classcarta_1_1PolarizationCalculator =
       [ "U", "classcarta_1_1PolarizationCalculator.html#afc9d48a46c208f167c451d9f640ddee1a23073f93094d0a05d490e18a28efb758", null ],
       [ "V", "classcarta_1_1PolarizationCalculator.html#afc9d48a46c208f167c451d9f640ddee1a454c0648ff70ec7a64f16e66a5df0662", null ]
     ] ],
-    [ "PolarizationCalculator", "classcarta_1_1PolarizationCalculator.html#a7d476867bfa68679c46f5391144efba2", null ],
+    [ "PolarizationCalculator", "classcarta_1_1PolarizationCalculator.html#a7b287776319ca3cce5e310f5045be40a", null ],
     [ "~PolarizationCalculator", "classcarta_1_1PolarizationCalculator.html#a0c359295c19dacdd212ee6a2bf47632b", null ],
     [ "ComputeFractionalPolarizedIntensity", "classcarta_1_1PolarizationCalculator.html#af6937bd807c038cf00fd0cc89ae9c2e8", null ],
     [ "ComputePolarizedAngle", "classcarta_1_1PolarizationCalculator.html#ab48307d44c2a4541caa908d24a3683a0", null ],

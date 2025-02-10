@@ -152,10 +152,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a2a3ed90a3e52af565ba3f80f3b5b66b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a86c9100a30061a92c1d7f4b50a5facae" id="r_a86c9100a30061a92c1d7f4b50a5facae"><td class="memItemLeft" align="right" valign="top">casacore::IPosition&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a86c9100a30061a92c1d7f4b50a5facae">GetShape</a> ()</td></tr>
 <tr class="separator:a86c9100a30061a92c1d7f4b50a5facae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3473538a60fd3c5e61db9885bd367992" id="r_a3473538a60fd3c5e61db9885bd367992"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structAxesInfo.html">AxesInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a3473538a60fd3c5e61db9885bd367992">GetAxes</a> ()</td></tr>
+<tr class="separator:a3473538a60fd3c5e61db9885bd367992"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ebaafaf2ffda086d83f121a8e13d54c" id="r_a5ebaafaf2ffda086d83f121a8e13d54c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structDimsInfo.html">DimsInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a5ebaafaf2ffda086d83f121a8e13d54c">GetDims</a> ()</td></tr>
+<tr class="separator:a5ebaafaf2ffda086d83f121a8e13d54c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c78d61804342a45dbf7e3e668357f2c" id="r_a6c78d61804342a45dbf7e3e668357f2c"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a6c78d61804342a45dbf7e3e668357f2c">GetCoordinateSystem</a> (const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>())</td></tr>
 <tr class="separator:a6c78d61804342a45dbf7e3e668357f2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4dee3765eea34c506f862e25afe8ccfe" id="r_a4dee3765eea34c506f862e25afe8ccfe"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a4dee3765eea34c506f862e25afe8ccfe">FindCoordinateAxes</a> (casacore::IPosition &amp;shape, std::vector&lt; int &gt; &amp;spatial_axes, int &amp;spectral_axis, int &amp;stokes_axis, std::vector&lt; int &gt; &amp;render_axes, int &amp;z_axis, std::string &amp;message)</td></tr>
-<tr class="separator:a4dee3765eea34c506f862e25afe8ccfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4f8082b373a3f7235d0bd7704e82600" id="r_ac4f8082b373a3f7235d0bd7704e82600"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#ac4f8082b373a3f7235d0bd7704e82600">FindCoordinateAxes</a> (std::string &amp;message)</td></tr>
+<tr class="separator:ac4f8082b373a3f7235d0bd7704e82600"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ef8462007320a75dcdc04929cdb28b0" id="r_a1ef8462007320a75dcdc04929cdb28b0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a1ef8462007320a75dcdc04929cdb28b0">GetSlice</a> (casacore::Array&lt; float &gt; &amp;data, const <a class="el" href="structcarta_1_1StokesSlicer.html">StokesSlicer</a> &amp;stokes_slicer)</td></tr>
 <tr class="separator:a1ef8462007320a75dcdc04929cdb28b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96c849a9ee61ae91b8f8e7393d54133c" id="r_a96c849a9ee61ae91b8f8e7393d54133c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a96c849a9ee61ae91b8f8e7393d54133c">GetSubImage</a> (const <a class="el" href="structcarta_1_1StokesSlicer.html">StokesSlicer</a> &amp;stokes_slicer, casacore::SubImage&lt; float &gt; &amp;sub_image)</td></tr>
@@ -267,24 +271,10 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a78b6b1b1f527836bbecad99b3ed80d0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ee9eab8973070f1e8b5267ed7cc3101" id="r_a0ee9eab8973070f1e8b5267ed7cc3101"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a0ee9eab8973070f1e8b5267ed7cc3101">_num_dims</a></td></tr>
 <tr class="separator:a0ee9eab8973070f1e8b5267ed7cc3101"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a275ebb41af415d3b413e291ce4b0950d" id="r_a275ebb41af415d3b413e291ce4b0950d"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a275ebb41af415d3b413e291ce4b0950d">_image_plane_size</a></td></tr>
-<tr class="separator:a275ebb41af415d3b413e291ce4b0950d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a55631158b8b53809393bb2c670c5abfb" id="r_a55631158b8b53809393bb2c670c5abfb"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a55631158b8b53809393bb2c670c5abfb">_width</a></td></tr>
-<tr class="separator:a55631158b8b53809393bb2c670c5abfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa138b71077790f1cd181de3c4375eac8" id="r_aa138b71077790f1cd181de3c4375eac8"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#aa138b71077790f1cd181de3c4375eac8">_height</a></td></tr>
-<tr class="separator:aa138b71077790f1cd181de3c4375eac8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abeb0a2a7a774dd50050ff04b3c0cb797" id="r_abeb0a2a7a774dd50050ff04b3c0cb797"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#abeb0a2a7a774dd50050ff04b3c0cb797">_depth</a></td></tr>
-<tr class="separator:abeb0a2a7a774dd50050ff04b3c0cb797"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adac2d3a27cbaa575c1ffac2f3b7da7b5" id="r_adac2d3a27cbaa575c1ffac2f3b7da7b5"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#adac2d3a27cbaa575c1ffac2f3b7da7b5">_num_stokes</a></td></tr>
-<tr class="separator:adac2d3a27cbaa575c1ffac2f3b7da7b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aef99bef08354e22af53f9553c8cd4bdc" id="r_aef99bef08354e22af53f9553c8cd4bdc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#aef99bef08354e22af53f9553c8cd4bdc">_x_axis</a></td></tr>
-<tr class="separator:aef99bef08354e22af53f9553c8cd4bdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a26747c3fbe629abcaf9568c254d3bd26" id="r_a26747c3fbe629abcaf9568c254d3bd26"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a26747c3fbe629abcaf9568c254d3bd26">_y_axis</a></td></tr>
-<tr class="separator:a26747c3fbe629abcaf9568c254d3bd26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6c1c4caebba9e765ab9fd3cf65972e9" id="r_aa6c1c4caebba9e765ab9fd3cf65972e9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#aa6c1c4caebba9e765ab9fd3cf65972e9">_z_axis</a></td></tr>
-<tr class="separator:aa6c1c4caebba9e765ab9fd3cf65972e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2bd4e3c85c8fcfc7778447b1819802fc" id="r_a2bd4e3c85c8fcfc7778447b1819802fc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a2bd4e3c85c8fcfc7778447b1819802fc">_stokes_axis</a></td></tr>
-<tr class="separator:a2bd4e3c85c8fcfc7778447b1819802fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82dd3cb6f5f6609c1c38ea4631818f7a" id="r_a82dd3cb6f5f6609c1c38ea4631818f7a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structDimsInfo.html">DimsInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a82dd3cb6f5f6609c1c38ea4631818f7a">_dims</a></td></tr>
+<tr class="separator:a82dd3cb6f5f6609c1c38ea4631818f7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e51adb71b14b5ba1003e901e32a6be2" id="r_a9e51adb71b14b5ba1003e901e32a6be2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structAxesInfo.html">AxesInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a9e51adb71b14b5ba1003e901e32a6be2">_axes</a></td></tr>
+<tr class="separator:a9e51adb71b14b5ba1003e901e32a6be2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6c9bfb488832543f72a032a7fa19309" id="r_aa6c9bfb488832543f72a032a7fa19309"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#aa6c9bfb488832543f72a032a7fa19309">_coord_sys</a></td></tr>
 <tr class="separator:aa6c9bfb488832543f72a032a7fa19309"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8511935ca00440cbb0b5c2661ef361e1" id="r_a8511935ca00440cbb0b5c2661ef361e1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a8511935ca00440cbb0b5c2661ef361e1">_has_pixel_mask</a></td></tr>
@@ -518,8 +508,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a4dee3765eea34c506f862e25afe8ccfe" name="a4dee3765eea34c506f862e25afe8ccfe"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4dee3765eea34c506f862e25afe8ccfe">&#9670;&#160;</a></span>FindCoordinateAxes()</h2>
+<a id="ac4f8082b373a3f7235d0bd7704e82600" name="ac4f8082b373a3f7235d0bd7704e82600"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac4f8082b373a3f7235d0bd7704e82600">&#9670;&#160;</a></span>FindCoordinateAxes()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -527,56 +517,16 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool FileLoader::FindCoordinateAxes </td>
           <td>(</td>
-          <td class="paramtype">casacore::IPosition &amp;&#160;</td>
-          <td class="paramname"><em>shape</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::vector&lt; int &gt; &amp;&#160;</td>
-          <td class="paramname"><em>spatial_axes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int &amp;&#160;</td>
-          <td class="paramname"><em>spectral_axis</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int &amp;&#160;</td>
-          <td class="paramname"><em>stokes_axis</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::vector&lt; int &gt; &amp;&#160;</td>
-          <td class="paramname"><em>render_axes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int &amp;&#160;</td>
-          <td class="paramname"><em>z_axis</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>message</em>&#160;</td>
-        </tr>
-        <tr>
+          <td class="paramname"><em>message</em></td><td>)</td>
           <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a4dee3765eea34c506f862e25afe8ccfe_cgraph.svg" width="398" height="102"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_ac4f8082b373a3f7235d0bd7704e82600_cgraph.svg" width="398" height="151"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -589,6 +539,23 @@ Here is the call graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">bool FileLoader::GetAipsBeamSupport </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3473538a60fd3c5e61db9885bd367992" name="a3473538a60fd3c5e61db9885bd367992"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3473538a60fd3c5e61db9885bd367992">&#9670;&#160;</a></span>GetAxes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structAxesInfo.html">AxesInfo</a> FileLoader::GetAxes </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -723,7 +690,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a6c78d61804342a45dbf7e3e668357f2c_cgraph.svg" width="100%" height="568"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a6c78d61804342a45dbf7e3e668357f2c_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -804,6 +771,23 @@ Here is the call graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">casacore::DataType FileLoader::GetDataType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a5ebaafaf2ffda086d83f121a8e13d54c" name="a5ebaafaf2ffda086d83f121a8e13d54c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5ebaafaf2ffda086d83f121a8e13d54c">&#9670;&#160;</a></span>GetDims()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structDimsInfo.html">DimsInfo</a> FileLoader::GetDims </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -1167,7 +1151,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a1ef8462007320a75dcdc04929cdb28b0_cgraph.svg" width="100%" height="568"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a1ef8462007320a75dcdc04929cdb28b0_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -1261,7 +1245,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a5680d87d09f6ddb4cc1bb1a3d713d2c3_cgraph.svg" width="100%" height="568"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a5680d87d09f6ddb4cc1bb1a3d713d2c3_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -1435,7 +1419,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_ac79c14eb03e346904ded08b47282323f_cgraph.svg" width="100%" height="568"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_ac79c14eb03e346904ded08b47282323f_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1468,7 +1452,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a96c849a9ee61ae91b8f8e7393d54133c_cgraph.svg" width="100%" height="568"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a96c849a9ee61ae91b8f8e7393d54133c_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -2144,6 +2128,28 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
+<a id="a9e51adb71b14b5ba1003e901e32a6be2" name="a9e51adb71b14b5ba1003e901e32a6be2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e51adb71b14b5ba1003e901e32a6be2">&#9670;&#160;</a></span>_axes</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structAxesInfo.html">AxesInfo</a> carta::FileLoader::_axes</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a5d673186ac95f8099586e1e45224b2e1" name="a5d673186ac95f8099586e1e45224b2e1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5d673186ac95f8099586e1e45224b2e1">&#9670;&#160;</a></span>_computed_stokes_image</h2>
 
@@ -2232,8 +2238,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="abeb0a2a7a774dd50050ff04b3c0cb797" name="abeb0a2a7a774dd50050ff04b3c0cb797"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abeb0a2a7a774dd50050ff04b3c0cb797">&#9670;&#160;</a></span>_depth</h2>
+<a id="a82dd3cb6f5f6609c1c38ea4631818f7a" name="a82dd3cb6f5f6609c1c38ea4631818f7a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a82dd3cb6f5f6609c1c38ea4631818f7a">&#9670;&#160;</a></span>_dims</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2242,7 +2248,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">size_t carta::FileLoader::_depth</td>
+          <td class="memname"><a class="el" href="structDimsInfo.html">DimsInfo</a> carta::FileLoader::_dims</td>
         </tr>
       </table>
   </td>
@@ -2364,28 +2370,6 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aa138b71077790f1cd181de3c4375eac8" name="aa138b71077790f1cd181de3c4375eac8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa138b71077790f1cd181de3c4375eac8">&#9670;&#160;</a></span>_height</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t carta::FileLoader::_height</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a74d06a4a6387eb3524b9b2dbcbaa4a94" name="a74d06a4a6387eb3524b9b2dbcbaa4a94"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a74d06a4a6387eb3524b9b2dbcbaa4a94">&#9670;&#160;</a></span>_history_beam</h2>
 
@@ -2419,28 +2403,6 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">std::shared_ptr&lt;casacore::ImageInterface&lt;casacore::Float&gt; &gt; carta::FileLoader::_image</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a275ebb41af415d3b413e291ce4b0950d" name="a275ebb41af415d3b413e291ce4b0950d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a275ebb41af415d3b413e291ce4b0950d">&#9670;&#160;</a></span>_image_plane_size</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t carta::FileLoader::_image_plane_size</td>
         </tr>
       </table>
   </td>
@@ -2573,50 +2535,6 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">size_t carta::FileLoader::_num_dims</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="adac2d3a27cbaa575c1ffac2f3b7da7b5" name="adac2d3a27cbaa575c1ffac2f3b7da7b5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adac2d3a27cbaa575c1ffac2f3b7da7b5">&#9670;&#160;</a></span>_num_stokes</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t carta::FileLoader::_num_stokes</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a2bd4e3c85c8fcfc7778447b1819802fc" name="a2bd4e3c85c8fcfc7778447b1819802fc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2bd4e3c85c8fcfc7778447b1819802fc">&#9670;&#160;</a></span>_stokes_axis</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">int carta::FileLoader::_stokes_axis</td>
         </tr>
       </table>
   </td>
@@ -2771,94 +2689,6 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">bool carta::FileLoader::_support_aips_beam</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a55631158b8b53809393bb2c670c5abfb" name="a55631158b8b53809393bb2c670c5abfb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a55631158b8b53809393bb2c670c5abfb">&#9670;&#160;</a></span>_width</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t carta::FileLoader::_width</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aef99bef08354e22af53f9553c8cd4bdc" name="aef99bef08354e22af53f9553c8cd4bdc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aef99bef08354e22af53f9553c8cd4bdc">&#9670;&#160;</a></span>_x_axis</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">int carta::FileLoader::_x_axis</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a26747c3fbe629abcaf9568c254d3bd26" name="a26747c3fbe629abcaf9568c254d3bd26"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a26747c3fbe629abcaf9568c254d3bd26">&#9670;&#160;</a></span>_y_axis</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">int carta::FileLoader::_y_axis</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa6c1c4caebba9e765ab9fd3cf65972e9" name="aa6c1c4caebba9e765ab9fd3cf65972e9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa6c1c4caebba9e765ab9fd3cf65972e9">&#9670;&#160;</a></span>_z_axis</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">int carta::FileLoader::_z_axis</td>
         </tr>
       </table>
   </td>

@@ -2,6 +2,8 @@ var Image_8h =
 [
     [ "AxisRange", "structAxisRange.html", "structAxisRange" ],
     [ "PointXy", "structPointXy.html", "structPointXy" ],
+    [ "AxesInfo", "structAxesInfo.html", "structAxesInfo" ],
+    [ "DimsInfo", "structDimsInfo.html", "structDimsInfo" ],
     [ "ALL_REGIONS", "Image_8h.html#a1676db91cb9f8f3197d8c49203f0264a", null ],
     [ "ALL_X", "Image_8h.html#a74b863f93b19c8a44646190f3385f855", null ],
     [ "ALL_Y", "Image_8h.html#a71ae956b3c1ebf675ec8d19f6c2115d1", null ],

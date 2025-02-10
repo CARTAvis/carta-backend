@@ -56,7 +56,7 @@ var searchData=
   ['filter_5fconfigs_53',['filter_configs',['../structcarta_1_1TableViewCache.html#adb6dd55828d15a3a98d0668b16e9674b',1,'carta::TableViewCache']]],
   ['filterindices_54',['filterindices',['../classcarta_1_1Column.html#aaab77c078586ede33eb6a14f0945c11a',1,'carta::Column::FilterIndices()'],['../classcarta_1_1DataColumn.html#aa45b56b620e2b07b10c522533b09b721',1,'carta::DataColumn::FilterIndices()']]],
   ['filterparamschanged_55',['FilterParamsChanged',['../classcarta_1_1TableController.html#ac47c58a40be6dc52d63d5bd10c4e7544',1,'carta::TableController']]],
-  ['findcoordinateaxes_56',['FindCoordinateAxes',['../classcarta_1_1FileLoader.html#a4dee3765eea34c506f862e25afe8ccfe',1,'carta::FileLoader']]],
+  ['findcoordinateaxes_56',['FindCoordinateAxes',['../classcarta_1_1FileLoader.html#ac4f8082b373a3f7235d0bd7704e82600',1,'carta::FileLoader']]],
   ['findexecutablepath_57',['findexecutablepath',['../App_8h.html#a41a3266785a8ac3360dd09466acc91c4',1,'FindExecutablePath(std::string &amp;path):&#160;App.cc'],['../App_8cc.html#a41a3266785a8ac3360dd09466acc91c4',1,'FindExecutablePath(std::string &amp;path):&#160;App.cc']]],
   ['findpointattargetseparation_58',['FindPointAtTargetSeparation',['../classcarta_1_1LineBoxRegions.html#aa1bb79738d6d9bd46aa5907c0493f7be',1,'carta::LineBoxRegions']]],
   ['first_5fprogress_5fafter_5fmilli_5fsecs_59',['FIRST_PROGRESS_AFTER_MILLI_SECS',['../MomentGenerator_8h.html#ab306bd134c636935c4cfd480283f57dd',1,'MomentGenerator.h']]],
@@ -97,11 +97,12 @@ var searchData=
   ['frame_2eh_94',['Frame.h',['../Frame_8h.html',1,'']]],
   ['frameset_95',['FrameSet',['../classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450',1,'carta::RegionHandler']]],
   ['from_96',['from',['../structAxisRange.html#a649a21f3357a105599ab3ced83a0053d',1,'AxisRange']]],
-  ['fromfield_97',['FromField',['../classcarta_1_1Column.html#a8d71da2b6ddb31d356a1b0836ac81409',1,'carta::Column']]],
-  ['fromfitsptr_98',['FromFitsPtr',['../classcarta_1_1Column.html#a7ad943a3b7cb58607b5bd38c84317d05',1,'carta::Column']]],
-  ['fromtext_99',['FromText',['../classcarta_1_1DataColumn.html#a34bafc86e0e1fe9c838dca2c82d18afe',1,'carta::DataColumn']]],
-  ['fromvalues_100',['FromValues',['../classcarta_1_1Column.html#a2df953c1e95a4a397a8bd8254e8c34c6',1,'carta::Column']]],
-  ['frontend_5ffolder_101',['frontend_folder',['../structcarta_1_1ProgramSettings.html#a3cf6f38321c0e0439b745db850cd94e8',1,'carta::ProgramSettings']]],
-  ['full_102',['full',['../structcarta_1_1FileInfo_1_1ImageStats.html#aa6719468e5fc239a7651dc9191f07de6',1,'carta::FileInfo::ImageStats::full'],['../structcarta_1_1TilePool.html#a122765fee330ff04ca7462238518d525',1,'carta::TilePool::Full()']]],
-  ['funcf_103',['FuncF',['../classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752',1,'carta::ImageFitter']]]
+  ['fromaxis_97',['FromAxis',['../structDimsInfo.html#a0f1d3df9ecaa2894673e373748c222ad',1,'DimsInfo']]],
+  ['fromfield_98',['FromField',['../classcarta_1_1Column.html#a8d71da2b6ddb31d356a1b0836ac81409',1,'carta::Column']]],
+  ['fromfitsptr_99',['FromFitsPtr',['../classcarta_1_1Column.html#a7ad943a3b7cb58607b5bd38c84317d05',1,'carta::Column']]],
+  ['fromtext_100',['FromText',['../classcarta_1_1DataColumn.html#a34bafc86e0e1fe9c838dca2c82d18afe',1,'carta::DataColumn']]],
+  ['fromvalues_101',['FromValues',['../classcarta_1_1Column.html#a2df953c1e95a4a397a8bd8254e8c34c6',1,'carta::Column']]],
+  ['frontend_5ffolder_102',['frontend_folder',['../structcarta_1_1ProgramSettings.html#a3cf6f38321c0e0439b745db850cd94e8',1,'carta::ProgramSettings']]],
+  ['full_103',['full',['../structcarta_1_1TilePool.html#a122765fee330ff04ca7462238518d525',1,'carta::TilePool::Full()'],['../structcarta_1_1FileInfo_1_1ImageStats.html#aa6719468e5fc239a7651dc9191f07de6',1,'carta::FileInfo::ImageStats::full']]],
+  ['funcf_104',['FuncF',['../classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752',1,'carta::ImageFitter']]]
 ];

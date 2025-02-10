@@ -1,19 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classcarta_1_1FileLoader.html" title=" " alt="" coords="5,179,136,204"/>
-<area shape="rect" id="Node000001" href="$classcarta_1_1CasaLoader.html" title=" " alt="" coords="199,5,337,31"/>
-<area shape="poly" id="edge3_Node000000_Node000001" title=" " alt="" coords="82,165,121,102,149,68,183,40,205,28,207,33,185,44,153,72,125,105,87,167"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1CompListLoader.html" title=" " alt="" coords="184,55,352,80"/>
-<area shape="poly" id="edge4_Node000000_Node000002" title=" " alt="" coords="90,167,130,127,183,89,209,78,211,83,185,94,134,131,94,170"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1ConcatLoader.html" title=" " alt="" coords="192,104,344,129"/>
-<area shape="poly" id="edge5_Node000000_Node000003" title=" " alt="" coords="109,170,183,138,218,127,219,132,185,143,111,175"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1ExprLoader.html" title=" " alt="" coords="200,153,336,179"/>
-<area shape="poly" id="edge6_Node000000_Node000004" title=" " alt="" coords="150,179,199,172,200,177,150,184"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1FitsLoader.html" title=" " alt="" coords="203,203,333,228"/>
-<area shape="poly" id="edge7_Node000000_Node000005" title=" " alt="" coords="150,198,203,205,202,210,150,204"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1Hdf5Loader.html" title=" " alt="" coords="199,252,337,277"/>
-<area shape="poly" id="edge8_Node000000_Node000006" title=" " alt="" coords="113,207,185,237,223,249,221,255,183,242,111,212"/>
-<area shape="rect" id="Node000007" href="$classcarta_1_1ImagePtrLoader.html" title=" " alt="" coords="185,301,351,327"/>
-<area shape="poly" id="edge9_Node000000_Node000007" title=" " alt="" coords="95,213,135,250,185,286,214,299,212,304,183,291,131,254,91,216"/>
-<area shape="rect" id="Node000008" href="$classcarta_1_1MiriadLoader.html" title=" " alt="" coords="194,351,342,376"/>
-<area shape="poly" id="edge10_Node000000_Node000008" title=" " alt="" coords="87,215,126,276,153,308,185,336,210,348,207,353,183,340,150,312,121,279,82,217"/>
+<area shape="rect" id="Node000000" href="$structcarta_1_1FileListHandler_1_1ResultMsg.html" title=" " alt="" coords="5,5,165,45"/>
 </map>

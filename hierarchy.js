@@ -4,6 +4,7 @@ var hierarchy =
     [ "ansicolor_sink", "classansicolor__sink.html", [
       [ "spdlog::sinks::carta_sink", "classspdlog_1_1sinks_1_1carta__sink.html", null ]
     ] ],
+    [ "AxesInfo", "structAxesInfo.html", null ],
     [ "AxisRange", "structAxisRange.html", null ],
     [ "carta::BasicStats< T >", "structcarta_1_1BasicStats.html", null ],
     [ "carta::BasicStats< float >", "structcarta_1_1BasicStats.html", null ],
@@ -29,6 +30,7 @@ var hierarchy =
     [ "carta::ConfigIdHash", "structcarta_1_1ConfigIdHash.html", null ],
     [ "carta::ContourSettings", "structcarta_1_1ContourSettings.html", null ],
     [ "carta::CursorSettings", "classcarta_1_1CursorSettings.html", null ],
+    [ "DimsInfo", "structDimsInfo.html", null ],
     [ "std::enable_shared_from_this", null, [
       [ "carta::TilePool", "structcarta_1_1TilePool.html", null ]
     ] ],

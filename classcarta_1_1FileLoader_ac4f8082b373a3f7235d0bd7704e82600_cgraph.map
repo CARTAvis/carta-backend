@@ -1,0 +1,9 @@
+<map id="carta::FileLoader::FindCoordinateAxes" name="carta::FileLoader::FindCoordinateAxes">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,47,156,87"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" title=" " alt="" coords="204,5,392,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="156,48,228,31,229,36,157,53"/>
+<area shape="rect" id="Node000003" href="$structDimsInfo.html#a0f1d3df9ecaa2894673e373748c222ad" title=" " alt="" coords="223,55,373,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="156,65,209,65,209,70,156,70"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileLoader.html#aa240e8e3019302df9f2ab7b24d4c5c04" title=" " alt="" coords="229,105,367,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="157,85,216,100,215,106,156,90"/>
+</map>
