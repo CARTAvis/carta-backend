@@ -1192,6 +1192,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     start = decimated_start * mip;
                     end = decimated_end * mip;
                     end = config.coordinate().back() == 'x' ? std::min(end, _dims.width) : std::min(end, _dims.height);
+                    start = std::min(start, end);
                 }
 
                 if (is_current_stokes) {

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix save image/export regions bug which could cause directory overwrite or deletion ([#1377](https://github.com/CARTAvis/carta-backend/issues/1377)).
 * Fix bug in cache slicer transformation which affects some images with rotated axes ([#1389](https://github.com/CARTAvis/carta-backend/pull/1389)).
 * Fix bug accessing top (root) folder of file browser ([#2354](https://github.com/CARTAvis/carta-frontend/issues/2354)).
+* Fix crash when spatially matching two images ([#1395](https://github.com/CARTAvis/carta-backend/issues/1395)).
 * Fix segfault after early exit ([#1382](https://github.com/CARTAvis/carta-backend/issues/1382)).
 
 ### Changed
