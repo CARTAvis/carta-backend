@@ -50,15 +50,14 @@ private:
 
     // Computed entries
     void AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type, casacore::DataType equivalent_type);
-    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const std::vector<int>& spatial_axes,
-        int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis,
+    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const AxesInfo& axes,
         casacore::Vector<casacore::String>& axes_names);
     void AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename,
-        const std::vector<int>& render_axes, CompressedFits* compressed_fits = nullptr);
-    void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-        const std::vector<int>& display_axes, int spectral_axis, int stokes_axis, bool use_image_for_entries, bool is_history_beam);
-    void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, int spectral_axis,
-        int stokes_axis, CompressedFits* compressed_fits = nullptr);
+        AxesInfo& axes, CompressedFits* compressed_fits = nullptr);
+    void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image, const AxesInfo& axes,
+        bool use_image_for_entries, bool is_history_beam);
+    void AddComputedEntriesFromHeaders(
+        CARTA::FileInfoExtended& extended_info, const AxesInfo& axes, CompressedFits* compressed_fits = nullptr);
     void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set, bool is_history_beam);
     void AddCoordRanges(
         CARTA::FileInfoExtended& extended_info, const casacore::CoordinateSystem& coord_system, const casacore::IPosition& image_shape);

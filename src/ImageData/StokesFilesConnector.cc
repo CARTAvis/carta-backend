@@ -280,31 +280,30 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
     }
 
     casacore::IPosition ref_shape(0);
-    std::vector<int> ref_spatial_axes, ref_render_axes;
     int ref_spectral_axis = -1;
-    int ref_z_axis = -1;
     int ref_stokes_axis = -1;
     int ref_index = 0;
 
     for (auto& loader : _loaders) {
-        casacore::IPosition shape;
-        std::vector<int> spatial_axes, render_axes;
-        int spectral_axis;
-        int z_axis;
+        loader.second->FindCoordinateAxes(err);
+        auto shape = loader.second->GetShape();
+        auto axes = loader.second->GetAxes();
 
         if (ref_index == 0) {
-            loader.second->FindCoordinateAxes(
-                ref_shape, ref_spatial_axes, ref_spectral_axis, ref_stokes_axis, ref_render_axes, ref_z_axis, err);
+            ref_shape = shape;
+            ref_spectral_axis = axes.spectral;
+            ref_stokes_axis = axes.stokes;
         } else {
-            loader.second->FindCoordinateAxes(shape, spatial_axes, spectral_axis, stokes_axis, render_axes, z_axis, err);
-            if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != spectral_axis) ||
-                (ref_stokes_axis != stokes_axis)) {
+            if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != axes.spectral) ||
+                (ref_stokes_axis != axes.stokes)) {
                 err = "Image shapes or axes are not consistent!";
                 return false;
             }
         }
         ++ref_index;
     }
+
+    stokes_axis = ref_stokes_axis;
     return true;
 }
 

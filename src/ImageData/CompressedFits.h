@@ -106,18 +106,6 @@ public:
     casacore::IPosition& GetShape() {
         return _shape;
     }
-    void SetSpectralAxis(int spectral_axis) {
-        _spectral_axis = spectral_axis;
-    }
-    void SetStokesAxis(int stokes_axis) {
-        _stokes_axis = stokes_axis;
-    }
-    int GetSpectralAxis() {
-        return _spectral_axis;
-    }
-    int GetStokesAxis() {
-        return _stokes_axis;
-    }
 
     // File decompression
     unsigned long long GetDecompressSize();
@@ -153,8 +141,6 @@ private:
 
     casacore::Matrix<casacore::Double> _xform; // Linear transform matrix for the direction coordinate
     casacore::IPosition _shape;                // Image shape
-    int _spectral_axis;                        // Spectral axis from the header
-    int _stokes_axis;                          // Stokes axis from the header
 };
 
 } // namespace carta
