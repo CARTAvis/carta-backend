@@ -59,5 +59,5 @@ This process should be followed if important bug fixes have to be released after
 1. `release/123.0` branch: update `CHANGELOG.md`. Copy only the `123.0.1` section from the changelog in the `dev` branch.
 1. `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.1`.
 1. Create a `v123.0.1` tag using the release branch.
-1. Test the release branch. If an issue affects both `dev` and the release branch, fix it in `dev` and cherry-pick it into the release branch. If an issue is caused by changes in `dev` which are not included in the point release, make the minimal required changes in the release branch. Ideally, bump the version and create a new tag every time changes are made. If you don't want to bump the version, remember to destroy and recreate the latest tag.
+1. Test the release branch. If an issue affects both `dev` and the release branch, fix it in `dev` and cherry-pick the changes into the release branch. If an issue is caused by changes in `dev` which are not included in the point release, make the minimal required changes in the release branch. Ideally, bump the version and create a new tag every time changes are made. If you don't want to bump the version, remember to destroy and recreate the latest tag.
 1. Create packages from the release branch.
