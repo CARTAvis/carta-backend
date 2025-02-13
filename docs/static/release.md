@@ -13,6 +13,11 @@ Beta release
 1. Test the release branch. Make any required fixes in the `dev` branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.
 1. Create packages from the release branch.
 
+After beta release
+------------------
+
+1. `dev` branch: update `CHANGELOG.md`. Create a new `Unreleased` section.
+
 Additional beta release
 -----------------------
 
