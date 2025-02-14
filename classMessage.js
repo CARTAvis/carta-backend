@@ -2,9 +2,10 @@ var classMessage =
 [
     [ "Message", "classMessage.html#a4fc4f717b634e66070366cb7722d7761", null ],
     [ "~Message", "classMessage.html#a072b42f0fb513679105c65ed1ef266e9", null ],
-    [ "AddRequiredTiles", "classMessage.html#af3f52da62c1618db4dbee57ddab2aeb8", null ],
+    [ "AddRequiredTiles", "classMessage.html#a8f3f50d7c76224f6c11eb8f074a47259", null ],
     [ "AnimationFlowControl", "classMessage.html#a3408af875693d81d8aa8b236a70431c4", null ],
     [ "Beam", "classMessage.html#a50066c9b8734724d4be0ced5e2143dfd", null ],
+    [ "ChannelMapFlowControl", "classMessage.html#a7e05dfa2b469223b7e2c773f8642bac2", null ],
     [ "CloseFile", "classMessage.html#acfdc04d3a74a1759ad075074bf2c19b1", null ],
     [ "ConcatStokesFiles", "classMessage.html#a746289ea968e20e413e42bbf3c3bcdfd", null ],
     [ "ContourImageData", "classMessage.html#a281caf592c92b9f16c878afc8446188b", null ],

@@ -1,0 +1,9 @@
+<map id="carta::ChannelMapSettings::HasRequiredTiles" name="carta::ChannelMapSettings::HasRequiredTiles">
+<area shape="rect" id="Node000001" title=" " alt="" coords="496,37,693,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1ChannelMapSettings.html#a5d89a81867b25bd7baac666db19596ed" title=" " alt="" coords="251,37,448,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="482,60,448,60,448,55,482,55"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1ChannelMapSettings.html#aa2da51a5bb8135a9576332f4fbbb2231" title=" " alt="" coords="5,5,203,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="237,45,202,41,203,36,237,40"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1ChannelMapSettings.html#af17ad56a1d0706d957326548d22d0a6e" title=" " alt="" coords="5,69,203,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="237,75,203,79,202,74,237,69"/>
+</map>

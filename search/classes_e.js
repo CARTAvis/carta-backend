@@ -12,5 +12,6 @@ var searchData=
   ['regionstate_9',['RegionState',['../structcarta_1_1RegionState.html',1,'carta']]],
   ['regionstatsconfig_10',['RegionStatsConfig',['../structcarta_1_1RegionStatsConfig.html',1,'carta']]],
   ['regionstatsid_11',['RegionStatsId',['../structcarta_1_1FileInfo_1_1RegionStatsId.html',1,'carta::FileInfo']]],
-  ['resultmsg_12',['ResultMsg',['../structcarta_1_1FileListHandler_1_1ResultMsg.html',1,'carta::FileListHandler']]]
+  ['requiredtiles_12',['RequiredTiles',['../structcarta_1_1RequiredTiles.html',1,'carta']]],
+  ['resultmsg_13',['ResultMsg',['../structcarta_1_1FileListHandler_1_1ResultMsg.html',1,'carta::FileListHandler']]]
 ];

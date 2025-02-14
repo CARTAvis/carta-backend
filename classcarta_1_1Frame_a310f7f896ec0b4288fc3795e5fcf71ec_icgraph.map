@@ -1,0 +1,9 @@
+<map id="carta::Frame::GetRasterData" name="carta::Frame::GetRasterData">
+<area shape="rect" id="Node000001" title=" " alt="" coords="507,31,715,56"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#af382d7b27adada74fab429616e48dbb4" title=" " alt="" coords="241,5,445,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="493,35,444,30,445,25,493,30"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ab489d663a29fb9d2d6cdc6b09be9651d" title=" " alt="" coords="227,55,459,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="493,57,459,60,459,54,492,51"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Frame.html#ac8f2427b56e05243415f3e9448a4dfe5" title=" " alt="" coords="5,47,179,87"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="213,70,179,70,179,65,213,65"/>
+</map>

@@ -20,7 +20,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="classMessage.html#af3f52da62c1618db4dbee57ddab2aeb8" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="classMessage.html#a8f3f50d7c76224f6c11eb8f074a47259" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="306,-93 154,-93 154,-74 306,-74 306,-93"/>
 <text text-anchor="middle" x="230" y="-81" font-family="Helvetica,sans-Serif" font-size="10.00">Message::AddRequiredTiles</text>
 </a>

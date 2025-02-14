@@ -72,24 +72,25 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "AnimationObject_8h.html",
-"Logger_8h.html#a7b334512783c98ccfdac74bd38aa2f9f",
-"classcarta_1_1AnimationObject.html#a56dbb294ef54486e215750b468536d14",
-"classcarta_1_1CartaHdf5Image.html#adbf774dc6b0b1208b69754ec62b6c566",
-"classcarta_1_1CrtfImportExport.html#aa033569c55ee689d372677e7a02bd243",
-"classcarta_1_1FileListHandler.html#a17d989234776d56309c835ffdc8a8906",
-"classcarta_1_1Frame.html#a14bc4ec0f66a22de8886bb4b6ef325dd",
-"classcarta_1_1Frame.html#af89271c818c27cc69f645adad9d9f370",
-"classcarta_1_1Image2DConvolver.html#a9037bd39cfa7f4350f45bf61fb622d55",
-"classcarta_1_1MomentGenerator.html#a3d2835e32bd00ee36836d43a36dafaa6",
-"classcarta_1_1Region.html#a0689c50d4e815b8eb4de969a5cb3b39e",
-"classcarta_1_1RegionHandler.html#a784c53414608adef3f077f1c642deaa5",
-"classcarta_1_1Session.html#a5fd62896cf8474c7b37c27093a24459e",
-"classcarta_1_1SessionManager.html#ae5ac6cd89932160011440a3b8796978f",
-"classcarta_1_1ThreadManager.html#a8ac96add5b842961dfe2a35ec9313bc1",
-"dir_c1e81cc400cfd81cea8c3638b6fefb69.html",
-"structcarta_1_1BasicStats.html",
-"structcarta_1_1HistogramCache.html#a208a72597f72b2c067608f6ef36c7f1a",
-"structcarta_1_1RegionState.html#ac7fc86b0c78d7486b6b1b1829e60b154"
+"Logger_8h.html#a670c6a63d98e715c33a6063e6e0c7b0c",
+"classcarta_1_1AnimationObject.html#a2ffd37826371248ce878cc4b09915670",
+"classcarta_1_1CartaHdf5Image.html#ad302ddf5eb102e86a2b0100ee92f20cb",
+"classcarta_1_1CrtfImportExport.html#a343bb4dffd1a7f4646ed0efd7e1779c6",
+"classcarta_1_1FileExtInfoLoader.html#adb3998e3b3756d1ee8a2bb91f445c4d7",
+"classcarta_1_1FitsLoader.html#a45ca0ae718eb9c8d925e43371e8c9af8",
+"classcarta_1_1Frame.html#ae3ee51cc1bda05842764364c3f49db45",
+"classcarta_1_1Image2DConvolver.html#a3045ffb63b08a532e7b6145f49d8a92f",
+"classcarta_1_1MiriadLoader.html#a117a93473876245205b6c1128e839717",
+"classcarta_1_1PvPreviewCut.html#aad4e1676c16757527a8fc399210a0b7a",
+"classcarta_1_1RegionHandler.html#a5dcaa11ea35b7c7a129feab0737a0223",
+"classcarta_1_1Session.html#a45b9623e5dd0c0d54307ab148e8745aa",
+"classcarta_1_1SessionManager.html",
+"classcarta_1_1TableView.html#a4c0a426836a7dee8a06f76422adb000e",
+"classcarta_1_1queuing__rw__mutex__scoped.html#a9b00c36da22c7557c162cf9df811c1f0",
+"structAxesInfo.html",
+"structcarta_1_1FitData.html#a60f3e4db41efafd0df57bc9fea53219d",
+"structcarta_1_1RegionProperties.html#ac17aae501c41e6b93c67ed23d1759b94",
+"structcarta_1_1VectorField_1_1CalcPi.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

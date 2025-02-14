@@ -46,6 +46,8 @@ var NAVTREEINDEX0 =
 "Casacore_8h.html#aa05a1fe4e2176aee249351f3e2544441":[4,0,1,16,3,1],
 "Casacore_8h.html#aa743c537861c278f5c5620fa996f8153":[4,0,1,16,3,6],
 "Casacore_8h.html#ad560f4fdd266b9e1503ae3f24a60aa52":[4,0,1,16,3,4],
+"ChannelMapSettings_8cc.html":[4,0,1,12,1],
+"ChannelMapSettings_8h.html":[4,0,1,12,2],
 "Columns_8cc.html":[4,0,1,13,0],
 "Columns_8cc.html#a928af6c5078150f8c0cafc2a32a6b05c":[4,0,1,13,0,1],
 "Columns_8cc.html#ab91d60c075ef6cca17b213b9cde59d66":[4,0,1,13,0,0],
@@ -89,8 +91,8 @@ var NAVTREEINDEX0 =
 "Contouring_8h.html#ab5f1891c4cb08c9253fbe5d1bb4b2dbe":[4,0,1,1,3,2],
 "CrtfImportExport_8cc.html":[4,0,1,11,0],
 "CrtfImportExport_8h.html":[4,0,1,11,1],
-"CursorSettings_8cc.html":[4,0,1,12,1],
-"CursorSettings_8h.html":[4,0,1,12,2],
+"CursorSettings_8cc.html":[4,0,1,12,3],
+"CursorSettings_8h.html":[4,0,1,12,4],
 "DataColumn_8tcc.html":[4,0,1,13,2],
 "Ds9ImportExport_8cc.html":[4,0,1,11,2],
 "Ds9ImportExport_8h.html":[4,0,1,11,3],
@@ -247,7 +249,5 @@ var NAVTREEINDEX0 =
 "Logger_8h.html":[4,0,1,9,3],
 "Logger_8h.html#a0ab032d47dbab9ca28d1fa3f65ec7e5d":[4,0,1,9,3,3],
 "Logger_8h.html#a3a30c8519779f61e8148bc6bcc19a489":[4,0,1,9,3,7],
-"Logger_8h.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,1,9,3,10],
-"Logger_8h.html#a670c6a63d98e715c33a6063e6e0c7b0c":[4,0,1,9,3,12],
-"Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce":[4,0,1,9,3,2]
+"Logger_8h.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,1,9,3,10]
 };

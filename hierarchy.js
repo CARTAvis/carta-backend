@@ -18,6 +18,7 @@ var hierarchy =
     [ "carta::VectorField::CalcFpi", "structcarta_1_1VectorField_1_1CalcFpi.html", null ],
     [ "carta::VectorField::CalcPa", "structcarta_1_1VectorField_1_1CalcPa.html", null ],
     [ "carta::VectorField::CalcPi", "structcarta_1_1VectorField_1_1CalcPi.html", null ],
+    [ "carta::ChannelMapSettings", "classcarta_1_1ChannelMapSettings.html", null ],
     [ "carta::Column", "classcarta_1_1Column.html", [
       [ "carta::DataColumn< T >", "classcarta_1_1DataColumn.html", null ]
     ] ],
@@ -120,6 +121,7 @@ var hierarchy =
     [ "carta::RegionState", "structcarta_1_1RegionState.html", null ],
     [ "carta::RegionStatsConfig", "structcarta_1_1RegionStatsConfig.html", null ],
     [ "carta::FileInfo::RegionStatsId", "structcarta_1_1FileInfo_1_1RegionStatsId.html", null ],
+    [ "carta::RequiredTiles", "structcarta_1_1RequiredTiles.html", null ],
     [ "carta::FileListHandler::ResultMsg", "structcarta_1_1FileListHandler_1_1ResultMsg.html", null ],
     [ "carta::Session", "classcarta_1_1Session.html", null ],
     [ "carta::SessionContext", "classcarta_1_1SessionContext.html", null ],

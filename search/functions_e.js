@@ -1,7 +1,7 @@
 var searchData=
 [
   ['ok_0',['ok',['../classcarta_1_1CartaHdf5Image.html#a8c35644daa801bbc6dc807bf333707fd',1,'carta::CartaHdf5Image::ok()'],['../classcarta_1_1CartaFitsImage.html#a16d3fdc222553528b79b761a6f14e14b',1,'carta::CartaFitsImage::ok()']]],
-  ['onaddrequiredtiles_1',['OnAddRequiredTiles',['../classcarta_1_1Session.html#ad769ec04ffbfb2289af256be174e3059',1,'carta::Session']]],
+  ['onaddrequiredtiles_1',['OnAddRequiredTiles',['../classcarta_1_1Session.html#a8ccc0be97ed2f62a4d267fc6f66b7110',1,'carta::Session']]],
   ['oncatalogfileinfo_2',['OnCatalogFileInfo',['../classcarta_1_1Session.html#a7f9dd9449b743d929e2e3609eea9c97a',1,'carta::Session']]],
   ['oncatalogfilelist_3',['OnCatalogFileList',['../classcarta_1_1Session.html#a85ae5fdf5dfa34aa0b28f4143a20252a',1,'carta::Session']]],
   ['oncatalogfilter_4',['OnCatalogFilter',['../classcarta_1_1Session.html#a09b1a3bf5b197b32bd37a48e9b8b401d',1,'carta::Session']]],

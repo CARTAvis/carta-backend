@@ -11,8 +11,11 @@ var searchData=
   ['completed_8',['completed',['../structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a925f5b17532b45ef5f2996be0b9c5345',1,'carta::FileInfo::RegionSpectralStats']]],
   ['compression_9',['compression',['../structcarta_1_1PreviewCutParameters.html#a2d0d22c0f7194c18017df87f19e71d30',1,'carta::PreviewCutParameters']]],
   ['compression_5flevel_10',['compression_level',['../structcarta_1_1ContourSettings.html#a5ec25d47bcbd51bfa57c1f41b5b0d387',1,'carta::ContourSettings']]],
-  ['configs_11',['configs',['../structcarta_1_1RegionHistogramConfig.html#ad8ed1b8fb32ff14b4f2720d7d78b358c',1,'carta::RegionHistogramConfig::configs'],['../structcarta_1_1RegionSpectralConfig.html#a2aa9292365dfa8f6cc302353795d9c2d',1,'carta::RegionSpectralConfig::configs']]],
-  ['control_5fpoints_12',['control_points',['../structcarta_1_1RegionState.html#a514f735c4244bb03216af80803a5f977',1,'carta::RegionState']]],
-  ['controller_5fdeployment_13',['controller_deployment',['../structcarta_1_1ProgramSettings.html#a3d95a3072052a718598c2a1830550970',1,'carta::ProgramSettings']]],
-  ['coordinate_14',['coordinate',['../structcarta_1_1HistogramConfig.html#ae625a69e48d46ef7887b9ee10cc04d53',1,'carta::HistogramConfig::coordinate'],['../structcarta_1_1SpectralConfig.html#a14b3cd201eb63f63d10211afc931d1ee',1,'carta::SpectralConfig::coordinate']]]
+  ['compression_5fquality_11',['compression_quality',['../structcarta_1_1RequiredTiles.html#a484a2f94fb14a6c6ebe76155f1bedf06',1,'carta::RequiredTiles']]],
+  ['compression_5ftype_12',['compression_type',['../structcarta_1_1RequiredTiles.html#aaab401591771f83b61cf90dc762c142d',1,'carta::RequiredTiles']]],
+  ['configs_13',['configs',['../structcarta_1_1RegionHistogramConfig.html#ad8ed1b8fb32ff14b4f2720d7d78b358c',1,'carta::RegionHistogramConfig::configs'],['../structcarta_1_1RegionSpectralConfig.html#a2aa9292365dfa8f6cc302353795d9c2d',1,'carta::RegionSpectralConfig::configs']]],
+  ['control_5fpoints_14',['control_points',['../structcarta_1_1RegionState.html#a514f735c4244bb03216af80803a5f977',1,'carta::RegionState']]],
+  ['controller_5fdeployment_15',['controller_deployment',['../structcarta_1_1ProgramSettings.html#a3d95a3072052a718598c2a1830550970',1,'carta::ProgramSettings']]],
+  ['coordinate_16',['coordinate',['../structcarta_1_1HistogramConfig.html#ae625a69e48d46ef7887b9ee10cc04d53',1,'carta::HistogramConfig::coordinate'],['../structcarta_1_1SpectralConfig.html#a14b3cd201eb63f63d10211afc931d1ee',1,'carta::SpectralConfig::coordinate']]],
+  ['current_5ftiles_17',['current_tiles',['../structcarta_1_1RequiredTiles.html#ad81e60edd2e1ddb4105496cbf31bfcda',1,'carta::RequiredTiles']]]
 ];

@@ -835,7 +835,7 @@
 <!-- Node44 -->
 <g id="Node000044" class="node">
 <title>Node44</title>
-<g id="a_Node000044"><a xlink:href="classcarta_1_1Session.html#ad769ec04ffbfb2289af256be174e3059" target="_top" xlink:title=" ">
+<g id="a_Node000044"><a xlink:href="classcarta_1_1Session.html#a8ccc0be97ed2f62a4d267fc6f66b7110" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="1338.5,-1364.74 1171.5,-1364.74 1171.5,-1334.74 1338.5,-1334.74 1338.5,-1364.74"/>
 <text text-anchor="start" x="1179.5" y="-1352.74" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnAddRequired</text>
 <text text-anchor="middle" x="1255" y="-1341.74" font-family="Helvetica,sans-Serif" font-size="10.00">Tiles</text>
@@ -892,7 +892,7 @@
 <!-- Node47 -->
 <g id="Node000047" class="node">
 <title>Node47</title>
-<g id="a_Node000047"><a xlink:href="classcarta_1_1Session.html#abf2d92e46ffc218b0e6e2685bf4ffb72" target="_top" xlink:title=" ">
+<g id="a_Node000047"><a xlink:href="classcarta_1_1Session.html#a7347c9a4f9337fcc6460709028c3ce64" target="_top" xlink:title=" ">
 <polygon fill="#fff0f0" stroke="red" points="1343,-1316.24 1167,-1316.24 1167,-1297.24 1343,-1297.24 1343,-1316.24"/>
 <text text-anchor="middle" x="1255" y="-1304.24" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendContourData</text>
 </a>

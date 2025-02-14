@@ -122,8 +122,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:af2a443107871719730e5e8ad6bf0179c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff42cb06470d65aa915523847fcff7e1" id="r_aff42cb06470d65aa915523847fcff7e1"><td class="memItemLeft" align="right" valign="top">static CARTA::SetHistogramRequirements&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#aff42cb06470d65aa915523847fcff7e1">SetHistogramRequirements</a> (int32_t file_id, int32_t region_id, int32_t channel=<a class="el" href="Image_8h.html#a1534a6d48c686d441767c9bda9e58712">CURRENT_Z</a>, int32_t num_bins=<a class="el" href="Image_8h.html#a0d7c8081a29b46e6a70f0065eda31de2">AUTO_BIN_SIZE</a>)</td></tr>
 <tr class="separator:aff42cb06470d65aa915523847fcff7e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3f52da62c1618db4dbee57ddab2aeb8" id="r_af3f52da62c1618db4dbee57ddab2aeb8"><td class="memItemLeft" align="right" valign="top">static CARTA::AddRequiredTiles&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#af3f52da62c1618db4dbee57ddab2aeb8">AddRequiredTiles</a> (int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector&lt; float &gt; &amp;tiles)</td></tr>
-<tr class="separator:af3f52da62c1618db4dbee57ddab2aeb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f3f50d7c76224f6c11eb8f074a47259" id="r_a8f3f50d7c76224f6c11eb8f074a47259"><td class="memItemLeft" align="right" valign="top">static CARTA::AddRequiredTiles&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a8f3f50d7c76224f6c11eb8f074a47259">AddRequiredTiles</a> (int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector&lt; int32_t &gt; &amp;tiles)</td></tr>
+<tr class="separator:a8f3f50d7c76224f6c11eb8f074a47259"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c0bb5e50ad8b90bade291ab17a18cf5" id="r_a0c0bb5e50ad8b90bade291ab17a18cf5"><td class="memItemLeft" align="right" valign="top">static CARTA::Point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5">Point</a> (float x, float y)</td></tr>
 <tr class="separator:a0c0bb5e50ad8b90bade291ab17a18cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7305f83781e5ceeee5cb3243bd993062" id="r_a7305f83781e5ceeee5cb3243bd993062"><td class="memItemLeft" align="right" valign="top">static CARTA::Point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a7305f83781e5ceeee5cb3243bd993062">Point</a> (const casacore::Vector&lt; casacore::Double &gt; &amp;input, int x_index=0, int y_index=1)</td></tr>
@@ -178,6 +178,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a0ed9dfcb0fca84572479e2b4abb7af52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60da007fe3902ca53c342359ad9e29a0" id="r_a60da007fe3902ca53c342359ad9e29a0"><td class="memItemLeft" align="right" valign="top">static CARTA::ScriptingRequest&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a60da007fe3902ca53c342359ad9e29a0">ScriptingRequest</a> (uint32_t scripting_request_id, const std::string &amp;target, const std::string &amp;action, const std::string &amp;parameters, bool async, const std::string &amp;return_path)</td></tr>
 <tr class="separator:a60da007fe3902ca53c342359ad9e29a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e05dfa2b469223b7e2c773f8642bac2" id="r_a7e05dfa2b469223b7e2c773f8642bac2"><td class="memItemLeft" align="right" valign="top">static CARTA::ChannelMapFlowControl&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a7e05dfa2b469223b7e2c773f8642bac2">ChannelMapFlowControl</a> (int32_t file_id, int32_t received_channel)</td></tr>
+<tr class="separator:a7e05dfa2b469223b7e2c773f8642bac2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0ee1f2c4e8dc91a09b2ee7a31020566" id="r_af0ee1f2c4e8dc91a09b2ee7a31020566"><td class="memItemLeft" align="right" valign="top">static CARTA::SpectralProfileData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#af0ee1f2c4e8dc91a09b2ee7a31020566">SpectralProfileData</a> (int32_t file_id, int32_t region_id, int32_t stokes, float progress, std::string &amp;coordinate, std::vector&lt; CARTA::StatsType &gt; &amp;required_stats, std::map&lt; CARTA::StatsType, std::vector&lt; double &gt; &gt; &amp;spectral_data)</td></tr>
 <tr class="separator:af0ee1f2c4e8dc91a09b2ee7a31020566"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e7fcbdfac275064dfd1a3f3582d2bcc" id="r_a4e7fcbdfac275064dfd1a3f3582d2bcc"><td class="memItemLeft" align="right" valign="top">static CARTA::SpectralProfileData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a4e7fcbdfac275064dfd1a3f3582d2bcc">SpectralProfileData</a> (int32_t stokes, float progress)</td></tr>
@@ -294,8 +296,8 @@ Here is the call graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="af3f52da62c1618db4dbee57ddab2aeb8" name="af3f52da62c1618db4dbee57ddab2aeb8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af3f52da62c1618db4dbee57ddab2aeb8">&#9670;&#160;</a></span>AddRequiredTiles()</h2>
+<a id="a8f3f50d7c76224f6c11eb8f074a47259" name="a8f3f50d7c76224f6c11eb8f074a47259"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f3f50d7c76224f6c11eb8f074a47259">&#9670;&#160;</a></span>AddRequiredTiles()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -324,7 +326,7 @@ Here is the call graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::vector&lt; float &gt; &amp;&#160;</td>
+          <td class="paramtype">const std::vector&lt; int32_t &gt; &amp;&#160;</td>
           <td class="paramname"><em>tiles</em>&#160;</td>
         </tr>
         <tr>
@@ -342,7 +344,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_af3f52da62c1618db4dbee57ddab2aeb8_icgraph.svg" width="419" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a8f3f50d7c76224f6c11eb8f074a47259_icgraph.svg" width="100%" height="400"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -439,6 +441,42 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_a50066c9b8734724d4be0ced5e2143dfd_icgraph.svg" width="324" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
+
+</div>
+</div>
+<a id="a7e05dfa2b469223b7e2c773f8642bac2" name="a7e05dfa2b469223b7e2c773f8642bac2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e05dfa2b469223b7e2c773f8642bac2">&#9670;&#160;</a></span>ChannelMapFlowControl()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::ChannelMapFlowControl Message::ChannelMapFlowControl </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>received_channel</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>

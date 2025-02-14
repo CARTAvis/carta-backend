@@ -1,0 +1,5 @@
+<map id="carta::RequiredTiles::HasTile" name="carta::RequiredTiles::HasTile">
+<area shape="rect" id="Node000001" title=" " alt="" coords="205,5,357,45"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1RequiredTiles.html#afdc9eac5cac2c4300a79d1bd8ebca94f" title=" " alt="" coords="5,5,157,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="191,28,158,28,158,23,191,23"/>
+</map>

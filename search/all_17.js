@@ -10,7 +10,7 @@ var searchData=
   ['webbrowser_2eh_7',['WebBrowser.h',['../WebBrowser_8h.html',1,'']]],
   ['welcome_20to_20the_20carta_20backend_20documentation_8',['Welcome to the CARTA backend documentation',['../index.html',1,'']]],
   ['whatisthenoise_9',['WhatIsTheNoise',['../classcarta_1_1ImageMoments.html#a8d172ceb87b9359c3a00db0f4ffe20de',1,'carta::ImageMoments']]],
-  ['width_10',['width',['../structcarta_1_1FitData.html#a4e26a16b01621a23ff66ff27cf5d53f5',1,'carta::FitData::width'],['../structDimsInfo.html#a32941459ac5af2c7a2fc953a845bb162',1,'DimsInfo::width'],['../structcarta_1_1PreviewCutParameters.html#acd3a13f48a5959a71e5924c61b591b2d',1,'carta::PreviewCutParameters::width'],['../classcarta_1_1Frame.html#aff03d724914298bb04b3ac69fecdc72f',1,'carta::Frame::Width()']]],
+  ['width_10',['width',['../structcarta_1_1PreviewCutParameters.html#acd3a13f48a5959a71e5924c61b591b2d',1,'carta::PreviewCutParameters::width'],['../classcarta_1_1Frame.html#aff03d724914298bb04b3ac69fecdc72f',1,'carta::Frame::Width()'],['../structDimsInfo.html#a32941459ac5af2c7a2fc953a845bb162',1,'DimsInfo::width'],['../structcarta_1_1FitData.html#a4e26a16b01621a23ff66ff27cf5d53f5',1,'carta::FitData::width']]],
   ['with_20asan_20flags_11',['Building with ASAN flags',['../md_docs_2static_2faq.html#autotoc_md1',1,'']]],
   ['workspace_12',['WORKSPACE',['../namespacecarta.html#af9830509695cfe9bd0ed310dec7033be',1,'carta']]],
   ['worldpointtoimagepixels_13',['WorldPointToImagePixels',['../classcarta_1_1RegionConverter.html#ac39257df92defdcc7bbd460d724da66e',1,'carta::RegionConverter']]],
