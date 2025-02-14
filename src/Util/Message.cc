@@ -100,7 +100,7 @@ CARTA::SetHistogramRequirements Message::SetHistogramRequirements(int32_t file_i
 }
 
 CARTA::AddRequiredTiles Message::AddRequiredTiles(
-    int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles) {
+    int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<int32_t>& tiles) {
     CARTA::AddRequiredTiles add_required_tiles;
     add_required_tiles.set_file_id(file_id);
     add_required_tiles.set_compression_type(compression_type);
@@ -437,6 +437,13 @@ CARTA::ScriptingRequest Message::ScriptingRequest(uint32_t scripting_request_id,
     message.set_parameters(parameters);
     message.set_async(async);
     message.set_return_path(return_path);
+    return message;
+}
+
+CARTA::ChannelMapFlowControl Message::ChannelMapFlowControl(int32_t file_id, int32_t received_channel) {
+    CARTA::ChannelMapFlowControl message;
+    message.set_file_id(file_id);
+    message.set_received_channel(received_channel);
     return message;
 }
 
