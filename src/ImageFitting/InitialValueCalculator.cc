@@ -19,7 +19,9 @@ InitialValueCalculator::InitialValueCalculator(float* image, size_t width, size_
 }
 
 bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, float image_std) {
-    if (initial_values.size() == 1) {
+    size_t num_components = initial_values.size();
+
+    if (num_components == 1) {
         auto [center_x_tmp, center_y_tmp, amp_tmp, fwhm_x_tmp, fwhm_y_tmp, pa_tmp] = MethodOfMoments();
         auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] =
             MethodOfMoments(true, center_x_tmp, center_y_tmp, std::max(fwhm_x_tmp, fwhm_y_tmp));
@@ -34,9 +36,18 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     }
 
     // TODO: support multi components
-    std::vector<int> centroid_indexes = KMeansPlusPlus(initial_values.size(), image_std * 4.0);
+    std::vector<int> centroid_indexes = KMeansPlusPlus(num_components, image_std * 4.0);
 
-    return false;
+    initial_values.clear();
+    for (size_t i = 0; i < num_components; ++i) {
+        auto center = Message::DoublePoint(centroid_indexes[i] % _width + _offset_x, centroid_indexes[i] / _width + _offset_y);
+        auto fwhm = Message::DoublePoint(10, 10);
+        auto component = Message::GaussianComponent(center, 1, fwhm, 0);
+
+        initial_values.push_back(component);
+    }
+
+    return true;
 }
 
 std::tuple<double, double, double, double, double, double> InitialValueCalculator::MethodOfMoments(
@@ -184,9 +195,9 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
         centroid_indexes.push_back(next_centroid_index);
     }
 
-    spdlog::info("Generated {} centroids.", centroid_indexes.size());
+    spdlog::debug("Generated {} centroids.", centroid_indexes.size());
     for (size_t i = 0; i < centroid_indexes.size(); ++i) {
-        spdlog::info("Centroid #{}: ({}, {})", i, centroid_indexes[i] % _width, centroid_indexes[i] / _width);
+        spdlog::debug("Centroid #{}: ({}, {})", i, centroid_indexes[i] % _width, centroid_indexes[i] / _width);
     }
 
     return centroid_indexes;
