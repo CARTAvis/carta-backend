@@ -93,6 +93,7 @@ public:
 
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
+    DimsInfo Dims();    // struct of all dimensions
     size_t Width();     // length of x axis
     size_t Height();    // length of y axis
     size_t Depth();     // length of z axis
@@ -105,6 +106,7 @@ public:
     int XAxis();
     int YAxis();
     int ZAxis();
+    AxesInfo Axes(); // struct of all axes
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
@@ -125,14 +127,14 @@ public:
 
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-        CARTA::CompressionType compression_type, float compression_quality);
+        CARTA::CompressionType compression_type, float compression_quality, bool is_current_z);
 
     // Functions used for smoothing and contouring
     bool SetContourParameters(const CARTA::SetContourParameters& message);
     inline ContourSettings& GetContourParameters() {
         return _contour_settings;
     };
-    bool ContourImage(ContourCallback& partial_contour_callback);
+    bool ContourImage(ContourCallback& partial_contour_callback, int channel);
 
     // Histograms: image and cube
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& histogram_configs);
@@ -230,9 +232,9 @@ protected:
     bool FillImageCache();
     void InvalidateImageCache();
 
-    // Downsampled data from image cache
-    bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
-    bool GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height);
+    // Downsampled data from image cache if current z
+    bool GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
+    bool GetRasterTileData(int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height);
 
     // Fill vector for given z and stokes
     void GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes);
@@ -279,10 +281,9 @@ protected:
 
     // Shape and axis info: X, Y, Z, Stokes
     casacore::IPosition _image_shape;
-    int _x_axis, _y_axis, _z_axis; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
-    int _spectral_axis, _stokes_axis;
+    AxesInfo _axes; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
+    DimsInfo _dims;
     int _z_index, _stokes_index; // current index
-    size_t _width, _height, _depth, _num_stokes;
     AxisRange _all_x, _all_y, _all_z;
 
     // Image settings
