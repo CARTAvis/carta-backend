@@ -99,6 +99,17 @@ jobs:
           recreate: true
           path: code-coverage-results.md
 
+      - name: Download coverage badge
+        shell: bash
+        run: |
+          head -n1 test.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
+
+      - name: Store coverage badge in gh-storage branch
+        uses: sylvanld/action-storage@v1
+        with:
+          src: badge-coverage.svg
+          dst: badge-coverage.svg
+
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
     needs: format-check
