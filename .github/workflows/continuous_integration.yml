@@ -102,7 +102,7 @@ jobs:
       - name: Download coverage badge
         shell: bash
         run: |
-          head -n1 test.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
+          head -n1 code-coverage-results.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
 
       - name: Store coverage badge in gh-storage branch
         uses: sylvanld/action-storage@v1
