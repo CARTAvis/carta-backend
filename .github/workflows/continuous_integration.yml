@@ -100,6 +100,7 @@ jobs:
           path: code-coverage-results.md
 
       - name: Download and store coverage badge when pushing to dev
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         shell: bash
         run: |
           head -n1 code-coverage-results.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
