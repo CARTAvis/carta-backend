@@ -107,8 +107,12 @@ jobs:
       - name: Store coverage badge in gh-storage branch
         shell: bash
         run: |
-          pwd
-          ls
+          git add badge-coverage.svg
+          git stash
+          git switch --orphan gh-storage || git checkout gh-storage
+          git checkout stash@{0} -- badge-coverage.svg
+          git diff --staged --quiet || { git commit -m "Updated coverage" && { git push || git push --set-upstream origin gh-storage; } }
+
 
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
