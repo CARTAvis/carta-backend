@@ -99,19 +99,14 @@ jobs:
           recreate: true
           path: code-coverage-results.md
 
-      - name: Download coverage badge
+      - name: Download and store coverage badge when pushing to dev
         shell: bash
         run: |
           head -n1 code-coverage-results.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
-
-      - name: Store coverage badge in gh-storage branch
-        shell: bash
-        run: |
           git config --global user.email "backend.ci@github.action"
           git config --global user.name "Backend CI"
           git add badge-coverage.svg
           git stash
-          git fetch origin gh-storage
           git checkout gh-storage
           git pull
           git checkout stash@{0} -- badge-coverage.svg
