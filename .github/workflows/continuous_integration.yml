@@ -100,7 +100,7 @@ jobs:
           path: code-coverage-results.md
 
       - name: Download and store coverage badge when pushing to dev
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         shell: bash
         run: |
           head -n1 code-coverage-results.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
@@ -108,7 +108,6 @@ jobs:
           git config --global user.name "Backend CI"
           git add badge-coverage.svg
           lastcommit=`git log -1 --pretty=format:"%h %s"`
-          echo "DEBUG: ${lastcommit}"
           git stash
           git checkout gh-storage
           git pull
