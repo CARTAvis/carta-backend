@@ -78,7 +78,7 @@ Two submodules are not required for building the main source:
 You can fetch the submodule contents when you clone the repository:
 ```shell
 git clone --recurse-submodules https://github.com/CARTAvis/carta-backend.git
-carta-backend
+cd carta-backend
 ```
 
 Alternatively, you can update them after cloning:
