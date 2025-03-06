@@ -97,6 +97,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           recreate: true
+          skip_unchanged: true
           path: code-coverage-results.md
 
       - name: Download and store coverage badge when pushing to dev
