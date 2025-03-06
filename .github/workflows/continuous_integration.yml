@@ -107,15 +107,15 @@ jobs:
       - name: Store coverage badge in gh-storage branch
         shell: bash
         run: |
-          set -x
           git config --global user.email "backend.ci@github.action"
           git config --global user.name "Backend CI"
           git add badge-coverage.svg
           git stash
           git fetch origin gh-storage
           git checkout gh-storage
+          git pull
           git checkout stash@{0} -- badge-coverage.svg
-          git diff --staged --quiet || { git commit -m "Updated coverage" && git pull && git push; }
+          git diff --staged --quiet || { git commit -m "Updated coverage" && git push; }
 
 
   macOS-12:
