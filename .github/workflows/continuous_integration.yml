@@ -105,10 +105,10 @@ jobs:
           head -n1 code-coverage-results.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
 
       - name: Store coverage badge in gh-storage branch
-        uses: sylvanld/action-storage@v1
-        with:
-          src: badge-coverage.svg
-          dst: badge-coverage.svg
+        shell: bash
+        run: |
+          pwd
+          ls
 
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
