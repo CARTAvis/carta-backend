@@ -10,11 +10,19 @@ In contrast to the conventional approach of rendering an image on the backend an
 
 # Installation
 
+If you are looking for releases of the CARTA application for desktop users, please refer to the [main website](https://cartavis.org/#download).
+
+If you would like to set up CARTA in a multi-user environment, we recommend installing the [CARTA controller](https://carta-controller.readthedocs.io). We provide detailed instructions for a complete deployment of all components on supported platforms.
+
+The rest of this document describes installation of **the backend component only** (for use with a separately installed frontend, or with the controller).
+
 ## Linux packages
 
 We provide packages of the backend and all required dependencies for recent Ubuntu LTS releases and recent AlmaLinux releases. They should also work on equivalent distributions closely based on Ubuntu and on RHEL.
 
-If you would like to set up CARTA in a multi-user environment, we recommend installing the [CARTA controller](https://carta-controller.readthedocs.io).
+The packages install a launcher which allows CARTA to be started from the desktop environment's menu.
+
+The beta package saves user configuration to `.carta-beta` rather than `.carta`.
 
 ### Ubuntu
 
@@ -23,15 +31,13 @@ sudo add-apt-repository ppa:cartavis-team/carta
 sudo apt-get update
 
 # install the latest beta version of the backend only
-# (suitable for use with the CARTA controller)
 sudo apt-get install carta-backend-beta
 
-# OR install the latest beta version of the backend and frontend
-# (suitable for a desktop install)
-sudo apt-get install carta-beta
+# OR install the latest stable release version of the backend only
+sudo apt-get install carta-backend
 ```
 
-The package installs a launcher which allows CARTA to be started from the desktop environment's menu.
+The beta and stable Ubuntu packages use the same install locations, and only one can be installed at a time.
 
 ### AlmaLinux (and equivalents)
 
@@ -41,17 +47,17 @@ sudo dnf install 'dnf-command(copr)'
 sudo dnf copr enable cartavis/carta
 
 # install the latest beta version of the backend only
-# (suitable for use with the CARTA controller)
 sudo dnf install carta-backend-beta
 
-# OR install the latest beta version of the backend and frontend
-# (suitable for a desktop install)
-sudo dnf install carta-beta
+# install the latest stable release version of the backend only
+sudo dnf install carta-backend
 ```
+
+The RPM beta package uses a custom install location in `/opt`, and can be installed in parallel with the stable package.
 
 ## Building the development version from source
 
-### Submodules
+### Obtaining the source
 
 This repository includes several dependencies as submodules:
 * [The protocol buffer definitions](carta-protobuf) for communication between the backend and frontend.
@@ -65,7 +71,18 @@ Two submodules are not required for building the main source:
 * [image-generator](https://github.com/idia-astro/image-generator) for creating FITS images (from the unit tests; soon to be deprecated)
 * [Doxygen Awesome](https://github.com/jothepro/doxygen-awesome-css), a Doxygen stylesheet (for generating the developer documentation)
 
-You can fetch the submodule contents when you clone the repository (`git clone --recurse-submodules https://github.com/CARTAvis/carta-backend.git`), or after cloning (`git submodule update --init --recursive` inside the directory).
+You can fetch the submodule contents when you clone the repository:
+```shell
+git clone --recurse-submodules https://github.com/CARTAvis/carta-backend.git
+carta-backend
+```
+
+Alternatively, you can update them after cloning:
+```shell
+git clone https://github.com/CARTAvis/carta-backend.git
+cd carta-backend
+git submodule update --init --recursive
+```
 
 If you use `git pull` to update an existing checkout of this repository, make sure that you also use `git submodule update` to fetch the appropriate versions of the submodule code.
 
@@ -95,7 +112,10 @@ cd build
 cmake ..
 make -j8
 ```
+
 # Running the backend process
+
+The packages provide a `carta` script which wraps the `carta_backend` executable. Both are available on the path. In the source build, the `carta_backend` executable can be found in the `build` directory.
 
 Command-line arguments are in the format `--arg=value` or `--arg value`. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `--frontend_folder` argument. Run `carta_backend --help` for a full list of options.
 
