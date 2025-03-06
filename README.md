@@ -4,7 +4,11 @@
 
 This is the backend component of the [Cube Analysis and Rendering Tool for Astronomy](https://cartavis.org/), a web-based application for viewing radio astronomy images in CASA, FITS, MIRIAD, and HDF5[^1] formats.
 
-In contrast to the conventional approach of rendering an image on the backend and sending a rendered image to the frontend client, the backend sends a compressed subset of the data, and the frontend renders the image efficiently on the GPU using WebGL and GLSL shaders. While the data is compressed using the lossy ZFP algorithm, the compression artefacts are generally much less noticeable than those cropping up from full-colour JPEG compression. While data sizes depend on the compression quality used, sizes are [comparable](https://docs.google.com/spreadsheets/d/1lp1687TL0bYmbM3jGyjuPd9dYZnrAYGnLIQXWVpnmS0/edit?usp=sharing) with sizes of compressed JPEG images with a 95% quality setting, depending on the colour map used to generate the JPEG image. PNG compression is generally a factor of 2 larger than the ZFP compressed data.
+Rather than rendering each image and sending it to the frontend client (which is the conventional approach), the backend sends a compressed subset of the data, and the frontend renders the image efficiently on the GPU using WebGL and GLSL shaders.
+
+Although the data is compressed with the lossy ZFP algorithm, the compression artefacts are generally much less noticeable than those produced by full-colour JPEG compression.
+
+While data sizes depend on compression quality, sizes are [comparable](https://docs.google.com/spreadsheets/d/1lp1687TL0bYmbM3jGyjuPd9dYZnrAYGnLIQXWVpnmS0/edit?usp=sharing) with sizes of compressed JPEG images with a 95% quality setting (depending on the colour map used to generate the JPEG image). PNG compression is generally a factor of 2 larger than the ZFP-compressed data.
 
 [^1] using the [custom IDIA schema](https://github.com/CARTAvis/fits2idia).
 
