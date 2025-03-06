@@ -107,6 +107,8 @@ jobs:
       - name: Store coverage badge in gh-storage branch
         shell: bash
         run: |
+          git config --global user.email "backend.ci@github.action"
+          git config --global user.name "Backend CI"
           git add badge-coverage.svg
           git stash
           git switch --orphan gh-storage || git checkout gh-storage
