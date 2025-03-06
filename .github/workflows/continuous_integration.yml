@@ -115,7 +115,7 @@ jobs:
           git fetch origin gh-storage
           git checkout gh-storage
           git checkout stash@{0} -- badge-coverage.svg
-          git diff --staged --quiet || { git commit -m "Updated coverage" && git pull && git push }
+          git diff --staged --quiet || { git commit -m "Updated coverage" && git pull && git push; }
 
 
   macOS-12:
