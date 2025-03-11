@@ -2073,8 +2073,11 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
         // make compression
 
-        compression_type = CARTA::CompressionType::ZFP;
-        compression_quality = 20; // high is 32, use 20 for now
+        // compression_type = CARTA::CompressionType::ZFP;
+        // compression_quality = 20; // high is 32, use 20 for now
+        compression_type = CARTA::CompressionType::NONE;
+        compression_quality = -1;
+        
         std::vector<char> compression_buffer;
         size_t compressed_size;
         // get data and transform to vector
@@ -2089,26 +2092,51 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
             std::cout << "width: " << width << std::endl;
             std::cout << "height: " << height << std::endl;
+            std::cout << "depth: " <<  num_slices << std::endl;
         }
 
-        auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+        CARTA::Render3DData data_message;
+        data_message.set_file_id(file_id);
+        data_message.set_region_id(region_id);
+        data_message.set_viewer_id(viewer_id);
+        data_message.set_width(width);
+        data_message.set_height(height);
+        data_message.set_depth(num_slices);
+        data_message.set_progress(progress);
 
-        if (is == 0) {
-            std::cout << "nan_encodings size: " << nan_encodings.size() << std::endl;
-        }	
+        if (compression_type == CARTA::CompressionType::NONE) {
 
-        Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
+            data_message.set_image_data(image_data.data(), image_data.size());
+            data_message.set_compression_type(compression_type);
+            data_message.set_compression_quality(compression_quality);
+            
+            cb(data_message);
 
-        if (is == 0) {
-            std::cout << "image_data size: " << image_data.size() << std::endl;
-            std::cout << "compressed_size: " << compressed_size << std::endl;
+        } else {
+            auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+
+            if (is == 0) {
+                std::cout << "nan_encodings size: " << nan_encodings.size() << std::endl;
+            }	
+
+            Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
+
+            if (is == 0) {
+                std::cout << "image_data size: " << image_data.size() << std::endl;
+                std::cout << "compressed_size: " << compressed_size << std::endl;
+            }
+    
+            // auto data_message = Message::Render3DData(file_id, region_id,
+            //             viewer_id, compression_buffer, compressed_size, nan_encodings, width, height, num_slices, compression_type,
+            //             compression_quality, progress);
+
+            data_message.set_image_data(compression_buffer.data(), compressed_size);
+            data_message.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+            data_message.set_compression_type(compression_type);
+            data_message.set_compression_quality(compression_quality);
+
+            cb(data_message);
         }
-
-        auto data_message = Message::Render3DData(
-                    viewer_id, compression_buffer, compressed_size, nan_encodings, compression_type,
-                    compression_quality, progress);
-
-        cb(data_message);
 
         if (progress >= 1.0) {
             std::cout << "3D rendering data stream sent." << std::endl;
