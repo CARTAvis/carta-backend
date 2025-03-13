@@ -31,6 +31,14 @@ var NAVTREE =
       [ "Building with ASAN flags", "md_docs_2static_2faq.html#autotoc_md1", null ],
       [ "Checking and fixing code format", "md_docs_2static_2faq.html#autotoc_md2", null ]
     ] ],
+    [ "Release checklist", "md_docs_2static_2release.html", [
+      [ "Beta release", "md_docs_2static_2release.html#autotoc_md4", null ],
+      [ "After beta release", "md_docs_2static_2release.html#autotoc_md5", null ],
+      [ "Additional beta release", "md_docs_2static_2release.html#autotoc_md6", null ],
+      [ "Final release", "md_docs_2static_2release.html#autotoc_md7", null ],
+      [ "After final release", "md_docs_2static_2release.html#autotoc_md8", null ],
+      [ "Point release", "md_docs_2static_2release.html#autotoc_md9", null ]
+    ] ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
@@ -87,10 +95,10 @@ var NAVTREEINDEX =
 "classcarta_1_1SessionManager.html",
 "classcarta_1_1TableView.html#a4c0a426836a7dee8a06f76422adb000e",
 "classcarta_1_1queuing__rw__mutex__scoped.html#a9b00c36da22c7557c162cf9df811c1f0",
-"structAxesInfo.html",
-"structcarta_1_1FitData.html#a60f3e4db41efafd0df57bc9fea53219d",
-"structcarta_1_1RegionProperties.html#ac17aae501c41e6b93c67ed23d1759b94",
-"structcarta_1_1VectorField_1_1CalcPi.html"
+"namespacemembers_vars.html",
+"structcarta_1_1FitData.html",
+"structcarta_1_1RegionHistogramConfig.html#ad8ed1b8fb32ff14b4f2720d7d78b358c",
+"structcarta_1_1VectorField_1_1CalcFpi.html#ae07f0d1b01bfc287548533884d34bfea"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
