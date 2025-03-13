@@ -97,7 +97,24 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           recreate: true
+          skip_unchanged: true
           path: code-coverage-results.md
+
+      - name: Download and store coverage badge when pushing to dev
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        shell: bash
+        run: |
+          head -n1 code-coverage-results.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
+          git config --global user.email "backend.ci@github.action"
+          git config --global user.name "Backend CI"
+          git add badge-coverage.svg
+          lastcommit=`git log -1 --pretty=format:"%h %s"`
+          git stash
+          git checkout gh-storage
+          git pull
+          git checkout stash@{0} -- badge-coverage.svg
+          git diff --staged --quiet || { git commit -m "Updated coverage @ ${lastcommit}" && git push; }
+
 
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
