@@ -80,7 +80,11 @@ public:
     // Load image cache for default_z, except for PV preview image which needs cube
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
         bool load_image_cache = true);
-    ~Frame(){};
+    ~Frame() {
+        // unique_ptr deletes managed pointer but we need to delete array
+        auto image_cache_ptr = _image_cache.release();
+        delete [] image_cache_ptr;
+    }
 
     bool IsValid();
     std::string GetErrorMessage();
