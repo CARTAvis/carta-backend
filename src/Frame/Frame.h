@@ -83,7 +83,7 @@ public:
     ~Frame() {
         // unique_ptr deletes managed pointer but we need to delete array
         auto image_cache_ptr = _image_cache.release();
-        delete [] image_cache_ptr;
+        delete[] image_cache_ptr;
     }
 
     bool IsValid();
