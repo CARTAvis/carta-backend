@@ -48,7 +48,7 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
-        TestImage.cc
+        TestUtilImage.cc
         TestImageFitting.cc
         TestMain.cc
         TestMoment.cc
@@ -63,6 +63,7 @@ set(TEST_SOURCES
         TestRegionSpectralProfiles.cc
         TestRegionStats.cc
         TestRestApi.cc
+        TestUtilString.cc
         TestTileEncoding.cc
         TestUtil.cc
         TestVoTable.cc)
