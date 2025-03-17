@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Fix empty response to HTTP request with underscores in header names ([#1406](https://github.com/CARTAvis/carta-backend/issues/1406))
+* Fix memory leak in Frame for PV and other images ([#1289](https://github.com/CARTAvis/carta-backend/issues/1289))
 
 ## [5.0.0-beta.1]
 
