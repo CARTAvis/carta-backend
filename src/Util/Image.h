@@ -86,7 +86,7 @@ struct AxisRange {
         }
         return false;
     }
-    bool is_in_range(int val) {
+    bool is_in_range(int val) const {
         return val >= from && val <= to;
     }
 };

@@ -48,6 +48,7 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
+        TestImage.cc
         TestImageFitting.cc
         TestMain.cc
         TestMoment.cc
