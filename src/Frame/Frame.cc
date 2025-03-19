@@ -38,6 +38,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _tile_cache(0),
       _z_index(default_z),
       _stokes_index(DEFAULT_STOKES),
+      _image_cache_size(0),
       _image_cache_valid(false),
       _tile_pool(std::make_shared<TilePool>()),
       _use_tile_cache(false),
@@ -388,8 +389,13 @@ bool Frame::FillImageCache() {
 
     Timer t;
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    _image_cache_size = stokes_slicer.slicer.length().product();
-    _image_cache = std::make_unique<float[]>(_image_cache_size);
+    auto frame_size = stokes_slicer.slicer.length().product();
+    if (frame_size != _image_cache_size) {
+        _image_cache.reset();
+        _image_cache_size = frame_size;
+        _image_cache = std::make_unique<float[]>(_image_cache_size);
+    }
+
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
