@@ -28,7 +28,6 @@
 #include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
-#include "Logger/Logger.h"
 #include "Region/Region.h"
 #include "ThreadingManager/Concurrency.h"
 #include "Util/FileSystem.h"
