@@ -81,7 +81,7 @@ public:
     // Load image cache for default_z, except for PV preview image which needs cube
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
         bool load_image_cache = true);
-    ~Frame() {};
+    ~Frame(){};
 
     bool IsValid();
     std::string GetErrorMessage();
