@@ -89,7 +89,7 @@ void SessionManager::OnConnect(WSType* ws) {
     // create a Session
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
     _sessions[session_id] = new Session(ws, loop, session_id, address, _file_list_handler);
-    _real_session_id[session->GetId()] = session_id;
+    _real_session_id[_sessions[session_id]->GetId()] = session_id;
     _sessions[session_id]->IncreaseRefCount();
 
     spdlog::info("Session {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
