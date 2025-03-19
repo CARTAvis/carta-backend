@@ -28,6 +28,7 @@
 #include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
+#include "Logger/Logger.h"
 #include "Region/Region.h"
 #include "ThreadingManager/Concurrency.h"
 #include "Util/FileSystem.h"
@@ -80,11 +81,7 @@ public:
     // Load image cache for default_z, except for PV preview image which needs cube
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
         bool load_image_cache = true);
-    ~Frame() {
-        // unique_ptr deletes managed pointer but we need to delete array
-        auto image_cache_ptr = _image_cache.release();
-        delete[] image_cache_ptr;
-    }
+    ~Frame() {};
 
     bool IsValid();
     std::string GetErrorMessage();
