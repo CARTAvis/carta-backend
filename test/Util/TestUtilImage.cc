@@ -9,9 +9,7 @@
 
 #include "Util/Image.h"
 
-class ImageUtilTest : public ::testing::Test {
-
-};
+class ImageUtilTest : public ::testing::Test {};
 
 TEST_F(ImageUtilTest, DefaultAxisRangeConstructor) {
     AxisRange range;
@@ -36,7 +34,7 @@ TEST_F(ImageUtilTest, RangeEqualityOperator) {
     AxisRange range2(3, 7);
     AxisRange range3(4, 7);
     AxisRange range4(3, 8);
-    
+
     EXPECT_TRUE(range1 == range2);
     EXPECT_FALSE(range1 == range3);
     EXPECT_FALSE(range1 == range4);
@@ -45,7 +43,7 @@ TEST_F(ImageUtilTest, RangeEqualityOperator) {
 TEST_F(ImageUtilTest, RangeInequalityOperator) {
     AxisRange range1(3, 7);
     AxisRange range2(4, 7);
-    
+
     EXPECT_TRUE(range1 != range2);
     EXPECT_FALSE(range1 != range1);
 }
@@ -69,8 +67,8 @@ TEST_F(ImageUtilTest, NegativeAxisRange) {
 }
 
 TEST_F(ImageUtilTest, ReversedAxisRange) {
-    AxisRange range(8, 3);  // This might indicate an invalid range
-    EXPECT_FALSE(range.is_in_range(5));  // Should be out-of-range in a valid case
+    AxisRange range(8, 3);              // This might indicate an invalid range
+    EXPECT_FALSE(range.is_in_range(5)); // Should be out-of-range in a valid case
 }
 
 TEST_F(ImageUtilTest, LargeAxisRangeValues) {
@@ -112,9 +110,9 @@ TEST_F(ImageUtilTest, ToIndexConversion) {
     PointXy p(3.6, 7.4);
     int x_index, y_index;
     p.ToIndex(x_index, y_index);
-    
-    EXPECT_EQ(x_index, 4);  // std::round(3.6) == 4
-    EXPECT_EQ(y_index, 7);  // std::round(7.4) == 7
+
+    EXPECT_EQ(x_index, 4); // std::round(3.6) == 4
+    EXPECT_EQ(y_index, 7); // std::round(7.4) == 7
 }
 
 TEST_F(ImageUtilTest, InImage) {
@@ -150,8 +148,8 @@ TEST_F(ImageUtilTest, ConstructorWithRenderAndSpatial) {
     EXPECT_EQ(axes.spatial_x, 4);
     EXPECT_EQ(axes.spatial_y, 5);
     EXPECT_EQ(axes.spectral, 6);
-    EXPECT_EQ(axes.z, -1);  // Default value
-    EXPECT_EQ(axes.stokes, -1);  // Default value
+    EXPECT_EQ(axes.z, -1);      // Default value
+    EXPECT_EQ(axes.stokes, -1); // Default value
 }
 
 TEST_F(ImageUtilTest, ConstructorWithRenderSpatialSpectralZStokes) {
@@ -175,7 +173,7 @@ TEST_F(ImageUtilTest, ConstructorWithRenderSpatialSpectralZStokes) {
 TEST_F(ImageUtilTest, RenderMethod) {
     AxesInfo axes({10, 20}, {30, 40}, 50);
     std::vector<int> render = axes.Render();
-    
+
     EXPECT_EQ(render.size(), 2);
     EXPECT_EQ(render[0], 10);
     EXPECT_EQ(render[1], 20);
@@ -184,7 +182,7 @@ TEST_F(ImageUtilTest, RenderMethod) {
 TEST_F(ImageUtilTest, SpatialMethod) {
     AxesInfo axes({10, 20}, {30, 40}, 50);
     std::vector<int> spatial = axes.Spatial();
-    
+
     EXPECT_EQ(spatial.size(), 2);
     EXPECT_EQ(spatial[0], 30);
     EXPECT_EQ(spatial[1], 40);
@@ -194,7 +192,7 @@ TEST_F(ImageUtilTest, SpatialMethod) {
 // TEST_F(ImageUtilTest, ConstructorWithEmptyVectors) {
 //     std::vector<int> empty_render;
 //     std::vector<int> empty_spatial;
-    
+
 //     EXPECT_THROW(AxesInfo axes(empty_render, empty_spatial, 5), std::out_of_range);
 // }
 
@@ -202,19 +200,19 @@ TEST_F(ImageUtilTest, SpatialMethod) {
 // TEST_F(ImageUtilTest, ConstructorWithSingleElementVectors) {
 //     std::vector<int> render = {5};
 //     std::vector<int> spatial = {10};
-    
+
 //     EXPECT_THROW(AxesInfo axes(render, spatial, 15), std::out_of_range);
 // }
 
 // Edge case: Ensure constructor handles oversized vectors safely
 TEST_F(ImageUtilTest, ConstructorWithOversizedVectors) {
     std::vector<int> render = {1, 2, 3};  // Extra element
-    std::vector<int> spatial = {4, 5, 6};  // Extra element
+    std::vector<int> spatial = {4, 5, 6}; // Extra element
     int spectral = 7;
-    
+
     AxesInfo axes(render, spatial, spectral);
-    
-    EXPECT_EQ(axes.x, 1);  // Should still take first element
+
+    EXPECT_EQ(axes.x, 1); // Should still take first element
     EXPECT_EQ(axes.y, 2);
     EXPECT_EQ(axes.spatial_x, 4);
     EXPECT_EQ(axes.spatial_y, 5);
@@ -224,7 +222,7 @@ TEST_F(ImageUtilTest, ConstructorWithOversizedVectors) {
 TEST_F(ImageUtilTest, RenderMethodOnDefault) {
     AxesInfo axes;
     std::vector<int> render = axes.Render();
-    
+
     EXPECT_EQ(render.size(), 2);
     EXPECT_EQ(render[0], -1);
     EXPECT_EQ(render[1], -1);
@@ -234,7 +232,7 @@ TEST_F(ImageUtilTest, RenderMethodOnDefault) {
 TEST_F(ImageUtilTest, SpatialMethodOnDefault) {
     AxesInfo axes;
     std::vector<int> spatial = axes.Spatial();
-    
+
     EXPECT_EQ(spatial.size(), 2);
     EXPECT_EQ(spatial[0], -1);
     EXPECT_EQ(spatial[1], -1);
@@ -250,7 +248,7 @@ TEST_F(ImageUtilTest, DefaultDimsInfoConstructor) {
 }
 
 TEST_F(ImageUtilTest, FromAxisValidIndex) {
-    casacore::IPosition shape(5, 10, 20, 30, 40, 50);  // Example shape
+    casacore::IPosition shape(5, 10, 20, 30, 40, 50); // Example shape
     EXPECT_EQ(DimsInfo::FromAxis(0, shape), 10);
     EXPECT_EQ(DimsInfo::FromAxis(1, shape), 20);
     EXPECT_EQ(DimsInfo::FromAxis(2, shape), 30);
@@ -260,7 +258,7 @@ TEST_F(ImageUtilTest, FromAxisValidIndex) {
 
 TEST_F(ImageUtilTest, FromAxisNegativeIndex) {
     casacore::IPosition shape(5, 10, 20, 30, 40, 50);
-    EXPECT_EQ(DimsInfo::FromAxis(-1, shape), 1);  // Negative index should return 1
+    EXPECT_EQ(DimsInfo::FromAxis(-1, shape), 1); // Negative index should return 1
     EXPECT_EQ(DimsInfo::FromAxis(-5, shape), 1);
 }
 

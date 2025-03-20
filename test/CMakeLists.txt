@@ -48,7 +48,6 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
-        TestUtilImage.cc
         TestImageFitting.cc
         TestMain.cc
         TestMoment.cc
@@ -63,9 +62,11 @@ set(TEST_SOURCES
         TestRegionSpectralProfiles.cc
         TestRegionStats.cc
         TestRestApi.cc
-        TestUtilString.cc
         TestTileEncoding.cc
-        TestUtil.cc
+        Util/TestUtilCasacore.cc
+        Util/TestUtilFile.cc
+        Util/TestUtilImage.cc
+        Util/TestUtilString.cc
         TestVoTable.cc)
 
 # Add all the sources in the main project and remove Main.cc
