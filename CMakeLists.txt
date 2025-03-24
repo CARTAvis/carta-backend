@@ -175,6 +175,10 @@ include_directories(${CMAKE_SOURCE_DIR}/third-party/pugixml/src)
 #spdlog
 add_subdirectory(third-party/spdlog)
 
+# JSON schemas
+add_subdirectory(schemas)
+include_directories(${CMAKE_SOURCE_DIR}/schemas)
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
