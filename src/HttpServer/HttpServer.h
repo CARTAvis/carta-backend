@@ -24,12 +24,6 @@ namespace carta {
 #define HTTP_500 "500 Internal Server Error"
 #define HTTP_501 "501 Not Implemented"
 
-// Schema URLs
-#define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preferences_schema_2.json"
-#define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
-#define CARTA_SNIPPET_SCHEMA_URL "https://cartavis.github.io/schemas/snippet_schema_1.json"
-#define CARTA_WORKSPACE_SCHEMA_URL "https://cartavis.github.io/schemas/workspace_schema_1.json"
-
 typedef uWS::HttpRequest Req;
 typedef uWS::HttpResponse<false> Res;
 typedef std::function<bool(int&, uint32_t&, std::string&, std::string&, std::string&, bool&, std::string&, ScriptingResponseCallback,
@@ -99,6 +93,8 @@ private:
     std::string _url_prefix;
     std::shared_ptr<SessionManager> _session_manager;
     static uint32_t _scripting_request_id;
+
+    std::unordered_map<std::string, nlohmann::json> _schemas;
 };
 
 } // namespace carta

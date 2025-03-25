@@ -15,6 +15,10 @@
 #include "MimeTypes.h"
 #include "Util/String.h"
 #include "Util/Token.h"
+#include "schemas/layout_schema_2.json.h"
+#include "schemas/preferences_schema_2.json.h"
+#include "schemas/snippet_schema_1.json.h"
+#include "schemas/workspace_schema_1.json.h"
 
 #if defined(__APPLE__)
 #define st_mtim st_mtimespec
@@ -25,12 +29,8 @@ using json = nlohmann::json;
 namespace carta {
 
 const std::string SUCCESS_STRING = json({{"success", true}}).dump();
-const std::string LAYOUT = "layout";
-const std::string SNIPPET = "snippet";
-const std::string WORKSPACE = "workspace";
-
-const std::unordered_map<std::string, std::string> SCHEMA_URLS = {
-    {LAYOUT, CARTA_LAYOUT_SCHEMA_URL}, {SNIPPET, CARTA_SNIPPET_SCHEMA_URL}, {WORKSPACE, CARTA_WORKSPACE_SCHEMA_URL}};
+const std::unordered_set<std::string> ALL_DATABASE_TYPES = {"preferences", "layout", "snippet", "workspace"};
+const std::unordered_set<std::string> OBJECT_TYPES = {"layout", "snippet", "workspace"};
 
 uint32_t HttpServer::_scripting_request_id = 0;
 
@@ -47,6 +47,13 @@ HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path
       _enable_scripting(enable_scripting),
       _enable_runtime_config(enable_runtime_config),
       _url_prefix(url_prefix) {
+    if (_enable_database) {
+        _schemas["preferences"] = json::parse(CARTASCHEMA::preferences_schema_2);
+        _schemas["layout"] = json::parse(CARTASCHEMA::layout_schema_2);
+        _schemas["snippet"] = json::parse(CARTASCHEMA::snippet_schema_1);
+        _schemas["workspace"] = json::parse(CARTASCHEMA::workspace_schema_1);
+    }
+
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 
@@ -73,8 +80,7 @@ void HttpServer::RegisterRoutes() {
         app.put(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleSetPreferences(res, req); });
         app.del(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleClearPreferences(res, req); });
 
-        for (const auto& elem : SCHEMA_URLS) {
-            const auto& object_type = elem.first;
+        for (const auto& object_type : OBJECT_TYPES) {
             app.get(fmt::format("{}/api/database/list/{}s", _url_prefix, object_type),
                 [&](auto res, auto req) { HandleGetObjectList(object_type, res, req); });
             app.get(fmt::format("{}/api/database/{}s", _url_prefix, object_type),
@@ -251,7 +257,7 @@ bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
         fs::create_directories(preferences_path.parent_path().string());
         std::ofstream file(preferences_path.string());
         // Ensure correct schema and version values are written
-        obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
+        obj["$schema"] = _schemas["preferences"]["$id"];
         obj["version"] = 2;
         auto json_string = obj.dump(4);
         file << json_string;
@@ -588,8 +594,8 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
         fs::create_directories(object_path.parent_path());
         std::ofstream file(object_path.string());
         // Ensure correct schema value is written
-        if (SCHEMA_URLS.count(object_type)) {
-            obj["$schema"] = SCHEMA_URLS.at(object_type);
+        if (OBJECT_TYPES.count(object_type)) {
+            obj["$schema"] = _schemas[object_type]["$id"];
         } else {
             spdlog::error("Unknown object types: {}.", object_type);
             return false;
