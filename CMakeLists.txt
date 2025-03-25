@@ -182,6 +182,7 @@ include_directories(${CMAKE_SOURCE_DIR}/schemas)
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
+        carta-schemas
         ${PROTOBUF_LIBRARY}
         uSockets
         uuid
