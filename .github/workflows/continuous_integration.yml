@@ -35,6 +35,7 @@ jobs:
       - name: Build backend
         shell: bash
         run: |
+          cat .gitmodules
           git submodule update --init --recursive
           mkdir build && cd build
           cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
