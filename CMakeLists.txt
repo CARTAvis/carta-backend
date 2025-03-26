@@ -184,7 +184,7 @@ set(JSON_Install OFF CACHE INTERNAL "")
 add_subdirectory(third-party/nlohmann_json)
 
 # json-schema-validator
-set(nlohmann_json_VERSION "v3.9.1")
+set(nlohmann_json_VERSION "v3.11.3")
 add_subdirectory(third-party/json-schema-validator)
 
 set(LINK_LIBS
