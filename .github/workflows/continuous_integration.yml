@@ -37,7 +37,6 @@ jobs:
       - name: Build backend
         shell: bash
         run: |
-          #git submodule update --init --recursive
           mkdir build && cd build
           cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
                    -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer --coverage' \
