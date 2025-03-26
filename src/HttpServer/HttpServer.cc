@@ -52,6 +52,17 @@ HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path
         _schemas["layout"] = json::parse(CARTASCHEMA::layout_schema_2);
         _schemas["snippet"] = json::parse(CARTASCHEMA::snippet_schema_1);
         _schemas["workspace"] = json::parse(CARTASCHEMA::workspace_schema_1);
+
+        auto content_check = [](const std::string& encoding, const std::string& mediaType, const json& instance) {
+            // TODO implement this
+        };
+
+        for (const auto& database_type : ALL_DATABASE_TYPES) {
+            // We need the content check for workspaces; may need it for other schemas in future
+            _validators.emplace(database_type,
+                nlohmann::json_schema::json_validator{nullptr, nlohmann::json_schema::default_string_format_check, content_check});
+            _validators[database_type].set_root_schema(_schemas[database_type]);
+        }
     }
 
     if (_enable_frontend && !root_folder.empty()) {

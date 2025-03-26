@@ -11,6 +11,7 @@
 #include <string>
 
 #include <uWebSockets/App.h>
+#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include "Session/SessionManager.h"
@@ -95,6 +96,7 @@ private:
     static uint32_t _scripting_request_id;
 
     std::unordered_map<std::string, nlohmann::json> _schemas;
+    std::unordered_map<std::string, nlohmann::json_schema::json_validator> _validators;
 };
 
 } // namespace carta

@@ -100,7 +100,7 @@ public:
         workspaces_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/workspaces";
 
         example_options = R"({
-            "$schema": "https://cartavis.github.io/schemas/preferences_schema_2.json",
+            "$schema": "https://cartavis.org/schemas/preferences_schema_2.json",
             "version": 2,
             "astGridVisible": false,
             "beamColor": "#8A9BA8",
@@ -110,7 +110,7 @@ public:
         })"_json;
 
         example_layout = R"({
-            "$schema": "https://cartavis.github.io/schemas/layout_schema_2.json",
+            "$schema": "https://cartavis.org/schemas/layout_schema_2.json",
             "layoutVersion": 2,
             "docked": {
                 "type": "stack",
@@ -126,7 +126,7 @@ public:
         })"_json;
 
         example_snippet = R"({
-            "$schema": "https://cartavis.github.io/schemas/snippet_schema_1.json",
+            "$schema": "https://cartavis.org/schemas/snippet_schema_1.json",
             "snippetVersion": 1,
             "frontendVersion": "v3.0.0-beta.0",
             "tags": ["example"],
@@ -136,7 +136,7 @@ public:
         })"_json;
 
         example_workspace = R"({
-            "$schema": "https://cartavis.github.io/schemas/workspace_schema_1.json",
+            "$schema": "https://cartavis.org/schemas/workspace_schema_1.json",
             "workspaceVersion": 1,
             "frontendVersion": "v3.0.0-beta.0",
             "description": "Example workspace",

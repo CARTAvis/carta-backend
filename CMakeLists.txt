@@ -178,6 +178,15 @@ add_subdirectory(third-party/spdlog)
 # JSON schemas
 add_subdirectory(schemas)
 
+# nlohmann/json
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_Install OFF CACHE INTERNAL "")
+add_subdirectory(third-party/nlohmann_json)
+
+# json-schema-validator
+set(nlohmann_json_VERSION "v3.9.1")
+add_subdirectory(third-party/json-schema-validator)
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
@@ -190,6 +199,8 @@ set(LINK_LIBS
         cfitsio
         wcs
         gsl
+        nlohmann_json::nlohmann_json
+        nlohmann_json_schema_validator
         casa_casa
         casa_coordinates
         casa_tables
