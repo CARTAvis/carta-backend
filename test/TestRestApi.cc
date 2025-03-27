@@ -142,19 +142,25 @@ public:
             "description": "Example workspace",
             "files": [{
                 "id": 0,
-                "path": "test/A.fits",
+                "directory": "test",
+                "filename": "A.fits",
                 "hdu": "0",
-                "spatialMatching": true,
                 "renderConfig": {
                   "colormap": "magma"
                 }
             }, {
                 "id": 1,
-                "path": "test/B.fits",
-                "spatialMatching": true
+                "directory": "test",
+                "filename": "B.fits",
+                "references": {
+                    "spatial": 0,
+                    "spectral": 0
+                }
             }],
-            "spatialReference": 0,
-            "spectralReference": 0
+            "references": {
+                "spatial": 0,
+                "spectral": 0
+            }
         })"_json;
     }
     void SetUp() {
@@ -279,16 +285,16 @@ TEST_F(RestApiTest, DeletePrefsKeyList) {
 TEST_F(RestApiTest, SetPrefsReadOnly) {
     json keys = {{"keys"}, example_options};
     auto status = _frontend_server_read_only_mode->UpdatePreferencesFromString(keys.dump());
-    EXPECT_EQ(status, HTTP_500);
+    EXPECT_EQ(status, HTTP_400);
 
     WriteDefaultPrefs();
     keys = {{"keys", {"beamType"}}};
     status = _frontend_server_read_only_mode->ClearPreferencesFromString(keys.dump());
-    EXPECT_EQ(status, HTTP_500);
+    EXPECT_EQ(status, HTTP_400);
 
     keys = {{"keys", {"beamType", "beamColor"}}};
     status = _frontend_server_read_only_mode->ClearPreferencesFromString(keys.dump());
-    EXPECT_EQ(status, HTTP_500);
+    EXPECT_EQ(status, HTTP_400);
 }
 
 TEST_F(RestApiTest, EmptyStartingLayouts) {

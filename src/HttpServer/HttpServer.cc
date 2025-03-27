@@ -243,25 +243,28 @@ void HttpServer::AddCorsHeaders(Res* res) {
 
 json HttpServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
+    json obj = {};
+
+    if (!fs::exists(preferences_path)) {
+        return {{"version", 1}};
+    }
+
+    std::ifstream file(preferences_path.string());
+    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
     try {
-        if (!fs::exists(preferences_path)) {
-            return {{"version", 1}};
-        }
-        std::ifstream file(preferences_path.string());
-        std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        return json::parse(json_string);
+        obj = json::parse(json_string);
+        _validators["preferences"].validate(obj);
     } catch (json::parse_error e) {
         spdlog::warn(e.what());
-        return {};
+    } catch (const std::exception& e) {
+        spdlog::warn(e.what());
     }
+
+    return obj;
 }
 
 bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
-    if (_read_only_mode) {
-        spdlog::warn("Writing preferences file is not allowed in read-only mode");
-        return false;
-    }
-
     auto preferences_path = _config_folder / "preferences.json";
 
     try {
@@ -270,6 +273,7 @@ bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
         // Ensure correct schema and version values are written
         obj["$schema"] = _schemas["preferences"]["$id"];
         obj["version"] = 2;
+        _validators["preferences"].validate(obj);
         auto json_string = obj.dump(4);
         file << json_string;
         return true;
@@ -317,6 +321,11 @@ void HttpServer::HandleGetPreferences(Res* res, Req* req) {
 }
 
 std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing preferences file is not allowed in read-only mode");
+        return HTTP_400;
+    }
+
     try {
         json update_data = json::parse(buffer);
         json existing_data = GetExistingPreferences();
@@ -333,7 +342,7 @@ std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buff
             if (WritePreferencesFile(existing_data)) {
                 return HTTP_200;
             } else {
-                return HTTP_500;
+                return HTTP_400;
             }
         } else {
             return HTTP_200;
@@ -365,6 +374,11 @@ void HttpServer::HandleSetPreferences(Res* res, Req* req) {
 }
 
 std::string_view HttpServer::ClearPreferencesFromString(const std::string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing preferences file is not allowed in read-only mode");
+        return HTTP_400;
+    }
+
     try {
         json post_data = json::parse(buffer);
         auto keys_array = post_data["keys"];
@@ -385,6 +399,8 @@ std::string_view HttpServer::ClearPreferencesFromString(const std::string& buffe
                     spdlog::debug("Cleared {} preferences", modified_key_count);
                     if (WritePreferencesFile(existing_data)) {
                         return HTTP_200;
+                    } else {
+                        return HTTP_400;
                     }
                 } else {
                     return HTTP_200;
@@ -559,6 +575,7 @@ nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, con
             std::ifstream file(object_path);
             std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
             json obj = json::parse(json_string);
+            _validators[object_type].validate(obj);
             return obj;
         }
     } catch (json::exception e) {
@@ -583,6 +600,7 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
                     std::ifstream file(p.path().string());
                     std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
                     json obj = json::parse(json_string);
+                    _validators[object_type].validate(obj);
                     objects[object_name] = obj;
                 }
             } catch (json::exception e) {
@@ -594,11 +612,6 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
 }
 
 bool HttpServer::WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj) {
-    if (_read_only_mode) {
-        spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
-        return false;
-    }
-
     auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
 
     try {
@@ -611,6 +624,8 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
             spdlog::error("Unknown object types: {}.", object_type);
             return false;
         }
+
+        _validators[object_type].validate(obj);
 
         auto json_string = obj.dump(4);
         file << json_string;
@@ -625,6 +640,11 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
 }
 
 std::string_view HttpServer::SetObjectFromString(const std::string& object_type, const std::string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
+        return HTTP_400;
+    }
+
     try {
         std::string field_name = object_type + "Name";
         json post_data = json::parse(buffer);
