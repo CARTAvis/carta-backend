@@ -23,13 +23,13 @@ private:
     fs::path working_directory;
 };
 
-TEST(FileUtilTest, ItemCountValidFolder) {
+TEST_F(FileUtilTest, ItemCountValidFolder) {
     auto pwd = TestRoot();
     EXPECT_EQ(GetNumItems((pwd / "data/tables").string()), 2);
     EXPECT_EQ(GetNumItems((pwd / "data/tables/xml").string()), 6);
 }
 
-TEST(FileUtilTest, ItemCountMissingFolder) {
+TEST_F(FileUtilTest, ItemCountMissingFolder) {
     auto pwd = TestRoot();
     EXPECT_EQ(GetNumItems((pwd / "data/missing_folder").string()), -1);
 }
