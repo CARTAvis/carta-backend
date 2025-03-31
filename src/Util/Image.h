@@ -168,6 +168,7 @@ struct PointXy {
      * @param x_ The x-coordinate.
      * @param y_ The y-coordinate.
      */
+
     PointXy(float x_, float y_) {
         x = x_;
         y = y_;
@@ -199,6 +200,7 @@ struct PointXy {
      * @param x_index Reference to store the x-coordinate index.
      * @param y_index Reference to store the y-coordinate index.
      */
+
     void ToIndex(int& x_index, int& y_index) {
         // convert float to int for index into image data array
         x_index = static_cast<int>(std::round(x));

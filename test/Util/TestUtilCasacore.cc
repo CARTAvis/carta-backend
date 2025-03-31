@@ -5,6 +5,10 @@
 */
 
 #include <gtest/gtest.h>
+#include <filesystem>
+#include <fstream>
+
+namespace fs = std::filesystem;
 
 #include "Util/Casacore.h"
 
@@ -18,11 +22,11 @@ TEST(IsSubdirectoryTest, ValidSubdirectory) {
     std::string top_level = "/tmp";
     std::string starting = "/tmp/test";
 
-    fs::create_directories(starting); // Ensure directory exists
+    fs::create_directories(starting);
 
     EXPECT_TRUE(IsSubdirectory(starting, top_level));
 
-    fs::remove(starting); // Cleanup
+    fs::remove(starting);
 }
 
 TEST(IsSubdirectoryTest, SameDirectory) {
@@ -96,11 +100,11 @@ TEST(CheckFolderPathsTest, ValidPaths) {
     std::string top_level = "/tmp";
     std::string starting = "/tmp/test";
 
-    fs::create_directories(starting); // Ensure directory exists
+    fs::create_directories(starting);
 
     EXPECT_TRUE(CheckFolderPaths(top_level, starting));
 
-    fs::remove(starting); // Cleanup
+    fs::remove(starting);
 }
 
 TEST(CheckFolderPathsTest, NonExistentStartingDirectory) {
@@ -166,7 +170,85 @@ TEST(CheckFolderPathsTest, SamePath) {
     fs::remove(top_level);
 }
 
-TEST(GetResolvedFilenameTest, FileExists) {
+void CreateFile(const fs::path& path, const std::string& content = "") {
+    std::ofstream file(path);
+    file << content;
+    file.close();
+}
+
+class GetResolvedFilenameTest : public ::testing::Test {
+protected:
+    fs::path temp_dir;
+
+    void SetUp() override {
+        temp_dir = fs::temp_directory_path() / "test_symlink";
+        fs::create_directories(temp_dir);
+    }
+
+    void TearDown() override {
+        fs::remove_all(temp_dir);
+    }
+};
+
+TEST_F(GetResolvedFilenameTest, ResolvesNormalFile) {
+    fs::path dir = temp_dir / "subdir";
+    fs::create_directory(dir);
+    fs::path file = dir / "test.txt";
+    CreateFile(file, "sample content");
+
+    std::string message;
+    std::string result = GetResolvedFilename(temp_dir.string(), "subdir", "test.txt", message);
+
+    EXPECT_EQ(result, file.string());
+    EXPECT_TRUE(message.empty());
+}
+
+TEST_F(GetResolvedFilenameTest, ResolvesSymlink) {
+    fs::path dir = temp_dir / "subdir";
+    fs::create_directory(dir);
+    fs::path target_file = dir / "real.txt";
+    CreateFile(target_file, "actual file");
+
+    fs::path symlink_file = dir / "symlink.txt";
+    fs::create_symlink(target_file, symlink_file);
+
+    std::string message;
+    std::string result = GetResolvedFilename(temp_dir.string(), "subdir", "symlink.txt", message);
+
+    EXPECT_EQ(result, symlink_file.string());
+    EXPECT_TRUE(message.empty());
+}
+
+TEST_F(GetResolvedFilenameTest, SymlinkToNonExistentFile) {
+    fs::path dir = temp_dir / "subdir";
+    fs::create_directory(dir);
+    
+    fs::path target_file = dir / "missing.txt";
+    fs::path symlink_file = dir / "bad_symlink.txt";
+    fs::create_symlink(target_file, symlink_file); // Points to a missing file
+
+    std::string message;
+    std::string result = GetResolvedFilename(temp_dir.string(), "subdir", "bad_symlink.txt", message);
+
+    EXPECT_EQ(result, ""); // Should return an empty string
+    EXPECT_FALSE(message.empty());
+}
+
+TEST_F(GetResolvedFilenameTest, DirectorySymlink) {
+    fs::path real_dir = temp_dir / "real_dir";
+    fs::create_directory(real_dir);
+
+    fs::path symlink_dir = temp_dir / "symlink_dir";
+    fs::create_symlink(real_dir, symlink_dir);
+
+    std::string message;
+    std::string result = GetResolvedFilename(temp_dir.string(), "", "symlink_dir", message);
+
+    EXPECT_EQ(result, ""); // It should not resolve a directory symlink as a file
+    EXPECT_FALSE(message.empty());
+}
+
+TEST_F(GetResolvedFilenameTest, FileExists) {
     auto pwd = TestRoot();
     std::string message;
     std::string resolved = GetResolvedFilename(pwd.string(), "data/images/fits", "noise_4d.fits", message);
@@ -175,7 +257,7 @@ TEST(GetResolvedFilenameTest, FileExists) {
     EXPECT_TRUE(message.empty());
 }
 
-TEST(GetResolvedFilenameTest, FileDoesNotExist) {
+TEST_F(GetResolvedFilenameTest, FileDoesNotExist) {
     std::string message;
     std::string resolved = GetResolvedFilename("/tmp", "test_dir", "missing.txt", message);
 
