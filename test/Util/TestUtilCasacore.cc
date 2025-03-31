@@ -222,7 +222,7 @@ TEST_F(GetResolvedFilenameTest, ResolvesSymlink) {
 TEST_F(GetResolvedFilenameTest, SymlinkToNonExistentFile) {
     fs::path dir = temp_dir / "subdir";
     fs::create_directory(dir);
-    
+
     fs::path target_file = dir / "missing.txt";
     fs::path symlink_file = dir / "bad_symlink.txt";
     fs::create_symlink(target_file, symlink_file); // Points to a missing file
