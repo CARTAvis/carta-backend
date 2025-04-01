@@ -163,9 +163,6 @@ public:
     /**
      * @brief Decodes a message from a vector of bytes into a specific type.
      *
-     * This function extracts the payload from a given message buffer, ignoring the event header,
-     * and deserializes it into an object of template type `T` using `ParseFromArray`.
-     *
      * @tparam T The type of the message to decode. It must have a `ParseFromArray` method.
      * @param message A vector of characters containing the encoded message data.
      * @return The decoded message of type `T`.

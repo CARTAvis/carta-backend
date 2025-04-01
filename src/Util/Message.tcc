@@ -7,6 +7,11 @@
 #ifndef CARTA_SRC_UTIL_MESSAGE_TCC_
 #define CARTA_SRC_UTIL_MESSAGE_TCC_
 
+
+/**
+ * @details This function extracts the payload from a given message buffer, ignoring the event header,
+ * and deserializes it into an object of template type `T` using `ParseFromArray`.
+ */
 template <typename T>
 T Message::DecodeMessage(std::vector<char>& message) {
     T decoded_message;

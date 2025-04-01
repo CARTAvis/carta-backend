@@ -22,10 +22,6 @@ public:
     /**
      * @brief Retrieves the corresponding CARTA polarization type from an integer value.
      *
-     * This function checks if the provided integer value is a valid `CARTA::PolarizationType`.
-     * If valid, it returns the corresponding enumeration value. Otherwise, it returns
-     * `CARTA::PolarizationType::POLARIZATION_TYPE_NONE` as a fallback.
-     *
      * @param value The integer representation of a `CARTA::PolarizationType`.
      * @return The corresponding `CARTA::PolarizationType` if valid, otherwise `POLARIZATION_TYPE_NONE`.
      */
@@ -34,10 +30,6 @@ public:
     /**
      * @brief Retrieves the corresponding CARTA polarization type from a string name.
      *
-     * This function attempts to parse a given string into a `CARTA::PolarizationType`.
-     * If parsing is successful, it returns the corresponding enumeration value.
-     * If the name is invalid, it returns `CARTA::PolarizationType::POLARIZATION_TYPE_NONE`.
-     *
      * @param name The string representation of a `CARTA::PolarizationType`.
      * @return The corresponding `CARTA::PolarizationType` if parsing is successful, otherwise `POLARIZATION_TYPE_NONE`.
      */
@@ -45,10 +37,6 @@ public:
 
     /**
      * @brief Converts a CARTA polarization type to the corresponding CASA Stokes type.
-     *
-     * This function maps a `CARTA::PolarizationType` to its equivalent `casacore::Stokes::StokesTypes`
-     * using a predefined lookup table. If the provided type is not found in the mapping,
-     * an `std::out_of_range` exception may be thrown.
      *
      * @param type The `CARTA::PolarizationType` to convert.
      * @return The corresponding `casacore::Stokes::StokesTypes` value.
@@ -59,25 +47,14 @@ public:
     /**
      * @brief Converts a FITS Stokes parameter value to its corresponding internal representation.
      *
-     * This function maps a FITS Stokes parameter to a valid internal Stokes value.
-     * It supports conversion of standard Stokes parameters (1 to 4) and
-     * circular/linear polarization parameters (5 to 12 and -1 to -8).
-     *
      * @param[in] in_stokes_value The input FITS Stokes parameter value.
      * @param[out] out_stokes_value The converted Stokes parameter value.
      * @return `true` if the conversion was successful, `false` if the input value is invalid.
-     *
-     * @note Valid FITS Stokes values:
-     * - `1` to `4` (directly assigned)
-     * - `5` to `12` and `-1` to `-8` (converted using `out_stokes_value = -in_stokes_value + 4`)
      */
     static bool ConvertFits(const int& in_stokes_value, int& out_stokes_value);
 
     /**
      * @brief Retrieves the name of a given CARTA polarization type.
-     *
-     * This function returns the string representation of a `CARTA::PolarizationType`
-     * using the `CARTA::PolarizationType_Name` function.
      *
      * @param[in] type The polarization type to retrieve the name for.
      * @return The string representation of the given polarization type.
@@ -87,10 +64,6 @@ public:
     /**
      * @brief Retrieves a descriptive string for a given CARTA polarization type.
      *
-     * This function returns a human-readable description of a `CARTA::PolarizationType`
-     * from the `_description` map. If the type is not found in the map, it falls back
-     * to returning the string representation of the polarization type.
-     *
      * @param[in] type The polarization type for which to retrieve a description.
      * @return A descriptive string for the given polarization type.
      */
@@ -98,9 +71,6 @@ public:
 
     /**
      * @brief Determines if a given polarization type is a computed polarization.
-     *
-     * This function checks whether the provided integer value corresponds to
-     * a computed polarization type (e.g., `Ptotal`, `Plinear`, `PFtotal`, `PFlinear`, `Pangle`).
      *
      * @param[in] value The integer representation of a `CARTA::PolarizationType`.
      * @return `true` if the value corresponds to a computed polarization type, otherwise `false`.
@@ -111,19 +81,11 @@ public:
 protected:
     /**
      * @brief Maps CARTA polarization types to CASA Stokes types.
-     *
-     * This unordered map provides a conversion between the `CARTA::PolarizationType`
-     * enumeration and the corresponding `casacore::Stokes::StokesTypes` enumeration.
-     * It is used to translate polarization representations between the two frameworks.
      */
     static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> _to_casa;
 
     /**
      * @brief Provides human-readable descriptions for CARTA polarization types.
-     *
-     * This unordered map associates each `CARTA::PolarizationType` enumeration value
-     * with a corresponding descriptive string. It is used to provide user-friendly
-     * labels for polarization types in logs, UI displays, or reports.
      */
     static std::unordered_map<CARTA::PolarizationType, std::string> _description;
 };

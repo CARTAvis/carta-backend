@@ -12,6 +12,18 @@
 #include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
 
+/**
+ * @details This function checks and resolves the given top-level and starting directories.
+ * If default placeholder values ("base" or "root") are found, they are replaced accordingly.
+ * The function verifies that both directories exist and are accessible, and ensures that
+ * the starting directory is a valid subdirectory of the top-level directory.
+ * 
+ * @note If `starting_string` is invalid, it is replaced with `top_level_string`.
+ * @note If `starting_string` is not a subdirectory of `top_level_string`, the function logs a critical error and returns `false`.
+ *
+ * @warning If both `top_level_string` and `starting_string` are set to their default placeholders ("base" and "root"),
+ *          the function logs a critical error and returns `false`.
+ */
 bool CheckFolderPaths(string& top_level_string, string& starting_string) {
     // TODO: is this code needed at all? Was it a weird workaround?
     {
@@ -72,6 +84,13 @@ bool CheckFolderPaths(string& top_level_string, string& starting_string) {
     return true;
 }
 
+/**
+ * @details This function checks if `folder` is a subdirectory of `top_folder` by
+ * resolving both paths to their absolute, weakly canonical forms and then
+ * traversing up the directory hierarchy.
+ * 
+ * @warning If `top_folder` is empty, the function will always return `true`.
+ */
 bool IsSubdirectory(string folder, string top_folder) {
     folder = casacore::Path(folder).absoluteName();
     top_folder = casacore::Path(top_folder).absoluteName();
@@ -98,6 +117,13 @@ bool IsSubdirectory(string folder, string top_folder) {
     return false;
 }
 
+/**
+ * @details This function constructs an absolute file path using a specified root directory,
+ * a relative subdirectory, and a file name. It checks whether the resulting file path
+ * exists and is readable. If any issue is encountered, an error message is set.
+ * 
+ * 
+ */
 casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file, string& message) {
     // Given directory (relative to root directory) and file, return resolved file path.
     // Check if file path exists and is readable.
@@ -137,6 +163,16 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
     return resolved_filename;
 }
 
+/**
+ * @details This function analyses the spectral coordinate system of the provided `image` and sets
+ * preference flags for velocity, wavelength, and their specific variations. It considers
+ * the image's native spectral type and applies special handling for `CartaMiriadImage` types.
+ * 
+ * @note If the image contains a spectral axis, its native type is determined and used to
+ *       update the preference flags accordingly.
+ *
+ * @warning The function modifies the output parameters in place; ensure they are initialized properly.
+ */
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength) {
     prefer_velocity = optical_velocity = prefer_wavelength = air_wavelength = false;
@@ -181,6 +217,14 @@ void GetSpectralCoordPreferences(
     }
 }
 
+/**
+ * @details This function retrieves the major axis, minor axis, and position angle (PA) of
+ * a given `casacore::GaussianBeam` and formats them into a structured string with
+ * six decimal places of precision.
+ * 
+ * @note The output format is:
+ *      `"major: <value> <unit> minor: <value> <unit> pa: <value> <unit>"`
+ */
 std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam) {
     std::string result;
     result += fmt::format("major: {:.6f} {} ", gaussian_beam.getMajor().getValue(), gaussian_beam.getMajor().getUnit());
@@ -189,10 +233,26 @@ std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam) {
     return result;
 }
 
+/**
+ * @details This function converts a `casacore::Quantity` into a string representation
+ * with six decimal places of precision, including its unit.
+ */
 std::string FormatQuantity(const casacore::Quantity& quantity) {
     return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
 }
 
+/**
+ * @details This function converts various unit representations into their standardised Casacore
+ * equivalents. It replaces non-standard units with correct forms, fixes case inconsistencies,
+ * and removes invalid characters. Additionally, it attempts to map the unit to a valid
+ * Casacore unit using `UnitMap::fromFITS` and `UnitVal::check`.
+ * 
+ * @note If the unit contains a recognized prefix, the function attempts to normalise with and without the prefix.
+ *
+ * @warning If the unit cannot be resolved to a known Casacore unit, it remains unchanged.
+ *
+ * @exception casacore::AipsError Caught internally when Casacore unit conversions fail.
+ */
 void NormalizeUnit(casacore::String& unit) {
     // Convert unit string to "proper" units according to casacore
     // Fix nonstandard units which pass check
@@ -257,6 +317,17 @@ void NormalizeUnit(casacore::String& unit) {
     }
 }
 
+/**
+ * @details This function uses regular expressions (regex) to extract the major axis (BMAJ),
+ * minor axis (BMIN), and position angle (BPA) from an AIPS-style history
+ * beam header string. It handles two common formats: one using "Beam ="
+ * notation and another using "BMAJ=", "BMIN=", and "BPA=" notation.
+ * 
+ * @note Units are normalized to "deg" when "degrees" is found in the header.
+ *
+ * @warning If the header format does not match expected patterns, the function
+ *          logs a debug message and returns `false`.
+ */
 bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa) {
     // Parse AIPS beam header using regex_match.
     // Returns false if regex failed, else true with beam value-unit strings.
