@@ -276,6 +276,7 @@ set(SOURCE_FILES
         src/Util/App.cc
         src/Util/Casacore.cc
         src/Util/File.cc
+        src/Util/Json.cc
         src/Util/Message.cc
         src/Util/Stokes.cc
         src/Util/String.cc

@@ -13,12 +13,9 @@
 
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
+#include "Util/Json.h"
 #include "Util/String.h"
 #include "Util/Token.h"
-#include "schemas/layout_schema_2.json.h"
-#include "schemas/preferences_schema_2.json.h"
-#include "schemas/snippet_schema_1.json.h"
-#include "schemas/workspace_schema_1.json.h"
 
 #if defined(__APPLE__)
 #define st_mtim st_mtimespec
@@ -29,7 +26,6 @@ using json = nlohmann::json;
 namespace carta {
 
 const std::string SUCCESS_STRING = json({{"success", true}}).dump();
-const std::unordered_set<std::string> ALL_DATABASE_TYPES = {"preferences", "layout", "snippet", "workspace"};
 const std::unordered_set<std::string> OBJECT_TYPES = {"layout", "snippet", "workspace"};
 
 uint32_t HttpServer::_scripting_request_id = 0;
@@ -47,24 +43,6 @@ HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path
       _enable_scripting(enable_scripting),
       _enable_runtime_config(enable_runtime_config),
       _url_prefix(url_prefix) {
-    if (_enable_database) {
-        _schemas["preferences"] = json::parse(CARTASCHEMA::preferences_schema_2);
-        _schemas["layout"] = json::parse(CARTASCHEMA::layout_schema_2);
-        _schemas["snippet"] = json::parse(CARTASCHEMA::snippet_schema_1);
-        _schemas["workspace"] = json::parse(CARTASCHEMA::workspace_schema_1);
-
-        auto content_check = [](const std::string& encoding, const std::string& mediaType, const json& instance) {
-            // TODO implement this
-        };
-
-        for (const auto& database_type : ALL_DATABASE_TYPES) {
-            // We need the content check for workspaces; may need it for other schemas in future
-            _validators.emplace(database_type,
-                nlohmann::json_schema::json_validator{nullptr, nlohmann::json_schema::default_string_format_check, content_check});
-            _validators[database_type].set_root_schema(_schemas[database_type]);
-        }
-    }
-
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 
@@ -254,7 +232,7 @@ json HttpServer::GetExistingPreferences() {
 
     try {
         obj = json::parse(json_string);
-        _validators["preferences"].validate(obj);
+        JsonObject::Validator("preferences").validate(obj);
     } catch (json::parse_error e) {
         spdlog::warn(e.what());
     } catch (const std::exception& e) {
@@ -271,9 +249,9 @@ bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
         fs::create_directories(preferences_path.parent_path().string());
         std::ofstream file(preferences_path.string());
         // Ensure correct schema and version values are written
-        obj["$schema"] = _schemas["preferences"]["$id"];
+        obj["$schema"] = JsonObject::Schema("preferences")["$id"];
         obj["version"] = 2;
-        _validators["preferences"].validate(obj);
+        JsonObject::Validator("preferences").validate(obj);
         auto json_string = obj.dump(4);
         file << json_string;
         return true;
@@ -575,7 +553,7 @@ nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, con
             std::ifstream file(object_path);
             std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
             json obj = json::parse(json_string);
-            _validators[object_type].validate(obj);
+            JsonObject::Validator(object_type).validate(obj);
             return obj;
         }
     } catch (json::exception e) {
@@ -600,7 +578,7 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
                     std::ifstream file(p.path().string());
                     std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
                     json obj = json::parse(json_string);
-                    _validators[object_type].validate(obj);
+                    JsonObject::Validator(object_type).validate(obj);
                     objects[object_name] = obj;
                 }
             } catch (json::exception e) {
@@ -619,13 +597,13 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
         std::ofstream file(object_path.string());
         // Ensure correct schema value is written
         if (OBJECT_TYPES.count(object_type)) {
-            obj["$schema"] = _schemas[object_type]["$id"];
+            obj["$schema"] = JsonObject::Schema(object_type)["$id"];
         } else {
             spdlog::error("Unknown object types: {}.", object_type);
             return false;
         }
 
-        _validators[object_type].validate(obj);
+        JsonObject::Validator(object_type).validate(obj);
 
         auto json_string = obj.dump(4);
         file << json_string;
