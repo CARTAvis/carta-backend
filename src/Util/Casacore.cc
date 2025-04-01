@@ -17,7 +17,7 @@
  * If default placeholder values ("base" or "root") are found, they are replaced accordingly.
  * The function verifies that both directories exist and are accessible, and ensures that
  * the starting directory is a valid subdirectory of the top-level directory.
- * 
+ *
  * @note If `starting_string` is invalid, it is replaced with `top_level_string`.
  * @note If `starting_string` is not a subdirectory of `top_level_string`, the function logs a critical error and returns `false`.
  *
@@ -88,7 +88,7 @@ bool CheckFolderPaths(string& top_level_string, string& starting_string) {
  * @details This function checks if `folder` is a subdirectory of `top_folder` by
  * resolving both paths to their absolute, weakly canonical forms and then
  * traversing up the directory hierarchy.
- * 
+ *
  * @warning If `top_folder` is empty, the function will always return `true`.
  */
 bool IsSubdirectory(string folder, string top_folder) {
@@ -121,8 +121,8 @@ bool IsSubdirectory(string folder, string top_folder) {
  * @details This function constructs an absolute file path using a specified root directory,
  * a relative subdirectory, and a file name. It checks whether the resulting file path
  * exists and is readable. If any issue is encountered, an error message is set.
- * 
- * 
+ *
+ *
  */
 casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file, string& message) {
     // Given directory (relative to root directory) and file, return resolved file path.
@@ -167,7 +167,7 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
  * @details This function analyses the spectral coordinate system of the provided `image` and sets
  * preference flags for velocity, wavelength, and their specific variations. It considers
  * the image's native spectral type and applies special handling for `CartaMiriadImage` types.
- * 
+ *
  * @note If the image contains a spectral axis, its native type is determined and used to
  *       update the preference flags accordingly.
  *
@@ -221,7 +221,7 @@ void GetSpectralCoordPreferences(
  * @details This function retrieves the major axis, minor axis, and position angle (PA) of
  * a given `casacore::GaussianBeam` and formats them into a structured string with
  * six decimal places of precision.
- * 
+ *
  * @note The output format is:
  *      `"major: <value> <unit> minor: <value> <unit> pa: <value> <unit>"`
  */
@@ -246,7 +246,7 @@ std::string FormatQuantity(const casacore::Quantity& quantity) {
  * equivalents. It replaces non-standard units with correct forms, fixes case inconsistencies,
  * and removes invalid characters. Additionally, it attempts to map the unit to a valid
  * Casacore unit using `UnitMap::fromFITS` and `UnitVal::check`.
- * 
+ *
  * @note If the unit contains a recognized prefix, the function attempts to normalise with and without the prefix.
  *
  * @warning If the unit cannot be resolved to a known Casacore unit, it remains unchanged.
@@ -322,7 +322,7 @@ void NormalizeUnit(casacore::String& unit) {
  * minor axis (BMIN), and position angle (BPA) from an AIPS-style history
  * beam header string. It handles two common formats: one using "Beam ="
  * notation and another using "BMAJ=", "BMIN=", and "BPA=" notation.
- * 
+ *
  * @note Units are normalized to "deg" when "degrees" is found in the header.
  *
  * @warning If the header format does not match expected patterns, the function

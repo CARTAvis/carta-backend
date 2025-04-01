@@ -24,7 +24,7 @@ std::string NewAuthToken() {
 }
 
 /**
- * @details This function checks if the provided HTTP request contains a valid authentication 
+ * @details This function checks if the provided HTTP request contains a valid authentication
  * token that matches the required token. It supports validation through:
  *      - Cookies (`carta-auth-token`)
  *      - Authorization header (`Bearer <token>`)

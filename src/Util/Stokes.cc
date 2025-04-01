@@ -40,7 +40,6 @@ std::unordered_map<CARTA::PolarizationType, std::string> Stokes::_description{{C
     {CARTA::PolarizationType::PFlinear, "Fractional linear polarization intensity"},
     {CARTA::PolarizationType::Pangle, "Polarization angle"}};
 
-
 /**
  * @details This function checks if the provided integer value is a valid `CARTA::PolarizationType`.
  * If valid, it returns the corresponding enumeration value. Otherwise, it returns
@@ -77,7 +76,7 @@ casacore::Stokes::StokesTypes Stokes::ToCasa(CARTA::PolarizationType type) {
  * @details This function maps a FITS Stokes parameter to a valid internal Stokes value.
  * It supports conversion of standard Stokes parameters (1 to 4) and
  * circular/linear polarization parameters (5 to 12 and -1 to -8).
- * 
+ *
  * @note Valid FITS Stokes values:
  *       - `1` to `4` (directly assigned)
  *       - `5` to `12` and `-1` to `-8` (converted using `out_stokes_value = -in_stokes_value + 4`)

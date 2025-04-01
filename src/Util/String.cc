@@ -14,7 +14,7 @@
  * @details This function tokenizes an input string by the given delimiter and stores
  * the resulting substrings in a vector. It also removes trailing carriage
  * return (`\r`) characters from each token.
- * 
+ *
  * @note Empty tokens are ignored, so consecutive delimiters will not produce empty strings in `parts`.
  *
  * @warning The function modifies the `parts` vector by clearing its contents before adding new elements.
@@ -37,7 +37,7 @@ void SplitString(std::string& input, char delim, std::vector<std::string>& parts
 /**
  * @details This function determines whether the `haystack` string ends with the `needle` string.
  * It supports both case-sensitive and case-insensitive comparisons.
- * 
+ *
  * @return `true` if `haystack` ends with `needle`, otherwise `false`.
  *
  * @note If `needle` is longer than `haystack`, the function immediately returns `false`.
@@ -59,7 +59,7 @@ bool HasSuffix(const std::string& haystack, const std::string& needle, bool case
  * by ensuring that the execution time does not depend on the input values.
  * It XORs each corresponding character and accumulates the differences,
  * preventing early termination.
- * 
+ *
  * @note If the strings have different lengths, the function immediately returns `false`.
  */
 bool ConstantTimeStringCompare(const std::string& a, const std::string& b) {
@@ -109,7 +109,7 @@ std::string SafeStringEscape(const std::string& input) {
  * back into their ASCII character equivalents. It scans the input string
  * and replaces any valid `%XX` hexadecimal escape sequences with their
  * corresponding characters.
- * 
+ *
  * @note The function assumes that the input is a properly formatted
  *       percent-encoded string. If an invalid escape sequence is encountered,
  *       it is left unchanged.
@@ -146,7 +146,7 @@ std::string SafeStringUnescape(const std::string& input) {
  * the parsed integer is stored in the output parameter, and the function
  * returns `true`. If the conversion fails due to an invalid format or
  * an out-of-range value, the function returns `false`.
- * 
+ *
  * @note This function does not modify `i` if the conversion fails.
  */
 bool StringToInt(const std::string& input, int& i) {

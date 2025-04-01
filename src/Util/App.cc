@@ -25,7 +25,7 @@
 /**
  * @details This function determines the full path of the running executable and stores it in the `path` parameter.
  * It supports both macOS (`_NSGetExecutablePath`) and Linux (`/proc/self/exe`).
- * 
+ *
  * @note On macOS, `_NSGetExecutablePath` is used, and the buffer size is checked dynamically.
  * @note On Linux, the function reads from `/proc/self/exe` using `readlink()`.
  *
@@ -57,7 +57,7 @@ bool FindExecutablePath(std::string& path) {
  * @details This function fetches OS release details using platform-specific methods:
  * - On **macOS**, it runs the `sw_vers` command and reads the output.
  * - On **Linux/Unix**, it attempts to read `/etc/os-release`, which is available on most distributions using systemd.
- * 
+ *
  * @note
  * - On macOS, `popen("sw_vers", "r")` is used to execute `sw_vers`, which outputs OS version details.
  * - On Linux, the function reads the `/etc/os-release` file into a string.
@@ -110,7 +110,7 @@ std::string GetReleaseInformation() {
 /**
  * @details This function opens a pipe using `popen()` to execute the given command,
  * reads its output, and returns it as a `std::string`.
- * 
+ *
  * @note
  * - The function trims trailing newline characters from the output.
  * - The caller must ensure the command is safe to execute (avoid shell injection).

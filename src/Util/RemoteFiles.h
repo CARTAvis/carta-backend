@@ -20,7 +20,7 @@ const auto HIPS_MAX_PIXELS = 50e6;
  * @param request The `CARTA::RemoteFileRequest` containing the request parameters.
  * @param url The generated URL to be returned if the request is valid.
  * @param error_message A message indicating the reason for failure if the request is invalid.
- * 
+ *
  * @return `true` if the URL was successfully generated, `false` otherwise.
  */
 bool GenerateUrlFromRequest(const CARTA::RemoteFileRequest& request, std::string& url, std::string& error_message);
