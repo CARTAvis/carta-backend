@@ -18,22 +18,22 @@ const std::unordered_map<std::string, std::string_view> Json::_schema_strings{{"
     {"preferences", CARTASCHEMA::preferences_schema_2}, {"snippet", CARTASCHEMA::snippet_schema_1},
     {"workspace", CARTASCHEMA::workspace_schema_1}, {"backend", CARTASCHEMA::preference_backend_schema_2}};
 
-std::unordered_map<std::string, nlohmann::json> Json::_schemas{};
-std::unordered_map<std::string, nlohmann::json_schema::json_validator> Json::_validators{};
+std::unordered_map<std::string, json> Json::_schemas{};
+std::unordered_map<std::string, json_schema::json_validator> Json::_validators{};
 
-nlohmann::json& Json::Schema(std::string object_type) {
+json& Json::Schema(std::string object_type) {
     if (!_schema_strings.count(object_type)) {
         throw std::invalid_argument("Unrecognised object type.");
     }
 
     if (!_schemas.count(object_type)) {
-        _schemas[object_type] = nlohmann::json::parse(_schema_strings.at(object_type));
+        _schemas[object_type] = json::parse(_schema_strings.at(object_type));
     }
 
     return _schemas.at(object_type);
 }
 
-nlohmann::json_schema::json_validator& Json::Validator(std::string object_type) {
+json_schema::json_validator& Json::Validator(std::string object_type) {
     auto schema = Schema(object_type);
 
     if (!_validators.count(object_type)) {

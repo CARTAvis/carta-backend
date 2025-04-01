@@ -12,16 +12,31 @@
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
+using namespace nlohmann;
+
 namespace carta {
+class JsonCustomErrorHandler : public json_schema::error_handler {
+public:
+    JsonCustomErrorHandler(std::function<void(const json::json_pointer&, const json&, const std::string&)> callback) {
+        _callback = callback;
+    }
+    void error(const json::json_pointer& pointer, const json& instance, const std::string& message) override {
+        _callback(pointer, instance, message);
+    }
+
+private:
+    std::function<void(const json::json_pointer&, const json&, const std::string&)> _callback;
+};
+
 class Json {
 public:
-    static nlohmann::json& Schema(std::string object_type);
-    static nlohmann::json_schema::json_validator& Validator(std::string object_type);
+    static json& Schema(std::string object_type);
+    static json_schema::json_validator& Validator(std::string object_type);
 
 private:
     static const std::unordered_map<std::string, std::string_view> _schema_strings;
-    static std::unordered_map<std::string, nlohmann::json> _schemas;
-    static std::unordered_map<std::string, nlohmann::json_schema::json_validator> _validators;
+    static std::unordered_map<std::string, json> _schemas;
+    static std::unordered_map<std::string, json_schema::json_validator> _validators;
 };
 } // namespace carta
 

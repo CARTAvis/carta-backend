@@ -15,6 +15,7 @@
 #include <casacore/images/Images/ImageOpener.h>
 
 #include "Util/App.h"
+#include "Util/Json.h"
 
 using json = nlohmann::json;
 
@@ -59,66 +60,27 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
         warning_msgs.push_back(err.what());
     }
 
+    std::unordered_set<std::string> bad_fields;
+    auto error_callback = [&](const json::json_pointer& pointer, const json& instance, const std::string& message) {
+        debug_msgs.push_back(fmt::format("Error validating config file {}: option {} has invalid value {}: {}", json_file_path,
+            pointer.back(), instance.dump(), message));
+        bad_fields.insert(pointer.back());
+    };
+
+    JsonCustomErrorHandler error_handler(error_callback);
+    Json::Validator("backend").validate(j, error_handler);
+
+    if (!bad_fields.empty()) {
+        warning_msgs.push_back(fmt::format("Error validating config file {}. These options had invalid values, and will be ignored: {}",
+            json_file_path, fmt::join(bad_fields, ", ")));
+        for (const auto& key : bad_fields) {
+            j.erase(key);
+        }
+    }
+
     for (const auto& [name, msg] : deprecated_options) {
         if (j.contains(name)) {
             AddDeprecationWarning(name, json_file_path);
-        }
-    }
-
-    for (const auto& [key, elem] : int_keys_map) {
-        if (j.contains(key) && !j[key].is_number_integer()) {
-            auto msg = fmt::format(
-                "Problem in config file {} at key {}: current value is {}, but a number is expected.", json_file_path, key, j[key].dump());
-            warning_msgs.push_back(msg);
-            j.erase(key);
-        }
-    }
-    for (const auto& [key, elem] : bool_keys_map) {
-        if (j.contains(key) && !j[key].is_boolean()) {
-            auto msg = fmt::format(
-                "Problem in config file {} at key {}: current value is {}, but a boolean is expected.", json_file_path, key, j[key].dump());
-            warning_msgs.push_back(msg);
-            j.erase(key);
-        }
-    }
-    for (const auto& [key, elem] : strings_keys_map) {
-        if (j.contains(key) && !j[key].is_string()) {
-            auto msg = fmt::format(
-                "Problem in config file {} at key {}: current value is {}, but a string is expected.", json_file_path, key, j[key].dump());
-            warning_msgs.push_back(msg);
-            j.erase(key);
-        }
-    }
-
-    auto msg_and_remove = [&](const std::string& key) {
-        auto msg =
-            fmt::format("Problem in config file {} at key {}: current value is {}, but a number or a list of two numbers is expected.",
-                json_file_path, key, j[key].dump());
-        warning_msgs.push_back(msg);
-        j.erase(key);
-    };
-    for (const auto& [key, elem] : vector_int_keys_map) {
-        if (j.contains(key)) {
-            if (j[key].size() == 1 && j[key].is_number()) {
-                continue;
-            } else if (j[key].is_array()) {
-                if (j[key].size() > 2) {
-                    msg_and_remove(key);
-                } else if (j[key].size() == 2) {
-                    if (!j[key][0].is_number() || !j[key][1].is_number()) {
-                        msg_and_remove(key);
-                    }
-                } else if (j[key].size() == 1) {
-                    if (!j[key].at(0).is_number()) {
-                        msg_and_remove(key);
-                    }
-                } else {
-                    // looks like things went well
-                    continue;
-                }
-            } else {
-                msg_and_remove(key);
-            }
         }
     }
 
