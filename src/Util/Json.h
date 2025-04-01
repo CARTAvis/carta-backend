@@ -13,13 +13,12 @@
 #include <nlohmann/json.hpp>
 
 namespace carta {
-class JsonObject {
+class Json {
 public:
     static nlohmann::json& Schema(std::string object_type);
     static nlohmann::json_schema::json_validator& Validator(std::string object_type);
 
 private:
-    static void contentCheck(const std::string& encoding, const std::string& mediaType, const nlohmann::json& instance);
     static const std::unordered_map<std::string, std::string_view> _schema_strings;
     static std::unordered_map<std::string, nlohmann::json> _schemas;
     static std::unordered_map<std::string, nlohmann::json_schema::json_validator> _validators;

@@ -232,7 +232,7 @@ json HttpServer::GetExistingPreferences() {
 
     try {
         obj = json::parse(json_string);
-        JsonObject::Validator("preferences").validate(obj);
+        Json::Validator("preferences").validate(obj);
     } catch (json::parse_error e) {
         spdlog::warn(e.what());
     } catch (const std::exception& e) {
@@ -249,9 +249,9 @@ bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
         fs::create_directories(preferences_path.parent_path().string());
         std::ofstream file(preferences_path.string());
         // Ensure correct schema and version values are written
-        obj["$schema"] = JsonObject::Schema("preferences")["$id"];
+        obj["$schema"] = Json::Schema("preferences")["$id"];
         obj["version"] = 2;
-        JsonObject::Validator("preferences").validate(obj);
+        Json::Validator("preferences").validate(obj);
         auto json_string = obj.dump(4);
         file << json_string;
         return true;
@@ -553,7 +553,7 @@ nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, con
             std::ifstream file(object_path);
             std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
             json obj = json::parse(json_string);
-            JsonObject::Validator(object_type).validate(obj);
+            Json::Validator(object_type).validate(obj);
             return obj;
         }
     } catch (json::exception e) {
@@ -578,7 +578,7 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
                     std::ifstream file(p.path().string());
                     std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
                     json obj = json::parse(json_string);
-                    JsonObject::Validator(object_type).validate(obj);
+                    Json::Validator(object_type).validate(obj);
                     objects[object_name] = obj;
                 }
             } catch (json::exception e) {
@@ -597,13 +597,13 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
         std::ofstream file(object_path.string());
         // Ensure correct schema value is written
         if (OBJECT_TYPES.count(object_type)) {
-            obj["$schema"] = JsonObject::Schema(object_type)["$id"];
+            obj["$schema"] = Json::Schema(object_type)["$id"];
         } else {
             spdlog::error("Unknown object types: {}.", object_type);
             return false;
         }
 
-        JsonObject::Validator(object_type).validate(obj);
+        Json::Validator(object_type).validate(obj);
 
         auto json_string = obj.dump(4);
         file << json_string;
