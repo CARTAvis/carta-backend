@@ -47,6 +47,7 @@ protected:
     std::string_view UpdatePreferencesFromString(const std::string& buffer);
     std::string_view ClearPreferencesFromString(const std::string& buffer);
     nlohmann::json GetExistingObjectList(const std::string& object_type);
+    nlohmann::json GetObjectFromPath(const fs::path& path, const std::string& object_type);
     nlohmann::json GetExistingObjects(const std::string& object_type);
     nlohmann::json GetExistingObject(const std::string& object_type, const std::string& object_name);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);

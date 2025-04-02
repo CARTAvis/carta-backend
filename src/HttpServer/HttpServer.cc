@@ -232,11 +232,22 @@ json HttpServer::GetExistingPreferences() {
 
     try {
         obj = json::parse(json_string);
-        Json::Validator("preferences").validate(obj);
     } catch (json::parse_error e) {
         spdlog::warn(e.what());
-    } catch (const std::exception& e) {
-        spdlog::warn(e.what());
+        return {};
+    }
+
+    bool valid(true);
+    auto error_callback = [&](const json::json_pointer& pointer, const json& instance, const std::string& message) {
+        spdlog::debug("Error validating preferences at {} with value {}: {}", pointer.to_string(), instance.dump(), message);
+        valid = false;
+    };
+
+    JsonCustomErrorHandler error_handler(error_callback);
+    Json::Validator("preferences").validate(obj, error_handler);
+
+    if (!valid) {
+        spdlog::warn("Returning invalid preferences.");
     }
 
     return obj;
@@ -455,7 +466,7 @@ void HttpServer::HandleGetObject(const std::string& object_type, Res* res, Req* 
     }
     auto object_name_string = SafeStringUnescape(std::string(object_name));
     json existing_object = GetExistingObject(object_type, object_name_string);
-    if (existing_object == nullptr) {
+    if (existing_object.empty()) {
         res->writeStatus(HTTP_404)->end();
         return;
     }
@@ -518,9 +529,9 @@ nlohmann::json HttpServer::GetExistingObjectList(const std::string& object_type)
         for (auto& p : fs::directory_iterator(object_folder)) {
             try {
                 std::string filename = p.path().filename().string();
-                std::regex object_regex(R"(^(.+)\.json$)");
+                std::regex object_regex(R"((.+)\.json)");
                 std::smatch sm;
-                if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+                if (fs::is_regular_file(p, error_code) && regex_match(filename, sm, object_regex)) {
                     std::string object_name = sm[1];
                     // Get modified date and fill JSON object
                     struct stat file_stats;
@@ -543,23 +554,44 @@ nlohmann::json HttpServer::GetExistingObjectList(const std::string& object_type)
     return list;
 }
 
-nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, const std::string& object_name) {
-    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
-    std::error_code error_code;
+nlohmann::json HttpServer::GetObjectFromPath(const fs::path& path, const std::string& object_type) {
+    json obj = {};
+    std::ifstream file(path);
+    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
     try {
-        std::string filename = object_path.filename().string();
-        if (fs::is_regular_file(object_path, error_code)) {
-            std::ifstream file(object_path);
-            std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-            json obj = json::parse(json_string);
-            Json::Validator(object_type).validate(obj);
-            return obj;
-        }
+        obj = json::parse(json_string);
     } catch (json::exception e) {
         spdlog::warn(e.what());
+        return obj;
     }
-    return nullptr;
+
+    bool valid(true);
+    auto error_callback = [&](const json::json_pointer& pointer, const json& instance, const std::string& message) {
+        spdlog::debug("Error validating {} at {} with value {}: {}", object_type, pointer.to_string(), instance.dump(), message);
+        valid = false;
+    };
+
+    JsonCustomErrorHandler error_handler(error_callback);
+    Json::Validator(object_type).validate(obj, error_handler);
+
+    if (!valid) {
+        spdlog::warn("Returning invalid {}.", object_type);
+    }
+
+    return obj;
+}
+
+nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, const std::string& object_name) {
+    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
+    json obj = {};
+    std::error_code error_code;
+
+    if (fs::is_regular_file(object_path, error_code)) {
+        obj = GetObjectFromPath(object_path, object_type);
+    }
+
+    return obj;
 }
 
 nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
@@ -569,20 +601,15 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
 
     if (fs::exists(object_folder, error_code)) {
         for (auto& p : fs::directory_iterator(object_folder)) {
-            try {
-                std::string filename = p.path().filename().string();
-                std::regex object_regex(R"(^(.+)\.json$)");
-                std::smatch sm;
-                if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+            std::string filename = p.path().filename().string();
+            std::regex object_regex(R"((.+)\.json)");
+            std::smatch sm;
+            if (fs::is_regular_file(p, error_code) && regex_match(filename, sm, object_regex)) {
+                auto obj = GetObjectFromPath(p.path(), object_type);
+                if (!obj.empty()) {
                     std::string object_name = sm[1];
-                    std::ifstream file(p.path().string());
-                    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-                    json obj = json::parse(json_string);
-                    Json::Validator(object_type).validate(obj);
                     objects[object_name] = obj;
                 }
-            } catch (json::exception e) {
-                spdlog::warn(e.what());
             }
         }
     }
