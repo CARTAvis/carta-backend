@@ -327,8 +327,8 @@ std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buff
         }
 
         if (modified_key_count) {
-            spdlog::debug("Updated {} preferences", modified_key_count);
             if (WritePreferencesFile(existing_data)) {
+                spdlog::debug("Updated {} preferences", modified_key_count);
                 return HTTP_200;
             } else {
                 return HTTP_400;
@@ -385,8 +385,8 @@ std::string_view HttpServer::ClearPreferencesFromString(const std::string& buffe
                     }
                 }
                 if (modified_key_count) {
-                    spdlog::debug("Cleared {} preferences", modified_key_count);
                     if (WritePreferencesFile(existing_data)) {
+                        spdlog::debug("Cleared {} preferences", modified_key_count);
                         return HTTP_200;
                     } else {
                         return HTTP_400;
