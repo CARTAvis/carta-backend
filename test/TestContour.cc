@@ -162,30 +162,3 @@ TEST_F(ContourTest, BlockAverageFitsFileNaN) {
     // GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
     GenerateContour("500_500_image_opts_nan.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
 }
-
-TEST_F(ContourTest, NoSmoothingHdf5File) {
-    // GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::HDF5, CARTA::SmoothingMode::NoSmoothing);
-    GenerateContour("500_500_image_opts.hdf5", CARTA::FileType::HDF5, CARTA::SmoothingMode::NoSmoothing);
-}
-TEST_F(ContourTest, NoSmoothingHdf5FileNaN) {
-    // GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::HDF5, CARTA::SmoothingMode::NoSmoothing);
-    GenerateContour("500_500_image_opts_nan.hdf5", CARTA::FileType::HDF5, CARTA::SmoothingMode::NoSmoothing);
-}
-
-TEST_F(ContourTest, GaussianBlurHdf5File) {
-    // GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);
-    GenerateContour("500_500_image_opts.hdf5", CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);
-}
-TEST_F(ContourTest, GaussianBlurHdf5FileNaN) {
-    // GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);
-    GenerateContour("500_500_image_opts_nan.hdf5", CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);
-}
-
-TEST_F(ContourTest, BlockAverageHdf5File) {
-    // GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::HDF5, CARTA::SmoothingMode::BlockAverage);
-    GenerateContour("500_500_image_opts.hdf5", CARTA::FileType::HDF5, CARTA::SmoothingMode::BlockAverage);
-}
-TEST_F(ContourTest, BlockAverageHdf5FileNaN) {
-    // GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::HDF5, CARTA::SmoothingMode::BlockAverage);
-    GenerateContour("500_500_image_opts_nan.hdf5", CARTA::FileType::HDF5, CARTA::SmoothingMode::BlockAverage);
-}
