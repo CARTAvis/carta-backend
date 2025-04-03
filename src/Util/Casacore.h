@@ -31,6 +31,7 @@ std::string FormatQuantity(const casacore::Quantity& quantity);
 
 // Convert unit to one recognized by casacore (case-sensitive)
 void NormalizeUnit(casacore::String& unit);
+bool IsGildasUnit(const casacore::String& unit);
 
 // Parse AIPS beam header using regex_match
 bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa);

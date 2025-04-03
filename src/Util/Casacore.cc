@@ -6,6 +6,8 @@
 
 #include "Casacore.h"
 
+#include <regex>
+
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
 
@@ -196,6 +198,10 @@ std::string FormatQuantity(const casacore::Quantity& quantity) {
 void NormalizeUnit(casacore::String& unit) {
     // Convert unit string to "proper" units according to casacore
     // Fix nonstandard units which pass check
+    if (IsGildasUnit(unit)) {
+        return; // do not casacore-ize unit
+    }
+
     unit.gsub("JY", "Jy");
     unit.gsub("jy", "Jy");
     unit.gsub("Beam", "beam");
@@ -255,6 +261,15 @@ void NormalizeUnit(casacore::String& unit) {
     } catch (const casacore::AipsError& err) {
         // not caught by check()
     }
+}
+
+bool IsGildasUnit(const casacore::String& unit) {
+    // Check if unit is in format from GILDAS CLASS software:
+    //     '<unit> (T<type>)' where the <type> describes the temperature T.
+    // Also test for casacore::Unit::check changes to the unit name where ' ' and '*' are replaced with '.'.
+    // For example: "K (Ta*)" -->  "K.(Ta.)" in casacore.
+    std::regex gildas_regex("[ ]*[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\)[ ]*");
+    return std::regex_match(unit, gildas_regex);
 }
 
 bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa) {
