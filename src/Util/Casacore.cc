@@ -121,8 +121,6 @@ bool IsSubdirectory(string folder, string top_folder) {
  * @details This function constructs an absolute file path using a specified root directory,
  * a relative subdirectory, and a file name. It checks whether the resulting file path
  * exists and is readable. If any issue is encountered, an error message is set.
- *
- *
  */
 casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file, string& message) {
     // Given directory (relative to root directory) and file, return resolved file path.
