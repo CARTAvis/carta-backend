@@ -115,6 +115,8 @@ TEST(UtilTest, CheckGildasUnit) {
     EXPECT_TRUE(IsGildasUnit("K (Ta*)"));
     EXPECT_TRUE(IsGildasUnit("K (Tmb)"));
     EXPECT_TRUE(IsGildasUnit("Jy (Tb)"));
+    EXPECT_TRUE(IsGildasUnit("K.(Ta.)"));
+    EXPECT_TRUE(IsGildasUnit("K.(Tmb)"));
     EXPECT_FALSE(IsGildasUnit("K"));
     EXPECT_FALSE(IsGildasUnit("Jy"));
 }
