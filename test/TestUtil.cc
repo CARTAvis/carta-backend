@@ -110,3 +110,11 @@ TEST(UtilTest, HasSuffixCaseInsensitive) {
     EXPECT_TRUE(HasSuffix("test.fits.gz", ".fits.gz"));
     EXPECT_FALSE(HasSuffix("test.fits.gz", ".fits"));
 }
+
+TEST(UtilTest, CheckGildasUnit) {
+    EXPECT_TRUE(IsGildasUnit("K (Ta*)"));
+    EXPECT_TRUE(IsGildasUnit("K (Tmb)"));
+    EXPECT_TRUE(IsGildasUnit("Jy (Tb)"));
+    EXPECT_FALSE(IsGildasUnit("K"));
+    EXPECT_FALSE(IsGildasUnit("Jy"));
+}
