@@ -4,6 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <casacore/casa/Exceptions/Error.h>
+
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
@@ -188,6 +190,7 @@ TEST_F(ImageUtilTest, SpatialMethod) {
     EXPECT_EQ(spatial[1], 40);
 }
 
+// FAILS with seg fault
 // Edge case: Ensure constructor handles empty vectors safely
 // TEST_F(ImageUtilTest, ConstructorWithEmptyVectors) {
 //     std::vector<int> empty_render;
@@ -196,15 +199,13 @@ TEST_F(ImageUtilTest, SpatialMethod) {
 //     EXPECT_THROW(AxesInfo axes(empty_render, empty_spatial, 5), std::out_of_range);
 // }
 
-// Edge case: Ensure constructor handles one-element vectors safely
-// TEST_F(ImageUtilTest, ConstructorWithSingleElementVectors) {
-//     std::vector<int> render = {5};
-//     std::vector<int> spatial = {10};
+TEST_F(ImageUtilTest, ConstructorWithSingleElementVectors) {
+    std::vector<int> render = {5};
+    std::vector<int> spatial = {10};
 
-//     EXPECT_THROW(AxesInfo axes(render, spatial, 15), std::out_of_range);
-// }
+    EXPECT_THROW(AxesInfo axes(render, spatial, 15), std::out_of_range);
+}
 
-// Edge case: Ensure constructor handles oversized vectors safely
 TEST_F(ImageUtilTest, ConstructorWithOversizedVectors) {
     std::vector<int> render = {1, 2, 3};  // Extra element
     std::vector<int> spatial = {4, 5, 6}; // Extra element
@@ -218,7 +219,6 @@ TEST_F(ImageUtilTest, ConstructorWithOversizedVectors) {
     EXPECT_EQ(axes.spatial_y, 5);
 }
 
-// Edge case: Ensure Render() returns correct values when struct is uninitialized
 TEST_F(ImageUtilTest, RenderMethodOnDefault) {
     AxesInfo axes;
     std::vector<int> render = axes.Render();
@@ -228,7 +228,6 @@ TEST_F(ImageUtilTest, RenderMethodOnDefault) {
     EXPECT_EQ(render[1], -1);
 }
 
-// Edge case: Ensure Spatial() returns correct values when struct is uninitialized
 TEST_F(ImageUtilTest, SpatialMethodOnDefault) {
     AxesInfo axes;
     std::vector<int> spatial = axes.Spatial();
@@ -262,36 +261,37 @@ TEST_F(ImageUtilTest, FromAxisNegativeIndex) {
     EXPECT_EQ(DimsInfo::FromAxis(-5, shape), 1);
 }
 
-// TEST_F(ImageUtilTest, ConstructorWithAxesInfo) {
-//     casacore::IPosition shape(5, 100, 200, 300, 400, 500);
-//     AxesInfo axes({0, 1}, {2, 3}, 4, -1, 5);  // x=0, y=1, z=-1, spectral=4, stokes=5
+// FAILING
+TEST_F(ImageUtilTest, ConstructorWithAxesInfo) {
+    casacore::IPosition shape(5, 100, 200, 300, 400, 500);
+    AxesInfo axes({0, 1}, {2, 3}, 4, -1, 5); // x=0, y=1, z=-1, spectral=4, stokes=5
 
-//     DimsInfo dims(axes, shape);
+    DimsInfo dims(axes, shape);
 
-//     EXPECT_EQ(dims.width, 100);  // x-axis
-//     EXPECT_EQ(dims.height, 200); // y-axis
-//     EXPECT_EQ(dims.depth, 1);    // z=-1, should default to 1
-//     EXPECT_EQ(dims.num_channels, 400);  // spectral=4
-//     EXPECT_EQ(dims.num_stokes, 500);    // stokes=5
-// }
+    EXPECT_EQ(dims.width, 100);        // x-axis
+    EXPECT_EQ(dims.height, 200);       // y-axis
+    EXPECT_EQ(dims.depth, 1);          // z=-1, should default to 1
+    EXPECT_EQ(dims.num_channels, 400); // spectral=4
+    EXPECT_EQ(dims.num_stokes, 500);   // stokes=5
+}
 
-// TEST_F(ImageUtilTest, ConstructorWithInvalidAxes) {
-//     casacore::IPosition shape(3, 10, 20, 30); // Only 3 dimensions
+TEST_F(ImageUtilTest, ConstructorWithInvalidAxes) {
+    casacore::IPosition shape(3, 10, 20, 30); // Only 3 dimensions
 
-//     AxesInfo axes({0, 1}, {2, 3}, 4, 5, 6); // Out-of-range indices
+    AxesInfo axes({0, 1}, {2, 3}, 4, 5, 6); // Out-of-range indices
 
-//     EXPECT_THROW(DimsInfo dims(axes, shape), casacore::AipsError);
-// }
+    EXPECT_THROW(DimsInfo dims(axes, shape), casacore::AipsError);
+}
 
-// TEST_F(ImageUtilTest, LargeShape) {
-//     casacore::IPosition shape(5, 1000, 2000, 3000, 4000, 5000);
-//     AxesInfo axes({1, 2}, {3, 4}, 0, 1, 2);
+TEST_F(ImageUtilTest, LargeShape) {
+    casacore::IPosition shape(5, 1000, 2000, 3000, 4000, 5000);
+    AxesInfo axes({1, 2}, {3, 4}, 0, 1, 2);
 
-//     DimsInfo dims(axes, shape);
+    DimsInfo dims(axes, shape);
 
-//     EXPECT_EQ(dims.width, 2000);
-//     EXPECT_EQ(dims.height, 3000);
-//     EXPECT_EQ(dims.depth, 1000);
-//     EXPECT_EQ(dims.num_channels, 1000);
-//     EXPECT_EQ(dims.num_stokes, 2000);
-// }
+    EXPECT_EQ(dims.width, 2000);
+    EXPECT_EQ(dims.height, 3000);
+    EXPECT_EQ(dims.depth, 1000);
+    EXPECT_EQ(dims.num_channels, 1000);
+    EXPECT_EQ(dims.num_stokes, 2000);
+}
