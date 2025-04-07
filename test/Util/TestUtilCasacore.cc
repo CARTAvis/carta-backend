@@ -223,60 +223,56 @@ TEST_F(GetResolvedFilenameTest, FileDoesNotExist) {
 }
 
 TEST_F(GetResolvedFilenameTest, ResolvesNormalFile) {
-	fs::path dir = temp_dir / "subdir";
-	fs::create_directory(dir);
-	fs::path file = dir / "test.txt";
-	CreateFile(file, "sample content");
-	std::string message;
-	std::string result = GetResolvedFilename(temp_dir.string(), "subdir", "test.txt", message);
-	EXPECT_EQ(result, file.string());
-	EXPECT_TRUE(message.empty());
+    fs::path dir = temp_dir / "subdir";
+    fs::create_directory(dir);
+    fs::path file = dir / "test.txt";
+    CreateFile(file, "sample content");
+    std::string message;
+    std::string result = GetResolvedFilename(temp_dir.string(), "subdir", "test.txt", message);
+    EXPECT_EQ(result, file.string());
+    EXPECT_TRUE(message.empty());
 }
 
 TEST_F(GetResolvedFilenameTest, ResolvesToSameDirectory) {
     auto pwd = TestRoot();
-	fs::path dir1 = temp_dir / "subdir";
-	fs::create_directory(dir1);
-    fs::path dir2 = temp_dir / "" / "subdir";
-    fs::create_directory(dir2);
-	std::string message;
-	std::string result1 = GetResolvedFilename(temp_dir.string(), "subdir", "", message);
+    fs::path dir = temp_dir / "subdir";
+    fs::create_directory(dir);
+    std::string message;
+    std::string result1 = GetResolvedFilename(temp_dir.string(), "", "subdir", message);
     std::string result2 = GetResolvedFilename(temp_dir.string(), "subdir", "", message);
-	EXPECT_EQ(result1, dir1.string());
-    EXPECT_EQ(result1, dir2.string());
-    EXPECT_EQ(result2, dir1.string());
-    EXPECT_EQ(result1, dir2.string());
-	EXPECT_TRUE(message.empty());
+    EXPECT_EQ(result1, dir.string());
+    EXPECT_EQ(result2, dir.string());
+    EXPECT_TRUE(message.empty());
 }
 
 TEST_F(GetResolvedFilenameTest, ResolvesSymlink) {
-	fs::path dir = temp_dir / "subdir";
-	fs::create_directory(dir);
-	fs::path target_file = dir / "real.txt";
-	CreateFile(target_file, "actual file");
-	
-	fs::path symlink_file = dir / "symlink.txt";
-	fs::create_symlink(target_file, symlink_file);
-	
-	std::string message;
-	std::string result = GetResolvedFilename(temp_dir.string(), "subdir", "symlink.txt", message);
-	
-	EXPECT_EQ(result, target_file.string());
-	EXPECT_TRUE(message.empty());
+    fs::path dir = temp_dir / "subdir";
+    fs::create_directory(dir);
+    fs::path target_file = dir / "real.txt";
+    CreateFile(target_file, "actual file");
+
+    fs::path symlink_file = dir / "symlink.txt";
+    fs::create_symlink(target_file, symlink_file);
+
+    std::string message;
+    std::string result = GetResolvedFilename(temp_dir.string(), "subdir", "symlink.txt", message);
+
+    EXPECT_EQ(result, target_file.string());
+    EXPECT_TRUE(message.empty());
 }
 
 TEST_F(GetResolvedFilenameTest, DirectorySymlink) {
-	fs::path real_dir = temp_dir / "real_dir";
-	fs::create_directory(real_dir);
-	
-	fs::path symlink_dir = temp_dir / "symlink_dir";
-	fs::create_symlink(real_dir, symlink_dir);
-	
-	std::string message;
-	std::string result = GetResolvedFilename(temp_dir.string(), "", "symlink_dir", message);
-	
-	EXPECT_EQ(result, real_dir);
-	EXPECT_TRUE(message.empty());
+    fs::path real_dir = temp_dir / "real_dir";
+    fs::create_directory(real_dir);
+
+    fs::path symlink_dir = temp_dir / "symlink_dir";
+    fs::create_symlink(real_dir, symlink_dir);
+
+    std::string message;
+    std::string result = GetResolvedFilename(temp_dir.string(), "", "symlink_dir", message);
+
+    EXPECT_EQ(result, real_dir);
+    EXPECT_TRUE(message.empty());
 }
 
 TEST(ParseHistoryBeamHeaderTest, ValidHistoryBeamFormat) {
