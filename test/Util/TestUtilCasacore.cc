@@ -233,15 +233,21 @@ TEST_F(GetResolvedFilenameTest, ResolvesNormalFile) {
 	EXPECT_TRUE(message.empty());
 }
 
-/* FAILING
-* expected output -> /tmp/test_symlink/subdir/symlink.txt
-* actual output -> /tmp/test_symlink/subdir/real.txt
-* the GetResolvedFilename function resolves the filename to the real file instead
-* where it actualy should resolve to the file through the symlink
-*
-* path.resolvedName() -> it is a known casacore issue that it fails to resolve symlinks
-* path.expandedName() -> if resolvedName() fails it tries expandedName() which returns the expanded name but neccessarily the resolved path
-*/
+TEST_F(GetResolvedFilenameTest, ResolvesToSameDirectory) {
+    auto pwd = TestRoot();
+	fs::path dir1 = temp_dir / "subdir";
+	fs::create_directory(dir1);
+    fs::path dir2 = temp_dir / "" / "subdir";
+    fs::create_directory(dir2);
+	std::string message;
+	std::string result1 = GetResolvedFilename(temp_dir.string(), "subdir", "", message);
+    std::string result2 = GetResolvedFilename(temp_dir.string(), "subdir", "", message);
+	EXPECT_EQ(result1, dir1.string());
+    EXPECT_EQ(result1, dir2.string());
+    EXPECT_EQ(result2, dir1.string());
+    EXPECT_EQ(result1, dir2.string());
+	EXPECT_TRUE(message.empty());
+}
 
 TEST_F(GetResolvedFilenameTest, ResolvesSymlink) {
 	fs::path dir = temp_dir / "subdir";
@@ -255,16 +261,9 @@ TEST_F(GetResolvedFilenameTest, ResolvesSymlink) {
 	std::string message;
 	std::string result = GetResolvedFilename(temp_dir.string(), "subdir", "symlink.txt", message);
 	
-	EXPECT_EQ(result, symlink_file.string());
+	EXPECT_EQ(result, target_file.string());
 	EXPECT_TRUE(message.empty());
 }
-
-/** FAILING
-* expected output -> ""
-* actual output -> /tmp/test_symlink/real_dir
-* It fails becuase it resolves to a real directory instead of an empty string
-* it depends on if the function is intended to be used in this manner, but again it is a problem with casacore's resolvedName() function not handling symlinks correctly
-*/
 
 TEST_F(GetResolvedFilenameTest, DirectorySymlink) {
 	fs::path real_dir = temp_dir / "real_dir";
@@ -276,8 +275,8 @@ TEST_F(GetResolvedFilenameTest, DirectorySymlink) {
 	std::string message;
 	std::string result = GetResolvedFilename(temp_dir.string(), "", "symlink_dir", message);
 	
-	EXPECT_EQ(result, ""); // It should not resolve a directory symlink as a file
-	EXPECT_FALSE(message.empty());
+	EXPECT_EQ(result, real_dir);
+	EXPECT_TRUE(message.empty());
 }
 
 TEST(ParseHistoryBeamHeaderTest, ValidHistoryBeamFormat) {
