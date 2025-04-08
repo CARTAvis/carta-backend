@@ -1990,9 +1990,12 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     int num_slices = 1; // Use 1 for now
     int width;
     int height;
+    int depth = spectral_range.to - spectral_range.from + 1;
 
     float progress(0.0);
-    for (int start = spectral_range.from; start <= spectral_range.to; start += num_slices) {       
+    for (int start = spectral_range.from; start <= spectral_range.to; start += num_slices) {  
+        
+        std::cout << "progress: " << progress << std::endl; 
         
         AxisRange slices_range(start, std::min(start + num_slices - 1, spectral_range.to));
 
@@ -2092,7 +2095,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
             std::cout << "width: " << width << std::endl;
             std::cout << "height: " << height << std::endl;
-            std::cout << "depth: " <<  num_slices << std::endl;
+            std::cout << "depth: " <<  depth << std::endl;
         }
 
         CARTA::Render3DData data_message;
@@ -2101,12 +2104,13 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         data_message.set_viewer_id(viewer_id);
         data_message.set_width(width);
         data_message.set_height(height);
-        data_message.set_depth(num_slices);
+        data_message.set_depth(depth);
+        data_message.set_slice(start);
         data_message.set_progress(progress);
 
         if (compression_type == CARTA::CompressionType::NONE) {
 
-            data_message.set_image_data(image_data.data(), image_data.size());
+            data_message.set_image_data(image_data.data(), image_data.size() * sizeof(float));
             data_message.set_compression_type(compression_type);
             data_message.set_compression_quality(compression_quality);
             
