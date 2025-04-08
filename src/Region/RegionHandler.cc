@@ -1934,8 +1934,6 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     auto stokes = frame->CurrentStokes();
     GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for render3d
 
-    std::cout << "cp 2.2" << std::endl;
-
     auto frame_id = GetRender3DViewerFrameId(viewer_id);
 
     std::cout << "file_id: " << file_id << std::endl;
@@ -1995,14 +1993,13 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     float progress(0.0);
     for (int start = spectral_range.from; start <= spectral_range.to; start += num_slices) {  
         
-        std::cout << "progress: " << progress << std::endl; 
-        
         AxisRange slices_range(start, std::min(start + num_slices - 1, spectral_range.to));
 
         // Set frame for preview image if needed
         Timer t;
         bool cancel(false);
         if (cancel) {
+            std::cout << "cancel" << std::endl;
             // render3d_response.set_cancel(cancel);
             //render3d_response.set_message(message);
             return false;
@@ -2067,12 +2064,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         // we need casacore::Array<float> to compress
         // after compression std::vector<float>?????
 
-        progress = (float)slices_range.to / (float)(spectral_range.to - spectral_range.from);
-
-        int is = 0;
-        if (progress != 0) {
-            is = 1;
-        }
+        progress = (float)(slices_range.to - spectral_range.from) / (float)(spectral_range.to - spectral_range.from);
 
         // make compression
 
@@ -2087,16 +2079,6 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         casacore::Array<float> casa_data;
         sub_image.get(casa_data);
         std::vector<float> image_data(casa_data.begin(), casa_data.end());
-
-        if (is == 0) {
-            std::cout << "progress: " << progress << std::endl;
-            std::cout << "start nan_encodings" << std::endl;
-            std::cout << "image_data size: " << image_data.size() << std::endl;
-
-            std::cout << "width: " << width << std::endl;
-            std::cout << "height: " << height << std::endl;
-            std::cout << "depth: " <<  depth << std::endl;
-        }
 
         CARTA::Render3DData data_message;
         data_message.set_file_id(file_id);
@@ -2119,16 +2101,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         } else {
             auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
 
-            if (is == 0) {
-                std::cout << "nan_encodings size: " << nan_encodings.size() << std::endl;
-            }	
-
             Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
-
-            if (is == 0) {
-                std::cout << "image_data size: " << image_data.size() << std::endl;
-                std::cout << "compressed_size: " << compressed_size << std::endl;
-            }
     
             // auto data_message = Message::Render3DData(file_id, region_id,
             //             viewer_id, compression_buffer, compressed_size, nan_encodings, width, height, num_slices, compression_type,
