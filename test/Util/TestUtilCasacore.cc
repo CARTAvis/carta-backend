@@ -19,8 +19,9 @@ TEST(IsSubdirectoryTest, ValidSubdirectory) {
     EXPECT_TRUE(IsSubdirectory("/var/log/apache", "/var/log"));
     EXPECT_TRUE(IsSubdirectory("/usr/local/bin", "/usr/local"));
 
-    std::string top_level = "/tmp";
-    std::string starting = "/tmp/test";
+    auto pwd = TestRoot();
+    std::string top_level = (pwd / "data").string();
+    std::string starting = (pwd / "data" / "test").string();
 
     fs::create_directories(starting);
 
@@ -91,14 +92,15 @@ TEST(IsSubdirectoryTest, TopIsRoot) {
 }
 
 TEST(IsSubdirectoryTest, SubdirectoryCheck) {
-    EXPECT_TRUE(IsSubdirectory("/tmp/test", "/tmp"));
-    EXPECT_FALSE(IsSubdirectory("/etc", "/tmp"));
-    EXPECT_TRUE(IsSubdirectory("/tmp/test/sub", "/tmp/test"));
+    EXPECT_TRUE(IsSubdirectory("/data/test", "/data"));
+    EXPECT_FALSE(IsSubdirectory("/etc", "/top"));
+    EXPECT_TRUE(IsSubdirectory("/data/test/sub", "/data/test"));
 }
 
 TEST(CheckFolderPathsTest, ValidPaths) {
-    std::string top_level = "/tmp";
-    std::string starting = "/tmp/test";
+    auto pwd = TestRoot();
+    std::string top_level = (pwd / "data").string();
+    std::string starting = (pwd / "data" / "test").string();
 
     fs::create_directories(starting);
 
@@ -108,15 +110,17 @@ TEST(CheckFolderPathsTest, ValidPaths) {
 }
 
 TEST(CheckFolderPathsTest, NonExistentStartingDirectory) {
-    std::string top_level = "/tmp";
-    std::string starting = "/tmp/nonexistent";
+    auto pwd = TestRoot();
+    std::string top_level = (pwd / "data").string();
+    std::string starting = (pwd / "data" / "test").string();
 
     EXPECT_TRUE(CheckFolderPaths(top_level, starting));
 }
 
 TEST(CheckFolderPathsTest, InvalidTopLevelDirectory) {
-    std::string top_level = "/tmp/nonexistent";
-    std::string starting = "/tmp/test";
+    std::string top_level = "/data/nonexistent";
+    auto pwd = TestRoot();
+    std::string starting = (pwd / "data" / "test").string();
 
     fs::create_directories(starting);
 
@@ -127,7 +131,8 @@ TEST(CheckFolderPathsTest, InvalidTopLevelDirectory) {
 
 TEST(CheckFolderPathsTest, TopLevelBase) {
     std::string top_level = "base";
-    std::string starting = "/tmp/test";
+    auto pwd = TestRoot();
+    std::string starting = (pwd / "data" / "test").string();
 
     fs::create_directories(starting);
 
@@ -147,8 +152,9 @@ TEST(CheckFolderPathsTest, StartingRoot) {
 }
 
 TEST(CheckFolderPathsTest, StartingNotSubdirectory) {
-    std::string top_level = "/tmp/parent";
-    std::string starting = "/tmp/another";
+    auto pwd = TestRoot();
+    std::string top_level = (pwd / "data" / "parent").string();
+    std::string starting = (pwd / "data" / "another").string();
 
     fs::create_directories(top_level);
     fs::create_directories(starting);
@@ -160,8 +166,9 @@ TEST(CheckFolderPathsTest, StartingNotSubdirectory) {
 }
 
 TEST(CheckFolderPathsTest, SamePath) {
-    std::string top_level = "/tmp/test_same";
-    std::string starting = "/tmp/test_same";
+    auto pwd = TestRoot();
+    std::string top_level = (pwd / "data" / "test_same").string();
+    std::string starting = (pwd / "data" / "test_same").string();
 
     fs::create_directories(top_level);
 
@@ -216,7 +223,7 @@ TEST_F(GetResolvedFilenameTest, FileExists) {
 
 TEST_F(GetResolvedFilenameTest, FileDoesNotExist) {
     std::string message;
-    std::string resolved = GetResolvedFilename("/tmp", "test_dir", "missing.txt", message);
+    std::string resolved = GetResolvedFilename("/", "test_dir", "missing.txt", message);
 
     EXPECT_TRUE(resolved.empty());
     EXPECT_FALSE(message.empty());
