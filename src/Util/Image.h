@@ -16,6 +16,7 @@
 #include <carta-protobuf/vector_overlay_tile.pb.h>
 
 #include <casacore/casa/Arrays/IPosition.h>
+#include <casacore/casa/Exceptions/Error.h>
 
 #include "DataStream/Tile.h"
 
@@ -242,7 +243,7 @@ struct AxesInfo {
     /**
      * @brief Default constructor initialising all axes to -1 (undefined).
      */
-    AxesInfo() : x(-1), y(-1), spatial_x(-1), spatial_y(-1), spectral(-1), z(-1), stokes(-1) {}
+    AxesInfo() : AxesInfo({-1, -1}, {-1, -1}, -1, -1, -1) {}
 
     /**
      * @brief Constructor initialising rendering and spatial axes.
@@ -251,7 +252,7 @@ struct AxesInfo {
      * @param spectral The spectral axis index.
      */
     AxesInfo(const std::vector<int> render, const std::vector<int> spatial, int spectral)
-        : x(render[0]), y(render[1]), spatial_x(spatial[0]), spatial_y(spatial[1]), spectral(spectral), z(-1), stokes(-1) {}
+        : AxesInfo(render, spatial, spectral, -1, -1) {}
 
     /**
      * @brief Constructor initialising rendering, spatial, spectral, z, and stokes axes.
@@ -262,7 +263,7 @@ struct AxesInfo {
      * @param stokes The stokes axis index.
      */
     AxesInfo(const std::vector<int> render, std::vector<int> spatial, int spectral, int z, int stokes)
-        : x(render[0]), y(render[1]), spatial_x(spatial[0]), spatial_y(spatial[1]), spectral(spectral), z(z), stokes(stokes) {}
+        : x(render.at(0)), y(render.at(1)), spatial_x(spatial.at(0)), spatial_y(spatial.at(1)), spectral(spectral), z(z), stokes(stokes) {}
 
     /**
      * @brief Retrieves the rendering axes (x and y).
@@ -302,7 +303,11 @@ struct DimsInfo {
      * @return The size of the axis if valid, otherwise returns 1.
      */
     static size_t FromAxis(int axis, const casacore::IPosition& shape) {
-        return axis >= 0 ? shape(axis) : 1;
+        if (axis < 0) return 1;
+        if (axis >= shape.nelements()) {
+            throw casacore::AipsError("Axis index out of bounds in DimsInfo::FromAxis");
+        }
+        return shape(axis);
     }
 
     /**

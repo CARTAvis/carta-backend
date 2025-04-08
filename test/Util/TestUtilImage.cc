@@ -190,14 +190,12 @@ TEST_F(ImageUtilTest, SpatialMethod) {
     EXPECT_EQ(spatial[1], 40);
 }
 
-// FAILS with seg fault
-// Edge case: Ensure constructor handles empty vectors safely
-// TEST_F(ImageUtilTest, ConstructorWithEmptyVectors) {
-//     std::vector<int> empty_render;
-//     std::vector<int> empty_spatial;
+TEST_F(ImageUtilTest, ConstructorWithEmptyVectors) {
+    std::vector<int> empty_render;
+    std::vector<int> empty_spatial;
 
-//     EXPECT_THROW(AxesInfo axes(empty_render, empty_spatial, 5), std::out_of_range);
-// }
+    EXPECT_THROW(AxesInfo axes(empty_render, empty_spatial, 5), std::out_of_range);
+}
 
 TEST_F(ImageUtilTest, ConstructorWithSingleElementVectors) {
     std::vector<int> render = {5};
@@ -264,7 +262,7 @@ TEST_F(ImageUtilTest, FromAxisNegativeIndex) {
 // FAILING
 TEST_F(ImageUtilTest, ConstructorWithAxesInfo) {
     casacore::IPosition shape(5, 100, 200, 300, 400, 500);
-    AxesInfo axes({0, 1}, {2, 3}, 4, -1, 5); // x=0, y=1, z=-1, spectral=4, stokes=5
+    AxesInfo axes({0, 1}, {2, 3}, 3, -1, 4);
 
     DimsInfo dims(axes, shape);
 
@@ -283,15 +281,16 @@ TEST_F(ImageUtilTest, ConstructorWithInvalidAxes) {
     EXPECT_THROW(DimsInfo dims(axes, shape), casacore::AipsError);
 }
 
+// FAILING
 TEST_F(ImageUtilTest, LargeShape) {
     casacore::IPosition shape(5, 1000, 2000, 3000, 4000, 5000);
-    AxesInfo axes({1, 2}, {3, 4}, 0, 1, 2);
+    AxesInfo axes({1, 2}, {3, 4}, 2, 0, 1);
 
     DimsInfo dims(axes, shape);
 
     EXPECT_EQ(dims.width, 2000);
     EXPECT_EQ(dims.height, 3000);
     EXPECT_EQ(dims.depth, 1000);
-    EXPECT_EQ(dims.num_channels, 1000);
-    EXPECT_EQ(dims.num_stokes, 2000);
+    EXPECT_EQ(dims.num_channels, 3000);
+    EXPECT_EQ(dims.num_stokes, 2000); 
 }
