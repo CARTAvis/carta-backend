@@ -292,5 +292,5 @@ TEST_F(ImageUtilTest, LargeShape) {
     EXPECT_EQ(dims.height, 3000);
     EXPECT_EQ(dims.depth, 1000);
     EXPECT_EQ(dims.num_channels, 3000);
-    EXPECT_EQ(dims.num_stokes, 2000); 
+    EXPECT_EQ(dims.num_stokes, 2000);
 }

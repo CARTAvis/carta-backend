@@ -251,8 +251,7 @@ struct AxesInfo {
      * @param spatial A vector containing the spatial x and y axes.
      * @param spectral The spectral axis index.
      */
-    AxesInfo(const std::vector<int> render, const std::vector<int> spatial, int spectral)
-        : AxesInfo(render, spatial, spectral, -1, -1) {}
+    AxesInfo(const std::vector<int> render, const std::vector<int> spatial, int spectral) : AxesInfo(render, spatial, spectral, -1, -1) {}
 
     /**
      * @brief Constructor initialising rendering, spatial, spectral, z, and stokes axes.
@@ -303,7 +302,8 @@ struct DimsInfo {
      * @return The size of the axis if valid, otherwise returns 1.
      */
     static size_t FromAxis(int axis, const casacore::IPosition& shape) {
-        if (axis < 0) return 1;
+        if (axis < 0)
+            return 1;
         if (axis >= shape.nelements()) {
             throw casacore::AipsError("Axis index out of bounds in DimsInfo::FromAxis");
         }
