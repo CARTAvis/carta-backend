@@ -2087,6 +2087,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         data_message.set_width(width);
         data_message.set_height(height);
         data_message.set_depth(depth);
+        data_message.set_slice(start); // render3DData.slice not needed
         data_message.set_progress(progress);
 
         if (compression_type == CARTA::CompressionType::NONE) {

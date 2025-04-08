@@ -136,10 +136,9 @@ public:
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
     static CARTA::Render3DRequest Render3DRequest(
         int32_t file_id, int32_t region_id, int32_t viewer_id, CARTA::IntBounds spectral_range, int32_t rebin_xy, int32_t rebin_z, CARTA::CompressionType compression_type, float compression_quality,  bool keep);
-    // static CARTA::Render3DResponse Render3DResponse(
-    //     bool success, const std::string& message, bool cancel);
+    // render3DData.slice not needed
     static CARTA::Render3DData Render3DData(int32_t file_id, int32_t region_id,
-        int32_t viewer_id, const std::vector<char>& image_data, const size_t compressed_size, const std::vector<int32_t>& nan_encodings, int32_t width, int32_t height, int32_t depth, CARTA::CompressionType compression_type, float compression_quality, float progress);
+        int32_t viewer_id, const std::vector<char>& image_data, const size_t compressed_size, const std::vector<int32_t>& nan_encodings, int32_t width, int32_t height, int32_t depth, int32_t slice, CARTA::CompressionType compression_type, float compression_quality, float progress);
     static CARTA::PvRequest PvRequest(
         int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false);
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress, int32_t preview_id = 0);
