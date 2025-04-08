@@ -576,7 +576,7 @@ CARTA::Render3DRequest Message::Render3DRequest(int32_t file_id, int32_t region_
 
 // give vectors image_data and nan_encodings. Then give .data() and size
 
-CARTA::Render3DData Message::Render3DData(int32_t file_id, int32_t region_id, int32_t viewer_id, const std::vector<char>& image_data, const size_t compressed_size, const std::vector<int32_t>& nan_encodings, int32_t width, int32_t height, int32_t depth, int32_t slice, CARTA::CompressionType compression_type, float compression_quality, float progress) {
+CARTA::Render3DData Message::Render3DData(int32_t file_id, int32_t region_id, int32_t viewer_id, const std::vector<char>& image_data, const size_t compressed_size, const std::vector<int32_t>& nan_encodings, int32_t width, int32_t height, int32_t depth, CARTA::CompressionType compression_type, float compression_quality, float progress) {
     CARTA::Render3DData message;
     message.set_file_id(file_id);
     message.set_region_id(region_id);
@@ -586,7 +586,6 @@ CARTA::Render3DData Message::Render3DData(int32_t file_id, int32_t region_id, in
     message.set_width(width);
     message.set_height(height);
     message.set_depth(depth);
-    message.set_slice(slice);
     message.set_compression_type(compression_type);
     message.set_compression_quality(compression_quality);
     message.set_progress(progress);
