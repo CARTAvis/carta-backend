@@ -11,26 +11,18 @@
 #include "Util/Message.h"
 #include "src/Frame/Frame.h"
 
-static const std::string IMAGE_OPTS = "-s 0";
-static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";
-
 class ContourTest : public ::testing::Test {
 public:
     void GenerateContour 
         (std::string filename, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {
-        // (int width, int height, std::string image_opts, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {
-        // std::string image_shape = std::to_string(width) + " " + std::to_string(height);
         std::string file_path;
         
         if (file_type == CARTA::FileType::HDF5) {
-            // file_path = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
             file_path = (TestRoot() / "data" / "images" / "hdf5" / filename);
         } else {
-            // file_path = ImageGenerator::GeneratedFitsImagePath(image_shape, image_opts);
             file_path = (TestRoot() / "data" / "images" / "fits" / filename);
         }
         
-        // file_path = (TestRoot() / "data" / "images" / "fits" / filename);
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
         
@@ -134,31 +126,25 @@ private:
 };
 
 TEST_F(ContourTest, NoSmoothingFitsFile) {
-    // GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::FITS, CARTA::SmoothingMode::NoSmoothing);
     GenerateContour("500_500_image_opts.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::NoSmoothing);
 }
 
 TEST_F(ContourTest, NoSmoothingFitsFileNaN) {
-    // GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::FITS, CARTA::SmoothingMode::NoSmoothing);
     GenerateContour("500_500_image_opts_nan.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::NoSmoothing);
 }
 
 TEST_F(ContourTest, GaussianBlurFitsFile) {
-    // GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::FITS, CARTA::SmoothingMode::GaussianBlur);
     GenerateContour("500_500_image_opts.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::GaussianBlur);
 }
 
 TEST_F(ContourTest, GaussianBlurFitsFileNaN) {
-    // GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::FITS, CARTA::SmoothingMode::GaussianBlur);
     GenerateContour("500_500_image_opts_nan.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::GaussianBlur);
 }
 
 TEST_F(ContourTest, BlockAverageFitsFile) {
-    // GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
     GenerateContour("500_500_image_opts.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
 }
 
 TEST_F(ContourTest, BlockAverageFitsFileNaN) {
-    // GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
     GenerateContour("500_500_image_opts_nan.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
 }
