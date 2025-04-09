@@ -188,7 +188,7 @@ protected:
     fs::path temp_dir;
 
     void SetUp() override {
-        temp_dir = fs::temp_directory_path() / "test_symlink";
+        temp_dir = TestRoot() / "test" / "test_symlink";
         fs::create_directories(temp_dir);
     }
 
@@ -241,7 +241,6 @@ TEST_F(GetResolvedFilenameTest, ResolvesNormalFile) {
 }
 
 TEST_F(GetResolvedFilenameTest, ResolvesToSameDirectory) {
-    auto pwd = TestRoot();
     fs::path dir = temp_dir / "subdir";
     fs::create_directory(dir);
     std::string message;
