@@ -107,7 +107,7 @@ int GetNumItems(const std::string& path) {
  * an empty `fs::path` is returned.
  *
  * @note This function assumes that path entries in `PATH` are separated by colons (`:`),
- *       which is standard on UNIX-like systems. It may need modification for Windows.
+ *       which is standard on UNIX-like systems.
  *
  * @warning If the `PATH` environment variable is not set, this function may behave unexpectedly.
  */
@@ -131,13 +131,13 @@ fs::path SearchPath(std::string filename) {
 }
 
 /**
- * @details This function attempts to identify the type of an image file by either checking
+ * @details This function attempts to identify the type of an image file either by checking
  * its magic number (file signature) or examining its file extension. If `check_content`
  * is set to `true`, the function inspects the file's magic number to classify it as
  * FITS or HDF5. If `check_content` is `false`, it relies on common file extensions.
  *
  * @note When `check_content` is enabled, compressed FITS files (`.fits.gz`) are identified
- *       by checking their decompressed filename extension.
+ *       by their decompressed filename extension.
  *
  * @warning Checking the file content requires reading the file's magic number,
  *          which may introduce additional I/O overhead.
@@ -219,13 +219,13 @@ CARTA::FileType GuessRegionType(const std::string& path_string, bool check_conte
 
 /**
  * @details This function attempts to classify the type of a catalog table file (e.g., FITS table or VOTable)
- * by first checking its magic number (if `check_content` is `true`) or, if content checking is
+ * either by checking its magic number (if `check_content` is `true`) or, if content checking is
  * disabled, by inspecting the file extension.
  *
  * @note If `check_content` is enabled, the function may attempt to read the file's magic number.
  *       Ensure the file is accessible to avoid potential I/O errors.
  *
- * @warning This function does not validate file integrity, it only determines type based on
+ * @warning This function does not validate file integrity; it only determines type based on
  *          basic signature matching or filename extensions.
  */
 CARTA::CatalogFileType GuessTableType(const std::string& path_string, bool check_content) {

@@ -34,7 +34,7 @@ std::string SafeStringUnescape(const std::string& input);
  *
  * @param[in] input The string to be split.
  * @param[in] delim The character delimiter used to separate the input string.
- * @param[out] parts A vector to store the resulting substrings. It is cleared before adding new values.
+ * @param[out] parts A vector to store the resulting substrings. It is cleared before new values are added.
  */
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
 

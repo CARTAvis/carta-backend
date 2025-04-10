@@ -12,7 +12,7 @@
 #include <uuid/uuid.h>
 
 /**
- * @details This function generates a new random UUID (Universally Unique Identifier)
+ * @details This function generates a new random UUID
  * and returns it as a string.
  */
 std::string NewAuthToken() {

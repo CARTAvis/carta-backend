@@ -107,7 +107,7 @@ struct AxisRange {
      * Two AxisRange objects are considered equal if both their `from`
      * and `to` values match.
      *
-     * @param rhs The other AxisRange to compare with.
+     * @param rhs The AxisRange to compare.
      * @return true if the two ranges are equal, false otherwise.
      */
     bool operator==(const AxisRange& rhs) const {
@@ -123,7 +123,7 @@ struct AxisRange {
      * Two AxisRange objects are considered not equal if either their
      * `from` or `to` values differ.
      *
-     * @param rhs The other AxisRange to compare with.
+     * @param rhs The AxisRange to compare.
      * @return true if the two ranges are not equal, false otherwise.
      */
     bool operator!=(const AxisRange& rhs) const {
@@ -198,8 +198,8 @@ struct PointXy {
 
     /**
      * @brief Converts floating-point coordinates to integer indices.
-     * @param x_index Reference to store the x-coordinate index.
-     * @param y_index Reference to store the y-coordinate index.
+     * @param x_index Reference to store the X-coordinate index.
+     * @param y_index Reference to store the Y-coordinate index.
      */
 
     void ToIndex(int& x_index, int& y_index) {
@@ -235,8 +235,8 @@ struct AxesInfo {
     int x;         ///< Index of the X-axis for rendering.
     int y;         ///< Index of the Y-axis for rendering.
     int spatial_x; ///< Index of the spatial X-axis.
-    int spatial_y; ///< Index of the spatial Y-axis (if applicable).
-    int spectral;  ///< Index of the spectral axis.
+    int spatial_y; ///< Index of the spatial Y-axis.
+    int spectral;  ///< Index of the spectral axis (if applicable).
     int z;         ///< Index of the Z-axis (if applicable).
     int stokes;    ///< Index of the stokes axis (if applicable).
 
@@ -318,7 +318,7 @@ struct DimsInfo {
     /**
      * @brief Constructor that initialises dimensions based on given axes and shape.
      * @param axes The AxesInfo struct containing axis indices.
-     * @param shape The shape of the data in terms of dimensions.
+     * @param shape The image dimensions.
      */
     DimsInfo(const AxesInfo& axes, const casacore::IPosition& shape)
         : width(FromAxis(axes.x, shape)),
