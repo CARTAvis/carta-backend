@@ -232,12 +232,12 @@ struct PointXy {
  * spectral representation, and stokes parameters.
  */
 struct AxesInfo {
-    int x;         ///< Index of the x-axis for rendering.
-    int y;         ///< Index of the spatial y-axis.
-    int spatial_x; ///< Index of the spatial x-axis.
-    int spatial_y; ///< Index of the spectral y-axis.
+    int x;         ///< Index of the X-axis for rendering.
+    int y;         ///< Index of the Y-axis for rendering.
+    int spatial_x; ///< Index of the spatial X-axis.
+    int spatial_y; ///< Index of the spatial Y-axis (if applicable).
     int spectral;  ///< Index of the spectral axis.
-    int z;         ///< Index of the z-axis (if applicable).
+    int z;         ///< Index of the Z-axis (if applicable).
     int stokes;    ///< Index of the stokes axis (if applicable).
 
     /**
@@ -247,26 +247,26 @@ struct AxesInfo {
 
     /**
      * @brief Constructor initialising rendering and spatial axes.
-     * @param render A vector containing the x and y rendering axes.
-     * @param spatial A vector containing the spatial x and y axes.
+     * @param render A vector containing the X and Y rendering axes.
+     * @param spatial A vector containing the spatial X and Y axes.
      * @param spectral The spectral axis index.
      */
     AxesInfo(const std::vector<int> render, const std::vector<int> spatial, int spectral) : AxesInfo(render, spatial, spectral, -1, -1) {}
 
     /**
-     * @brief Constructor initialising rendering, spatial, spectral, z, and stokes axes.
-     * @param render A vector containing the x and y rendering axes.
-     * @param spatial A vector containing the spatial x and y axes.
+     * @brief Constructor initialising rendering, spatial, spectral, Z, and stokes axes.
+     * @param render A vector containing the X and Y rendering axes.
+     * @param spatial A vector containing the spatial X and Y axes.
      * @param spectral The spectral axis index.
-     * @param z The z-axis index.
+     * @param z The Z-axis index.
      * @param stokes The stokes axis index.
      */
     AxesInfo(const std::vector<int> render, std::vector<int> spatial, int spectral, int z, int stokes)
         : x(render.at(0)), y(render.at(1)), spatial_x(spatial.at(0)), spatial_y(spatial.at(1)), spectral(spectral), z(z), stokes(stokes) {}
 
     /**
-     * @brief Retrieves the rendering axes (x and y).
-     * @return A vector containing the x and y rendering axes.
+     * @brief Retrieves the rendering axes (X and Y).
+     * @return A vector containing the X and Y rendering axes.
      */
     std::vector<int> Render() {
         return {x, y};
@@ -274,7 +274,7 @@ struct AxesInfo {
 
     /**
      * @brief Retrieves the spatial axes (spatial_x and spatial_y).
-     * @return A vector containing the spatial x and y axes.
+     * @return A vector containing the spatial X and Y axes.
      */
     std::vector<int> Spatial() {
         return {spatial_x, spatial_y};
@@ -289,9 +289,9 @@ struct AxesInfo {
  * and number of Stokes parameters based on the given axes and shape.
  */
 struct DimsInfo {
-    size_t width;        ///< Width of the data (corresponding to the x-axis).
-    size_t height;       ///< Height of the data (corresponding to the y-axis).
-    size_t depth;        ///< Depth of the data (corresponding to the z-axis).
+    size_t width;        ///< Width of the data (corresponding to the X-axis).
+    size_t height;       ///< Height of the data (corresponding to the Y-axis).
+    size_t depth;        ///< Depth of the data (corresponding to the Z-axis).
     size_t num_channels; ///< Number of spectral channels.
     size_t num_stokes;   ///< Number of Stokes parameters.
 
