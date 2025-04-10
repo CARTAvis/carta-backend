@@ -24,7 +24,7 @@
  * @warning If both `top_level_string` and `starting_string` are set to their default placeholders ("base" and "root"),
  *          the function logs a critical error and returns `false`.
  */
-bool CheckFolderPaths(string& top_level_string, string& starting_string) {
+bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string) {
     // TODO: is this code needed at all? Was it a weird workaround?
     {
         if (top_level_string == "base" && starting_string == "root") {
@@ -91,7 +91,7 @@ bool CheckFolderPaths(string& top_level_string, string& starting_string) {
  *
  * @warning If `top_folder` is empty, the function will always return `true`.
  */
-bool IsSubdirectory(string folder, string top_folder) {
+bool IsSubdirectory(std::string folder, std::string top_folder) {
     folder = casacore::Path(folder).absoluteName();
     top_folder = casacore::Path(top_folder).absoluteName();
     if (top_folder.empty()) {
@@ -101,7 +101,7 @@ bool IsSubdirectory(string folder, string top_folder) {
         return true;
     }
     casacore::Path folder_path(folder);
-    string parent_string(folder_path.dirName());
+    std::string parent_string(folder_path.dirName());
     if (parent_string == top_folder) {
         return true;
     }
@@ -122,7 +122,8 @@ bool IsSubdirectory(string folder, string top_folder) {
  * a relative subdirectory, and a file name. It checks whether the resulting file path
  * exists and is readable. If any issue is encountered, an error message is set.
  */
-casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file, string& message) {
+casacore::String GetResolvedFilename(
+    const std::string& root_dir, const std::string& directory, const std::string& file, std::string& message) {
     // Given directory (relative to root directory) and file, return resolved file path.
     // Check if file path exists and is readable.
     casacore::String resolved_filename;

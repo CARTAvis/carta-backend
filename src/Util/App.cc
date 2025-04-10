@@ -114,7 +114,7 @@ std::string GetReleaseInformation() {
  * @note
  * - The function trims trailing newline characters from the output.
  * - The caller must ensure the command is safe to execute (avoid shell injection).
- * - Works only on Unix-like systems; **not compatible with Windows** (consider `_popen()` for Windows support).
+ * - Works only on Unix-like systems.
  *
  * @warning
  * - If `popen()` fails, an error message is printed, and an empty string is returned.

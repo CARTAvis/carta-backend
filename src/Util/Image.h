@@ -233,7 +233,7 @@ struct PointXy {
  */
 struct AxesInfo {
     int x;         ///< Index of the x-axis for rendering.
-    int y;         ///< Index of the spatial x-axis.
+    int y;         ///< Index of the spatial y-axis.
     int spatial_x; ///< Index of the spatial x-axis.
     int spatial_y; ///< Index of the spectral y-axis.
     int spectral;  ///< Index of the spectral axis.
