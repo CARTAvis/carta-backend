@@ -13,22 +13,19 @@
 
 using namespace carta;
 
-TEST(TileEncodingTest, InvalidInput) {
-    // Layer can be from 0 to 12
-    ASSERT_EQ(Tile::Encode(0, 0, -1), -1);
-    ASSERT_EQ(Tile::Encode(0, 0, 13), -1);
-    // X and Y coordinates from 0 to 4095
-    ASSERT_EQ(Tile::Encode(-1, 0, 12), -1);
-    ASSERT_EQ(Tile::Encode(4096, 0, 12), -1);
-    ASSERT_EQ(Tile::Encode(0, -1, 12), -1);
-    ASSERT_EQ(Tile::Encode(0, 4096, 12), -1);
-}
+TEST(TileEncodingTest, InvalidEncoding) {
+    std::vector<std::tuple<int32_t, int32_t, int32_t >> invalid_cases = {
+        {-1, 0, 0}, {0, -1, 0}, {0, 0, -1},                         // negative values
+        {0, 0, -1}, {0, 0, 13},                                     // invalid layer
+        {4096, 0, 12}, {0, 4096, 12}, {-1, 0, 12}, {0, -1, 12},     // x/y too large
+        {1 << 10, 0, 10}, {0, 1 << 10, 10},                         // x/y on upper edge
+        {0, 1024, 10}, {0, 256, 8}, {0, 4, 2}                       // out of bounds
+    };
 
-TEST(TileEncodingTest, OutOfBounds) {
-    // X and Y coordinates from 0 to 2^layer -1
-    ASSERT_EQ(Tile::Encode(0, 1024, 10), -1);
-    ASSERT_EQ(Tile::Encode(0, 256, 8), -1);
-    ASSERT_EQ(Tile::Encode(0, 4, 2), -1);
+    for (auto& [x, y, layer] : invalid_cases) {
+        int32_t result = Tile::Encode(x, y, layer);
+        EXPECT_EQ(result, -1) << "Expected -1 for invalid (x=" << x << ", y=" << y << ", layer=" << layer << ")";
+    }
 }
 
 TEST(TileEncodingTest, RoundTrip) {
@@ -37,19 +34,79 @@ TEST(TileEncodingTest, RoundTrip) {
     std::uniform_int_distribution<> layer_random(0, 12);
     std::uniform_real_distribution<float> float_random(0, 1);
 
-    for (auto i = 0; i < 10000; i++) {
+    for (int i = 0; i < 10000; i++) {
         int32_t layer = layer_random(mt);
         int32_t layer_width = 1 << layer;
-        int32_t x = floor(float_random(mt) * layer_width);
-        int32_t y = floor(float_random(mt) * layer_width);
+        int32_t x = static_cast<int32_t>(float_random(mt) * layer_width);
+        int32_t y = static_cast<int32_t>(float_random(mt) * layer_width);
 
-        int32_t encoded_value = Tile::Encode(x, y, layer);
-        auto tile = Tile::Decode(encoded_value);
-        ASSERT_EQ(tile.x, x);
-        ASSERT_EQ(tile.y, y);
-        ASSERT_EQ(tile.layer, layer);
+        int32_t encoded = Tile::Encode(x, y, layer);
+        ASSERT_NE(encoded, -1) << "Encode failed for valid values: x=" << x << " y=" << y << " layer=" << layer;
+
+        Tile decoded = Tile::Decode(encoded);
+
+        ASSERT_EQ(decoded.x, x) << "Mismatch at iteration " << i << ": decoded.x=" << decoded.x << " expected=" << x;
+        ASSERT_EQ(decoded.y, y) << "Mismatch at iteration " << i << ": decoded.y=" << decoded.y << " expected=" << y;
+        ASSERT_EQ(decoded.layer, layer) << "Mismatch at iteration " << i << ": decoded.layer=" << decoded.layer << " expected=" << layer;
     }
 }
+
+TEST(TileEncodingTest, BoundaryEncodingDecoding) {
+    for (int32_t layer = 0; layer <= 12; ++layer) {
+        int32_t width = 1 << layer;
+        std::vector<std::pair<int32_t, int32_t>> points = {
+            {0, 0},
+            {width - 1, 0},
+            {0, width - 1},
+            {width - 1, width - 1}
+        };
+
+        for (const auto& [x, y] : points) {
+            int32_t encoded = Tile::Encode(x, y, layer);
+            ASSERT_NE(encoded, -1) << "Failed to encode boundary point";
+
+            Tile decoded = Tile::Decode(encoded);
+            EXPECT_EQ(decoded.x, x);
+            EXPECT_EQ(decoded.y, y);
+            EXPECT_EQ(decoded.layer, layer);
+        }
+    }
+}
+
+TEST(TileEncodingTest, LayerToMipConversion) {
+    int32_t img_width = 1024;
+    int32_t img_height = 512;
+    int32_t tile_width = 256;
+    int32_t tile_height = 256;
+
+    // Manually calculated expected mips
+    std::vector<std::pair<int, int>> layer_to_expected_mip = {
+        {0, 4}, {1, 2}, {2, 1}
+    };
+
+    for (const auto& [layer, expected_mip] : layer_to_expected_mip) {
+        int32_t mip = Tile::LayerToMip(layer, img_width, img_height, tile_width, tile_height);
+        EXPECT_EQ(mip, expected_mip) << "Unexpected mip for layer " << layer;
+    }
+}
+
+TEST(TileEncodingTest, MipLayerRoundTrip) {
+    int32_t img_width = 1024;
+    int32_t img_height = 1024;
+    int32_t tile_width = 256;
+    int32_t tile_height = 256;
+
+    for (int layer = 0; layer <= 4; ++layer) {
+        int mip = Tile::LayerToMip(layer, img_width, img_height, tile_width, tile_height);
+    
+        // Skip invalid mip-to-layer mappings
+        if (mip <= 0) continue;
+    
+        int roundtrip_layer = Tile::MipToLayer(mip, img_width, img_height, tile_width, tile_height);
+        EXPECT_EQ(roundtrip_layer, layer) << "Round-trip failed: layer " << layer << " → mip " << mip << " → layer " << roundtrip_layer;
+    }
+}
+
 
 #ifdef COMPILE_PERFORMANCE_TESTS
 

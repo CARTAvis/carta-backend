@@ -28,9 +28,9 @@ struct Tile {
     }
 
     static Tile Decode(int32_t encoded_value) {
-        int32_t x = (((encoded_value << 19) >> 19) + 4096) % 4096;
-        int32_t layer = ((encoded_value >> 24) + 128) % 128;
-        int32_t y = (((encoded_value << 7) >> 19) + 4096) % 4096;
+        int32_t x = encoded_value & 0xFFF;
+        int32_t y = (encoded_value >> 12) & 0xFFF;
+        int32_t layer = (encoded_value >> 24) & 0xFF;
         return Tile{x, y, layer};
     }
 
@@ -43,9 +43,12 @@ struct Tile {
     }
 
     static int32_t MipToLayer(int32_t mip, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height) {
+        if (mip <= 0) return -1;  // invalid mip
+    
         double total_tiles_x = ceil((double)(image_width) / tile_width);
         double total_tiles_y = ceil((double)(image_height) / tile_height);
         double max_mip = std::max(total_tiles_x, total_tiles_y);
+    
         return ceil(log2(max_mip / mip));
     }
 };
