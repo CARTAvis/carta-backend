@@ -21,13 +21,13 @@ namespace carta {
  * between resolution layers and mipmap levels.
  */
 struct Tile {
-    int32_t x;      /**< The X coordinate of the tile. */
-    int32_t y;      /**< The Y coordinate of the tile. */
-    int32_t layer;  /**< The resolution layer of the tile. */
+    int32_t x;     /**< The X coordinate of the tile. */
+    int32_t y;     /**< The Y coordinate of the tile. */
+    int32_t layer; /**< The resolution layer of the tile. */
 
     /**
      * @brief Encodes tile coordinates and layer into a 32-bit integer.
-     * 
+     *
      * @param x The X coordinate (must be within bounds of the layer).
      * @param y The Y coordinate (must be within bounds of the layer).
      * @param layer The layer index (must be between 0 and 12).
@@ -44,7 +44,7 @@ struct Tile {
 
     /**
      * @brief Decodes a 32-bit integer into a Tile object.
-     * 
+     *
      * @param encoded_value The encoded 32-bit integer.
      * @return A Tile object with decoded x, y, and layer values.
      */
