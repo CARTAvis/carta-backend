@@ -35,6 +35,7 @@ var hierarchy =
     [ "std::enable_shared_from_this", null, [
       [ "carta::TilePool", "structcarta_1_1TilePool.html", null ]
     ] ],
+    [ "carta::EnumClassHash", "structcarta_1_1EnumClassHash.html", null ],
     [ "carta::EventHeader", "structcarta_1_1EventHeader.html", null ],
     [ "carta::FileExtInfoLoader", "classcarta_1_1FileExtInfoLoader.html", null ],
     [ "carta::FileInfoLoader", "classcarta_1_1FileInfoLoader.html", null ],
@@ -89,6 +90,7 @@ var hierarchy =
     ] ],
     [ "carta::OnMessageTask", "classcarta_1_1OnMessageTask.html", [
       [ "carta::AnimationTask", "classcarta_1_1AnimationTask.html", null ],
+      [ "carta::GeneralMessageTask< T >", "classcarta_1_1GeneralMessageTask.html", null ],
       [ "carta::PvPreviewUpdateTask", "classcarta_1_1PvPreviewUpdateTask.html", null ],
       [ "carta::RegionDataStreamsTask", "classcarta_1_1RegionDataStreamsTask.html", null ],
       [ "carta::SetCursorTask", "classcarta_1_1SetCursorTask.html", null ],

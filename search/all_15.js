@@ -22,5 +22,6 @@ var searchData=
   ['user_5fdirectory_19',['user_directory',['../structcarta_1_1ProgramSettings.html#a8c6eb022e0fd7ea678672911f21012f7',1,'carta::ProgramSettings']]],
   ['user_5fsettings_5fjson_5fexists_20',['user_settings_json_exists',['../structcarta_1_1ProgramSettings.html#ada065e7f7ffd32d0ff0bf815c14ba9f0',1,'carta::ProgramSettings']]],
   ['useregionspectraldata_21',['useregionspectraldata',['../classcarta_1_1FileLoader.html#a5b9332a18c0ff362c8f7371017974408',1,'carta::FileLoader::UseRegionSpectralData()'],['../classcarta_1_1Hdf5Loader.html#a3e977a2be894479c4e26a88bbd4d6dfc',1,'carta::Hdf5Loader::UseRegionSpectralData()']]],
-  ['usetilecache_22',['usetilecache',['../classcarta_1_1FileLoader.html#a7c599d031a7fd5402902ab943f55338e',1,'carta::FileLoader::UseTileCache()'],['../classcarta_1_1Hdf5Loader.html#a00c1f69879b1c2d59bbd902e93c70f31',1,'carta::Hdf5Loader::UseTileCache()']]]
+  ['usetilecache_22',['usetilecache',['../classcarta_1_1FileLoader.html#a7c599d031a7fd5402902ab943f55338e',1,'carta::FileLoader::UseTileCache()'],['../classcarta_1_1Hdf5Loader.html#a00c1f69879b1c2d59bbd902e93c70f31',1,'carta::Hdf5Loader::UseTileCache()']]],
+  ['utype_5ft_23',['utype_t',['../structcarta_1_1EnumClassHash.html#ad3d70e8b43be01d6a19b1b5b551f46cf',1,'carta::EnumClassHash']]]
 ];

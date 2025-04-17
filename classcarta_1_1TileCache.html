@@ -388,7 +388,9 @@ Here is the caller graph for this function:</div>
 <p>Retrieve a tile from the cache. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">key</td><td>The tile key</td></tr>
+    <tr><td class="paramname">key</td><td>The tile key </td></tr>
+    <tr><td class="paramname">loader</td><td>The file loader to pass to TileCache::GetChunk </td></tr>
+    <tr><td class="paramname">image_mutex</td><td>The image mutex to pass to TileCache::GetChunk</td></tr>
   </table>
   </dd>
 </dl>

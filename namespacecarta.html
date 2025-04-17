@@ -168,6 +168,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Ds9ImportExport.html">Ds9ImportExport</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1EnumClassHash.html">EnumClassHash</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ExprLoader.html">ExprLoader</a></td></tr>
@@ -191,6 +193,8 @@ Classes</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Data structure for storing status of the fitting result.  <a href="structcarta_1_1FitStatus.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html">Frame</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1GeneralMessageTask.html">GeneralMessageTask</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -432,6 +436,9 @@ Functions</h2></td></tr>
 <tr class="separator:a928af6c5078150f8c0cafc2a32a6b05c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab91d60c075ef6cca17b213b9cde59d66" id="r_ab91d60c075ef6cca17b213b9cde59d66"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1Column.html">Column</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ab91d60c075ef6cca17b213b9cde59d66">ColumnFromFitsType</a> (int type, const string &amp;col_name)</td></tr>
 <tr class="separator:ab91d60c075ef6cca17b213b9cde59d66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89ce55ad3ee994c42310eee6787f1a14" id="r_a89ce55ad3ee994c42310eee6787f1a14"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:a89ce55ad3ee994c42310eee6787f1a14"><td class="memTemplItemLeft" align="right" valign="top">T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a89ce55ad3ee994c42310eee6787f1a14">clamp</a> (T val, const T &amp;min_val, const T &amp;max_val)</td></tr>
+<tr class="separator:a89ce55ad3ee994c42310eee6787f1a14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -1053,6 +1060,47 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a89ce55ad3ee994c42310eee6787f1a14" name="a89ce55ad3ee994c42310eee6787f1a14"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89ce55ad3ee994c42310eee6787f1a14">&#9670;&#160;</a></span>clamp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">T carta::clamp </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>val</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramname"><em>min_val</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramname"><em>max_val</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a89ce55ad3ee994c42310eee6787f1a14_icgraph.svg" width="314" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
 <a id="ab91d60c075ef6cca17b213b9cde59d66" name="ab91d60c075ef6cca17b213b9cde59d66"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab91d60c075ef6cca17b213b9cde59d66">&#9670;&#160;</a></span>ColumnFromFitsType()</h2>
 
@@ -1281,7 +1329,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_ae0d37b236270de77bb23613108e10258_icgraph.svg" width="100%" height="434"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_ae0d37b236270de77bb23613108e10258_icgraph.svg" width="100%" height="482"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1781,7 +1829,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a075ee64ae108d46c43cdb9a37b54d442_icgraph.svg" width="100%" height="434"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a075ee64ae108d46c43cdb9a37b54d442_icgraph.svg" width="100%" height="482"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -2371,12 +2419,13 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">= {</div>
-<div class="line">    {<a class="code hl_variable" href="namespacecarta.html#a1507d2cefdaa01d5695e4fb962c01281">LAYOUT</a>, <a class="code hl_define" href="HttpServer_8h.html#a9b3d6bc5a4ab900cf721b725b2d295fe">CARTA_LAYOUT_SCHEMA_URL</a>}, {<a class="code hl_variable" href="namespacecarta.html#a276b31a07a77cce605e901c674d66356">SNIPPET</a>, <a class="code hl_define" href="HttpServer_8h.html#a03de961a098b39862343b6df887057c1">CARTA_SNIPPET_SCHEMA_URL</a>}, {WORKSPACE, <a class="code hl_define" href="HttpServer_8h.html#a46a0a90c65a0875944e2e2eea3fc0886">CARTA_WORKSPACE_SCHEMA_URL</a>}}</div>
+<div class="line">    {<a class="code hl_variable" href="namespacecarta.html#a1507d2cefdaa01d5695e4fb962c01281">LAYOUT</a>, <a class="code hl_define" href="HttpServer_8h.html#a9b3d6bc5a4ab900cf721b725b2d295fe">CARTA_LAYOUT_SCHEMA_URL</a>}, {<a class="code hl_variable" href="namespacecarta.html#a276b31a07a77cce605e901c674d66356">SNIPPET</a>, <a class="code hl_define" href="HttpServer_8h.html#a03de961a098b39862343b6df887057c1">CARTA_SNIPPET_SCHEMA_URL</a>}, {<a class="code hl_variable" href="namespacecarta.html#af9830509695cfe9bd0ed310dec7033be">WORKSPACE</a>, <a class="code hl_define" href="HttpServer_8h.html#a46a0a90c65a0875944e2e2eea3fc0886">CARTA_WORKSPACE_SCHEMA_URL</a>}}</div>
 <div class="ttc" id="aHttpServer_8h_html_a03de961a098b39862343b6df887057c1"><div class="ttname"><a href="HttpServer_8h.html#a03de961a098b39862343b6df887057c1">CARTA_SNIPPET_SCHEMA_URL</a></div><div class="ttdeci">#define CARTA_SNIPPET_SCHEMA_URL</div><div class="ttdef"><b>Definition</b> HttpServer.h:30</div></div>
 <div class="ttc" id="aHttpServer_8h_html_a46a0a90c65a0875944e2e2eea3fc0886"><div class="ttname"><a href="HttpServer_8h.html#a46a0a90c65a0875944e2e2eea3fc0886">CARTA_WORKSPACE_SCHEMA_URL</a></div><div class="ttdeci">#define CARTA_WORKSPACE_SCHEMA_URL</div><div class="ttdef"><b>Definition</b> HttpServer.h:31</div></div>
 <div class="ttc" id="aHttpServer_8h_html_a9b3d6bc5a4ab900cf721b725b2d295fe"><div class="ttname"><a href="HttpServer_8h.html#a9b3d6bc5a4ab900cf721b725b2d295fe">CARTA_LAYOUT_SCHEMA_URL</a></div><div class="ttdeci">#define CARTA_LAYOUT_SCHEMA_URL</div><div class="ttdef"><b>Definition</b> HttpServer.h:29</div></div>
 <div class="ttc" id="anamespacecarta_html_a1507d2cefdaa01d5695e4fb962c01281"><div class="ttname"><a href="namespacecarta.html#a1507d2cefdaa01d5695e4fb962c01281">carta::LAYOUT</a></div><div class="ttdeci">const std::string LAYOUT</div><div class="ttdef"><b>Definition</b> HttpServer.cc:28</div></div>
 <div class="ttc" id="anamespacecarta_html_a276b31a07a77cce605e901c674d66356"><div class="ttname"><a href="namespacecarta.html#a276b31a07a77cce605e901c674d66356">carta::SNIPPET</a></div><div class="ttdeci">const std::string SNIPPET</div><div class="ttdef"><b>Definition</b> HttpServer.cc:29</div></div>
+<div class="ttc" id="anamespacecarta_html_af9830509695cfe9bd0ed310dec7033be"><div class="ttname"><a href="namespacecarta.html#af9830509695cfe9bd0ed310dec7033be">carta::WORKSPACE</a></div><div class="ttdeci">const std::string WORKSPACE</div><div class="ttdef"><b>Definition</b> HttpServer.cc:30</div></div>
 </div><!-- fragment -->
 </div>
 </div>

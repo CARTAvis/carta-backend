@@ -1,11 +1,32 @@
 <map id="BasicStatsCalculator.h" name="BasicStatsCalculator.h">
-<area shape="rect" id="Node000001" title=" " alt="" coords="135,5,302,31"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,91,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="192,33,89,76,87,71,190,28"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="115,79,178,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="209,33,170,71,166,67,205,29"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="203,79,381,104"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="233,29,272,67,268,71,229,33"/>
-<area shape="rect" id="Node000005" href="$BasicStatsCalculator_8tcc.html" title=" " alt="" coords="405,79,584,104"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="264,28,437,73,436,78,262,33"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="251,5,418,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="149,79,235,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="313,33,229,75,226,70,311,28"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="346,152,409,177"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="325,33,302,65,296,84,300,103,318,126,341,143,338,147,314,130,295,105,291,84,297,63,321,29"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="309,79,488,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="347,29,381,67,377,70,343,33"/>
+<area shape="rect" id="Node000005" href="$BasicStatsCalculator_8tcc.html" title=" " alt="" coords="512,79,691,104"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="378,28,545,72,544,78,377,33"/>
+<area shape="poly" id="edge15_Node000005_Node000003" title=" " alt="" coords="566,107,423,152,421,147,565,101"/>
+<area shape="rect" id="Node000006" href="$Logger_8h.html" title=" " alt="" coords="539,152,664,177"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="604,104,604,138,599,138,599,104"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="5,233,85,258"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="539,174,306,198,185,213,98,228,87,231,86,226,97,223,184,208,305,193,538,169"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="109,233,248,258"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="539,179,262,228,241,232,240,227,261,223,538,173"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="273,225,410,265"/>
+<area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="564,180,418,224,416,219,563,175"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="434,225,593,265"/>
+<area shape="poly" id="edge9_Node000006_Node000010" title=" " alt="" coords="590,180,546,218,543,214,587,176"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="617,225,765,265"/>
+<area shape="poly" id="edge10_Node000006_Node000011" title=" " alt="" coords="616,176,661,214,657,218,613,180"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="789,233,913,258"/>
+<area shape="poly" id="edge11_Node000006_Node000012" title=" " alt="" coords="638,175,802,226,801,231,637,180"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="937,233,1132,258"/>
+<area shape="poly" id="edge12_Node000006_Node000013" title=" " alt="" coords="665,175,959,228,958,233,664,180"/>
+<area shape="rect" id="Node000014" href="$FileSystem_8h.html" title=" " alt="" coords="1156,233,1289,258"/>
+<area shape="poly" id="edge13_Node000006_Node000014" title=" " alt="" coords="665,168,878,187,1011,203,1144,223,1167,227,1166,232,1144,228,1010,208,877,192,664,173"/>
+<area shape="rect" id="Node000015" title=" " alt="" coords="1177,313,1268,339"/>
+<area shape="poly" id="edge14_Node000014_Node000015" title=" " alt="" coords="1225,258,1225,299,1220,299,1220,258"/>
 </map>

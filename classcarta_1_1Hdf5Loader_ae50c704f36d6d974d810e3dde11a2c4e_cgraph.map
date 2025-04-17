@@ -1,0 +1,18 @@
+<map id="carta::Hdf5Loader::GetStatsDataShapeTyped" name="carta::Hdf5Loader::GetStatsDataShapeTyped">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,93,192,133"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Hdf5Loader.html#afa5d819caee85e90912fece54d1896b4" title=" " alt="" coords="252,29,399,69"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="170,91,240,71,241,76,171,96"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FileLoader.html#ad006f05ccd020be05834212598e3a38b" title=" " alt="" coords="256,93,395,133"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="192,111,242,111,242,116,192,116"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1CartaHdf5Image.html#aa163d9cdc235a1e8b1c70679b6538feb" title=" " alt="" coords="240,157,411,197"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="171,131,241,151,240,156,170,136"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="286,30,284,20,290,10,304,5,325,3,350,6,363,13,360,18,348,11,325,8,305,10,293,15,289,21,291,28"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="459,61,611,101"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="395,100,445,92,445,98,395,105"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="465,125,604,165"/>
+<area shape="poly" id="edge5_Node000003_Node000005" title=" " alt="" coords="395,121,452,130,451,135,395,127"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="659,96,797,136"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="604,132,644,126,645,131,605,137"/>
+<area shape="rect" id="Node000007" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="670,161,786,186"/>
+<area shape="poly" id="edge7_Node000005_Node000007" title=" " alt="" coords="605,153,657,160,656,166,604,158"/>
+</map>

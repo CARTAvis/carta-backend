@@ -1,17 +1,19 @@
 <map id="carta::OnMessageTask" name="carta::OnMessageTask">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,153,173,179"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1AnimationTask.html" title=" " alt="" coords="253,5,412,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,141,154,89,185,62,220,40,252,27,254,32,223,44,189,66,158,93,110,144"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1PvPreviewUpdateTask.html" title=" " alt="" coords="229,55,436,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="119,144,165,115,220,89,257,77,259,83,222,94,168,120,121,148"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1RegionDataStreamsTask.html" title=" " alt="" coords="221,104,444,129"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="165,148,269,127,270,132,167,153"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1SetCursorTask.html" title=" " alt="" coords="255,153,410,179"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="187,163,255,163,255,169,187,169"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1SetImageChannelsTask.html" title=" " alt="" coords="225,203,440,228"/>
-<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="167,179,270,200,269,205,165,184"/>
-<area shape="rect" id="Node000007" href="$classcarta_1_1SpectralProfileTask.html" title=" " alt="" coords="239,252,426,277"/>
-<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="122,184,168,211,222,237,263,249,262,255,220,242,166,216,119,188"/>
-<area shape="rect" id="Node000008" href="$classcarta_1_1StartAnimationTask.html" title=" " alt="" coords="237,301,428,327"/>
-<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="111,187,158,238,189,264,223,286,254,299,252,304,220,291,186,269,154,242,107,191"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,179,173,204"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1AnimationTask.html" title=" " alt="" coords="261,5,420,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,165,149,102,182,68,220,40,260,24,262,29,223,44,185,72,153,105,107,168"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1GeneralMessageTask.html" title=" " alt="" coords="221,55,460,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="111,167,159,127,189,106,220,89,253,78,254,83,222,94,191,111,162,131,115,171"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1PvPreviewUpdateTask.html" title=" " alt="" coords="237,104,444,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="131,171,221,138,266,127,268,132,222,143,133,176"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionDataStreamsTask.html" title=" " alt="" coords="229,153,452,179"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="187,179,229,175,229,180,187,184"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1SetCursorTask.html" title=" " alt="" coords="263,203,418,228"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="187,198,263,205,263,211,187,203"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1SetImageChannelsTask.html" title=" " alt="" coords="233,252,448,277"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="135,206,222,237,273,249,272,255,221,242,133,211"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1SpectralProfileTask.html" title=" " alt="" coords="247,301,434,327"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="115,211,163,250,192,270,222,286,259,299,257,304,220,291,189,274,160,254,112,215"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1StartAnimationTask.html" title=" " alt="" coords="245,351,436,376"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="107,214,154,276,186,309,223,336,251,348,249,353,220,340,182,313,150,280,103,217"/>
 </map>

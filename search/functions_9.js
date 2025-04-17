@@ -1,14 +1,14 @@
 var searchData=
 [
   ['id_0',['id',['../classcarta_1_1CartaLogSink.html#a84c3210d5f867f5492ed35afa4631955',1,'carta::CartaLogSink']]],
-  ['image2dconvolver_1',['image2dconvolver',['../classcarta_1_1Image2DConvolver.html#a153605f0ef7a18a092f32c823d4e1921',1,'carta::Image2DConvolver::Image2DConvolver()=delete'],['../classcarta_1_1Image2DConvolver.html#ae12813c5ef59a697ce469d3e3c1de849',1,'carta::Image2DConvolver::Image2DConvolver(const Image2DConvolver&lt; T &gt; &amp;other)=delete'],['../classcarta_1_1Image2DConvolver.html#ad620a3b6c39aee566a5b127419594487',1,'carta::Image2DConvolver::Image2DConvolver(const SPCIIT image, const casacore::Record *const &amp;regionPtr, const casacore::String &amp;mask, const casacore::String &amp;outname, const casacore::Bool overwrite, casa::ImageMomentsProgress *progress_monitor)']]],
+  ['image2dconvolver_1',['image2dconvolver',['../classcarta_1_1Image2DConvolver.html#a153605f0ef7a18a092f32c823d4e1921',1,'carta::Image2DConvolver::Image2DConvolver()=delete'],['../classcarta_1_1Image2DConvolver.html#ae12813c5ef59a697ce469d3e3c1de849',1,'carta::Image2DConvolver::Image2DConvolver(const Image2DConvolver&lt; T &gt; &amp;other)=delete'],['../classcarta_1_1Image2DConvolver.html#a3230283412ad488e25bedf1029cdba99',1,'carta::Image2DConvolver::Image2DConvolver(const SPCIIT image, const casacore::Record *const &amp;regionPtr, const casacore::String &amp;mask, const casacore::String &amp;outname, const casacore::Bool overwrite, casa::ImageMomentsProgress *progress_monitor)']]],
   ['imagebounds_2',['ImageBounds',['../classMessage.html#a2db1e87dde5d0eb661c819b9a6f02604',1,'Message']]],
   ['imagechannellock_3',['ImageChannelLock',['../classcarta_1_1Session.html#a0b574942013817dea365c473c93beb92',1,'carta::Session']]],
   ['imagechanneltasksetidle_4',['ImageChannelTaskSetIdle',['../classcarta_1_1Session.html#a1ffc82b5974708fbeb68b57fb263c637',1,'carta::Session']]],
   ['imagechanneltasktestandset_5',['ImageChannelTaskTestAndSet',['../classcarta_1_1Session.html#a850b38146d8f26a9a2a8ef1097dad20a',1,'carta::Session']]],
   ['imagechannelunlock_6',['ImageChannelUnlock',['../classcarta_1_1Session.html#adf1a6d4cd709bc0aa71c4f4f71d2e6da',1,'carta::Session']]],
   ['imagefitter_7',['ImageFitter',['../classcarta_1_1ImageFitter.html#a9cdf83157a2149961d2311086602baf8',1,'carta::ImageFitter']]],
-  ['imagemoments_8',['ImageMoments',['../classcarta_1_1ImageMoments.html#ad512d09713a16359bda9cc81b39679a3',1,'carta::ImageMoments']]],
+  ['imagemoments_8',['ImageMoments',['../classcarta_1_1ImageMoments.html#a2f017cd5fcb9fd4364ba14c4fb31fbd6',1,'carta::ImageMoments']]],
   ['imageproperties_9',['ImageProperties',['../classMessage.html#aaf243e8ddf5a936578279be8467923e1',1,'Message']]],
   ['imageptrloader_10',['ImagePtrLoader',['../classcarta_1_1ImagePtrLoader.html#a822d130b7bb626e46b446aa1cb5184ab',1,'carta::ImagePtrLoader']]],
   ['imageshape_11',['ImageShape',['../classcarta_1_1Frame.html#aeff1a00d7f22df6f180888b1d9eaf457',1,'carta::Frame']]],

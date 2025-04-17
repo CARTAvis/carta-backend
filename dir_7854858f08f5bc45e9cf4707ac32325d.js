@@ -2,7 +2,7 @@ var dir_7854858f08f5bc45e9cf4707ac32325d =
 [
     [ "CartaFitsImage.cc", "CartaFitsImage_8cc.html", null ],
     [ "CartaFitsImage.h", "CartaFitsImage_8h.html", "CartaFitsImage_8h" ],
-    [ "CartaFitsImage.tcc", "CartaFitsImage_8tcc.html", null ],
+    [ "CartaFitsImage.tcc", "CartaFitsImage_8tcc.html", "CartaFitsImage_8tcc" ],
     [ "CartaHdf5Image.cc", "CartaHdf5Image_8cc.html", null ],
     [ "CartaHdf5Image.h", "CartaHdf5Image_8h.html", "CartaHdf5Image_8h" ],
     [ "CartaMiriadImage.cc", "CartaMiriadImage_8cc.html", null ],
@@ -23,7 +23,7 @@ var dir_7854858f08f5bc45e9cf4707ac32325d =
     [ "Hdf5Attributes.h", "Hdf5Attributes_8h.html", "Hdf5Attributes_8h" ],
     [ "Hdf5Loader.cc", "Hdf5Loader_8cc.html", null ],
     [ "Hdf5Loader.h", "Hdf5Loader_8h.html", "Hdf5Loader_8h" ],
-    [ "Hdf5Loader.tcc", "Hdf5Loader_8tcc.html", null ],
+    [ "Hdf5Loader.tcc", "Hdf5Loader_8tcc.html", "Hdf5Loader_8tcc" ],
     [ "ImagePtrLoader.h", "ImagePtrLoader_8h.html", "ImagePtrLoader_8h" ],
     [ "MiriadLoader.h", "MiriadLoader_8h.html", "MiriadLoader_8h" ],
     [ "PolarizationCalculator.cc", "PolarizationCalculator_8cc.html", null ],

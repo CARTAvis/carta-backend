@@ -9,7 +9,7 @@ var classMessage =
     [ "CloseFile", "classMessage.html#acfdc04d3a74a1759ad075074bf2c19b1", null ],
     [ "ConcatStokesFiles", "classMessage.html#a746289ea968e20e413e42bbf3c3bcdfd", null ],
     [ "ContourImageData", "classMessage.html#a281caf592c92b9f16c878afc8446188b", null ],
-    [ "DecodeMessage", "classMessage.html#a026fbed610e5f1f9b45792892ffa9cac", null ],
+    [ "DecodeMessage", "classMessage.html#a8a8b06331a96f3ed7e0e7e659203159e", null ],
     [ "DoublePoint", "classMessage.html#a2e8cdef60c335b1a50208053aa4b7f22", null ],
     [ "ErrorData", "classMessage.html#a99e84f303d54a46b1cf582bf343c7f29", null ],
     [ "EventType", "classMessage.html#a51a727e617bb0fe05ac48d6f9354ef09", null ],

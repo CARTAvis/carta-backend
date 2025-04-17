@@ -1,0 +1,13 @@
+<map id="FormatBeam" name="FormatBeam">
+<area shape="rect" id="Node000001" title=" " alt="" coords="283,149,389,174"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Image2DConvolver.html#a2a8922c4a5d4fc02336f47b8eeef0efa" title=" " alt="" coords="26,5,214,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="316,139,280,98,258,77,233,60,209,48,212,43,236,55,261,73,284,94,320,135"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Image2DConvolver.html#ad33659bd00f65b2ba7d467a59f29ac07" title=" " alt="" coords="26,69,214,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="291,146,234,124,196,112,197,107,236,119,293,141"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Image2DConvolver.html#a3cddf97a5c0939e0ed82cb01029f022b" title=" " alt="" coords="5,134,235,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="269,164,235,164,235,159,269,159"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Image2DConvolver.html#ad8a3417baf6da5f407844a54ec917e7d" title=" " alt="" coords="26,213,214,253"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="292,182,236,203,194,216,192,211,234,197,290,177"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1ImageMoments.html#ae3871029a49730bf6ee0c380f07215b9" title=" " alt="" coords="37,278,203,333"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="319,187,284,228,236,268,204,284,202,279,233,263,280,224,315,183"/>
+</map>

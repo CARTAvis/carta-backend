@@ -76,7 +76,7 @@ var searchData=
   ['requiredtiles_73',['requiredtiles',['../structcarta_1_1RequiredTiles.html',1,'carta::RequiredTiles'],['../structcarta_1_1RequiredTiles.html#a9cb1ebcf5dd6c3191feeb630aa9787e1',1,'carta::RequiredTiles::RequiredTiles()'],['../structcarta_1_1RequiredTiles.html#a639d5caac3800834335b129f937f0161',1,'carta::RequiredTiles::RequiredTiles(const CARTA::AddRequiredTiles &amp;required_tiles)']]],
   ['requirementscache_2eh_74',['RequirementsCache.h',['../RequirementsCache_8h.html',1,'']]],
   ['res_75',['Res',['../namespacecarta.html#a9a9fe0f86f7e331bd55b6875dd3ce036',1,'carta']]],
-  ['reset_76',['reset',['../classcarta_1_1SessionContext.html#ad80d2c2c9b72b9e388f71092f526d292',1,'carta::SessionContext::reset()'],['../classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5',1,'carta::TileCache::Reset()'],['../classcarta_1_1TableView.html#a53abb93ed7bc2b5a0383874366fa456a',1,'carta::TableView::Reset()']]],
+  ['reset_76',['reset',['../classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5',1,'carta::TileCache::Reset()'],['../classcarta_1_1TableView.html#a53abb93ed7bc2b5a0383874366fa456a',1,'carta::TableView::Reset()'],['../classcarta_1_1SessionContext.html#ad80d2c2c9b72b9e388f71092f526d292',1,'carta::SessionContext::reset()']]],
   ['resetcontext_77',['ResetContext',['../classcarta_1_1AnimationObject.html#a9a0b4e3e6a71780288fefd962624034a',1,'carta::AnimationObject']]],
   ['resethistcontext_78',['ResetHistContext',['../classcarta_1_1Session.html#af04404d4795dc3973358399dc3ceb6d7',1,'carta::Session']]],
   ['resetimagebeam_79',['ResetImageBeam',['../classcarta_1_1FitsLoader.html#a6daba3f63c8e10c36a94779abba69a0f',1,'carta::FitsLoader']]],

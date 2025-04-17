@@ -1,9 +1,13 @@
 <map id="carta::CartaFitsImage::shape" name="carta::CartaFitsImage::shape">
-<area shape="rect" id="Node000001" title=" " alt="" coords="872,37,1035,77"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="872,101,1035,141"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1CartaFitsImage.html#af993b70a99360ba6ac3206c6dc9a41ad" title=" " alt="" coords="645,5,824,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="858,46,824,41,825,36,859,41"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="901,97,823,60,793,48,795,43,825,55,903,92"/>
 <area shape="rect" id="Node000006" href="$classcarta_1_1CartaFitsImage.html#ad6ed456739344311edc09fae4cb00b78" title=" " alt="" coords="650,69,819,109"/>
-<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="859,74,820,80,819,74,858,69"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="858,110,819,104,820,99,859,105"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1CartaFitsImage.html#a1dc4149aca8185e66c5aa46289777fc0" title=" " alt="" coords="653,133,816,173"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="859,138,817,144,816,139,858,133"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1CartaFitsImage.html#a02e17c0bbc3457b0352a6367fca62518" title=" " alt="" coords="653,197,816,237"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="903,150,825,188,795,200,793,195,823,183,901,146"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1CartaFitsImage.html#ae786ee34cee8ab105c404907bc2fbff0" title=" " alt="" coords="427,37,597,77"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="632,43,598,48,597,42,631,37"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1CartaFitsImage.html#ad98c05e53c5163dfa7b87cdd5eda5db7" title=" " alt="" coords="216,37,379,77"/>

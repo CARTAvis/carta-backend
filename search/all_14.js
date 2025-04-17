@@ -26,7 +26,7 @@ var searchData=
   ['threadingmanager_2ecc_23',['ThreadingManager.cc',['../ThreadingManager_8cc.html',1,'']]],
   ['threadingmanager_2eh_24',['ThreadingManager.h',['../ThreadingManager_8h.html',1,'']]],
   ['threadmanager_25',['ThreadManager',['../classcarta_1_1ThreadManager.html',1,'carta']]],
-  ['threshold_26',['threshold',['../structcarta_1_1VectorField_1_1ThresholdCut.html#ae98cb8f44fef736cbc33b190ab32f11c',1,'carta::VectorField::ThresholdCut::threshold'],['../classcarta_1_1VectorField.html#ad02102bc99e41d7aaf8a84ea2528ebd4',1,'carta::VectorField::Threshold() const']]],
+  ['threshold_26',['threshold',['../classcarta_1_1VectorField.html#ad02102bc99e41d7aaf8a84ea2528ebd4',1,'carta::VectorField::Threshold()'],['../structcarta_1_1VectorField_1_1ThresholdCut.html#ae98cb8f44fef736cbc33b190ab32f11c',1,'carta::VectorField::ThresholdCut::threshold']]],
   ['thresholdcut_27',['thresholdcut',['../structcarta_1_1VectorField_1_1ThresholdCut.html',1,'carta::VectorField::ThresholdCut'],['../structcarta_1_1VectorField_1_1ThresholdCut.html#a39ce83d99b4da4a5b3557aed9c48cb5f',1,'carta::VectorField::ThresholdCut::ThresholdCut()']]],
   ['tile_28',['Tile',['../structcarta_1_1Tile.html',1,'carta']]],
   ['tile_2ecc_29',['Tile.cc',['../Tile_8cc.html',1,'']]],
@@ -67,5 +67,5 @@ var searchData=
   ['trimspaces_64',['TrimSpaces',['../namespacecarta.html#a928af6c5078150f8c0cafc2a32a6b05c',1,'carta']]],
   ['try_5fpop_65',['try_pop',['../classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d',1,'carta::concurrent_queue']]],
   ['trycast_66',['TryCast',['../classcarta_1_1DataColumn.html#a9ee54f3fb58e28a423fb84418a0c178d',1,'carta::DataColumn']]],
-  ['type_67',['type',['../structcarta_1_1EventHeader.html#aee18d56213e8780ddd554870aaae64ed',1,'carta::EventHeader::type'],['../classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001',1,'carta::Table::Type()'],['../structcarta_1_1RegionState.html#a012fe948493b80db2c45fc6477674346',1,'carta::RegionState::type']]]
+  ['type_67',['type',['../classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001',1,'carta::Table::Type()'],['../structcarta_1_1RegionState.html#a012fe948493b80db2c45fc6477674346',1,'carta::RegionState::type'],['../structcarta_1_1EventHeader.html#aee18d56213e8780ddd554870aaae64ed',1,'carta::EventHeader::type']]]
 ];

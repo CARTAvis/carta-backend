@@ -4,7 +4,7 @@ var searchData=
   ['chisq_1',['chisq',['../structcarta_1_1FitStatus.html#a75c2e761044fbe625b876efb7ed3eabc',1,'carta::FitStatus']]],
   ['chisq0_2',['chisq0',['../structcarta_1_1FitStatus.html#ad6b680e816346f91b04dae7bac78eca3',1,'carta::FitStatus']]],
   ['chunk_5fsize_3',['chunk_size',['../structcarta_1_1ContourSettings.html#ae823bf613b06e4315ca087448e855edf',1,'carta::ContourSettings']]],
-  ['class_5fname_4',['CLASS_NAME',['../classcarta_1_1Image2DConvolver.html#a2f3d44e71d32eba5d453c7eac1e5f34b',1,'carta::Image2DConvolver']]],
+  ['class_5fname_4',['CLASS_NAME',['../classcarta_1_1Image2DConvolver.html#a3c7e4dfcdf5b072315afafe0caffeac2',1,'carta::Image2DConvolver']]],
   ['colors_5f_5',['colors_',['../classspdlog_1_1sinks_1_1carta__sink.html#a57f19f504fa35fa71d61ea0ee6a16c32',1,'spdlog::sinks::carta_sink']]],
   ['column_5finfo_6',['column_info',['../structcarta_1_1BeamTableInfo.html#a522b82fc7e62627cee31c1e6904adb85',1,'carta::BeamTableInfo']]],
   ['command_5fline_5fsettings_7',['command_line_settings',['../structcarta_1_1ProgramSettings.html#a78c341ba61be92463475a46e15544913',1,'carta::ProgramSettings']]],

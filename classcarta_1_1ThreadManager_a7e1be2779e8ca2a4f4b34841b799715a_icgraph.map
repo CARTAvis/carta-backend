@@ -1,9 +1,12 @@
 <map id="carta::ThreadManager::ExitEventHandlingThreads" name="carta::ThreadManager::ExitEventHandlingThreads">
-<area shape="rect" id="Node000001" title=" " alt="" coords="412,35,615,75"/>
-<area shape="rect" id="Node000002" href="$Session_8cc.html#a9f98a9b01427a3b3c835601d903bc205" title=" " alt="" coords="241,42,364,67"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="398,57,364,57,364,52,398,52"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#ad8a393254598d44b7b2c518b57d667e0" title=" " alt="" coords="5,5,193,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="227,47,193,42,194,36,228,41"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1Session.html#a8753bb9dee966b7d39abc9b7237cd665" title=" " alt="" coords="8,70,191,95"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="228,68,191,73,191,67,227,62"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="515,88,717,128"/>
+<area shape="rect" id="Node000002" href="$Session_8cc.html#a9f98a9b01427a3b3c835601d903bc205" title=" " alt="" coords="344,70,467,95"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="501,97,467,93,467,87,501,92"/>
+<area shape="rect" id="Node000004" href="$Main_8cc.html#a0ddf1224851353fc92bfbff6f499fa97" title=" " alt="" coords="5,67,60,93"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="501,122,414,127,315,129,211,124,107,111,59,95,61,90,109,105,211,119,315,123,414,122,500,117"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#ad8a393254598d44b7b2c518b57d667e0" title=" " alt="" coords="108,5,296,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="346,69,273,48,274,43,347,64"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Session.html#a8753bb9dee966b7d39abc9b7237cd665" title=" " alt="" coords="111,70,293,95"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="330,85,294,85,294,80,330,80"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="127,52,61,74,59,69,126,47"/>
 </map>
