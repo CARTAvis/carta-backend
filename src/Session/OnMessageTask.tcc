@@ -15,7 +15,7 @@ class GeneralMessageTask : public OnMessageTask {
         if constexpr (std::is_same_v<T, CARTA::SetHistogramRequirements>) {
             _session->OnSetHistogramRequirements(_message, _request_id);
         } else if constexpr (std::is_same_v<T, CARTA::AddRequiredTiles>) {
-            _session->OnAddRequiredTiles(_message, 0, _session->AnimationRunning());
+            _session->OnAddRequiredTiles(_message, CURRENT_Z, 0, _session->AnimationRunning());
         } else if constexpr (std::is_same_v<T, CARTA::SetContourParameters>) {
             _session->OnSetContourParameters(_message);
         } else if constexpr (std::is_same_v<T, CARTA::SetSpatialRequirements>) {
