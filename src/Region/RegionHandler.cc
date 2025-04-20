@@ -1837,6 +1837,7 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
 
     CARTA::Render3DResponse render3d_response;
     render3d_response.set_cancel(false);
+    render3d_response.set_success(true);
 
     std::cout << "file_id: " << file_id << std::endl;
 
@@ -1856,13 +1857,13 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
         if (!RegionSet(region_id)) {
             render3d_response.set_message("3D rendering cube requested for invalid region id.");
             render3d_response.set_success(false);
-            return false;
+            // return false;
         }
         std::cout << "check 1 passed" << std::endl;
         if (!IsClosedRegion(region_id)) {
             render3d_response.set_message("Region type not supported for 3D Rendering.");
             render3d_response.set_success(false);
-            return false;
+            // return false;
         }
         std::cout << "check 2 passed" << std::endl;
     }
@@ -1871,17 +1872,22 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
     if (!frame->CoordinateSystem()->hasSpectralAxis()) {
         render3d_response.set_message("No spectral coordinate for generating 3D rendering.");
         render3d_response.set_success(false);
-        return false;
+        // return false;
     }
 
     std::cout << "check 3 passed" << std::endl;
 
+    // std::cout << "frame->Width(): " << frame->Width() << std::endl;
+    // std::cout << "frame->Height(): " << frame->Height() << std::endl;
+    // std::cout << "frame->Depth(): " << frame->Depth() << std::endl;
+    // std::cout << "MAX_RENDER3D_PIXELS: " << MAX_RENDER3D_PIXELS << std::endl;
+
     // 4. Image is smaller than limit
-    if (frame->Width() * frame->Height() * frame->Depth() > MAX_RENDER3D_PIXELS) {
-        render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Use smaller region or spectral range.");
-        render3d_response.set_success(false);
-        return false;
-    }
+    // if (frame->Width() * frame->Height() * frame->Depth() > MAX_RENDER3D_PIXELS) {
+    //     render3d_response.set_message("Cube size exceeds maximum for 3D Rendering. Use smaller region or spectral range.");
+    //     render3d_response.set_success(false);
+    //     // return false;
+    // }
 
     std::cout << "check 4 passed" << std::endl;
 
@@ -1891,7 +1897,11 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
         _frames[file_id] = frame;
     }
 
-    render3d_response.set_success(true);
+    if (!render3d_response.success()) {
+        ack_callback(render3d_response);
+        return false;
+    }
+    
     render3d_response.set_message("3D rendering started");
     ack_callback(render3d_response);
 
@@ -2068,10 +2078,10 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
         // make compression
 
-        // compression_type = CARTA::CompressionType::ZFP;
-        // compression_quality = 20; // high is 32, use 20 for now
-        compression_type = CARTA::CompressionType::NONE;
-        compression_quality = -1;
+        compression_type = CARTA::CompressionType::ZFP;
+        compression_quality = 20; // high is 32, use 20 for now
+        // compression_type = CARTA::CompressionType::NONE;
+        // compression_quality = -1;
         
         std::vector<char> compression_buffer;
         size_t compressed_size;
@@ -2099,6 +2109,8 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             cb(data_message);
 
         } else {
+
+            // Check how to compress with NaN values. Give a number of NaN values.
             auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
 
             Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
