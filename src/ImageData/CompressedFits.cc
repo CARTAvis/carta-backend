@@ -22,7 +22,7 @@
 using namespace carta;
 
 CompressedFits::CompressedFits(const std::string& filename, bool support_aips_beam)
-    : _filename(filename), _support_aips_beam(support_aips_beam), _is_history_beam(false), _spectral_axis(-1), _stokes_axis(-1) {
+    : _filename(filename), _support_aips_beam(support_aips_beam), _is_history_beam(false) {
     // Initialize linear transformation matrix for the direction coordinate
     SetDefaultTransformMatrix();
 }
