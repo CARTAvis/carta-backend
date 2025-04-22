@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_UTIL_CASACORE_H_
 #define CARTA_SRC_UTIL_CASACORE_H_
 
+#include <carta-protobuf/enums.pb.h>
+
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
@@ -22,6 +24,9 @@ casacore::String GetResolvedFilename(
 inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& filename) {
     return casacore::ImageOpener::imageType(filename);
 }
+
+// Use CasacoreImageType to determine CARTA image type for folder path
+CARTA::FileType CartaFolderImageType(const std::string& folder_path, std::string& message);
 
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);

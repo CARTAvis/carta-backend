@@ -137,6 +137,38 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
     return resolved_filename;
 }
 
+CARTA::FileType CartaFolderImageType(const std::string& folder_path, std::string& message) {
+    // Return CARTA::FileType enum for input folder (image type only for folder only).
+    // Returns UNKNOWN for files (including image files), unsupported image types, and plain directories.
+    // Return parameter `message` is set for unsupported image types.
+    CARTA::FileType carta_type(CARTA::FileType::UNKNOWN);
+
+    switch (CasacoreImageType(folder_path)) {
+        case casacore::ImageOpener::AIPSPP:
+        case casacore::ImageOpener::IMAGECONCAT:
+        case casacore::ImageOpener::IMAGEEXPR:
+        case casacore::ImageOpener::COMPLISTIMAGE: {
+            carta_type = CARTA::FileType::CASA;
+            break;
+        }
+        case casacore::ImageOpener::MIRIAD: {
+            carta_type = CARTA::FileType::MIRIAD;
+            break;
+        }
+        case casacore::ImageOpener::GIPSY:
+        case casacore::ImageOpener::CAIPS:
+        case casacore::ImageOpener::NEWSTAR: {
+            message = fmt::format("{}: image type not supported", folder_path);
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+
+    return carta_type;
+}
+
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength) {
     prefer_velocity = optical_velocity = prefer_wavelength = air_wavelength = false;
