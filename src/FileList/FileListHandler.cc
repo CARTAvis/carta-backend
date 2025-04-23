@@ -143,6 +143,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
             // Add file info
             FileInfoLoader info_loader = FileInfoLoader(full_path, carta_file_type);
             info_loader.FillFileInfo(file_info);
+            file_list_response.set_success(true);
             return;
         } else if (!message.empty()) {
             // Unsupported image type
