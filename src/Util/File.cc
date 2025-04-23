@@ -52,7 +52,7 @@ bool IsCompressedFits(const std::string& filename) {
 }
 
 /**
- * @details This function uses a regular expression (Regex) to determine if the provided filename
+ * @details This function uses a regular expression to determine if the provided filename
  * starts with "http://" or "https://", indicating that it is a remote file
  * accessible via HTTP.
  *

@@ -329,7 +329,7 @@ void NormalizeUnit(casacore::String& unit) {
  */
 bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa) {
     // Parse AIPS beam header using regex_match.
-    // Returns false if regular expression failed, else true with beam value-unit strings.
+    // Returns false if regex failed, else true with beam value-unit strings.
     std::regex r;
     std::cmatch results;
     bool matched(false);
