@@ -110,3 +110,14 @@ TEST(UtilTest, HasSuffixCaseInsensitive) {
     EXPECT_TRUE(HasSuffix("test.fits.gz", ".fits.gz"));
     EXPECT_FALSE(HasSuffix("test.fits.gz", ".fits"));
 }
+
+TEST(UtilTest, FolderImageType) {
+    auto pwd = TestRoot() / "data/images";
+    std::string message;
+    // Image files are unknown folder image types
+    EXPECT_EQ(CartaFolderImageType((pwd / "mix/M17_SWex_unit.fits").string(), message), CARTA::FileType::UNKNOWN);
+    EXPECT_EQ(CartaFolderImageType((pwd / "mix/M17_SWex_unit.hdf5").string(), message), CARTA::FileType::UNKNOWN);
+    // Image folders have folder image type
+    EXPECT_EQ(CartaFolderImageType((pwd / "mix/M17_SWex_unit.image").string(), message), CARTA::FileType::CASA);
+    EXPECT_EQ(CartaFolderImageType((pwd / "mix/M17_SWex_unit.miriad").string(), message), CARTA::FileType::MIRIAD);
+}

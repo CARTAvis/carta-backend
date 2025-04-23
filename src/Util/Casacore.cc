@@ -142,6 +142,10 @@ CARTA::FileType CartaFolderImageType(const std::string& folder_path, std::string
     // Returns UNKNOWN for files (including image files), unsupported image types, and plain directories.
     // Return parameter `message` is set for unsupported image types.
     CARTA::FileType carta_type(CARTA::FileType::UNKNOWN);
+    casacore::File input_file(folder_path);
+    if (input_file.isRegular()) {
+        return carta_type;
+    }
 
     switch (CasacoreImageType(folder_path)) {
         case casacore::ImageOpener::AIPSPP:

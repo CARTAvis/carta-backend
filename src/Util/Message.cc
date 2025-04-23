@@ -332,9 +332,10 @@ CARTA::SetSpectralRequirements_SpectralConfig Message::SpectralConfig(const std:
     return spectral_config;
 }
 
-CARTA::FileListRequest Message::FileListRequest(const std::string& directory) {
+CARTA::FileListRequest Message::FileListRequest(const std::string& directory, const CARTA::FileListFilterMode filter_mode) {
     CARTA::FileListRequest file_list_request;
     file_list_request.set_directory(directory);
+    file_list_request.set_filter_mode(filter_mode);
     return file_list_request;
 }
 
