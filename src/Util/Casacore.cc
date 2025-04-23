@@ -317,7 +317,7 @@ void NormalizeUnit(casacore::String& unit) {
 }
 
 /**
- * @details This function uses regular expressions (regex) to extract the major axis (BMAJ),
+ * @details This function uses regular expressions to extract the major axis (BMAJ),
  * minor axis (BMIN), and position angle (BPA) from an AIPS-style history
  * beam header string. It handles two common formats: one using "Beam ="
  * notation and another using "BMAJ=", "BMIN=", and "BPA=" notation.
@@ -329,7 +329,7 @@ void NormalizeUnit(casacore::String& unit) {
  */
 bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa) {
     // Parse AIPS beam header using regex_match.
-    // Returns false if regex failed, else true with beam value-unit strings.
+    // Returns false if regular expression failed, else true with beam value-unit strings.
     std::regex r;
     std::cmatch results;
     bool matched(false);

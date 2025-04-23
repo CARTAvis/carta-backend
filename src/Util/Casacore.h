@@ -106,7 +106,7 @@ std::string FormatQuantity(const casacore::Quantity& quantity);
 void NormalizeUnit(casacore::String& unit);
 
 /**
- * @brief Parses an AIPS-style beam header to extract beam parameters with regex.
+ * @brief Parses an AIPS-style beam header to extract beam parameters with regular expression.
  *
  * @param[in] header A string reference to the history beam header string to be parsed.
  * @param[out] bmaj A string reference to the extracted major axis value with its unit.
