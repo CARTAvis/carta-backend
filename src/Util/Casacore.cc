@@ -14,7 +14,7 @@
 #include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
 
-const std::string GILDAS_UNIT_REGEX = " *[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\) *";
+const std::regex GILDAS_REGEX(" *[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\) *");
 
 bool CheckFolderPaths(string& top_level_string, string& starting_string) {
     // TODO: is this code needed at all? Was it a weird workaround?
@@ -270,8 +270,7 @@ bool IsGildasUnit(const casacore::String& unit) {
     //     '<unit> (T<type>)' where the <type> describes the temperature T.
     // Also test for casacore::Unit::check changes to the unit name where ' ' and '*' are replaced with '.'.
     // For example: "K (Ta*)" -->  "K.(Ta.)" in casacore.
-    std::regex gildas_regex(GILDAS_UNIT_REGEX);
-    return std::regex_match(unit, gildas_regex);
+    return std::regex_match(unit, GILDAS_REGEX);
 }
 
 bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa) {
