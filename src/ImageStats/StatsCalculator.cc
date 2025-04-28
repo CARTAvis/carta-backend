@@ -130,29 +130,10 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
                     double npoints = num_points(casacore::IPosition(1, 0));
                     image_stats.getStatistic(result, casacore::LatticeStatsBase::SUM);
                     double sum = result(casacore::IPosition(1, 0));
-                    double flux(0.0);
-                    bool carta_flux_ok(false); // TODO: remove after testing
-
-                    if (ComputeFluxDensity(image, npoints, sum, flux)) {
-                        result.resize(casacore::IPosition(1, 1));
-                        result[0] = flux;
+                    if (ComputeFluxDensity(image, npoints, sum, result)) {
                         result.tovector(dbl_result);
-                        carta_flux_ok = true;
-                    }
-
-                    // Compare to casa ImageStatistics - TODO: remove after testing
-                    result.resize();
-                    image_stats.getStatistic(result, casacore::LatticeStatsBase::FLUX);
-                    bool imstats_flux_ok = !result.empty();
-                    if (carta_flux_ok && imstats_flux_ok) {
-                        spdlog::debug("carta flux={} image stats flux={}", flux, result(casacore::IPosition(1, 0)));
-                    } else if (carta_flux_ok) {
-                        spdlog::debug("carta flux={} image stats flux failed", flux);
-                    } else if (imstats_flux_ok) {
-                        spdlog::debug("carta flux failed, image stats flux={}", result(casacore::IPosition(1, 0)));
                     }
                 } catch (const casacore::AipsError& err) {
-                    std::cerr << "Flux density exception: " << err.getMesg() << std::endl;
                     // Leave dbl_result empty, to be filled with nan.
                 }
             } else if (lattice_stats_type < casacore::LatticeStatsBase::NSTATS) {
@@ -212,19 +193,21 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
     return true;
 }
 
-bool ComputeFluxDensity(const casacore::ImageInterface<float>& image, double npixels, double sum, double& flux_density) {
+bool ComputeFluxDensity(
+    const casacore::ImageInterface<float>& image, double npixels, double sum, casacore::Array<casacore::Double>& result) {
     // Compute flux density when image has compatible units.  Value returned in flux_density.
     // Returns whether calculation succeeded.
+    bool success(false);
 
     // Return if no image unit.
     casacore::String bunit(image.units().getName());
     if (bunit.empty()) {
-        return false;
+        return success;
     }
 
     // Return if no pixels in image with finite data values.
     if (npixels == 0.0) {
-        return false;
+        return success;
     }
 
     // Separate unit parts
@@ -235,6 +218,7 @@ bool ComputeFluxDensity(const casacore::ImageInterface<float>& image, double npi
         per_unit = bunit.after("/");
     }
 
+    double flux_density;
     if (flux_unit.startsWith("K")) {
         // Convert sum to Jy using wavelength from spectral axis, beam solid angle, and constants.
         // Get beam solid angle in steradians
@@ -251,47 +235,50 @@ bool ComputeFluxDensity(const casacore::ImageInterface<float>& image, double npi
 
         // k() is Boltzmann's constant Quantity defined in QC.h
         flux_density = 2 * casacore::QC::k().getValue() * sum / std::pow(wavelength_m, 2) * beam_area_sr;
-        return true;
+        success = true;
     } else {
         if (!flux_unit.contains("Jy")) {
             spdlog::warn("Cannot compute flux density for image unit not in Jy.");
             return false;
         }
 
-        // Casacore supports "unit-1" and "/unit" syntax
+        // Casacore supports "unit-1" and "/unit" syntax so check for both
         if (flux_unit.contains("pixel-1") || (per_unit == "pixel")) {
             flux_density = sum;
-        } else if (flux_unit.contains("beam-1") || per_unit.contains("beam")) {
-            double beam_area;
-            if (!GetBeamArea(image, "sr", beam_area)) {
-                // No beam defined
-                return false;
-            }
-            flux_density = sum * beam_area;
+            success = true;
         } else {
             // Get area for one pixel
             auto increments = image.coordinates().increment();
             auto units = image.coordinates().worldAxisUnits();
-            casacore::Quantity area_unit = casacore::Quantity(1, units[0]) * casacore::Quantity(1, units[1]);
-            casacore::Quantity pixel_area(fabs(increments[0] * increments[1]), area_unit.getUnit());
+            casacore::Quantity area_unit = casacore::Quantity(1.0, units[0]) * casacore::Quantity(1.0, units[1]);
+            casacore::Quantity pixel_area(std::fabs(increments[0] * increments[1]), area_unit.getUnit());
 
             // Convert pixel area to per_unit
-            if (flux_unit.contains("sr-1") || (per_unit == "sr")) {
-                double pixel_area_sr = pixel_area.get(per_unit).getValue();
-                spdlog::debug("Using pixel area {} {} for flux density", pixel_area_sr, per_unit);
+            if (flux_unit.contains("beam-1") || per_unit == "beam") {
+                double pixel_area_sr = pixel_area.get("sr").getValue();
+                double beam_area_sr;
+                if (!GetBeamArea(image, "sr", beam_area_sr)) {
+                    return false;
+                }
+                flux_density = sum * pixel_area_sr / beam_area_sr;
+                success = true;
+            } else if (flux_unit.contains("sr-1") || per_unit == "sr") {
+                double pixel_area_sr = pixel_area.get("sr").getValue();
                 flux_density = sum * pixel_area_sr;
-            } else if (flux_unit.contains("arcsec-2") || (per_unit == "arcsec2")) {
-                // Casacore supports various syntax for arcsec
-                double pixel_area_per_unit = pixel_area.get("arcsec2").getValue();
-                spdlog::debug("Using pixel area {} arcsec2 for flux density", pixel_area_per_unit);
-                flux_density = sum * pixel_area_per_unit;
-            } else {
-                return false;
+                success = true;
+            } else if (flux_unit.contains("arcsec-2") || per_unit == "arcsec2") {
+                double pixel_area_arcsec2 = pixel_area.get("arcsec2").getValue();
+                flux_density = sum * pixel_area_arcsec2;
+                success = true;
             }
         }
     }
 
-    return true;
+    if (success) {
+        result.resize(casacore::IPosition(1, 1));
+        result[0] = flux_density;
+    }
+    return success;
 }
 
 bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::String unit, double& beam_area) {
@@ -301,14 +288,8 @@ bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::S
         spdlog::warn("Image has no beam for flux density");
         return false;
     }
-    casacore::Quantity unit_q(1.0, unit);
-    if (!unit_q.isConform("sr")) {
-        spdlog::warn("Beam area unit {} is not solid angle", unit);
-        return false;
-    }
 
     beam_area = image.imageInfo().restoringBeam().getArea(unit);
-    spdlog::debug("Using beam area {} {} for flux density", beam_area, unit);
     return true;
 }
 
@@ -316,17 +297,16 @@ bool GetWavelength(const casacore::ImageInterface<float>& image, const casacore:
     // Use image spectral coordinate to convert frequency to wavelength in unit.
     // Returns false if image has no spectral axis or conversion fails.
     if (!image.coordinates().hasSpectralAxis()) {
-        spdlog::warn("Image has no spectral axis, cannot compute flux density");
+        spdlog::warn("Image has no spectral axis for wavelength, cannot compute flux density");
         return false;
     }
 
     auto spectral_coord = image.coordinates().spectralCoordinate();
     spectral_coord.setWavelengthUnit(unit);
 
-    // Get frequency of current plane (spectral coordinate is 1D)
+    // Get current frequency = spectral pixel 0 (spectral coordinate is 1D)
     double frequency;
     spectral_coord.toWorld(frequency, 0);
-    casacore::String freq_unit = spectral_coord.worldAxisUnits()[0];
 
     // Convert freq to wave
     casacore::Vector<double> wavelen, freq(1, frequency);
@@ -335,7 +315,6 @@ bool GetWavelength(const casacore::ImageInterface<float>& image, const casacore:
         return false;
     }
     wavelength = wavelen[0];
-    spdlog::debug("Converted current frequency {} {} to wavelength {} {} for flux density", frequency, freq_unit, wavelength, unit);
     return true;
 }
 

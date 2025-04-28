@@ -26,7 +26,8 @@ Histogram CalcHistogram(int num_bins, const HistogramBounds& bounds, const float
 bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel = true);
 
-bool ComputeFluxDensity(const casacore::ImageInterface<float>& image, double npoints, double sum, double& flux_density);
+bool ComputeFluxDensity(
+    const casacore::ImageInterface<float>& image, double npixels, double sum, casacore::Array<casacore::Double>& result);
 bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::String unit, double& beam_area);
 bool GetWavelength(const casacore::ImageInterface<float>& image, const casacore::String unit, double& wavelength);
 
