@@ -121,7 +121,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
     bool list_all_files(filter_mode == CARTA::AllFiles);
 
     if (list_all_files) {
-        // Check if directory is an image
+        // Check if input directory is an image
         std::string message;
         casacore::String full_path(folder_path.path().absoluteName());
         auto carta_file_type = CartaFolderImageType(full_path, message);
@@ -129,13 +129,11 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
         if (carta_file_type != CARTA::FileType::UNKNOWN) {
             // Add image with file info
             auto& file_info = *file_list_response.add_files();
-            // Directory is path above image
-            casacore::Path image_path(full_path);
-            std::string directory(image_path.dirName());
-            file_list_response.set_directory(directory);
+            // Directory is path to image
+            file_list_response.set_directory(full_path);
             // Parent is path above directory
-            casacore::Path dir_path(directory);
-            std::string parent(dir_path.dirName());
+            casacore::Path image_path(full_path);
+            std::string parent(image_path.dirName());
             file_list_response.set_parent(parent);
             // Image name is base name of image path
             std::string name_only = image_path.baseName();
@@ -182,9 +180,13 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                     if (cc_file.isRegular(true)) {
                         auto& file_info = *file_list_response.add_files();
                         file_info.set_name(name_only);
+                        FileInfoLoader info_loader = FileInfoLoader(full_path, CARTA::FileType::UNKNOWN);
+                        info_loader.FillFileInfo(file_info);
                     } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                         auto directory_info = file_list_response.add_subdirectories();
                         directory_info->set_name(name_only);
+                        directory_info->set_date(cc_file.modifyTime());
+                        // skip item count
                     }
                 } else {
                     try {
