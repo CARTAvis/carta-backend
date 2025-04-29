@@ -13,7 +13,7 @@
 
 namespace carta {
 
-    SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
+SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {
     InitMessageHandlers();
 }
@@ -132,7 +132,6 @@ void SessionManager::OnDrain(WSType* ws) {
 }
 
 void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpCode op_code) {
-
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session;
     try {
@@ -160,7 +159,8 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 spdlog::error("Error handling event {}: {}", event_type, e.what());
             }
             auto end_time = std::chrono::high_resolution_clock::now();
-            spdlog::info("Processed event {} in {} ms", event_type, std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count());
+            spdlog::info("Processed event {} in {} ms", event_type,
+                std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count());
         } else {
             spdlog::warn("Unhandled event type: {}", event_type);
         }
@@ -270,29 +270,34 @@ std::string SessionManager::IPAsText(std::string_view binary) {
 }
 
 void SessionManager::InitMessageHandlers() {
-
-    _message_handlers[CARTA::EventType::REGISTER_VIEWER] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::REGISTER_VIEWER] = [](Session* session, const char* event_buffer, int event_length,
+                                                               const EventHeader& head) {
         CARTA::RegisterViewer message;
         if (!message.ParseFromArray(event_buffer, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REGISTER_VIEWER) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::REGISTER_VIEWER));
             return;
         }
         session->OnRegisterViewer(message, head.icd_version, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::RESUME_SESSION] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::RESUME_SESSION] = [](Session* session, const char* event_buffer, int event_length,
+                                                              const EventHeader& head) {
         CARTA::ResumeSession message;
         if (!message.ParseFromArray(event_buffer, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::RESUME_SESSION) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::RESUME_SESSION));
             return;
         }
         session->OnResumeSession(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::SET_IMAGE_CHANNELS] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_IMAGE_CHANNELS] = [](Session* session, const char* event_buffer, int event_length,
+                                                                  const EventHeader& head) {
         CARTA::SetImageChannels message;
         if (!message.ParseFromArray(event_buffer, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_IMAGE_CHANNELS) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_IMAGE_CHANNELS));
             return;
         }
         session->ImageChannelLock(message.file_id());
@@ -305,10 +310,12 @@ void SessionManager::InitMessageHandlers() {
         session->ImageChannelUnlock(message.file_id());
     };
 
-    _message_handlers[CARTA::EventType::SET_CURSOR] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_CURSOR] = [](Session* session, const char* event_buffer, int event_length,
+                                                          const EventHeader& head) {
         CARTA::SetCursor message;
         if (!message.ParseFromArray(event_buffer, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_CURSOR) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_CURSOR));
             return;
         }
         session->AddCursorSetting(message, head.request_id);
@@ -316,10 +323,12 @@ void SessionManager::InitMessageHandlers() {
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS] = [](Session* session, const char* event_buffer, int event_length,
+                                                                          const EventHeader& head) {
         CARTA::SetHistogramRequirements message;
         if (!message.ParseFromArray(event_buffer, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS));
             return;
         }
         if (message.histograms_size() == 0) {
@@ -331,19 +340,23 @@ void SessionManager::InitMessageHandlers() {
         }
     };
 
-    _message_handlers[CARTA::EventType::CLOSE_FILE] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::CLOSE_FILE] = [](Session* session, const char* event_buffer, int event_length,
+                                                          const EventHeader& head) {
         CARTA::CloseFile message;
         if (!message.ParseFromArray(event_buffer, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CLOSE_FILE) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::CLOSE_FILE));
             return;
         }
         session->OnCloseFile(message);
     };
 
-    _message_handlers[CARTA::EventType::START_ANIMATION] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::START_ANIMATION] = [](Session* session, const char* event_buffer, int event_length,
+                                                               const EventHeader& head) {
         CARTA::StartAnimation message;
         if (!message.ParseFromArray(event_buffer, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::START_ANIMATION) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::START_ANIMATION));
             return;
         }
         session->CancelExistingAnimation();
@@ -351,28 +364,34 @@ void SessionManager::InitMessageHandlers() {
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::ANIMATION_FLOW_CONTROL] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::ANIMATION_FLOW_CONTROL] = [](Session* session, const char* event_buf, int event_length,
+                                                                      const EventHeader& head) {
         CARTA::AnimationFlowControl message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::ANIMATION_FLOW_CONTROL) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::ANIMATION_FLOW_CONTROL));
             return;
         }
         session->HandleAnimationFlowControlEvt(message);
     };
 
-    _message_handlers[CARTA::EventType::FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                                 const EventHeader& head) {
         CARTA::FileInfoRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::FILE_INFO_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::FILE_INFO_REQUEST));
             return;
         }
         session->OnFileInfoRequest(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::OPEN_FILE] = [this](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::OPEN_FILE] = [this](Session* session, const char* event_buf, int event_length,
+                                                         const EventHeader& head) {
         CARTA::OpenFile message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::OPEN_FILE) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::OPEN_FILE));
             return;
         }
         if (!message.lel_expr()) {
@@ -383,156 +402,190 @@ void SessionManager::InitMessageHandlers() {
         session->OnOpenFile(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::ADD_REQUIRED_TILES] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::ADD_REQUIRED_TILES] = [](Session* session, const char* event_buf, int event_length,
+                                                                  const EventHeader& head) {
         CARTA::AddRequiredTiles message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::OPEN_FILE) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::OPEN_FILE));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::AddRequiredTiles>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::REGION_FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::REGION_FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                                        const EventHeader& head) {
         CARTA::RegionFileInfoRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REGION_FILE_INFO_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::REGION_FILE_INFO_REQUEST));
             return;
         }
         session->OnRegionFileInfoRequest(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::IMPORT_REGION] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::IMPORT_REGION] = [](Session* session, const char* event_buf, int event_length,
+                                                             const EventHeader& head) {
         CARTA::ImportRegion message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::IMPORT_REGION) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::IMPORT_REGION));
             return;
         }
         session->OnImportRegion(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::EXPORT_REGION] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::EXPORT_REGION] = [](Session* session, const char* event_buf, int event_length,
+                                                             const EventHeader& head) {
         CARTA::ExportRegion message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::EXPORT_REGION) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::EXPORT_REGION));
             return;
         }
         session->OnExportRegion(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::SET_CONTOUR_PARAMETERS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_CONTOUR_PARAMETERS] = [](Session* session, const char* event_buf, int event_length,
+                                                                      const EventHeader& head) {
         CARTA::SetContourParameters message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_CONTOUR_PARAMETERS) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_CONTOUR_PARAMETERS));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetContourParameters>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::SCRIPTING_RESPONSE] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SCRIPTING_RESPONSE] = [](Session* session, const char* event_buf, int event_length,
+                                                                  const EventHeader& head) {
         CARTA::ScriptingResponse message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SCRIPTING_RESPONSE) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SCRIPTING_RESPONSE));
             return;
         }
         session->OnScriptingResponse(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::SET_REGION] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_REGION] = [](Session* session, const char* event_buf, int event_length,
+                                                          const EventHeader& head) {
         CARTA::SetRegion message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_REGION) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_REGION));
             return;
         }
         session->OnSetRegion(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::REMOVE_REGION] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::REMOVE_REGION] = [](Session* session, const char* event_buf, int event_length,
+                                                             const EventHeader& head) {
         CARTA::RemoveRegion message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REMOVE_REGION) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::REMOVE_REGION));
             return;
         }
         session->OnRemoveRegion(message);
     };
 
-    _message_handlers[CARTA::EventType::SET_SPECTRAL_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_SPECTRAL_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length,
+                                                                         const EventHeader& head) {
         CARTA::SetSpectralRequirements message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_SPECTRAL_REQUIREMENTS) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_SPECTRAL_REQUIREMENTS));
             return;
         }
         session->OnSetSpectralRequirements(message);
     };
 
-    _message_handlers[CARTA::EventType::CATALOG_FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::CATALOG_FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                                         const EventHeader& head) {
         CARTA::CatalogFileInfoRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CATALOG_FILE_INFO_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::CATALOG_FILE_INFO_REQUEST));
             return;
         }
         session->OnCatalogFileInfo(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::OPEN_CATALOG_FILE] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::OPEN_CATALOG_FILE] = [](Session* session, const char* event_buf, int event_length,
+                                                                 const EventHeader& head) {
         CARTA::OpenCatalogFile message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::OPEN_CATALOG_FILE) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::OPEN_CATALOG_FILE));
             return;
         }
         session->OnOpenCatalogFile(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::CLOSE_CATALOG_FILE] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::CLOSE_CATALOG_FILE] = [](Session* session, const char* event_buf, int event_length,
+                                                                  const EventHeader& head) {
         CARTA::CloseCatalogFile message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CLOSE_CATALOG_FILE) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::CLOSE_CATALOG_FILE));
             return;
         }
         session->OnCloseCatalogFile(message);
     };
 
-    _message_handlers[CARTA::EventType::CATALOG_FILTER_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::CATALOG_FILTER_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                                      const EventHeader& head) {
         CARTA::CatalogFilterRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CATALOG_FILTER_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::CATALOG_FILTER_REQUEST));
             return;
         }
         session->OnCatalogFilter(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::STOP_MOMENT_CALC] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::STOP_MOMENT_CALC] = [](Session* session, const char* event_buf, int event_length,
+                                                                const EventHeader& head) {
         CARTA::StopMomentCalc message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_MOMENT_CALC) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::STOP_MOMENT_CALC));
             return;
         }
         session->OnStopMomentCalc(message);
     };
 
-    _message_handlers[CARTA::EventType::SAVE_FILE] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SAVE_FILE] = [](Session* session, const char* event_buf, int event_length,
+                                                         const EventHeader& head) {
         CARTA::SaveFile message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SAVE_FILE) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SAVE_FILE));
             return;
         }
         session->OnSaveFile(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::CONCAT_STOKES_FILES] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::CONCAT_STOKES_FILES] = [](Session* session, const char* event_buf, int event_length,
+                                                                   const EventHeader& head) {
         CARTA::ConcatStokesFiles message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CONCAT_STOKES_FILES) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::CONCAT_STOKES_FILES));
             return;
         }
         session->OnConcatStokesFiles(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::STOP_FILE_LIST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::STOP_FILE_LIST] = [](Session* session, const char* event_buf, int event_length,
+                                                              const EventHeader& head) {
         CARTA::StopFileList message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_FILE_LIST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::STOP_FILE_LIST));
             return;
         }
         if (message.file_list_type() == CARTA::Image) {
@@ -542,70 +595,84 @@ void SessionManager::InitMessageHandlers() {
         }
     };
 
-    _message_handlers[CARTA::EventType::SET_SPATIAL_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_SPATIAL_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length,
+                                                                        const EventHeader& head) {
         CARTA::SetSpatialRequirements message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_SPATIAL_REQUIREMENTS) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_SPATIAL_REQUIREMENTS));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetSpatialRequirements>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::SET_STATS_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_STATS_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length,
+                                                                      const EventHeader& head) {
         CARTA::SetStatsRequirements message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_STATS_REQUIREMENTS) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_STATS_REQUIREMENTS));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetStatsRequirements>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::MOMENT_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::MOMENT_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                              const EventHeader& head) {
         CARTA::MomentRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::MOMENT_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::MOMENT_REQUEST));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::MomentRequest>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::FILE_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::FILE_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                                 const EventHeader& head) {
         CARTA::FileListRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::FILE_LIST_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::FILE_LIST_REQUEST));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::FileListRequest>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::REGION_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::REGION_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                                   const EventHeader& head) {
         CARTA::RegionListRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REGION_LIST_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::REGION_LIST_REQUEST));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::RegionListRequest>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::CATALOG_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::CATALOG_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                                    const EventHeader& head) {
         CARTA::CatalogListRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CATALOG_LIST_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::CATALOG_LIST_REQUEST));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::CatalogListRequest>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::PV_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::PV_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                          const EventHeader& head) {
         CARTA::PvRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::PV_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::PV_REQUEST));
             return;
         }
         if (message.has_preview_settings()) {
@@ -615,75 +682,91 @@ void SessionManager::InitMessageHandlers() {
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::STOP_PV_CALC] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::STOP_PV_CALC] = [](Session* session, const char* event_buf, int event_length,
+                                                            const EventHeader& head) {
         CARTA::StopPvCalc message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_PV_CALC) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::STOP_PV_CALC));
             return;
         }
         session->OnStopPvCalc(message);
     };
 
-    _message_handlers[CARTA::EventType::FITTING_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::FITTING_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                               const EventHeader& head) {
         CARTA::FittingRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::FITTING_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::FITTING_REQUEST));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::FittingRequest>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS] = [](Session* session, const char* event_buf, int event_length,
+                                                                             const EventHeader& head) {
         CARTA::SetVectorOverlayParameters message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS));
             return;
         }
         OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetVectorOverlayParameters>(session, message, head.request_id);
         ThreadManager::QueueTask(tsk);
     };
 
-    _message_handlers[CARTA::EventType::STOP_FITTING] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::STOP_FITTING] = [](Session* session, const char* event_buf, int event_length,
+                                                            const EventHeader& head) {
         CARTA::StopFitting message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_FITTING) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::STOP_FITTING));
             return;
         }
         session->OnStopFitting(message);
     };
 
-    _message_handlers[CARTA::EventType::STOP_PV_PREVIEW] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::STOP_PV_PREVIEW] = [](Session* session, const char* event_buf, int event_length,
+                                                               const EventHeader& head) {
         CARTA::StopPvPreview message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_PV_PREVIEW) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::STOP_PV_PREVIEW));
             return;
         }
         session->OnStopPvPreview(message);
     };
 
-    _message_handlers[CARTA::EventType::CLOSE_PV_PREVIEW] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::CLOSE_PV_PREVIEW] = [](Session* session, const char* event_buf, int event_length,
+                                                                const EventHeader& head) {
         CARTA::ClosePvPreview message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CLOSE_PV_PREVIEW) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::CLOSE_PV_PREVIEW));
             return;
         }
         session->OnClosePvPreview(message);
     };
 
-    _message_handlers[CARTA::EventType::REMOTE_FILE_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::REMOTE_FILE_REQUEST] = [](Session* session, const char* event_buf, int event_length,
+                                                                   const EventHeader& head) {
         CARTA::RemoteFileRequest message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REMOTE_FILE_REQUEST) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::REMOTE_FILE_REQUEST));
             return;
         }
         session->OnRemoteFileRequest(message, head.request_id);
     };
 
-    _message_handlers[CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+    _message_handlers[CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL] = [](Session* session, const char* event_buf, int event_length,
+                                                                        const EventHeader& head) {
         CARTA::ChannelMapFlowControl message;
         if (!message.ParseFromArray(event_buf, event_length)) {
-            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL) );
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(),
+                CARTA::EventType_Name(CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL));
             return;
         }
         session->HandleChannelMapFlowControlEvt(message);

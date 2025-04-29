@@ -8,9 +8,9 @@
 #define CARTA_SRC_SESSION_SESSIONMANAGER_H_
 
 #include <uWebSockets/App.h>
-#include <vector>
-#include <unordered_map>
 #include <functional>
+#include <unordered_map>
+#include <vector>
 
 #include "Main/ProgramSettings.h"
 #include "Session.h"
