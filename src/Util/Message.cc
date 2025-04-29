@@ -267,6 +267,7 @@ CARTA::FloatBounds Message::FloatBounds(float min, float max) {
     return float_bounds;
 }
 
+// not used
 CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
     CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range, bool keep) {
     CARTA::MomentRequest moment_request;

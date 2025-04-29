@@ -9,6 +9,8 @@
 
 #include <uWebSockets/App.h>
 #include <vector>
+#include <unordered_map>
+#include <functional>
 
 #include "Main/ProgramSettings.h"
 #include "Session.h"
@@ -38,6 +40,10 @@ public:
     void OnScriptingAbort(int session_id, uint32_t scripting_request_id);
 
 private:
+    // message handlers
+    using MessageHandler = std::function<void(Session*, const char*, int, const EventHeader&)>;
+    std::unordered_map<CARTA::EventType, MessageHandler> _message_handlers;
+    void InitMessageHandlers();
     // Sessions map
     uint32_t _session_number;
     std::unordered_map<uint32_t, Session*> _sessions;

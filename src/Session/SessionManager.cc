@@ -13,8 +13,10 @@
 
 namespace carta {
 
-SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
-    : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
+    SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
+    : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {
+    InitMessageHandlers();
+}
 
 void SessionManager::DeleteSession(uint32_t session_id) {
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
@@ -130,6 +132,7 @@ void SessionManager::OnDrain(WSType* ws) {
 }
 
 void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpCode op_code) {
+
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session;
     try {
@@ -139,406 +142,27 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
         return;
     }
 
-    if (op_code == uWS::OpCode::BINARY) {
-        if (sv_message.length() >= sizeof(EventHeader)) {
-            session->UpdateLastMessageTimestamp();
+    if (op_code == uWS::OpCode::BINARY && sv_message.length() >= sizeof(EventHeader)) {
+        session->UpdateLastMessageTimestamp();
 
-            EventHeader head = *reinterpret_cast<const EventHeader*>(sv_message.data());
-            const char* event_buf = sv_message.data() + sizeof(EventHeader);
-            int event_length = sv_message.length() - sizeof(EventHeader);
+        EventHeader head = *reinterpret_cast<const EventHeader*>(sv_message.data());
+        const char* event_buf = sv_message.data() + sizeof(EventHeader);
+        int event_length = sv_message.length() - sizeof(EventHeader);
 
-            CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
-            logger::LogReceivedEventType(event_type);
+        CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
+        auto handler = _message_handlers.find(event_type);
 
-            auto event_type_name = CARTA::EventType_Name(CARTA::EventType(event_type));
-
-            bool message_parsed(false);
-            OnMessageTask* tsk = nullptr;
-
-            switch (event_type) {
-                case CARTA::EventType::REGISTER_VIEWER: {
-                    CARTA::RegisterViewer message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRegisterViewer(message, head.icd_version, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::RESUME_SESSION: {
-                    CARTA::ResumeSession message;
-                    spdlog::debug("({})({}) resuming session", fmt::ptr(session), session->GetId());
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnResumeSession(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_IMAGE_CHANNELS: {
-                    CARTA::SetImageChannels message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->ImageChannelLock(message.file_id());
-                        if (!session->ImageChannelTaskTestAndSet(message.file_id())) {
-                            tsk = new SetImageChannelsTask(session, message.file_id());
-                        }
-                        // has its own queue to keep channels in order during animation
-                        session->AddToSetChannelQueue(message, head.request_id);
-                        session->ImageChannelUnlock(message.file_id());
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_CURSOR: {
-                    CARTA::SetCursor message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->AddCursorSetting(message, head.request_id);
-                        tsk = new SetCursorTask(session, message.file_id());
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
-                    CARTA::SetHistogramRequirements message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        if (message.histograms_size() == 0) {
-                            session->CancelSetHistRequirements();
-                        } else {
-                            session->ResetHistContext();
-                            tsk = new GeneralMessageTask<CARTA::SetHistogramRequirements>(session, message, head.request_id);
-                        }
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::CLOSE_FILE: {
-                    CARTA::CloseFile message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCloseFile(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::START_ANIMATION: {
-                    CARTA::StartAnimation message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->CancelExistingAnimation();
-                        tsk = new StartAnimationTask(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::STOP_ANIMATION: {
-                    CARTA::StopAnimation message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->StopAnimation(message.file_id(), message.end_frame());
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
-                    CARTA::AnimationFlowControl message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->HandleAnimationFlowControlEvt(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::FILE_INFO_REQUEST: {
-                    CARTA::FileInfoRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnFileInfoRequest(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::OPEN_FILE: {
-                    CARTA::OpenFile message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        if (!message.lel_expr()) {
-                            for (auto& session_map : _sessions) {
-                                session_map.second->CloseCachedImage(message.directory(), message.file());
-                            }
-                        }
-                        session->OnOpenFile(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::ADD_REQUIRED_TILES: {
-                    CARTA::AddRequiredTiles message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::AddRequiredTiles>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
-                    CARTA::RegionFileInfoRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRegionFileInfoRequest(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::IMPORT_REGION: {
-                    CARTA::ImportRegion message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnImportRegion(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::EXPORT_REGION: {
-                    CARTA::ExportRegion message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnExportRegion(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
-                    CARTA::SetContourParameters message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::SetContourParameters>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SCRIPTING_RESPONSE: {
-                    CARTA::ScriptingResponse message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnScriptingResponse(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_REGION: {
-                    CARTA::SetRegion message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnSetRegion(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::REMOVE_REGION: {
-                    CARTA::RemoveRegion message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRemoveRegion(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
-                    CARTA::SetSpectralRequirements message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnSetSpectralRequirements(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::CATALOG_FILE_INFO_REQUEST: {
-                    CARTA::CatalogFileInfoRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCatalogFileInfo(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::OPEN_CATALOG_FILE: {
-                    CARTA::OpenCatalogFile message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnOpenCatalogFile(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::CLOSE_CATALOG_FILE: {
-                    CARTA::CloseCatalogFile message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCloseCatalogFile(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::CATALOG_FILTER_REQUEST: {
-                    CARTA::CatalogFilterRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCatalogFilter(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::STOP_MOMENT_CALC: {
-                    CARTA::StopMomentCalc message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnStopMomentCalc(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SAVE_FILE: {
-                    CARTA::SaveFile message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnSaveFile(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::CONCAT_STOKES_FILES: {
-                    CARTA::ConcatStokesFiles message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnConcatStokesFiles(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::STOP_FILE_LIST: {
-                    CARTA::StopFileList message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        if (message.file_list_type() == CARTA::Image) {
-                            session->StopImageFileList();
-                        } else {
-                            session->StopCatalogFileList();
-                        }
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_SPATIAL_REQUIREMENTS: {
-                    CARTA::SetSpatialRequirements message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::SetSpatialRequirements>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_STATS_REQUIREMENTS: {
-                    CARTA::SetStatsRequirements message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::SetStatsRequirements>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::MOMENT_REQUEST: {
-                    CARTA::MomentRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::MomentRequest>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::FILE_LIST_REQUEST: {
-                    CARTA::FileListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::FileListRequest>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::REGION_LIST_REQUEST: {
-                    CARTA::RegionListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::RegionListRequest>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::CATALOG_LIST_REQUEST: {
-                    CARTA::CatalogListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::CatalogListRequest>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::PV_REQUEST: {
-                    CARTA::PvRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        if (message.has_preview_settings()) {
-                            session->StopPvPreviewUpdates(message.preview_settings().preview_id());
-                        }
-                        tsk = new GeneralMessageTask<CARTA::PvRequest>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::STOP_PV_CALC: {
-                    CARTA::StopPvCalc message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnStopPvCalc(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::FITTING_REQUEST: {
-                    CARTA::FittingRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::FittingRequest>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS: {
-                    CARTA::SetVectorOverlayParameters message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::SetVectorOverlayParameters>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::STOP_FITTING: {
-                    CARTA::StopFitting message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnStopFitting(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::STOP_PV_PREVIEW: {
-                    CARTA::StopPvPreview message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnStopPvPreview(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::CLOSE_PV_PREVIEW: {
-                    CARTA::ClosePvPreview message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnClosePvPreview(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::REMOTE_FILE_REQUEST: {
-                    CARTA::RemoteFileRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRemoteFileRequest(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL: {
-                    CARTA::ChannelMapFlowControl message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->HandleChannelMapFlowControlEvt(message);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                default: {
-                    spdlog::warn("Bad event type {}!", event_type);
-                    break;
-                }
+        if (handler != _message_handlers.end()) {
+            auto start_time = std::chrono::high_resolution_clock::now();
+            try {
+                handler->second(session, event_buf, event_length, head);
+            } catch (const std::exception& e) {
+                spdlog::error("Error handling event {}: {}", event_type, e.what());
             }
-
-            if (!message_parsed) {
-                spdlog::warn("Bad {} message!", event_type_name);
-            }
-
-            if (tsk) {
-                ThreadManager::QueueTask(tsk);
-            }
+            auto end_time = std::chrono::high_resolution_clock::now();
+            spdlog::info("Processed event {} in {} ms", event_type, std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count());
+        } else {
+            spdlog::warn("Unhandled event type: {}", event_type);
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {
@@ -643,6 +267,427 @@ std::string SessionManager::IPAsText(std::string_view binary) {
     }
 
     return result;
+}
+
+void SessionManager::InitMessageHandlers() {
+
+    _message_handlers[CARTA::EventType::REGISTER_VIEWER] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+        CARTA::RegisterViewer message;
+        if (!message.ParseFromArray(event_buffer, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REGISTER_VIEWER) );
+            return;
+        }
+        session->OnRegisterViewer(message, head.icd_version, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::RESUME_SESSION] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+        CARTA::ResumeSession message;
+        if (!message.ParseFromArray(event_buffer, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::RESUME_SESSION) );
+            return;
+        }
+        session->OnResumeSession(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::SET_IMAGE_CHANNELS] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+        CARTA::SetImageChannels message;
+        if (!message.ParseFromArray(event_buffer, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_IMAGE_CHANNELS) );
+            return;
+        }
+        session->ImageChannelLock(message.file_id());
+        if (!session->ImageChannelTaskTestAndSet(message.file_id())) {
+            OnMessageTask* tsk = new SetImageChannelsTask(session, message.file_id());
+            ThreadManager::QueueTask(tsk);
+        }
+        // has its own queue to keep channels in order during animation
+        session->AddToSetChannelQueue(message, head.request_id);
+        session->ImageChannelUnlock(message.file_id());
+    };
+
+    _message_handlers[CARTA::EventType::SET_CURSOR] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+        CARTA::SetCursor message;
+        if (!message.ParseFromArray(event_buffer, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_CURSOR) );
+            return;
+        }
+        session->AddCursorSetting(message, head.request_id);
+        OnMessageTask* tsk = new SetCursorTask(session, message.file_id());
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+        CARTA::SetHistogramRequirements message;
+        if (!message.ParseFromArray(event_buffer, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS) );
+            return;
+        }
+        if (message.histograms_size() == 0) {
+            session->CancelSetHistRequirements();
+        } else {
+            session->ResetHistContext();
+            OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetHistogramRequirements>(session, message, head.request_id);
+            ThreadManager::QueueTask(tsk);
+        }
+    };
+
+    _message_handlers[CARTA::EventType::CLOSE_FILE] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+        CARTA::CloseFile message;
+        if (!message.ParseFromArray(event_buffer, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CLOSE_FILE) );
+            return;
+        }
+        session->OnCloseFile(message);
+    };
+
+    _message_handlers[CARTA::EventType::START_ANIMATION] = [](Session* session, const char* event_buffer, int event_length, const EventHeader& head) {
+        CARTA::StartAnimation message;
+        if (!message.ParseFromArray(event_buffer, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::START_ANIMATION) );
+            return;
+        }
+        session->CancelExistingAnimation();
+        OnMessageTask* tsk = new StartAnimationTask(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::ANIMATION_FLOW_CONTROL] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::AnimationFlowControl message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::ANIMATION_FLOW_CONTROL) );
+            return;
+        }
+        session->HandleAnimationFlowControlEvt(message);
+    };
+
+    _message_handlers[CARTA::EventType::FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::FileInfoRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::FILE_INFO_REQUEST) );
+            return;
+        }
+        session->OnFileInfoRequest(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::OPEN_FILE] = [this](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::OpenFile message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::OPEN_FILE) );
+            return;
+        }
+        if (!message.lel_expr()) {
+            for (auto& session_map : this->_sessions) {
+                session_map.second->CloseCachedImage(message.directory(), message.file());
+            }
+        }
+        session->OnOpenFile(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::ADD_REQUIRED_TILES] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::AddRequiredTiles message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::OPEN_FILE) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::AddRequiredTiles>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::REGION_FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::RegionFileInfoRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REGION_FILE_INFO_REQUEST) );
+            return;
+        }
+        session->OnRegionFileInfoRequest(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::IMPORT_REGION] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::ImportRegion message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::IMPORT_REGION) );
+            return;
+        }
+        session->OnImportRegion(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::EXPORT_REGION] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::ExportRegion message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::EXPORT_REGION) );
+            return;
+        }
+        session->OnExportRegion(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::SET_CONTOUR_PARAMETERS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::SetContourParameters message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_CONTOUR_PARAMETERS) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetContourParameters>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::SCRIPTING_RESPONSE] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::ScriptingResponse message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SCRIPTING_RESPONSE) );
+            return;
+        }
+        session->OnScriptingResponse(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::SET_REGION] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::SetRegion message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_REGION) );
+            return;
+        }
+        session->OnSetRegion(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::REMOVE_REGION] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::RemoveRegion message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REMOVE_REGION) );
+            return;
+        }
+        session->OnRemoveRegion(message);
+    };
+
+    _message_handlers[CARTA::EventType::SET_SPECTRAL_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::SetSpectralRequirements message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_SPECTRAL_REQUIREMENTS) );
+            return;
+        }
+        session->OnSetSpectralRequirements(message);
+    };
+
+    _message_handlers[CARTA::EventType::CATALOG_FILE_INFO_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::CatalogFileInfoRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CATALOG_FILE_INFO_REQUEST) );
+            return;
+        }
+        session->OnCatalogFileInfo(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::OPEN_CATALOG_FILE] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::OpenCatalogFile message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::OPEN_CATALOG_FILE) );
+            return;
+        }
+        session->OnOpenCatalogFile(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::CLOSE_CATALOG_FILE] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::CloseCatalogFile message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CLOSE_CATALOG_FILE) );
+            return;
+        }
+        session->OnCloseCatalogFile(message);
+    };
+
+    _message_handlers[CARTA::EventType::CATALOG_FILTER_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::CatalogFilterRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CATALOG_FILTER_REQUEST) );
+            return;
+        }
+        session->OnCatalogFilter(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::STOP_MOMENT_CALC] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::StopMomentCalc message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_MOMENT_CALC) );
+            return;
+        }
+        session->OnStopMomentCalc(message);
+    };
+
+    _message_handlers[CARTA::EventType::SAVE_FILE] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::SaveFile message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SAVE_FILE) );
+            return;
+        }
+        session->OnSaveFile(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::CONCAT_STOKES_FILES] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::ConcatStokesFiles message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CONCAT_STOKES_FILES) );
+            return;
+        }
+        session->OnConcatStokesFiles(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::STOP_FILE_LIST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::StopFileList message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_FILE_LIST) );
+            return;
+        }
+        if (message.file_list_type() == CARTA::Image) {
+            session->StopImageFileList();
+        } else {
+            session->StopCatalogFileList();
+        }
+    };
+
+    _message_handlers[CARTA::EventType::SET_SPATIAL_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::SetSpatialRequirements message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_SPATIAL_REQUIREMENTS) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetSpatialRequirements>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::SET_STATS_REQUIREMENTS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::SetStatsRequirements message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_STATS_REQUIREMENTS) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetStatsRequirements>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::MOMENT_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::MomentRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::MOMENT_REQUEST) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::MomentRequest>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::FILE_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::FileListRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::FILE_LIST_REQUEST) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::FileListRequest>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::REGION_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::RegionListRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REGION_LIST_REQUEST) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::RegionListRequest>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::CATALOG_LIST_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::CatalogListRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CATALOG_LIST_REQUEST) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::CatalogListRequest>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::PV_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::PvRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::PV_REQUEST) );
+            return;
+        }
+        if (message.has_preview_settings()) {
+            session->StopPvPreviewUpdates(message.preview_settings().preview_id());
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::PvRequest>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::STOP_PV_CALC] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::StopPvCalc message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_PV_CALC) );
+            return;
+        }
+        session->OnStopPvCalc(message);
+    };
+
+    _message_handlers[CARTA::EventType::FITTING_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::FittingRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::FITTING_REQUEST) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::FittingRequest>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::SetVectorOverlayParameters message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS) );
+            return;
+        }
+        OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetVectorOverlayParameters>(session, message, head.request_id);
+        ThreadManager::QueueTask(tsk);
+    };
+
+    _message_handlers[CARTA::EventType::STOP_FITTING] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::StopFitting message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_FITTING) );
+            return;
+        }
+        session->OnStopFitting(message);
+    };
+
+    _message_handlers[CARTA::EventType::STOP_PV_PREVIEW] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::StopPvPreview message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::STOP_PV_PREVIEW) );
+            return;
+        }
+        session->OnStopPvPreview(message);
+    };
+
+    _message_handlers[CARTA::EventType::CLOSE_PV_PREVIEW] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::ClosePvPreview message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CLOSE_PV_PREVIEW) );
+            return;
+        }
+        session->OnClosePvPreview(message);
+    };
+
+    _message_handlers[CARTA::EventType::REMOTE_FILE_REQUEST] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::RemoteFileRequest message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::REMOTE_FILE_REQUEST) );
+            return;
+        }
+        session->OnRemoteFileRequest(message, head.request_id);
+    };
+
+    _message_handlers[CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL] = [](Session* session, const char* event_buf, int event_length, const EventHeader& head) {
+        CARTA::ChannelMapFlowControl message;
+        if (!message.ParseFromArray(event_buf, event_length)) {
+            spdlog::error("Error parsing message for event type {} in session {}: Failed to parse message.", session->GetId(), CARTA::EventType_Name(CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL) );
+            return;
+        }
+        session->HandleChannelMapFlowControlEvt(message);
+    };
 }
 
 } // namespace carta
