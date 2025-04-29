@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Fix empty response to HTTP request with underscores in header names ([#1406](https://github.com/CARTAvis/carta-backend/issues/1406))
+* Fix spatial profile for point region in matched image ([#1405](https://github.com/CARTAvis/carta-backend/issues/1405))
 * Fix flux density computation for additional image units including MJy/sr ([#1343](https://github.com/CARTAvis/carta-backend/issues/1343))
 
 ## [5.0.0-beta.1]
