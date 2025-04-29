@@ -50,6 +50,8 @@ public:
 
     /** @brief Retrieve a tile from the cache
      *  @param key The tile key
+     *  @param loader The file loader to pass to TileCache::GetChunk
+     *  @param image_mutex The image mutex to pass to TileCache::GetChunk
      *  @details This function locks the cache because it modifies the cache state.
      */
     TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
