@@ -1298,7 +1298,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
 void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set,
     const casacore::Vector<casacore::String>& stokes_names, bool is_history_beam) {
     // Add restoring or median beam to computed entries.
-    casacore::GaussianBeam gaussian_beam;
+    casacore::GaussianBeam gaussian_beam, min_beam, max_beam;
     std::string entry_name;
 
     if (beam_set.hasSingleBeam()) {
@@ -1314,6 +1314,13 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
             // If multi beams and n_stokes==1, then n_chan > 1 so get median beam.
             // Do not append Stokes name to entry name.
             gaussian_beam = beam_set.getMedianAreaBeam();
+            min_beam = beam_set.getMinAreaBeam();
+            max_beam = beam_set.getMaxAreaBeam();
+            if (gaussian_beam == min_beam && gaussian_beam == max_beam) {
+                // Same across channels
+                entry_name = "Restoring beam";
+            }
+
             AddBeamEntry(extended_info, gaussian_beam, entry_name, is_history_beam);
         } else {
             // Add entry for each Stokes
@@ -1330,6 +1337,12 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
                     // Median beam for stokes i.
                     casacore::IPosition beam_pos; // position of median beam in beam set, not required here.
                     gaussian_beam = beam_set.getMedianAreaBeamForPol(beam_pos, i);
+                    min_beam = beam_set.getMinAreaBeamForPol(beam_pos, i);
+                    max_beam = beam_set.getMaxAreaBeamForPol(beam_pos, i);
+                    if (gaussian_beam == min_beam && gaussian_beam == max_beam) {
+                        // Same across channels
+                        stokes_entry_name = "Restoring beam (Stokes " + stokes_name + ")";
+                    }
                 } else {
                     // Get beam for channel 0, stokes i
                     gaussian_beam = beam_set.getBeam(0, i);
