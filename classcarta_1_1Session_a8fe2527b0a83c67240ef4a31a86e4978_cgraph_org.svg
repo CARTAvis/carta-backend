@@ -175,7 +175,7 @@
 <!-- Node46 -->
 <g id="Node000046" class="node">
 <title>Node46</title>
-<g id="a_Node000046"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000046"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="891,-469.5 767,-469.5 767,-450.5 891,-450.5 891,-469.5"/>
 <text text-anchor="middle" x="829" y="-457.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -633,7 +633,7 @@
 <!-- Node71 -->
 <g id="Node000071" class="node">
 <title>Node71</title>
-<g id="a_Node000071"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
+<g id="a_Node000071"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
 <polygon fill="#fff0f0" stroke="red" points="1080,-115.5 977,-115.5 977,-96.5 1080,-96.5 1080,-115.5"/>
 <text text-anchor="middle" x="1028.5" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>
@@ -762,7 +762,7 @@
 <!-- Node79 -->
 <g id="Node000079" class="node">
 <title>Node79</title>
-<g id="a_Node000079"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title=" ">
+<g id="a_Node000079"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title="Determines the image type of a given filename using Casacore.">
 <polygon fill="white" stroke="#666666" points="1086,-38.5 971,-38.5 971,-19.5 1086,-19.5 1086,-38.5"/>
 <text text-anchor="middle" x="1028.5" y="-26.5" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
 </a>
@@ -780,7 +780,7 @@
 <!-- Node80 -->
 <g id="Node000080" class="node">
 <title>Node80</title>
-<g id="a_Node000080"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title=" ">
+<g id="a_Node000080"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title="Checks whether a given filename represents a remote HTTP or HTTPS URL.">
 <polygon fill="white" stroke="#666666" points="1079,-75.5 978,-75.5 978,-56.5 1079,-56.5 1079,-75.5"/>
 <text text-anchor="middle" x="1028.5" y="-63.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsRemoteHttpFile</text>
 </a>

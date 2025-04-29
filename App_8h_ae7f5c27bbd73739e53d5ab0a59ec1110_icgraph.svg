@@ -57,7 +57,7 @@ var sectionId = 'dynsection-4';
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Executes a shell command and returns its output.">
 <polygon fill="#999999" stroke="#666666" points="620,-24.5 509,-24.5 509,-5.5 620,-5.5 620,-24.5"/>
 <text text-anchor="middle" x="564.5" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">OutputOfCommand</text>
 </a>

@@ -1,5 +1,5 @@
 <map id="FormatQuantity" name="FormatQuantity">
-<area shape="rect" id="Node000001" title=" " alt="" coords="248,13,372,38"/>
+<area shape="rect" id="Node000001" title="Formats a Casacore quantity into a human&#45;readable string." alt="" coords="248,13,372,38"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Image2DConvolver.html#abfdee26da4b4b6ce44c1349b1cf586e0" title=" " alt="" coords="5,5,200,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="234,28,200,28,200,23,234,23"/>
 </map>

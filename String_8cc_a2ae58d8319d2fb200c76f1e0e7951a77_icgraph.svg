@@ -57,7 +57,7 @@ var sectionId = 'dynsection-5';
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Splits a string into parts based on a specified delimiter.">
 <polygon fill="#999999" stroke="#666666" points="1897,-525 1830,-525 1830,-506 1897,-506 1897,-525"/>
 <text text-anchor="middle" x="1863.5" y="-513" font-family="Helvetica,sans-Serif" font-size="10.00">SplitString</text>
 </a>
@@ -218,7 +218,7 @@ var sectionId = 'dynsection-5';
 <!-- Node43 -->
 <g id="Node000043" class="node">
 <title>Node43</title>
-<g id="a_Node000043"><a xlink:href="File_8cc.html#add15dd288b07460bb502c1b6fa632371" target="_top" xlink:title=" ">
+<g id="a_Node000043"><a xlink:href="File_8cc.html#add15dd288b07460bb502c1b6fa632371" target="_top" xlink:title="Searches for a file in the system&#39;s PATH environment variable.">
 <polygon fill="white" stroke="#666666" points="1749.5,-235 1678.5,-235 1678.5,-216 1749.5,-216 1749.5,-235"/>
 <text text-anchor="middle" x="1714" y="-223" font-family="Helvetica,sans-Serif" font-size="10.00">SearchPath</text>
 </a>

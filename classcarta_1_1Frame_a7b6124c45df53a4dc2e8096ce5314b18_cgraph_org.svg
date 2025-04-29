@@ -248,7 +248,7 @@
 <!-- Node12 -->
 <g id="Node000012" class="node">
 <title>Node12</title>
-<g id="a_Node000012"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title=" ">
+<g id="a_Node000012"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title="Retrieves the corresponding CARTA polarization type from an integer value.">
 <polygon fill="white" stroke="#666666" points="490.5,-93 387.5,-93 387.5,-74 490.5,-74 490.5,-93"/>
 <text text-anchor="middle" x="439" y="-81" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::Get</text>
 </a>
@@ -266,7 +266,7 @@
 <!-- Node13 -->
 <g id="Node000013" class="node">
 <title>Node13</title>
-<g id="a_Node000013"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<g id="a_Node000013"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
 <polygon fill="white" stroke="#666666" points="511,-56 367,-56 367,-37 511,-37 511,-56"/>
 <text text-anchor="middle" x="439" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>

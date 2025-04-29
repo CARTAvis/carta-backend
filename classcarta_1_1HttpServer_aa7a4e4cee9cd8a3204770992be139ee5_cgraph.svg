@@ -124,7 +124,7 @@ var sectionId = 'dynsection-20';
 <!-- Node8 -->
 <g id="Node000008" class="node">
 <title>Node8</title>
-<g id="a_Node000008"><a xlink:href="String_8cc.html#a072e2624b237bdf8f61e2014ce26eecf" target="_top" xlink:title=" ">
+<g id="a_Node000008"><a xlink:href="String_8cc.html#a072e2624b237bdf8f61e2014ce26eecf" target="_top" xlink:title="Decodes a percent&#45;encoded (URL&#45;encoded) string.">
 <polygon fill="white" stroke="#666666" points="259,-19 144,-19 144,0 259,0 259,-19"/>
 <text text-anchor="middle" x="201.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">SafeStringUnescape</text>
 </a>
@@ -179,7 +179,7 @@ var sectionId = 'dynsection-20';
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title=" ">
+<g id="a_Node000007"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title="Performs a constant&#45;time comparison of two strings.">
 <polygon fill="white" stroke="#666666" points="598,-62 440,-62 440,-43 598,-43 598,-62"/>
 <text text-anchor="middle" x="519" y="-50" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
 </a>

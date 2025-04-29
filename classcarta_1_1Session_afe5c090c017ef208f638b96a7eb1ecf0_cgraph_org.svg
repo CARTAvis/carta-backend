@@ -597,7 +597,7 @@
 <!-- Node57 -->
 <g id="Node000057" class="node">
 <title>Node57</title>
-<g id="a_Node000057"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000057"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="735.5,-968.5 611.5,-968.5 611.5,-949.5 735.5,-949.5 735.5,-968.5"/>
 <text text-anchor="middle" x="673.5" y="-956.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>

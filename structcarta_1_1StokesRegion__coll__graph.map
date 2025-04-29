@@ -1,10 +1,10 @@
 <map id="carta::StokesRegion" name="carta::StokesRegion">
 <area shape="rect" id="Node000001" title=" " alt="" coords="93,313,244,339"/>
-<area shape="rect" id="Node000002" href="$structcarta_1_1StokesSource.html" title=" " alt="" coords="5,225,156,251"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications." alt="" coords="5,225,156,251"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="85,263,96,288,111,301,130,311,127,316,108,306,92,291,81,265"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="61,5,100,31"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="80,45,74,108,76,174,82,225,76,226,70,175,69,108,75,44"/>
-<area shape="rect" id="Node000004" href="$structAxisRange.html" title=" " alt="" coords="130,108,221,133"/>
+<area shape="rect" id="Node000004" href="$structAxisRange.html" title="Represents a range along an axis." alt="" coords="130,108,221,133"/>
 <area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="103,39,167,106,163,110,99,42"/>
 <area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="159,146,92,227,88,224,155,142"/>
 <area shape="rect" id="Node000005" title=" " alt="" coords="180,225,288,251"/>

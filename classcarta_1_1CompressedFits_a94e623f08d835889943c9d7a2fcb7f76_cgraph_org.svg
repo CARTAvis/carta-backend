@@ -339,7 +339,7 @@
 <!-- Node12 -->
 <g id="Node000012" class="node">
 <title>Node12</title>
-<g id="a_Node000012"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title=" ">
+<g id="a_Node000012"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title="Splits a string into parts based on a specified delimiter.">
 <polygon fill="white" stroke="#666666" points="579,-495.5 512,-495.5 512,-476.5 579,-476.5 579,-495.5"/>
 <text text-anchor="middle" x="545.5" y="-483.5" font-family="Helvetica,sans-Serif" font-size="10.00">SplitString</text>
 </a>
@@ -375,7 +375,7 @@
 <!-- Node19 -->
 <g id="Node000019" class="node">
 <title>Node19</title>
-<g id="a_Node000019"><a xlink:href="Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" target="_top" xlink:title=" ">
+<g id="a_Node000019"><a xlink:href="Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" target="_top" xlink:title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression.">
 <polygon fill="white" stroke="#666666" points="476,-24.5 334,-24.5 334,-5.5 476,-5.5 476,-24.5"/>
 <text text-anchor="middle" x="405" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">ParseHistoryBeamHeader</text>
 </a>

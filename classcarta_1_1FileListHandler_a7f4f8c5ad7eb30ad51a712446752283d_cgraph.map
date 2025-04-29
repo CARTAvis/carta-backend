@@ -1,7 +1,7 @@
 <map id="carta::FileListHandler::FillRegionFileInfo" name="carta::FileListHandler::FillRegionFileInfo">
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,5,165,45"/>
-<area shape="rect" id="Node000002" href="$File_8cc.html#af9947f7bb03abff3412672068ab7acdf" title=" " alt="" coords="213,13,351,38"/>
+<area shape="rect" id="Node000002" href="$File_8cc.html#af9947f7bb03abff3412672068ab7acdf" title="Determines the region file type based on its content or extension." alt="" coords="213,13,351,38"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="166,23,200,23,200,28,166,28"/>
-<area shape="rect" id="Node000003" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="399,13,483,38"/>
+<area shape="rect" id="Node000003" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="399,13,483,38"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="351,23,385,23,385,28,351,28"/>
 </map>

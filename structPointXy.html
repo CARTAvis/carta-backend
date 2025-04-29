@@ -102,6 +102,9 @@ $(document).ready(function(){initNavTree('structPointXy.html',''); initResizable
 </div><!--header-->
 <div class="contents">
 
+<p>Represents a 2D point with floating-point coordinates.  
+ <a href="structPointXy.html#details">More...</a></p>
+
 <p><code>#include &lt;Image.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for PointXy:</div>
@@ -112,26 +115,37 @@ Collaboration diagram for PointXy:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a621610a5d2f12457e8ff10110972f81c" id="r_a621610a5d2f12457e8ff10110972f81c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPointXy.html#a621610a5d2f12457e8ff10110972f81c">PointXy</a> ()</td></tr>
+<tr class="memdesc:a621610a5d2f12457e8ff10110972f81c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor initialising point to (-1.0, -1.0).  <br /></td></tr>
 <tr class="separator:a621610a5d2f12457e8ff10110972f81c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2ea924810b76cb83c3175de2ba2dc31b" id="r_a2ea924810b76cb83c3175de2ba2dc31b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPointXy.html#a2ea924810b76cb83c3175de2ba2dc31b">PointXy</a> (float x_, float y_)</td></tr>
+<tr class="memdesc:a2ea924810b76cb83c3175de2ba2dc31b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor initialising point with given coordinates.  <br /></td></tr>
 <tr class="separator:a2ea924810b76cb83c3175de2ba2dc31b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4565cef6a760b37ee073bfdd6aa91185" id="r_a4565cef6a760b37ee073bfdd6aa91185"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPointXy.html#a4565cef6a760b37ee073bfdd6aa91185">operator=</a> (const <a class="el" href="structPointXy.html">PointXy</a> &amp;other)</td></tr>
+<tr class="memdesc:a4565cef6a760b37ee073bfdd6aa91185"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment operator.  <br /></td></tr>
 <tr class="separator:a4565cef6a760b37ee073bfdd6aa91185"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a725ab27cd1756e34fcfdfac02b64c8e1" id="r_a725ab27cd1756e34fcfdfac02b64c8e1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPointXy.html#a725ab27cd1756e34fcfdfac02b64c8e1">operator==</a> (const <a class="el" href="structPointXy.html">PointXy</a> &amp;rhs) const</td></tr>
+<tr class="memdesc:a725ab27cd1756e34fcfdfac02b64c8e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equality comparison operator.  <br /></td></tr>
 <tr class="separator:a725ab27cd1756e34fcfdfac02b64c8e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8346106fda170e511b843f0d47fe3dfa" id="r_a8346106fda170e511b843f0d47fe3dfa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPointXy.html#a8346106fda170e511b843f0d47fe3dfa">ToIndex</a> (int &amp;x_index, int &amp;y_index)</td></tr>
+<tr class="memdesc:a8346106fda170e511b843f0d47fe3dfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts floating-point coordinates to integer indices.  <br /></td></tr>
 <tr class="separator:a8346106fda170e511b843f0d47fe3dfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae53c1507f25ca4218505925d7505b464" id="r_ae53c1507f25ca4218505925d7505b464"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPointXy.html#ae53c1507f25ca4218505925d7505b464">InImage</a> (int xrange, int yrange)</td></tr>
+<tr class="memdesc:ae53c1507f25ca4218505925d7505b464"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the point is within the given image axis ranges.  <br /></td></tr>
 <tr class="separator:ae53c1507f25ca4218505925d7505b464"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:ae0cad71ed6933a76708f3ebdfd88136b" id="r_ae0cad71ed6933a76708f3ebdfd88136b"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPointXy.html#ae0cad71ed6933a76708f3ebdfd88136b">x</a></td></tr>
+<tr class="memdesc:ae0cad71ed6933a76708f3ebdfd88136b"><td class="mdescLeft">&#160;</td><td class="mdescRight">X-coordinate of the point.  <br /></td></tr>
 <tr class="separator:ae0cad71ed6933a76708f3ebdfd88136b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8068184e785344031e9434130ce825d" id="r_af8068184e785344031e9434130ce825d"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPointXy.html#af8068184e785344031e9434130ce825d">y</a></td></tr>
+<tr class="memdesc:af8068184e785344031e9434130ce825d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Y-coordinate of the point.  <br /></td></tr>
 <tr class="separator:af8068184e785344031e9434130ce825d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Represents a 2D point with floating-point coordinates. </p>
+<p>This struct provides basic operations for handling 2D points, such as assignment, comparison, and checking if a point is within image bounds. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a621610a5d2f12457e8ff10110972f81c" name="a621610a5d2f12457e8ff10110972f81c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a621610a5d2f12457e8ff10110972f81c">&#9670;&#160;</a></span>PointXy() <span class="overload">[1/2]</span></h2>
 
@@ -154,6 +168,8 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Default constructor initialising point to (-1.0, -1.0). </p>
 
 </div>
 </div>
@@ -191,6 +207,15 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Constructor initialising point with given coordinates. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x_</td><td>The x-coordinate. </td></tr>
+    <tr><td class="paramname">y_</td><td>The y-coordinate. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -227,6 +252,16 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Checks if the point is within the given image axis ranges. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">xrange</td><td>The width of the image. </td></tr>
+    <tr><td class="paramname">yrange</td><td>The height of the image. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>True if the point is within the image bounds, false otherwise. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -264,6 +299,14 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Assignment operator. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">other</td><td>The point to assign from. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a id="a725ab27cd1756e34fcfdfac02b64c8e1" name="a725ab27cd1756e34fcfdfac02b64c8e1"></a>
@@ -289,6 +332,15 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Equality comparison operator. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rhs</td><td>The point to compare with. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>True if the points have the same coordinates, false otherwise. </dd></dl>
 
 </div>
 </div>
@@ -325,6 +377,15 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Converts floating-point coordinates to integer indices. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x_index</td><td>Reference to store the X-coordinate index. </td></tr>
+    <tr><td class="paramname">y_index</td><td>Reference to store the Y-coordinate index. </td></tr>
+  </table>
+  </dd>
+</dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -346,6 +407,8 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
+<p>X-coordinate of the point. </p>
+
 </div>
 </div>
 <a id="af8068184e785344031e9434130ce825d" name="af8068184e785344031e9434130ce825d"></a>
@@ -359,6 +422,8 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Y-coordinate of the point. </p>
 
 </div>
 </div>

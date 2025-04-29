@@ -4,6 +4,6 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="144,43,178,38,179,43,145,49"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8" title=" " alt="" coords="201,69,340,109"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="145,66,188,73,187,78,144,71"/>
-<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title=" " alt="" coords="397,13,587,38"/>
+<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression." alt="" coords="397,13,587,38"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="350,23,384,23,384,28,350,28"/>
 </map>

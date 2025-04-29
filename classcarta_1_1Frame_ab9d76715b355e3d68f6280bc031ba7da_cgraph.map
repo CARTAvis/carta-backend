@@ -2,7 +2,7 @@
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,151,240,176"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a3872d048935ea5600bcabfff67fa7214" title=" " alt="" coords="297,24,491,50"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="142,149,205,109,287,67,329,51,331,56,289,71,207,114,144,153"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="1329,75,1521,100"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="1329,75,1521,100"/>
 <area shape="poly" id="edge19_Node000001_Node000003" title=" " alt="" coords="157,148,217,128,287,110,389,94,469,86,653,85,921,85,1316,85,1316,90,921,90,653,90,469,92,390,99,289,116,218,133,158,153"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1Frame.html#a197494c0f0b5dc6ab6414e2dec20c088" title=" " alt="" coords="313,126,475,151"/>
 <area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="240,150,299,144,300,150,241,155"/>
@@ -28,7 +28,7 @@
 <area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="713,295,759,282,873,242,875,247,761,288,714,300"/>
 <area shape="rect" id="Node000014" href="$classcarta_1_1Frame.html#afe9bbcad03f6343aba029f48c4e66dc7" title=" " alt="" coords="808,298,1031,323"/>
 <area shape="poly" id="edge15_Node000010_Node000014" title=" " alt="" coords="755,308,794,308,794,313,755,313"/>
-<area shape="rect" id="Node000012" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="1105,133,1255,173"/>
+<area shape="rect" id="Node000012" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title="Checks if this Stokes source represents an original image." alt="" coords="1105,133,1255,173"/>
 <area shape="poly" id="edge12_Node000011_Node000012" title=" " alt="" coords="965,211,1094,174,1096,179,966,216"/>
 <area shape="rect" id="Node000013" href="$classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117" title=" " alt="" coords="1103,214,1257,239"/>
 <area shape="poly" id="edge14_Node000011_Node000013" title=" " alt="" coords="1016,224,1089,224,1089,229,1016,229"/>

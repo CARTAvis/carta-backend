@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Formats a Gaussian beam&#39;s parameters into a human&#45;readable string.">
 <polygon fill="#999999" stroke="#666666" points="288,-138 208,-138 208,-119 288,-119 288,-138"/>
 <text text-anchor="middle" x="248" y="-126" font-family="Helvetica,sans-Serif" font-size="10.00">FormatBeam</text>
 </a>

@@ -59,7 +59,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title="Splits a string into parts based on a specified delimiter.">
 <polygon fill="white" stroke="#666666" points="434.5,-94.58 367.5,-94.58 367.5,-75.58 434.5,-75.58 434.5,-94.58"/>
 <text text-anchor="middle" x="401" y="-82.58" font-family="Helvetica,sans-Serif" font-size="10.00">SplitString</text>
 </a>
@@ -77,7 +77,7 @@
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" target="_top" xlink:title="Converts a string to an integer.">
 <polygon fill="white" stroke="#666666" points="435,-46.58 367,-46.58 367,-27.58 435,-27.58 435,-46.58"/>
 <text text-anchor="middle" x="401" y="-34.58" font-family="Helvetica,sans-Serif" font-size="10.00">StringToInt</text>
 </a>

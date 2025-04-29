@@ -1,5 +1,5 @@
 <map id="GetReleaseInformation" name="GetReleaseInformation">
-<area shape="rect" id="Node000001" title=" " alt="" coords="684,13,857,38"/>
+<area shape="rect" id="Node000001" title="Retrieves the operating system release information." alt="" coords="684,13,857,38"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#add3b0e0836be0e2fa056cb7cc0607f72" title=" " alt="" coords="443,5,636,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="670,28,636,28,636,23,670,23"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,5,395,45"/>

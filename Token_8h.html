@@ -140,7 +140,8 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Create a new authentication token. </p>
-<dl class="section return"><dt>Returns</dt><dd>A new random token. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A new random token.</dd></dl>
+<p>This function generates a new random UUID and returns it as a string. </p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -183,7 +184,14 @@ Here is the caller graph for this function:</div>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>Whether the request contains the required authentication token. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>Whether the request contains the required authentication token.</dd></dl>
+<p>This function checks if the provided HTTP request contains a valid authentication token that matches the required token. It supports validation through:</p><ul>
+<li>Cookies (<code>carta-auth-token</code>)</li>
+<li>Authorization header (<code>Bearer &lt;token&gt;</code>)</li>
+<li>URL query parameter (<code>token</code>)</li>
+<li>Custom header (<code>carta-auth-token</code>)</li>
+</ul>
+<p>If the required token is empty, authentication is automatically approved. </p>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">

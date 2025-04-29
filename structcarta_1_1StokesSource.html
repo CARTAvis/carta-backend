@@ -102,6 +102,9 @@ $(document).ready(function(){initNavTree('structcarta_1_1StokesSource.html','');
 </div><!--header-->
 <div class="contents">
 
+<p>Represents a source of <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> data with axis range specifications.  
+ <a href="structcarta_1_1StokesSource.html#details">More...</a></p>
+
 <p><code>#include &lt;Stokes.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for carta::StokesSource:</div>
@@ -112,30 +115,43 @@ Collaboration diagram for carta::StokesSource:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a036be5bbc678f28288d40266f226de7a" id="r_a036be5bbc678f28288d40266f226de7a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#a036be5bbc678f28288d40266f226de7a">StokesSource</a> ()</td></tr>
+<tr class="memdesc:a036be5bbc678f28288d40266f226de7a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor initializes with undefined <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> and full axis ranges.  <br /></td></tr>
 <tr class="separator:a036be5bbc678f28288d40266f226de7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae345334af07434130a3e3ae31bf486a2" id="r_ae345334af07434130a3e3ae31bf486a2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#ae345334af07434130a3e3ae31bf486a2">StokesSource</a> (int stokes_, <a class="el" href="structAxisRange.html">AxisRange</a> z_range_)</td></tr>
+<tr class="memdesc:ae345334af07434130a3e3ae31bf486a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor initializing with a <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter and Z-axis range.  <br /></td></tr>
 <tr class="separator:ae345334af07434130a3e3ae31bf486a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a51b8253e6357616b02cabe3e68542b0f" id="r_a51b8253e6357616b02cabe3e68542b0f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#a51b8253e6357616b02cabe3e68542b0f">StokesSource</a> (int stokes_, <a class="el" href="structAxisRange.html">AxisRange</a> z_range_, <a class="el" href="structAxisRange.html">AxisRange</a> x_range_, <a class="el" href="structAxisRange.html">AxisRange</a> y_range_)</td></tr>
+<tr class="memdesc:a51b8253e6357616b02cabe3e68542b0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor initializing with a <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter and specified axis ranges.  <br /></td></tr>
 <tr class="separator:a51b8253e6357616b02cabe3e68542b0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7cb4847ee609866b84ce3afa1624bb45" id="r_a7cb4847ee609866b84ce3afa1624bb45"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45">IsOriginalImage</a> () const</td></tr>
+<tr class="memdesc:a7cb4847ee609866b84ce3afa1624bb45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if this <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> source represents an original image.  <br /></td></tr>
 <tr class="separator:a7cb4847ee609866b84ce3afa1624bb45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb6ce2027a9004f217889f13ba9cc5d4" id="r_afb6ce2027a9004f217889f13ba9cc5d4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#afb6ce2027a9004f217889f13ba9cc5d4">operator==</a> (const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;rhs) const</td></tr>
+<tr class="memdesc:afb6ce2027a9004f217889f13ba9cc5d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equality operator to compare two <a class="el" href="structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications.">StokesSource</a> objects.  <br /></td></tr>
 <tr class="separator:afb6ce2027a9004f217889f13ba9cc5d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a59f58eb5b949f34cfbea10172fa368a4" id="r_a59f58eb5b949f34cfbea10172fa368a4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#a59f58eb5b949f34cfbea10172fa368a4">operator!=</a> (const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;rhs) const</td></tr>
+<tr class="memdesc:a59f58eb5b949f34cfbea10172fa368a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inequality operator to compare two <a class="el" href="structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications.">StokesSource</a> objects.  <br /></td></tr>
 <tr class="separator:a59f58eb5b949f34cfbea10172fa368a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a5d517cd6d8bd9565de343cdacefa01d3" id="r_a5d517cd6d8bd9565de343cdacefa01d3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#a5d517cd6d8bd9565de343cdacefa01d3">stokes</a></td></tr>
+<tr class="memdesc:a5d517cd6d8bd9565de343cdacefa01d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter identifier.  <br /></td></tr>
 <tr class="separator:a5d517cd6d8bd9565de343cdacefa01d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a604900ea270d364968262d89b6e03378" id="r_a604900ea270d364968262d89b6e03378"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structAxisRange.html">AxisRange</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#a604900ea270d364968262d89b6e03378">z_range</a></td></tr>
+<tr class="memdesc:a604900ea270d364968262d89b6e03378"><td class="mdescLeft">&#160;</td><td class="mdescRight">The range along the Z-axis.  <br /></td></tr>
 <tr class="separator:a604900ea270d364968262d89b6e03378"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1f4348ee1f4b0423e15619cfab144e93" id="r_a1f4348ee1f4b0423e15619cfab144e93"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structAxisRange.html">AxisRange</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#a1f4348ee1f4b0423e15619cfab144e93">x_range</a></td></tr>
+<tr class="memdesc:a1f4348ee1f4b0423e15619cfab144e93"><td class="mdescLeft">&#160;</td><td class="mdescRight">The range along the X-axis.  <br /></td></tr>
 <tr class="separator:a1f4348ee1f4b0423e15619cfab144e93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9311f0e1023c547450276c5a8f91a455" id="r_a9311f0e1023c547450276c5a8f91a455"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structAxisRange.html">AxisRange</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1StokesSource.html#a9311f0e1023c547450276c5a8f91a455">y_range</a></td></tr>
+<tr class="memdesc:a9311f0e1023c547450276c5a8f91a455"><td class="mdescLeft">&#160;</td><td class="mdescRight">The range along the Y-axis.  <br /></td></tr>
 <tr class="separator:a9311f0e1023c547450276c5a8f91a455"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Represents a source of <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> data with axis range specifications. </p>
+<p>This struct encapsulates information about a <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter and its associated axis ranges in an image dataset. It is used to tell the file loader to get the original image interface, or get the computed stokes image interface. It provides constructors for different levels of specification and utility functions for comparison and checking if the data represents an original image. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a036be5bbc678f28288d40266f226de7a" name="a036be5bbc678f28288d40266f226de7a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a036be5bbc678f28288d40266f226de7a">&#9670;&#160;</a></span>StokesSource() <span class="overload">[1/3]</span></h2>
 
@@ -158,6 +174,8 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Default constructor initializes with undefined <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> and full axis ranges. </p>
 
 </div>
 </div>
@@ -194,6 +212,15 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Constructor initializing with a <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter and Z-axis range. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">stokes_</td><td>The <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">z_range_</td><td>The Z-axis range. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -243,6 +270,17 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Constructor initializing with a <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter and specified axis ranges. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">stokes_</td><td>The <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">z_range_</td><td>The Z-axis range. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">x_range_</td><td>The X-axis range. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">y_range_</td><td>The Y-axis range. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -268,6 +306,9 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Checks if this <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> source represents an original image. </p>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter is not a computed polarization, otherwise <code>false</code>. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -305,6 +346,15 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Inequality operator to compare two <a class="el" href="structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications.">StokesSource</a> objects. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">rhs</td><td>The <a class="el" href="structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications.">StokesSource</a> object to compare against. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if any attribute differs, otherwise <code>false</code>. </dd></dl>
+
 </div>
 </div>
 <a id="afb6ce2027a9004f217889f13ba9cc5d4" name="afb6ce2027a9004f217889f13ba9cc5d4"></a>
@@ -331,6 +381,15 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Equality operator to compare two <a class="el" href="structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications.">StokesSource</a> objects. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">rhs</td><td>The <a class="el" href="structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications.">StokesSource</a> object to compare against. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if all attributes match, otherwise <code>false</code>. </dd></dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
@@ -346,6 +405,8 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
+<p>The <a class="el" href="classcarta_1_1Stokes.html">Stokes</a> parameter identifier. </p>
+
 </div>
 </div>
 <a id="a1f4348ee1f4b0423e15619cfab144e93" name="a1f4348ee1f4b0423e15619cfab144e93"></a>
@@ -359,6 +420,8 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>The range along the X-axis. </p>
 
 </div>
 </div>
@@ -374,6 +437,8 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
+<p>The range along the Y-axis. </p>
+
 </div>
 </div>
 <a id="a604900ea270d364968262d89b6e03378" name="a604900ea270d364968262d89b6e03378"></a>
@@ -387,6 +452,8 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>The range along the Z-axis. </p>
 
 </div>
 </div>

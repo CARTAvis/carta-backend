@@ -1,9 +1,9 @@
 <map id="carta::Frame::GetStokesType" name="carta::Frame::GetStokesType">
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,55,213,80"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Stokes.html#a4f3f6776d4df43dc430c1aa77d58b0d7" title=" " alt="" coords="263,5,451,31"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Stokes.html#a4f3f6776d4df43dc430c1aa77d58b0d7" title="Retrieves a descriptive string for a given CARTA polarization type." alt="" coords="263,5,451,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,52,279,31,280,36,174,57"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="289,55,426,80"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title="Retrieves the corresponding CARTA polarization type from an integer value." alt="" coords="289,55,426,80"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="214,65,275,65,275,70,214,70"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="261,104,453,129"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="261,104,453,129"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="174,77,280,99,279,104,173,83"/>
 </map>

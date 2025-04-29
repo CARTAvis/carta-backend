@@ -76,7 +76,7 @@
 <!-- Node45 -->
 <g id="Node000045" class="node">
 <title>Node45</title>
-<g id="a_Node000045"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
+<g id="a_Node000045"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
 <polygon fill="white" stroke="#666666" points="700,-411.5 597,-411.5 597,-392.5 700,-392.5 700,-411.5"/>
 <text text-anchor="middle" x="648.5" y="-399.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>
@@ -536,7 +536,7 @@
 <!-- Node17 -->
 <g id="Node000017" class="node">
 <title>Node17</title>
-<g id="a_Node000017"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title=" ">
+<g id="a_Node000017"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive).">
 <polygon fill="white" stroke="#666666" points="1118,-723.5 1031,-723.5 1031,-704.5 1118,-704.5 1118,-723.5"/>
 <text text-anchor="middle" x="1074.5" y="-711.5" font-family="Helvetica,sans-Serif" font-size="10.00">NormalizeUnit</text>
 </a>
@@ -601,7 +601,7 @@
 <!-- Node40 -->
 <g id="Node000040" class="node">
 <title>Node40</title>
-<g id="a_Node000040"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000040"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="516.5,-545.5 392.5,-545.5 392.5,-526.5 516.5,-526.5 516.5,-545.5"/>
 <text text-anchor="middle" x="454.5" y="-533.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -676,7 +676,7 @@
 <!-- Node44 -->
 <g id="Node000044" class="node">
 <title>Node44</title>
-<g id="a_Node000044"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title=" ">
+<g id="a_Node000044"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title="Determines the image type of a given filename using Casacore.">
 <polygon fill="white" stroke="#666666" points="706,-488.5 591,-488.5 591,-469.5 706,-469.5 706,-488.5"/>
 <text text-anchor="middle" x="648.5" y="-476.5" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
 </a>
@@ -703,7 +703,7 @@
 <!-- Node49 -->
 <g id="Node000049" class="node">
 <title>Node49</title>
-<g id="a_Node000049"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title=" ">
+<g id="a_Node000049"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title="Checks whether a given filename represents a remote HTTP or HTTPS URL.">
 <polygon fill="white" stroke="#666666" points="699,-451.5 598,-451.5 598,-432.5 699,-432.5 699,-451.5"/>
 <text text-anchor="middle" x="648.5" y="-439.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsRemoteHttpFile</text>
 </a>
@@ -721,7 +721,7 @@
 <!-- Node46 -->
 <g id="Node000046" class="node">
 <title>Node46</title>
-<g id="a_Node000046"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title=" ">
+<g id="a_Node000046"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
 <polygon fill="white" stroke="#666666" points="917.5,-448.5 815.5,-448.5 815.5,-429.5 917.5,-429.5 917.5,-448.5"/>
 <text text-anchor="middle" x="866.5" y="-436.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>
@@ -739,7 +739,7 @@
 <!-- Node47 -->
 <g id="Node000047" class="node">
 <title>Node47</title>
-<g id="a_Node000047"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title=" ">
+<g id="a_Node000047"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
 <polygon fill="white" stroke="#666666" points="898,-411.5 835,-411.5 835,-392.5 898,-392.5 898,-411.5"/>
 <text text-anchor="middle" x="866.5" y="-399.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>
@@ -757,7 +757,7 @@
 <!-- Node48 -->
 <g id="Node000048" class="node">
 <title>Node48</title>
-<g id="a_Node000048"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title=" ">
+<g id="a_Node000048"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title="Determines if a given magic number corresponds to a gzip&#45;compressed file.">
 <polygon fill="white" stroke="#666666" points="919.5,-374.5 813.5,-374.5 813.5,-355.5 919.5,-355.5 919.5,-374.5"/>
 <text text-anchor="middle" x="866.5" y="-362.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
 </a>

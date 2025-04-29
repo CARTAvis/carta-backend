@@ -21,7 +21,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
 <polygon fill="white" stroke="#666666" points="284,-24.5 140,-24.5 140,-5.5 284,-5.5 284,-24.5"/>
 <text text-anchor="middle" x="212" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>

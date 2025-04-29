@@ -704,7 +704,7 @@
 <!-- Node65 -->
 <g id="Node000065" class="node">
 <title>Node65</title>
-<g id="a_Node000065"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000065"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="1149.5,-203.63 1025.5,-203.63 1025.5,-184.63 1149.5,-184.63 1149.5,-203.63"/>
 <text text-anchor="middle" x="1087.5" y="-191.63" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>

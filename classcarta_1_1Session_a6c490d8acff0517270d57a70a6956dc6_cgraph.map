@@ -2,7 +2,7 @@
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,42,193,67"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4" title=" " alt="" coords="247,5,401,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="193,40,233,35,233,40,194,45"/>
-<area shape="rect" id="Node000004" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="241,70,407,95"/>
+<area shape="rect" id="Node000004" href="$Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="241,70,407,95"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="194,64,228,68,228,73,193,69"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1FileInfoLoader.html#a3395971925347571f4724f7ee714a85a" title=" " alt="" coords="455,5,609,45"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="402,23,441,23,441,28,402,28"/>

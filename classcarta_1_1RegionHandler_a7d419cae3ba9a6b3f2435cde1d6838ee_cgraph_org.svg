@@ -721,7 +721,7 @@
 <!-- Node31 -->
 <g id="Node000031" class="node">
 <title>Node31</title>
-<g id="a_Node000031"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title=" ">
+<g id="a_Node000031"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title="Retrieves the corresponding CARTA polarization type from an integer value.">
 <polygon fill="white" stroke="#666666" points="967,-19 864,-19 864,0 967,0 967,-19"/>
 <text text-anchor="middle" x="915.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::Get</text>
 </a>
@@ -739,7 +739,7 @@
 <!-- Node32 -->
 <g id="Node000032" class="node">
 <title>Node32</title>
-<g id="a_Node000032"><a xlink:href="classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" target="_top" xlink:title=" ">
+<g id="a_Node000032"><a xlink:href="classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" target="_top" xlink:title="Converts a CARTA polarization type to the corresponding CASA Stokes type.">
 <polygon fill="white" stroke="#666666" points="975.5,-56 855.5,-56 855.5,-37 975.5,-37 975.5,-56"/>
 <text text-anchor="middle" x="915.5" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::ToCasa</text>
 </a>

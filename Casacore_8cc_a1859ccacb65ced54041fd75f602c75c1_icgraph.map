@@ -1,5 +1,5 @@
 <map id="FormatBeam" name="FormatBeam">
-<area shape="rect" id="Node000001" title=" " alt="" coords="283,149,389,174"/>
+<area shape="rect" id="Node000001" title="Formats a Gaussian beam&#39;s parameters into a human&#45;readable string." alt="" coords="283,149,389,174"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Image2DConvolver.html#a2a8922c4a5d4fc02336f47b8eeef0efa" title=" " alt="" coords="26,5,214,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="316,139,280,98,258,77,233,60,209,48,212,43,236,55,261,73,284,94,320,135"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Image2DConvolver.html#ad33659bd00f65b2ba7d467a59f29ac07" title=" " alt="" coords="26,69,214,109"/>

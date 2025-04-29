@@ -21,7 +21,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Decodes a percent&#45;encoded (URL&#45;encoded) string.">
 <polygon fill="#999999" stroke="#666666" points="399,-24.5 284,-24.5 284,-5.5 399,-5.5 399,-24.5"/>
 <text text-anchor="middle" x="341.5" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">SafeStringUnescape</text>
 </a>

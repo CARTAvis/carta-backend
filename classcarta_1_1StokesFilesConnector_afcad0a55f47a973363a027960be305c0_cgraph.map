@@ -8,27 +8,27 @@
 <area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="208,150,243,155,242,160,208,156"/>
 <area shape="rect" id="Node000016" href="$classcarta_1_1StokesFilesConnector.html#adf4cafd64661676a483c234b666335cc" title=" " alt="" coords="256,216,459,256"/>
 <area shape="poly" id="edge16_Node000001_Node000016" title=" " alt="" coords="153,158,257,202,278,209,276,214,255,206,151,163"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="507,18,699,43"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="507,18,699,43"/>
 <area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="441,67,535,44,536,49,442,72"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" title=" " alt="" coords="523,67,683,93"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" title="Converts a CARTA polarization type to the corresponding CASA Stokes type." alt="" coords="523,67,683,93"/>
 <area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="459,83,509,81,509,86,459,88"/>
-<area shape="rect" id="Node000007" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="747,133,900,158"/>
+<area shape="rect" id="Node000007" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title="Determines the image type of a given filename using Casacore." alt="" coords="747,133,900,158"/>
 <area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="459,157,506,153,732,144,733,149,507,159,459,163"/>
-<area shape="rect" id="Node000008" href="$classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" title=" " alt="" coords="509,169,697,194"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" title="Converts a FITS Stokes parameter value to its corresponding internal representation." alt="" coords="509,169,697,194"/>
 <area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="459,173,495,175,495,180,459,179"/>
 <area shape="rect" id="Node000009" href="$classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f" title=" " alt="" coords="533,219,672,259"/>
 <area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="432,189,521,214,520,219,431,195"/>
-<area shape="rect" id="Node000015" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="520,283,685,309"/>
+<area shape="rect" id="Node000015" href="$Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="520,283,685,309"/>
 <area shape="poly" id="edge15_Node000006_Node000015" title=" " alt="" coords="439,190,460,202,477,219,485,236,493,253,508,269,520,276,518,280,505,273,488,256,480,239,472,222,457,206,437,194"/>
 <area shape="poly" id="edge9_Node000009_Node000007" title=" " alt="" coords="664,216,698,203,785,162,787,167,700,208,665,221"/>
-<area shape="rect" id="Node000010" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="755,211,892,237"/>
+<area shape="rect" id="Node000010" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title="Checks whether a given file is a compressed FITS file." alt="" coords="755,211,892,237"/>
 <area shape="poly" id="edge10_Node000009_Node000010" title=" " alt="" coords="672,231,741,227,741,232,673,237"/>
-<area shape="rect" id="Node000014" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title=" " alt="" coords="756,261,891,286"/>
+<area shape="rect" id="Node000014" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title="Checks whether a given filename represents a remote HTTP or HTTPS URL." alt="" coords="756,261,891,286"/>
 <area shape="poly" id="edge14_Node000009_Node000014" title=" " alt="" coords="673,247,743,258,742,263,672,252"/>
-<area shape="rect" id="Node000011" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="951,162,1087,187"/>
+<area shape="rect" id="Node000011" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="951,162,1087,187"/>
 <area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="874,209,954,188,955,193,875,214"/>
-<area shape="rect" id="Node000012" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="977,211,1061,237"/>
+<area shape="rect" id="Node000012" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="977,211,1061,237"/>
 <area shape="poly" id="edge12_Node000010_Node000012" title=" " alt="" coords="892,221,963,221,963,227,892,227"/>
-<area shape="rect" id="Node000013" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="948,261,1089,286"/>
+<area shape="rect" id="Node000013" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title="Determines if a given magic number corresponds to a gzip&#45;compressed file." alt="" coords="948,261,1089,286"/>
 <area shape="poly" id="edge13_Node000010_Node000013" title=" " alt="" coords="875,234,955,255,954,260,874,239"/>
 </map>

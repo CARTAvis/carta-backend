@@ -1,5 +1,5 @@
 <map id="carta::Stokes::ToCasa" name="carta::Stokes::ToCasa">
-<area shape="rect" id="Node000001" title=" " alt="" coords="947,45,1107,70"/>
+<area shape="rect" id="Node000001" title="Converts a CARTA polarization type to the corresponding CASA Stokes type." alt="" coords="947,45,1107,70"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1StokesFilesConnector.html#a682e3c54c1eb013b0d886df710cf6f7b" title=" " alt="" coords="696,5,899,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="932,47,899,42,899,37,933,42"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1PvGenerator.html#a5a390c35d2e0f5fd1f8051fd2704f70d" title=" " alt="" coords="703,69,892,109"/>

@@ -105,7 +105,7 @@ var sectionId = 'dynsection-8';
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="311,-19 187,-19 187,0 311,0 311,-19"/>
 <text text-anchor="middle" x="249" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -123,7 +123,7 @@ var sectionId = 'dynsection-8';
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf" target="_top" xlink:title="Determines the region file type based on its content or extension.">
 <polygon fill="white" stroke="#666666" points="455,-110 352,-110 352,-91 455,-91 455,-110"/>
 <text text-anchor="middle" x="403.5" y="-98" font-family="Helvetica,sans-Serif" font-size="10.00">GuessRegionType</text>
 </a>
@@ -141,7 +141,7 @@ var sectionId = 'dynsection-8';
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
 <polygon fill="white" stroke="#666666" points="554,-110 491,-110 491,-91 554,-91 554,-110"/>
 <text text-anchor="middle" x="522.5" y="-98" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>

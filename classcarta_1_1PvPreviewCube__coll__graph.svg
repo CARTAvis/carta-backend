@@ -108,7 +108,7 @@ var sectionId = 'dynsection-0';
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="structAxisRange.html" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="structAxisRange.html" target="_top" xlink:title="Represents a range along an axis.">
 <polygon fill="white" stroke="#666666" points="459.5,-296 391.5,-296 391.5,-277 459.5,-277 459.5,-296"/>
 <text text-anchor="middle" x="425.5" y="-284" font-family="Helvetica,sans-Serif" font-size="10.00">AxisRange</text>
 </a>

@@ -6,7 +6,7 @@
 <area shape="poly" id="edge15_Node000001_Node000015" title=" " alt="" coords="178,522,225,528,225,533,178,528"/>
 <area shape="rect" id="Node000016" href="$classcarta_1_1RegionConverter.html#a0363c9591e779bc148c9789512976633" title=" " alt="" coords="234,408,415,448"/>
 <area shape="poly" id="edge16_Node000001_Node000016" title=" " alt="" coords="145,492,256,450,258,455,147,497"/>
-<area shape="rect" id="Node000017" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="518,504,669,544"/>
+<area shape="rect" id="Node000017" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title="Checks if this Stokes source represents an original image." alt="" coords="518,504,669,544"/>
 <area shape="poly" id="edge28_Node000001_Node000017" title=" " alt="" coords="178,509,225,508,325,506,424,508,504,513,504,518,424,513,325,512,225,513,178,514"/>
 <area shape="rect" id="Node000023" href="$structcarta_1_1RegionState.html#abb4d405523dc5b896a5f28ccaf707513" title=" " alt="" coords="253,587,396,627"/>
 <area shape="poly" id="edge26_Node000001_Node000023" title=" " alt="" coords="135,532,226,572,247,580,245,585,224,577,133,537"/>
@@ -46,7 +46,7 @@
 <area shape="poly" id="edge19_Node000016_Node000019" title=" " alt="" coords="415,415,493,405,493,411,416,420"/>
 <area shape="rect" id="Node000020" href="$classcarta_1_1RegionConverter.html#a6cfef4d37011edbd984fcb3f3ad82637" title=" " alt="" coords="501,440,685,480"/>
 <area shape="poly" id="edge20_Node000016_Node000020" title=" " alt="" coords="416,436,487,445,487,450,415,441"/>
-<area shape="rect" id="Node000018" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="783,511,975,537"/>
+<area shape="rect" id="Node000018" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="783,511,975,537"/>
 <area shape="poly" id="edge18_Node000017_Node000018" title=" " alt="" coords="669,521,769,521,769,527,669,527"/>
 <area shape="poly" id="edge21_Node000020_Node000011" title=" " alt="" coords="685,438,762,425,908,411,1041,403,1041,409,909,416,763,431,686,443"/>
 <area shape="rect" id="Node000021" href="$classcarta_1_1RegionConverter.html#a07b2bf1f762d542111b7bf5a7b562f96" title=" " alt="" coords="774,440,985,480"/>

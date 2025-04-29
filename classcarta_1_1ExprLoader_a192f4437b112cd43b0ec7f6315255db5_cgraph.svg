@@ -69,7 +69,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive).">
 <polygon fill="white" stroke="#666666" points="379.5,-19 292.5,-19 292.5,0 379.5,0 379.5,-19"/>
 <text text-anchor="middle" x="336" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">NormalizeUnit</text>
 </a>

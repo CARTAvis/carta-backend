@@ -120,10 +120,13 @@ Macros</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a41a3266785a8ac3360dd09466acc91c4" id="r_a41a3266785a8ac3360dd09466acc91c4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="App_8h.html#a41a3266785a8ac3360dd09466acc91c4">FindExecutablePath</a> (std::string &amp;path)</td></tr>
+<tr class="memdesc:a41a3266785a8ac3360dd09466acc91c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the absolute path of the currently running executable.  <br /></td></tr>
 <tr class="separator:a41a3266785a8ac3360dd09466acc91c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a88efa1f2f554a9f807784421cef88c32" id="r_a88efa1f2f554a9f807784421cef88c32"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="App_8h.html#a88efa1f2f554a9f807784421cef88c32">GetReleaseInformation</a> ()</td></tr>
+<tr class="memdesc:a88efa1f2f554a9f807784421cef88c32"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the operating system release information.  <br /></td></tr>
 <tr class="separator:a88efa1f2f554a9f807784421cef88c32"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae7f5c27bbd73739e53d5ab0a59ec1110" id="r_ae7f5c27bbd73739e53d5ab0a59ec1110"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="App_8h.html#ae7f5c27bbd73739e53d5ab0a59ec1110">OutputOfCommand</a> (const char *command)</td></tr>
+<tr class="memdesc:ae7f5c27bbd73739e53d5ab0a59ec1110"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes a shell command and returns its output.  <br /></td></tr>
 <tr class="separator:ae7f5c27bbd73739e53d5ab0a59ec1110"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -157,6 +160,20 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Retrieves the absolute path of the currently running executable. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">path</td><td>A reference to a string that will store the resolved executable path if successful.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the executable path was successfully retrieved, <code>false</code> otherwise.</dd></dl>
+<p>This function determines the full path of the running executable and stores it in the <code>path</code> parameter. It supports both macOS (<code>_NSGetExecutablePath</code>) and Linux (<code>/proc/self/exe</code>).</p>
+<dl class="section note"><dt>Note</dt><dd>On macOS, <code>_NSGetExecutablePath</code> is used, and the buffer size is checked dynamically. </dd>
+<dd>
+On Linux, the function reads from <code>/proc/self/exe</code> using <code>readlink()</code>.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>On macOS, if the buffer is too small, <code>_NSGetExecutablePath</code> may fail, this implementation does not handle resizing the buffer. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -179,6 +196,24 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Retrieves the operating system release information. </p>
+<dl class="section return"><dt>Returns</dt><dd>A <code>std::string</code> containing the OS release information. If the information is unavailable or an error occurs, the function returns <code>"Platform information not available"</code>.</dd></dl>
+<p>This function fetches OS release details using platform-specific methods:</p><ul>
+<li>On <b>macOS</b>, it runs the <code>sw_vers</code> command and reads the output.</li>
+<li>On <b>Linux/Unix</b>, it attempts to read <code>/etc/os-release</code>, which is available on most distributions using systemd.</li>
+</ul>
+<dl class="section note"><dt>Note</dt><dd><ul>
+<li>On macOS, <code>popen("sw_vers", "r")</code> is used to execute <code>sw_vers</code>, which outputs OS version details.</li>
+<li>On Linux, the function reads the <code>/etc/os-release</code> file into a string.</li>
+<li>If an error occurs while reading the file, a warning is logged via <code>spdlog::warn</code>.</li>
+</ul>
+</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd><ul>
+<li>The function does <b>not</b> support Windows.</li>
+<li>On macOS, buffer overflow protection is in place, but the buffer size is fixed. </li>
+</ul>
+</dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -202,6 +237,27 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Executes a shell command and returns its output. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">command</td><td>The shell command to execute.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A <code>std::string</code> containing the command's output. If execution fails, an empty string is returned.</dd></dl>
+<p>This function opens a pipe using <code>popen()</code> to execute the given command, reads its output, and returns it as a <code>std::string</code>.</p>
+<dl class="section note"><dt>Note</dt><dd><ul>
+<li>The function trims trailing newline characters from the output.</li>
+<li>The caller must ensure the command is safe to execute (avoid shell injection).</li>
+<li>Works only on Unix-like systems.</li>
+</ul>
+</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd><ul>
+<li>If <code>popen()</code> fails, an error message is printed, and an empty string is returned.</li>
+<li>The function does not handle command execution failures beyond detecting if <code>popen()</code> fails. </li>
+</ul>
+</dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">

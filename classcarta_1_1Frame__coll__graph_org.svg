@@ -292,7 +292,7 @@
 <!-- Node19 -->
 <g id="Node000019" class="node">
 <title>Node19</title>
-<g id="a_Node000019"><a xlink:href="structAxesInfo.html" target="_top" xlink:title=" ">
+<g id="a_Node000019"><a xlink:href="structAxesInfo.html" target="_top" xlink:title="Stores information about image axes, including spatial and spectral components.">
 <polygon fill="white" stroke="#666666" points="381.5,-877.11 322.5,-877.11 322.5,-858.11 381.5,-858.11 381.5,-877.11"/>
 <text text-anchor="middle" x="352" y="-865.11" font-family="Helvetica,sans-Serif" font-size="10.00">AxesInfo</text>
 </a>
@@ -317,7 +317,7 @@
 <!-- Node15 -->
 <g id="Node000015" class="node">
 <title>Node15</title>
-<g id="a_Node000015"><a xlink:href="structAxisRange.html" target="_top" xlink:title=" ">
+<g id="a_Node000015"><a xlink:href="structAxisRange.html" target="_top" xlink:title="Represents a range along an axis.">
 <polygon fill="white" stroke="#666666" points="529,-222.11 461,-222.11 461,-203.11 529,-203.11 529,-222.11"/>
 <text text-anchor="middle" x="495" y="-210.11" font-family="Helvetica,sans-Serif" font-size="10.00">AxisRange</text>
 </a>
@@ -523,7 +523,7 @@
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="structDimsInfo.html" target="_top" xlink:title=" ">
+<g id="a_Node000018"><a xlink:href="structDimsInfo.html" target="_top" xlink:title="Represents the dimensions of an image or data cube.">
 <polygon fill="white" stroke="#666666" points="382.5,-1494.11 321.5,-1494.11 321.5,-1475.11 382.5,-1475.11 382.5,-1494.11"/>
 <text text-anchor="middle" x="352" y="-1482.11" font-family="Helvetica,sans-Serif" font-size="10.00">DimsInfo</text>
 </a>
@@ -626,7 +626,7 @@
 <!-- Node36 -->
 <g id="Node000036" class="node">
 <title>Node36</title>
-<g id="a_Node000036"><a xlink:href="structPointXy.html" target="_top" xlink:title=" ">
+<g id="a_Node000036"><a xlink:href="structPointXy.html" target="_top" xlink:title="Represents a 2D point with floating&#45;point coordinates.">
 <polygon fill="white" stroke="#666666" points="816,-1005.11 762,-1005.11 762,-986.11 816,-986.11 816,-1005.11"/>
 <text text-anchor="middle" x="789" y="-993.11" font-family="Helvetica,sans-Serif" font-size="10.00">PointXy</text>
 </a>

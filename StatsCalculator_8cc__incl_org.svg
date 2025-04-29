@@ -53,40 +53,21 @@
 </a>
 </g>
 </g>
-<!-- Node64 -->
-<g id="Node000064" class="node">
-<title>Node64</title>
-<g id="a_Node000064"><a xlink:title=" ">
+<!-- Node65 -->
+<g id="Node000065" class="node">
+<title>Node65</title>
+<g id="a_Node000065"><a xlink:title=" ">
 <polygon fill="#e0e0e0" stroke="#999999" points="5194,-431.5 5150,-431.5 5150,-412.5 5194,-412.5 5194,-431.5"/>
 <text text-anchor="middle" x="5172" y="-419.5" font-family="Helvetica,sans-Serif" font-size="10.00">limits</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node64 -->
-<g id="edge56_Node000001_Node000064" class="edge">
-<title>Node1&#45;&gt;Node64</title>
-<g id="a_edge56_Node000001_Node000064"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node65 -->
+<g id="edge56_Node000001_Node000065" class="edge">
+<title>Node1&#45;&gt;Node65</title>
+<g id="a_edge56_Node000001_Node000065"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M5172,-472.87C5172,-464.75 5172,-452.31 5172,-441.89"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="5175.5,-441.67 5172,-431.67 5168.5,-441.67 5175.5,-441.67"/>
-</a>
-</g>
-</g>
-<!-- Node65 -->
-<g id="Node000065" class="node">
-<title>Node65</title>
-<g id="a_Node000065"><a xlink:title=" ">
-<polygon fill="#e0e0e0" stroke="#999999" points="5332,-437 5212,-437 5212,-407 5332,-407 5332,-437"/>
-<text text-anchor="start" x="5220" y="-425" font-family="Helvetica,sans-Serif" font-size="10.00">casacore/casa/Arrays</text>
-<text text-anchor="middle" x="5272" y="-414" font-family="Helvetica,sans-Serif" font-size="10.00">/ArrayMath.h</text>
-</a>
-</g>
-</g>
-<!-- Node1&#45;&gt;Node65 -->
-<g id="edge57_Node000001_Node000065" class="edge">
-<title>Node1&#45;&gt;Node65</title>
-<g id="a_edge57_Node000001_Node000065"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M5186.76,-472.87C5200.45,-464.86 5221.32,-452.65 5238.98,-442.31"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="5241.01,-445.19 5247.87,-437.11 5237.47,-439.14 5241.01,-445.19"/>
 </a>
 </g>
 </g>
@@ -94,16 +75,35 @@
 <g id="Node000066" class="node">
 <title>Node66</title>
 <g id="a_Node000066"><a xlink:title=" ">
+<polygon fill="#e0e0e0" stroke="#999999" points="5332,-437 5212,-437 5212,-407 5332,-407 5332,-437"/>
+<text text-anchor="start" x="5220" y="-425" font-family="Helvetica,sans-Serif" font-size="10.00">casacore/casa/Arrays</text>
+<text text-anchor="middle" x="5272" y="-414" font-family="Helvetica,sans-Serif" font-size="10.00">/ArrayMath.h</text>
+</a>
+</g>
+</g>
+<!-- Node1&#45;&gt;Node66 -->
+<g id="edge57_Node000001_Node000066" class="edge">
+<title>Node1&#45;&gt;Node66</title>
+<g id="a_edge57_Node000001_Node000066"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M5186.76,-472.87C5200.45,-464.86 5221.32,-452.65 5238.98,-442.31"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="5241.01,-445.19 5247.87,-437.11 5237.47,-439.14 5241.01,-445.19"/>
+</a>
+</g>
+</g>
+<!-- Node67 -->
+<g id="Node000067" class="node">
+<title>Node67</title>
+<g id="a_Node000067"><a xlink:title=" ">
 <polygon fill="#e0e0e0" stroke="#999999" points="5488,-437 5350,-437 5350,-407 5488,-407 5488,-437"/>
 <text text-anchor="start" x="5358" y="-425" font-family="Helvetica,sans-Serif" font-size="10.00">casacore/images/Images</text>
 <text text-anchor="middle" x="5419" y="-414" font-family="Helvetica,sans-Serif" font-size="10.00">/ImageStatistics.h</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node66 -->
-<g id="edge58_Node000001_Node000066" class="edge">
-<title>Node1&#45;&gt;Node66</title>
-<g id="a_edge58_Node000001_Node000066"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node67 -->
+<g id="edge58_Node000001_Node000067" class="edge">
+<title>Node1&#45;&gt;Node67</title>
+<g id="a_edge58_Node000001_Node000067"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M5207.92,-472.99C5244.94,-464.23 5303.59,-450.33 5349.69,-439.42"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="5350.69,-442.77 5359.62,-437.06 5349.08,-435.96 5350.69,-442.77"/>
 </a>

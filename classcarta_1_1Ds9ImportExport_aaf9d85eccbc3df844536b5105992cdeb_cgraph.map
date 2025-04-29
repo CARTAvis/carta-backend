@@ -28,7 +28,7 @@
 <area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="1127,648,1210,670,1209,675,1126,653"/>
 <area shape="rect" id="Node000012" href="$classcarta_1_1RegionImportExport.html#ace29fa615ac0800a59cfd12c9259d278" title=" " alt="" coords="711,713,904,753"/>
 <area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="652,730,697,730,697,736,652,736"/>
-<area shape="rect" id="Node000013" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="1507,626,1596,651"/>
+<area shape="rect" id="Node000013" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="1507,626,1596,651"/>
 <area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="880,751,985,773,1050,782,1119,788,1191,790,1264,786,1337,774,1406,753,1443,734,1477,710,1529,660,1532,664,1480,714,1446,739,1408,758,1338,779,1265,791,1191,796,1119,794,1049,788,984,778,879,756"/>
 <area shape="poly" id="edge65_Node000014_Node000008" title=" " alt="" coords="650,330,665,342,684,371,692,399,693,427,691,454,688,482,688,509,695,537,713,565,728,579,724,583,709,568,690,539,683,510,682,481,685,454,688,427,687,400,679,373,661,346,647,334"/>
 <area shape="poly" id="edge64_Node000014_Node000012" title=" " alt="" coords="651,330,665,342,689,380,701,416,702,451,699,486,694,521,692,558,697,597,713,639,738,674,768,702,764,706,734,677,708,641,692,598,687,558,689,521,693,485,697,451,695,417,685,382,661,346,648,334"/>
@@ -76,7 +76,7 @@
 <area shape="poly" id="edge28_Node000026_Node000027" title=" " alt="" coords="1107,448,1144,430,1168,409,1192,388,1219,375,1221,380,1195,393,1171,413,1147,434,1110,453"/>
 <area shape="rect" id="Node000028" href="$classcarta_1_1Ds9ImportExport.html#a4579ce073b1c5b91a9c62e38e48d4944" title=" " alt="" coords="1196,446,1404,486"/>
 <area shape="poly" id="edge29_Node000026_Node000028" title=" " alt="" coords="1139,466,1182,466,1183,471,1139,472"/>
-<area shape="rect" id="Node000029" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title=" " alt="" coords="1506,454,1597,479"/>
+<area shape="rect" id="Node000029" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title="Converts a string to an integer." alt="" coords="1506,454,1597,479"/>
 <area shape="poly" id="edge36_Node000026_Node000029" title=" " alt="" coords="1115,448,1193,432,1300,424,1407,432,1493,448,1492,453,1406,437,1300,429,1194,437,1116,453"/>
 <area shape="rect" id="Node000030" href="$classcarta_1_1Ds9ImportExport.html#a38914b11d3f6461aab91779d74e6e364" title=" " alt="" coords="1193,510,1407,550"/>
 <area shape="poly" id="edge32_Node000026_Node000030" title=" " alt="" coords="1134,488,1203,505,1202,510,1133,493"/>

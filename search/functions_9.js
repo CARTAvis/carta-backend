@@ -48,7 +48,7 @@ var searchData=
   ['is64bitbeamstable_45',['Is64BitBeamsTable',['../classcarta_1_1FitsLoader.html#a9fba46cca685f41b92dd4abe57c466fd',1,'carta::FitsLoader']]],
   ['is_5fdefined_46',['is_defined',['../structcarta_1_1BeamTableInfo.html#a400fc3d84f03c6ef99ff8cf08d19345f',1,'carta::BeamTableInfo']]],
   ['is_5fgroup_5fexecution_5fcancelled_47',['is_group_execution_cancelled',['../classcarta_1_1SessionContext.html#a28e9e5c979d1c244253a92f69b156c39',1,'carta::SessionContext']]],
-  ['is_5fin_5frange_48',['is_in_range',['../structAxisRange.html#ab1963ef2bfd0d41dbcfaba14eaa9bd00',1,'AxisRange']]],
+  ['is_5fin_5frange_48',['is_in_range',['../structAxisRange.html#aafe8ce1f44aa7d6b8ca5d2e112ccf2bb',1,'AxisRange']]],
   ['isannotation_49',['isannotation',['../classcarta_1_1Region.html#a9557b22b60d93d7d5933c08f3a2e19c2',1,'carta::Region::IsAnnotation()'],['../structcarta_1_1RegionState.html#abb4d405523dc5b896a5f28ccaf707513',1,'carta::RegionState::IsAnnotation()']]],
   ['isauthenticated_50',['IsAuthenticated',['../classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38',1,'carta::HttpServer']]],
   ['isbeamtable_51',['IsBeamTable',['../classcarta_1_1CompressedFits.html#a340325b4ce79417c35f2b21fb1bdec82',1,'carta::CompressedFits']]],
@@ -80,7 +80,7 @@ var searchData=
   ['ispointregion_77',['IsPointRegion',['../classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e',1,'carta::RegionHandler']]],
   ['isremotehttpfile_78',['isremotehttpfile',['../File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb',1,'IsRemoteHttpFile(const std::string &amp;filename):&#160;File.cc'],['../File_8h.html#ac3253b9c72cf4368b08803ef2a0102bb',1,'IsRemoteHttpFile(const std::string &amp;filename):&#160;File.cc']]],
   ['isrotbox_79',['IsRotbox',['../structcarta_1_1RegionState.html#af0d42fa8098fb452ff8b385808aa75a2',1,'carta::RegionState']]],
-  ['issubdirectory_80',['issubdirectory',['../Casacore_8cc.html#a42ba788ab586bfe63f86aaef57c3d1af',1,'IsSubdirectory(string folder, string top_folder):&#160;Casacore.cc'],['../Casacore_8h.html#aa743c537861c278f5c5620fa996f8153',1,'IsSubdirectory(std::string folder, std::string top_folder):&#160;Casacore.h']]],
+  ['issubdirectory_80',['issubdirectory',['../Casacore_8cc.html#aa743c537861c278f5c5620fa996f8153',1,'IsSubdirectory(std::string folder, std::string top_folder):&#160;Casacore.cc'],['../Casacore_8h.html#aa743c537861c278f5c5620fa996f8153',1,'IsSubdirectory(std::string folder, std::string top_folder):&#160;Casacore.cc']]],
   ['issuccess_81',['IsSuccess',['../classcarta_1_1MomentGenerator.html#a562b38c84d048b37f2458bb64f21e374',1,'carta::MomentGenerator']]],
   ['isvalid_82',['isvalid',['../classcarta_1_1Table.html#a0f4ae1773d077ea3827df217cb6e8360',1,'carta::Table::IsValid()'],['../classcarta_1_1RegionHandler.html#a8f74993ebeac47b9031a2558833f3ee1',1,'carta::RegionHandler::IsValid()'],['../classcarta_1_1Region.html#a8a7524f9b053bc0a642b72d85826b43b',1,'carta::Region::IsValid()'],['../structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a9184856136b09f591228dfb288f34a5f',1,'carta::FileInfo::RegionSpectralStats::IsValid()'],['../classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117',1,'carta::Frame::IsValid()']]],
   ['isvalidfrontendfolder_83',['IsValidFrontendFolder',['../classcarta_1_1HttpServer.html#adb8ce1dc188f8d754ef9d614b2ef1ca1',1,'carta::HttpServer']]]

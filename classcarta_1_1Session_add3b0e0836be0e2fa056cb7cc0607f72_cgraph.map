@@ -1,8 +1,8 @@
 <map id="carta::Session::OnRegisterViewer" name="carta::Session::OnRegisterViewer">
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,73,199,113"/>
-<area shape="rect" id="Node000002" href="$App_8cc.html#a88efa1f2f554a9f807784421cef88c32" title=" " alt="" coords="265,5,439,31"/>
+<area shape="rect" id="Node000002" href="$App_8cc.html#a88efa1f2f554a9f807784421cef88c32" title="Retrieves the operating system release information." alt="" coords="265,5,439,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="155,70,246,39,277,31,278,36,247,45,156,75"/>
-<area shape="rect" id="Node000003" href="$App_8cc.html#ae7f5c27bbd73739e53d5ab0a59ec1110" title=" " alt="" coords="278,55,426,80"/>
+<area shape="rect" id="Node000003" href="$App_8cc.html#ae7f5c27bbd73739e53d5ab0a59ec1110" title="Executes a shell command and returns its output." alt="" coords="278,55,426,80"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="199,80,264,74,265,79,199,86"/>
 <area shape="rect" id="Node000004" href="$classMessage.html#a8c590c77e9f0326e09ac0af465b58a86" title=" " alt="" coords="247,104,457,129"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="199,99,233,103,233,108,199,105"/>

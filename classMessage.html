@@ -230,6 +230,7 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a51a727e617bb0fe05ac48d6f9354ef09"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a8b06331a96f3ed7e0e7e659203159e" id="r_a8a8b06331a96f3ed7e0e7e659203159e"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a8a8b06331a96f3ed7e0e7e659203159e"><td class="memTemplItemLeft" align="right" valign="top">static T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classMessage.html#a8a8b06331a96f3ed7e0e7e659203159e">DecodeMessage</a> (std::vector&lt; char &gt; &amp;message)</td></tr>
+<tr class="memdesc:a8a8b06331a96f3ed7e0e7e659203159e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decodes a message from a vector of bytes into a specific type.  <br /></td></tr>
 <tr class="separator:a8a8b06331a96f3ed7e0e7e659203159e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
@@ -636,6 +637,22 @@ template&lt;typename T &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Decodes a message from a vector of bytes into a specific type. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>The type of the message to decode. It must have a <code>ParseFromArray</code> method. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">message</td><td>A vector of characters containing the encoded message data. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The decoded message of type <code>T</code>.</dd></dl>
+<p>This function extracts the payload from a given message buffer, ignoring the event header, and deserializes it into an object of template type <code>T</code> using <code>ParseFromArray</code>. </p>
 
 </div>
 </div>

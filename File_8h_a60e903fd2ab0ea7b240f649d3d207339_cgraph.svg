@@ -21,7 +21,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Determines the image file type based on its content or extension.">
 <polygon fill="#999999" stroke="#666666" points="100,-56 0,-56 0,-37 100,-37 100,-56"/>
 <text text-anchor="middle" x="50" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">GuessImageType</text>
 </a>
@@ -30,7 +30,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
 <polygon fill="white" stroke="#666666" points="240,-93 138,-93 138,-74 240,-74 240,-93"/>
 <text text-anchor="middle" x="189" y="-81" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>
@@ -48,7 +48,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
 <polygon fill="white" stroke="#666666" points="220.5,-56 157.5,-56 157.5,-37 220.5,-37 220.5,-56"/>
 <text text-anchor="middle" x="189" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>
@@ -66,7 +66,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title="Determines if a given magic number corresponds to a gzip&#45;compressed file.">
 <polygon fill="white" stroke="#666666" points="242,-19 136,-19 136,0 242,0 242,-19"/>
 <text text-anchor="middle" x="189" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
 </a>

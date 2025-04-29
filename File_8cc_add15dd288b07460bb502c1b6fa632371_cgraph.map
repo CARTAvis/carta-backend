@@ -1,5 +1,5 @@
 <map id="SearchPath" name="SearchPath">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,100,31"/>
-<area shape="rect" id="Node000002" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="148,5,237,31"/>
+<area shape="rect" id="Node000001" title="Searches for a file in the system&#39;s PATH environment variable." alt="" coords="5,5,100,31"/>
+<area shape="rect" id="Node000002" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="148,5,237,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,15,134,15,134,21,100,21"/>
 </map>

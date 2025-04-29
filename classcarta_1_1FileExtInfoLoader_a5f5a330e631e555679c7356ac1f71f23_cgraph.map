@@ -20,7 +20,7 @@
 <area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="155,364,220,426,263,460,309,490,323,496,320,501,307,494,260,464,216,430,151,368"/>
 <area shape="rect" id="Node000012" href="$classcarta_1_1FileExtInfoLoader.html#afa0abc9c6dd40164f472c7554adc32b6" title=" " alt="" coords="322,568,498,608"/>
 <area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="147,364,172,404,209,455,255,508,310,554,319,559,316,564,306,558,251,512,204,458,168,407,143,367"/>
-<area shape="rect" id="Node000013" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="352,633,468,658"/>
+<area shape="rect" id="Node000013" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="352,633,468,658"/>
 <area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="143,365,164,416,198,485,247,557,277,590,309,618,340,633,338,638,307,622,273,594,243,560,194,488,159,419,138,367"/>
 <area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="499,353,562,360,561,366,498,358"/>
 <area shape="rect" id="Node000011" href="$classcarta_1_1CompressedFits.html#a27e31cc4d4f75f55f592a274b898c416" title=" " alt="" coords="560,504,767,544"/>

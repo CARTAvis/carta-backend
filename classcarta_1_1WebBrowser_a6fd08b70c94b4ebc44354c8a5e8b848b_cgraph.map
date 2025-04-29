@@ -6,8 +6,8 @@
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="157,87,192,87,192,92,157,92"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1WebBrowser.html#a215b7b5d07c541e892dd2ff129eb8dae" title=" " alt="" coords="209,133,361,173"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="146,107,208,127,207,132,145,112"/>
-<area shape="rect" id="Node000005" href="$File_8cc.html#add15dd288b07460bb502c1b6fa632371" title=" " alt="" coords="412,141,507,166"/>
+<area shape="rect" id="Node000005" href="$File_8cc.html#add15dd288b07460bb502c1b6fa632371" title="Searches for a file in the system&#39;s PATH environment variable." alt="" coords="412,141,507,166"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="361,151,398,151,398,156,361,156"/>
-<area shape="rect" id="Node000006" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="555,141,644,166"/>
+<area shape="rect" id="Node000006" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="555,141,644,166"/>
 <area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="507,151,541,151,541,156,507,156"/>
 </map>

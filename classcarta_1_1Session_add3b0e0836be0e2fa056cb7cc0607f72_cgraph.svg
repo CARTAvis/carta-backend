@@ -67,7 +67,7 @@ var sectionId = 'dynsection-91';
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="App_8cc.html#a88efa1f2f554a9f807784421cef88c32" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="App_8cc.html#a88efa1f2f554a9f807784421cef88c32" target="_top" xlink:title="Retrieves the operating system release information.">
 <polygon fill="white" stroke="#666666" points="325,-183.5 195,-183.5 195,-164.5 325,-164.5 325,-183.5"/>
 <text text-anchor="middle" x="260" y="-171.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetReleaseInformation</text>
 </a>
@@ -85,7 +85,7 @@ var sectionId = 'dynsection-91';
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="App_8cc.html#ae7f5c27bbd73739e53d5ab0a59ec1110" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="App_8cc.html#ae7f5c27bbd73739e53d5ab0a59ec1110" target="_top" xlink:title="Executes a shell command and returns its output.">
 <polygon fill="white" stroke="#666666" points="315.5,-146.5 204.5,-146.5 204.5,-127.5 315.5,-127.5 315.5,-146.5"/>
 <text text-anchor="middle" x="260" y="-134.5" font-family="Helvetica,sans-Serif" font-size="10.00">OutputOfCommand</text>
 </a>

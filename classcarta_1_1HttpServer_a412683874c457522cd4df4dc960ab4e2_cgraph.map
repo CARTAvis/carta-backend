@@ -16,6 +16,6 @@
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="382,23,419,23,419,28,382,28"/>
 <area shape="rect" id="Node000005" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="432,77,575,102"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="373,87,418,87,418,92,373,92"/>
-<area shape="rect" id="Node000006" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title=" " alt="" coords="623,77,833,102"/>
+<area shape="rect" id="Node000006" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title="Performs a constant&#45;time comparison of two strings." alt="" coords="623,77,833,102"/>
 <area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="575,87,609,87,609,92,575,92"/>
 </map>

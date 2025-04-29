@@ -130,7 +130,7 @@ var sectionId = 'dynsection-52';
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title="Checks if this Stokes source represents an original image.">
 <polygon fill="white" stroke="#666666" points="497.5,-30 384.5,-30 384.5,0 497.5,0 497.5,-30"/>
 <text text-anchor="start" x="392.5" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
 <text text-anchor="middle" x="441" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
@@ -149,7 +149,7 @@ var sectionId = 'dynsection-52';
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
 <polygon fill="white" stroke="#666666" points="679,-24.5 535,-24.5 535,-5.5 679,-5.5 679,-24.5"/>
 <text text-anchor="middle" x="607" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>

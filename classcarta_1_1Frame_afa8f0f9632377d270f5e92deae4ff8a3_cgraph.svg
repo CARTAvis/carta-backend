@@ -66,7 +66,7 @@ var sectionId = 'dynsection-21';
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56" target="_top" xlink:title="Determines the spectral coordinate preferences based on an image&#39;s native spectral type.">
 <polygon fill="white" stroke="#666666" points="363,-24.5 203,-24.5 203,-5.5 363,-5.5 363,-24.5"/>
 <text text-anchor="middle" x="283" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetSpectralCoordPreferences</text>
 </a>

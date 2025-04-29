@@ -116,6 +116,7 @@ This graph shows which files directly or indirectly include this file:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a810fce65818eabe0741e639b2ff23619" id="r_a810fce65818eabe0741e639b2ff23619"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="RemoteFiles_8h.html#a810fce65818eabe0741e639b2ff23619">GenerateUrlFromRequest</a> (const CARTA::RemoteFileRequest &amp;request, std::string &amp;url, std::string &amp;error_message)</td></tr>
+<tr class="memdesc:a810fce65818eabe0741e639b2ff23619"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generates a URL for a remote file request based on provided parameters.  <br /></td></tr>
 <tr class="separator:a810fce65818eabe0741e639b2ff23619"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
@@ -157,6 +158,19 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Generates a URL for a remote file request based on provided parameters. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">request</td><td>The <code>CARTA::RemoteFileRequest</code> containing the request parameters. </td></tr>
+    <tr><td class="paramname">url</td><td>The generated URL to be returned if the request is valid. </td></tr>
+    <tr><td class="paramname">error_message</td><td>A message indicating the reason for failure if the request is invalid.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the URL was successfully generated, <code>false</code> otherwise.</dd></dl>
+<p>This function validates the <code>CARTA::RemoteFileRequest</code> parameters and constructs a URL to fetch an image from the HiPS service. If any required parameters are missing or invalid, it returns <code>false</code> and provides an appropriate error message.</p>
+<dl class="section note"><dt>Note</dt><dd>The function ensures that all required parameters are present and valid before constructing the URL. If <code>wcs</code> is not provided, additional fields such as <code>coordsys</code>, <code>projection</code>, <code>fov</code>, and <code>object</code> or <code>(ra, dec)</code> must be specified. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">

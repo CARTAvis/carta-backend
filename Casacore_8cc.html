@@ -112,26 +112,34 @@ Include dependency graph for Casacore.cc:</div>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ab60f76f2282c51336d32de6a0e54df6d" id="r_ab60f76f2282c51336d32de6a0e54df6d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#ab60f76f2282c51336d32de6a0e54df6d">CheckFolderPaths</a> (string &amp;top_level_string, string &amp;starting_string)</td></tr>
-<tr class="separator:ab60f76f2282c51336d32de6a0e54df6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42ba788ab586bfe63f86aaef57c3d1af" id="r_a42ba788ab586bfe63f86aaef57c3d1af"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a42ba788ab586bfe63f86aaef57c3d1af">IsSubdirectory</a> (string folder, string top_folder)</td></tr>
-<tr class="separator:a42ba788ab586bfe63f86aaef57c3d1af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c9a1def63cd54cea5e9cf5b893b5708" id="r_a5c9a1def63cd54cea5e9cf5b893b5708"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708">GetResolvedFilename</a> (const string &amp;root_dir, const string &amp;directory, const string &amp;file, string &amp;message)</td></tr>
-<tr class="separator:a5c9a1def63cd54cea5e9cf5b893b5708"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa05a1fe4e2176aee249351f3e2544441" id="r_aa05a1fe4e2176aee249351f3e2544441"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#aa05a1fe4e2176aee249351f3e2544441">CheckFolderPaths</a> (std::string &amp;top_level_string, std::string &amp;starting_string)</td></tr>
+<tr class="memdesc:aa05a1fe4e2176aee249351f3e2544441"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validates and resolves folder paths, ensuring the starting directory is within the top-level directory.  <br /></td></tr>
+<tr class="separator:aa05a1fe4e2176aee249351f3e2544441"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa743c537861c278f5c5620fa996f8153" id="r_aa743c537861c278f5c5620fa996f8153"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#aa743c537861c278f5c5620fa996f8153">IsSubdirectory</a> (std::string folder, std::string top_folder)</td></tr>
+<tr class="memdesc:aa743c537861c278f5c5620fa996f8153"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines whether a given folder is a subdirectory of a specified top-level folder.  <br /></td></tr>
+<tr class="separator:aa743c537861c278f5c5620fa996f8153"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad560f4fdd266b9e1503ae3f24a60aa52" id="r_ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52">GetResolvedFilename</a> (const std::string &amp;root_dir, const std::string &amp;directory, const std::string &amp;file, std::string &amp;message)</td></tr>
+<tr class="memdesc:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolves a file path based on a given root directory and relative subdirectory.  <br /></td></tr>
+<tr class="separator:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2710acccf40d0db8b686e21bc111cc56" id="r_a2710acccf40d0db8b686e21bc111cc56"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56">GetSpectralCoordPreferences</a> (casacore::ImageInterface&lt; float &gt; *image, bool &amp;prefer_velocity, bool &amp;optical_velocity, bool &amp;prefer_wavelength, bool &amp;air_wavelength)</td></tr>
+<tr class="memdesc:a2710acccf40d0db8b686e21bc111cc56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the spectral coordinate preferences based on an image's native spectral type.  <br /></td></tr>
 <tr class="separator:a2710acccf40d0db8b686e21bc111cc56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1859ccacb65ced54041fd75f602c75c1" id="r_a1859ccacb65ced54041fd75f602c75c1"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a1859ccacb65ced54041fd75f602c75c1">FormatBeam</a> (const casacore::GaussianBeam &amp;gaussian_beam)</td></tr>
+<tr class="memdesc:a1859ccacb65ced54041fd75f602c75c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Formats a Gaussian beam's parameters into a human-readable string.  <br /></td></tr>
 <tr class="separator:a1859ccacb65ced54041fd75f602c75c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c9fe1e490ee8d17337e07e1f9ac6bdc" id="r_a8c9fe1e490ee8d17337e07e1f9ac6bdc"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a8c9fe1e490ee8d17337e07e1f9ac6bdc">FormatQuantity</a> (const casacore::Quantity &amp;quantity)</td></tr>
+<tr class="memdesc:a8c9fe1e490ee8d17337e07e1f9ac6bdc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Formats a Casacore quantity into a human-readable string.  <br /></td></tr>
 <tr class="separator:a8c9fe1e490ee8d17337e07e1f9ac6bdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8733accb41db0f83703779c667ae852e" id="r_a8733accb41db0f83703779c667ae852e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e">NormalizeUnit</a> (casacore::String &amp;unit)</td></tr>
+<tr class="memdesc:a8733accb41db0f83703779c667ae852e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Normalizes a given unit string to conform to standard Casacore unit conventions (case-sensitive).  <br /></td></tr>
 <tr class="separator:a8733accb41db0f83703779c667ae852e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a460085220f0ce6d3fe661fba5877a796" id="r_a460085220f0ce6d3fe661fba5877a796"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796">ParseHistoryBeamHeader</a> (std::string &amp;header, std::string &amp;bmaj, std::string &amp;bmin, std::string &amp;bpa)</td></tr>
+<tr class="memdesc:a460085220f0ce6d3fe661fba5877a796"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses an AIPS-style beam header to extract beam parameters with regular expression.  <br /></td></tr>
 <tr class="separator:a460085220f0ce6d3fe661fba5877a796"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="ab60f76f2282c51336d32de6a0e54df6d" name="ab60f76f2282c51336d32de6a0e54df6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab60f76f2282c51336d32de6a0e54df6d">&#9670;&#160;</a></span>CheckFolderPaths()</h2>
+<a id="aa05a1fe4e2176aee249351f3e2544441" name="aa05a1fe4e2176aee249351f3e2544441"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa05a1fe4e2176aee249351f3e2544441">&#9670;&#160;</a></span>CheckFolderPaths()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -139,13 +147,13 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">bool CheckFolderPaths </td>
           <td>(</td>
-          <td class="paramtype">string &amp;&#160;</td>
+          <td class="paramtype">std::string &amp;&#160;</td>
           <td class="paramname"><em>top_level_string</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">string &amp;&#160;</td>
+          <td class="paramtype">std::string &amp;&#160;</td>
           <td class="paramname"><em>starting_string</em>&#160;</td>
         </tr>
         <tr>
@@ -155,15 +163,22 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Validates and resolves folder paths, ensuring the starting directory is within the top-level directory. </p>
+<p>This function checks and resolves the given top-level and starting directories. If default placeholder values ("base" or "root") are found, they are replaced accordingly. The function verifies that both directories exist and are accessible, and ensures that the starting directory is a valid subdirectory of the top-level directory.</p>
+<dl class="section note"><dt>Note</dt><dd>If <code>starting_string</code> is invalid, it is replaced with <code>top_level_string</code>. </dd>
+<dd>
+If <code>starting_string</code> is not a subdirectory of <code>top_level_string</code>, the function logs a critical error and returns <code>false</code>.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>If both <code>top_level_string</code> and <code>starting_string</code> are set to their default placeholders ("base" and "root"), the function logs a critical error and returns <code>false</code>. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_ab60f76f2282c51336d32de6a0e54df6d_cgraph.svg" width="311" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_aa05a1fe4e2176aee249351f3e2544441_cgraph.svg" width="311" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_ab60f76f2282c51336d32de6a0e54df6d_icgraph.svg" width="251" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_aa05a1fe4e2176aee249351f3e2544441_icgraph.svg" width="251" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -183,6 +198,10 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Formats a Gaussian beam's parameters into a human-readable string. </p>
+<p>This function retrieves the major axis, minor axis, and position angle (PA) of a given <code>casacore::GaussianBeam</code> and formats them into a structured string with six decimal places of precision.</p>
+<dl class="section note"><dt>Note</dt><dd>The output format is: <code>"major: &lt;value&gt; &lt;unit&gt; minor: &lt;value&gt; &lt;unit&gt; pa: &lt;value&gt; &lt;unit&gt;"</code> </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -206,6 +225,9 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Formats a Casacore quantity into a human-readable string. </p>
+<p>This function converts a <code>casacore::Quantity</code> into a string representation with six decimal places of precision, including its unit. </p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -214,8 +236,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a5c9a1def63cd54cea5e9cf5b893b5708" name="a5c9a1def63cd54cea5e9cf5b893b5708"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5c9a1def63cd54cea5e9cf5b893b5708">&#9670;&#160;</a></span>GetResolvedFilename()</h2>
+<a id="ad560f4fdd266b9e1503ae3f24a60aa52" name="ad560f4fdd266b9e1503ae3f24a60aa52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad560f4fdd266b9e1503ae3f24a60aa52">&#9670;&#160;</a></span>GetResolvedFilename()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -223,25 +245,25 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">casacore::String GetResolvedFilename </td>
           <td>(</td>
-          <td class="paramtype">const string &amp;&#160;</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>root_dir</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const string &amp;&#160;</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>directory</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const string &amp;&#160;</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>file</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">string &amp;&#160;</td>
+          <td class="paramtype">std::string &amp;&#160;</td>
           <td class="paramname"><em>message</em>&#160;</td>
         </tr>
         <tr>
@@ -251,10 +273,13 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Resolves a file path based on a given root directory and relative subdirectory. </p>
+<p>This function constructs an absolute file path using a specified root directory, a relative subdirectory, and a file name. It checks whether the resulting file path exists and is readable. If any issue is encountered, an error message is set. </p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_a5c9a1def63cd54cea5e9cf5b893b5708_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_ad560f4fdd266b9e1503ae3f24a60aa52_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -302,6 +327,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Determines the spectral coordinate preferences based on an image's native spectral type. </p>
+<p>This function analyses the spectral coordinate system of the provided <code>image</code> and sets preference flags for velocity, wavelength, and their specific variations. It considers the image's native spectral type and applies special handling for <code>CartaMiriadImage</code> types.</p>
+<dl class="section note"><dt>Note</dt><dd>If the image contains a spectral axis, its native type is determined and used to update the preference flags accordingly.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The function modifies the output parameters in place; ensure they are initialized properly. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -315,8 +345,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a42ba788ab586bfe63f86aaef57c3d1af" name="a42ba788ab586bfe63f86aaef57c3d1af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a42ba788ab586bfe63f86aaef57c3d1af">&#9670;&#160;</a></span>IsSubdirectory()</h2>
+<a id="aa743c537861c278f5c5620fa996f8153" name="aa743c537861c278f5c5620fa996f8153"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa743c537861c278f5c5620fa996f8153">&#9670;&#160;</a></span>IsSubdirectory()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -324,13 +354,13 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool IsSubdirectory </td>
           <td>(</td>
-          <td class="paramtype">string&#160;</td>
+          <td class="paramtype">std::string&#160;</td>
           <td class="paramname"><em>folder</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">string&#160;</td>
+          <td class="paramtype">std::string&#160;</td>
           <td class="paramname"><em>top_folder</em>&#160;</td>
         </tr>
         <tr>
@@ -340,10 +370,14 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Determines whether a given folder is a subdirectory of a specified top-level folder. </p>
+<p>This function checks if <code>folder</code> is a subdirectory of <code>top_folder</code> by resolving both paths to their absolute, weakly canonical forms and then traversing up the directory hierarchy.</p>
+<dl class="section warning"><dt>Warning</dt><dd>If <code>top_folder</code> is empty, the function will always return <code>true</code>. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_a42ba788ab586bfe63f86aaef57c3d1af_icgraph.svg" width="414" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_aa743c537861c278f5c5620fa996f8153_icgraph.svg" width="414" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -363,6 +397,17 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Normalizes a given unit string to conform to standard Casacore unit conventions (case-sensitive). </p>
+<p>This function converts various unit representations into their standardised Casacore equivalents. It replaces non-standard units with correct forms, fixes case inconsistencies, and removes invalid characters. Additionally, it attempts to map the unit to a valid Casacore unit using <code>UnitMap::fromFITS</code> and <code>UnitVal::check</code>.</p>
+<dl class="section note"><dt>Note</dt><dd>If the unit contains a recognized prefix, the function attempts to normalise with and without the prefix.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>If the unit cannot be resolved to a known Casacore unit, it remains unchanged.</dd></dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">casacore::AipsError</td><td>Caught internally when Casacore unit conversions fail. </td></tr>
+  </table>
+  </dd>
+</dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -408,6 +453,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Parses an AIPS-style beam header to extract beam parameters with regular expression. </p>
+<p>This function uses regular expressions to extract the major axis (BMAJ), minor axis (BMIN), and position angle (BPA) from an AIPS-style history beam header string. It handles two common formats: one using "Beam =" notation and another using "BMAJ=", "BMIN=", and "BPA=" notation.</p>
+<dl class="section note"><dt>Note</dt><dd>Units are normalized to "deg" when "degrees" is found in the header.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>If the header format does not match expected patterns, the function logs a debug message and returns <code>false</code>. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">

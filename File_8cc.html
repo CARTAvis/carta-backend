@@ -113,22 +113,31 @@ Include dependency graph for File.cc:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a7e6d57b61e0979a7171bb2e6519093f9" id="r_a7e6d57b61e0979a7171bb2e6519093f9"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9">GetMagicNumber</a> (const std::string &amp;filename)</td></tr>
+<tr class="memdesc:a7e6d57b61e0979a7171bb2e6519093f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads the magic number from the beginning of a file.  <br /></td></tr>
 <tr class="separator:a7e6d57b61e0979a7171bb2e6519093f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75f8a4cb14c9fca8730255b6fee82794" id="r_a75f8a4cb14c9fca8730255b6fee82794"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794">IsCompressedFits</a> (const std::string &amp;filename)</td></tr>
+<tr class="memdesc:a75f8a4cb14c9fca8730255b6fee82794"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether a given file is a compressed FITS file.  <br /></td></tr>
 <tr class="separator:a75f8a4cb14c9fca8730255b6fee82794"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac3253b9c72cf4368b08803ef2a0102bb" id="r_ac3253b9c72cf4368b08803ef2a0102bb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb">IsRemoteHttpFile</a> (const std::string &amp;filename)</td></tr>
+<tr class="memdesc:ac3253b9c72cf4368b08803ef2a0102bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether a given filename represents a remote HTTP or HTTPS URL.  <br /></td></tr>
 <tr class="separator:ac3253b9c72cf4368b08803ef2a0102bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b28b83747dc07e95f4a0e1b5b4db83e" id="r_a0b28b83747dc07e95f4a0e1b5b4db83e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e">IsGzMagicNumber</a> (uint32_t magic_number)</td></tr>
+<tr class="memdesc:a0b28b83747dc07e95f4a0e1b5b4db83e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines if a given magic number corresponds to a gzip-compressed file.  <br /></td></tr>
 <tr class="separator:a0b28b83747dc07e95f4a0e1b5b4db83e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6f49a48edd9827968c16d1cc91e25f5" id="r_aa6f49a48edd9827968c16d1cc91e25f5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5">GetNumItems</a> (const std::string &amp;path)</td></tr>
+<tr class="memdesc:aa6f49a48edd9827968c16d1cc91e25f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Counts the number of items in a given directory.  <br /></td></tr>
 <tr class="separator:aa6f49a48edd9827968c16d1cc91e25f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add15dd288b07460bb502c1b6fa632371" id="r_add15dd288b07460bb502c1b6fa632371"><td class="memItemLeft" align="right" valign="top">fs::path&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#add15dd288b07460bb502c1b6fa632371">SearchPath</a> (std::string filename)</td></tr>
+<tr class="memdesc:add15dd288b07460bb502c1b6fa632371"><td class="mdescLeft">&#160;</td><td class="mdescRight">Searches for a file in the system's <code>PATH</code> environment variable.  <br /></td></tr>
 <tr class="separator:add15dd288b07460bb502c1b6fa632371"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60e903fd2ab0ea7b240f649d3d207339" id="r_a60e903fd2ab0ea7b240f649d3d207339"><td class="memItemLeft" align="right" valign="top">CARTA::FileType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339">GuessImageType</a> (const std::string &amp;path_string, bool check_content)</td></tr>
+<tr class="memdesc:a60e903fd2ab0ea7b240f649d3d207339"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the image file type based on its content or extension.  <br /></td></tr>
 <tr class="separator:a60e903fd2ab0ea7b240f649d3d207339"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9947f7bb03abff3412672068ab7acdf" id="r_af9947f7bb03abff3412672068ab7acdf"><td class="memItemLeft" align="right" valign="top">CARTA::FileType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf">GuessRegionType</a> (const std::string &amp;path_string, bool check_content)</td></tr>
+<tr class="memdesc:af9947f7bb03abff3412672068ab7acdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the region file type based on its content or extension.  <br /></td></tr>
 <tr class="separator:af9947f7bb03abff3412672068ab7acdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab867a11df63f2ba00cae668a8ad0f3ff" id="r_ab867a11df63f2ba00cae668a8ad0f3ff"><td class="memItemLeft" align="right" valign="top">CARTA::CatalogFileType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff">GuessTableType</a> (const std::string &amp;path_string, bool check_content)</td></tr>
+<tr class="memdesc:ab867a11df63f2ba00cae668a8ad0f3ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the catalog table file type based on its content or file extension.  <br /></td></tr>
 <tr class="separator:ab867a11df63f2ba00cae668a8ad0f3ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
@@ -147,6 +156,19 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Reads the magic number from the beginning of a file. </p>
+<p>This function opens the specified file and reads the first 4 bytes as a <code>uint32_t</code> magic number.</p>
+<dl class="section note"><dt>Note</dt><dd><ul>
+<li>The function assumes the file's magic number is stored in the first 4 bytes.</li>
+<li>Reads the file in <b>binary mode</b> would be safer to avoid unwanted conversions.</li>
+<li>The byte order (endianness) of the magic number depends on the system architecture.</li>
+</ul>
+</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd><ul>
+<li>If the file does not exist or is not readable, the function returns <code>0</code> without error messages. </li>
+</ul>
+</dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -170,6 +192,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Counts the number of items in a given directory. </p>
+<p>This function iterates over the contents of the specified directory and counts the number of files and subdirectories present. If the directory does not exist or cannot be accessed, the function returns <code>-1</code>.</p>
+<dl class="section note"><dt>Note</dt><dd>This function does not distinguish between files and subdirectories; it counts both.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>If the path is invalid or inaccessible, an exception is caught internally, and <code>-1</code> is returned. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -203,6 +230,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Determines the image file type based on its content or extension. </p>
+<p>This function attempts to identify the type of an image file either by checking its magic number (file signature) or examining its file extension. If <code>check_content</code> is set to <code>true</code>, the function inspects the file's magic number to classify it as FITS or HDF5. If <code>check_content</code> is <code>false</code>, it relies on common file extensions.</p>
+<dl class="section note"><dt>Note</dt><dd>When <code>check_content</code> is enabled, compressed FITS files (<code>.fits.gz</code>) are identified by their decompressed filename extension.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>Checking the file content requires reading the file's magic number, which may introduce additional I/O overhead. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -241,6 +273,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Determines the region file type based on its content or extension. </p>
+<p>This function attempts to identify the type of a region file used in astronomical imaging analysis by either checking its file content or examining its file extension. If <code>check_content</code> is <code>true</code>, it reads the first line of the file to identify known headers (e.g., <code>#CRTF</code> or <code># Region file format: DS9</code>). Otherwise, it determines the file type based on its extension.</p>
+<dl class="section note"><dt>Note</dt><dd>CRTF files typically start with <code>#CRTF</code>, while DS9 region files may include <code># Region file format: DS9</code> as an optional header.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>Checking file content requires reading the first line, which may introduce a slight I/O overhead. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -279,6 +316,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Determines the catalog table file type based on its content or file extension. </p>
+<p>This function attempts to classify the type of a catalog table file (e.g., FITS table or VOTable) either by checking its magic number (if <code>check_content</code> is <code>true</code>) or, if content checking is disabled, by inspecting the file extension.</p>
+<dl class="section note"><dt>Note</dt><dd>If <code>check_content</code> is enabled, the function may attempt to read the file's magic number. Ensure the file is accessible to avoid potential I/O errors.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>This function does not validate file integrity; it only determines type based on basic signature matching or filename extensions. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -307,6 +349,9 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Checks whether a given file is a compressed FITS file. </p>
+<p>This function first determines if the file is gzip-compressed by examining its magic number. If the file is gzip-compressed, it then checks whether the original filename (before compression) has a <code>.fits</code> extension. </p>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -335,6 +380,10 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Determines if a given magic number corresponds to a gzip-compressed file. </p>
+<p>This function checks whether the provided 32-bit magic number matches the gzip file signature (<code>0x1f8b</code>). The magic number is formatted as a hexadecimal string and examined to see if it ends with "8b1f".</p>
+<dl class="section note"><dt>Note</dt><dd>This function assumes little-endian byte order for checking the magic number. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -358,6 +407,10 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Checks whether a given filename represents a remote HTTP or HTTPS URL. </p>
+<p>This function uses a regular expression to determine if the provided filename starts with "http://" or "https://", indicating that it is a remote file accessible via HTTP.</p>
+<dl class="section note"><dt>Note</dt><dd>This function does not verify if the URL is accessible or valid beyond its prefix. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -381,6 +434,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Searches for a file in the system's <code>PATH</code> environment variable. </p>
+<p>This function retrieves the <code>PATH</code> environment variable, splits it into individual directory paths, and searches for the specified file within those directories. If the file is found, its full path is returned. If not found or if an error occurs, an empty <code>fs::path</code> is returned.</p>
+<dl class="section note"><dt>Note</dt><dd>This function assumes that path entries in <code>PATH</code> are separated by colons (<code>:</code>), which is standard on UNIX-like systems.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>If the <code>PATH</code> environment variable is not set, this function may behave unexpectedly. </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">

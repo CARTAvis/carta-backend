@@ -12,7 +12,7 @@
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="408,23,488,23,488,28,408,28"/>
 <area shape="rect" id="Node000005" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="501,77,644,102"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="400,87,488,87,488,92,400,92"/>
-<area shape="rect" id="Node000006" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title=" " alt="" coords="708,77,919,102"/>
+<area shape="rect" id="Node000006" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title="Performs a constant&#45;time comparison of two strings." alt="" coords="708,77,919,102"/>
 <area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="644,87,694,87,694,92,644,92"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="485,129,660,169"/>
 <area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="438,149,472,148,472,154,438,154"/>

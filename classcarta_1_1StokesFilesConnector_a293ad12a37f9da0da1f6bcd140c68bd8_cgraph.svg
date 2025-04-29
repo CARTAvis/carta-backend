@@ -67,7 +67,7 @@ var sectionId = 'dynsection-6';
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title="Determines the image type of a given filename using Casacore.">
 <polygon fill="white" stroke="#666666" points="480,-121 365,-121 365,-102 480,-102 480,-121"/>
 <text text-anchor="middle" x="422.5" y="-109" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
 </a>
@@ -85,7 +85,7 @@ var sectionId = 'dynsection-6';
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" target="_top" xlink:title="Converts a FITS Stokes parameter value to its corresponding internal representation.">
 <polygon fill="white" stroke="#666666" points="329,-105 188,-105 188,-86 329,-86 329,-105"/>
 <text text-anchor="middle" x="258.5" y="-93" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::ConvertFits</text>
 </a>
@@ -122,7 +122,7 @@ var sectionId = 'dynsection-6';
 <!-- Node10 -->
 <g id="Node000010" class="node">
 <title>Node10</title>
-<g id="a_Node000010"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000010"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="320.5,-19 196.5,-19 196.5,0 320.5,0 320.5,-19"/>
 <text text-anchor="middle" x="258.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -149,7 +149,7 @@ var sectionId = 'dynsection-6';
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
 <polygon fill="white" stroke="#666666" points="474,-81 371,-81 371,-62 474,-62 474,-81"/>
 <text text-anchor="middle" x="422.5" y="-69" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>
@@ -167,7 +167,7 @@ var sectionId = 'dynsection-6';
 <!-- Node9 -->
 <g id="Node000009" class="node">
 <title>Node9</title>
-<g id="a_Node000009"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title=" ">
+<g id="a_Node000009"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title="Checks whether a given filename represents a remote HTTP or HTTPS URL.">
 <polygon fill="white" stroke="#666666" points="473,-44 372,-44 372,-25 473,-25 473,-44"/>
 <text text-anchor="middle" x="422.5" y="-32" font-family="Helvetica,sans-Serif" font-size="10.00">IsRemoteHttpFile</text>
 </a>
@@ -185,7 +185,7 @@ var sectionId = 'dynsection-6';
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
 <polygon fill="white" stroke="#666666" points="620,-118 518,-118 518,-99 620,-99 620,-118"/>
 <text text-anchor="middle" x="569" y="-106" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>
@@ -203,7 +203,7 @@ var sectionId = 'dynsection-6';
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title=" ">
+<g id="a_Node000007"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
 <polygon fill="white" stroke="#666666" points="600.5,-81 537.5,-81 537.5,-62 600.5,-62 600.5,-81"/>
 <text text-anchor="middle" x="569" y="-69" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>
@@ -221,7 +221,7 @@ var sectionId = 'dynsection-6';
 <!-- Node8 -->
 <g id="Node000008" class="node">
 <title>Node8</title>
-<g id="a_Node000008"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title=" ">
+<g id="a_Node000008"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title="Determines if a given magic number corresponds to a gzip&#45;compressed file.">
 <polygon fill="white" stroke="#666666" points="622,-44 516,-44 516,-25 622,-25 622,-44"/>
 <text text-anchor="middle" x="569" y="-32" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
 </a>

@@ -85,7 +85,7 @@ var searchData=
   ['checkcancelanimationonfileclose_82',['CheckCancelAnimationOnFileClose',['../classcarta_1_1Session.html#a52f5c3d0a8e54f6e14f54d5b2b4d1915',1,'carta::Session']]],
   ['checkfilestatus_83',['CheckFileStatus',['../classcarta_1_1CartaFitsImage.html#ae9f5024c4841b03d1f8a2053457776ac',1,'carta::CartaFitsImage']]],
   ['checkfitsheaders_84',['CheckFitsHeaders',['../classcarta_1_1FitsHduList.html#a55f0f93cc0c2dd4811cc702559455856',1,'carta::FitsHduList']]],
-  ['checkfolderpaths_85',['checkfolderpaths',['../Casacore_8h.html#aa05a1fe4e2176aee249351f3e2544441',1,'CheckFolderPaths(std::string &amp;top_level_string, std::string &amp;starting_string):&#160;Casacore.h'],['../Casacore_8cc.html#ab60f76f2282c51336d32de6a0e54df6d',1,'CheckFolderPaths(string &amp;top_level_string, string &amp;starting_string):&#160;Casacore.cc']]],
+  ['checkfolderpaths_85',['checkfolderpaths',['../Casacore_8h.html#aa05a1fe4e2176aee249351f3e2544441',1,'CheckFolderPaths(std::string &amp;top_level_string, std::string &amp;starting_string):&#160;Casacore.cc'],['../Casacore_8cc.html#aa05a1fe4e2176aee249351f3e2544441',1,'CheckFolderPaths(std::string &amp;top_level_string, std::string &amp;starting_string):&#160;Casacore.cc']]],
   ['checking_20and_20fixing_20code_20format_86',['Checking and fixing code format',['../md_docs_2static_2faq.html#autotoc_md2',1,'']]],
   ['checklinearoffsets_87',['CheckLinearOffsets',['../classcarta_1_1LineBoxRegions.html#a67e4579a3ef3eb21ae3abd1db415725a',1,'carta::LineBoxRegions']]],
   ['checklist_88',['Release checklist',['../md_docs_2static_2release.html',1,'']]],

@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Determines the spectral coordinate preferences based on an image&#39;s native spectral type.">
 <polygon fill="#999999" stroke="#666666" points="1982,-163.5 1822,-163.5 1822,-144.5 1982,-144.5 1982,-163.5"/>
 <text text-anchor="middle" x="1902" y="-151.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetSpectralCoordPreferences</text>
 </a>

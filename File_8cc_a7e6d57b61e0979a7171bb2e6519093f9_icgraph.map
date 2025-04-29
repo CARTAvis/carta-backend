@@ -1,10 +1,10 @@
 <map id="GetMagicNumber" name="GetMagicNumber">
-<area shape="rect" id="Node000001" title=" " alt="" coords="2115,363,2251,389"/>
-<area shape="rect" id="Node000002" href="$File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" title=" " alt="" coords="1931,162,2064,187"/>
+<area shape="rect" id="Node000001" title="Reads the magic number from the beginning of a file." alt="" coords="2115,363,2251,389"/>
+<area shape="rect" id="Node000002" href="$File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" title="Determines the image file type based on its content or extension." alt="" coords="1931,162,2064,187"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="2158,354,2008,189,2012,186,2162,351"/>
-<area shape="rect" id="Node000006" href="$File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" title=" " alt="" coords="1934,297,2061,322"/>
+<area shape="rect" id="Node000006" href="$File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" title="Determines the catalog table file type based on its content or file extension." alt="" coords="1934,297,2061,322"/>
 <area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="2133,361,2033,325,2035,320,2135,356"/>
-<area shape="rect" id="Node000008" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="1929,387,2066,413"/>
+<area shape="rect" id="Node000008" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title="Checks whether a given file is a compressed FITS file." alt="" coords="1929,387,2066,413"/>
 <area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="2101,389,2067,394,2066,388,2101,384"/>
 <area shape="rect" id="Node000037" href="$classcarta_1_1Table.html#af157765f3632349e5656375aedf4d94f" title=" " alt="" coords="1928,437,2067,462"/>
 <area shape="poly" id="edge53_Node000001_Node000037" title=" " alt="" coords="2142,397,2068,428,2037,439,2035,434,2066,423,2139,392"/>

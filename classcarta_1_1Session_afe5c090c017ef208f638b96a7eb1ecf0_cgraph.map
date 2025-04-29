@@ -63,7 +63,7 @@
 <area shape="rect" id="Node000090" href="$classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451" title=" " alt="" coords="1071,1017,1285,1043"/>
 <area shape="poly" id="edge31_Node000016_Node000090" title=" " alt="" coords="686,352,769,374,864,403,951,437,985,455,1009,474,1080,700,1171,1003,1166,1005,1075,701,1004,477,982,460,949,442,863,408,767,379,684,357"/>
 <area shape="poly" id="edge30_Node000016_Node000092" title=" " alt="" coords="654,327,750,269,773,249,784,240,799,233,941,189,1003,176,1062,172,1119,176,1177,192,1238,220,1303,261,1337,291,1365,328,1389,367,1407,409,1431,489,1443,550,1438,551,1426,490,1402,411,1384,370,1361,331,1333,295,1300,265,1235,224,1175,197,1118,182,1062,177,1004,182,943,194,801,238,786,245,777,253,754,273,656,332"/>
-<area shape="rect" id="Node000057" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="821,272,986,297"/>
+<area shape="rect" id="Node000057" href="$Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="821,272,986,297"/>
 <area shape="poly" id="edge26_Node000016_Node000057" title=" " alt="" coords="691,327,828,298,829,303,692,332"/>
 <area shape="poly" id="edge28_Node000016_Node000097" title=" " alt="" coords="654,352,870,479,867,483,652,357"/>
 <area shape="rect" id="Node000098" href="$classcarta_1_1LoaderCache.html#a850302c370dc52cc1784d85b88a03e77" title=" " alt="" coords="830,55,977,95"/>

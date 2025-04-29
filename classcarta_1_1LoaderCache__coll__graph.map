@@ -4,11 +4,11 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="70,244,77,199,91,144,117,88,135,63,157,42,182,25,205,15,227,10,249,9,295,14,352,17,1827,17,1852,20,1875,29,1898,44,1920,63,1960,115,1997,183,2031,264,2062,354,2090,452,2115,554,2156,760,2187,949,2216,1186,2211,1186,2181,950,2151,761,2110,556,2085,454,2057,356,2026,266,1993,185,1956,118,1916,67,1895,48,1873,34,1851,26,1827,23,352,23,295,19,248,15,227,16,206,20,184,30,160,46,139,67,121,91,96,145,82,200,76,244"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1FileLoader.html" title=" " alt="" coords="1080,607,1211,633"/>
 <area shape="poly" id="edge9_Node000007_Node000002" title=" " alt="" coords="101,254,158,235,203,227,248,224,402,214,659,201,793,197,913,199,1005,207,1037,215,1058,225,1079,254,1097,298,1112,352,1124,412,1139,528,1146,607,1141,607,1134,529,1118,413,1107,353,1092,299,1075,256,1054,229,1036,220,1005,213,913,205,793,203,660,206,402,219,248,229,203,232,159,240,103,259"/>
-<area shape="rect" id="Node000014" href="$structcarta_1_1StokesSource.html" title=" " alt="" coords="664,285,815,310"/>
+<area shape="rect" id="Node000014" href="$structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications." alt="" coords="664,285,815,310"/>
 <area shape="poly" id="edge16_Node000014_Node000002" title=" " alt="" coords="103,263,189,253,312,244,453,244,526,250,597,260,621,269,670,282,669,287,619,275,595,265,525,255,453,250,312,250,190,258,104,268"/>
-<area shape="rect" id="Node000015" href="$structAxisRange.html" title=" " alt="" coords="308,294,399,319"/>
+<area shape="rect" id="Node000015" href="$structAxisRange.html" title="Represents a range along an axis." alt="" coords="308,294,399,319"/>
 <area shape="poly" id="edge18_Node000015_Node000002" title=" " alt="" coords="103,278,159,291,238,300,308,303,308,309,237,305,158,296,102,283"/>
-<area shape="rect" id="Node000019" href="$structAxesInfo.html" title=" " alt="" coords="500,126,579,151"/>
+<area shape="rect" id="Node000019" href="$structAxesInfo.html" title="Stores information about image axes, including spatial and spectral components." alt="" coords="500,126,579,151"/>
 <area shape="poly" id="edge24_Node000019_Node000002" title=" " alt="" coords="84,245,114,206,134,187,157,172,202,154,249,141,345,127,432,126,500,131,499,136,432,131,345,133,250,146,204,159,160,177,138,192,118,210,88,248"/>
 <area shape="rect" id="Node000031" title=" " alt="" coords="284,647,423,673"/>
 <area shape="poly" id="edge38_Node000031_Node000002" title=" " alt="" coords="78,296,88,340,104,396,128,456,161,512,177,527,193,535,209,543,226,560,235,581,237,599,239,616,250,633,266,644,285,651,283,656,263,649,246,637,234,618,231,600,230,582,222,563,206,548,190,540,173,531,157,515,123,459,99,398,82,342,73,297"/>
@@ -48,7 +48,7 @@
 <area shape="poly" id="edge19_Node000007_Node000016" title=" " alt="" coords="792,1055,955,1029,1055,1011,1074,983,1091,939,1105,885,1117,825,1133,710,1140,632,1146,633,1138,711,1122,826,1110,886,1096,940,1078,985,1057,1016,956,1035,793,1060"/>
 <area shape="rect" id="Node000017" title=" " alt="" coords="323,519,383,545"/>
 <area shape="poly" id="edge20_Node000007_Node000017" title=" " alt="" coords="397,536,483,551,620,573,1080,612,1080,618,620,579,482,556,397,542"/>
-<area shape="rect" id="Node000018" href="$structDimsInfo.html" title=" " alt="" coords="699,525,780,550"/>
+<area shape="rect" id="Node000018" href="$structDimsInfo.html" title="Represents the dimensions of an image or data cube." alt="" coords="699,525,780,550"/>
 <area shape="poly" id="edge22_Node000018_Node000017" title=" " alt="" coords="397,535,483,543,600,543,698,538,699,543,601,549,483,548,397,540"/>
 <area shape="poly" id="edge21_Node000007_Node000018" title=" " alt="" coords="794,534,916,540,987,551,1057,568,1096,585,1128,605,1125,609,1093,590,1055,573,986,556,915,546,794,539"/>
 <area shape="poly" id="edge23_Node000007_Node000019" title=" " alt="" coords="592,132,705,128,843,129,911,134,972,143,1023,157,1058,177,1081,210,1100,260,1115,322,1126,390,1140,520,1146,607,1141,607,1135,520,1121,390,1109,323,1095,262,1076,213,1054,181,1020,162,971,148,910,139,843,135,705,133,592,138"/>

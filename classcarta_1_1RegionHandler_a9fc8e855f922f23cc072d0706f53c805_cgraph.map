@@ -30,16 +30,16 @@
 <area shape="poly" id="edge11_Node000007_Node000005" title=" " alt="" coords="610,27,660,13,720,4,782,5,813,11,843,22,879,45,910,75,935,108,953,137,949,140,930,111,906,79,875,49,840,27,812,16,782,11,720,10,661,19,611,32"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="683,36,841,76"/>
 <area shape="poly" id="edge10_Node000007_Node000008" title=" " alt="" coords="635,49,669,51,669,56,635,55"/>
-<area shape="rect" id="Node000011" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="479,332,632,357"/>
+<area shape="rect" id="Node000011" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title="Determines the image type of a given filename using Casacore." alt="" coords="479,332,632,357"/>
 <area shape="poly" id="edge15_Node000010_Node000011" title=" " alt="" coords="410,375,486,357,487,363,411,380"/>
-<area shape="rect" id="Node000012" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="487,381,624,406"/>
+<area shape="rect" id="Node000012" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title="Checks whether a given file is a compressed FITS file." alt="" coords="487,381,624,406"/>
 <area shape="poly" id="edge16_Node000010_Node000012" title=" " alt="" coords="410,391,473,391,473,396,410,396"/>
-<area shape="rect" id="Node000016" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title=" " alt="" coords="488,430,623,456"/>
+<area shape="rect" id="Node000016" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title="Checks whether a given filename represents a remote HTTP or HTTPS URL." alt="" coords="488,430,623,456"/>
 <area shape="poly" id="edge20_Node000010_Node000016" title=" " alt="" coords="411,407,487,425,486,430,410,412"/>
-<area shape="rect" id="Node000013" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="694,332,830,357"/>
+<area shape="rect" id="Node000013" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="694,332,830,357"/>
 <area shape="poly" id="edge17_Node000012_Node000013" title=" " alt="" coords="609,378,694,358,695,363,610,383"/>
-<area shape="rect" id="Node000014" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="720,381,804,406"/>
+<area shape="rect" id="Node000014" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="720,381,804,406"/>
 <area shape="poly" id="edge18_Node000012_Node000014" title=" " alt="" coords="624,391,706,391,706,396,624,396"/>
-<area shape="rect" id="Node000015" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="691,430,833,456"/>
+<area shape="rect" id="Node000015" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title="Determines if a given magic number corresponds to a gzip&#45;compressed file." alt="" coords="691,430,833,456"/>
 <area shape="poly" id="edge19_Node000012_Node000015" title=" " alt="" coords="610,404,695,424,694,430,609,409"/>
 </map>

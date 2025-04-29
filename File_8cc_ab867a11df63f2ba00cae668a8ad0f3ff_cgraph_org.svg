@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Determines the catalog table file type based on its content or file extension.">
 <polygon fill="#999999" stroke="#666666" points="95,-37 0,-37 0,-18 95,-18 95,-37"/>
 <text text-anchor="middle" x="47.5" y="-25" font-family="Helvetica,sans-Serif" font-size="10.00">GuessTableType</text>
 </a>
@@ -20,7 +20,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
 <polygon fill="white" stroke="#666666" points="233,-56 131,-56 131,-37 233,-37 233,-56"/>
 <text text-anchor="middle" x="182" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>
@@ -38,7 +38,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
 <polygon fill="white" stroke="#666666" points="213.5,-19 150.5,-19 150.5,0 213.5,0 213.5,-19"/>
 <text text-anchor="middle" x="182" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>

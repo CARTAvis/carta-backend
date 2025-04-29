@@ -483,7 +483,7 @@
 <!-- Node15 -->
 <g id="Node000015" class="node">
 <title>Node15</title>
-<g id="a_Node000015"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title=" ">
+<g id="a_Node000015"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive).">
 <polygon fill="white" stroke="#666666" points="724,-432.5 637,-432.5 637,-413.5 724,-413.5 724,-432.5"/>
 <text text-anchor="middle" x="680.5" y="-420.5" font-family="Helvetica,sans-Serif" font-size="10.00">NormalizeUnit</text>
 </a>
@@ -688,7 +688,7 @@
 <!-- Node33 -->
 <g id="Node000033" class="node">
 <title>Node33</title>
-<g id="a_Node000033"><a xlink:href="Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56" target="_top" xlink:title=" ">
+<g id="a_Node000033"><a xlink:href="Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56" target="_top" xlink:title="Determines the spectral coordinate preferences based on an image&#39;s native spectral type.">
 <polygon fill="white" stroke="#666666" points="552.5,-24.5 392.5,-24.5 392.5,-5.5 552.5,-5.5 552.5,-24.5"/>
 <text text-anchor="middle" x="472.5" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetSpectralCoordPreferences</text>
 </a>

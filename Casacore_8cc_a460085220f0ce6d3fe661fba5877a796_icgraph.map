@@ -1,5 +1,5 @@
 <map id="ParseHistoryBeamHeader" name="ParseHistoryBeamHeader">
-<area shape="rect" id="Node000001" title=" " alt="" coords="2120,375,2309,400"/>
+<area shape="rect" id="Node000001" title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression." alt="" coords="2120,375,2309,400"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1FitsLoader.html#acf150034b1de8ed3b98e596e17e9c2ef" title=" " alt="" coords="1910,335,2067,375"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="2111,375,2067,369,2068,364,2111,370"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1CompressedFits.html#a329de09f59620a426d4a1c63fe007052" title=" " alt="" coords="1905,399,2072,439"/>

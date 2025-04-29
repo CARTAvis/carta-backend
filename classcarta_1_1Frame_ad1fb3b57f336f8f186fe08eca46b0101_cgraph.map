@@ -12,15 +12,15 @@
 <area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="122,360,173,322,236,285,275,270,277,275,238,290,176,327,125,364"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1Frame.html#a79c789ebc62771151da94673a325a31a" title=" " alt="" coords="243,5,445,31"/>
 <area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="98,361,108,299,131,212,148,165,171,119,200,77,236,40,241,36,245,40,239,44,204,80,176,122,153,167,136,213,113,300,103,362"/>
-<area shape="rect" id="Node000010" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="1020,244,1212,269"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="1020,244,1212,269"/>
 <area shape="poly" id="edge23_Node000001_Node000010" title=" " alt="" coords="190,387,374,400,601,408,713,408,817,404,905,394,971,378,1009,358,1044,332,1095,278,1099,282,1047,336,1012,363,973,383,906,400,818,409,714,414,600,414,373,405,189,392"/>
 <area shape="rect" id="Node000014" href="$classcarta_1_1Frame.html#aad7fc7f3462a849a9cea9562fb45e220" title=" " alt="" coords="506,330,714,370"/>
 <area shape="poly" id="edge15_Node000001_Node000014" title=" " alt="" coords="190,374,492,355,492,360,190,379"/>
 <area shape="rect" id="Node000017" href="$classcarta_1_1Frame.html#a484fe0a17431676c96ec0a7562fd1a31" title=" " alt="" coords="249,445,439,485"/>
 <area shape="poly" id="edge20_Node000001_Node000017" title=" " alt="" coords="159,399,271,438,270,443,157,405"/>
-<area shape="rect" id="Node000018" href="$structPointXy.html#ae53c1507f25ca4218505925d7505b464" title=" " alt="" coords="278,509,410,535"/>
+<area shape="rect" id="Node000018" href="$structPointXy.html#ae53c1507f25ca4218505925d7505b464" title="Checks if the point is within the given image axis ranges." alt="" coords="278,509,410,535"/>
 <area shape="poly" id="edge21_Node000001_Node000018" title=" " alt="" coords="119,400,170,448,203,473,239,494,266,505,264,510,236,499,200,478,167,452,115,404"/>
-<area shape="rect" id="Node000019" href="$structPointXy.html#a8346106fda170e511b843f0d47fe3dfa" title=" " alt="" coords="545,535,675,560"/>
+<area shape="rect" id="Node000019" href="$structPointXy.html#a8346106fda170e511b843f0d47fe3dfa" title="Converts floating&#45;point coordinates to integer indices." alt="" coords="545,535,675,560"/>
 <area shape="poly" id="edge27_Node000001_Node000019" title=" " alt="" coords="110,401,129,435,157,476,194,515,215,532,238,545,277,559,317,569,400,576,479,571,545,560,546,565,479,576,400,581,316,574,275,565,236,550,212,536,190,519,153,479,125,438,106,403"/>
 <area shape="rect" id="Node000020" href="$classcarta_1_1Frame.html#a54fc45adef933c9b039b39f21b0dd6d9" title=" " alt="" coords="248,611,440,636"/>
 <area shape="poly" id="edge24_Node000001_Node000020" title=" " alt="" coords="109,401,127,441,155,492,192,544,214,568,239,589,264,603,262,608,236,594,211,572,188,548,150,494,122,443,104,403"/>
@@ -33,7 +33,7 @@
 <area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="446,18,500,20,499,25,446,24"/>
 <area shape="rect" id="Node000012" href="$classcarta_1_1Frame.html#afe9bbcad03f6343aba029f48c4e66dc7" title=" " alt="" coords="499,128,721,153"/>
 <area shape="poly" id="edge12_Node000007_Node000012" title=" " alt="" coords="417,28,452,40,524,78,583,117,580,122,522,82,450,44,415,33"/>
-<area shape="rect" id="Node000009" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="795,6,946,46"/>
+<area shape="rect" id="Node000009" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title="Checks if this Stokes source represents an original image." alt="" coords="795,6,946,46"/>
 <area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="707,23,781,23,781,29,707,29"/>
 <area shape="rect" id="Node000011" href="$classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117" title=" " alt="" coords="793,71,948,96"/>
 <area shape="poly" id="edge11_Node000008_Node000011" title=" " alt="" coords="669,36,799,65,798,70,668,41"/>
@@ -43,7 +43,7 @@
 <area shape="poly" id="edge14_Node000012_Node000013" title=" " alt="" coords="721,138,772,138,772,143,721,143"/>
 <area shape="poly" id="edge16_Node000014_Node000002" title=" " alt="" coords="688,328,720,309,735,292,743,273,751,255,768,236,793,222,795,226,771,240,755,257,748,276,740,294,723,313,691,332"/>
 <area shape="poly" id="edge18_Node000014_Node000010" title=" " alt="" coords="675,327,720,309,743,293,768,280,828,264,890,255,1006,249,1006,254,891,260,829,269,770,284,746,298,723,314,677,332"/>
-<area shape="rect" id="Node000015" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="802,295,939,320"/>
+<area shape="rect" id="Node000015" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title="Retrieves the corresponding CARTA polarization type from an integer value." alt="" coords="802,295,939,320"/>
 <area shape="poly" id="edge17_Node000014_Node000015" title=" " alt="" coords="714,330,788,318,789,323,714,336"/>
 <area shape="rect" id="Node000016" href="$classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9" title=" " alt="" coords="777,344,964,369"/>
 <area shape="poly" id="edge19_Node000014_Node000016" title=" " alt="" coords="714,350,764,351,763,357,714,355"/>

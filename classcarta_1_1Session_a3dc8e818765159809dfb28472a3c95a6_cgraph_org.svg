@@ -594,7 +594,7 @@
 <!-- Node17 -->
 <g id="Node000017" class="node">
 <title>Node17</title>
-<g id="a_Node000017"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title=" ">
+<g id="a_Node000017"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive).">
 <polygon fill="white" stroke="#666666" points="1307,-597 1220,-597 1220,-578 1307,-578 1307,-597"/>
 <text text-anchor="middle" x="1263.5" y="-585" font-family="Helvetica,sans-Serif" font-size="10.00">NormalizeUnit</text>
 </a>
@@ -667,7 +667,7 @@
 <!-- Node40 -->
 <g id="Node000040" class="node">
 <title>Node40</title>
-<g id="a_Node000040"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000040"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="516.5,-93 392.5,-93 392.5,-74 516.5,-74 516.5,-93"/>
 <text text-anchor="middle" x="454.5" y="-81" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -779,7 +779,7 @@
 <!-- Node65 -->
 <g id="Node000065" class="node">
 <title>Node65</title>
-<g id="a_Node000065"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
+<g id="a_Node000065"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
 <polygon fill="#fff0f0" stroke="red" points="690,-189 587,-189 587,-170 690,-170 690,-189"/>
 <text text-anchor="middle" x="638.5" y="-177" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>

@@ -102,7 +102,7 @@ var sectionId = 'dynsection-1';
 <!-- Node14 -->
 <g id="Node000014" class="node">
 <title>Node14</title>
-<g id="a_Node000014"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title=" ">
+<g id="a_Node000014"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
 <polygon fill="white" stroke="#666666" points="276.5,-74 174.5,-74 174.5,-55 276.5,-55 276.5,-74"/>
 <text text-anchor="middle" x="225.5" y="-62" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>

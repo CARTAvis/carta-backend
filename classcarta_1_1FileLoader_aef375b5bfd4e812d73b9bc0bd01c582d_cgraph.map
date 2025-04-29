@@ -8,6 +8,6 @@
 <area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="331,66,372,73,371,78,331,71"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="579,40,717,80"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="524,76,564,70,565,75,525,81"/>
-<area shape="rect" id="Node000006" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="590,105,706,130"/>
+<area shape="rect" id="Node000006" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="590,105,706,130"/>
 <area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="525,97,577,104,576,110,524,102"/>
 </map>

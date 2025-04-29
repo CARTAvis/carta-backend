@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Escapes a string using percent&#45;encoding (URL encoding).">
 <polygon fill="#999999" stroke="#666666" points="784,-45.5 683,-45.5 683,-26.5 784,-26.5 784,-45.5"/>
 <text text-anchor="middle" x="733.5" y="-33.5" font-family="Helvetica,sans-Serif" font-size="10.00">SafeStringEscape</text>
 </a>
@@ -20,7 +20,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="RemoteFiles_8cc.html#a810fce65818eabe0741e639b2ff23619" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="RemoteFiles_8cc.html#a810fce65818eabe0741e639b2ff23619" target="_top" xlink:title="Generates a URL for a remote file request based on provided parameters.">
 <polygon fill="white" stroke="#666666" points="647,-67.5 507,-67.5 507,-48.5 647,-48.5 647,-67.5"/>
 <text text-anchor="middle" x="577" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">GenerateUrlFromRequest</text>
 </a>

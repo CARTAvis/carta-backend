@@ -1,7 +1,7 @@
 <map id="GuessTableType" name="GuessTableType">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,132,56"/>
-<area shape="rect" id="Node000002" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="180,5,316,31"/>
+<area shape="rect" id="Node000001" title="Determines the catalog table file type based on its content or file extension." alt="" coords="5,31,132,56"/>
+<area shape="rect" id="Node000002" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="180,5,316,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="132,32,166,27,167,32,133,37"/>
-<area shape="rect" id="Node000003" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="206,55,290,80"/>
+<area shape="rect" id="Node000003" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="206,55,290,80"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="133,49,193,57,192,63,132,54"/>
 </map>

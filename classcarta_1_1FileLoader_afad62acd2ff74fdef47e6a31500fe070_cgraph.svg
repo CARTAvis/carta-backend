@@ -181,7 +181,7 @@ var sectionId = 'dynsection-4';
 <!-- Node8 -->
 <g id="Node000008" class="node">
 <title>Node8</title>
-<g id="a_Node000008"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title=" ">
+<g id="a_Node000008"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive).">
 <polygon fill="white" stroke="#666666" points="552.5,-19 465.5,-19 465.5,0 552.5,0 552.5,-19"/>
 <text text-anchor="middle" x="509" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">NormalizeUnit</text>
 </a>

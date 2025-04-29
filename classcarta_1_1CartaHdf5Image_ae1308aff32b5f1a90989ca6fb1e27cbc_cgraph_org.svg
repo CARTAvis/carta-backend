@@ -78,7 +78,7 @@
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title="Splits a string into parts based on a specified delimiter.">
 <polygon fill="white" stroke="#666666" points="425.5,-19 358.5,-19 358.5,0 425.5,0 425.5,-19"/>
 <text text-anchor="middle" x="392" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">SplitString</text>
 </a>

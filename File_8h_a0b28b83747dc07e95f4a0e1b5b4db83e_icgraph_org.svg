@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Determines if a given magic number corresponds to a gzip&#45;compressed file.">
 <polygon fill="#999999" stroke="#666666" points="1686,-346.5 1580,-346.5 1580,-327.5 1686,-327.5 1686,-346.5"/>
 <text text-anchor="middle" x="1633" y="-334.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
 </a>
@@ -20,7 +20,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" target="_top" xlink:title="Determines the image file type based on its content or extension.">
 <polygon fill="white" stroke="#666666" points="1542.5,-403.5 1442.5,-403.5 1442.5,-384.5 1542.5,-384.5 1542.5,-403.5"/>
 <text text-anchor="middle" x="1492.5" y="-391.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessImageType</text>
 </a>
@@ -38,7 +38,7 @@
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
 <polygon fill="white" stroke="#666666" points="1544,-328.5 1441,-328.5 1441,-309.5 1544,-309.5 1544,-328.5"/>
 <text text-anchor="middle" x="1492.5" y="-316.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>

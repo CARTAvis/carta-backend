@@ -66,7 +66,7 @@ var sectionId = 'dynsection-1';
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="Casacore_8cc.html#ab60f76f2282c51336d32de6a0e54df6d" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="Casacore_8cc.html#aa05a1fe4e2176aee249351f3e2544441" target="_top" xlink:title="Validates and resolves folder paths, ensuring the starting directory is within the top&#45;level director...">
 <polygon fill="white" stroke="#666666" points="211.5,-678.5 108.5,-678.5 108.5,-659.5 211.5,-659.5 211.5,-678.5"/>
 <text text-anchor="middle" x="160" y="-666.5" font-family="Helvetica,sans-Serif" font-size="10.00">CheckFolderPaths</text>
 </a>
@@ -122,7 +122,7 @@ var sectionId = 'dynsection-1';
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="App_8cc.html#a41a3266785a8ac3360dd09466acc91c4" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="App_8cc.html#a41a3266785a8ac3360dd09466acc91c4" target="_top" xlink:title="Retrieves the absolute path of the currently running executable.">
 <polygon fill="white" stroke="#666666" points="215.5,-554.5 104.5,-554.5 104.5,-535.5 215.5,-535.5 215.5,-554.5"/>
 <text text-anchor="middle" x="160" y="-542.5" font-family="Helvetica,sans-Serif" font-size="10.00">FindExecutablePath</text>
 </a>
@@ -364,7 +364,7 @@ var sectionId = 'dynsection-1';
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="Casacore_8cc.html#a42ba788ab586bfe63f86aaef57c3d1af" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="Casacore_8cc.html#aa743c537861c278f5c5620fa996f8153" target="_top" xlink:title="Determines whether a given folder is a subdirectory of a specified top&#45;level folder.">
 <polygon fill="white" stroke="#666666" points="386,-678.5 300,-678.5 300,-659.5 386,-659.5 386,-678.5"/>
 <text text-anchor="middle" x="343" y="-666.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsSubdirectory</text>
 </a>
@@ -382,7 +382,7 @@ var sectionId = 'dynsection-1';
 <!-- Node9 -->
 <g id="Node000009" class="node">
 <title>Node9</title>
-<g id="a_Node000009"><a xlink:href="String_8cc.html#a6b2ec03aa2a51136d6aca516677bfc79" target="_top" xlink:title=" ">
+<g id="a_Node000009"><a xlink:href="String_8cc.html#a6b2ec03aa2a51136d6aca516677bfc79" target="_top" xlink:title="Escapes a string using percent&#45;encoding (URL encoding).">
 <polygon fill="white" stroke="#666666" points="393.5,-463.5 292.5,-463.5 292.5,-444.5 393.5,-444.5 393.5,-463.5"/>
 <text text-anchor="middle" x="343" y="-451.5" font-family="Helvetica,sans-Serif" font-size="10.00">SafeStringEscape</text>
 </a>

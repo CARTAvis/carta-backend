@@ -712,7 +712,7 @@ var sectionId = 'dynsection-135';
 <!-- Node19 -->
 <g id="Node000019" class="node">
 <title>Node19</title>
-<g id="a_Node000019"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title=" ">
+<g id="a_Node000019"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive).">
 <polygon fill="white" stroke="#666666" points="1529,-394.5 1442,-394.5 1442,-375.5 1529,-375.5 1529,-394.5"/>
 <text text-anchor="middle" x="1485.5" y="-382.5" font-family="Helvetica,sans-Serif" font-size="10.00">NormalizeUnit</text>
 </a>
@@ -785,7 +785,7 @@ var sectionId = 'dynsection-135';
 <!-- Node42 -->
 <g id="Node000042" class="node">
 <title>Node42</title>
-<g id="a_Node000042"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000042"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="718.5,-264.5 594.5,-264.5 594.5,-245.5 718.5,-245.5 718.5,-264.5"/>
 <text text-anchor="middle" x="656.5" y="-252.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -897,7 +897,7 @@ var sectionId = 'dynsection-135';
 <!-- Node66 -->
 <g id="Node000066" class="node">
 <title>Node66</title>
-<g id="a_Node000066"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
+<g id="a_Node000066"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
 <polygon fill="#fff0f0" stroke="red" points="902,-321.5 799,-321.5 799,-302.5 902,-302.5 902,-321.5"/>
 <text text-anchor="middle" x="850.5" y="-309.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>

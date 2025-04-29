@@ -1,5 +1,5 @@
 <map id="IsRemoteHttpFile" name="IsRemoteHttpFile">
-<area shape="rect" id="Node000001" title=" " alt="" coords="1905,254,2040,279"/>
+<area shape="rect" id="Node000001" title="Checks whether a given filename represents a remote HTTP or HTTPS URL." alt="" coords="1905,254,2040,279"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f" title=" " alt="" coords="1719,247,1857,287"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1892,269,1858,269,1858,264,1892,264"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a9fc8e855f922f23cc072d0706f53c805" title=" " alt="" coords="1469,109,1669,149"/>

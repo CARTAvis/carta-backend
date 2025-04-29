@@ -379,7 +379,7 @@ var sectionId = 'dynsection-46';
 <!-- Node9 -->
 <g id="Node000009" class="node">
 <title>Node9</title>
-<g id="a_Node000009"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title=" ">
+<g id="a_Node000009"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title="Splits a string into parts based on a specified delimiter.">
 <polygon fill="white" stroke="#666666" points="834.5,-417.5 767.5,-417.5 767.5,-398.5 834.5,-398.5 834.5,-417.5"/>
 <text text-anchor="middle" x="801" y="-405.5" font-family="Helvetica,sans-Serif" font-size="10.00">SplitString</text>
 </a>
@@ -498,7 +498,7 @@ var sectionId = 'dynsection-46';
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" target="_top" xlink:title=" ">
+<g id="a_Node000018"><a xlink:href="String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" target="_top" xlink:title="Converts a string to an integer.">
 <polygon fill="white" stroke="#666666" points="651.5,-67.5 583.5,-67.5 583.5,-48.5 651.5,-48.5 651.5,-67.5"/>
 <text text-anchor="middle" x="617.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">StringToInt</text>
 </a>

@@ -39,7 +39,7 @@
 <area shape="poly" id="edge5_Node000005_Node000002" title=" " alt="" coords="608,404,637,389,675,357,707,319,754,247,758,250,712,322,679,361,640,393,611,409"/>
 <area shape="rect" id="Node000008" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="703,474,845,500"/>
 <area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="601,484,689,484,689,490,601,490"/>
-<area shape="rect" id="Node000009" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title=" " alt="" coords="909,474,1120,500"/>
+<area shape="rect" id="Node000009" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title="Performs a constant&#45;time comparison of two strings." alt="" coords="909,474,1120,500"/>
 <area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="845,484,896,484,896,490,845,490"/>
 <area shape="poly" id="edge12_Node000011_Node000005" title=" " alt="" coords="352,529,372,517,387,501,395,486,403,469,420,453,437,443,439,448,423,457,408,472,399,488,391,505,375,521,355,533"/>
 <area shape="poly" id="edge16_Node000011_Node000007" title=" " alt="" coords="361,528,445,506,447,511,362,534"/>
@@ -54,7 +54,7 @@
 <area shape="poly" id="edge22_Node000016_Node000007" title=" " alt="" coords="357,247,375,261,392,286,400,311,401,336,399,360,398,384,399,407,407,430,423,453,448,470,445,475,419,457,402,433,394,408,392,384,394,360,396,336,395,312,387,289,371,265,353,251"/>
 <area shape="rect" id="Node000017" href="$classcarta_1_1HttpServer.html#af4c89f86ebffb4e0ea82f37d41e6f190" title=" " alt="" coords="459,46,601,86"/>
 <area shape="poly" id="edge21_Node000016_Node000017" title=" " alt="" coords="299,209,348,153,382,122,420,95,445,83,447,88,423,100,386,126,352,157,303,213"/>
-<area shape="rect" id="Node000018" href="$String_8cc.html#a072e2624b237bdf8f61e2014ce26eecf" title=" " alt="" coords="453,110,607,136"/>
+<area shape="rect" id="Node000018" href="$String_8cc.html#a072e2624b237bdf8f61e2014ce26eecf" title="Decodes a percent&#45;encoded (URL&#45;encoded) string." alt="" coords="453,110,607,136"/>
 <area shape="poly" id="edge23_Node000016_Node000018" title=" " alt="" coords="311,209,361,177,420,146,446,137,448,142,422,151,363,181,314,213"/>
 <area shape="poly" id="edge25_Node000019_Node000005" title=" " alt="" coords="355,313,375,325,391,342,399,358,408,374,423,389,439,399,437,403,420,393,403,377,395,361,387,345,372,329,352,317"/>
 <area shape="poly" id="edge27_Node000019_Node000007" title=" " alt="" coords="359,313,375,325,388,342,395,359,400,391,404,423,411,438,423,453,448,469,445,474,420,457,406,441,399,424,394,392,390,360,384,345,371,329,356,317"/>

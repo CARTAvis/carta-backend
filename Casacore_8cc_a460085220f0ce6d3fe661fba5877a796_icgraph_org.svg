@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression.">
 <polygon fill="#999999" stroke="#666666" points="1728,-123.5 1586,-123.5 1586,-104.5 1728,-104.5 1728,-123.5"/>
 <text text-anchor="middle" x="1657" y="-111.5" font-family="Helvetica,sans-Serif" font-size="10.00">ParseHistoryBeamHeader</text>
 </a>

@@ -57,7 +57,7 @@ var sectionId = 'dynsection-2';
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Reads the magic number from the beginning of a file.">
 <polygon fill="#999999" stroke="#666666" points="1684,-248.5 1582,-248.5 1582,-229.5 1684,-229.5 1684,-248.5"/>
 <text text-anchor="middle" x="1633" y="-236.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>
@@ -66,7 +66,7 @@ var sectionId = 'dynsection-2';
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" target="_top" xlink:title="Determines the image file type based on its content or extension.">
 <polygon fill="white" stroke="#666666" points="1544,-399.5 1444,-399.5 1444,-380.5 1544,-380.5 1544,-399.5"/>
 <text text-anchor="middle" x="1494" y="-387.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessImageType</text>
 </a>
@@ -84,7 +84,7 @@ var sectionId = 'dynsection-2';
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" target="_top" xlink:title="Determines the catalog table file type based on its content or file extension.">
 <polygon fill="white" stroke="#666666" points="1541.5,-298.5 1446.5,-298.5 1446.5,-279.5 1541.5,-279.5 1541.5,-298.5"/>
 <text text-anchor="middle" x="1494" y="-286.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessTableType</text>
 </a>
@@ -102,7 +102,7 @@ var sectionId = 'dynsection-2';
 <!-- Node8 -->
 <g id="Node000008" class="node">
 <title>Node8</title>
-<g id="a_Node000008"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
+<g id="a_Node000008"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
 <polygon fill="white" stroke="#666666" points="1545.5,-230.5 1442.5,-230.5 1442.5,-211.5 1545.5,-211.5 1545.5,-230.5"/>
 <text text-anchor="middle" x="1494" y="-218.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>

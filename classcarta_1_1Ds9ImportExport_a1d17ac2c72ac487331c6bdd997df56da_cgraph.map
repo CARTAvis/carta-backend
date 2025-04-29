@@ -4,9 +4,9 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="128,117,232,62,265,48,267,53,234,66,131,122"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#a4579ce073b1c5b91a9c62e38e48d4944" title=" " alt="" coords="236,184,444,224"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,157,251,178,249,183,172,163"/>
-<area shape="rect" id="Node000004" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="495,127,585,153"/>
+<area shape="rect" id="Node000004" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="495,127,585,153"/>
 <area shape="poly" id="edge8_Node000001_Node000004" title=" " alt="" coords="168,117,233,105,340,95,387,97,447,105,498,120,497,125,446,111,387,102,340,101,234,111,169,123"/>
-<area shape="rect" id="Node000005" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title=" " alt="" coords="495,191,585,217"/>
+<area shape="rect" id="Node000005" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title="Converts a string to an integer." alt="" coords="495,191,585,217"/>
 <area shape="poly" id="edge9_Node000001_Node000005" title=" " alt="" coords="118,158,168,199,200,219,234,233,292,248,339,250,386,244,446,233,497,219,498,224,447,239,387,249,339,255,291,253,232,239,198,224,165,204,115,162"/>
 <area shape="rect" id="Node000006" href="$classcarta_1_1Ds9ImportExport.html#a38914b11d3f6461aab91779d74e6e364" title=" " alt="" coords="233,120,447,160"/>
 <area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="185,137,220,137,220,143,185,143"/>

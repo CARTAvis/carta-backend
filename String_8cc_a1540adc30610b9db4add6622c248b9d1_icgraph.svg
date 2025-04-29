@@ -57,7 +57,7 @@ var sectionId = 'dynsection-2';
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Checks if a string ends with a specified suffix.">
 <polygon fill="#999999" stroke="#666666" points="1644,-468.5 1581,-468.5 1581,-449.5 1644,-449.5 1644,-468.5"/>
 <text text-anchor="middle" x="1612.5" y="-456.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>
@@ -66,7 +66,7 @@ var sectionId = 'dynsection-2';
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" target="_top" xlink:title="Determines the image file type based on its content or extension.">
 <polygon fill="white" stroke="#666666" points="1543.5,-546.5 1443.5,-546.5 1443.5,-527.5 1543.5,-527.5 1543.5,-546.5"/>
 <text text-anchor="middle" x="1493.5" y="-534.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessImageType</text>
 </a>
@@ -84,7 +84,7 @@ var sectionId = 'dynsection-2';
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf" target="_top" xlink:title="Determines the region file type based on its content or extension.">
 <polygon fill="white" stroke="#666666" points="1545,-487.5 1442,-487.5 1442,-468.5 1545,-468.5 1545,-487.5"/>
 <text text-anchor="middle" x="1493.5" y="-475.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessRegionType</text>
 </a>
@@ -102,7 +102,7 @@ var sectionId = 'dynsection-2';
 <!-- Node9 -->
 <g id="Node000009" class="node">
 <title>Node9</title>
-<g id="a_Node000009"><a xlink:href="File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" target="_top" xlink:title=" ">
+<g id="a_Node000009"><a xlink:href="File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" target="_top" xlink:title="Determines the catalog table file type based on its content or file extension.">
 <polygon fill="white" stroke="#666666" points="1541,-444.5 1446,-444.5 1446,-425.5 1541,-425.5 1541,-444.5"/>
 <text text-anchor="middle" x="1493.5" y="-432.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessTableType</text>
 </a>
@@ -120,7 +120,7 @@ var sectionId = 'dynsection-2';
 <!-- Node11 -->
 <g id="Node000011" class="node">
 <title>Node11</title>
-<g id="a_Node000011"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
+<g id="a_Node000011"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
 <polygon fill="white" stroke="#666666" points="1545,-329.5 1442,-329.5 1442,-310.5 1545,-310.5 1545,-329.5"/>
 <text text-anchor="middle" x="1493.5" y="-317.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>

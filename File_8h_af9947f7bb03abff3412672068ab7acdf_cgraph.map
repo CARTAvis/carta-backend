@@ -1,5 +1,5 @@
 <map id="GuessRegionType" name="GuessRegionType">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,143,31"/>
-<area shape="rect" id="Node000002" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="191,5,275,31"/>
+<area shape="rect" id="Node000001" title="Determines the region file type based on its content or extension." alt="" coords="5,5,143,31"/>
+<area shape="rect" id="Node000002" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="191,5,275,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="143,15,177,15,177,21,143,21"/>
 </map>

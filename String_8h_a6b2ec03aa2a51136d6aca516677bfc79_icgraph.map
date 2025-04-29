@@ -1,6 +1,6 @@
 <map id="SafeStringEscape" name="SafeStringEscape">
-<area shape="rect" id="Node000001" title=" " alt="" coords="916,42,1051,67"/>
-<area shape="rect" id="Node000002" href="$RemoteFiles_8cc.html#a810fce65818eabe0741e639b2ff23619" title=" " alt="" coords="681,13,868,38"/>
+<area shape="rect" id="Node000001" title="Escapes a string using percent&#45;encoding (URL encoding)." alt="" coords="916,42,1051,67"/>
+<area shape="rect" id="Node000002" href="$RemoteFiles_8cc.html#a810fce65818eabe0741e639b2ff23619" title="Generates a URL for a remote file request based on provided parameters." alt="" coords="681,13,868,38"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="902,46,865,41,865,35,903,41"/>
 <area shape="rect" id="Node000006" href="$classcarta_1_1HttpServer.html#a81a867dc29b7be0f8d8e2f901ebbf688" title=" " alt="" coords="704,63,845,103"/>
 <area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="903,68,846,76,845,71,902,63"/>

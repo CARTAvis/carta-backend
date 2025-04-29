@@ -1,22 +1,22 @@
 <map id="carta::StokesFilesConnector::OpenStokesFiles" name="carta::StokesFilesConnector::OpenStokesFiles">
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,50,208,90"/>
-<area shape="rect" id="Node000002" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title=" " alt="" coords="492,7,645,32"/>
+<area shape="rect" id="Node000002" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title="Determines the image type of a given filename using Casacore." alt="" coords="492,7,645,32"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,48,199,28,255,13,313,6,371,3,479,7,478,12,372,8,313,11,257,18,201,33,151,53"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" title=" " alt="" coords="256,28,444,54"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" title="Converts a FITS Stokes parameter value to its corresponding internal representation." alt="" coords="256,28,444,54"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="208,55,242,51,243,57,209,61"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f" title=" " alt="" coords="281,78,419,118"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="209,79,267,86,267,91,208,85"/>
-<area shape="rect" id="Node000010" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="267,143,433,168"/>
+<area shape="rect" id="Node000010" href="$Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="267,143,433,168"/>
 <area shape="poly" id="edge10_Node000001_Node000010" title=" " alt="" coords="154,88,257,128,286,137,284,142,255,133,153,93"/>
 <area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="406,76,443,62,519,35,521,40,445,67,408,81"/>
-<area shape="rect" id="Node000005" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="500,60,637,86"/>
+<area shape="rect" id="Node000005" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title="Checks whether a given file is a compressed FITS file." alt="" coords="500,60,637,86"/>
 <area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="419,88,486,80,487,85,420,93"/>
-<area shape="rect" id="Node000009" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title=" " alt="" coords="501,110,636,135"/>
+<area shape="rect" id="Node000009" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title="Checks whether a given filename represents a remote HTTP or HTTPS URL." alt="" coords="501,110,636,135"/>
 <area shape="poly" id="edge9_Node000004_Node000009" title=" " alt="" coords="420,103,488,111,487,116,419,109"/>
-<area shape="rect" id="Node000006" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="696,11,832,36"/>
+<area shape="rect" id="Node000006" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="696,11,832,36"/>
 <area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="619,58,699,37,700,42,620,63"/>
-<area shape="rect" id="Node000007" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="722,60,806,86"/>
+<area shape="rect" id="Node000007" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="722,60,806,86"/>
 <area shape="poly" id="edge7_Node000005_Node000007" title=" " alt="" coords="637,70,708,70,708,76,637,76"/>
-<area shape="rect" id="Node000008" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title=" " alt="" coords="693,110,835,135"/>
+<area shape="rect" id="Node000008" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title="Determines if a given magic number corresponds to a gzip&#45;compressed file." alt="" coords="693,110,835,135"/>
 <area shape="poly" id="edge8_Node000005_Node000008" title=" " alt="" coords="620,83,700,104,699,109,619,88"/>
 </map>

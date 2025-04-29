@@ -1,5 +1,5 @@
 <map id="GetResolvedFilename" name="GetResolvedFilename">
-<area shape="rect" id="Node000001" title=" " alt="" coords="1721,461,1887,487"/>
+<area shape="rect" id="Node000001" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="1721,461,1887,487"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#a1888b66423989c3c52c590cd6ca73362" title=" " alt="" coords="1468,254,1673,294"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1788,450,1742,380,1710,341,1672,308,1651,296,1654,292,1675,304,1714,337,1747,376,1792,447"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#a6c490d8acff0517270d57a70a6956dc6" title=" " alt="" coords="1477,319,1665,344"/>

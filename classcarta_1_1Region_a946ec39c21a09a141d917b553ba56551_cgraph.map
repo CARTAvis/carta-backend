@@ -6,7 +6,7 @@
 <area shape="poly" id="edge13_Node000001_Node000003" title=" " alt="" coords="231,217,470,215,610,219,750,227,788,230,788,236,749,232,610,224,470,221,231,222"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1Region.html#a3bcb4285b1e57b69ffe405073361b74c" title=" " alt="" coords="535,120,740,160"/>
 <area shape="poly" id="edge20_Node000001_Node000004" title=" " alt="" coords="158,207,215,191,278,176,403,157,521,145,521,150,404,162,279,181,216,196,160,212"/>
-<area shape="rect" id="Node000005" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="562,5,713,45"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title="Checks if this Stokes source represents an original image." alt="" coords="562,5,713,45"/>
 <area shape="poly" id="edge24_Node000001_Node000005" title=" " alt="" coords="124,208,146,175,180,131,224,86,250,67,278,51,345,27,417,14,486,11,548,12,548,18,486,16,417,20,347,32,280,56,253,71,228,90,184,135,150,178,129,211"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1Region.html#afeba24c3fc32647d614ed0fe8a2cb63d" title=" " alt="" coords="285,417,471,457"/>
 <area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="130,234,189,307,232,352,280,392,308,409,306,414,277,397,228,356,185,311,126,237"/>
@@ -20,7 +20,7 @@
 <area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="472,102,529,115,528,120,471,108"/>
 <area shape="poly" id="edge5_Node000002_Node000005" title=" " alt="" coords="465,63,548,43,549,48,466,68"/>
 <area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="701,158,750,176,843,219,841,224,748,181,699,163"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="797,13,989,38"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="797,13,989,38"/>
 <area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="713,23,783,23,783,28,713,28"/>
 <area shape="poly" id="edge12_Node000007_Node000003" title=" " alt="" coords="471,433,535,427,606,416,679,398,748,371,782,351,814,326,865,276,869,280,818,330,785,355,750,376,680,403,607,421,535,432,472,438"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1Region.html#a77abe84c6c73dbad663e8255e362a86f" title=" " alt="" coords="525,451,749,491"/>

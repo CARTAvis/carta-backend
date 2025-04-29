@@ -134,7 +134,7 @@
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title=" ">
+<g id="a_Node000007"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title="Performs a constant&#45;time comparison of two strings.">
 <polygon fill="white" stroke="#666666" points="608,-72.5 450,-72.5 450,-53.5 608,-53.5 608,-72.5"/>
 <text text-anchor="middle" x="529" y="-60.5" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
 </a>

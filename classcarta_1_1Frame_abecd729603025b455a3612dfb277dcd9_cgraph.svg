@@ -122,7 +122,7 @@ var sectionId = 'dynsection-89';
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title="Retrieves the corresponding CARTA polarization type from an integer value.">
 <polygon fill="white" stroke="#666666" points="495.5,-93 392.5,-93 392.5,-74 495.5,-74 495.5,-93"/>
 <text text-anchor="middle" x="444" y="-81" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::Get</text>
 </a>
@@ -140,7 +140,7 @@ var sectionId = 'dynsection-89';
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
 <polygon fill="white" stroke="#666666" points="516,-56 372,-56 372,-37 516,-37 516,-56"/>
 <text text-anchor="middle" x="444" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>

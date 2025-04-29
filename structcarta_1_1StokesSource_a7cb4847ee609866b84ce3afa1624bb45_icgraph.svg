@@ -57,7 +57,7 @@ var sectionId = 'dynsection-2';
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Checks if this Stokes source represents an original image.">
 <polygon fill="#999999" stroke="#666666" points="1341,-716 1228,-716 1228,-686 1341,-686 1341,-716"/>
 <text text-anchor="start" x="1236" y="-704" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
 <text text-anchor="middle" x="1284.5" y="-693" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>

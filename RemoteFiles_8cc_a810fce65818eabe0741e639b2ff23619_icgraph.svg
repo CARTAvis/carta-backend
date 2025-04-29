@@ -57,7 +57,7 @@ var sectionId = 'dynsection-2';
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Generates a URL for a remote file request based on provided parameters.">
 <polygon fill="#999999" stroke="#666666" points="647,-24.5 507,-24.5 507,-5.5 647,-5.5 647,-24.5"/>
 <text text-anchor="middle" x="577" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">GenerateUrlFromRequest</text>
 </a>

@@ -7,8 +7,8 @@
 <area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117" title=" " alt="" coords="516,13,671,38"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="463,23,502,23,502,28,463,28"/>
 <area shape="poly" id="edge6_Node000004_Node000003" title=" " alt="" coords="421,67,530,39,531,44,422,73"/>
-<area shape="rect" id="Node000005" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="518,63,669,103"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title="Checks if this Stokes source represents an original image." alt="" coords="518,63,669,103"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="468,80,504,80,504,85,468,85"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="719,70,911,95"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="719,70,911,95"/>
 <area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="669,80,705,80,705,85,669,85"/>
 </map>

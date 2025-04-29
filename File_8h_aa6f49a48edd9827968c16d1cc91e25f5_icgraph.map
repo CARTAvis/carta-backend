@@ -1,5 +1,5 @@
 <map id="GetNumItems" name="GetNumItems">
-<area shape="rect" id="Node000001" title=" " alt="" coords="432,77,545,102"/>
+<area shape="rect" id="Node000001" title="Counts the number of items in a given directory." alt="" coords="432,77,545,102"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1FileListHandler.html#a1c0729f201216e2ee578126c9fa49f41" title=" " alt="" coords="223,37,383,77"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="418,80,383,74,384,69,419,75"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1TableController.html#a429ef193778c7d7ece134f68e0f465e3" title=" " alt="" coords="223,101,384,141"/>

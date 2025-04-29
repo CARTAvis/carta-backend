@@ -1,5 +1,5 @@
 <map id="NormalizeUnit" name="NormalizeUnit">
-<area shape="rect" id="Node000001" title=" " alt="" coords="2701,512,2817,537"/>
+<area shape="rect" id="Node000001" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="2701,512,2817,537"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1FileExtInfoLoader.html#a5f5a330e631e555679c7356ac1f71f23" title=" " alt="" coords="2399,441,2653,481"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="2704,511,2653,495,2608,483,2610,478,2654,490,2706,505"/>
 <area shape="rect" id="Node000024" href="$classcarta_1_1FileExtInfoLoader.html#a9a7099a65e803d42d6da0619f83bfd7c" title=" " alt="" coords="2413,505,2639,545"/>

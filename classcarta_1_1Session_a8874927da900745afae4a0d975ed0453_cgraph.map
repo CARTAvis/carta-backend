@@ -65,7 +65,7 @@
 <area shape="rect" id="Node000015" href="$classcarta_1_1CompressedFits.html#a08d166346f4e5dd3261602727205943d" title=" " alt="" coords="1868,504,2035,544"/>
 <area shape="poly" id="edge15_Node000007_Node000015" title=" " alt="" coords="1713,363,1757,392,1803,429,1818,446,1826,461,1835,476,1851,490,1860,496,1857,500,1848,494,1831,479,1822,464,1813,449,1799,433,1754,396,1710,368"/>
 <area shape="poly" id="edge16_Node000007_Node000017" title=" " alt="" coords="1719,363,1763,391,1803,429,1815,447,1821,464,1826,495,1831,525,1839,539,1851,554,1856,558,1852,562,1847,558,1834,542,1826,527,1820,496,1816,465,1810,449,1799,432,1760,395,1716,368"/>
-<area shape="rect" id="Node000018" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="1893,633,2009,658"/>
+<area shape="rect" id="Node000018" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="1893,633,2009,658"/>
 <area shape="poly" id="edge17_Node000007_Node000018" title=" " alt="" coords="1688,364,1763,500,1810,572,1832,600,1851,618,1881,633,1879,638,1848,622,1828,603,1805,575,1758,503,1683,367"/>
 <area shape="poly" id="edge13_Node000012_Node000013" title=" " alt="" coords="2040,354,2088,360,2087,365,2039,359"/>
 <area shape="poly" id="edge25_Node000020_Node000018" title=" " alt="" coords="1787,615,1880,631,1879,636,1787,620"/>
@@ -73,7 +73,7 @@
 <area shape="poly" id="edge28_Node000023_Node000024" title=" " alt="" coords="1466,308,1485,317,1501,330,1527,367,1540,403,1544,437,1542,472,1535,545,1538,585,1549,630,1573,684,1602,736,1657,816,1652,819,1598,739,1568,687,1544,632,1532,586,1530,545,1536,471,1538,437,1535,404,1522,370,1497,334,1482,321,1464,312"/>
 <area shape="rect" id="Node000039" href="$classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4" title=" " alt="" coords="769,728,923,768"/>
 <area shape="poly" id="edge36_Node000038_Node000039" title=" " alt="" coords="652,790,755,766,756,771,653,795"/>
-<area shape="rect" id="Node000041" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="763,793,929,818"/>
+<area shape="rect" id="Node000041" href="$Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="763,793,929,818"/>
 <area shape="poly" id="edge38_Node000038_Node000041" title=" " alt="" coords="690,803,750,803,750,808,690,808"/>
 <area shape="rect" id="Node000040" href="$classcarta_1_1FileInfoLoader.html#a3395971925347571f4724f7ee714a85a" title=" " alt="" coords="1027,728,1182,768"/>
 <area shape="poly" id="edge37_Node000039_Node000040" title=" " alt="" coords="923,745,1013,745,1013,751,923,751"/>
@@ -85,7 +85,7 @@
 <area shape="poly" id="edge47_Node000042_Node000045" title=" " alt="" coords="684,982,748,974,749,979,685,987"/>
 <area shape="rect" id="Node000064" href="$classcarta_1_1FitsHduList.html#aae758ae3882416bb039c090209fcf5ad" title=" " alt="" coords="779,1008,913,1048"/>
 <area shape="poly" id="edge49_Node000042_Node000064" title=" " alt="" coords="685,1005,766,1015,765,1020,684,1010"/>
-<area shape="rect" id="Node000066" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="1036,1073,1173,1098"/>
+<area shape="rect" id="Node000066" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title="Checks whether a given file is a compressed FITS file." alt="" coords="1036,1073,1173,1098"/>
 <area shape="poly" id="edge51_Node000042_Node000066" title=" " alt="" coords="637,1014,690,1038,751,1057,822,1071,894,1079,1022,1084,1022,1090,893,1084,821,1076,750,1063,688,1043,635,1019"/>
 <area shape="rect" id="Node000070" href="$classcarta_1_1FileExtInfoLoader.html#a52af5bc1b2fbb1cbeb91ceb48d8ba685" title=" " alt="" coords="758,1123,934,1163"/>
 <area shape="poly" id="edge52_Node000042_Node000070" title=" " alt="" coords="624,1014,681,1057,752,1102,779,1115,776,1120,749,1106,678,1061,621,1018"/>

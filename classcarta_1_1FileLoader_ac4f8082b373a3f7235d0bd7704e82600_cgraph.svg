@@ -31,7 +31,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="classcarta_1_1Stokes.html#a3e0fb65482096d6f48480b4550375957" target="_top" xlink:title="Converts a FITS Stokes parameter value to its corresponding internal representation.">
 <polygon fill="white" stroke="#666666" points="290,-104.5 149,-104.5 149,-85.5 290,-85.5 290,-104.5"/>
 <text text-anchor="middle" x="219.5" y="-92.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::ConvertFits</text>
 </a>
@@ -49,7 +49,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="structDimsInfo.html#a0f1d3df9ecaa2894673e373748c222ad" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="structDimsInfo.html#a0f1d3df9ecaa2894673e373748c222ad" target="_top" xlink:title="Retrieves the size of a given axis from the shape.">
 <polygon fill="white" stroke="#666666" points="276,-67.5 163,-67.5 163,-48.5 276,-48.5 276,-67.5"/>
 <text text-anchor="middle" x="219.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">DimsInfo::FromAxis</text>
 </a>

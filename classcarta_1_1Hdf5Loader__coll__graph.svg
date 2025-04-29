@@ -217,7 +217,7 @@ var sectionId = 'dynsection-1';
 <!-- Node12 -->
 <g id="Node000012" class="node">
 <title>Node12</title>
-<g id="a_Node000012"><a xlink:href="structcarta_1_1StokesSource.html" target="_top" xlink:title=" ">
+<g id="a_Node000012"><a xlink:href="structcarta_1_1StokesSource.html" target="_top" xlink:title="Represents a source of Stokes data with axis range specifications.">
 <polygon fill="white" stroke="#666666" points="841,-672 728,-672 728,-653 841,-653 841,-672"/>
 <text text-anchor="middle" x="784.5" y="-660" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
 </a>
@@ -236,7 +236,7 @@ var sectionId = 'dynsection-1';
 <!-- Node13 -->
 <g id="Node000013" class="node">
 <title>Node13</title>
-<g id="a_Node000013"><a xlink:href="structAxisRange.html" target="_top" xlink:title=" ">
+<g id="a_Node000013"><a xlink:href="structAxisRange.html" target="_top" xlink:title="Represents a range along an axis.">
 <polygon fill="white" stroke="#666666" points="457,-668 389,-668 389,-649 457,-649 457,-668"/>
 <text text-anchor="middle" x="423" y="-656" font-family="Helvetica,sans-Serif" font-size="10.00">AxisRange</text>
 </a>
@@ -256,7 +256,7 @@ var sectionId = 'dynsection-1';
 <!-- Node17 -->
 <g id="Node000017" class="node">
 <title>Node17</title>
-<g id="a_Node000017"><a xlink:href="structAxesInfo.html" target="_top" xlink:title=" ">
+<g id="a_Node000017"><a xlink:href="structAxesInfo.html" target="_top" xlink:title="Stores information about image axes, including spatial and spectral components.">
 <polygon fill="white" stroke="#666666" points="628,-335 569,-335 569,-316 628,-316 628,-335"/>
 <text text-anchor="middle" x="598.5" y="-323" font-family="Helvetica,sans-Serif" font-size="10.00">AxesInfo</text>
 </a>
@@ -554,7 +554,7 @@ var sectionId = 'dynsection-1';
 <!-- Node16 -->
 <g id="Node000016" class="node">
 <title>Node16</title>
-<g id="a_Node000016"><a xlink:href="structDimsInfo.html" target="_top" xlink:title=" ">
+<g id="a_Node000016"><a xlink:href="structDimsInfo.html" target="_top" xlink:title="Represents the dimensions of an image or data cube.">
 <polygon fill="white" stroke="#666666" points="815,-448 754,-448 754,-429 815,-429 815,-448"/>
 <text text-anchor="middle" x="784.5" y="-436" font-family="Helvetica,sans-Serif" font-size="10.00">DimsInfo</text>
 </a>

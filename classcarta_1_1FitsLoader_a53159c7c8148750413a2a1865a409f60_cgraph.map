@@ -30,7 +30,7 @@
 <area shape="poly" id="edge11_Node000008_Node000007" title=" " alt="" coords="362,117,437,96,438,101,363,122"/>
 <area shape="rect" id="Node000009" href="$classcarta_1_1CompressedFits.html#a44ffd0a06a3f94f38e9f714a265f4910" title=" " alt="" coords="442,234,609,274"/>
 <area shape="poly" id="edge12_Node000008_Node000009" title=" " alt="" coords="361,157,384,169,399,182,409,194,418,206,432,218,445,226,442,230,429,223,414,210,405,198,396,185,381,174,358,162"/>
-<area shape="rect" id="Node000010" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title=" " alt="" coords="719,241,809,267"/>
+<area shape="rect" id="Node000010" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="719,241,809,267"/>
 <area shape="poly" id="edge13_Node000009_Node000010" title=" " alt="" coords="609,251,705,251,705,257,609,257"/>
 <area shape="rect" id="Node000014" href="$namespacecarta.html#a6fd1aefcf08b3fb1c823b3d76943d365" title=" " alt="" coords="454,305,597,331"/>
 <area shape="poly" id="edge17_Node000013_Node000014" title=" " alt="" coords="369,315,440,315,440,321,369,321"/>
@@ -38,6 +38,6 @@
 <area shape="poly" id="edge20_Node000016_Node000017" title=" " alt="" coords="356,434,433,424,433,429,357,439"/>
 <area shape="rect" id="Node000019" href="$classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8" title=" " alt="" coords="456,458,595,498"/>
 <area shape="poly" id="edge22_Node000016_Node000019" title=" " alt="" coords="357,453,443,464,442,470,356,458"/>
-<area shape="rect" id="Node000018" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title=" " alt="" coords="669,401,859,427"/>
+<area shape="rect" id="Node000018" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression." alt="" coords="669,401,859,427"/>
 <area shape="poly" id="edge21_Node000017_Node000018" title=" " alt="" coords="605,411,656,411,656,417,605,417"/>
 </map>

@@ -31,7 +31,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf" target="_top" xlink:title="Determines the region file type based on its content or extension.">
 <polygon fill="white" stroke="#666666" points="259,-24.5 156,-24.5 156,-5.5 259,-5.5 259,-24.5"/>
 <text text-anchor="middle" x="207.5" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessRegionType</text>
 </a>
@@ -49,7 +49,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
 <polygon fill="white" stroke="#666666" points="358,-24.5 295,-24.5 295,-5.5 358,-5.5 358,-24.5"/>
 <text text-anchor="middle" x="326.5" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>

@@ -180,7 +180,7 @@ var sectionId = 'dynsection-32';
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title="Performs a constant&#45;time comparison of two strings.">
 <polygon fill="white" stroke="#666666" points="685,-120.5 527,-120.5 527,-101.5 685,-101.5 685,-120.5"/>
 <text text-anchor="middle" x="606" y="-108.5" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
 </a>

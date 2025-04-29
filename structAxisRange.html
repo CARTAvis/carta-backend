@@ -102,6 +102,9 @@ $(document).ready(function(){initNavTree('structAxisRange.html',''); initResizab
 </div><!--header-->
 <div class="contents">
 
+<p>Represents a range along an axis.  
+ <a href="structAxisRange.html#details">More...</a></p>
+
 <p><code>#include &lt;Image.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for AxisRange:</div>
@@ -112,26 +115,37 @@ Collaboration diagram for AxisRange:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a17ff4d17c50573253c06cfba37fa479c" id="r_a17ff4d17c50573253c06cfba37fa479c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#a17ff4d17c50573253c06cfba37fa479c">AxisRange</a> ()</td></tr>
+<tr class="memdesc:a17ff4d17c50573253c06cfba37fa479c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor initialising the range from 0 to ALL_Z.  <br /></td></tr>
 <tr class="separator:a17ff4d17c50573253c06cfba37fa479c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a145c438deed0a187f00335a4c3b8d024" id="r_a145c438deed0a187f00335a4c3b8d024"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#a145c438deed0a187f00335a4c3b8d024">AxisRange</a> (int from_and_to_)</td></tr>
+<tr class="memdesc:a145c438deed0a187f00335a4c3b8d024"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a range with the same start and end value.  <br /></td></tr>
 <tr class="separator:a145c438deed0a187f00335a4c3b8d024"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe27315ca30282545d389919e2ad9cd8" id="r_afe27315ca30282545d389919e2ad9cd8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#afe27315ca30282545d389919e2ad9cd8">AxisRange</a> (int from_, int to_)</td></tr>
+<tr class="memdesc:afe27315ca30282545d389919e2ad9cd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a range with a specified start and end.  <br /></td></tr>
 <tr class="separator:afe27315ca30282545d389919e2ad9cd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a495415babad4cbd13f0c165f88fad6a1" id="r_a495415babad4cbd13f0c165f88fad6a1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#a495415babad4cbd13f0c165f88fad6a1">operator==</a> (const <a class="el" href="structAxisRange.html">AxisRange</a> &amp;rhs) const</td></tr>
+<tr class="memdesc:a495415babad4cbd13f0c165f88fad6a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if two <a class="el" href="structAxisRange.html" title="Represents a range along an axis.">AxisRange</a> objects are equal.  <br /></td></tr>
 <tr class="separator:a495415babad4cbd13f0c165f88fad6a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae077bad7bf33daaf0db4603b8cebe7c3" id="r_ae077bad7bf33daaf0db4603b8cebe7c3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#ae077bad7bf33daaf0db4603b8cebe7c3">operator!=</a> (const <a class="el" href="structAxisRange.html">AxisRange</a> &amp;rhs) const</td></tr>
+<tr class="memdesc:ae077bad7bf33daaf0db4603b8cebe7c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if two <a class="el" href="structAxisRange.html" title="Represents a range along an axis.">AxisRange</a> objects are not equal.  <br /></td></tr>
 <tr class="separator:ae077bad7bf33daaf0db4603b8cebe7c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab1963ef2bfd0d41dbcfaba14eaa9bd00" id="r_ab1963ef2bfd0d41dbcfaba14eaa9bd00"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#ab1963ef2bfd0d41dbcfaba14eaa9bd00">is_in_range</a> (int val)</td></tr>
-<tr class="separator:ab1963ef2bfd0d41dbcfaba14eaa9bd00"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aafe8ce1f44aa7d6b8ca5d2e112ccf2bb" id="r_aafe8ce1f44aa7d6b8ca5d2e112ccf2bb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#aafe8ce1f44aa7d6b8ca5d2e112ccf2bb">is_in_range</a> (int val) const</td></tr>
+<tr class="memdesc:aafe8ce1f44aa7d6b8ca5d2e112ccf2bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines if a value falls within the range.  <br /></td></tr>
+<tr class="separator:aafe8ce1f44aa7d6b8ca5d2e112ccf2bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a649a21f3357a105599ab3ced83a0053d" id="r_a649a21f3357a105599ab3ced83a0053d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#a649a21f3357a105599ab3ced83a0053d">from</a></td></tr>
+<tr class="memdesc:a649a21f3357a105599ab3ced83a0053d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The start of the range.  <br /></td></tr>
 <tr class="separator:a649a21f3357a105599ab3ced83a0053d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad838bfc7c64ace788906bf98106a86b9" id="r_ad838bfc7c64ace788906bf98106a86b9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxisRange.html#ad838bfc7c64ace788906bf98106a86b9">to</a></td></tr>
+<tr class="memdesc:ad838bfc7c64ace788906bf98106a86b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">The end of the range.  <br /></td></tr>
 <tr class="separator:ad838bfc7c64ace788906bf98106a86b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Represents a range along an axis. </p>
+<p>This struct stores a range with <code>from</code> and <code>to</code> values, providing constructors for different initialization scenarios and utility functions for comparison and range checking. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a17ff4d17c50573253c06cfba37fa479c" name="a17ff4d17c50573253c06cfba37fa479c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a17ff4d17c50573253c06cfba37fa479c">&#9670;&#160;</a></span>AxisRange() <span class="overload">[1/3]</span></h2>
 
@@ -154,6 +168,8 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Default constructor initialising the range from 0 to ALL_Z. </p>
 
 </div>
 </div>
@@ -180,6 +196,14 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Constructs a range with the same start and end value. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">from_and_to_</td><td>The value for both <code>from</code> and <code>to</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -217,11 +241,20 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Constructs a range with a specified start and end. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">from_</td><td>The start of the range. </td></tr>
+    <tr><td class="paramname">to_</td><td>The end of the range. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ab1963ef2bfd0d41dbcfaba14eaa9bd00" name="ab1963ef2bfd0d41dbcfaba14eaa9bd00"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab1963ef2bfd0d41dbcfaba14eaa9bd00">&#9670;&#160;</a></span>is_in_range()</h2>
+<a id="aafe8ce1f44aa7d6b8ca5d2e112ccf2bb" name="aafe8ce1f44aa7d6b8ca5d2e112ccf2bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aafe8ce1f44aa7d6b8ca5d2e112ccf2bb">&#9670;&#160;</a></span>is_in_range()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -234,7 +267,7 @@ Public Attributes</h2></td></tr>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>val</em></td><td>)</td>
-          <td></td>
+          <td> const</td>
         </tr>
       </table>
   </td>
@@ -243,6 +276,15 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Determines if a value falls within the range. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">val</td><td>The value to check. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if <code>val</code> is within the range [from, to], false otherwise. </dd></dl>
 
 </div>
 </div>
@@ -270,6 +312,16 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Checks if two <a class="el" href="structAxisRange.html" title="Represents a range along an axis.">AxisRange</a> objects are not equal. </p>
+<p>Two <a class="el" href="structAxisRange.html" title="Represents a range along an axis.">AxisRange</a> objects are considered not equal if either their <code>from</code> or <code>to</code> values differ.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rhs</td><td>The <a class="el" href="structAxisRange.html" title="Represents a range along an axis.">AxisRange</a> to compare. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the two ranges are not equal, false otherwise. </dd></dl>
+
 </div>
 </div>
 <a id="a495415babad4cbd13f0c165f88fad6a1" name="a495415babad4cbd13f0c165f88fad6a1"></a>
@@ -296,6 +348,16 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Checks if two <a class="el" href="structAxisRange.html" title="Represents a range along an axis.">AxisRange</a> objects are equal. </p>
+<p>Two <a class="el" href="structAxisRange.html" title="Represents a range along an axis.">AxisRange</a> objects are considered equal if both their <code>from</code> and <code>to</code> values match.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rhs</td><td>The <a class="el" href="structAxisRange.html" title="Represents a range along an axis.">AxisRange</a> to compare. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the two ranges are equal, false otherwise. </dd></dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
@@ -311,6 +373,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>The start of the range. </p>
+
 </div>
 </div>
 <a id="ad838bfc7c64ace788906bf98106a86b9" name="ad838bfc7c64ace788906bf98106a86b9"></a>
@@ -324,6 +388,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>The end of the range. </p>
 
 </div>
 </div>

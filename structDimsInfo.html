@@ -103,6 +103,9 @@ $(document).ready(function(){initNavTree('structDimsInfo.html',''); initResizabl
 </div><!--header-->
 <div class="contents">
 
+<p>Represents the dimensions of an image or data cube.  
+ <a href="structDimsInfo.html#details">More...</a></p>
+
 <p><code>#include &lt;Image.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for DimsInfo:</div>
@@ -113,29 +116,40 @@ Collaboration diagram for DimsInfo:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a4c0b283ae4af661ef4d3e2eadc3b9899" id="r_a4c0b283ae4af661ef4d3e2eadc3b9899"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDimsInfo.html#a4c0b283ae4af661ef4d3e2eadc3b9899">DimsInfo</a> ()</td></tr>
+<tr class="memdesc:a4c0b283ae4af661ef4d3e2eadc3b9899"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor initialising all dimensions to 1.  <br /></td></tr>
 <tr class="separator:a4c0b283ae4af661ef4d3e2eadc3b9899"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab85029c5f94298a819fd0652abab0c95" id="r_ab85029c5f94298a819fd0652abab0c95"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDimsInfo.html#ab85029c5f94298a819fd0652abab0c95">DimsInfo</a> (const <a class="el" href="structAxesInfo.html">AxesInfo</a> &amp;axes, const casacore::IPosition &amp;shape)</td></tr>
+<tr class="memdesc:ab85029c5f94298a819fd0652abab0c95"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor that initialises dimensions based on given axes and shape.  <br /></td></tr>
 <tr class="separator:ab85029c5f94298a819fd0652abab0c95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a0f1d3df9ecaa2894673e373748c222ad" id="r_a0f1d3df9ecaa2894673e373748c222ad"><td class="memItemLeft" align="right" valign="top">static size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDimsInfo.html#a0f1d3df9ecaa2894673e373748c222ad">FromAxis</a> (int axis, const casacore::IPosition &amp;shape)</td></tr>
+<tr class="memdesc:a0f1d3df9ecaa2894673e373748c222ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the size of a given axis from the shape.  <br /></td></tr>
 <tr class="separator:a0f1d3df9ecaa2894673e373748c222ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a32941459ac5af2c7a2fc953a845bb162" id="r_a32941459ac5af2c7a2fc953a845bb162"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDimsInfo.html#a32941459ac5af2c7a2fc953a845bb162">width</a></td></tr>
+<tr class="memdesc:a32941459ac5af2c7a2fc953a845bb162"><td class="mdescLeft">&#160;</td><td class="mdescRight">Width of the data (corresponding to the X-axis).  <br /></td></tr>
 <tr class="separator:a32941459ac5af2c7a2fc953a845bb162"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ec319eda659def920ebedae974ec8c8" id="r_a9ec319eda659def920ebedae974ec8c8"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDimsInfo.html#a9ec319eda659def920ebedae974ec8c8">height</a></td></tr>
+<tr class="memdesc:a9ec319eda659def920ebedae974ec8c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Height of the data (corresponding to the Y-axis).  <br /></td></tr>
 <tr class="separator:a9ec319eda659def920ebedae974ec8c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5290b27cfc785af3749b6b8b637311e" id="r_ad5290b27cfc785af3749b6b8b637311e"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDimsInfo.html#ad5290b27cfc785af3749b6b8b637311e">depth</a></td></tr>
+<tr class="memdesc:ad5290b27cfc785af3749b6b8b637311e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Depth of the data (corresponding to the Z-axis).  <br /></td></tr>
 <tr class="separator:ad5290b27cfc785af3749b6b8b637311e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae22d14fabe7a1db8a799fd976f34fe5f" id="r_ae22d14fabe7a1db8a799fd976f34fe5f"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDimsInfo.html#ae22d14fabe7a1db8a799fd976f34fe5f">num_channels</a></td></tr>
+<tr class="memdesc:ae22d14fabe7a1db8a799fd976f34fe5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of spectral channels.  <br /></td></tr>
 <tr class="separator:ae22d14fabe7a1db8a799fd976f34fe5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a055565def87a8c8f1e144f9e70f48803" id="r_a055565def87a8c8f1e144f9e70f48803"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDimsInfo.html#a055565def87a8c8f1e144f9e70f48803">num_stokes</a></td></tr>
+<tr class="memdesc:a055565def87a8c8f1e144f9e70f48803"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of Stokes parameters.  <br /></td></tr>
 <tr class="separator:a055565def87a8c8f1e144f9e70f48803"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Represents the dimensions of an image or data cube. </p>
+<p>This struct stores information about the width, height, depth, number of spectral channels, and number of Stokes parameters based on the given axes and shape. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a4c0b283ae4af661ef4d3e2eadc3b9899" name="a4c0b283ae4af661ef4d3e2eadc3b9899"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4c0b283ae4af661ef4d3e2eadc3b9899">&#9670;&#160;</a></span>DimsInfo() <span class="overload">[1/2]</span></h2>
 
@@ -158,6 +172,8 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Default constructor initialising all dimensions to 1. </p>
 
 </div>
 </div>
@@ -195,6 +211,15 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Constructor that initialises dimensions based on given axes and shape. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">axes</td><td>The <a class="el" href="structAxesInfo.html" title="Stores information about image axes, including spatial and spectral components.">AxesInfo</a> struct containing axis indices. </td></tr>
+    <tr><td class="paramname">shape</td><td>The image dimensions. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -231,6 +256,16 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Retrieves the size of a given axis from the shape. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">axis</td><td>The axis index. </td></tr>
+    <tr><td class="paramname">shape</td><td>The shape of the data. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The size of the axis if valid, otherwise returns 1. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -252,6 +287,8 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
+<p>Depth of the data (corresponding to the Z-axis). </p>
+
 </div>
 </div>
 <a id="a9ec319eda659def920ebedae974ec8c8" name="a9ec319eda659def920ebedae974ec8c8"></a>
@@ -265,6 +302,8 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Height of the data (corresponding to the Y-axis). </p>
 
 </div>
 </div>
@@ -280,6 +319,8 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
+<p>Number of spectral channels. </p>
+
 </div>
 </div>
 <a id="a055565def87a8c8f1e144f9e70f48803" name="a055565def87a8c8f1e144f9e70f48803"></a>
@@ -294,6 +335,8 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
+<p>Number of Stokes parameters. </p>
+
 </div>
 </div>
 <a id="a32941459ac5af2c7a2fc953a845bb162" name="a32941459ac5af2c7a2fc953a845bb162"></a>
@@ -307,6 +350,8 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Width of the data (corresponding to the X-axis). </p>
 
 </div>
 </div>

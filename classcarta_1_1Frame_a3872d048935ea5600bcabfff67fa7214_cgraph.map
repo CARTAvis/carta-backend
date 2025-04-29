@@ -1,6 +1,6 @@
 <map id="carta::Frame::CheckStokes" name="carta::Frame::CheckStokes">
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,31,200,56"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="248,5,440,31"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="248,5,440,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="200,30,234,27,235,32,200,36"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9" title=" " alt="" coords="251,55,437,80"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="200,50,237,54,236,59,200,56"/>

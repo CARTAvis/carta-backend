@@ -23,11 +23,11 @@
 <area shape="poly" id="edge39_Node000026_Node000008" title=" " alt="" coords="349,598,644,671,643,677,348,603"/>
 <area shape="rect" id="Node000009" title=" " alt="" coords="29,1089,67,1114"/>
 <area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="81,1100,283,1106,579,1108,727,1106,858,1098,957,1086,990,1077,1010,1067,1030,1040,1047,998,1062,946,1073,888,1089,776,1096,699,1102,700,1094,776,1078,889,1067,947,1052,1000,1035,1043,1014,1071,992,1082,958,1091,858,1104,727,1111,579,1114,283,1111,81,1105"/>
-<area shape="rect" id="Node000015" href="$structcarta_1_1StokesSource.html" title=" " alt="" coords="620,1321,771,1346"/>
+<area shape="rect" id="Node000015" href="$structcarta_1_1StokesSource.html" title="Represents a source of Stokes data with axis range specifications." alt="" coords="620,1321,771,1346"/>
 <area shape="poly" id="edge16_Node000015_Node000009" title=" " alt="" coords="51,1128,53,1174,61,1233,81,1293,97,1321,117,1345,147,1370,180,1390,215,1404,253,1414,292,1420,331,1422,412,1416,490,1402,561,1382,665,1344,667,1349,563,1387,491,1407,413,1422,332,1427,291,1425,252,1419,213,1409,177,1395,143,1375,113,1349,92,1324,76,1295,56,1234,47,1175,46,1128"/>
-<area shape="rect" id="Node000016" href="$structAxisRange.html" title=" " alt="" coords="264,1318,355,1343"/>
+<area shape="rect" id="Node000016" href="$structAxisRange.html" title="Represents a range along an axis." alt="" coords="264,1318,355,1343"/>
 <area shape="poly" id="edge18_Node000016_Node000009" title=" " alt="" coords="51,1128,53,1171,62,1222,82,1274,97,1296,116,1315,150,1334,189,1342,228,1342,263,1338,264,1343,228,1347,189,1347,149,1339,113,1319,93,1300,77,1276,57,1224,48,1171,46,1128"/>
-<area shape="rect" id="Node000020" href="$structAxesInfo.html" title=" " alt="" coords="456,805,535,830"/>
+<area shape="rect" id="Node000020" href="$structAxesInfo.html" title="Stores information about image axes, including spatial and spectral components." alt="" coords="456,805,535,830"/>
 <area shape="poly" id="edge24_Node000020_Node000009" title=" " alt="" coords="63,1076,119,1004,158,964,203,928,269,891,338,861,455,824,457,829,340,866,271,896,205,933,162,967,123,1007,67,1079"/>
 <area shape="rect" id="Node000032" title=" " alt="" coords="240,761,379,786"/>
 <area shape="poly" id="edge38_Node000032_Node000009" title=" " alt="" coords="49,1075,55,1010,67,927,86,850,98,820,113,799,141,780,173,769,207,763,240,763,240,768,208,769,175,774,144,785,117,803,103,822,91,851,73,928,61,1010,54,1076"/>
@@ -49,7 +49,7 @@
 <area shape="poly" id="edge19_Node000007_Node000017" title=" " alt="" coords="748,731,869,721,1012,704,1049,697,1050,702,1012,709,869,727,748,736"/>
 <area shape="rect" id="Node000018" title=" " alt="" coords="279,358,339,383"/>
 <area shape="poly" id="edge20_Node000007_Node000018" title=" " alt="" coords="353,369,510,376,717,388,908,407,975,419,1013,434,1040,460,1061,491,1076,526,1087,561,1099,627,1103,673,1097,674,1094,627,1082,562,1071,528,1056,494,1036,464,1011,438,974,424,907,412,717,393,509,381,353,375"/>
-<area shape="rect" id="Node000019" href="$structDimsInfo.html" title=" " alt="" coords="655,325,736,350"/>
+<area shape="rect" id="Node000019" href="$structDimsInfo.html" title="Represents the dimensions of an image or data cube." alt="" coords="655,325,736,350"/>
 <area shape="poly" id="edge22_Node000019_Node000018" title=" " alt="" coords="353,364,654,338,654,343,353,370"/>
 <area shape="poly" id="edge21_Node000007_Node000019" title=" " alt="" coords="750,333,819,334,896,338,967,349,994,357,1014,369,1032,392,1047,427,1073,517,1091,609,1101,674,1096,674,1086,610,1068,518,1042,429,1027,395,1010,373,992,362,965,354,896,343,819,339,750,339"/>
 <area shape="poly" id="edge23_Node000007_Node000020" title=" " alt="" coords="548,812,638,805,754,790,884,765,948,748,1011,728,1077,697,1079,702,1013,733,950,753,885,770,755,795,638,810,549,817"/>

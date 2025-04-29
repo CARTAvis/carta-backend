@@ -112,16 +112,22 @@ Include dependency graph for String.cc:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a2ae58d8319d2fb200c76f1e0e7951a77" id="r_a2ae58d8319d2fb200c76f1e0e7951a77"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77">SplitString</a> (std::string &amp;input, char delim, std::vector&lt; std::string &gt; &amp;parts)</td></tr>
+<tr class="memdesc:a2ae58d8319d2fb200c76f1e0e7951a77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Splits a string into parts based on a specified delimiter.  <br /></td></tr>
 <tr class="separator:a2ae58d8319d2fb200c76f1e0e7951a77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1540adc30610b9db4add6622c248b9d1" id="r_a1540adc30610b9db4add6622c248b9d1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1">HasSuffix</a> (const std::string &amp;haystack, const std::string &amp;needle, bool case_sensitive)</td></tr>
+<tr class="memdesc:a1540adc30610b9db4add6622c248b9d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if a string ends with a specified suffix.  <br /></td></tr>
 <tr class="separator:a1540adc30610b9db4add6622c248b9d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6e67fbe6974b4438e7f60fa751d5e75" id="r_ac6e67fbe6974b4438e7f60fa751d5e75"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75">ConstantTimeStringCompare</a> (const std::string &amp;a, const std::string &amp;b)</td></tr>
+<tr class="memdesc:ac6e67fbe6974b4438e7f60fa751d5e75"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a constant-time comparison of two strings.  <br /></td></tr>
 <tr class="separator:ac6e67fbe6974b4438e7f60fa751d5e75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b2ec03aa2a51136d6aca516677bfc79" id="r_a6b2ec03aa2a51136d6aca516677bfc79"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="String_8cc.html#a6b2ec03aa2a51136d6aca516677bfc79">SafeStringEscape</a> (const std::string &amp;input)</td></tr>
+<tr class="memdesc:a6b2ec03aa2a51136d6aca516677bfc79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Escapes a string using percent-encoding (URL encoding).  <br /></td></tr>
 <tr class="separator:a6b2ec03aa2a51136d6aca516677bfc79"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a072e2624b237bdf8f61e2014ce26eecf" id="r_a072e2624b237bdf8f61e2014ce26eecf"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="String_8cc.html#a072e2624b237bdf8f61e2014ce26eecf">SafeStringUnescape</a> (const std::string &amp;input)</td></tr>
+<tr class="memdesc:a072e2624b237bdf8f61e2014ce26eecf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decodes a percent-encoded (URL-encoded) string.  <br /></td></tr>
 <tr class="separator:a072e2624b237bdf8f61e2014ce26eecf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac169e525f15ae5ec3c0ccc36d1702454" id="r_ac169e525f15ae5ec3c0ccc36d1702454"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454">StringToInt</a> (const std::string &amp;input, int &amp;i)</td></tr>
+<tr class="memdesc:ac169e525f15ae5ec3c0ccc36d1702454"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a string to an integer.  <br /></td></tr>
 <tr class="separator:ac169e525f15ae5ec3c0ccc36d1702454"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
@@ -150,6 +156,10 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Performs a constant-time comparison of two strings. </p>
+<p>This function compares two strings in a way that avoids timing attacks by ensuring that the execution time does not depend on the input values. It XORs each corresponding character and accumulates the differences, preventing early termination.</p>
+<dl class="section note"><dt>Note</dt><dd>If the strings have different lengths, the function immediately returns <code>false</code>. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -189,6 +199,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Checks if a string ends with a specified suffix. </p>
+<p>This function determines whether the <code>haystack</code> string ends with the <code>needle</code> string. It supports both case-sensitive and case-insensitive comparisons.</p>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if <code>haystack</code> ends with <code>needle</code>, otherwise <code>false</code>.</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>If <code>needle</code> is longer than <code>haystack</code>, the function immediately returns <code>false</code>. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -212,6 +227,9 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Escapes a string using percent-encoding (URL encoding). </p>
+<p>This function converts special characters in the input string into percent-encoded format, making it safe for use in URLs or other contexts where special characters need to be encoded. Alphanumeric characters and <code>-</code>, <code>_</code>, <code>.</code>, and <code>~</code> are left unchanged. </p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -235,6 +253,10 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Decodes a percent-encoded (URL-encoded) string. </p>
+<p>This function converts percent-encoded sequences (e.g., <code>%20</code> for space) back into their ASCII character equivalents. It scans the input string and replaces any valid <code>XX</code> hexadecimal escape sequences with their corresponding characters.</p>
+<dl class="section note"><dt>Note</dt><dd>The function assumes that the input is a properly formatted percent-encoded string. If an invalid escape sequence is encountered, it is left unchanged. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -274,6 +296,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Splits a string into parts based on a specified delimiter. </p>
+<p>This function tokenizes an input string by the given delimiter and stores the resulting substrings in a vector. It also removes trailing carriage return (<code>\r</code>) characters from each token.</p>
+<dl class="section note"><dt>Note</dt><dd>Empty tokens are ignored, so consecutive delimiters will not produce empty strings in <code>parts</code>.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The function modifies the <code>parts</code> vector by clearing its contents before adding new elements. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -307,6 +334,10 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Converts a string to an integer. </p>
+<p>Attempts to parse an integer from the given string. If successful, the parsed integer is stored in the output parameter, and the function returns <code>true</code>. If the conversion fails due to an invalid format or an out-of-range value, the function returns <code>false</code>.</p>
+<dl class="section note"><dt>Note</dt><dd>This function does not modify <code>i</code> if the conversion fails. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">

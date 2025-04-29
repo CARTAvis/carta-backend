@@ -75,9 +75,9 @@
 <area shape="poly" id="edge38_Node000028_Node000029" title=" " alt="" coords="431,993,556,995,556,1001,431,999"/>
 <area shape="rect" id="Node000030" href="$classcarta_1_1PvGenerator.html#a5a390c35d2e0f5fd1f8051fd2704f70d" title=" " alt="" coords="851,1151,1040,1191"/>
 <area shape="poly" id="edge39_Node000029_Node000030" title=" " alt="" coords="715,1006,745,1015,773,1029,790,1042,799,1055,808,1069,822,1084,861,1115,900,1142,897,1146,858,1119,818,1088,804,1072,795,1058,786,1046,771,1033,743,1020,713,1011"/>
-<area shape="rect" id="Node000031" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="1157,1208,1295,1233"/>
+<area shape="rect" id="Node000031" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title="Retrieves the corresponding CARTA polarization type from an integer value." alt="" coords="1157,1208,1295,1233"/>
 <area shape="poly" id="edge40_Node000030_Node000031" title=" " alt="" coords="1040,1185,1144,1203,1143,1209,1040,1190"/>
-<area shape="rect" id="Node000032" href="$classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" title=" " alt="" coords="1146,1158,1306,1184"/>
+<area shape="rect" id="Node000032" href="$classcarta_1_1Stokes.html#a0a8cd7a357c54b544604b6a7943eb523" title="Converts a CARTA polarization type to the corresponding CASA Stokes type." alt="" coords="1146,1158,1306,1184"/>
 <area shape="poly" id="edge41_Node000030_Node000032" title=" " alt="" coords="1040,1168,1133,1168,1133,1174,1040,1174"/>
 <area shape="poly" id="edge44_Node000033_Node000005" title=" " alt="" coords="438,179,563,172,723,174,811,181,899,193,987,212,1072,238,1108,255,1142,277,1197,323,1194,328,1139,282,1106,260,1070,243,986,217,898,198,810,186,723,179,563,177,438,184"/>
 <area shape="rect" id="Node000034" href="$classcarta_1_1RegionHandler.html#a772046cac78b7c01f5562e68a07c7447" title=" " alt="" coords="512,112,772,152"/>

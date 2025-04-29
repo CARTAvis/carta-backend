@@ -1,18 +1,18 @@
 <map id="carta::TableController::OnFileListRequest" name="carta::TableController::OnFileListRequest">
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,113,167,153"/>
-<area shape="rect" id="Node000002" href="$File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5" title=" " alt="" coords="257,5,371,31"/>
+<area shape="rect" id="Node000002" href="$File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5" title="Counts the number of items in a given directory." alt="" coords="257,5,371,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="109,110,155,75,214,41,243,30,245,35,216,46,158,79,112,115"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1TableController.html#a5523c384eccdd225df0dddf7cec5e965" title=" " alt="" coords="233,55,395,95"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="165,110,220,96,222,101,167,115"/>
-<area shape="rect" id="Node000004" href="$File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" title=" " alt="" coords="251,120,377,145"/>
+<area shape="rect" id="Node000004" href="$File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" title="Determines the catalog table file type based on its content or file extension." alt="" coords="251,120,377,145"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="167,130,237,130,237,135,167,135"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1ListProgressReporter.html#a10a2db7d423b702b8a3f7537b348de1d" title=" " alt="" coords="215,170,413,210"/>
 <area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="167,150,222,164,220,169,165,155"/>
 <area shape="rect" id="Node000009" href="$classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b" title=" " alt="" coords="215,234,413,274"/>
 <area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="113,151,159,185,216,220,231,227,229,231,213,224,156,190,110,155"/>
-<area shape="rect" id="Node000005" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="477,75,613,100"/>
+<area shape="rect" id="Node000005" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="477,75,613,100"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="377,118,466,100,467,105,378,123"/>
-<area shape="rect" id="Node000006" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title=" " alt="" coords="503,124,587,149"/>
+<area shape="rect" id="Node000006" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="503,124,587,149"/>
 <area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="378,131,489,133,489,138,378,136"/>
 <area shape="rect" id="Node000008" href="$classMessage.html#a03594461e68b148a3398fbaad3d651a7" title=" " alt="" coords="461,177,628,203"/>
 <area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="413,187,448,187,448,193,413,193"/>

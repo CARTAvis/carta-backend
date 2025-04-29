@@ -77,7 +77,7 @@
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title="Checks if this Stokes source represents an original image.">
 <polygon fill="white" stroke="#666666" points="530.5,-450 417.5,-450 417.5,-420 530.5,-420 530.5,-450"/>
 <text text-anchor="start" x="425.5" y="-438" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
 <text text-anchor="middle" x="474" y="-427" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
@@ -206,7 +206,7 @@
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
 <polygon fill="white" stroke="#666666" points="738,-444.5 594,-444.5 594,-425.5 738,-425.5 738,-444.5"/>
 <text text-anchor="middle" x="666" y="-432.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>

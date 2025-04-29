@@ -57,7 +57,7 @@ var sectionId = 'dynsection-3';
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Retrieves the corresponding CARTA polarization type from an integer value.">
 <polygon fill="#999999" stroke="#666666" points="890,-307.5 787,-307.5 787,-288.5 890,-288.5 890,-307.5"/>
 <text text-anchor="middle" x="838.5" y="-295.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::Get</text>
 </a>

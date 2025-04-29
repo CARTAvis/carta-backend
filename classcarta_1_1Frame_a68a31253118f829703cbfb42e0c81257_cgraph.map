@@ -9,11 +9,11 @@
 <area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="447,96,501,91,501,96,448,101"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1Frame.html#afe9bbcad03f6343aba029f48c4e66dc7" title=" " alt="" coords="500,119,723,145"/>
 <area shape="poly" id="edge8_Node000003_Node000008" title=" " alt="" coords="448,114,486,118,486,123,447,120"/>
-<area shape="rect" id="Node000005" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title=" " alt="" coords="797,5,947,45"/>
+<area shape="rect" id="Node000005" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title="Checks if this Stokes source represents an original image." alt="" coords="797,5,947,45"/>
 <area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="669,67,782,42,783,47,671,73"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117" title=" " alt="" coords="795,70,949,95"/>
 <area shape="poly" id="edge7_Node000004_Node000007" title=" " alt="" coords="708,80,781,80,781,85,708,85"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="1021,13,1213,38"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="1021,13,1213,38"/>
 <area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="947,23,1007,23,1007,28,947,28"/>
 <area shape="rect" id="Node000009" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="771,119,973,145"/>
 <area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="723,129,757,129,757,135,723,135"/>

@@ -66,7 +66,7 @@
 <area shape="poly" id="edge16_Node000009_Node000017" title=" " alt="" coords="1778,279,1908,319,1907,324,1776,284"/>
 <area shape="rect" id="Node000041" href="$classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4" title=" " alt="" coords="818,620,973,660"/>
 <area shape="poly" id="edge31_Node000040_Node000041" title=" " alt="" coords="739,637,804,637,804,643,739,643"/>
-<area shape="rect" id="Node000043" href="$Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" title=" " alt="" coords="813,685,978,710"/>
+<area shape="rect" id="Node000043" href="$Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="813,685,978,710"/>
 <area shape="poly" id="edge33_Node000040_Node000043" title=" " alt="" coords="702,650,826,679,825,684,700,655"/>
 <area shape="rect" id="Node000042" href="$classcarta_1_1FileInfoLoader.html#a3395971925347571f4724f7ee714a85a" title=" " alt="" coords="1072,620,1227,660"/>
 <area shape="poly" id="edge32_Node000041_Node000042" title=" " alt="" coords="973,637,1058,637,1058,643,973,643"/>
@@ -78,7 +78,7 @@
 <area shape="poly" id="edge40_Node000044_Node000047" title=" " alt="" coords="732,286,798,278,799,283,733,291"/>
 <area shape="rect" id="Node000066" href="$classcarta_1_1FitsHduList.html#aae758ae3882416bb039c090209fcf5ad" title=" " alt="" coords="828,364,963,404"/>
 <area shape="poly" id="edge41_Node000044_Node000066" title=" " alt="" coords="705,316,824,357,822,362,703,321"/>
-<area shape="rect" id="Node000068" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title=" " alt="" coords="1081,498,1218,523"/>
+<area shape="rect" id="Node000068" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title="Checks whether a given file is a compressed FITS file." alt="" coords="1081,498,1218,523"/>
 <area shape="poly" id="edge43_Node000044_Node000068" title=" " alt="" coords="733,299,807,305,883,314,951,329,977,338,996,350,1011,366,1019,383,1022,418,1025,452,1031,468,1044,483,1069,498,1066,503,1041,487,1027,471,1020,453,1017,418,1014,384,1007,369,993,354,975,343,949,334,882,320,806,310,733,305"/>
 <area shape="rect" id="Node000072" href="$classcarta_1_1FileExtInfoLoader.html#a52af5bc1b2fbb1cbeb91ceb48d8ba685" title=" " alt="" coords="807,428,983,468"/>
 <area shape="poly" id="edge44_Node000044_Node000072" title=" " alt="" coords="668,317,724,365,760,391,797,414,811,420,809,425,795,418,757,395,721,369,665,321"/>

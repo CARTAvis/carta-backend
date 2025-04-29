@@ -1,6 +1,6 @@
 <map id="carta::CartaMiriadImage::NativeType" name="carta::CartaMiriadImage::NativeType">
 <area shape="rect" id="Node000001" title=" " alt="" coords="2696,314,2876,354"/>
-<area shape="rect" id="Node000002" href="$Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56" title=" " alt="" coords="2435,321,2648,347"/>
+<area shape="rect" id="Node000002" href="$Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56" title="Determines the spectral coordinate preferences based on an image&#39;s native spectral type." alt="" coords="2435,321,2648,347"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="2682,337,2648,337,2648,331,2682,331"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#afa8f0f9632377d270f5e92deae4ff8a3" title=" " alt="" coords="2164,292,2387,317"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="2421,323,2387,320,2387,314,2421,318"/>

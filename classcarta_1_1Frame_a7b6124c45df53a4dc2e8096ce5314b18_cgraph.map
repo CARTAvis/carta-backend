@@ -25,9 +25,9 @@
 <area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="437,276,479,272,480,277,438,281"/>
 <area shape="rect" id="Node000011" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="489,308,692,333"/>
 <area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="439,333,475,329,476,335,440,338"/>
-<area shape="rect" id="Node000012" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title=" " alt="" coords="522,357,659,383"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" title="Retrieves the corresponding CARTA polarization type from an integer value." alt="" coords="522,357,659,383"/>
 <area shape="poly" id="edge12_Node000010_Node000012" title=" " alt="" coords="440,353,509,360,508,365,439,358"/>
-<area shape="rect" id="Node000013" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title=" " alt="" coords="495,407,687,432"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="495,407,687,432"/>
 <area shape="poly" id="edge13_Node000010_Node000013" title=" " alt="" coords="404,364,442,375,490,391,524,401,522,406,489,397,441,381,402,369"/>
 <area shape="rect" id="Node000014" href="$classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9" title=" " alt="" coords="497,456,684,481"/>
 <area shape="poly" id="edge14_Node000010_Node000014" title=" " alt="" coords="422,364,443,376,459,393,468,411,475,427,491,443,501,448,498,453,488,447,471,430,463,413,455,396,440,380,419,369"/>

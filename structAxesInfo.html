@@ -102,6 +102,9 @@ $(document).ready(function(){initNavTree('structAxesInfo.html',''); initResizabl
 </div><!--header-->
 <div class="contents">
 
+<p>Stores information about image axes, including spatial and spectral components.  
+ <a href="structAxesInfo.html#details">More...</a></p>
+
 <p><code>#include &lt;Image.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for AxesInfo:</div>
@@ -112,34 +115,49 @@ Collaboration diagram for AxesInfo:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a8c8d3cfa85926250af812828d04fe8da" id="r_a8c8d3cfa85926250af812828d04fe8da"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#a8c8d3cfa85926250af812828d04fe8da">AxesInfo</a> ()</td></tr>
+<tr class="memdesc:a8c8d3cfa85926250af812828d04fe8da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor initialising all axes to -1 (undefined).  <br /></td></tr>
 <tr class="separator:a8c8d3cfa85926250af812828d04fe8da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a926656b9703a5bee01cc02e9f12824d7" id="r_a926656b9703a5bee01cc02e9f12824d7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#a926656b9703a5bee01cc02e9f12824d7">AxesInfo</a> (const std::vector&lt; int &gt; render, const std::vector&lt; int &gt; spatial, int <a class="el" href="structAxesInfo.html#ab7f0396d92c45ac54d7715e826ed1431">spectral</a>)</td></tr>
+<tr class="memdesc:a926656b9703a5bee01cc02e9f12824d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor initialising rendering and spatial axes.  <br /></td></tr>
 <tr class="separator:a926656b9703a5bee01cc02e9f12824d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa336889948ea6c4c19d6b59d2c5e5b93" id="r_aa336889948ea6c4c19d6b59d2c5e5b93"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#aa336889948ea6c4c19d6b59d2c5e5b93">AxesInfo</a> (const std::vector&lt; int &gt; render, std::vector&lt; int &gt; spatial, int <a class="el" href="structAxesInfo.html#ab7f0396d92c45ac54d7715e826ed1431">spectral</a>, int <a class="el" href="structAxesInfo.html#a1b6c7840f27209403d351e39c517e854">z</a>, int <a class="el" href="structAxesInfo.html#a1eb9dac77b971da9873c16b141b68687">stokes</a>)</td></tr>
+<tr class="memdesc:aa336889948ea6c4c19d6b59d2c5e5b93"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor initialising rendering, spatial, spectral, Z, and stokes axes.  <br /></td></tr>
 <tr class="separator:aa336889948ea6c4c19d6b59d2c5e5b93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7cc47d0cc4c2391b17858a25509554f8" id="r_a7cc47d0cc4c2391b17858a25509554f8"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#a7cc47d0cc4c2391b17858a25509554f8">Render</a> ()</td></tr>
+<tr class="memdesc:a7cc47d0cc4c2391b17858a25509554f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the rendering axes (X and Y).  <br /></td></tr>
 <tr class="separator:a7cc47d0cc4c2391b17858a25509554f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a238f0f3e3b917094c75468c9c316e091" id="r_a238f0f3e3b917094c75468c9c316e091"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#a238f0f3e3b917094c75468c9c316e091">Spatial</a> ()</td></tr>
+<tr class="memdesc:a238f0f3e3b917094c75468c9c316e091"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the spatial axes (spatial_x and spatial_y).  <br /></td></tr>
 <tr class="separator:a238f0f3e3b917094c75468c9c316e091"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:ab987df322689a4f451af2174fe2ae997" id="r_ab987df322689a4f451af2174fe2ae997"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#ab987df322689a4f451af2174fe2ae997">x</a></td></tr>
+<tr class="memdesc:ab987df322689a4f451af2174fe2ae997"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of the X-axis for rendering.  <br /></td></tr>
 <tr class="separator:ab987df322689a4f451af2174fe2ae997"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a440b43ab6153fc0f77e7c10f08898198" id="r_a440b43ab6153fc0f77e7c10f08898198"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#a440b43ab6153fc0f77e7c10f08898198">y</a></td></tr>
+<tr class="memdesc:a440b43ab6153fc0f77e7c10f08898198"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of the Y-axis for rendering.  <br /></td></tr>
 <tr class="separator:a440b43ab6153fc0f77e7c10f08898198"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5f5be72ebe48e7358376eab3981281b" id="r_ae5f5be72ebe48e7358376eab3981281b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#ae5f5be72ebe48e7358376eab3981281b">spatial_x</a></td></tr>
+<tr class="memdesc:ae5f5be72ebe48e7358376eab3981281b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of the spatial X-axis.  <br /></td></tr>
 <tr class="separator:ae5f5be72ebe48e7358376eab3981281b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a71369f53835531b95ae42a7d5054eb" id="r_a9a71369f53835531b95ae42a7d5054eb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#a9a71369f53835531b95ae42a7d5054eb">spatial_y</a></td></tr>
+<tr class="memdesc:a9a71369f53835531b95ae42a7d5054eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of the spatial Y-axis.  <br /></td></tr>
 <tr class="separator:a9a71369f53835531b95ae42a7d5054eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7f0396d92c45ac54d7715e826ed1431" id="r_ab7f0396d92c45ac54d7715e826ed1431"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#ab7f0396d92c45ac54d7715e826ed1431">spectral</a></td></tr>
+<tr class="memdesc:ab7f0396d92c45ac54d7715e826ed1431"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of the spectral axis (if applicable).  <br /></td></tr>
 <tr class="separator:ab7f0396d92c45ac54d7715e826ed1431"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b6c7840f27209403d351e39c517e854" id="r_a1b6c7840f27209403d351e39c517e854"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#a1b6c7840f27209403d351e39c517e854">z</a></td></tr>
+<tr class="memdesc:a1b6c7840f27209403d351e39c517e854"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of the Z-axis (if applicable).  <br /></td></tr>
 <tr class="separator:a1b6c7840f27209403d351e39c517e854"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1eb9dac77b971da9873c16b141b68687" id="r_a1eb9dac77b971da9873c16b141b68687"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structAxesInfo.html#a1eb9dac77b971da9873c16b141b68687">stokes</a></td></tr>
+<tr class="memdesc:a1eb9dac77b971da9873c16b141b68687"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of the stokes axis (if applicable).  <br /></td></tr>
 <tr class="separator:a1eb9dac77b971da9873c16b141b68687"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Stores information about image axes, including spatial and spectral components. </p>
+<p>This struct holds indices for different axes used in image rendering, spatial mapping, spectral representation, and stokes parameters. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a8c8d3cfa85926250af812828d04fe8da" name="a8c8d3cfa85926250af812828d04fe8da"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8c8d3cfa85926250af812828d04fe8da">&#9670;&#160;</a></span>AxesInfo() <span class="overload">[1/3]</span></h2>
 
@@ -162,6 +180,8 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Default constructor initialising all axes to -1 (undefined). </p>
 
 </div>
 </div>
@@ -204,6 +224,16 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Constructor initialising rendering and spatial axes. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">render</td><td>A vector containing the X and Y rendering axes. </td></tr>
+    <tr><td class="paramname">spatial</td><td>A vector containing the spatial X and Y axes. </td></tr>
+    <tr><td class="paramname">spectral</td><td>The spectral axis index. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -259,6 +289,18 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Constructor initialising rendering, spatial, spectral, Z, and stokes axes. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">render</td><td>A vector containing the X and Y rendering axes. </td></tr>
+    <tr><td class="paramname">spatial</td><td>A vector containing the spatial X and Y axes. </td></tr>
+    <tr><td class="paramname">spectral</td><td>The spectral axis index. </td></tr>
+    <tr><td class="paramname">z</td><td>The Z-axis index. </td></tr>
+    <tr><td class="paramname">stokes</td><td>The stokes axis index. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -285,6 +327,9 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Retrieves the rendering axes (X and Y). </p>
+<dl class="section return"><dt>Returns</dt><dd>A vector containing the X and Y rendering axes. </dd></dl>
+
 </div>
 </div>
 <a id="a238f0f3e3b917094c75468c9c316e091" name="a238f0f3e3b917094c75468c9c316e091"></a>
@@ -310,6 +355,9 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Retrieves the spatial axes (spatial_x and spatial_y). </p>
+<dl class="section return"><dt>Returns</dt><dd>A vector containing the spatial X and Y axes. </dd></dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
@@ -325,6 +373,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Index of the spatial X-axis. </p>
+
 </div>
 </div>
 <a id="a9a71369f53835531b95ae42a7d5054eb" name="a9a71369f53835531b95ae42a7d5054eb"></a>
@@ -338,6 +388,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Index of the spatial Y-axis. </p>
 
 </div>
 </div>
@@ -353,6 +405,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Index of the spectral axis (if applicable). </p>
+
 </div>
 </div>
 <a id="a1eb9dac77b971da9873c16b141b68687" name="a1eb9dac77b971da9873c16b141b68687"></a>
@@ -366,6 +420,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Index of the stokes axis (if applicable). </p>
 
 </div>
 </div>
@@ -381,6 +437,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Index of the X-axis for rendering. </p>
+
 </div>
 </div>
 <a id="a440b43ab6153fc0f77e7c10f08898198" name="a440b43ab6153fc0f77e7c10f08898198"></a>
@@ -395,6 +453,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Index of the Y-axis for rendering. </p>
+
 </div>
 </div>
 <a id="a1b6c7840f27209403d351e39c517e854" name="a1b6c7840f27209403d351e39c517e854"></a>
@@ -408,6 +468,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Index of the Z-axis (if applicable). </p>
 
 </div>
 </div>

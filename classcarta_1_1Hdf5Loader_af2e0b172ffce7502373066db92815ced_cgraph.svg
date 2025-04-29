@@ -86,7 +86,7 @@ var sectionId = 'dynsection-5';
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<g id="a_Node000018"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title="Checks if this Stokes source represents an original image.">
 <polygon fill="white" stroke="#666666" points="584,-30 471,-30 471,0 584,0 584,-30"/>
 <text text-anchor="start" x="479" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
 <text text-anchor="middle" x="527.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
@@ -462,7 +462,7 @@ var sectionId = 'dynsection-5';
 <!-- Node17 -->
 <g id="Node000017" class="node">
 <title>Node17</title>
-<g id="a_Node000017"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title=" ">
+<g id="a_Node000017"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive).">
 <polygon fill="white" stroke="#666666" points="981.5,-345.5 894.5,-345.5 894.5,-326.5 981.5,-326.5 981.5,-345.5"/>
 <text text-anchor="middle" x="938" y="-333.5" font-family="Helvetica,sans-Serif" font-size="10.00">NormalizeUnit</text>
 </a>
@@ -480,7 +480,7 @@ var sectionId = 'dynsection-5';
 <!-- Node19 -->
 <g id="Node000019" class="node">
 <title>Node19</title>
-<g id="a_Node000019"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<g id="a_Node000019"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
 <polygon fill="white" stroke="#666666" points="829.5,-24.5 685.5,-24.5 685.5,-5.5 829.5,-5.5 829.5,-24.5"/>
 <text text-anchor="middle" x="757.5" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>

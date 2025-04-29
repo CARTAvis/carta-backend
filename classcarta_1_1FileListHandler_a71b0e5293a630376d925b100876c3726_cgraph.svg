@@ -86,7 +86,7 @@ var sectionId = 'dynsection-9';
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title="Determines the image type of a given filename using Casacore.">
 <polygon fill="white" stroke="#666666" points="451,-410.5 336,-410.5 336,-391.5 451,-391.5 451,-410.5"/>
 <text text-anchor="middle" x="393.5" y="-398.5" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
 </a>
@@ -142,7 +142,7 @@ var sectionId = 'dynsection-9';
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf" target="_top" xlink:title=" ">
+<g id="a_Node000007"><a xlink:href="File_8cc.html#af9947f7bb03abff3412672068ab7acdf" target="_top" xlink:title="Determines the region file type based on its content or extension.">
 <polygon fill="white" stroke="#666666" points="618,-276.5 515,-276.5 515,-257.5 618,-257.5 618,-276.5"/>
 <text text-anchor="middle" x="566.5" y="-264.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessRegionType</text>
 </a>
@@ -160,7 +160,7 @@ var sectionId = 'dynsection-9';
 <!-- Node9 -->
 <g id="Node000009" class="node">
 <title>Node9</title>
-<g id="a_Node000009"><a xlink:href="File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5" target="_top" xlink:title=" ">
+<g id="a_Node000009"><a xlink:href="File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5" target="_top" xlink:title="Counts the number of items in a given directory.">
 <polygon fill="white" stroke="#666666" points="436,-238.5 351,-238.5 351,-219.5 436,-219.5 436,-238.5"/>
 <text text-anchor="middle" x="393.5" y="-226.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetNumItems</text>
 </a>
@@ -197,7 +197,7 @@ var sectionId = 'dynsection-9';
 <!-- Node11 -->
 <g id="Node000011" class="node">
 <title>Node11</title>
-<g id="a_Node000011"><a xlink:href="Casacore_8cc.html#a5c9a1def63cd54cea5e9cf5b893b5708" target="_top" xlink:title=" ">
+<g id="a_Node000011"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="455.5,-152.5 331.5,-152.5 331.5,-133.5 455.5,-133.5 455.5,-152.5"/>
 <text text-anchor="middle" x="393.5" y="-140.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -215,7 +215,7 @@ var sectionId = 'dynsection-9';
 <!-- Node12 -->
 <g id="Node000012" class="node">
 <title>Node12</title>
-<g id="a_Node000012"><a xlink:href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" target="_top" xlink:title=" ">
+<g id="a_Node000012"><a xlink:href="File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" target="_top" xlink:title="Determines the image file type based on its content or extension.">
 <polygon fill="white" stroke="#666666" points="443.5,-115.5 343.5,-115.5 343.5,-96.5 443.5,-96.5 443.5,-115.5"/>
 <text text-anchor="middle" x="393.5" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessImageType</text>
 </a>
@@ -299,7 +299,7 @@ var sectionId = 'dynsection-9';
 <!-- Node8 -->
 <g id="Node000008" class="node">
 <title>Node8</title>
-<g id="a_Node000008"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title=" ">
+<g id="a_Node000008"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
 <polygon fill="white" stroke="#666666" points="728,-244.5 665,-244.5 665,-225.5 728,-225.5 728,-244.5"/>
 <text text-anchor="middle" x="696.5" y="-232.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>
@@ -326,7 +326,7 @@ var sectionId = 'dynsection-9';
 <!-- Node13 -->
 <g id="Node000013" class="node">
 <title>Node13</title>
-<g id="a_Node000013"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title=" ">
+<g id="a_Node000013"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
 <polygon fill="white" stroke="#666666" points="617.5,-149.5 515.5,-149.5 515.5,-130.5 617.5,-130.5 617.5,-149.5"/>
 <text text-anchor="middle" x="566.5" y="-137.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>
@@ -344,7 +344,7 @@ var sectionId = 'dynsection-9';
 <!-- Node14 -->
 <g id="Node000014" class="node">
 <title>Node14</title>
-<g id="a_Node000014"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title=" ">
+<g id="a_Node000014"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title="Determines if a given magic number corresponds to a gzip&#45;compressed file.">
 <polygon fill="white" stroke="#666666" points="619.5,-112.5 513.5,-112.5 513.5,-93.5 619.5,-93.5 619.5,-112.5"/>
 <text text-anchor="middle" x="566.5" y="-100.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
 </a>

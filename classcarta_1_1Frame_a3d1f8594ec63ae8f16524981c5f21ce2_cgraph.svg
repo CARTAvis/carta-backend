@@ -193,7 +193,7 @@ var sectionId = 'dynsection-32';
 <!-- Node14 -->
 <g id="Node000014" class="node">
 <title>Node14</title>
-<g id="a_Node000014"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<g id="a_Node000014"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
 <polygon fill="white" stroke="#666666" points="898,-383 754,-383 754,-364 898,-364 898,-383"/>
 <text text-anchor="middle" x="826" y="-371" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>
@@ -230,7 +230,7 @@ var sectionId = 'dynsection-32';
 <!-- Node20 -->
 <g id="Node000020" class="node">
 <title>Node20</title>
-<g id="a_Node000020"><a xlink:href="structPointXy.html#ae53c1507f25ca4218505925d7505b464" target="_top" xlink:title=" ">
+<g id="a_Node000020"><a xlink:href="structPointXy.html#ae53c1507f25ca4218505925d7505b464" target="_top" xlink:title="Checks if the point is within the given image axis ranges.">
 <polygon fill="white" stroke="#666666" points="297,-181 198,-181 198,-162 297,-162 297,-181"/>
 <text text-anchor="middle" x="247.5" y="-169" font-family="Helvetica,sans-Serif" font-size="10.00">PointXy::InImage</text>
 </a>
@@ -248,7 +248,7 @@ var sectionId = 'dynsection-32';
 <!-- Node21 -->
 <g id="Node000021" class="node">
 <title>Node21</title>
-<g id="a_Node000021"><a xlink:href="structPointXy.html#a8346106fda170e511b843f0d47fe3dfa" target="_top" xlink:title=" ">
+<g id="a_Node000021"><a xlink:href="structPointXy.html#a8346106fda170e511b843f0d47fe3dfa" target="_top" xlink:title="Converts floating&#45;point coordinates to integer indices.">
 <polygon fill="white" stroke="#666666" points="495,-162 398,-162 398,-143 495,-143 495,-162"/>
 <text text-anchor="middle" x="446.5" y="-150" font-family="Helvetica,sans-Serif" font-size="10.00">PointXy::ToIndex</text>
 </a>
@@ -438,7 +438,7 @@ var sectionId = 'dynsection-32';
 <!-- Node13 -->
 <g id="Node000013" class="node">
 <title>Node13</title>
-<g id="a_Node000013"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<g id="a_Node000013"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title="Checks if this Stokes source represents an original image.">
 <polygon fill="white" stroke="#666666" points="698.5,-388.5 585.5,-388.5 585.5,-358.5 698.5,-358.5 698.5,-388.5"/>
 <text text-anchor="start" x="593.5" y="-376.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
 <text text-anchor="middle" x="642" y="-365.5" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
@@ -520,7 +520,7 @@ var sectionId = 'dynsection-32';
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title=" ">
+<g id="a_Node000018"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title="Retrieves the corresponding CARTA polarization type from an integer value.">
 <polygon fill="white" stroke="#666666" points="693.5,-214 590.5,-214 590.5,-195 693.5,-195 693.5,-214"/>
 <text text-anchor="middle" x="642" y="-202" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::Get</text>
 </a>

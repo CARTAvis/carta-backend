@@ -4,7 +4,7 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,203,268,110,271,114,100,208"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1Table.html#a3991348408dd1a1e016abbfcab82f457" title=" " alt="" coords="192,205,420,231"/>
 <area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="145,215,178,215,178,221,145,221"/>
-<area shape="rect" id="Node000014" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title=" " alt="" coords="238,255,374,280"/>
+<area shape="rect" id="Node000014" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="238,255,374,280"/>
 <area shape="poly" id="edge14_Node000001_Node000014" title=" " alt="" coords="134,228,193,241,232,249,231,254,191,246,133,233"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc" title=" " alt="" coords="743,151,909,191"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="420,90,545,97,613,105,679,117,724,129,767,144,765,149,723,134,678,122,612,111,545,103,420,96"/>

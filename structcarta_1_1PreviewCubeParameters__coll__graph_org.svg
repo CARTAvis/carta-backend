@@ -43,7 +43,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="structAxisRange.html" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="structAxisRange.html" target="_top" xlink:title="Represents a range along an axis.">
 <polygon fill="white" stroke="#666666" points="131.01,-103 63.01,-103 63.01,-84 131.01,-84 131.01,-103"/>
 <text text-anchor="middle" x="97.01" y="-91" font-family="Helvetica,sans-Serif" font-size="10.00">AxisRange</text>
 </a>

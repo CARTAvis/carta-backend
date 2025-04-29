@@ -347,7 +347,7 @@ var sectionId = 'dynsection-2';
 <!-- Node10 -->
 <g id="Node000010" class="node">
 <title>Node10</title>
-<g id="a_Node000010"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title=" ">
+<g id="a_Node000010"><a xlink:href="String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" target="_top" xlink:title="Splits a string into parts based on a specified delimiter.">
 <polygon fill="white" stroke="#666666" points="602.5,-192.5 535.5,-192.5 535.5,-173.5 602.5,-173.5 602.5,-192.5"/>
 <text text-anchor="middle" x="569" y="-180.5" font-family="Helvetica,sans-Serif" font-size="10.00">SplitString</text>
 </a>
@@ -421,7 +421,7 @@ var sectionId = 'dynsection-2';
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" target="_top" xlink:title=" ">
+<g id="a_Node000018"><a xlink:href="Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" target="_top" xlink:title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression.">
 <polygon fill="white" stroke="#666666" points="640,-72.5 498,-72.5 498,-53.5 640,-53.5 640,-72.5"/>
 <text text-anchor="middle" x="569" y="-60.5" font-family="Helvetica,sans-Serif" font-size="10.00">ParseHistoryBeamHeader</text>
 </a>

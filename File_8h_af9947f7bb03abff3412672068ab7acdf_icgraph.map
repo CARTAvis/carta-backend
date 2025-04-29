@@ -1,5 +1,5 @@
 <map id="GuessRegionType" name="GuessRegionType">
-<area shape="rect" id="Node000001" title=" " alt="" coords="673,74,811,99"/>
+<area shape="rect" id="Node000001" title="Determines the region file type based on its content or extension." alt="" coords="673,74,811,99"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1FileListHandler.html#a7f4f8c5ad7eb30ad51a712446752283d" title=" " alt="" coords="465,95,625,135"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="660,101,626,106,625,101,659,96"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1FileListHandler.html#a1c0729f201216e2ee578126c9fa49f41" title=" " alt="" coords="240,37,400,77"/>

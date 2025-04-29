@@ -583,7 +583,7 @@ var sectionId = 'dynsection-18';
 <!-- Node23 -->
 <g id="Node000023" class="node">
 <title>Node23</title>
-<g id="a_Node000023"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title=" ">
+<g id="a_Node000023"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title="Checks if this Stokes source represents an original image.">
 <polygon fill="white" stroke="#666666" points="942.5,-308 829.5,-308 829.5,-278 942.5,-278 942.5,-308"/>
 <text text-anchor="start" x="837.5" y="-296" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
 <text text-anchor="middle" x="886" y="-285" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
@@ -620,7 +620,7 @@ var sectionId = 'dynsection-18';
 <!-- Node24 -->
 <g id="Node000024" class="node">
 <title>Node24</title>
-<g id="a_Node000024"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title=" ">
+<g id="a_Node000024"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
 <polygon fill="white" stroke="#666666" points="1142,-379.5 998,-379.5 998,-360.5 1142,-360.5 1142,-379.5"/>
 <text text-anchor="middle" x="1070" y="-367.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
 </a>
@@ -683,7 +683,7 @@ var sectionId = 'dynsection-18';
 <!-- Node30 -->
 <g id="Node000030" class="node">
 <title>Node30</title>
-<g id="a_Node000030"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title=" ">
+<g id="a_Node000030"><a xlink:href="classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e" target="_top" xlink:title="Retrieves the corresponding CARTA polarization type from an integer value.">
 <polygon fill="white" stroke="#666666" points="937.5,-495.5 834.5,-495.5 834.5,-476.5 937.5,-476.5 937.5,-495.5"/>
 <text text-anchor="middle" x="886" y="-483.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::Get</text>
 </a>
