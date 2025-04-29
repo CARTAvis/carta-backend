@@ -326,8 +326,8 @@ void NormalizeUnit(casacore::String& unit) {
 
 /**
  * @details This function uses regex to check if unit is in the GILDAS CLASS software format
- * '<unit> (T<type>)' where the <type> describes the temperature T.
- * It also tests for casacore Unit name changes where ' ' and '*' are replaced with '.'.
+ * "unit (Ttype)" where the "type" describes the temperature T.
+ * It also tests for casacore Unit name changes where " " and "*" are replaced with ".".
  * For example: "K (Ta*)" -->  "K.(Ta.)" in casacore.
  */
 bool IsGildasUnit(const casacore::String& unit) {
