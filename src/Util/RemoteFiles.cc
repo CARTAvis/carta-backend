@@ -9,6 +9,14 @@
 #include <cmath>
 #include "String.h"
 
+/**
+ * @details This function validates the `CARTA::RemoteFileRequest` parameters and constructs a URL
+ * to fetch an image from the HiPS service. If any required parameters are missing or invalid,
+ * it returns `false` and provides an appropriate error message.
+ *
+ * @note The function ensures that all required parameters are present and valid before constructing the URL.
+ *       If `wcs` is not provided, additional fields such as `coordsys`, `projection`, `fov`, and `object` or `(ra, dec)` must be specified.
+ */
 bool GenerateUrlFromRequest(const CARTA::RemoteFileRequest& request, std::string& url, std::string& error_message) {
     // Check for required fields
     if (request.hips().empty()) {
