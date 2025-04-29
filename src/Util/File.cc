@@ -12,6 +12,17 @@
 
 #include "String.h"
 
+/**
+ * @details This function opens the specified file and reads the first 4 bytes as a `uint32_t` magic number.
+ *
+ * @note
+ * - The function assumes the file's magic number is stored in the first 4 bytes.
+ * - Reads the file in **binary mode** would be safer to avoid unwanted conversions.
+ * - The byte order (endianness) of the magic number depends on the system architecture.
+ *
+ * @warning
+ * - If the file does not exist or is not readable, the function returns `0` without error messages.
+ */
 uint32_t GetMagicNumber(const std::string& filename) {
     uint32_t magic_number = 0;
 
@@ -24,6 +35,11 @@ uint32_t GetMagicNumber(const std::string& filename) {
     return magic_number;
 }
 
+/**
+ * @details This function first determines if the file is gzip-compressed by examining its
+ * magic number. If the file is gzip-compressed, it then checks whether the
+ * original filename (before compression) has a `.fits` extension.
+ */
 bool IsCompressedFits(const std::string& filename) {
     // Check if gzip file, then check .fits extension
     if (IsGzMagicNumber(GetMagicNumber(filename))) {
@@ -35,16 +51,40 @@ bool IsCompressedFits(const std::string& filename) {
     return false;
 }
 
+/**
+ * @details This function uses a regular expression to determine if the provided filename
+ * starts with "http://" or "https://", indicating that it is a remote file
+ * accessible via HTTP.
+ *
+ * @note This function does not verify if the URL is accessible or valid beyond its prefix.
+ */
 bool IsRemoteHttpFile(const std::string& filename) {
     const std::regex is_http_url("^https?://");
     return std::regex_search(filename, is_http_url);
 }
 
+/**
+ * @details This function checks whether the provided 32-bit magic number matches the
+ * gzip file signature (`0x1f8b`). The magic number is formatted as a hexadecimal
+ * string and examined to see if it ends with "8b1f".
+ *
+ * @note This function assumes little-endian byte order for checking the magic number.
+ */
 bool IsGzMagicNumber(uint32_t magic_number) {
     std::string hex_string = fmt::format("{:#x}", magic_number);
     return (hex_string.length() > 4) && (hex_string.substr(hex_string.length() - 4) == "8b1f");
 }
 
+/**
+ * @details This function iterates over the contents of the specified directory and counts
+ * the number of files and subdirectories present. If the directory does not exist
+ * or cannot be accessed, the function returns `-1`.
+ *
+ * @note This function does not distinguish between files and subdirectories; it counts both.
+ *
+ * @warning If the path is invalid or inaccessible, an exception is caught internally,
+ *          and `-1` is returned.
+ */
 int GetNumItems(const std::string& path) {
     try {
         int counter = 0;
@@ -60,6 +100,17 @@ int GetNumItems(const std::string& path) {
 
 // quick alternative to bp::search_path that allows us to remove
 // boost:filesystem dependency
+/**
+ * @details This function retrieves the `PATH` environment variable, splits it into individual
+ * directory paths, and searches for the specified file within those directories.
+ * If the file is found, its full path is returned. If not found or if an error occurs,
+ * an empty `fs::path` is returned.
+ *
+ * @note This function assumes that path entries in `PATH` are separated by colons (`:`),
+ *       which is standard on UNIX-like systems.
+ *
+ * @warning If the `PATH` environment variable is not set, this function may behave unexpectedly.
+ */
 fs::path SearchPath(std::string filename) {
     std::string path(std::getenv("PATH"));
     std::vector<std::string> path_strings;
@@ -79,6 +130,18 @@ fs::path SearchPath(std::string filename) {
     return fs::path();
 }
 
+/**
+ * @details This function attempts to identify the type of an image file either by checking
+ * its magic number (file signature) or examining its file extension. If `check_content`
+ * is set to `true`, the function inspects the file's magic number to classify it as
+ * FITS or HDF5. If `check_content` is `false`, it relies on common file extensions.
+ *
+ * @note When `check_content` is enabled, compressed FITS files (`.fits.gz`) are identified
+ *       by their decompressed filename extension.
+ *
+ * @warning Checking the file content requires reading the file's magic number,
+ *          which may introduce additional I/O overhead.
+ */
 CARTA::FileType GuessImageType(const std::string& path_string, bool check_content) {
     if (check_content) {
         // Guess file type by magic number
@@ -107,6 +170,19 @@ CARTA::FileType GuessImageType(const std::string& path_string, bool check_conten
     return CARTA::UNKNOWN;
 }
 
+/**
+ * @details This function attempts to identify the type of a region file used in astronomical
+ * imaging analysis by either checking its file content or examining its file extension.
+ * If `check_content` is `true`, it reads the first line of the file to identify
+ * known headers (e.g., `#CRTF` or `# Region file format: DS9`). Otherwise, it determines
+ * the file type based on its extension.
+ *
+ * @note CRTF files typically start with `#CRTF`, while DS9 region files may include
+ *       `# Region file format: DS9` as an optional header.
+ *
+ * @warning Checking file content requires reading the first line, which may introduce
+ *          a slight I/O overhead.
+ */
 CARTA::FileType GuessRegionType(const std::string& path_string, bool check_content) {
     if (check_content) {
         // Check beginning of file for CRTF or REG header
@@ -141,6 +217,17 @@ CARTA::FileType GuessRegionType(const std::string& path_string, bool check_conte
     return CARTA::UNKNOWN;
 }
 
+/**
+ * @details This function attempts to classify the type of a catalog table file (e.g., FITS table or VOTable)
+ * either by checking its magic number (if `check_content` is `true`) or, if content checking is
+ * disabled, by inspecting the file extension.
+ *
+ * @note If `check_content` is enabled, the function may attempt to read the file's magic number.
+ *       Ensure the file is accessible to avoid potential I/O errors.
+ *
+ * @warning This function does not validate file integrity; it only determines type based on
+ *          basic signature matching or filename extensions.
+ */
 CARTA::CatalogFileType GuessTableType(const std::string& path_string, bool check_content) {
     if (check_content) {
         uint32_t file_magic_number = GetMagicNumber(path_string);
