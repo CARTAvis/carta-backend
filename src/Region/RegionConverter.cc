@@ -494,16 +494,20 @@ std::vector<std::vector<CARTA::Point>> RegionConverter::GetReferencePolygonPoint
     switch (_region_state.type) {
         case CARTA::POINT: {
             points.push_back(_region_state.control_points);
+            break;
         }
         case CARTA::RECTANGLE:
         case CARTA::POLYGON: {
-            return GetApproximatePolygonPoints(num_vertices, has_distortion);
+            points = GetApproximatePolygonPoints(num_vertices, has_distortion);
+            break;
         }
         case CARTA::ELLIPSE: {
             points.push_back(GetApproximateEllipsePoints(num_vertices));
+            break;
         }
-        default:
-            return points;
+        default: {
+            // Return empty vector
+        }
     }
     return points;
 }

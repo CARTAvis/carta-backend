@@ -160,6 +160,13 @@ public:
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
 
+    /**
+     * @brief Decodes a message from a vector of bytes into a specific type.
+     *
+     * @tparam T The type of the message to decode. It must have a `ParseFromArray` method.
+     * @param message A vector of characters containing the encoded message data.
+     * @return The decoded message of type `T`.
+     */
     template <typename T>
     static T DecodeMessage(std::vector<char>& message);
 };
