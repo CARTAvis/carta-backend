@@ -65,9 +65,9 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 }
 
 /**
- * @brief Determines the image type of a directory.  Returns false for all files.
+ * @brief Determines the image type of a directory.  Returns unknown for all files.
  *
- * @param[in] folder The folder path to check, represented as a string.
+ * @param[in] folder_path The folder path to check, represented as a string.
  * @param[out] message Error message if an image but not a supported type
  *
  * @return The CARTA::FileType of the directory, unknown if not an image.
