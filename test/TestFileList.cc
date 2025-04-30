@@ -69,62 +69,50 @@ public:
         EXPECT_GT(response.subdirectories_size(), 0);
     }
 
-    void TestFileListResponse(const CARTA::FileListResponse& response, size_t expected_files, size_t expected_dirs, bool no_info = false) {
+    void TestFileListResponse(
+        const CARTA::FileListResponse& response, size_t expected_files, size_t expected_dirs, bool expect_file_type = true) {
         EXPECT_TRUE(response.success());
         EXPECT_EQ(response.files_size(), expected_files);
         EXPECT_EQ(response.subdirectories_size(), expected_dirs);
 
         for (size_t i = 0; i < response.files_size(); ++i) {
-            TestFileInfo(response.files(i), no_info);
+            TestFileInfo(response.files(i), expect_file_type);
         }
 
         for (size_t i = 0; i < response.subdirectories_size(); ++i) {
-            TestDirectoryInfo(response.subdirectories(i), no_info);
+            TestDirectoryInfo(response.subdirectories(i), expect_file_type);
         }
     }
 
-    void TestFileInfo(const CARTA::FileInfo& file_info, bool no_info) {
+    void TestFileInfo(const CARTA::FileInfo& file_info, bool expect_file_type) {
         // Test contents of FileInfo submessage
-        // Name should always be set
+        // Name, size, date should be set
         EXPECT_GT(file_info.name().size(), 0);
-
-        if (no_info) {
-            // Not set is zero
-            EXPECT_EQ(file_info.size(), 0);
-            EXPECT_EQ(file_info.date(), 0);
-            EXPECT_EQ(file_info.type(), 0);
+        if (file_info.name().find("empty") == std::string::npos) {
+            EXPECT_GT(file_info.size(), 0);
         } else {
-            if (file_info.name().find("empty") == std::string::npos) {
-                EXPECT_GT(file_info.size(), 0);
-            } else {
-                // Empty file has size 0
-                EXPECT_EQ(file_info.size(), 0);
-            }
-            // Date should always be set
-            EXPECT_GT(file_info.date(), 0);
-            // Type 0 is CASA image so cannot test gt 0
-            EXPECT_GE(file_info.type(), 0);
+            // Empty file has size 0
+            EXPECT_EQ(file_info.size(), 0);
+        }
+        EXPECT_GT(file_info.date(), 0);
+
+        // Type set only if filter not AllFiles
+        if (!expect_file_type) {
+            EXPECT_EQ(file_info.type(), CARTA::FileType::UNKNOWN);
         }
     }
 
-    void TestDirectoryInfo(const CARTA::DirectoryInfo& dir_info, bool no_info) {
+    void TestDirectoryInfo(const CARTA::DirectoryInfo& dir_info, bool expect_file_type) {
         // Test contents of DirectoryInfo submessage
-        // Name should always be set
+        // Name, date should always be set
         EXPECT_GT(dir_info.name().size(), 0);
+        EXPECT_GT(dir_info.date(), 0);
 
-        if (no_info) {
-            // Not set is zero
-            EXPECT_EQ(dir_info.date(), 0);
-            EXPECT_EQ(dir_info.item_count(), 0);
+        // Item count set only if know type
+        if (expect_file_type) {
+            EXPECT_GT(dir_info.item_count(), 0);
         } else {
-            // Date should always be set
-            EXPECT_GT(dir_info.date(), 0);
-            if (dir_info.name().find("empty") == std::string::npos) {
-                EXPECT_GT(dir_info.item_count(), 1);
-            } else {
-                // empty directory has a git hidden file!
-                EXPECT_EQ(dir_info.item_count(), 1);
-            }
+            EXPECT_EQ(dir_info.item_count(), 0);
         }
     }
 };
@@ -201,7 +189,7 @@ TEST_F(FileListTest, TestFilterModes) {
     // All are files or dirs
     auto request3 = Message::FileListRequest("data/images/mix", CARTA::FileListFilterMode::AllFiles);
     response = RequestFileList(TestRoot().string(), "", request3);
-    TestFileListResponse(response, 7, 7, true);
+    TestFileListResponse(response, 7, 7, false);
 
     // Filter mode AllFiles with image as directory should have one FileInfo for the image
     auto request4 = Message::FileListRequest("data/images/mix/M17_SWex_unit.image", CARTA::FileListFilterMode::AllFiles);

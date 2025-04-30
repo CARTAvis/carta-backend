@@ -129,11 +129,13 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
         if (carta_file_type != CARTA::FileType::UNKNOWN) {
             // Add image with file info
             auto& file_info = *file_list_response.add_files();
-            // Directory is path to image
-            file_list_response.set_directory(full_path);
-            // Parent is path above directory
+            // Directory is path above image
             casacore::Path image_path(full_path);
-            std::string parent(image_path.dirName());
+            std::string directory(image_path.dirName());
+            file_list_response.set_directory(directory);
+            // Parent is path above directory
+            casacore::Path dir_path(directory);
+            std::string parent(dir_path.dirName());
             file_list_response.set_parent(parent);
             // Image name is base name of image path
             std::string name_only = image_path.baseName();
