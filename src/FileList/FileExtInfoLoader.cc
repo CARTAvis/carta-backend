@@ -1323,7 +1323,8 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
 
             AddBeamEntry(extended_info, gaussian_beam, entry_name, is_history_beam);
         } else {
-            // Add entry for each Stokes
+            // Add entry for each Stokes unless all the same.  Keep in original order with vector.
+            std::vector<std::pair<std::string, casacore::GaussianBeam>> beam_list;
             for (unsigned int i = 0; i < n_stokes; ++i) {
                 // Append Stokes name to entry name
                 if (stokes_names.empty()) {
@@ -1347,9 +1348,9 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
                     // Get beam for channel 0, stokes i
                     gaussian_beam = beam_set.getBeam(0, i);
                 }
-
-                AddBeamEntry(extended_info, gaussian_beam, stokes_entry_name, is_history_beam);
+                beam_list.push_back(std::make_pair(stokes_entry_name, gaussian_beam));
             }
+            AddStokesBeamEntries(extended_info, beam_list, is_history_beam);
         }
     }
 }
@@ -1398,6 +1399,31 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
             header_entry->set_value(fmt::format("{:E}", pa));
             header_entry->set_numeric_value(pa);
             header_entry->set_comment("extracted from HISTORY");
+        }
+    }
+}
+
+void FileExtInfoLoader::AddStokesBeamEntries(
+    CARTA::FileInfoExtended& extended_info, std::vector<std::pair<std::string, casacore::GaussianBeam>>& beam_list, bool is_history_beam) {
+    // Add entry for each Stokes beam or single entry for all Stokes beams if identical
+    bool beams_identical(true);
+    casacore::GaussianBeam gaussian_beam;
+    for (auto& beam : beam_list) {
+        if (gaussian_beam.isNull()) {
+            gaussian_beam = beam.second;
+        } else if (gaussian_beam != beam.second) {
+            beams_identical = false;
+            break;
+        }
+    }
+
+    if (beams_identical) {
+        auto first_entry_name = beam_list[0].first;
+        std::string entry_name = first_entry_name.substr(0, first_entry_name.find(" (")); // Remove " (Stokes X)"
+        AddBeamEntry(extended_info, gaussian_beam, entry_name, is_history_beam);
+    } else {
+        for (auto& beam : beam_list) {
+            AddBeamEntry(extended_info, beam.second, beam.first, is_history_beam);
         }
     }
 }
