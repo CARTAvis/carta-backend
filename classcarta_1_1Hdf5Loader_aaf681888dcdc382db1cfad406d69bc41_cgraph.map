@@ -4,8 +4,8 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,91,209,71,210,76,147,96"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1FileLoader.html#ad006f05ccd020be05834212598e3a38b" title=" " alt="" coords="219,93,357,133"/>
 <area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="155,111,205,111,205,116,155,116"/>
-<area shape="rect" id="Node000008" href="$classcarta_1_1CartaHdf5Image.html#aa163d9cdc235a1e8b1c70679b6538feb" title=" " alt="" coords="203,157,373,197"/>
-<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="147,131,210,151,209,156,145,136"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1CartaHdf5Image.html#aa163d9cdc235a1e8b1c70679b6538feb" title=" " alt="" coords="203,157,373,197"/>
+<area shape="poly" id="edge10_Node000001_Node000010" title=" " alt="" coords="147,131,210,151,209,156,145,136"/>
 <area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="249,30,247,20,253,10,267,5,288,3,312,6,326,13,323,18,311,11,288,8,268,10,256,15,252,21,254,28"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="421,61,573,101"/>
 <area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="357,100,407,92,408,98,358,105"/>
@@ -15,4 +15,8 @@
 <area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="567,132,607,126,608,131,567,137"/>
 <area shape="rect" id="Node000007" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="633,161,749,186"/>
 <area shape="poly" id="edge7_Node000005_Node000007" title=" " alt="" coords="567,153,619,160,618,166,567,158"/>
+<area shape="rect" id="Node000008" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title=" " alt="" coords="808,161,909,186"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="749,171,794,171,794,176,749,176"/>
+<area shape="rect" id="Node000009" href="$Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" title=" " alt="" coords="957,161,1079,186"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="910,171,944,171,944,176,910,176"/>
 </map>

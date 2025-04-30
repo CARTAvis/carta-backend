@@ -46,7 +46,7 @@
   </g>
 </defs>
 <script type="application/ecmascript">
-var viewWidth = 542;
+var viewWidth = 781;
 var viewHeight = 124;
 var sectionId = 'dynsection-9';
 </script>
@@ -101,20 +101,20 @@ var sectionId = 'dynsection-9';
 </a>
 </g>
 </g>
-<!-- Node8 -->
-<g id="Node000008" class="node">
-<title>Node8</title>
-<g id="a_Node000008"><a xlink:href="classcarta_1_1FileLoader.html#a8e756d262c6f5a7af800a7d8e0e8ec17" target="_top" xlink:title=" ">
+<!-- Node10 -->
+<g id="Node000010" class="node">
+<title>Node10</title>
+<g id="a_Node000010"><a xlink:href="classcarta_1_1FileLoader.html#a8e756d262c6f5a7af800a7d8e0e8ec17" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="244,-30 140,-30 140,0 244,0 244,-30"/>
 <text text-anchor="start" x="148" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileLoader::</text>
 <text text-anchor="middle" x="192" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">IsHistoryBeam</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node8 -->
-<g id="edge7_Node000001_Node000008" class="edge">
-<title>Node1&#45;&gt;Node8</title>
-<g id="a_edge7_Node000001_Node000008"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node10 -->
+<g id="edge9_Node000001_Node000010" class="edge">
+<title>Node1&#45;&gt;Node10</title>
+<g id="a_edge9_Node000001_Node000010"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M96.29,-47.94C109.64,-43.3 124.5,-38.13 138.42,-33.29"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="139.57,-36.59 147.87,-30 137.27,-29.98 139.57,-36.59"/>
 </a>
@@ -192,6 +192,42 @@ var sectionId = 'dynsection-9';
 <g id="a_edge6_Node000005_Node000007"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M389.22,-31.48C401.87,-29.62 415.44,-27.63 428.16,-25.76"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="428.76,-29.21 438.15,-24.29 427.75,-22.28 428.76,-29.21"/>
+</a>
+</g>
+</g>
+<!-- Node8 -->
+<g id="Node000008" class="node">
+<title>Node8</title>
+<g id="a_Node000008"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="646,-27.5 570,-27.5 570,-8.5 646,-8.5 646,-27.5"/>
+<text text-anchor="middle" x="608" y="-15.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGildasUnit</text>
+</a>
+</g>
+</g>
+<!-- Node7&#45;&gt;Node8 -->
+<g id="edge7_Node000007_Node000008" class="edge">
+<title>Node7&#45;&gt;Node8</title>
+<g id="a_edge7_Node000007_Node000008"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M525.67,-18C536.62,-18 548.45,-18 559.61,-18"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="559.63,-21.5 569.63,-18 559.63,-14.5 559.63,-21.5"/>
+</a>
+</g>
+</g>
+<!-- Node9 -->
+<g id="Node000009" class="node">
+<title>Node9</title>
+<g id="a_Node000009"><a xlink:href="Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="773,-27.5 682,-27.5 682,-8.5 773,-8.5 773,-27.5"/>
+<text text-anchor="middle" x="727.5" y="-15.5" font-family="Helvetica,sans-Serif" font-size="10.00">GILDAS_REGEX</text>
+</a>
+</g>
+</g>
+<!-- Node8&#45;&gt;Node9 -->
+<g id="edge8_Node000008_Node000009" class="edge">
+<title>Node8&#45;&gt;Node9</title>
+<g id="a_edge8_Node000008_Node000009"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M646.18,-18C654.3,-18 663.05,-18 671.7,-18"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="671.74,-21.5 681.74,-18 671.74,-14.5 671.74,-21.5"/>
 </a>
 </g>
 </g>

@@ -139,6 +139,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a8733accb41db0f83703779c667ae852e" id="r_a8733accb41db0f83703779c667ae852e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a8733accb41db0f83703779c667ae852e">NormalizeUnit</a> (casacore::String &amp;unit)</td></tr>
 <tr class="memdesc:a8733accb41db0f83703779c667ae852e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Normalizes a given unit string to conform to standard Casacore unit conventions (case-sensitive).  <br /></td></tr>
 <tr class="separator:a8733accb41db0f83703779c667ae852e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1417964e00800b515ec0913adaa1957" id="r_af1417964e00800b515ec0913adaa1957"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#af1417964e00800b515ec0913adaa1957">IsGildasUnit</a> (const casacore::String &amp;unit)</td></tr>
+<tr class="separator:af1417964e00800b515ec0913adaa1957"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a460085220f0ce6d3fe661fba5877a796" id="r_a460085220f0ce6d3fe661fba5877a796"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a460085220f0ce6d3fe661fba5877a796">ParseHistoryBeamHeader</a> (std::string &amp;header, std::string &amp;bmaj, std::string &amp;bmin, std::string &amp;bpa)</td></tr>
 <tr class="memdesc:a460085220f0ce6d3fe661fba5877a796"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses an AIPS-style beam header to extract beam parameters with regular expression.  <br /></td></tr>
 <tr class="separator:a460085220f0ce6d3fe661fba5877a796"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -219,22 +221,7 @@ Here is the caller graph for this function:</div>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the paths are valid and the starting directory is within the top-level directory, otherwise <code>false</code>.</dd></dl>
-<p>This function checks and resolves the given top-level and starting directories. If default placeholder values ("base" or "root") are found, they are replaced accordingly. The function verifies that both directories exist and are accessible, and ensures that the starting directory is a valid subdirectory of the top-level directory.</p>
-<dl class="section note"><dt>Note</dt><dd>If <code>starting_string</code> is invalid, it is replaced with <code>top_level_string</code>. </dd>
-<dd>
-If <code>starting_string</code> is not a subdirectory of <code>top_level_string</code>, the function logs a critical error and returns <code>false</code>.</dd></dl>
-<dl class="section warning"><dt>Warning</dt><dd>If both <code>top_level_string</code> and <code>starting_string</code> are set to their default placeholders ("base" and "root"), the function logs a critical error and returns <code>false</code>. </dd></dl>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h_aa05a1fe4e2176aee249351f3e2544441_cgraph.svg" width="311" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h_aa05a1fe4e2176aee249351f3e2544441_icgraph.svg" width="251" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the paths are valid and the starting directory is within the top-level directory, otherwise <code>false</code>. </dd></dl>
 
 </div>
 </div>
@@ -434,6 +421,35 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="af1417964e00800b515ec0913adaa1957" name="af1417964e00800b515ec0913adaa1957"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af1417964e00800b515ec0913adaa1957">&#9670;&#160;</a></span>IsGildasUnit()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool IsGildasUnit </td>
+          <td>(</td>
+          <td class="paramtype">const casacore::String &amp;&#160;</td>
+          <td class="paramname"><em>unit</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This function uses regex to check if unit is in the GILDAS CLASS software format "unit (Ttype)" where the "type" describes the temperature T. It also tests for casacore Unit name changes where " " and "*" are replaced with ".". For example: "K (Ta*)" --&gt; "K.(Ta.)" in casacore. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h_af1417964e00800b515ec0913adaa1957_cgraph.svg" width="282" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_af1417964e00800b515ec0913adaa1957_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
 <a id="aa743c537861c278f5c5620fa996f8153" name="aa743c537861c278f5c5620fa996f8153"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa743c537861c278f5c5620fa996f8153">&#9670;&#160;</a></span>IsSubdirectory()</h2>
 
@@ -511,6 +527,11 @@ Here is the caller graph for this function:</div>
   </table>
   </dd>
 </dl>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h_a8733accb41db0f83703779c667ae852e_cgraph.svg" width="446" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">

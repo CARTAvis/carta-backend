@@ -13,7 +13,7 @@
 <area shape="rect" id="Node000007" href="$classcarta_1_1FileExtInfoLoader.html#a3b46f3add8328b7c49712851a4c26de2" title=" " alt="" coords="322,325,498,365"/>
 <area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="260,343,308,343,308,348,260,348"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1FileExtInfoLoader.html#a91a1a282afb4ad16afc2940da18735d2" title=" " alt="" coords="575,355,751,395"/>
-<area shape="poly" id="edge13_Node000001_Node000008" title=" " alt="" coords="226,363,308,375,410,378,512,375,561,374,561,379,512,380,410,383,308,380,225,368"/>
+<area shape="poly" id="edge15_Node000001_Node000008" title=" " alt="" coords="226,363,308,375,410,378,512,375,561,374,561,379,512,380,410,383,308,380,225,368"/>
 <area shape="rect" id="Node000009" href="$classcarta_1_1CompressedFits.html#a4bd8ce5412d89f601493adccd4aa5c17" title=" " alt="" coords="327,440,493,480"/>
 <area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="180,363,309,419,343,433,341,438,307,424,177,368"/>
 <area shape="rect" id="Node000010" href="$classcarta_1_1CompressedFits.html#a08d166346f4e5dd3261602727205943d" title=" " alt="" coords="327,504,493,544"/>
@@ -25,4 +25,8 @@
 <area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="499,353,562,360,561,366,498,358"/>
 <area shape="rect" id="Node000011" href="$classcarta_1_1CompressedFits.html#a27e31cc4d4f75f55f592a274b898c416" title=" " alt="" coords="560,504,767,544"/>
 <area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="493,521,546,521,546,527,493,527"/>
+<area shape="rect" id="Node000014" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title=" " alt="" coords="613,633,714,658"/>
+<area shape="poly" id="edge13_Node000013_Node000014" title=" " alt="" coords="468,643,599,643,599,648,468,648"/>
+<area shape="rect" id="Node000015" href="$Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" title=" " alt="" coords="815,633,936,658"/>
+<area shape="poly" id="edge14_Node000014_Node000015" title=" " alt="" coords="714,643,801,643,801,648,714,648"/>
 </map>

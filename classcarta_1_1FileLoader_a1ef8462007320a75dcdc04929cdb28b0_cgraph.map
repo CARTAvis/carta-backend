@@ -14,8 +14,8 @@
 <area shape="poly" id="edge16_Node000002_Node000011" title=" " alt="" coords="332,250,379,263,414,271,413,277,378,268,331,255"/>
 <area shape="rect" id="Node000012" href="$classcarta_1_1FileLoader.html#ad006f05ccd020be05834212598e3a38b" title=" " alt="" coords="445,341,583,381"/>
 <area shape="poly" id="edge20_Node000002_Node000012" title=" " alt="" coords="283,251,325,290,352,310,380,327,432,346,430,351,378,332,349,315,322,294,279,255"/>
-<area shape="rect" id="Node000017" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title="Checks if this Stokes source represents an original image." alt="" coords="439,405,589,445"/>
-<area shape="poly" id="edge25_Node000002_Node000017" title=" " alt="" coords="274,252,290,284,313,321,343,359,380,391,402,403,426,411,425,416,400,408,377,396,340,363,309,324,285,286,269,255"/>
+<area shape="rect" id="Node000019" href="$structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" title="Checks if this Stokes source represents an original image." alt="" coords="439,405,589,445"/>
+<area shape="poly" id="edge27_Node000002_Node000019" title=" " alt="" coords="274,252,290,284,313,321,343,359,380,391,402,403,426,411,425,416,400,408,377,396,340,363,309,324,285,286,269,255"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1PolarizationCalculator.html#a972eab3776df84d99cbd231b49e3a969" title=" " alt="" coords="717,141,924,181"/>
 <area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="629,43,651,55,668,72,676,90,684,107,699,123,715,133,713,138,696,127,679,110,671,92,663,75,648,59,626,48"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1PolarizationCalculator.html#af800918471188ab3eb863931a4f89dfe" title=" " alt="" coords="713,8,929,48"/>
@@ -41,6 +41,10 @@
 <area shape="poly" id="edge23_Node000014_Node000015" title=" " alt="" coords="890,289,978,279,979,284,891,295"/>
 <area shape="rect" id="Node000016" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="1003,317,1119,342"/>
 <area shape="poly" id="edge24_Node000014_Node000016" title=" " alt="" coords="891,306,990,318,989,323,890,311"/>
-<area shape="rect" id="Node000018" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="725,413,917,438"/>
-<area shape="poly" id="edge26_Node000017_Node000018" title=" " alt="" coords="590,423,711,423,711,428,590,428"/>
+<area shape="rect" id="Node000017" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title=" " alt="" coords="1179,317,1280,342"/>
+<area shape="poly" id="edge25_Node000016_Node000017" title=" " alt="" coords="1120,327,1165,327,1165,332,1120,332"/>
+<area shape="rect" id="Node000018" href="$Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" title=" " alt="" coords="1328,317,1449,342"/>
+<area shape="poly" id="edge26_Node000017_Node000018" title=" " alt="" coords="1280,327,1314,327,1314,332,1280,332"/>
+<area shape="rect" id="Node000020" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="725,413,917,438"/>
+<area shape="poly" id="edge28_Node000019_Node000020" title=" " alt="" coords="590,423,711,423,711,428,590,428"/>
 </map>

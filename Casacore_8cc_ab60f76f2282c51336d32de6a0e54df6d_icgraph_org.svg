@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title="Validates and resolves folder paths, ensuring the starting directory is within the top&#45;level director...">
+<g id="a_Node000001"><a xlink:title=" ">
 <polygon fill="#999999" stroke="#666666" points="180,-19 77,-19 77,0 180,0 180,-19"/>
 <text text-anchor="middle" x="128.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">CheckFolderPaths</text>
 </a>

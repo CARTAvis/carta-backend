@@ -46,7 +46,7 @@
   </g>
 </defs>
 <script type="application/ecmascript">
-var viewWidth = 998;
+var viewWidth = 1237;
 var viewHeight = 402;
 var sectionId = 'dynsection-5';
 </script>
@@ -83,20 +83,20 @@ var sectionId = 'dynsection-5';
 </a>
 </g>
 </g>
-<!-- Node18 -->
-<g id="Node000018" class="node">
-<title>Node18</title>
-<g id="a_Node000018"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title="Checks if this Stokes source represents an original image.">
+<!-- Node20 -->
+<g id="Node000020" class="node">
+<title>Node20</title>
+<g id="a_Node000020"><a xlink:href="structcarta_1_1StokesSource.html#a7cb4847ee609866b84ce3afa1624bb45" target="_top" xlink:title="Checks if this Stokes source represents an original image.">
 <polygon fill="white" stroke="#666666" points="584,-30 471,-30 471,0 584,0 584,-30"/>
 <text text-anchor="start" x="479" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesSource</text>
 <text text-anchor="middle" x="527.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::IsOriginalImage</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node18 -->
-<g id="edge28_Node000001_Node000018" class="edge">
-<title>Node1&#45;&gt;Node18</title>
-<g id="a_edge28_Node000001_Node000018"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node20 -->
+<g id="edge30_Node000001_Node000020" class="edge">
+<title>Node1&#45;&gt;Node20</title>
+<g id="a_edge30_Node000001_Node000020"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M110.43,-78.67C197.37,-65.37 367.27,-39.37 460.82,-25.05"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="461.38,-28.51 470.74,-23.53 460.32,-21.59 461.38,-28.51"/>
 </a>
@@ -236,10 +236,10 @@ var sectionId = 'dynsection-5';
 </a>
 </g>
 </g>
-<!-- Node3&#45;&gt;Node18 -->
-<g id="edge26_Node000003_Node000018" class="edge">
-<title>Node3&#45;&gt;Node18</title>
-<g id="a_edge26_Node000003_Node000018"><a xlink:title=" ">
+<!-- Node3&#45;&gt;Node20 -->
+<g id="edge28_Node000003_Node000020" class="edge">
+<title>Node3&#45;&gt;Node20</title>
+<g id="a_edge28_Node000003_Node000020"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M353.4,-119.69C363.68,-108.72 377.79,-93.53 390,-80 406.25,-62 405.23,-51.52 426,-39 436.67,-32.57 448.94,-27.86 461.17,-24.42"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="462.11,-27.79 470.93,-21.92 460.37,-21.01 462.11,-27.79"/>
 </a>
@@ -477,12 +477,30 @@ var sectionId = 'dynsection-5';
 </a>
 </g>
 </g>
+<!-- Node18 -->
+<g id="Node000018" class="node">
+<title>Node18</title>
+<g id="a_Node000018"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="1102,-345.5 1026,-345.5 1026,-326.5 1102,-326.5 1102,-345.5"/>
+<text text-anchor="middle" x="1064" y="-333.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGildasUnit</text>
+</a>
+</g>
+</g>
+<!-- Node17&#45;&gt;Node18 -->
+<g id="edge26_Node000017_Node000018" class="edge">
+<title>Node17&#45;&gt;Node18</title>
+<g id="a_edge26_Node000017_Node000018"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M981.67,-336C992.62,-336 1004.45,-336 1015.61,-336"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="1015.63,-339.5 1025.63,-336 1015.63,-332.5 1015.63,-339.5"/>
+</a>
+</g>
+</g>
 <!-- Node19 -->
 <g id="Node000019" class="node">
 <title>Node19</title>
-<g id="a_Node000019"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
-<polygon fill="white" stroke="#666666" points="829.5,-24.5 685.5,-24.5 685.5,-5.5 829.5,-5.5 829.5,-24.5"/>
-<text text-anchor="middle" x="757.5" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
+<g id="a_Node000019"><a xlink:href="Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="1229,-345.5 1138,-345.5 1138,-326.5 1229,-326.5 1229,-345.5"/>
+<text text-anchor="middle" x="1183.5" y="-333.5" font-family="Helvetica,sans-Serif" font-size="10.00">GILDAS_REGEX</text>
 </a>
 </g>
 </g>
@@ -490,6 +508,24 @@ var sectionId = 'dynsection-5';
 <g id="edge27_Node000018_Node000019" class="edge">
 <title>Node18&#45;&gt;Node19</title>
 <g id="a_edge27_Node000018_Node000019"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M1102.18,-336C1110.3,-336 1119.05,-336 1127.7,-336"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="1127.74,-339.5 1137.74,-336 1127.74,-332.5 1127.74,-339.5"/>
+</a>
+</g>
+</g>
+<!-- Node21 -->
+<g id="Node000021" class="node">
+<title>Node21</title>
+<g id="a_Node000021"><a xlink:href="classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" target="_top" xlink:title="Determines if a given polarization type is a computed polarization.">
+<polygon fill="white" stroke="#666666" points="829.5,-24.5 685.5,-24.5 685.5,-5.5 829.5,-5.5 829.5,-24.5"/>
+<text text-anchor="middle" x="757.5" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Stokes::IsComputed</text>
+</a>
+</g>
+</g>
+<!-- Node20&#45;&gt;Node21 -->
+<g id="edge29_Node000020_Node000021" class="edge">
+<title>Node20&#45;&gt;Node21</title>
+<g id="a_edge29_Node000020_Node000021"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M584.28,-15C611.64,-15 645.11,-15 675.25,-15"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="675.33,-18.5 685.33,-15 675.33,-11.5 675.33,-18.5"/>
 </a>

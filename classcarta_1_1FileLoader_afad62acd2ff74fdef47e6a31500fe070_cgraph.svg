@@ -46,7 +46,7 @@
   </g>
 </defs>
 <script type="application/ecmascript">
-var viewWidth = 569;
+var viewWidth = 808;
 var viewHeight = 150;
 var sectionId = 'dynsection-4';
 </script>
@@ -193,6 +193,42 @@ var sectionId = 'dynsection-4';
 <g id="a_edge7_Node000006_Node000008"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M416.22,-22.98C428.87,-21.12 442.44,-19.13 455.16,-17.26"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="455.76,-20.71 465.15,-15.79 454.75,-13.78 455.76,-20.71"/>
+</a>
+</g>
+</g>
+<!-- Node9 -->
+<g id="Node000009" class="node">
+<title>Node9</title>
+<g id="a_Node000009"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="673,-19 597,-19 597,0 673,0 673,-19"/>
+<text text-anchor="middle" x="635" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">IsGildasUnit</text>
+</a>
+</g>
+</g>
+<!-- Node8&#45;&gt;Node9 -->
+<g id="edge8_Node000008_Node000009" class="edge">
+<title>Node8&#45;&gt;Node9</title>
+<g id="a_edge8_Node000008_Node000009"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M552.67,-9.5C563.62,-9.5 575.45,-9.5 586.61,-9.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="586.63,-13 596.63,-9.5 586.63,-6 586.63,-13"/>
+</a>
+</g>
+</g>
+<!-- Node10 -->
+<g id="Node000010" class="node">
+<title>Node10</title>
+<g id="a_Node000010"><a xlink:href="Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="800,-19 709,-19 709,0 800,0 800,-19"/>
+<text text-anchor="middle" x="754.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">GILDAS_REGEX</text>
+</a>
+</g>
+</g>
+<!-- Node9&#45;&gt;Node10 -->
+<g id="edge9_Node000009_Node000010" class="edge">
+<title>Node9&#45;&gt;Node10</title>
+<g id="a_edge9_Node000009_Node000010"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M673.18,-9.5C681.3,-9.5 690.05,-9.5 698.7,-9.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="698.74,-13 708.74,-9.5 698.74,-6 698.74,-13"/>
 </a>
 </g>
 </g>
