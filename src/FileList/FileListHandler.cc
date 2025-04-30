@@ -124,7 +124,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
         // Check if input directory is an image
         std::string message;
         casacore::String full_path(folder_path.path().absoluteName());
-        auto carta_file_type = CartaFolderImageType(full_path, message);
+        auto carta_file_type = FolderImageType(full_path, message);
 
         if (carta_file_type != CARTA::FileType::UNKNOWN) {
             // Add image with file info
@@ -224,7 +224,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                             } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                                 // Determine if image or directory for image list
                                 std::string message;
-                                file_type = CartaFolderImageType(full_path, message);
+                                file_type = FolderImageType(full_path, message);
                                 switch (file_type) {
                                     case CARTA::FileType::CASA:
                                     case CARTA::FileType::MIRIAD: {
