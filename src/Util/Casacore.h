@@ -104,6 +104,7 @@ std::string FormatQuantity(const casacore::Quantity& quantity);
  *       the corrected and validated unit name if possible.
  */
 void NormalizeUnit(casacore::String& unit);
+bool IsGildasUnit(const casacore::String& unit);
 
 /**
  * @brief Parses an AIPS-style beam header to extract beam parameters with regular expression.

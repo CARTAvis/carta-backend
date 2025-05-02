@@ -6,11 +6,15 @@
 
 #include "Casacore.h"
 
+#include <regex>
+
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
 
 #include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
+
+const std::regex GILDAS_REGEX(" *[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\) *");
 
 /**
  * @details This function checks and resolves the given top-level and starting directories.
@@ -246,6 +250,10 @@ std::string FormatQuantity(const casacore::Quantity& quantity) {
 void NormalizeUnit(casacore::String& unit) {
     // Convert unit string to "proper" units according to casacore
     // Fix nonstandard units which pass check
+    if (IsGildasUnit(unit)) {
+        return; // do not casacore-ize unit
+    }
+
     unit.gsub("JY", "Jy");
     unit.gsub("jy", "Jy");
     unit.gsub("Beam", "beam");
@@ -305,6 +313,16 @@ void NormalizeUnit(casacore::String& unit) {
     } catch (const casacore::AipsError& err) {
         // not caught by check()
     }
+}
+
+/**
+ * @details This function uses regex to check if unit is in the GILDAS CLASS software format
+ * "unit (Ttype)" where the "type" describes the temperature T.
+ * It also tests for casacore Unit name changes where " " and "*" are replaced with ".".
+ * For example: "K (Ta*)" -->  "K.(Ta.)" in casacore.
+ */
+bool IsGildasUnit(const casacore::String& unit) {
+    return std::regex_match(unit, GILDAS_REGEX);
 }
 
 /**
