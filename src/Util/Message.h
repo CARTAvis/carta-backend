@@ -161,11 +161,17 @@ public:
     static CARTA::EventType EventType(std::vector<char>& message);
 
     /**
-     * @brief Decodes a message from a vector of bytes into a specific type.
+     * Decodes a message from a buffer of characters into an object of type T and
+     * can be used to decode various types of messages.
      *
-     * @tparam T The type of the message to decode. It must have a `ParseFromArray` method.
-     * @param message A vector of characters containing the encoded message data.
-     * @return The decoded message of type `T`.
+     * @tparam T The type of the object to decode the message into. T must have a member function
+     *           `ParseFromArray(const void*, int)` to parse the data.
+     * @param session_id The session ID associated with the message.
+     * @param event_buffer A pointer to the buffer containing the serialized message data.
+     * @param event_length The length of the message data in bytes.
+     * @param head The event header containing metadata about the message.
+     * @throws std::runtime_error If the message cannot be parsed.
+     * @return The decoded message of type T.
      */
     template <typename T>
     static T DecodeMessage(uint32_t session_id, const char* event_buffer, int event_length, const carta::EventHeader& head);
