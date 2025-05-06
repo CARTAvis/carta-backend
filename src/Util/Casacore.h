@@ -82,17 +82,4 @@ std::string FormatQuantity(const casacore::Quantity& quantity);
 void NormalizeUnit(casacore::String& unit);
 bool IsGildasUnit(const casacore::String& unit);
 
-/**
- * @brief Parses an AIPS-style beam header to extract beam parameters with regular expression.
- *
- * @param[in] header A string reference to the history beam header string to be parsed.
- * @param[out] bmaj A string reference to the extracted major axis value with its unit.
- * @param[out] bmin A string reference to the extracted minor axis value with its unit.
- * @param[out] bpa A string reference to the extracted position angle value with its unit.
- *
- * @return `true` if the header was successfully parsed and values were extracted,
- *         otherwise `false`.
- */
-bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa);
-
 #endif // CARTA_SRC_UTIL_CASACORE_H_

@@ -6,9 +6,9 @@
 
 #include "File.h"
 
+#include <spdlog/spdlog.h>
 #include <fstream>
 #include <regex>
-#include "spdlog/spdlog.h"
 
 #include "String.h"
 

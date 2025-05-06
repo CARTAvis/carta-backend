@@ -16,6 +16,7 @@
 #include "CompressedFits.h"
 #include "Util/Casacore.h"
 #include "Util/FileSystem.h"
+#include "Util/String.h"
 
 namespace carta {
 
