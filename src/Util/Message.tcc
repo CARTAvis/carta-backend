@@ -17,9 +17,15 @@ template <typename T>
  *
  * @tparam T The type of the object to decode the message into. T must have a member function
  *           `ParseFromArray(const void*, int)` to parse the data.
- * @param session A vector of characters containing the serialized message. The message is expected
- *                to start with a header of type `carta::EventHeader`, followed by the payload.
- * @param message
+ * @param session_id The session ID associated with the message.
+ * @param event_buffer A pointer to the buffer containing the serialized message data.
+ * @param event_length The length of the message data in bytes.
+ * @param head The event header containing metadata about the message.
+ * @throws std::runtime_error If the message cannot be parsed.
+ * @note This function uses a static_assert to ensure that T has a member function `ParseFromArray`.
+ *       If T does not have this member function, a compilation error will occur.
+ *       The function also throws a runtime error if the parsing fails, providing information about
+ *       the session ID and the type of the message.
  * @return The decoded message of type T.
  */
 T Message::DecodeMessage(uint32_t session_id, const char* event_buffer, int event_length, const carta::EventHeader& head) {
