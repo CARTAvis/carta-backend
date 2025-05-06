@@ -161,7 +161,7 @@ public:
     static CARTA::EventType EventType(std::vector<char>& message);
 
     /**
-     * Decodes a message from a buffer of characters into an object of type T and
+     * @brief Decodes a message from a buffer of characters into an object of type T and
      * can be used to decode various types of messages.
      *
      * @tparam T The type of the object to decode the message into. T must have a member function
