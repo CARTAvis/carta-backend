@@ -14,7 +14,6 @@ namespace fs = std::filesystem;
 
 #include "CommonTestUtilities.h"
 
-
 void CreateFile(const fs::path& path, const std::string& content = "") {
     std::ofstream file(path);
     file << content;

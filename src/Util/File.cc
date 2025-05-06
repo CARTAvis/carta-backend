@@ -6,12 +6,11 @@
 
 #include "File.h"
 
-#include "spdlog/spdlog.h"
 #include <fstream>
 #include <regex>
+#include "spdlog/spdlog.h"
 
 #include "String.h"
-
 
 /**
  * @details This function checks and resolves the given top-level and starting directories.
