@@ -14,21 +14,21 @@
 template <typename T>
 /**
  * Decodes a message from a buffer of characters into an object of type T.
- * 
- * @tparam T The type of the object to decode the message into. T must have a member function 
+ *
+ * @tparam T The type of the object to decode the message into. T must have a member function
  *           `ParseFromArray(const void*, int)` to parse the data.
- * @param session A vector of characters containing the serialized message. The message is expected 
+ * @param session A vector of characters containing the serialized message. The message is expected
  *                to start with a header of type `carta::EventHeader`, followed by the payload.
- * @param message 
+ * @param message
  * @return The decoded message of type T.
  */
 T Message::DecodeMessage(uint32_t session_id, const char* event_buffer, int event_length, const carta::EventHeader& head) {
-    static_assert(std::is_member_function_pointer<decltype(&T::ParseFromArray)>::value,"T must have a member function ParseFromArray(const void*, int)");
+    static_assert(std::is_member_function_pointer<decltype(&T::ParseFromArray)>::value,
+        "T must have a member function ParseFromArray(const void*, int)");
     T decoded_message;
     if (!decoded_message.ParseFromArray(event_buffer, event_length)) {
-        throw std::runtime_error(fmt::format(
-            "Error parsing message for event type {} in session {}: Failed to parse message.",
-            session_id, typeid(T).name()));
+        throw std::runtime_error(
+            fmt::format("Error parsing message for event type {} in session {}: Failed to parse message.", session_id, typeid(T).name()));
     }
     return decoded_message;
 }
