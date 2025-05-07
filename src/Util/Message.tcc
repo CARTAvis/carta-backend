@@ -7,10 +7,10 @@
 #ifndef CARTA_SRC_UTIL_MESSAGE_TCC_
 #define CARTA_SRC_UTIL_MESSAGE_TCC_
 
-/**
- * @details This function extracts the payload from a given message buffer, ignoring the event header,
- * and deserializes it into an object of template type `T` using `ParseFromArray`.
- */
+struct message_parsing_exception : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
 template <typename T>
 /**
  * @note This function uses a static_assert to ensure that T has a member function `ParseFromArray`.
@@ -18,13 +18,12 @@ template <typename T>
  *       The function also throws a runtime error if the parsing fails, providing information about
  *       the session ID and the type of the message.
  */
-T Message::DecodeMessage(uint32_t session_id, const char* event_buffer, int event_length, const carta::EventHeader& head) {
+T Message::DecodeMessage(const char* event_buffer, int event_length) {
     static_assert(std::is_member_function_pointer<decltype(&T::ParseFromArray)>::value,
         "T must have a member function ParseFromArray(const void*, int)");
     T decoded_message;
     if (!decoded_message.ParseFromArray(event_buffer, event_length)) {
-        throw std::runtime_error(
-            fmt::format("Error parsing message for event type {} in session {}: Failed to parse message.", session_id, typeid(T).name()));
+        throw message_parsing_exception("Failed to parse message");
     }
     return decoded_message;
 }

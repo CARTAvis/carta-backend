@@ -166,15 +166,13 @@ public:
      *
      * @tparam T The type of the object to decode the message into. T must have a member function
      *           `ParseFromArray(const void*, int)` to parse the data.
-     * @param session_id The session ID associated with the message.
      * @param event_buffer A pointer to the buffer containing the serialized message data.
      * @param event_length The length of the message data in bytes.
-     * @param head The event header containing metadata about the message.
      * @throws std::runtime_error If the message cannot be parsed.
      * @return The decoded message of type T.
      */
     template <typename T>
-    static T DecodeMessage(uint32_t session_id, const char* event_buffer, int event_length, const carta::EventHeader& head);
+    static T DecodeMessage(const char* event_buffer, int event_length);
 };
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
