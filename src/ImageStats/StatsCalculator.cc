@@ -54,17 +54,22 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
         result_size = image.shape().removeAxes(xy_axes).product();
     }
 
-    // Used for setting results to NaN where num_points is zero.
-    casacore::Array<casacore::Double> num_points;
+    // num_points used for setting stats results to NaN where num_points is zero.
+    casacore::Array<casacore::Double> num_points, result;
     image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
+
+    std::vector<double> dbl_result; // lattice stats
+    std::vector<int> int_result;    // position stats
 
     for (size_t i = 0; i < requested_stats.size(); ++i) {
         // get requested statistics values
         auto carta_stats_type = requested_stats[i];
         casacore::LatticeStatsBase::StatisticsTypes lattice_stats_type(casacore::LatticeStatsBase::NSTATS);
 
-        std::vector<double> dbl_result; // lattice stats
-        std::vector<int> int_result;    // position stats
+        // Clear previous results
+        dbl_result.clear();
+        int_result.clear();
+        result.resize();
 
         if (!num_points.empty()) {
             switch (carta_stats_type) {
