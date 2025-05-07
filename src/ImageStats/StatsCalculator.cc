@@ -54,6 +54,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
         result_size = image.shape().removeAxes(xy_axes).product();
     }
 
+    // Used for setting results to NaN where num_points is zero.
     casacore::Array<casacore::Double> num_points;
     image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
 
@@ -124,12 +125,18 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
             }
 
             casacore::Array<casacore::Double> result;
-            if (carta_stats_type == CARTA::FluxDensity) {
+            if (carta_stats_type == CARTA::NumPixels) {
+                // Already retrieved before loop
+                num_points.tovector(dbl_result);
+            } else if (carta_stats_type == CARTA::FluxDensity) {
                 try {
+                    casacore::Array<casacore::Double> sum_stats;
+                    image_stats.getStatistic(sum_stats, casacore::LatticeStatsBase::SUM);
+
                     // Flux density only valid for per-plane stats (not spectral profile), so one result per stat.
                     double npoints = num_points(casacore::IPosition(1, 0));
-                    image_stats.getStatistic(result, casacore::LatticeStatsBase::SUM);
-                    double sum = result(casacore::IPosition(1, 0));
+                    double sum = sum_stats(casacore::IPosition(1, 0));
+
                     if (ComputeFluxDensity(image, npoints, sum, result)) {
                         result.tovector(dbl_result);
                     }
