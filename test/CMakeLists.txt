@@ -63,7 +63,10 @@ set(TEST_SOURCES
         TestRegionStats.cc
         TestRestApi.cc
         TestTileEncoding.cc
-        TestUtil.cc
+        Util/TestUtilCasacore.cc
+        Util/TestUtilFile.cc
+        Util/TestUtilImage.cc
+        Util/TestUtilString.cc
         TestVoTable.cc)
 
 # Add all the sources in the main project and remove Main.cc
