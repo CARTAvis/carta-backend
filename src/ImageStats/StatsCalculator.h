@@ -12,12 +12,19 @@
 #include <vector>
 
 #include <casacore/images/Images/ImageInterface.h>
+#include <casacore/images/Images/ImageStatistics.h>
 
 #include <carta-protobuf/enums.pb.h>
 #include "BasicStatsCalculator.h"
 #include "Cache/RequirementsCache.h"
 
 namespace carta {
+
+static std::unordered_map<CARTA::StatsType, casacore::LatticeStatsBase::StatisticsTypes> carta_stats_to_casacore{
+    {CARTA::StatsType::Sum, casacore::LatticeStatsBase::SUM}, {CARTA::StatsType::Mean, casacore::LatticeStatsBase::MEAN},
+    {CARTA::StatsType::RMS, casacore::LatticeStatsBase::RMS}, {CARTA::StatsType::Sigma, casacore::LatticeStatsBase::SIGMA},
+    {CARTA::StatsType::SumSq, casacore::LatticeStatsBase::SUMSQ}, {CARTA::StatsType::Min, casacore::LatticeStatsBase::MIN},
+    {CARTA::StatsType::Extrema, casacore::LatticeStatsBase::MIN}, {CARTA::StatsType::Max, casacore::LatticeStatsBase::MAX}};
 
 void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t data_size);
 
@@ -26,8 +33,11 @@ Histogram CalcHistogram(int num_bins, const HistogramBounds& bounds, const float
 bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel = true);
 
+void GetPositionStats(const casacore::ImageInterface<float>& image, casacore::ImageStatistics<float> image_stats,
+    CARTA::StatsType carta_stats_type, std::vector<double>& dbl_result);
+
 bool ComputeFluxDensity(
-    const casacore::ImageInterface<float>& image, double npixels, double sum, casacore::Array<casacore::Double>& result);
+    const casacore::ImageInterface<float>& image, casacore::ImageStatistics<float> image_stats, std::vector<double>& result);
 bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::String unit, double& beam_area);
 bool GetWavelength(const casacore::ImageInterface<float>& image, const casacore::String unit, double& wavelength);
 
