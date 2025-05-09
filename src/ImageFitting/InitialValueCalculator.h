@@ -32,6 +32,7 @@ public:
     /**
      * @brief Calculate initial values from the provided image data.
      * @param initial_values Vector to store the resulting initial values
+     * @param image_std Standard deviation of the image data
      * @return Whether the parameters are successfully generated
      */
     bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, float image_std);
