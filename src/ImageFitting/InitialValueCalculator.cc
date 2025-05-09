@@ -22,9 +22,9 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     size_t num_components = initial_values.size();
 
     if (num_components == 1) {
-        auto [center_x_tmp, center_y_tmp, amp_tmp, fwhm_x_tmp, fwhm_y_tmp, pa_tmp] = MethodOfMoments();
-        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] =
-            MethodOfMoments(true, center_x_tmp, center_y_tmp, std::max(fwhm_x_tmp, fwhm_y_tmp));
+        auto [center_x_tmp, center_y_tmp, amp_tmp, fwhm_x_tmp, fwhm_y_tmp, pa_tmp] = MethodOfMoments()[0];
+        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = 
+            MethodOfMoments(true, {center_x_tmp}, {center_y_tmp}, {std::max(fwhm_x_tmp, fwhm_y_tmp)})[0];
 
         auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
         auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
@@ -50,13 +50,13 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     return true;
 }
 
-std::tuple<double, double, double, double, double, double> InitialValueCalculator::MethodOfMoments(
-    bool apply_filter, double center_x, double center_y, double radius) {
+std::vector<std::tuple<double, double, double, double, double, double>> InitialValueCalculator::MethodOfMoments(
+    bool apply_filter, std::vector<double> center_x, std::vector<double> center_y, std::vector<double> radius) {
     double m0 = 0.0, mx = 0.0, my = 0.0, mxx = 0.0, myy = 0.0, mxy = 0.0;
 
     for (int j = 0; j < _height; ++j) {
         for (int i = 0; i < _width; ++i) {
-            if (!apply_filter || (std::sqrt(std::pow(i - center_x, 2.0) + std::pow(j - center_y, 2.0)) <= radius)) {
+            if (!apply_filter || (std::sqrt(std::pow(i - center_x[0], 2.0) + std::pow(j - center_y[0], 2.0)) <= radius[0])) {
                 int index = j * _width + i;
                 double value = _image[index];
 
@@ -84,7 +84,11 @@ std::tuple<double, double, double, double, double, double> InitialValueCalculato
     double fwhm_y = std::sqrt(0.5 * (std::abs(mxx + myy - tmp))) * SIGMA_TO_FWHM;
     double pa = -0.5 * std::atan2(2.0 * mxy, myy - mxx) * 180.0 / M_PI;
 
-    return {mx, my, amp, fwhm_x, fwhm_y, pa};
+
+    std::vector<std::tuple<double, double, double, double, double, double>> result;
+    result.push_back({mx, my, amp, fwhm_x, fwhm_y, pa});
+
+    return result;
 }
 
 std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, float threshold) {

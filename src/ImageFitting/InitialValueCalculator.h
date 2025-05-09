@@ -51,8 +51,8 @@ private:
     /** @brief Y-axis offset from the fitting region to the entire image. */
     size_t _offset_y;
 
-    std::tuple<double, double, double, double, double, double> MethodOfMoments(
-        bool apply_filter = false, double center_x = 0, double center_y = 0, double radius = 0);
+    std::vector<std::tuple<double, double, double, double, double, double>> MethodOfMoments(
+        bool apply_filter = false, std::vector<double> center_x = {}, std::vector<double> center_y = {}, std::vector<double> radius = {});
     std::vector<int> KMeansPlusPlus(size_t num_components, float threshold);
 };
 
