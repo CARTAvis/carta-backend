@@ -60,7 +60,7 @@ std::tuple<double, double, double, double, double, double> InitialValueCalculato
                 int index = j * _width + i;
                 double value = _image[index];
 
-                if (!isnan(value)) {
+                if (!std::isnan(value)) {
                     m0 += value;
                     mx += i * value;
                     my += j * value;
