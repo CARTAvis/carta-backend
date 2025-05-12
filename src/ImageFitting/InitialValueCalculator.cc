@@ -21,29 +21,32 @@ InitialValueCalculator::InitialValueCalculator(float* image, size_t width, size_
 bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, float image_std) {
     size_t num_components = initial_values.size();
 
+    std::vector<int> centroid_indexes;
     if (num_components == 1) {
-        auto [center_x_tmp, center_y_tmp, amp_tmp, fwhm_x_tmp, fwhm_y_tmp, pa_tmp] = MethodOfMoments()[0];
-        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] =
-            MethodOfMoments({0}, true, {center_x_tmp}, {center_y_tmp}, {std::max(fwhm_x_tmp, fwhm_y_tmp)})[0];
-
-        auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
-        auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
-        auto component = Message::GaussianComponent(center, amp, fwhm, pa);
-        initial_values.clear();
-        initial_values.push_back(component);
-
-        return true;
+        centroid_indexes = {0};
+    } else {
+        centroid_indexes = KMeansPlusPlus(num_components, image_std * 4.0);
     }
 
-    // TODO: support multi components
-    std::vector<int> centroid_indexes = KMeansPlusPlus(num_components, image_std * 4.0);
+    std::vector<double> center_x_tmp(num_components, 0.0);
+    std::vector<double> center_y_tmp(num_components, 0.0);
+    std::vector<double> radius_tmp(num_components, 0.0);
+    std::vector<std::tuple<double, double, double, double, double, double>> estimated_components_tmp = MethodOfMoments(centroid_indexes);
+    for (size_t i = 0; i < num_components; ++i) {
+        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components_tmp[i];
+        center_x_tmp[i] = center_x;
+        center_y_tmp[i] = center_y;
+        radius_tmp[i] = std::max(fwhm_x, fwhm_y);
+    }
+    std::vector<std::tuple<double, double, double, double, double, double>> estimated_components =
+        MethodOfMoments(centroid_indexes, true, center_x_tmp, center_y_tmp, radius_tmp);
 
     initial_values.clear();
     for (size_t i = 0; i < num_components; ++i) {
-        auto center = Message::DoublePoint(centroid_indexes[i] % _width + _offset_x, centroid_indexes[i] / _width + _offset_y);
-        auto fwhm = Message::DoublePoint(10, 10);
-        auto component = Message::GaussianComponent(center, 1, fwhm, 0);
-
+        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components[i];
+        auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
+        auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
+        auto component = Message::GaussianComponent(center, amp, fwhm, pa);
         initial_values.push_back(component);
     }
 
