@@ -23,8 +23,8 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
 
     if (num_components == 1) {
         auto [center_x_tmp, center_y_tmp, amp_tmp, fwhm_x_tmp, fwhm_y_tmp, pa_tmp] = MethodOfMoments()[0];
-        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = 
-            MethodOfMoments(true, {center_x_tmp}, {center_y_tmp}, {std::max(fwhm_x_tmp, fwhm_y_tmp)})[0];
+        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] =
+            MethodOfMoments({0}, true, {center_x_tmp}, {center_y_tmp}, {std::max(fwhm_x_tmp, fwhm_y_tmp)})[0];
 
         auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
         auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
@@ -51,42 +51,66 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
 }
 
 std::vector<std::tuple<double, double, double, double, double, double>> InitialValueCalculator::MethodOfMoments(
-    bool apply_filter, std::vector<double> center_x, std::vector<double> center_y, std::vector<double> radius) {
-    double m0 = 0.0, mx = 0.0, my = 0.0, mxx = 0.0, myy = 0.0, mxy = 0.0;
+    std::vector<int> centroid_indexes, bool apply_filter, std::vector<double> center_x, std::vector<double> center_y,
+    std::vector<double> radius) {
+    std::vector<std::tuple<double, double, double, double, double, double>> result;
+    std::vector<double> m0(centroid_indexes.size(), 0.0);
+    std::vector<double> mx(centroid_indexes.size(), 0.0);
+    std::vector<double> my(centroid_indexes.size(), 0.0);
+    std::vector<double> mxx(centroid_indexes.size(), 0.0);
+    std::vector<double> myy(centroid_indexes.size(), 0.0);
+    std::vector<double> mxy(centroid_indexes.size(), 0.0);
 
     for (int j = 0; j < _height; ++j) {
         for (int i = 0; i < _width; ++i) {
-            if (!apply_filter || (std::sqrt(std::pow(i - center_x[0], 2.0) + std::pow(j - center_y[0], 2.0)) <= radius[0])) {
+            int closest_centroid_index = -1;
+            if (centroid_indexes.size() == 1) {
+                closest_centroid_index = 0;
+            } else {
+                double min_distance = std::numeric_limits<double>::max();
+                for (size_t k = 0; k < centroid_indexes.size(); ++k) {
+                    double distance =
+                        std::sqrt(std::pow(i - centroid_indexes[k] % _width, 2.0) + std::pow(j - centroid_indexes[k] / _width, 2.0));
+                    if (distance < min_distance) {
+                        min_distance = distance;
+                        closest_centroid_index = k;
+                    }
+                }
+            }
+
+            if (closest_centroid_index != -1 &&
+                (!apply_filter || (std::sqrt(std::pow(i - center_x[closest_centroid_index], 2.0) +
+                                             std::pow(j - center_y[closest_centroid_index], 2.0)) <= radius[closest_centroid_index]))) {
                 int index = j * _width + i;
                 double value = _image[index];
 
                 if (!std::isnan(value)) {
-                    m0 += value;
-                    mx += i * value;
-                    my += j * value;
-                    mxx += i * i * value;
-                    myy += j * j * value;
-                    mxy += i * j * value;
+                    m0[closest_centroid_index] += value;
+                    mx[closest_centroid_index] += i * value;
+                    my[closest_centroid_index] += j * value;
+                    mxx[closest_centroid_index] += i * i * value;
+                    myy[closest_centroid_index] += j * j * value;
+                    mxy[closest_centroid_index] += i * j * value;
                 }
             }
         }
     }
 
-    mx /= m0;
-    my /= m0;
-    mxx = mxx / m0 - mx * mx;
-    myy = myy / m0 - my * my;
-    mxy = mxy / m0 - mx * my;
+    for (size_t k = 0; k < centroid_indexes.size(); ++k) {
+        mx[k] /= m0[k];
+        my[k] /= m0[k];
+        mxx[k] = mxx[k] / m0[k] - mx[k] * mx[k];
+        myy[k] = myy[k] / m0[k] - my[k] * my[k];
+        mxy[k] = mxy[k] / m0[k] - mx[k] * my[k];
 
-    double amp = m0 * 0.5 * std::pow(std::abs(mxx * myy - mxy * mxy), -0.5) / M_PI;
-    double tmp = std::sqrt(std::pow(mxx - myy, 2.0) + 4.0 * mxy * mxy);
-    double fwhm_x = std::sqrt(0.5 * (std::abs(mxx + myy + tmp))) * SIGMA_TO_FWHM;
-    double fwhm_y = std::sqrt(0.5 * (std::abs(mxx + myy - tmp))) * SIGMA_TO_FWHM;
-    double pa = -0.5 * std::atan2(2.0 * mxy, myy - mxx) * 180.0 / M_PI;
+        double amp = m0[k] * 0.5 * std::pow(std::abs(mxx[k] * myy[k] - mxy[k] * mxy[k]), -0.5) / M_PI;
+        double tmp = std::sqrt(std::pow(mxx[k] - myy[k], 2.0) + 4.0 * mxy[k] * mxy[k]);
+        double fwhm_x = std::sqrt(0.5 * (std::abs(mxx[k] + myy[k] + tmp))) * SIGMA_TO_FWHM;
+        double fwhm_y = std::sqrt(0.5 * (std::abs(mxx[k] + myy[k] - tmp))) * SIGMA_TO_FWHM;
+        double pa = -0.5 * std::atan2(2.0 * mxy[k], myy[k] - mxx[k]) * 180.0 / M_PI;
 
-
-    std::vector<std::tuple<double, double, double, double, double, double>> result;
-    result.push_back({mx, my, amp, fwhm_x, fwhm_y, pa});
+        result.push_back({mx[k], my[k], amp, fwhm_x, fwhm_y, pa});
+    }
 
     return result;
 }
