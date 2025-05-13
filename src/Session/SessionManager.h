@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "Main/ProgramSettings.h"
+#include "Session.h"
 
 #define MAX_SOCKET_PORT_TRIALS 100
 
