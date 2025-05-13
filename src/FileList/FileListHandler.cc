@@ -20,11 +20,13 @@
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
+#define INVALID_PATH_VALUE {'\0'}
+
 using namespace carta;
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
-    : _top_level_folder(top_level_folder), _starting_folder(starting_folder), _filelist_folder("nofolder") {}
+    : _top_level_folder(top_level_folder), _starting_folder(starting_folder), _filelist_folder(INVALID_PATH_VALUE), _regionlist_folder(INVALID_PATH_VALUE) {}
 
 void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
     // use scoped lock so that it only processes the file list a time for one user
@@ -41,7 +43,7 @@ void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, C
     // get file list response and result message if any
     GetFileList(response, folder, result_msg, request.filter_mode());
 
-    _filelist_folder = "nofolder"; // ready for next file list request
+    _filelist_folder = INVALID_PATH_VALUE; // ready for next file list request
 }
 
 void FileListHandler::GetRelativePath(std::string& folder) {
@@ -274,7 +276,7 @@ void FileListHandler::OnRegionListRequest(
     *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
     region_response.set_cancel(file_response.cancel());
 
-    _regionlist_folder = "nofolder"; // ready for next file list request
+    _regionlist_folder = INVALID_PATH_VALUE; // ready for next file list request
 }
 
 bool FileListHandler::FillRegionFileInfo(
