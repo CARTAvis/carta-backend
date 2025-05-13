@@ -11,6 +11,10 @@
 
 #include <uuid/uuid.h>
 
+/**
+ * @details This function generates a new random UUID
+ * and returns it as a string.
+ */
 std::string NewAuthToken() {
     uuid_t token;
     char token_string[37];
@@ -19,6 +23,16 @@ std::string NewAuthToken() {
     return std::string(token_string);
 }
 
+/**
+ * @details This function checks if the provided HTTP request contains a valid authentication
+ * token that matches the required token. It supports validation through:
+ *      - Cookies (`carta-auth-token`)
+ *      - Authorization header (`Bearer <token>`)
+ *      - URL query parameter (`token`)
+ *      - Custom header (`carta-auth-token`)
+ *
+ * If the required token is empty, authentication is automatically approved.
+ */
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token) {
     // Always allow if the required token is empty
     if (required_token.empty()) {
