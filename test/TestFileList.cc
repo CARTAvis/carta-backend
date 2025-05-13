@@ -60,7 +60,6 @@ public:
             return;
         }
         // Expect non-zero subdirectories
-        EXPECT_GE(response.files_size(), 0);
         EXPECT_GT(response.subdirectories_size(), 0);
     }
 };
