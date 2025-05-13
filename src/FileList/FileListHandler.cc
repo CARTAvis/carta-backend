@@ -20,13 +20,17 @@
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
-#define INVALID_PATH_VALUE {'\0'}
+#define INVALID_PATH_VALUE \
+    { '\0' }
 
 using namespace carta;
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
-    : _top_level_folder(top_level_folder), _starting_folder(starting_folder), _filelist_folder(INVALID_PATH_VALUE), _regionlist_folder(INVALID_PATH_VALUE) {}
+    : _top_level_folder(top_level_folder),
+      _starting_folder(starting_folder),
+      _filelist_folder(INVALID_PATH_VALUE),
+      _regionlist_folder(INVALID_PATH_VALUE) {}
 
 void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
     // use scoped lock so that it only processes the file list a time for one user
