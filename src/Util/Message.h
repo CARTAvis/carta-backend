@@ -8,6 +8,7 @@
 #define CARTA_SRC_UTIL_MESSAGE_H_
 
 #include <carta-protobuf/animation.pb.h>
+#include <carta-protobuf/channel_map.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour_image.pb.h>
 #include <carta-protobuf/defs.pb.h>
@@ -47,7 +48,8 @@
 #include "ImageStats/Histogram.h"
 
 namespace carta {
-const uint16_t ICD_VERSION = 29;
+const uint16_t ICD_VERSION = 30;
+
 struct EventHeader {
     uint16_t type;
     uint16_t icd_version;
@@ -74,7 +76,7 @@ public:
     static CARTA::SetHistogramRequirements SetHistogramRequirements(
         int32_t file_id, int32_t region_id, int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
     static CARTA::AddRequiredTiles AddRequiredTiles(
-        int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles);
+        int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<int32_t>& tiles);
     static CARTA::Point Point(float x, float y);
     static CARTA::Point Point(const casacore::Vector<casacore::Double>& input, int x_index = 0, int y_index = 1);
     static CARTA::Point Point(const std::vector<casacore::Quantity>& input, int x_index = 0, int y_index = 1);
@@ -115,6 +117,7 @@ public:
         const CARTA::DoublePoint& center, double amp, const CARTA::DoublePoint& fwhm, double pa);
     static CARTA::ScriptingRequest ScriptingRequest(uint32_t scripting_request_id, const std::string& target, const std::string& action,
         const std::string& parameters, bool async, const std::string& return_path);
+    static CARTA::ChannelMapFlowControl ChannelMapFlowControl(int32_t file_id, int32_t received_channel);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
@@ -157,6 +160,13 @@ public:
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
 
+    /**
+     * @brief Decodes a message from a vector of bytes into a specific type.
+     *
+     * @tparam T The type of the message to decode. It must have a `ParseFromArray` method.
+     * @param message A vector of characters containing the encoded message data.
+     * @return The decoded message of type `T`.
+     */
     template <typename T>
     static T DecodeMessage(std::vector<char>& message);
 };

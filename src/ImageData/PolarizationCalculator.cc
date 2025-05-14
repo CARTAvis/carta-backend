@@ -58,6 +58,7 @@ PangleCalculator::PangleCalculator(std::shared_ptr<FileLoader> loader) : Polariz
 
 
 
+
 PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxesInfo axes, DimsInfo dims,
     AxisRange z_range, AxisRange x_range, AxisRange y_range)
     : _image(image), _image_valid(true) {

@@ -42,7 +42,7 @@ macro(install_uWebSockets)
 
     FetchContent_Declare(
             uWebSockets-build
-            URL https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.46.0.zip
+            URL https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.74.0.zip
             SOURCE_DIR ${UWEBSOCKETS_SOURCE_DIR}
     )
 
