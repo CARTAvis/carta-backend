@@ -9,272 +9,174 @@
 
 using namespace carta;
 
-PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loader, CARTA::PolarizationType computed_type) : _loader(loader)), _computed_type(computed_type) _component_types(Stokes::Components(type)) {}
+std::unordered_map<Pol, CalculatorFunc> PolarizationCalculator::_nodes = {
+    {Pol::Ptotal, &PolarizationCalculator::PtotalNode},
+    {Pol::Plinear, &PolarizationCalculator::PlinearNode},
+    {Pol::PFtotal, &PolarizationCalculator::PFtotalNode},
+    {Pol::PFlinear, &PolarizationCalculator::PFlinearNode},
+    {Pol::Pangle, &PolarizationCalculator::PangleNode}
+}
+
+std::unordered_map<Pol, casacore::Unit> PolarizationCalculator::_units = {
+    {Pol::PFtotal, casacore::Unit("%")},
+    {Pol::PFlinear, casacore::Unit("%")},
+    {Pol::Pangle, casacore::Unit("deg")}
+}
+
+std::unordered_map<Pol, Pol> PolarizationCalculator::_beam_types = {
+    {Pol::Ptotal, Pol::Q},
+    {Pol::Plinear, Pol::Q},
+    {Pol::PFtotal, Pol::I},
+    {Pol::PFlinear, Pol::I}
+}
+
+PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loader) : _loader(loader) {}
 
 
-std::shared_ptr<PolarizationCalculator> PolarizationCalculator::GetCalculator(std::shared_ptr<FileLoader> loader, CARTA::PolarizationType type) {
-    switch(type) {
-        case CARTA::PolarizationType::Ptotal:
-            return std::make_shared<PtotalCalculator>(loader);
-        case CARTA::PolarizationType::Plinear:
-            return std::make_shared<PlinearCalculator>(loader);
-        case CARTA::PolarizationType::PFtotal:
-            return std::make_shared<PFtotalCalculator>(loader);
-        case CARTA::PolarizationType::PFlinear:
-            return std::make_shared<PFlinearCalculator>(loader);
-        case CARTA::PolarizationType::Pangle:
-            return std::make_shared<PangleCalculator>(loader);
-        default: {
-            spdlog::error("Cannot calculate polarization {}", CARTA::PolarizationType_Name(type));
+ImagePtr PolarizationCalculator::GetImage(casacore::Slicer slicer) {
+    // TODO: have to make sure slicer passed in here is valid (no placeholders)
+    // TODO this slicer should already have been constructed with the appropriate axis order and should be 4D
+    
+    if (_loader->GetImage()->ndim() < 4) {
+        spdlog::error("Invalid image dimensions {}", _loader->GetImage()->ndim());
+        return nullptr;
+    }
+    
+    if (slicer.ndim() < 4) {
+        spdlog::error("Invalid slicer dimensions {}", slicer.ndim());
+        return nullptr;
+    }
+    
+    auto computed_type = Stokes::Get(slicer(_loader->GetAxes().stokes));
+    
+    if (!Stokes::IsComputed(computed_type)) {
+        spdlog::error("Cannot calculate polarization {}", Stokes::Name(computed_type));
+        return nullptr;
+    }
+    
+    // Create the image
+    auto component_images = GetComponents(computed_type);    
+    auto node = std::invoke(_nodes[computed_type], this, component_images);
+    auto computed_image = Calculate(node, computed_type);
+    
+    // Update metadata
+    UpdateUnits(computed_image, computed_type);
+    UpdateInfo(computed_image, component_images, computed_type);
+    UpdateCoordinates(computed_image, computed_type);
+    
+    return computed_image;
+}
+
+
+ImagePtr PolarizationCalculator::GetComponentImage(casacore::Slicer slicer, int axis, int index) {
+    slicer(axis) = index;
+    casacore::LCSlicer lc_slicer(slicer);
+    casacore::ImageRegion region(lc_slicer);
+    // TODO when the calculator call is moved from loader to frame and loader only loads raw data, this should just call a function on the loader
+    return std::make_shared<casacore::SubImage<float>>(*(_loader->GetImage()), region);
+}
+
+
+void PolarizationCalculator::GetComponents(Pol computed_type) {
+    std::unordered_map<CasaPol, int> stokes_indices;
+    
+    // Use mapping from loader
+    for (const auto &[pol, i]: _loader->GetStokesIndices()) {
+        stokes_indices[Stokes::ToCasa(pol)] = i;
+    }
+    
+    // Otherwise assume IQUV (or subset) in order
+    if (stokes_indices.empty()) {
+        for (int i = 0; i < std::min(_loader.GetDims().num_stokes, 4); i++) {
+            stokes_indices[CasaPol::type(i + 1)] = i;
+        }
+    }
+    
+    auto stokes_axis = _loader->GetAxes().stokes;
+    ImageMap component_images;
+
+    // Get the required components
+    for (auto& pol : Stokes::Components(computed_type)) {
+        try {
+            auto stokes_index = stokes_indices.at(Stokes::ToCasa(pol));
+        } catch(const std::out_of_range& e) {
+            spdlog::error("This image lacks {}. Cannot compute {}.", Stokes::Name(pol), Stokes::Name(computed_type));
             return nullptr;
         }
+        // TODO TODO TODO can this fail?
+        component_images[pol] = GetComponentImage(slicer, stokes_axis, stokes_index);
     }
 }
 
 
-ImageRef PolarizationCalculator::GetImage(casacore::Slicer slicer) {
-    // TODO: have to make sure slicer passed in here is valid (no placeholders)
-    // get blc and trc
-    // get interfaces for needed components only
-    // call calculate
+ImagePtr PolarizationCalculator::Calculate(Node node, Pol computed_type) {
+    // Create the image
+    casacore::LatticeExpr<float> lattice_expr(node);
+    return std::make_shared<casacore::ImageExpr<float>>(lattice_expr, Stokes::Name(computed_type));
 }
+    
 
-
-
-PtotalCalculator::PtotalCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::Ptotal) {}
-PlinearCalculator::PlinearCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::Plinear) {}
-PFtotalCalculator::PFtotalCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::PFtotal) {}
-PFlinearCalculator::PFlinearCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::PFlinear) {}
-PangleCalculator::PangleCalculator(std::shared_ptr<FileLoader> loader) : PolarizationCalculator(loader, CARTA::PolarizationType::Pangle) {}
-
-
-
-
-
-
-
-
-//-------------------------- TODO OLD BELOW THIS LINE
-
-
-
-
-PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxesInfo axes, DimsInfo dims,
-    AxisRange z_range, AxisRange x_range, AxisRange y_range)
-    : _image(image), _image_valid(true) {
-    const auto ndim = _image->ndim();
-    if (ndim < 4) {
-        spdlog::error("Invalid image dimension: {}", ndim);
-        _image_valid = false;
-        return;
-    }
-
-    const auto& coord_sys = _image->coordinates();
-    const auto shape = _image->shape();
-    casacore::IPosition blc(ndim, 0);
-    casacore::IPosition trc = shape - 1;
-
-    if (x_range.to == ALL_X) {
-        x_range.from = 0;
-        x_range.to = dims.width - 1;
-    }
-
-    if (y_range.to == ALL_Y) {
-        y_range.from = 0;
-        y_range.to = dims.height - 1;
-    }
-
-    if (z_range.to == ALL_Z) {
-        z_range.from = 0;
-        z_range.to = dims.depth - 1;
-    }
-
-    if (x_range.from < 0 || x_range.to >= dims.width || y_range.from < 0 || y_range.to >= dims.height || z_range.from < 0 ||
-        z_range.to >= dims.depth) {
-        spdlog::error("Invalid selection region.");
-        _image_valid = false;
-        return;
-    }
-
-    // Make a region
-    blc(axes.x) = x_range.from;
-    trc(axes.x) = x_range.to;
-    blc(axes.y) = y_range.from;
-    trc(axes.y) = y_range.to;
-    blc(axes.z) = z_range.from;
-    trc(axes.z) = z_range.to;
-
-    // Get stokes indices and make stokes regions
-    if (coord_sys.hasPolarizationCoordinate()) {
-        const auto& stokes = coord_sys.stokesCoordinate();
-        int stokes_index;
-        if (stokes.toPixel(stokes_index, casacore::Stokes::I)) {
-            _stokes_images[I] = MakeSubImage(blc, trc, axes.stokes, stokes_index);
-        }
-        if (stokes.toPixel(stokes_index, casacore::Stokes::Q)) {
-            _stokes_images[Q] = MakeSubImage(blc, trc, axes.stokes, stokes_index);
-        }
-        if (stokes.toPixel(stokes_index, casacore::Stokes::U)) {
-            _stokes_images[U] = MakeSubImage(blc, trc, axes.stokes, stokes_index);
-        }
-        if (stokes.toPixel(stokes_index, casacore::Stokes::V)) {
-            _stokes_images[V] = MakeSubImage(blc, trc, axes.stokes, stokes_index);
-        }
-    } else { // Assume stokes indices: I = 0, Q = 1, U = 2, and V = 3
-        if (dims.num_stokes > 0) {
-            _stokes_images[I] = MakeSubImage(blc, trc, axes.stokes, 0);
-        }
-        if (dims.num_stokes > 1) {
-            _stokes_images[Q] = MakeSubImage(blc, trc, axes.stokes, 1);
-        }
-        if (dims.num_stokes > 2) {
-            _stokes_images[U] = MakeSubImage(blc, trc, axes.stokes, 2);
-        }
-        if (dims.num_stokes > 3) {
-            _stokes_images[V] = MakeSubImage(blc, trc, axes.stokes, 3);
-        }
+void PolarizationCalculator::UpdateUnits(ImagePtr computed_image, Pol computed_type) {
+    // Set the units
+    try {
+        computed_image->setUnits(_units.at(computed_type));
+    } catch(const std::out_of_range& e) {
+        computed_image->setUnits(_loader->GetImage()->units());
     }
 }
 
-void PolarizationCalculator::FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type) {
-    casacore::CoordinateSystem coord_sys = image.coordinates();
+void PolarizationCalculator::UpdateInfo(ImagePtr computed_image, ImageMap& component_images, Pol computed_type) {
+    // Copy image info from original image
+    auto info = _loader->GetImage()->imageInfo();
+    if (info.hasMultipleBeams()) {
+        try {
+            // Copy beam from specified component image
+            auto beam_type = _beam_types.at(computed_type);
+            info.setBeams(component_images[beam_type]->imageInfo().getBeamSet());
+        } catch(const std::out_of_range& e) {
+            // Multiple beams can vary; don't copy
+            info.removeRestoringBeam();
+        }
+    }
+    computed_image->setImageInfo(info);
+}
+
+void PolarizationCalculator::UpdateCoordinates(ImagePtr computed_image, Pol computed_type) {
+    // Update Stokes coordinate with computed type
+    auto coord_sys = computed_image->coordinates();
     int stokes_index = coord_sys.findCoordinate(casacore::Coordinate::STOKES);
     if (stokes_index > -1) {
-        casacore::Vector<int> which(1);
-        which(0) = (int)type;
-        casacore::StokesCoordinate stokes(which);
+        casacore::StokesCoordinate stokes({Stokes::ToCasa(computed_type)});
         coord_sys.replaceCoordinate(stokes, stokes_index);
-        image.setCoordinateInfo(coord_sys);
-    }
+        computed_image->setCoordinateInfo(coord_sys);
+    }    
 }
 
-casacore::LatticeExprNode PolarizationCalculator::MakeTotalPolarizedIntensityNode() {
+
+Node PolarizationCalculator::PtotalNode(ImageMap& component_images) {
     casacore::LatticeExprNode lin_node = casacore::LatticeExprNode(
-        casacore::pow(*_stokes_images[V], 2) + casacore::pow(*_stokes_images[U], 2) + casacore::pow(*_stokes_images[Q], 2));
+        casacore::pow(*component_images[Pol::V], 2) + casacore::pow(*component_images[Pol::U], 2) + casacore::pow(*component_images[Pol::Q], 2));
     return casacore::sqrt(lin_node);
 }
 
-casacore::LatticeExprNode PolarizationCalculator::MakePolarizedIntensityNode() {
+
+Node PolarizationCalculator::PlinearNode(ImageMap& component_images) {
     casacore::LatticeExprNode lin_node =
-        casacore::LatticeExprNode(casacore::pow(*_stokes_images[U], 2) + casacore::pow(*_stokes_images[Q], 2));
+        casacore::LatticeExprNode(casacore::pow(*component_images[Pol::U], 2) + casacore::pow(*component_images[Pol::Q], 2));
     return casacore::sqrt(lin_node);
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::MakeSubImage(
-    casacore::IPosition& blc, casacore::IPosition& trc, int axis, int pix) {
-    blc(axis) = pix;
-    trc(axis) = pix;
-    casacore::LCSlicer slicer(blc, trc, casacore::RegionType::Abs);
-    casacore::ImageRegion region(slicer);
-    return std::make_shared<casacore::SubImage<float>>(*_image, region);
+
+Node PolarizationCalculator::PFtotalNode(ImageMap& component_images) {
+    return 100.0 * TotalPolarizedIntensityNode() / (*component_images[Pol::I]);
 }
 
-void PolarizationCalculator::SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes) {
-    casacore::ImageInfo info = _image->imageInfo();
-    if (info.hasMultipleBeams()) {
-        info.setBeams(_stokes_images[stokes]->imageInfo().getBeamSet());
-    }
-    image.setImageInfo(info);
+
+Node PolarizationCalculator::PFlinearNode(ImageMap& component_images) {
+    return 100.0 * PolarizedIntensityNode() / (*component_images[Pol::I]);
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeTotalPolarizedIntensity() {
-    if (!_image_valid) {
-        return nullptr;
-    }
 
-    if (!_stokes_images[Q] || !_stokes_images[U] || !_stokes_images[V]) {
-        spdlog::error("This image lacks stokes Q, U, or V. Cannot compute total polarized intensity");
-        return nullptr;
-    }
-
-    auto node = MakeTotalPolarizedIntensityNode();
-    casacore::LatticeExpr<float> lattice_expr(node);
-    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("Ptotal"));
-    image_expr->setUnits(_image->units());
-    SetImageStokesInfo(*image_expr, Q);
-    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::Ptotal);
-    return image_expr;
-}
-
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeTotalFractionalPolarizedIntensity() {
-    if (!_image_valid) {
-        return nullptr;
-    }
-
-    if (!_stokes_images[I] || !_stokes_images[Q] || !_stokes_images[U] || !_stokes_images[V]) {
-        spdlog::error("This image lacks stokes I, Q, U, or V. Cannot compute total fractional polarized intensity");
-        return nullptr;
-    }
-
-    auto node = 100.0 * MakeTotalPolarizedIntensityNode() / (*_stokes_images[I]);
-    casacore::LatticeExpr<float> lattice_expr(node);
-    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("PFtotal"));
-    image_expr->setUnits(casacore::Unit("%"));
-    SetImageStokesInfo(*image_expr, I);
-    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::PFtotal);
-    return image_expr;
-}
-
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizedIntensity() {
-    if (!_image_valid) {
-        return nullptr;
-    }
-
-    if (!_stokes_images[Q] || !_stokes_images[U]) {
-        spdlog::error("This image lacks stokes Q or U. Cannot compute polarized intensity");
-        return nullptr;
-    }
-
-    auto node = MakePolarizedIntensityNode();
-    casacore::LatticeExpr<float> lattice_expr(node);
-    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("Plinear"));
-    image_expr->setUnits(_image->units());
-    SetImageStokesInfo(*image_expr, Q);
-    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::Plinear);
-    return image_expr;
-}
-
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeFractionalPolarizedIntensity() {
-    if (!_image_valid) {
-        return nullptr;
-    }
-
-    if (!_stokes_images[I] || !_stokes_images[Q] || !_stokes_images[U]) {
-        spdlog::error("This image lacks stokes I, Q, or U. Cannot compute fractional polarized intensity");
-        return nullptr;
-    }
-
-    auto node = 100.0 * MakePolarizedIntensityNode() / (*_stokes_images[I]);
-    casacore::LatticeExpr<float> lattice_expr(node);
-    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("PFlinear"));
-    image_expr->setUnits(casacore::Unit("%"));
-    SetImageStokesInfo(*image_expr, I);
-    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::PFlinear);
-    return image_expr;
-}
-
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizedAngle() {
-    if (!_image_valid) {
-        return nullptr;
-    }
-
-    if (!_stokes_images[Q] || !_stokes_images[U]) {
-        spdlog::error("This image lacks stokes Q or U. Cannot compute polarized angle");
-        return nullptr;
-    }
-
-    casacore::LatticeExprNode node(casacore::pa(*_stokes_images[U], *_stokes_images[Q]));
-    casacore::LatticeExpr<float> lattice_expr(node);
-    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("Pangle"));
-    image_expr->setUnits(casacore::Unit("deg"));
-    casacore::ImageInfo image_info = _image->imageInfo();
-
-    // Since multiple beams can vary with stokes/polarization, they will not be copied to the output image
-    if (image_info.hasMultipleBeams()) {
-        image_info.removeRestoringBeam();
-    }
-
-    image_expr->setImageInfo(image_info);
-    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::Pangle);
-    return image_expr;
+Node PolarizationCalculator::PangleNode(ImageMap& component_images) {
+    return casacore::pa(*component_images[Pol::U], *component_images[Pol::Q]);
 }

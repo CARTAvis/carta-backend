@@ -104,7 +104,7 @@ void FileLoader::OpenFile(const std::string& hdu) {
     }
 }
 
-typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
+ImagePtr FileLoader::GetImage(bool check_data_type) {
     if (!_image) {
         OpenFile(_hdu);
     }
@@ -930,10 +930,15 @@ bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType&
     }
 }
 
-typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stokes_source) {
+ImagePtr FileLoader::GetStokesImage(const StokesSource& stokes_source) {
     if (stokes_source.IsOriginalImage()) {
         return GetImage();
     }
+    
+    // TODO we need to pass a real slicer into the new calculator
+    // TODO this requires further refactoring later
+    
+    // TODO use the (real) slicer here in the check
 
     if (_stokes_source != stokes_source) {
         // compute new stokes image with respect to the channel range

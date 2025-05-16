@@ -42,7 +42,7 @@ struct StokesRegion {
 
 class FileLoader {
 public:
-    using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
+    using ImagePtr = std::shared_ptr<casacore::ImageInterface<float>>;
 
     // directory only for ExprLoader, is_gz only for FitsLoader
     FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false, bool is_generated = false);
@@ -67,12 +67,12 @@ public:
     void CloseImageIfUpdated();
 
     // Return the opened casacore image or its class name
-    ImageRef GetImage(bool check_data_type = true);
+    ImagePtr GetImage(bool check_data_type = true);
     casacore::DataType GetDataType();
     bool IsComplexDataType();
 
     // Return the opened casacore image or computed stokes image
-    ImageRef GetStokesImage(const StokesSource& stokes_source);
+    ImagePtr GetStokesImage(const StokesSource& stokes_source);
 
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);

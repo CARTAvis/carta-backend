@@ -16,91 +16,39 @@
 #include <casacore/lattices/LatticeMath/LatticeStatistics.h>
 
 #include "Util/Image.h"
+#include "Util/Stokes.h"
 
 namespace carta {
     
+    
+// TODO constructor should just take a loader; GetImage should get the calculated type from the slicer
+    
 class PolarizationCalculator {
 public:
-    using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
-    PolarizationCalculator(std::shared_ptr<FileLoader> loader, CARTA::PolarizationType calculated_type);
-    virtual ~PolarizationCalculator() = default;
-    static std::shared_ptr<PolarizationCalculator> GetCalculator(std::shared_ptr<FileLoader> loader, CARTA::PolarizationType calculated_type);
-    ImageRef GetImage(casacore::Slicer slicer);
-protected:
-    virtual ImageRef Calculate();
-    std::shared_ptr<FileLoader> _loader;
-    CARTA::PolarizationType _computed_type;
-    std::vector<CARTA::PolarizationType> _component_types;
-    std::map<CARTA::PolarizationType, ImageRef> _component_images;
-};
-
-class PtotalCalculator : public PolarizationCalculator {
-public:
-    PtotalCalculator(std::shared_ptr<FileLoader> loader);
-protected:
-    ImageRef Calculate() override;
-};
-
-class PlinearCalculator : public PolarizationCalculator {
-public:
-    PlinearCalculator(std::shared_ptr<FileLoader> loader);
-protected:
-    ImageRef Calculate() override;
-};
-
-class PFtotalCalculator : public PolarizationCalculator {
-public:
-    PFtotalCalculator(std::shared_ptr<FileLoader> loader);
-protected:
-    ImageRef Calculate() override;
-};
-
-class PFlinearCalculator : public PolarizationCalculator {
-public:
-    PFlinearCalculator(std::shared_ptr<FileLoader> loader);
-protected:
-    ImageRef Calculate() override;
-};
-
-class PangleCalculator : public PolarizationCalculator {
-public:
-    PangleCalculator(std::shared_ptr<FileLoader> loader);
-protected:
-    ImageRef Calculate() override;
-};
-
-
-
-
-
-//-------------------------- TODO OLD BELOW THIS LINE
-class PolarizationCalculator {
-    enum StokesTypes { I, Q, U, V };
-
-public:
-    PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxesInfo axes, DimsInfo dims, AxisRange z_range,
-        AxisRange x_range, AxisRange y_range);
-    ~PolarizationCalculator() = default;
-
-    std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalPolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalFractionalPolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputeFractionalPolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedAngle();
-
+    using ImagePtr = std::shared_ptr<casacore::ImageInterface<float>>;
+    using Pol = CARTA::PolarizationType;
+    using ImageMap = std::unordered_map<Pol, ImagePtr>;
+    using CasaPol = casacore::Stokes::StokesTypes;
+    using Node = casacore::LatticeExprNode;
+    typedef Node (PolarizationCalculator::*NodeFunc)(ImageMap&);
+    PolarizationCalculator(std::shared_ptr<FileLoader> loader);
+    ImagePtr GetImage(casacore::Slicer slicer);
 private:
-    std::shared_ptr<casacore::ImageInterface<float>> MakeSubImage(casacore::IPosition& blc, casacore::IPosition& trc, int axis, int pix);
-    casacore::LatticeExprNode MakeTotalPolarizedIntensityNode();
-    casacore::LatticeExprNode MakePolarizedIntensityNode();
-    void SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes);
-    void FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type);
-
-    // These blocks are always size 4, with I/Q/U/V in slots 0/1/2/3. If an image is I/V only, it uses slots 0/3
-    std::vector<std::shared_ptr<casacore::ImageInterface<float>>> _stokes_images =
-        std::vector<std::shared_ptr<casacore::ImageInterface<float>>>(4);
-
-    const std::shared_ptr<const casacore::ImageInterface<float>> _image;
-    bool _image_valid;
+    ImagePtr GetComponentImage(casacore::Slicer slicer, int axis, int index);
+    ImageMap GetComponents(Pol computed_type);
+    ImagePtr Calculate(Node node, Pol computed_type);
+    void UpdateUnits(ImagePtr computed_image, Pol computed_type);
+    void UpdateInfo(ImagePtr computed_image, ImageMap& component_images, Pol computed_type);
+    void UpdateCoordinates(ImagePtr computed_image, Pol computed_type);
+    Node PtotalNode(ImageMap& component_images);
+    Node PlinearNode(ImageMap& component_images);
+    Node PFtotalNode(ImageMap& component_images);
+    Node PFlinearNode(ImageMap& component_images);
+    Node PangleNode(ImageMap& component_images);
+    std::shared_ptr<FileLoader> _loader;
+    static std::unordered_map<Pol, NodeFunc> _nodes;
+    static std::unordered_map<Pol, casacore::Unit> _units;
+    static std::unordered_map<Pol, Pol> _beam_types;
 };
 
 } // namespace carta

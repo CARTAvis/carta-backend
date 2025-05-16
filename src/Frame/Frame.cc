@@ -2123,7 +2123,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     save_file_ack.set_message(message);
 }
 
-// Export FileLoader::ImageRef image to CASA file
+// Export image to CASA file
 // Input casacore::ImageInterface<casacore::Float> image as source data
 // Input output_filename as file path
 // Input message as a return message, which may contain error message
@@ -2170,7 +2170,7 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
     return success;
 }
 
-// Export FileLoader::ImageRef image to FITS file
+// Export image to FITS file
 // Input casacore::ImageInterface<casacore::Float> image as source data
 // Input output_filename as file path
 // Input message as a return message, which may contain error message
