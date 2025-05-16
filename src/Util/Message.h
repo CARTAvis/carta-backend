@@ -54,6 +54,10 @@ struct EventHeader {
     uint16_t type;
     uint16_t icd_version;
     uint32_t request_id;
+
+    CARTA::EventType GetType() const {
+        return static_cast<CARTA::EventType>(type);
+    }
 };
 struct HistogramConfig;
 } // namespace carta
@@ -158,7 +162,7 @@ public:
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
 
     // Decode messages
-    static CARTA::EventType EventType(std::vector<char>& message);
+    static carta::EventHeader GetEventHeader(std::string_view message);
 
     /**
      * @brief Decodes a message from a buffer of characters into an object of type T and
@@ -172,7 +176,10 @@ public:
      * @return The decoded message of type T.
      */
     template <typename T>
-    static T DecodeMessage(const char* event_buffer, int event_length);
+    static T DecodeMessage(std::string_view sv_message);
+
+    static std::pair<std::vector<char>, bool> EncodeMessage(
+        CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message);
 };
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,

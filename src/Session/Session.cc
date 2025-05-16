@@ -2117,18 +2117,13 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     logger::LogSentEventType(event_type);
 
     size_t message_length = message.ByteSizeLong();
-    size_t required_size = message_length + sizeof(EventHeader);
-    std::pair<std::vector<char>, bool> msg_vs_compress;
-    std::vector<char>& msg = msg_vs_compress.first;
-    msg.resize(required_size, 0);
-    EventHeader* head = (EventHeader*)msg.data();
+    size_t required_size = sizeof(carta::EventHeader) + message_length;
 
-    head->type = event_type;
-    head->icd_version = ICD_VERSION;
-    head->request_id = event_id;
-    message.SerializeToArray(msg.data() + sizeof(EventHeader), message_length);
+    std::pair<std::vector<char>, bool> msg_vs_compress = Message::EncodeMessage(event_type, event_id, message);
+
     // Skip compression on files smaller than 1 kB
     msg_vs_compress.second = compress && required_size > 1024;
+
     _out_msgs.push(msg_vs_compress);
 
     // uWS::Loop::defer(function) is the only thread-safe function.
