@@ -452,14 +452,15 @@ carta::EventHeader Message::GetEventHeader(std::string_view message) {
     return *reinterpret_cast<const carta::EventHeader*>(message.data());
 }
 
+/**
+ * @note This function creates a binary buffer containing a CARTA::EventHeader followed by the serialized protobuf message.
+ * The header includes the event type, protocol version, and event/request ID.
+ */
 std::vector<char> Message::EncodeMessage(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message) {
     size_t message_length = message.ByteSizeLong();
     size_t required_size = sizeof(carta::EventHeader) + message_length;
 
-    std::vector<char> msg;
-    msg.resize(required_size, 0);
-    carta::EventHeader* head = (carta::EventHeader*)msg.data();
-
+    std::vector<char> msg(required_size, 0);
     carta::EventHeader* header = reinterpret_cast<carta::EventHeader*>(msg.data());
     header->type = event_type;
     header->icd_version = carta::ICD_VERSION;

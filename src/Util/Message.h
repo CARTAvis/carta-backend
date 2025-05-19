@@ -170,14 +170,21 @@ public:
      *
      * @tparam T The type of the object to decode the message into. T must have a member function
      *           `ParseFromArray(const void*, int)` to parse the data.
-     * @param event_buffer A pointer to the buffer containing the serialized message data.
-     * @param event_length The length of the message data in bytes.
+     * @param sv_message The message to decode.
      * @throws std::runtime_error If the message cannot be parsed.
      * @return The decoded message of type T.
      */
     template <typename T>
     static T DecodeMessage(std::string_view sv_message);
 
+    /**
+     * @brief Encodes a protobuf message with a CARTA event header for transmission.
+     * 
+     * @param event_type The CARTA event type to encode in the header.
+     * @param event_id The event or request ID to encode in the header.
+     * @param message The protobuf message to serialize and encode.
+     * @return A std::vector<char> containing the header followed by the serialized message.
+     */
     static std::vector<char> EncodeMessage(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message);
 };
 
