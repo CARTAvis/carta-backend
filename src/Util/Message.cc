@@ -460,7 +460,7 @@ std::vector<char> Message::EncodeMessage(CARTA::EventType event_type, uint32_t e
     size_t message_length = message.ByteSizeLong();
     size_t required_size = sizeof(carta::EventHeader) + message_length;
 
-    std::vector<char> msg(required_size, 0);
+    std::vector<char> msg(required_size);
     carta::EventHeader* header = reinterpret_cast<carta::EventHeader*>(msg.data());
     header->type = event_type;
     header->icd_version = carta::ICD_VERSION;
