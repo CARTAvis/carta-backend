@@ -179,7 +179,7 @@ public:
 
     /**
      * @brief Encodes a protobuf message with a CARTA event header for transmission.
-     * 
+     *
      * @param event_type The CARTA event type to encode in the header.
      * @param event_id The event or request ID to encode in the header.
      * @param message The protobuf message to serialize and encode.
