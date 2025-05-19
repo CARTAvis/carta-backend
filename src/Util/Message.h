@@ -178,8 +178,7 @@ public:
     template <typename T>
     static T DecodeMessage(std::string_view sv_message);
 
-    static std::pair<std::vector<char>, bool> EncodeMessage(
-        CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message);
+    static std::vector<char> EncodeMessage(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message);
 };
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,

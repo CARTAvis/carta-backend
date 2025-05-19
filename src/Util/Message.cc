@@ -452,12 +452,11 @@ carta::EventHeader Message::GetEventHeader(std::string_view message) {
     return *reinterpret_cast<const carta::EventHeader*>(message.data());
 }
 
-std::pair<std::vector<char>, bool> Message::EncodeMessage(
-    CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message) {
+std::vector<char> Message::EncodeMessage(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message) {
     size_t message_length = message.ByteSizeLong();
     size_t required_size = sizeof(carta::EventHeader) + message_length;
-    std::pair<std::vector<char>, bool> msg_vs_compress;
-    std::vector<char>& msg = msg_vs_compress.first;
+
+    std::vector<char> msg;
     msg.resize(required_size, 0);
     carta::EventHeader* head = (carta::EventHeader*)msg.data();
 
@@ -468,7 +467,7 @@ std::pair<std::vector<char>, bool> Message::EncodeMessage(
 
     message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
 
-    return msg_vs_compress;
+    return msg;
 }
 
 CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,

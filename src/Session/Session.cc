@@ -2116,13 +2116,10 @@ bool Session::SendVectorFieldData(int file_id) {
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
     logger::LogSentEventType(event_type);
 
-    size_t message_length = message.ByteSizeLong();
-    size_t required_size = sizeof(carta::EventHeader) + message_length;
-
-    std::pair<std::vector<char>, bool> msg_vs_compress = Message::EncodeMessage(event_type, event_id, message);
+    std::vector<char> msg = Message::EncodeMessage(event_type, event_id, message);
 
     // Skip compression on files smaller than 1 kB
-    msg_vs_compress.second = compress && required_size > 1024;
+    auto msg_vs_compress = std::make_pair(std::move(msg), compress && msg.size() > 1024);
 
     _out_msgs.push(msg_vs_compress);
 
