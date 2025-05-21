@@ -128,6 +128,53 @@ jobs:
           git checkout stash@{0} -- badge-coverage.svg
           git diff --staged --quiet || { git commit -m "Updated coverage @ ${lastcommit}" && git push; }
 
+  Ubuntu-24.04:
+    runs-on: [self-hosted, Linux, X64, Docker, CI]
+    needs: format-check
+    container: carta/backend-builder-ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Fix ownership
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          lsb_release -a
+
+      - name: Build backend
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 32
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          cd build/test
+          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp \
+          LSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan-leaks.supp \
+          ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+          ./carta_backend_tests --gtest_output=xml:ubuntu_test_report.xml
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Ubuntu-24.04 Unit Test results
 
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
@@ -181,6 +228,55 @@ jobs:
           path: build/test/macos_test_report.xml
           reporter: java-junit
 
+  macOS-15:
+    runs-on: [self-hosted, macOS-15-M1, C1]
+    needs: format-check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          sw_vers
+
+      - name: Build backend  
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DDevSuppressExternalWarnings=ON \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 8
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
+
+      - name: Run unit tests
+        uses: nick-fields/retry@master
+        with:
+          timeout_minutes: 2
+          retry_wait_seconds: 60
+          max_attempts: 3
+          retry_on_exit_code: 1
+          shell: bash
+          command: |
+            cd build/test
+            ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp:detect_container_overflow=0 \
+            ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer \
+            ./carta_backend_tests --gtest_output=xml:macos_test_report.xml
+            head -1 macos_test_report.xml
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: macOS-15 Unit Test results
 
   AlmaLinux-8:
     runs-on: [self-hosted, Linux, X64, Docker]
@@ -232,6 +328,54 @@ jobs:
           path: build/test/almalinux_test_report.xml
           reporter: java-junit
 
+  AlmaLinux-9:
+    runs-on: [self-hosted, Linux, X64, Docker, CI]
+    needs: format-check
+    container: carta/backend-builder-almalinux-9
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Fix ownership
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          cat /etc/redhat-release
+
+      - name: Build backend
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 32
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          cd build/test
+          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp \
+          LSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan-leaks.supp \
+          ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+          ./carta_backend_tests --gtest_output=xml:almalinux_test_report.xml
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: AlmaLinux-9 Unit Test results
+          
   Notify:
     name: Send notifications
     runs-on: ubuntu-latest
