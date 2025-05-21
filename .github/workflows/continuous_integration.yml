@@ -152,7 +152,8 @@ jobs:
           git submodule update --init --recursive
           mkdir build && cd build
           cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
-                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer --coverage' \
+                   -DCMAKE_C_FLAGS='--coverage' \
                    -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
           make -j 32
 
@@ -175,7 +176,57 @@ jobs:
         if: success() || failure()
         with:
           name: Ubuntu-24.04 Unit Test results
+          path: build/test/ubuntu24_test_report.xml
+          reporter: java-junit
 
+      - name: Generate code coverage report
+        shell: bash
+        run: |
+          mkdir coverage
+          gcovr -f src/ --xml-pretty -j 8 -o coverage/coverage.xml
+      - name: Create code coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/coverage.xml
+          badge: true
+          format: 'markdown'
+          output: both
+          indicators: true
+          thresholds: '38 75'
+          hide_branch_rate: true
+          hide_complexity: true
+      - name: Publish code coverage summary
+        uses: LouisBrunner/checks-action@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Code Coverage
+          conclusion: ${{ job.status }}
+          output: "{\"summary\":\"Code Coverage\"}"
+          output_text_description_file: code-coverage-results.md          
+
+      - name: Add coverage comment to Pull Request
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          skip_unchanged: true
+          path: code-coverage-results.md
+      
+      - name: Download and store coverage badge when pushing to dev
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        shell: bash
+        run: |
+          head -n1 code-coverage-results.md | grep -Po 'https.*(?=\))' | wget -i - -O badge-coverage.svg
+          git config --global user.email "backend.ci@github.action"
+          git config --global user.name "Backend CI"
+          git add badge-coverage.svg
+          lastcommit=`git log -1 --pretty=format:"%h %s"`
+          git stash
+          git checkout gh-storage
+          git pull
+          git checkout stash@{0} -- badge-coverage.svg
+          git diff --staged --quiet || { git commit -m "Updated coverage @ ${lastcommit}" && git push; }
+          
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
     needs: format-check
@@ -277,6 +328,8 @@ jobs:
         if: success() || failure()
         with:
           name: macOS-15 Unit Test results
+          path: build/test/macos15_test_report.xml
+          reporter: java-junit
 
   AlmaLinux-8:
     runs-on: [self-hosted, Linux, X64, Docker]
@@ -375,7 +428,9 @@ jobs:
         if: success() || failure()
         with:
           name: AlmaLinux-9 Unit Test results
-          
+          path: build/test/almalinux9_test_report.xml
+          reporter: java-junit
+
   Notify:
     name: Send notifications
     runs-on: ubuntu-latest
