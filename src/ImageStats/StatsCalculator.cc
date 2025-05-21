@@ -238,7 +238,7 @@ bool ComputeFluxDensity(
             }
 
             // Casacore supports "unit-1" and "/unit" syntax so check for both
-            if (flux_unit.contains("pixel-1") || (per_unit == "pixel")) {
+            if (per_unit.empty() || flux_unit.contains("pixel-1") || (per_unit == "pixel")) {
                 flux_density = sum;
             } else {
                 // Get area for one pixel
