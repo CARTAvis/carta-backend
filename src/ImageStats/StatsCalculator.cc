@@ -266,29 +266,4 @@ bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::S
     return true;
 }
 
-bool GetWavelength(const casacore::ImageInterface<float>& image, const casacore::String unit, double& wavelength) {
-    // Use image spectral coordinate to convert frequency to wavelength in unit.
-    // Returns false if image has no spectral axis or conversion fails.
-    if (!image.coordinates().hasSpectralAxis()) {
-        spdlog::warn("Image has no spectral axis for wavelength, cannot compute flux density");
-        return false;
-    }
-
-    auto spectral_coord = image.coordinates().spectralCoordinate();
-    spectral_coord.setWavelengthUnit(unit);
-
-    // Get current frequency = spectral pixel 0 (spectral coordinate is 1D)
-    double frequency;
-    spectral_coord.toWorld(frequency, 0);
-
-    // Convert freq to wave
-    casacore::Vector<double> wavelen, freq(1, frequency);
-    if (!spectral_coord.frequencyToWavelength(wavelen, freq)) {
-        spdlog::warn("Cannot convert image frequency to wavelength for flux density");
-        return false;
-    }
-    wavelength = wavelen[0];
-    return true;
-}
-
 } // namespace carta

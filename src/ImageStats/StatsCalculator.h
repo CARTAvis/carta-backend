@@ -39,7 +39,6 @@ void GetPositionStats(const casacore::ImageInterface<float>& image, casacore::Im
 bool ComputeFluxDensity(
     const casacore::ImageInterface<float>& image, casacore::ImageStatistics<float> image_stats, std::vector<double>& result);
 bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::String unit, double& beam_area);
-bool GetWavelength(const casacore::ImageInterface<float>& image, const casacore::String unit, double& wavelength);
 
 } // namespace carta
 
