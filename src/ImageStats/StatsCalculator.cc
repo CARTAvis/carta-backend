@@ -8,12 +8,7 @@
 
 #include "StatsCalculator.h"
 
-#include <cmath>
-#include <limits>
-
 #include <casacore/casa/Arrays/ArrayMath.h>
-#include <casacore/casa/BasicSL/Constants.h>
-#include <casacore/casa/Quanta/QC.h>
 
 #include "Logger/Logger.h"
 

@@ -16,7 +16,7 @@
 
 #include <carta-protobuf/enums.pb.h>
 #include "BasicStatsCalculator.h"
-#include "Cache/RequirementsCache.h"
+#include "Histogram.h"
 
 namespace carta {
 
@@ -46,7 +46,7 @@ void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t da
  *  @param bounds The min and max for the histogram in a HistogramBounds struct
  *  @param data The pointer to the float vector
  *  @param data_size The size of the float vector
- *  @return The histogram 
+ *  @return The histogram
  */
 Histogram CalcHistogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size);
 
@@ -68,7 +68,8 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
  *  @param image_stats The casacore::ImageStatistics object for the image
  *  @param carta_stats_type The position statistics type to calculate
  *  @param dbl_result Double vector to return the statistics result
- *  @details The casacore::Slicer defining the image bounds is used to determine Blc and Trc. ImageStatistics is used to retrieve the minimum and maximum position.
+ *  @details The casacore::Slicer defining the image bounds is used to determine Blc and Trc.
+ *  ImageStatistics is used to retrieve the minimum and maximum position.
  *  @see CalcStatsValues
  */
 void GetPositionStats(const casacore::ImageInterface<float>& image, casacore::ImageStatistics<float> image_stats,
@@ -79,7 +80,8 @@ void GetPositionStats(const casacore::ImageInterface<float>& image, casacore::Im
  *  @param image_stats The casacore::ImageStatistics object for the image
  *  @param result Double vector to return the flux density result
  *  @return Whether the calculation succeeded
- *  @details Flux density calculation fails when image unit is not compatible or when the unit is per beam but no beam is defined.  ImageStatistics is used to retrieve the sum. GetBeamArea is called when the image unit is per beam.
+ *  @details Flux density calculation fails when image unit is not compatible or when the unit is per beam but no beam is defined.
+ *  ImageStatistics is used to retrieve the sum. GetBeamArea is called when the image unit is per beam.
  *  @see CalcStatsValues
  *  @see GetBeamArea
  */
@@ -91,8 +93,10 @@ bool ComputeFluxDensity(
  *  @param unit The unit to use for the area calculation, based on the image unit
  *  @param beam_area The result of the calculation
  *  @return Whether the calculation succeeded
- *  @details The beam area calculation fails when the image has no beam. casacore::ImageInfo is used to get the area of the beam.
+ *  @details The beam area calculation fails when the image has no beam.
+ *  casacore::ImageInfo is used to get the area of the beam.
  *  @see ComputeFluxDensity
+ */
 bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::String unit, double& beam_area);
 
 } // namespace carta
