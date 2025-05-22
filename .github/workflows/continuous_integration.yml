@@ -177,7 +177,7 @@ jobs:
         if: success() || failure()
         with:
           name: Ubuntu-Noble Unit Test results
-          path: build/test/ubuntu24_test_report.xml
+          path: build/test/ubuntu_test_report.xml
           reporter: java-junit
 
       - name: Generate code coverage report
@@ -281,7 +281,7 @@ jobs:
           reporter: java-junit
 
   macOS-15:
-    runs-on: [self-hosted, macOS-15-M1, C1]
+    runs-on: [self-hosted, macOS-15-M1, CI]
     needs: format-check
     steps:
       - name: Checkout
@@ -329,7 +329,7 @@ jobs:
         if: success() || failure()
         with:
           name: macOS-15 Unit Test results
-          path: build/test/macos15_test_report.xml
+          path: build/test/macos_test_report.xml
           reporter: java-junit
 
   AlmaLinux-8:
@@ -429,7 +429,7 @@ jobs:
         if: success() || failure()
         with:
           name: AlmaLinux-9 Unit Test results
-          path: build/test/almalinux9_test_report.xml
+          path: build/test/almalinux_test_report.xml
           reporter: java-junit
 
   Notify:
