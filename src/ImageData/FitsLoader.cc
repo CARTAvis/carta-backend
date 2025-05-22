@@ -14,9 +14,9 @@
 
 #include "CartaFitsImage.h"
 #include "CompressedFits.h"
+#include "FitsUtil.h"
 #include "Util/Casacore.h"
 #include "Util/FileSystem.h"
-#include "Util/String.h"
 
 namespace carta {
 

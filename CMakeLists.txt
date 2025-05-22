@@ -225,6 +225,7 @@ set(SOURCE_FILES
         src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc
         src/ImageData/FitsLoader.cc
+        src/ImageData/FitsUtil.cc
         src/ImageData/Hdf5Attributes.cc
         src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
