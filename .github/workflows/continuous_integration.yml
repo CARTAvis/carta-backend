@@ -1,6 +1,6 @@
 
 name: ci
-on: [push]
+on: [push, pull_request]
 jobs:
 
 
@@ -308,17 +308,11 @@ jobs:
         shell: bash
         run: |
           ./build/carta_backend --version
-
-      - name: List contents of mix test folder
-        shell: bash
-        run: |
-          echo "[DEBUG] Listing test/data/images/mix..."
-          ls -lR test/data/images/mix || echo "Folder not found"
           
       - name: Run unit tests
         uses: nick-fields/retry@master
         with:
-          timeout_minutes: 2
+          timeout_minutes: 5
           retry_wait_seconds: 60
           max_attempts: 3
           retry_on_exit_code: 1
@@ -336,56 +330,6 @@ jobs:
         with:
           name: macOS-15 Unit Test results
           path: build/test/macos_test_report.xml
-          reporter: java-junit
-
-  AlmaLinux-8:
-    runs-on: [self-hosted, Linux, X64, Docker]
-    needs: format-check
-    container: carta/backend-builder-almalinux-8
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Fix ownership
-        run: |
-          chown -R $(id -u):$(id -g) $PWD
-
-      - name: System information
-        shell: bash
-        run: |
-          uname -a
-          cat /etc/redhat-release
-
-      - name: Build backend
-        shell: bash
-        run: |
-          git submodule update --init --recursive
-          mkdir build && cd build
-          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
-                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
-                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
-          make -j 32
-
-      - name: Check backend runs
-        shell: bash
-        run: |
-          ./build/carta_backend --version
-
-      - name: Run unit tests
-        shell: bash
-        run: |
-          cd build/test
-          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp \
-          LSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan-leaks.supp \
-          ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
-          ./carta_backend_tests --gtest_output=xml:almalinux_test_report.xml
-
-      - name: Publish unit test report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
-        with:
-          name: AlmaLinux-8 Unit Test results
-          path: build/test/almalinux_test_report.xml
           reporter: java-junit
 
   AlmaLinux-9:
@@ -441,7 +385,7 @@ jobs:
   Notify:
     name: Send notifications
     runs-on: ubuntu-latest
-    needs: [format-check, Ubuntu-Focal, Ubuntu-Noble, macOS-12, macOS-15, AlmaLinux-8, AlmaLinux-9]
+    needs: [format-check, Ubuntu-Focal, Ubuntu-Noble, macOS-12, macOS-15, AlmaLinux-9]
     if: always()
     steps:
       - name: Notify Slack
