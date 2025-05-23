@@ -199,7 +199,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                 if (file_type == CARTA::UNKNOWN) {
                                     // Contents did not work, check extension (e.g. DS9 with no header)
                                     file_type = GuessRegionType(full_path, false);
-                                } else {
+                                }
+
+                                if (file_type != CARTA::UNKNOWN) {
                                     // Add file: known region file
                                     auto& file_info = *file_list_response.add_files();
                                     FillRegionFileInfo(file_info, full_path, file_type, false);
