@@ -100,6 +100,7 @@ TEST_F(FileListTest, SetTopLevelFolder) {
     auto request5 = Message::FileListRequest("");
     std::cout << "[DEBUG] Running TestFileListSubdirectories with / and request5" << std::endl;
     TestFileListSubdirectories("/", "", request5);
+    std::cout << "[DEBUG] End of TestFileListSubdirectories with / and request5" << std::endl;
 }
 
 TEST_F(FileListTest, SetStartingFolder) {
