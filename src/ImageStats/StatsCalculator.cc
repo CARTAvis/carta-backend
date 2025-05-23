@@ -226,7 +226,7 @@ bool ComputeFluxDensity(
             casacore::Quantity pixel_area(std::fabs(increments[0] * increments[1]), area_unit.getUnit());
 
             // Convert pixel area to per_unit
-            if (flux_unit.contains("beam-1") || per_unit == "beam") {
+            if (flux_unit.contains("beam-1") || per_unit.contains("beam")) {
                 double pixel_area_sr = pixel_area.get("sr").getValue();
                 double beam_area_sr;
                 if (!GetBeamArea(image, "sr", beam_area_sr)) {
