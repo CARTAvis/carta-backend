@@ -309,6 +309,12 @@ jobs:
         run: |
           ./build/carta_backend --version
 
+      - name: List contents of mix test folder
+        shell: bash
+        run: |
+          echo "[DEBUG] Listing test/data/images/mix..."
+          ls -lR test/data/images/mix || echo "Folder not found"
+          
       - name: Run unit tests
         uses: nick-fields/retry@master
         with:
