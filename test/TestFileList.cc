@@ -68,11 +68,6 @@ public:
 TEST_F(FileListTest, SetTopLevelFolder) {
     std::string abs_path = (TestRoot() / "data" / "images" / "mix").string();
 
-    // Request file list for default top folder "/"
-    // 0 image files, > 0 subdirectories
-    auto request5 = Message::FileListRequest("");
-    TestFileListSubdirectories("/", "", request5);
-
     auto request1 = Message::FileListRequest(abs_path);
     TestFileList("/", "", request1);
     TestFileList("", "", request1, false);
@@ -85,6 +80,11 @@ TEST_F(FileListTest, SetTopLevelFolder) {
 
     auto request4 = Message::FileListRequest(".");
     TestFileList(abs_path, "", request4);
+
+    // Request file list for default top folder "/"
+    // 0 image files, > 0 subdirectories
+    auto request5 = Message::FileListRequest("");
+    TestFileListSubdirectories("/", "", request5);
 }
 
 TEST_F(FileListTest, SetStartingFolder) {
