@@ -67,6 +67,11 @@ public:
 
 TEST_F(FileListTest, SetTopLevelFolder) {
     std::string abs_path = (TestRoot() / "data" / "images" / "mix").string();
+    std::cout << "[DEBUG] abs_path = " << abs_path << std::endl;
+
+    for (const auto& entry : std::filesystem::directory_iterator(abs_path)) {
+        std::cout << "[DEBUG] entry = " << entry.path().string() << std::endl;
+    }
 
     auto request1 = Message::FileListRequest(abs_path);
     TestFileList("/", "", request1);
