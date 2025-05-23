@@ -312,7 +312,7 @@ jobs:
       - name: Run unit tests
         uses: nick-fields/retry@master
         with:
-          timeout_minutes: 5
+          timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
           retry_on_exit_code: 1
