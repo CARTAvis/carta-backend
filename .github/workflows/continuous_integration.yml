@@ -5,6 +5,7 @@ on:
     branches:
       - dev
       - release/*
+      - posh/almalinux9_ci
   pull_request:
 jobs:
 
