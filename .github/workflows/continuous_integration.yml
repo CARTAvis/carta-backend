@@ -37,7 +37,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, Docker, Ubuntu-24]
     needs: format-check
     container: 
-      images: carta/backend-builder-ubuntu-noble
+      image: carta/backend-builder-ubuntu-noble
       options: --user 1000:1000
     steps:
       - name: Checkout
