@@ -935,30 +935,33 @@ ImagePtr FileLoader::GetStokesImage(const StokesSource& stokes_source) {
         return GetImage();
     }
     
-    // TODO we need to pass a real slicer into the new calculator
-    // TODO this requires further refactoring later
-    
-    // TODO use the (real) slicer here in the check
+    // This is a temporary shim for integrating the refactored calculator with the current code.
+    // This will be refactored further.
 
     if (_stokes_source != stokes_source) {
-        // compute new stokes image with respect to the channel range
-        carta::PolarizationCalculator polarization_calculator(
-            GetImage(), _axes, _dims, AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
+//         // compute new stokes image with respect to the channel range
+//         carta::PolarizationCalculator polarization_calculator(
+//             GetImage(), _axes, _dims, AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
+// 
+//         if (stokes_source.stokes == CARTA::PolarizationType::Ptotal) {
+//             _computed_stokes_image = polarization_calculator.ComputeTotalPolarizedIntensity();
+//         } else if (stokes_source.stokes == CARTA::PolarizationType::PFtotal) {
+//             _computed_stokes_image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
+//         } else if (stokes_source.stokes == CARTA::PolarizationType::Plinear) {
+//             _computed_stokes_image = polarization_calculator.ComputePolarizedIntensity();
+//         } else if (stokes_source.stokes == CARTA::PolarizationType::PFlinear) {
+//             _computed_stokes_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+//         } else if (stokes_source.stokes == CARTA::PolarizationType::Pangle) {
+//             _computed_stokes_image = polarization_calculator.ComputePolarizedAngle();
+//         } else {
+//             spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
+//             _computed_stokes_image = nullptr;
+//         }
 
-        if (stokes_source.stokes == CARTA::PolarizationType::Ptotal) {
-            _computed_stokes_image = polarization_calculator.ComputeTotalPolarizedIntensity();
-        } else if (stokes_source.stokes == CARTA::PolarizationType::PFtotal) {
-            _computed_stokes_image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
-        } else if (stokes_source.stokes == CARTA::PolarizationType::Plinear) {
-            _computed_stokes_image = polarization_calculator.ComputePolarizedIntensity();
-        } else if (stokes_source.stokes == CARTA::PolarizationType::PFlinear) {
-            _computed_stokes_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
-        } else if (stokes_source.stokes == CARTA::PolarizationType::Pangle) {
-            _computed_stokes_image = polarization_calculator.ComputePolarizedAngle();
-        } else {
-            spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
-            _computed_stokes_image = nullptr;
-        }
+        // TODO calculate "real" slicer here from the StokesSource (???)
+        // TODO refactor everything???
+        
+        
         _stokes_source = stokes_source;
     }
     return _computed_stokes_image;
