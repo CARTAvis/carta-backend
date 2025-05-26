@@ -18,6 +18,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -54,8 +57,32 @@ jobs:
           uname -a
           sw_vers
 
+      - name: Build carta-backend (macOS-14)
+        if: matrix.os_version == 'macOS-14'
+        shell: bash
+        run: |
+          export CC=/usr/local/Cellar/llvm/20.1.3/bin/clang
+          export CXX=/usr/local/Cellar/llvm/20.1.3/bin/clang++
+          export PROTOBUF_ROOT=$(brew --prefix protobuf@21)
+          export PATH="$PROTOBUF_ROOT/bin:$PATH"
+          export LIBRARY_PATH="$PROTOBUF_ROOT/lib:$LIBRARY_PATH"
+          export CMAKE_PREFIX_PATH="$PROTOBUF_ROOT:$CMAKE_PREFIX_PATH"
+          export PKG_CONFIG_PATH="$PROTOBUF_ROOT/lib/pkgconfig:$PKG_CONFIG_PATH"
+          SRC_DIR=$GITHUB_WORKSPACE/source
+          BUILD_DIR=$GITHUB_WORKSPACE/build
+          cd $SRC_DIR && git submodule update --init --recursive
+          rm -rf $BUILD_DIR && mkdir -p $BUILD_DIR
+          cd $BUILD_DIR
+          cmake $SRC_DIR \
+            -Dtest=on \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DDevSuppressExternalWarnings=ON \
+            -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
+          make -j 16
+
       - name: Build carta-backend (macOS)
-        if: matrix.os == 'macos'
+        if: matrix.os == 'macos' && matrix.os_version != 'macOS-14'
         shell: bash
         run: |
           SRC_DIR=$GITHUB_WORKSPACE/source
@@ -113,6 +140,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -183,6 +213,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -236,6 +269,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -289,6 +325,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -342,6 +381,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -395,6 +437,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -448,6 +493,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -501,6 +549,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -554,6 +605,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -607,6 +661,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -660,6 +717,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -713,6 +773,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -766,6 +829,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -819,6 +885,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
@@ -872,6 +941,9 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+          - os_version: macOS-14
+            os: macos
+            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
