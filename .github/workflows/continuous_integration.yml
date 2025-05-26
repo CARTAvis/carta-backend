@@ -37,7 +37,7 @@ jobs:
     needs: format-check
     container: 
       images: carta/backend-builder-ubuntu-noble
-      options --user 1000:1000
+      options: --user 1000:1000
     steps:
       - name: Checkout
         uses: actions/checkout@v3
