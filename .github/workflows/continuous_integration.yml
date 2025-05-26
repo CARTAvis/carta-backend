@@ -38,6 +38,7 @@ jobs:
     needs: format-check
     container: 
       image: carta/backend-builder-ubuntu-noble
+      options: --init
     steps:
       - name: Checkout
         uses: actions/checkout@v3
