@@ -126,10 +126,10 @@ jobs:
           git add badge-coverage.svg
           lastcommit=`git log -1 --pretty=format:"%h %s"`
           git stash
-          git checkout gh-storage
+          git switch --orphan gh-storage || git checkout gh-storage
           git pull
           git checkout stash@{0} -- badge-coverage.svg
-          git diff --staged --quiet || { git commit -m "Updated coverage @ ${lastcommit}" && git push; }
+          git diff --staged --quiet || { git commit -m "Updated coverage @ ${lastcommit}" && { git push || git push --set-upstream origin gh-storage; }; }
           
   macOS-15:
     runs-on: [self-hosted, macOS-15-M1, CI]
