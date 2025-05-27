@@ -48,10 +48,15 @@ jobs:
             image: /opt/apptainer/almalinux9-dec2023.sif
             port: 9005
     steps:
-      - name: Check tar availability
+      - name: Ensure tar is installed
         run: |
-          ls -l /usr/bin/tar
-          /usr/bin/tar --version || echo "/usr/bin/tar not working"
+          if ! command -v tar > /dev/null; then
+            echo "tar not found, attempting to install..."
+            ls -l /usr/bin/tar
+            ls -l /Users/acdc/Homebrew/bin/tar
+            brew install gnu-tar
+            ln -sf /Users/acdc/Homebrew/bin/gtar /Users/acdc/Homebrew/bin/tar
+          fi
 
       - name: Checkout
         uses: actions/checkout@v4
