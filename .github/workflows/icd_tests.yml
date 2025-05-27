@@ -2,9 +2,7 @@ name: ICD tests
 on:
   schedule:
     - cron: '0 0 * * *' # UTC time
-  push:
-    branches:
-      - posh/icd_os14
+
 env:
   ICD_RXJS_BRANCH_NAME: dev
 
@@ -48,22 +46,9 @@ jobs:
             image: /opt/apptainer/almalinux9-dec2023.sif
             port: 9005
     steps:
-      - name: Ensure tar is installed
-        run: |
-          which tar
-          if ! command -v tar > /dev/null; then
-            echo "tar not found, attempting to install..."
-            ls -l /usr/bin/tar
-            ls -l /Users/acdc/Homebrew/bin/tar
-            brew install gnu-tar
-            ln -sf /Users/acdc/Homebrew/bin/gtar /Users/acdc/Homebrew/bin/tar
-          fi
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: CARTAvis/carta-backend
-          ref:  ${{ env.CARTA_BACKEND_BRANCH_NAME }}
           path: source
 
       - name: System information (macOS)
