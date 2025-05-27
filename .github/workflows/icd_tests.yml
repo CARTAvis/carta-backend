@@ -45,6 +45,11 @@ jobs:
             image: /opt/apptainer/almalinux9-dec2023.sif
             port: 9005
     steps:
+      - name: Check tar availability
+        run: |
+          ls -l /usr/bin/tar
+          /usr/bin/tar --version || echo "/usr/bin/tar not working"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
