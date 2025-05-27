@@ -50,6 +50,7 @@ jobs:
     steps:
       - name: Ensure tar is installed
         run: |
+          which tar
           if ! command -v tar > /dev/null; then
             echo "tar not found, attempting to install..."
             ls -l /usr/bin/tar
@@ -61,6 +62,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          repository: CARTAvis/carta-backend
+          ref:  ${{ env.CARTA_BACKEND_BRANCH_NAME }}
           path: source
 
       - name: System information (macOS)
