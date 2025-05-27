@@ -34,11 +34,10 @@ jobs:
         run: stderr=$(doxygen 2>&1 >/dev/null) && [[ ${#stderr} == 0 ]] || ( echo $stderr && exit 1)
 
   Ubuntu-Noble:
-    runs-on: [self-hosted, Linux, X64, Docker, Ubuntu-24]
+    runs-on: [self-hosted, Linux, X64, Docker]
     needs: format-check
-    container: 
-      image: carta/backend-builder-ubuntu-noble
-      options: --init
+    container: carta/backend-builder-ubuntu-noble
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -187,11 +186,9 @@ jobs:
           reporter: java-junit
 
   AlmaLinux-9:
-    runs-on: [self-hosted, Linux, X64, Docker, Almalinux-9]
+    runs-on: [self-hosted, Linux, X64, Docker]
     needs: format-check
-    container: 
-      image: carta/backend-builder-almalinux-9
-      options: --user 1002:1002
+    container: carta/backend-builder-almalinux-9
     steps:
       - name: Checkout
         uses: actions/checkout@v3
