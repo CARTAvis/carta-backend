@@ -2,6 +2,9 @@ name: ICD tests
 on:
   schedule:
     - cron: '0 0 * * *' # UTC time
+  push:
+    branches:
+      - posh/icd_os14
 env:
   ICD_RXJS_BRANCH_NAME: dev
 
