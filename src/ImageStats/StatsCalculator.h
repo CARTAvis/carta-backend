@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# StatsCalculator.h: functions for calculating statistics and histograms
+// # StatsCalculator.h: functions for calculating statistics and histograms
 
 #ifndef CARTA_SRC_IMAGESTATS_STATSCALCULATOR_H_
 #define CARTA_SRC_IMAGESTATS_STATSCALCULATOR_H_

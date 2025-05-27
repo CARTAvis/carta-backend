@@ -29,10 +29,10 @@ class Column {
 public:
     Column(const std::string& name_chr);
     virtual ~Column() = default;
-    virtual void SetFromText(const pugi::xml_text& text, size_t index){};
-    virtual void SetEmpty(size_t index){};
-    virtual void FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride){};
-    virtual void Resize(size_t capacity){};
+    virtual void SetFromText(const pugi::xml_text& text, size_t index) {};
+    virtual void SetEmpty(size_t index) {};
+    virtual void FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {};
+    virtual void Resize(size_t capacity) {};
     virtual size_t NumEntries() const {
         return 0;
     }

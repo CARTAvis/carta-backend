@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Frame.h: represents an open image file.  Handles slicing data and region calculations
-//# (profiles, histograms, stats)
+// # Frame.h: represents an open image file.  Handles slicing data and region calculations
+// # (profiles, histograms, stats)
 
 #ifndef CARTA_SRC_FRAME_FRAME_H_
 #define CARTA_SRC_FRAME_FRAME_H_

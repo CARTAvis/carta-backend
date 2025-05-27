@@ -2339,7 +2339,7 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
                 float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
                 std::string unit = increment.getUnit();
 
-                auto profile_message = Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index, value, start, end,
+                auto profile_message = Message::SpatialProfileData(x, y, channel, stokes_index, value, file_id, region_id, start, end,
                     profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
                 cb(profile_message);
             });

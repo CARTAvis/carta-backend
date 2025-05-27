@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# RegionState.h: struct for holding region parameters
+// # RegionState.h: struct for holding region parameters
 
 #ifndef CARTA_SRC_REGION_REGIONSTATE_H_
 #define CARTA_SRC_REGION_REGIONSTATE_H_

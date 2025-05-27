@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CrtfImportExport.h: handle CRTF region file import and export
+// # CrtfImportExport.h: handle CRTF region file import and export
 
 #ifndef CARTA_SRC_REGION_CRTFIMPORTEXPORT_H_
 #define CARTA_SRC_REGION_CRTFIMPORTEXPORT_H_

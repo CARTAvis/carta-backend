@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CartaHdf5Image.cc : specialized Image implementation for IDIA HDF5 schema
+// # CartaHdf5Image.cc : specialized Image implementation for IDIA HDF5 schema
 
 #include "CartaHdf5Image.h"
 

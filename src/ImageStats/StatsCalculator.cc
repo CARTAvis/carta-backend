@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# StatsCalculator.cc: functions for calculating statistics and histograms
+// # StatsCalculator.cc: functions for calculating statistics and histograms
 
 #include "StatsCalculator.h"
 

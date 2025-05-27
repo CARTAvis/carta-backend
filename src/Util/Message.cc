@@ -484,9 +484,10 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float pr
     return message;
 }
 
-CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
-    int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
-    CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit) {
+CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value,
+        int32_t file_id, int32_t region_id, int32_t start, int32_t end, const std::vector<float>& profile,
+        const std::string& coordinate, int32_t mip, CARTA::ProfileAxisType axis_type,
+        float crpix, float crval, float cdelt, const std::string& unit) {
     CARTA::SpatialProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
@@ -508,16 +509,6 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t r
     profile_axis->set_cdelt(cdelt);
     profile_axis->set_unit(unit);
     return profile_message;
-}
-
-CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value) {
-    CARTA::SpatialProfileData message;
-    message.set_x(x);
-    message.set_y(y);
-    message.set_channel(channel);
-    message.set_stokes(stokes);
-    message.set_value(value);
-    return message;
 }
 
 CARTA::RasterTileSync Message::RasterTileSync(

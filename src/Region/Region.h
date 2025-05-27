@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Region.h: class for managing 2D region parameters in reference image
+// # Region.h: class for managing 2D region parameters in reference image
 
 #ifndef CARTA_SRC_REGION_REGION_H_
 #define CARTA_SRC_REGION_REGION_H_

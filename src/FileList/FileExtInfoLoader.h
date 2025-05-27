@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# FileExtInfoLoader.h: load FileInfoExtended fields for all supported file types
+// # FileExtInfoLoader.h: load FileInfoExtended fields for all supported file types
 
 #ifndef CARTA_SRC_FILELIST_FILEEXTINFOLOADER_H_
 #define CARTA_SRC_FILELIST_FILEEXTINFOLOADER_H_

@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CartaMiriadImage.h : MIRIAD Image class to support masks
+// # CartaMiriadImage.h : MIRIAD Image class to support masks
 
 #ifndef CARTA_SRC_IMAGEDATA_CARTAMIRIADIMAGE_H_
 #define CARTA_SRC_IMAGEDATA_CARTAMIRIADIMAGE_H_

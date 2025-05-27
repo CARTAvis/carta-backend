@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# FileExtInfoLoader.cc: fill FileInfoExtended for all supported file types
+// # FileExtInfoLoader.cc: fill FileInfoExtended for all supported file types
 
 #include "FileExtInfoLoader.h"
 

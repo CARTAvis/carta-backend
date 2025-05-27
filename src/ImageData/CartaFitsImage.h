@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CartaFitsImage.h : FITS Image class derived from casacore::ImageInterface for images not supported by casacore,
-//# including compressed and Int64
+// # CartaFitsImage.h : FITS Image class derived from casacore::ImageInterface for images not supported by casacore,
+// # including compressed and Int64
 
 #ifndef CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_H_
 #define CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_H_
