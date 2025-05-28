@@ -4,13 +4,14 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <algorithm>
 #include "Stokes.h"
 
 using namespace carta;
 
-/** @details This unordered map stores the component polarizations required to calculate each computed polarization type. It is used to determine whether a polarization can be computed from the polarizations available in an image file.
+/** @details This map stores the component polarizations required to calculate each computed polarization type. It is used to determine whether a polarization can be computed from the polarizations available in an image file. The map is ordered so that Stokes::Computable does not have to sort its output.
  */
-std::unordered_map<Pol, std::vector<Pol>> Stokes::_components{
+std::map<Pol, std::vector<Pol>> Stokes::_components{
     {Pol::Ptotal, {Pol::Q, Pol::U, Pol::V}},
     {Pol::Plinear, {Pol::Q, Pol::U}},
     {Pol::PFtotal, {Pol::I, Pol::Q, Pol::U, Pol::V}},
@@ -54,7 +55,7 @@ std::unordered_map<Pol, std::string> Stokes::_description{{Pol::POLARIZATION_TYP
  * If valid, it returns the corresponding enumeration value. Otherwise, it returns
  * `CARTA::PolarizationType::POLARIZATION_TYPE_NONE` as a fallback.
  */
-Pol Stokes::Get(int value) {
+Pol Stokes::Get(const int value) {
     if (Pol_IsValid(value)) {
         return static_cast<Pol>(value);
     }
@@ -66,7 +67,7 @@ Pol Stokes::Get(int value) {
  * If parsing is successful, it returns the corresponding enumeration value.
  * If the name is invalid, it returns `CARTA::PolarizationType::POLARIZATION_TYPE_NONE`.
  */
-Pol Stokes::Get(std::string name) {
+Pol Stokes::Get(const std::string name) {
     auto type = Pol::POLARIZATION_TYPE_NONE;
     Pol_Parse(name, &type);
     return type;
@@ -77,7 +78,7 @@ Pol Stokes::Get(std::string name) {
  * using a predefined lookup table. If the provided type is not found in the mapping,
  * an `std::out_of_range` exception may be thrown.
  */
-CasaPol Stokes::ToCasa(Pol type) {
+CasaPol Stokes::ToCasa(const Pol type) {
     return _to_casa.at(type);
 }
 
@@ -106,7 +107,7 @@ bool Stokes::ConvertFits(const int& in_stokes_value, int& out_stokes_value) {
  * @details This function returns the string representation of a CARTA polarization type
  * using the `CARTA::PolarizationType_Name` function.
  */
-std::string Stokes::Name(Pol type) {
+std::string Stokes::Name(const Pol type) {
     return Pol_Name(type);
 }
 
@@ -115,7 +116,7 @@ std::string Stokes::Name(Pol type) {
  * from the `_description` map. If the type is not found in the map, it falls back
  * to returning the string representation of the polarization type.
  */
-std::string Stokes::Description(Pol type) {
+std::string Stokes::Description(const Pol type) {
     try {
         return _description.at(type);
     } catch (const std::out_of_range& e) {
@@ -127,16 +128,36 @@ std::string Stokes::Description(Pol type) {
  * @details This function checks whether the provided integer value corresponds to
  * a computed polarization type (e.g., `Ptotal`, `Plinear`, `PFtotal`, `PFlinear`, `Pangle`).
  */
-bool Stokes::IsComputed(int value) {
+bool Stokes::IsComputed(const int value) {
     return (value >= Pol::Ptotal) && (value <= Pol::Pangle);
 }
 
 /** @details This function returns a vector containing the polarization types required to calculate the given computed polarization type, using the `_components` map. For example, for `Ptotal` it returns `Q`, `U`, and `V`. If the input value is not found in the map, an empty vector is returned. 
  */
-std::vector<Pol> Stokes::Components(Pol type) {
+std::vector<Pol> Stokes::Components(const Pol type) {
     try {
         return _components.at(type);
     } catch (const std::out_of_range& e) {
         return std::vector<Pol>();
     }
+}
+
+/** @details This function retrieves the polarizations which may be computed from the given component polarizations, using the `_components` map. The components may be given in any order. The returned polarizations are sorted by numeric value. If no polarizations are computable from the components provided, an empty vector is returned.
+ */
+std::vector<Pol> Stokes::Computable(const std::vector<Pol>& components) {
+    // Ensure that components are sorted and deduplicated
+    std::vector<Pol> available(components);
+    std::sort(available.begin(), available.end());
+    last = std::unique(available.begin(), available.end());
+    available.erase(last, available.end());
+    
+    std::vector<Pol> computable;
+
+    for (auto& [computed, required]: _components) {
+        if (std::includes(required.begin(), required.end(), available.begin(), available.end())) {
+            computable.push_back(computed);
+        }
+    }
+
+    return computable;
 }

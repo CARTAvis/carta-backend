@@ -300,6 +300,7 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
     size_t num_stokes = DimsInfo::FromAxis(stokes_axis, _image_shape);
 
     // save stokes types with respect to the stokes index
+    // TODO get these from the coordinate system instead?
     if (_stokes_cdelt != 0) {
         for (int i = 0; i < num_stokes; ++i) {
             int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
@@ -935,8 +936,7 @@ ImagePtr FileLoader::GetStokesImage(const StokesSource& stokes_source) {
         return GetImage();
     }
     
-    // This is a temporary shim for integrating the refactored calculator with the current code.
-    // This will be refactored further.
+    // TODO we need to change the API from this function upwards
 
     if (_stokes_source != stokes_source) {
 //         // compute new stokes image with respect to the channel range
