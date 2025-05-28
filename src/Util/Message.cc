@@ -130,20 +130,12 @@ CARTA::Point Message::Point(const std::vector<double>& input, int x_index, int y
     return Message::Point(input[x_index], input[y_index]);
 }
 
-CARTA::SetRegion Message::SetRegion(
-    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation) {
-    CARTA::SetRegion set_region;
-    set_region.set_file_id(file_id);
-    set_region.set_region_id(region_id);
-    auto* region_info = set_region.mutable_region_info();
-    region_info->set_region_type(region_type);
-    region_info->set_rotation(rotation);
-    for (auto control_point : control_points) {
-        auto* point = region_info->add_control_points();
-        point->set_x(control_point.x());
-        point->set_y(control_point.y());
-    }
-    return set_region;
+CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
+    CARTA::SetRegion message;
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
+    *message.mutable_region_info() = region_info;
+    return message;
 }
 
 CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
@@ -395,14 +387,6 @@ CARTA::ImageBounds Message::ImageBounds(int32_t x_min, int32_t x_max, int32_t y_
     return message;
 }
 
-CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
-    CARTA::SetRegion message;
-    message.set_file_id(file_id);
-    message.set_region_id(region_id);
-    *message.mutable_region_info() = region_info;
-    return message;
-}
-
 CARTA::ConcatStokesFiles Message::ConcatStokesFiles(
     int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files) {
     CARTA::ConcatStokesFiles message;
@@ -484,10 +468,9 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float pr
     return message;
 }
 
-CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value,
-        int32_t file_id, int32_t region_id, int32_t start, int32_t end, const std::vector<float>& profile,
-        const std::string& coordinate, int32_t mip, CARTA::ProfileAxisType axis_type,
-        float crpix, float crval, float cdelt, const std::string& unit) {
+CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value, int32_t file_id,
+    int32_t region_id, int32_t start, int32_t end, const std::vector<float>& profile, const std::string& coordinate, int32_t mip,
+    CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, const std::string& unit) {
     CARTA::SpatialProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
