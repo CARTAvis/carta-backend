@@ -72,8 +72,9 @@ public:
         CARTA::CompressionType compression_type = CARTA::CompressionType::NONE, float compression_quality = -1);
     static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);
     static CARTA::SetSpatialRequirements SetSpatialRequirements(int32_t file_id, int32_t region_id);
+    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(
+        std::string coordinate, int32_t start = 0, int32_t end = 0, int32_t mip = 0, int32_t width = 0);
     static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id);
-    static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
     static CARTA::SetHistogramRequirements SetHistogramRequirements(
         int32_t file_id, int32_t region_id, int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
     static CARTA::AddRequiredTiles AddRequiredTiles(
@@ -89,8 +90,6 @@ public:
         CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles, int32_t frame_rate = 5);
     static CARTA::AnimationFlowControl AnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame);
     static CARTA::StopAnimation StopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame);
-    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(
-        std::string coordinate, int32_t start = 0, int32_t end = 0, int32_t mip = 0, int32_t width = 0);
     static CARTA::IntBounds IntBounds(int32_t min, int32_t max);
     static CARTA::FloatBounds FloatBounds(float min, float max);
     static CARTA::MomentRequest MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,

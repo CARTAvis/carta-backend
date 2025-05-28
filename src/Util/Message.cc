@@ -138,25 +138,6 @@ CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CA
     return message;
 }
 
-CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
-    CARTA::SetStatsRequirements set_stats_requirements;
-    set_stats_requirements.set_file_id(file_id);
-    set_stats_requirements.set_region_id(region_id);
-    auto* stats_configs = set_stats_requirements.add_stats_configs();
-    stats_configs->set_coordinate(coordinate);
-    stats_configs->add_stats_types(CARTA::StatsType::NumPixels);
-    stats_configs->add_stats_types(CARTA::StatsType::Sum);
-    stats_configs->add_stats_types(CARTA::StatsType::FluxDensity);
-    stats_configs->add_stats_types(CARTA::StatsType::Mean);
-    stats_configs->add_stats_types(CARTA::StatsType::RMS);
-    stats_configs->add_stats_types(CARTA::StatsType::Sigma);
-    stats_configs->add_stats_types(CARTA::StatsType::SumSq);
-    stats_configs->add_stats_types(CARTA::StatsType::Min);
-    stats_configs->add_stats_types(CARTA::StatsType::Max);
-    stats_configs->add_stats_types(CARTA::StatsType::Extrema);
-    return set_stats_requirements;
-}
-
 CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
     CARTA::SetSpectralRequirements set_spectral_requirements;
     set_spectral_requirements.set_file_id(file_id);
