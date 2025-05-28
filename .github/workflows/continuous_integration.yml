@@ -34,7 +34,7 @@ jobs:
         run: stderr=$(doxygen 2>&1 >/dev/null) && [[ ${#stderr} == 0 ]] || ( echo $stderr && exit 1)
 
   Ubuntu-Noble:
-    runs-on: [self-hosted, Linux, X64, Docker]
+    runs-on: [self-hosted, Linux, X64, Docker, CI]
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
 
@@ -186,7 +186,7 @@ jobs:
           reporter: java-junit
 
   AlmaLinux-9:
-    runs-on: [self-hosted, Linux, X64, Docker]
+    runs-on: [self-hosted, Linux, X64, Docker, CI]
     needs: format-check
     container: carta/backend-builder-almalinux-9
     steps:
