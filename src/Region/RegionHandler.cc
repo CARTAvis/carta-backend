@@ -1824,7 +1824,7 @@ bool RegionHandler::FillSpectralProfileData(
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
                     report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                         auto profile_message = Message::SpectralProfileData(
-                            config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
+                            stokes_index, progress, config_file_id, config_region_id, coordinate, required_stats, results);
                         cb(profile_message); // send (partial profile) data
                     });
             }

@@ -417,9 +417,9 @@ CARTA::EventType Message::EventType(std::vector<char>& message) {
     return static_cast<CARTA::EventType>(head.type);
 }
 
-CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
-    std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
-    std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
+CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress, int32_t file_id, int32_t region_id,
+        const std::string& coordinate, const std::vector<CARTA::StatsType>& required_stats,
+        const std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
     CARTA::SpectralProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
@@ -436,18 +436,18 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
             double nan_value = std::nan("");
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
-            new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
+            new_profile->set_raw_values_fp64(spectral_data.at(stats_type).data(), spectral_data.at(stats_type).size() * sizeof(double));
         }
     }
     return profile_message;
 }
 
-CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress) {
-    CARTA::SpectralProfileData message;
-    message.set_stokes(stokes);
-    message.set_progress(progress);
-    return message;
-}
+// CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress) {
+//     CARTA::SpectralProfileData message;
+//     message.set_stokes(stokes);
+//     message.set_progress(progress);
+//     return message;
+// }
 
 CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value, int32_t file_id,
     int32_t region_id, int32_t start, int32_t end, const std::vector<float>& profile, const std::string& coordinate, int32_t mip,
