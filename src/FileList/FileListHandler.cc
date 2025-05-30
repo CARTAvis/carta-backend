@@ -19,6 +19,7 @@
 #include "Timer/ListProgressReporter.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
+#include "Util/Message.h"
 
 using namespace carta;
 
