@@ -665,6 +665,13 @@ CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const strin
     return message;
 }
 
+Message::AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t value item_count) {
+    auto* directory_info = response.add_subdirectories();
+    directory_info->set_name(name);
+    directory_info->set_date(date);
+    directory_info->set_item_count(item_count);
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
     const std::vector<int32_t>& bins, double mean, double std_dev) {
     if (histogram) {

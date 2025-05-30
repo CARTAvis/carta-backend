@@ -151,6 +151,7 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
+    static void Message::AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t value item_count);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

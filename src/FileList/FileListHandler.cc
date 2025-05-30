@@ -161,10 +161,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                    (list_all_files || CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN)) {
                             // Add directory: not image if checking type, or not checking type
                             casacore::String dir_name(cc_file.path().baseName());
-                            auto directory_info = file_list_response.add_subdirectories();
-                            directory_info->set_name(dir_name);
-                            directory_info->set_date(cc_file.modifyTime());
-                            directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
+                            Message::AddDirectory(
+                                file_list_response, dir_name, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                         }
                     } else {
                         // Image list
@@ -199,10 +197,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                 case casacore::ImageOpener::UNKNOWN: {
                                     // UNKNOWN directories are directories
                                     casacore::String dir_name(cc_file.path().baseName());
-                                    auto directory_info = file_list_response.add_subdirectories();
-                                    directory_info->set_name(dir_name);
-                                    directory_info->set_date(cc_file.modifyTime());
-                                    directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
+                                    Message::AddDirectory(
+                                        file_list_response, dir_name, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                                     break;
                                 }
                                 default:
