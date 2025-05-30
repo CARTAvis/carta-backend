@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix empty response to HTTP request with underscores in header names ([#1406](https://github.com/CARTAvis/carta-backend/issues/1406))
 * Fix spatial profile for point region in matched image ([#1405](https://github.com/CARTAvis/carta-backend/issues/1405))
 * Fix casacore reformatting GILDAS unit ([#1423](https://github.com/CARTAvis/carta-backend/issues/1423))
+* Fix applying vector field threshold ([#1444](https://github.com/CARTAvis/carta-backend/issues/1444))
 
 ## [5.0.0-beta.1]
 

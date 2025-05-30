@@ -52,6 +52,7 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
     // Current stokes data as PI or PA
     if (_current_stokes_as_pi || _current_stokes_as_pa) {
         // Apply a threshold cut
+        std::cerr << "Apply threshold to image" << std::endl;
         std::for_each(stokes_data["CUR"].begin(), stokes_data["CUR"].end(), threshold_cut);
 
         if (_current_stokes_as_pi) {
@@ -78,9 +79,13 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), calc_fpi);
         }
 
-        if (stokes_flag["I"]) { // Set NAN for PI/FPI if stokes I is NAN or below the threshold
+        // Set NAN for PI/FPI if stokes or pa is NAN or below the threshold
+        if (stokes_flag["I"]) {
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), threshold_cut);
+        } else {
+            std::for_each(pi.begin(), pi.end(), threshold_cut);
         }
+
         FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
     }
 
@@ -90,8 +95,11 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
         CalcPa calc_pa;
         std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), calc_pa);
 
-        if (stokes_flag["I"]) { // Set NAN for PA if stokes I is NAN or below the threshold
+        // Set NAN for PA if stokes or pa is NAN or below the threshold
+        if (stokes_flag["I"]) {
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
+        } else {
+            std::for_each(pa.begin(), pa.end(), threshold_cut);
         }
         FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
     }
@@ -145,11 +153,12 @@ void VectorField::RenewParameters(const CARTA::SetVectorOverlayParameters& messa
     _stokes_angle = message.stokes_angle();
     _compression_type = message.compression_type();
     _compression_quality = message.compression_quality();
+    bool has_stokes_axis(stokes_axis > -1);
 
-    _calculate_pi = _stokes_intensity == 1 && stokes_axis > -1;
-    _calculate_pa = _stokes_angle == 1 && stokes_axis > -1;
-    _current_stokes_as_pi = (_stokes_intensity == 0 && stokes_axis > -1) || stokes_axis < 0;
-    _current_stokes_as_pa = (_stokes_angle == 0 && stokes_axis > -1) || stokes_axis < 0;
+    _calculate_pi = _stokes_intensity == 1 && has_stokes_axis;
+    _calculate_pa = _stokes_angle == 1 && has_stokes_axis;
+    _current_stokes_as_pi = (_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis;
+    _current_stokes_as_pa = (_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis;
 }
 
 void VectorField::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width,
