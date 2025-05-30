@@ -1994,7 +1994,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     // end get PvPreviewCube
 
     // iterate in spectral range to get subimages of PvPreviewCube
-    int num_slices = 1; // Use 1 for now
+    int num_slices = 4;
     int width;
     int height;
     int depth = spectral_range.to - spectral_range.from + 1;
@@ -2081,6 +2081,8 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         compression_quality = 20; // high is 32, use 20 for now
         // compression_type = CARTA::CompressionType::NONE;
         // compression_quality = -1;
+
+        // cout << "send data" << std::endl;
         
         std::vector<char> compression_buffer;
         size_t compressed_size;
@@ -2096,11 +2098,10 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         data_message.set_width(width);
         data_message.set_height(height);
         data_message.set_depth(depth);
-        data_message.set_slice(start); // render3DData.slice not needed
+        data_message.set_slice(num_slices);
         data_message.set_progress(progress);
 
         if (compression_type == CARTA::CompressionType::NONE) {
-
             data_message.set_image_data(image_data.data(), image_data.size() * sizeof(float));
             data_message.set_compression_type(compression_type);
             data_message.set_compression_quality(compression_quality);
@@ -2109,14 +2110,31 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
         } else {
 
-            // Check how to compress with NaN values. Give a number of NaN values.
-            auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+            std::vector<int> nan_encodings;
 
-            Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
+            auto diff = slices_range.to - slices_range.from + 1;
+            if ( diff < num_slices ) {
+                data_message.set_slice(diff);
+                nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, diff);
+                Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
+            } else {
+                // Check how to compress with NaN values. Give a number of NaN values.
+                nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, num_slices);
+                Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, num_slices, compression_quality);
+            }
     
             // auto data_message = Message::Render3DData(file_id, region_id,
             //             viewer_id, compression_buffer, compressed_size, nan_encodings, width, height, num_slices, compression_type,
             //             compression_quality, progress);
+
+            // std::cout << "image_data size: " << image_data.size() << std::endl;
+            // std::cout << "compressed size: " << compressed_size << std::endl;
+            // std::cout << "compression_buffer size: " << compression_buffer.size() << std::endl;
+            // std::cout << "nan_encodings size: " << nan_encodings.size() << std::endl;
+            // std::cout << "width: " << width << std::endl;
+            // std::cout << "height: " << height << std::endl;
+            // std::cout << "depth: " << depth << std::endl;
+            // std::cout << "slice: " << num_slices << std::endl;
 
             data_message.set_image_data(compression_buffer.data(), compressed_size);
             data_message.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());

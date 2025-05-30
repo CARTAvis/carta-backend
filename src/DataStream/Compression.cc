@@ -61,7 +61,7 @@ int Compress(std::vector<float>& array, size_t offset, std::vector<char>& compre
     return status;
 }
 
-int Compress3D(std::vector<float>& array, std::vector<char>& compression_buffer, size_t& compressed_size, uint32_t width, uint32_t height, uint32_t depth, uint32_t precision) {
+int Compress3D(std::vector<float>& array, size_t offset, std::vector<char>& compression_buffer, size_t& compressed_size, uint32_t width, uint32_t height, uint32_t depth, uint32_t precision) {
     int status = 0;     /* return value: 0 = success */
     zfp_type type;      /* array scalar type */
     zfp_field* field;   /* array meta data */
@@ -70,8 +70,15 @@ int Compress3D(std::vector<float>& array, std::vector<char>& compression_buffer,
     bitstream* stream;  /* bit stream to write to or read from */
 
     type = zfp_type_float;
-    field = zfp_field_3d(array.data(), type, width, height, depth);
 
+    if (depth > 1) {
+        // 3D compression
+        field = zfp_field_3d(array.data() + offset, type, width, height, depth);
+    } else {
+        // 2D compression
+        field = zfp_field_2d(array.data() + offset, type, width, height);
+    }
+    
     /* allocate meta data for a compressed stream */
     zfp = zfp_stream_open(nullptr);
 
@@ -207,6 +214,64 @@ std::vector<int32_t> GetNanEncodingsBlock(std::vector<float>& array, int offset,
                             float v = array[block_start + (y * w) + x];
                             if (std::isnan(v)) {
                                 array[block_start + (y * w) + x] = average;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return encoded_array;
+}
+
+std::vector<int32_t> GetNanEncodingsBlock3D(std::vector<float>& array, int offset, int w, int h, int d) {
+    // Generate RLE NaN list
+    int length = w * h * d;
+    int32_t prev_index = offset;
+    bool prev = false;
+    std::vector<int32_t> encoded_array;
+
+    for (auto i = offset; i < offset + length; i++) {
+        bool current = std::isnan(array[i]);
+        if (current != prev) {
+            encoded_array.push_back(i - prev_index);
+            prev_index = i;
+            prev = current;
+        }
+    }
+    encoded_array.push_back(offset + length - prev_index);
+
+    // Skip all-NaN images and NaN-free images
+    if (encoded_array.size() > 1) {
+        // Calculate average of 4x4 blocks (matching blocks used in ZFP), and replace NaNs with block average
+        for (auto k = 0; k < d; k ++) {
+            for (auto i = 0; i < w; i += 4) {
+                for (auto j = 0; j < h; j += 4) {
+                    int block_start = offset + k * w * h + j * w + i;
+                    int valid_count = 0;
+                    float sum = 0;
+                    // Limit the block size when at the edges of the image
+                    int block_width = std::min(4, w - i);
+                    int block_height = std::min(4, h - j);
+                    for (int x = 0; x < block_width; x++) {
+                        for (int y = 0; y < block_height; y++) {
+                            float v = array[block_start + (y * w) + x];
+                            if (!std::isnan(v)) {
+                                valid_count++;
+                                sum += v;
+                            }
+                        }
+                    }
+
+                    // Only process blocks which have at least one valid value AND at least one NaN. All-NaN blocks won't affect ZFP compression
+                    if (valid_count && valid_count != block_width * block_height) {
+                        float average = sum / valid_count;
+                        for (int x = 0; x < block_width; x++) {
+                            for (int y = 0; y < block_height; y++) {
+                                float v = array[block_start + (y * w) + x];
+                                if (std::isnan(v)) {
+                                    array[block_start + (y * w) + x] = average;
+                                }
                             }
                         }
                     }
