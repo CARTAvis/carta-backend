@@ -52,7 +52,6 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
     // Current stokes data as PI or PA
     if (_current_stokes_as_pi || _current_stokes_as_pa) {
         // Apply a threshold cut
-        std::cerr << "Apply threshold to image" << std::endl;
         std::for_each(stokes_data["CUR"].begin(), stokes_data["CUR"].end(), threshold_cut);
 
         if (_current_stokes_as_pi) {
