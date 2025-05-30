@@ -32,6 +32,9 @@ public:
     
     PolarizationCalculator(std::shared_ptr<FileLoader> loader);
     ImagePtr GetImage(Pol computed_type);
+    const std::unordered_set<Pol>& AvailablePolarizations() {
+        return _available_polarizations;
+    }
 private:
     Node PtotalNode();
     Node PlinearNode();
@@ -43,9 +46,9 @@ private:
     static std::unordered_map<Pol, casacore::Unit> _units;
     static std::unordered_map<Pol, Pol> _beam_types;
     
-    std::shared_ptr<FileLoader> _loader;
     ImageMap _component_images;
     ImageMap _computed_images;
+    std::unordered_set<Pol> _available_polarizations;
 };
 
 } // namespace carta

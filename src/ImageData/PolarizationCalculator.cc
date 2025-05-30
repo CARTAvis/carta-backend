@@ -34,17 +34,22 @@ std::unordered_map<Pol, Pol> PolarizationCalculator::_beam_types = {
 }
 
 
-PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loader) : _loader(loader) {
-    auto original_image = _loader->GetImage();
+PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loader) {
+    auto original_image = loader->GetImage();
     
     if (original_image->ndim() < 4) {
         spdlog::info("No computed polarizations available for {}d image.", original_image->ndim());
-        return computed_images;
+        return;
+    }
+    
+    if (loader->GetDims().num_stokes < 2) {
+        spdlog::info("No computed polarizations available for image with {} polarizations.", loader->GetDims().num_stokes);
+        return;
     }
     
     // Create slicer for one Stokes cube
-    auto stokes_axis = _loader->GetAxes().stokes;
-    casacore::IPosition end(_loader->GetShape());
+    auto stokes_axis = loader->GetAxes().stokes;
+    casacore::IPosition end(loader->GetShape());
     end -= 1;
     end(stokes_axis) = 0;
     casacore::IPosition start(end.size(), 0);
@@ -53,9 +58,13 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loade
     // Get the components
     std::vector<Pol> components;
     
-    // Use mapping from loader
-    // TODO make sure that this is properly populated in the loader, instead of repeating the same guessing in multiple places
-    for (const auto &[pol, idx]: _loader->GetStokesIndices()) {
+    // Use mapping from loader or deduce indices in order
+    std::map<Pol, int> indices = loader->GetStokesIndices();
+    if (indices.empty()) {
+        indices = loader->GetDeducedStokesIndices();
+    }
+
+    for (const auto &[pol, idx]: indices) {
         components.push_back(pol);        
         
         slicer(axis) = idx;
@@ -103,6 +112,7 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loade
         
         // Store computed image expression
         _computed_images[computed_type] = computed_image;
+        _available_polarizations.insert(computed_type);
     }
 }
 
@@ -110,11 +120,10 @@ ImagePtr PolarizationCalculator::GetImage(Pol computed_type) {
     try {
         return _computed_images.at(computed_type);
     } catch(const std::out_of_range& e) {
-        spdlog::error("No computed polarization available for {}.", Stokes::Description(computed_type));
+        spdlog::error("No computed polarization image available for {}.", Stokes::Name(computed_type));
         return nullptr;
     }
 }
-
 
 Node PolarizationCalculator::PtotalNode() {
     casacore::LatticeExprNode lin_node = casacore::LatticeExprNode(

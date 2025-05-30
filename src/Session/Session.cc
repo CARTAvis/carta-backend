@@ -1649,7 +1649,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // Get stokes index
             int stokes;
-            if (!_frames.at(file_id)->GetStokesTypeIndex(cube_histogram_config.coordinate, stokes)) {
+            if (!_frames.at(file_id)->GetCoordinateStokesIndex(cube_histogram_config.coordinate, stokes)) {
                 return calculated;
             }
 

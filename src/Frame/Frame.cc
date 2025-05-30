@@ -37,7 +37,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _loader(loader),
       _tile_cache(0),
       _z_index(default_z),
-      _stokes_index(DEFAULT_STOKES),
+      _stokes_index(0),
       _image_cache_valid(false),
       _tile_pool(std::make_shared<TilePool>()),
       _use_tile_cache(false),
@@ -129,24 +129,23 @@ std::string Frame::GetFileName() {
     return filename;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(const StokesSource& stokes_source) {
-    if (IsValid()) {
-        return _loader->GetCoordinateSystem(stokes_source);
-    }
-    return std::make_shared<casacore::CoordinateSystem>();
+std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem() {
+    return _loader->GetCoordinateSystem(); // always the original image
 }
 
-casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
+std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(int stokes_index) {
+    return _loader->GetCoordinateSystem(stokes_index);
+}
+
+casacore::IPosition Frame::ImageShape() {
+    return _image_shape; // always the original image
+}
+
+casacore::IPosition Frame::ImageShape(int stokes_index) {
     casacore::IPosition ipos;
-    if (stokes_source.IsOriginalImage() && IsValid()) {
-        ipos = _image_shape;
-    } else {
-        auto image = _loader->GetStokesImage(stokes_source);
-        if (image) {
-            ipos = image->shape();
-        } else {
-            spdlog::error("Failed to compute the stokes image!");
-        }
+    auto image = _loader->GetStokesImage(stokes_index);
+    if (image) {
+        ipos = image->shape();
     }
     return ipos;
 }
@@ -291,8 +290,6 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     // Slice stokes axis
     if (_axes.stokes >= 0) {
         // Normalize stokes constant
-        stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
-
         if (stokes_source.IsOriginalImage()) {
             start(_axes.stokes) = stokes;
             end(_axes.stokes) = stokes;
@@ -777,7 +774,7 @@ bool Frame::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramDat
         int num_bins = histogram_config.num_bins;
 
         // Set stokes
-        if (!GetStokesTypeIndex(histogram_config.coordinate, stokes)) {
+        if (!GetCoordinateStokesIndex(histogram_config.coordinate, stokes)) {
             continue;
         }
 
@@ -1024,7 +1021,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
     for (auto stats_config : _image_required_stats) {
         // Get stokes index
         int stokes;
-        if (!GetStokesTypeIndex(stats_config.coordinate(), stokes)) {
+        if (!GetCoordinateStokesIndex(stats_config.coordinate(), stokes)) {
             continue;
         }
 
@@ -1146,7 +1143,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         // Get stokes
         std::string coordinate(config.coordinate());
         int stokes;
-        if (!GetStokesTypeIndex(coordinate, stokes)) {
+        if (!GetCoordinateStokesIndex(coordinate, stokes)) {
             continue;
         }
         point_regions_spatial_configs[stokes].push_back(config);
@@ -1407,7 +1404,7 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
         int stokes;
-        if (!GetStokesTypeIndex(coordinate, stokes)) {
+        if (!GetCoordinateStokesIndex(coordinate, stokes)) {
             continue;
         }
 
@@ -1483,7 +1480,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         // Send spectral profile data if cursor inside image
         if (start_cursor.InImage(_dims.width, _dims.height)) {
             int stokes;
-            if (!GetStokesTypeIndex(coordinate, stokes)) {
+            if (!GetCoordinateStokesIndex(coordinate, stokes)) {
                 continue;
             }
 
@@ -1836,8 +1833,10 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
         }
 
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
+        auto stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
+        _loader->GetStokesType(stokes_index, stokes_type);
         _moment_generator->CalculateMoments(file_id, stokes_region.image_region, _axes.z, _axes.stokes, name_index, progress_callback,
-            moment_request, moment_response, collapse_results, region_state, GetStokesType(CurrentStokes()));
+            moment_request, moment_response, collapse_results, region_state, Stokes::Description(stokes_type));
         ulock.unlock();
     }
 
@@ -2369,7 +2368,7 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
     return casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
 }
 
-bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
+bool Frame::GetCoordinateStokesIndex(const string& coordinate, int& stokes_index) {
     // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
 
     if (coordinate.empty() || coordinate == 'x' || coordinate == 'y' || coordinate == 'z') {
@@ -2389,20 +2388,11 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
 
     bool stokes_ok(false);
 
+    // TODO TODO TODO check when stokes are *actually* deduced, and if this is sufficient
     auto stokes_type = Stokes::Get(stokes_string);
     if (stokes_type) {
         if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
             stokes_ok = true;
-        } else if (Stokes::IsComputed(stokes_type)) {
-            stokes_index = stokes_type;
-            stokes_ok = true;
-        } else {
-            int assumed_stokes_index = (stokes_type - 1) % 4;
-            if (NumStokes() > assumed_stokes_index) {
-                stokes_index = assumed_stokes_index;
-                stokes_ok = true;
-                spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
-            }
         }
     }
 
@@ -2412,20 +2402,6 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
     }
 
     return true;
-}
-
-std::string Frame::GetStokesType(int stokes_index) {
-    auto stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
-
-    // Computed stokes: stokes index is equal to numeric value
-    if (Stokes::IsComputed(stokes_index)) {
-        stokes_type = Stokes::Get(stokes_index);
-    }
-
-    // Otherwise try to map index to type with loader
-    _loader->GetStokesType(stokes_index, stokes_type);
-
-    return Stokes::Description(stokes_type);
 }
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
@@ -2527,9 +2503,8 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     // Set stokes flags and get their indices
     stokes_flag["I"] = (fractional || !std::isnan(threshold));
     stokes_flag["Q"] = stokes_flag["U"] = (calculate_pi || calculate_pa);
-    for (auto one : stokes_flag) {
-        std::string stokes = one.first;
-        if (stokes_flag[stokes] && !GetStokesTypeIndex(stokes + "x", stokes_indices[stokes])) {
+    for (auto [name, flag] : stokes_flag) {
+        if (flag && !_loader->GetStokesTypeIndex(Stokes::Get(name), stokes_indices[name])) {
             return false;
         }
     }
@@ -2551,10 +2526,9 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 
         // Get stokes data I, Q, or U
         if (calculate_pi || calculate_pa) {
-            for (auto one : stokes_flag) {
-                std::string stokes = one.first;
-                if (stokes_flag[stokes] &&
-                    !GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, mip)) {
+            for (auto [name, flag] : stokes_flag) {
+                if (flag &&
+                    !GetDownsampledRasterData(stokes_data[name], width, height, _z_index, stokes_indices[name], bounds, mip)) {
                     return false;
                 }
             }

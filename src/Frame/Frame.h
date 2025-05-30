@@ -89,10 +89,12 @@ public:
     std::string GetFileName();
 
     // Returns shared ptr to CoordinateSystem
-    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem(const StokesSource& stokes_source = StokesSource());
+    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem();
+    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem(int stokes_index);
 
     // Image/Frame info
-    casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
+    casacore::IPosition ImageShape();
+    casacore::IPosition ImageShape(int stokes_index);
     DimsInfo Dims();    // struct of all dimensions
     size_t Width();     // length of x axis
     size_t Height();    // length of y axis
@@ -201,8 +203,7 @@ public:
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
         std::shared_ptr<Region> image_region);
 
-    bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
-    std::string GetStokesType(int stokes_index);
+    bool GetCoordinateStokesIndex(const string& coordinate, int& stokes_index);
 
     std::shared_mutex& GetActiveTaskMutex();
 

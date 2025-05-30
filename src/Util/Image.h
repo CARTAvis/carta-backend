@@ -29,20 +29,10 @@
 #define TEMP_REGION_ID -100
 #define TEMP_FOV_REGION_ID -1000
 
-// x axis
-#define ALL_X -2
-
-// y axis
-#define ALL_Y -2
-
 // z axis
 #define DEFAULT_Z 0
 #define CURRENT_Z -1
 #define ALL_Z -2
-
-// stokes (computed stokes in Stokes.h)
-#define DEFAULT_STOKES 0
-#define CURRENT_STOKES -1
 
 // raster image data
 #define TILE_SIZE 256
