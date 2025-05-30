@@ -944,7 +944,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};
 
         // check for file or contents set
-        bool import_file(!directory.empty() && !filename.empty()), import_contents(!contents.empty());
+        bool import_file(!filename.empty()), import_contents(!contents.empty());
         if (!import_file && !import_contents) {
             auto import_ack = Message::ImportRegionAck(false, "Import region failed: cannot import by filename or contents.");
             SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
