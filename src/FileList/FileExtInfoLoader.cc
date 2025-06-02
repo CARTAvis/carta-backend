@@ -92,7 +92,7 @@ bool FileExtInfoLoader::FillFileExtInfo(
     // Set name from filename
     fs::path filepath(filename);
     std::string filename_nopath = filepath.filename().string();
-    
+
     Message::AddComputedEntry(extended_info, "Has Name", filename_nopath);
 
     // Fill header_entries, computed_entries
@@ -1399,8 +1399,8 @@ void FileExtInfoLoader::AddCoordRanges(
                 } else if (axis_names(spatial_axes[0]) == "Longitude") {
                     axis_names(spatial_axes[0]) = "LON";
                 }
-                Message::AddComputedEntry(extended_info, fmt::format("{} range", axis_names(spatial_axes[0])),
-                    fmt::format("[{}, {}]", x_start, x_end));
+                Message::AddComputedEntry(
+                    extended_info, fmt::format("{} range", axis_names(spatial_axes[0])), fmt::format("[{}, {}]", x_start, x_end));
             }
 
             if (spatial_axes[1] > -1 && spatial_axes[1] < axis_names.size()) {
@@ -1409,8 +1409,8 @@ void FileExtInfoLoader::AddCoordRanges(
                 } else if (axis_names(spatial_axes[1]) == "Latitude") {
                     axis_names(spatial_axes[1]) = "LAT";
                 }
-                Message::AddComputedEntry(extended_info, fmt::format("{} range", axis_names(spatial_axes[1])),
-                    fmt::format("[{}, {}]", y_start, y_end));
+                Message::AddComputedEntry(
+                    extended_info, fmt::format("{} range", axis_names(spatial_axes[1])), fmt::format("[{}, {}]", y_start, y_end));
             }
         }
     }

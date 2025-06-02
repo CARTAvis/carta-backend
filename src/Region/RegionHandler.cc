@@ -196,27 +196,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     auto region_info_map = import_ack.mutable_regions();
     auto region_style_map = import_ack.mutable_region_styles();
     for (auto& imported_region : region_list) {
-        auto region_state = imported_region.state;
-        auto region_style = imported_region.style;
-
-        auto region_csys = frame->CoordinateSystem();
-        auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
-
-        if (region && region->IsValid()) {
-            std::unique_lock<std::mutex> region_lock(_region_mutex);
-            _regions[region_id] = std::move(region);
-            region_lock.unlock();
-
-            // Set CARTA::RegionInfo
-            CARTA::RegionInfo region_info;
-            region_info.set_region_type(region_state.type);
-            *region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
-            region_info.set_rotation(region_state.rotation);
-
-            // Add info and style to import_ack; increment region id for next region
-            (*region_info_map)[region_id] = region_info;
-            (*region_style_map)[region_id++] = region_style;
-        }
+        AddImportedRegion(region_id, imported_region, frame, region_info_map, region_style_map);
     }
 }
 
