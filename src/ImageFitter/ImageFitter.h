@@ -90,7 +90,6 @@ public:
      * @brief Generate model and residual images based on the fitting results.
      * @param image Pointer to the casacore ImageInterface object
      * @param image_region The fitting region
-     * @param file_id ID of the fitting image file
      * @param filename Name of the fitting image file
      * @param model_image The generated model image
      * @param residual_image The generated residual image
