@@ -1012,7 +1012,7 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
             // Export filename (optional, for server-side export)
             std::string directory(message.directory()), filename(message.file());
             std::string abs_filename;
-            if (!directory.empty() && !filename.empty()) {
+            if (!filename.empty()) {
                 // export file is on server, form path with filename
                 casacore::Path top_level_path(_top_level_folder);
                 top_level_path.append(directory);
