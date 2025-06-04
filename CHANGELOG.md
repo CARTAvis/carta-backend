@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-* Fix empty response to HTTP request with underscores in header names ([#1406](https://github.com/CARTAvis/carta-backend/issues/1406))
-* Fix spatial profile for point region in matched image ([#1405](https://github.com/CARTAvis/carta-backend/issues/1405))
-* Fix casacore reformatting GILDAS unit ([#1423](https://github.com/CARTAvis/carta-backend/issues/1423))
-* Fix removing single beam defined in BEAMS table not in headers ([#1432](https://github.com/CARTAvis/carta-backend/issues/1432))
+* Fix empty response to HTTP request with underscores in header names ([#1406](https://github.com/CARTAvis/carta-backend/issues/1406)).
+* Fix scripting being unable to find resumed session ([#1416](https://github.com/CARTAvis/carta-backend/issues/1416)).
+* Fix spatial profile for point region in matched image ([#1405](https://github.com/CARTAvis/carta-backend/issues/1405)).
+* Fix casacore reformatting GILDAS unit ([#1423](https://github.com/CARTAvis/carta-backend/issues/1423)).
+* Fix removing single beam defined in BEAMS table not in headers ([#1432](https://github.com/CARTAvis/carta-backend/issues/1432)).
 
 ## [5.0.0-beta.1]
 
