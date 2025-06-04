@@ -1,0 +1,15 @@
+<map id="carta::FitsLoader::OpenHdu" name="carta::FitsLoader::OpenHdu">
+<area shape="rect" id="Node000001" title=" " alt="" coords="616,69,755,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FitsLoader.html#acf150034b1de8ed3b98e596e17e9c2ef" title=" " alt="" coords="411,5,568,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="610,68,550,48,552,43,612,63"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1FitsLoader.html#a5e62163d0843c0ad322983851d5e073a" title=" " alt="" coords="192,127,363,167"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="607,115,568,124,462,138,363,146,363,141,461,133,568,119,606,110"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8" title=" " alt="" coords="420,69,559,109"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="602,92,559,92,559,87,602,87"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FitsLoader.html#a6daba3f63c8e10c36a94779abba69a0f" title=" " alt="" coords="208,63,347,103"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="402,52,348,67,346,61,401,46"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FitsLoader.html#a53159c7c8148750413a2a1865a409f60" title=" " alt="" coords="5,95,144,135"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="195,98,145,106,144,101,194,93"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="178,134,144,128,145,123,179,128"/>
+<area shape="poly" id="edge7_Node000006_Node000003" title=" " alt="" coords="406,89,347,88,347,82,406,84"/>
+</map>

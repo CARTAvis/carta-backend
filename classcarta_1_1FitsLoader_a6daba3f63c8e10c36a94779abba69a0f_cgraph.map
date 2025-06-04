@@ -1,9 +1,16 @@
 <map id="carta::FitsLoader::ResetImageBeam" name="carta::FitsLoader::ResetImageBeam">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,144,77"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1FitsLoader.html#acf150034b1de8ed3b98e596e17e9c2ef" title=" " alt="" coords="192,5,349,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="144,43,178,38,179,43,145,49"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8" title=" " alt="" coords="201,69,340,109"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="145,66,188,73,187,78,144,71"/>
-<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression." alt="" coords="397,13,587,38"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="350,23,384,23,384,28,350,28"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,144,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FitsLoader.html#acf150034b1de8ed3b98e596e17e9c2ef" title=" " alt="" coords="192,69,349,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="144,87,178,87,178,92,144,92"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8" title=" " alt="" coords="201,5,340,45"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="136,67,195,47,197,52,137,72"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1FitsLoader.html#a375dbd9b3e9cbc5c6bc24763b912a47e" title=" " alt="" coords="201,133,340,173"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="137,107,197,127,195,132,136,112"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1FitsLoader.html#a1147e09123e26bb9bc28f57786541fef" title=" " alt="" coords="423,9,561,49"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="345,67,409,49,410,54,346,72"/>
+<area shape="rect" id="Node000004" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression." alt="" coords="397,77,587,102"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="350,87,384,87,384,92,350,92"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="341,24,409,25,409,30,341,29"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1FitsLoader.html#aa7400a4ed627290250fa68427dbca5fb" title=" " alt="" coords="423,133,561,173"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="341,151,409,151,409,156,341,156"/>
 </map>

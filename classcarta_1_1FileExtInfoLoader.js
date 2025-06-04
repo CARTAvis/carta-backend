@@ -1,7 +1,8 @@
 var classcarta_1_1FileExtInfoLoader =
 [
     [ "FileExtInfoLoader", "classcarta_1_1FileExtInfoLoader.html#a98ea2c5ce5573fd46084a01ba69ad2cd", null ],
-    [ "AddBeamEntry", "classcarta_1_1FileExtInfoLoader.html#a52df8914847de227ba7be055b5c24d21", null ],
+    [ "AddBeamEntry", "classcarta_1_1FileExtInfoLoader.html#ab2784a1282577569e272b59970176d38", null ],
+    [ "AddBeamEntry", "classcarta_1_1FileExtInfoLoader.html#a8a1ec104ddd9cc285626ff247d1c99ef", null ],
     [ "AddComputedEntries", "classcarta_1_1FileExtInfoLoader.html#a70696eaf23232d6b278f941dcfe701bb", null ],
     [ "AddComputedEntriesFromHeaders", "classcarta_1_1FileExtInfoLoader.html#a5f5a330e631e555679c7356ac1f71f23", null ],
     [ "AddCoordRanges", "classcarta_1_1FileExtInfoLoader.html#a02cd16701178cf515aca3f5623537611", null ],
@@ -9,6 +10,7 @@ var classcarta_1_1FileExtInfoLoader =
     [ "AddEntriesFromHeaderStrings", "classcarta_1_1FileExtInfoLoader.html#a9a7099a65e803d42d6da0619f83bfd7c", null ],
     [ "AddInitialComputedEntries", "classcarta_1_1FileExtInfoLoader.html#a5ec18ae95dc807af08f85854d8d7d240", null ],
     [ "AddShapeEntries", "classcarta_1_1FileExtInfoLoader.html#ab582a4be78221eeeadcff03c7f63dc63", null ],
+    [ "AddStokesBeamEntries", "classcarta_1_1FileExtInfoLoader.html#a40778d9a3e8f6e3866ca10dcfff37977", null ],
     [ "ConvertCoordsToDeg", "classcarta_1_1FileExtInfoLoader.html#adb3998e3b3756d1ee8a2bb91f445c4d7", null ],
     [ "ConvertHeaderValueToNumeric", "classcarta_1_1FileExtInfoLoader.html#a9569d63b1ec07f806edb9f3469b15fd5", null ],
     [ "ConvertIncrementToArcsec", "classcarta_1_1FileExtInfoLoader.html#ac36abc843ecdd6253cbb9524c77bc5ce", null ],

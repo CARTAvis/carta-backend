@@ -75,7 +75,7 @@ var searchData=
   ['invalidateimagecache_72',['InvalidateImageCache',['../classcarta_1_1Frame.html#a03a1722c3e3ff0b2f84c4b734ccd3a02',1,'carta::Frame']]],
   ['invert_73',['Invert',['../classcarta_1_1TableView.html#adf9dee6cf8ff10bf2ea71fa75f2744e3',1,'carta::TableView']]],
   ['ipastext_74',['IPAsText',['../classcarta_1_1SessionManager.html#a16f9a3e4944b8b34fdf48e4cebdfbd2f',1,'carta::SessionManager']]],
-  ['is64bitbeamstable_75',['Is64BitBeamsTable',['../classcarta_1_1FitsLoader.html#a9fba46cca685f41b92dd4abe57c466fd',1,'carta::FitsLoader']]],
+  ['is64bitbeamstable_75',['Is64BitBeamsTable',['../classcarta_1_1FitsLoader.html#af5a8677d504fe3f4c4f8f125f6aa9414',1,'carta::FitsLoader']]],
   ['is_5fdefined_76',['is_defined',['../structcarta_1_1BeamTableInfo.html#a400fc3d84f03c6ef99ff8cf08d19345f',1,'carta::BeamTableInfo']]],
   ['is_5fgroup_5fexecution_5fcancelled_77',['is_group_execution_cancelled',['../classcarta_1_1SessionContext.html#a28e9e5c979d1c244253a92f69b156c39',1,'carta::SessionContext']]],
   ['is_5fin_5frange_78',['is_in_range',['../structAxisRange.html#aafe8ce1f44aa7d6b8ca5d2e112ccf2bb',1,'AxisRange']]],

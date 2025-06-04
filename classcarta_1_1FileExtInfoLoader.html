@@ -145,8 +145,12 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a70696eaf23232d6b278f941dcfe701bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f5a330e631e555679c7356ac1f71f23" id="r_a5f5a330e631e555679c7356ac1f71f23"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a5f5a330e631e555679c7356ac1f71f23">AddComputedEntriesFromHeaders</a> (CARTA::FileInfoExtended &amp;extended_info, const <a class="el" href="structAxesInfo.html">AxesInfo</a> &amp;axes, <a class="el" href="classcarta_1_1CompressedFits.html">CompressedFits</a> *compressed_fits=nullptr)</td></tr>
 <tr class="separator:a5f5a330e631e555679c7356ac1f71f23"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52df8914847de227ba7be055b5c24d21" id="r_a52df8914847de227ba7be055b5c24d21"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a52df8914847de227ba7be055b5c24d21">AddBeamEntry</a> (CARTA::FileInfoExtended &amp;extended_info, const casacore::ImageBeamSet &amp;beam_set, bool is_history_beam)</td></tr>
-<tr class="separator:a52df8914847de227ba7be055b5c24d21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a1ec104ddd9cc285626ff247d1c99ef" id="r_a8a1ec104ddd9cc285626ff247d1c99ef"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a8a1ec104ddd9cc285626ff247d1c99ef">AddBeamEntry</a> (CARTA::FileInfoExtended &amp;extended_info, const casacore::ImageBeamSet &amp;beam_set, const casacore::Vector&lt; casacore::String &gt; &amp;stokes_names, bool is_history_beam)</td></tr>
+<tr class="separator:a8a1ec104ddd9cc285626ff247d1c99ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2784a1282577569e272b59970176d38" id="r_ab2784a1282577569e272b59970176d38"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#ab2784a1282577569e272b59970176d38">AddBeamEntry</a> (CARTA::FileInfoExtended &amp;extended_info, const casacore::GaussianBeam &amp;gaussian_beam, const std::string &amp;entry_name, bool is_history_beam)</td></tr>
+<tr class="separator:ab2784a1282577569e272b59970176d38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40778d9a3e8f6e3866ca10dcfff37977" id="r_a40778d9a3e8f6e3866ca10dcfff37977"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a40778d9a3e8f6e3866ca10dcfff37977">AddStokesBeamEntries</a> (CARTA::FileInfoExtended &amp;extended_info, std::vector&lt; std::pair&lt; std::string, casacore::GaussianBeam &gt; &gt; &amp;beam_list, bool is_history_beam)</td></tr>
+<tr class="separator:a40778d9a3e8f6e3866ca10dcfff37977"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a02cd16701178cf515aca3f5623537611" id="r_a02cd16701178cf515aca3f5623537611"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a02cd16701178cf515aca3f5623537611">AddCoordRanges</a> (CARTA::FileInfoExtended &amp;extended_info, const casacore::CoordinateSystem &amp;coord_system, const casacore::IPosition &amp;image_shape)</td></tr>
 <tr class="separator:a02cd16701178cf515aca3f5623537611"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa0abc9c6dd40164f472c7554adc32b6" id="r_afa0abc9c6dd40164f472c7554adc32b6"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#afa0abc9c6dd40164f472c7554adc32b6">MakeAngleString</a> (const std::string &amp;type, double val, const std::string &amp;unit)</td></tr>
@@ -187,8 +191,56 @@ Private Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a52df8914847de227ba7be055b5c24d21" name="a52df8914847de227ba7be055b5c24d21"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a52df8914847de227ba7be055b5c24d21">&#9670;&#160;</a></span>AddBeamEntry()</h2>
+<a id="ab2784a1282577569e272b59970176d38" name="ab2784a1282577569e272b59970176d38"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2784a1282577569e272b59970176d38">&#9670;&#160;</a></span>AddBeamEntry() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void FileExtInfoLoader::AddBeamEntry </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileInfoExtended &amp;&#160;</td>
+          <td class="paramname"><em>extended_info</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const casacore::GaussianBeam &amp;&#160;</td>
+          <td class="paramname"><em>gaussian_beam</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>entry_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>is_history_beam</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8a1ec104ddd9cc285626ff247d1c99ef" name="a8a1ec104ddd9cc285626ff247d1c99ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8a1ec104ddd9cc285626ff247d1c99ef">&#9670;&#160;</a></span>AddBeamEntry() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -211,6 +263,12 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">const casacore::Vector&lt; casacore::String &gt; &amp;&#160;</td>
+          <td class="paramname"><em>stokes_names</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">bool&#160;</td>
           <td class="paramname"><em>is_history_beam</em>&#160;</td>
         </tr>
@@ -227,9 +285,14 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 <div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a8a1ec104ddd9cc285626ff247d1c99ef_cgraph.svg" width="416" height="75"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a52df8914847de227ba7be055b5c24d21_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a8a1ec104ddd9cc285626ff247d1c99ef_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -609,6 +672,58 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_ab582a4be78221eeeadcff03c7f63dc63_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a40778d9a3e8f6e3866ca10dcfff37977" name="a40778d9a3e8f6e3866ca10dcfff37977"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a40778d9a3e8f6e3866ca10dcfff37977">&#9670;&#160;</a></span>AddStokesBeamEntries()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void FileExtInfoLoader::AddStokesBeamEntries </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileInfoExtended &amp;&#160;</td>
+          <td class="paramname"><em>extended_info</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; std::pair&lt; std::string, casacore::GaussianBeam &gt; &gt; &amp;&#160;</td>
+          <td class="paramname"><em>beam_list</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>is_history_beam</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a40778d9a3e8f6e3866ca10dcfff37977_cgraph.svg" width="416" height="75"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a40778d9a3e8f6e3866ca10dcfff37977_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>

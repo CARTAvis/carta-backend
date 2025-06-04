@@ -213,16 +213,22 @@ Public Member Functions</h2></td></tr>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a53159c7c8148750413a2a1865a409f60" id="r_a53159c7c8148750413a2a1865a409f60"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a53159c7c8148750413a2a1865a409f60">AllocateImage</a> (const std::string &amp;hdu) override</td></tr>
 <tr class="separator:a53159c7c8148750413a2a1865a409f60"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71815a52ccd44370b952600cc6ad2cbb" id="r_a71815a52ccd44370b952600cc6ad2cbb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a71815a52ccd44370b952600cc6ad2cbb">GetNumImageHeaders</a> (const std::string &amp;filename, int hdu, std::string &amp;error)</td></tr>
-<tr class="separator:a71815a52ccd44370b952600cc6ad2cbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9fba46cca685f41b92dd4abe57c466fd" id="r_a9fba46cca685f41b92dd4abe57c466fd"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a9fba46cca685f41b92dd4abe57c466fd">Is64BitBeamsTable</a> (const std::string &amp;filename)</td></tr>
-<tr class="separator:a9fba46cca685f41b92dd4abe57c466fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e62163d0843c0ad322983851d5e073a" id="r_a5e62163d0843c0ad322983851d5e073a"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a5e62163d0843c0ad322983851d5e073a">GetNumImageHeaders</a> (unsigned int hdu_num, std::string &amp;error)</td></tr>
+<tr class="separator:a5e62163d0843c0ad322983851d5e073a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6daba3f63c8e10c36a94779abba69a0f" id="r_a6daba3f63c8e10c36a94779abba69a0f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a6daba3f63c8e10c36a94779abba69a0f">ResetImageBeam</a> (unsigned int hdu_num)</td></tr>
 <tr class="separator:a6daba3f63c8e10c36a94779abba69a0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a375dbd9b3e9cbc5c6bc24763b912a47e" id="r_a375dbd9b3e9cbc5c6bc24763b912a47e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a375dbd9b3e9cbc5c6bc24763b912a47e">HasBeamsTable</a> ()</td></tr>
+<tr class="separator:a375dbd9b3e9cbc5c6bc24763b912a47e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a40c64ccac8f72236384fe2efd90f33a8" id="r_a40c64ccac8f72236384fe2efd90f33a8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a40c64ccac8f72236384fe2efd90f33a8">HasBeamHeaders</a> (unsigned int hdu_num)</td></tr>
 <tr class="separator:a40c64ccac8f72236384fe2efd90f33a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acf150034b1de8ed3b98e596e17e9c2ef" id="r_acf150034b1de8ed3b98e596e17e9c2ef"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#acf150034b1de8ed3b98e596e17e9c2ef">GetLastHistoryBeam</a> (unsigned int hdu_num, casacore::Quantity &amp;major, casacore::Quantity &amp;minor, casacore::Quantity &amp;pa)</td></tr>
 <tr class="separator:acf150034b1de8ed3b98e596e17e9c2ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af5a8677d504fe3f4c4f8f125f6aa9414" id="r_af5a8677d504fe3f4c4f8f125f6aa9414"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#af5a8677d504fe3f4c4f8f125f6aa9414">Is64BitBeamsTable</a> ()</td></tr>
+<tr class="separator:af5a8677d504fe3f4c4f8f125f6aa9414"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1147e09123e26bb9bc28f57786541fef" id="r_a1147e09123e26bb9bc28f57786541fef"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#a1147e09123e26bb9bc28f57786541fef">OpenHdu</a> (unsigned int hdu_num, fitsfile *&amp;fptr, int &amp;hdu_type)</td></tr>
+<tr class="separator:a1147e09123e26bb9bc28f57786541fef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7400a4ed627290250fa68427dbca5fb" id="r_aa7400a4ed627290250fa68427dbca5fb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FitsLoader.html#aa7400a4ed627290250fa68427dbca5fb">OpenBeamsTable</a> (fitsfile *&amp;fptr)</td></tr>
+<tr class="separator:aa7400a4ed627290250fa68427dbca5fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -452,7 +458,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_acf150034b1de8ed3b98e596e17e9c2ef_cgraph.svg" width="406" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_acf150034b1de8ed3b98e596e17e9c2ef_cgraph.svg" width="406" height="102"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -462,8 +468,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a71815a52ccd44370b952600cc6ad2cbb" name="a71815a52ccd44370b952600cc6ad2cbb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a71815a52ccd44370b952600cc6ad2cbb">&#9670;&#160;</a></span>GetNumImageHeaders()</h2>
+<a id="a5e62163d0843c0ad322983851d5e073a" name="a5e62163d0843c0ad322983851d5e073a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e62163d0843c0ad322983851d5e073a">&#9670;&#160;</a></span>GetNumImageHeaders()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -474,14 +480,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">int carta::FitsLoader::GetNumImageHeaders </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>filename</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>hdu</em>, </td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>hdu_num</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -502,9 +502,14 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a5e62163d0843c0ad322983851d5e073a_cgraph.svg" width="368" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a71815a52ccd44370b952600cc6ad2cbb_icgraph.svg" width="368" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a5e62163d0843c0ad322983851d5e073a_icgraph.svg" width="368" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -533,6 +538,11 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a40c64ccac8f72236384fe2efd90f33a8_cgraph.svg" width="336" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a40c64ccac8f72236384fe2efd90f33a8_icgraph.svg" width="523" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
@@ -540,8 +550,43 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a9fba46cca685f41b92dd4abe57c466fd" name="a9fba46cca685f41b92dd4abe57c466fd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9fba46cca685f41b92dd4abe57c466fd">&#9670;&#160;</a></span>Is64BitBeamsTable()</h2>
+<a id="a375dbd9b3e9cbc5c6bc24763b912a47e" name="a375dbd9b3e9cbc5c6bc24763b912a47e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a375dbd9b3e9cbc5c6bc24763b912a47e">&#9670;&#160;</a></span>HasBeamsTable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::FitsLoader::HasBeamsTable </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a375dbd9b3e9cbc5c6bc24763b912a47e_cgraph.svg" width="336" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a375dbd9b3e9cbc5c6bc24763b912a47e_icgraph.svg" width="523" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="af5a8677d504fe3f4c4f8f125f6aa9414" name="af5a8677d504fe3f4c4f8f125f6aa9414"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af5a8677d504fe3f4c4f8f125f6aa9414">&#9670;&#160;</a></span>Is64BitBeamsTable()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -552,8 +597,43 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool carta::FitsLoader::Is64BitBeamsTable </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>filename</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_af5a8677d504fe3f4c4f8f125f6aa9414_cgraph.svg" width="344" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_af5a8677d504fe3f4c4f8f125f6aa9414_icgraph.svg" width="344" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="aa7400a4ed627290250fa68427dbca5fb" name="aa7400a4ed627290250fa68427dbca5fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7400a4ed627290250fa68427dbca5fb">&#9670;&#160;</a></span>OpenBeamsTable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::FitsLoader::OpenBeamsTable </td>
+          <td>(</td>
+          <td class="paramtype">fitsfile *&amp;&#160;</td>
+          <td class="paramname"><em>fptr</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -566,7 +646,54 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a9fba46cca685f41b92dd4abe57c466fd_icgraph.svg" width="344" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_aa7400a4ed627290250fa68427dbca5fb_icgraph.svg" width="100%" height="386"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a1147e09123e26bb9bc28f57786541fef" name="a1147e09123e26bb9bc28f57786541fef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1147e09123e26bb9bc28f57786541fef">&#9670;&#160;</a></span>OpenHdu()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::FitsLoader::OpenHdu </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>hdu_num</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">fitsfile *&amp;&#160;</td>
+          <td class="paramname"><em>fptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int &amp;&#160;</td>
+          <td class="paramname"><em>hdu_type</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a1147e09123e26bb9bc28f57786541fef_icgraph.svg" width="100%" height="429"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -597,7 +724,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a6daba3f63c8e10c36a94779abba69a0f_cgraph.svg" width="592" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FitsLoader_a6daba3f63c8e10c36a94779abba69a0f_cgraph.svg" width="592" height="179"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
