@@ -8,5 +8,5 @@ var searchData=
   ['blocksmoothscalar_5',['BlockSmoothScalar',['../namespacecarta.html#aead2ccf135cb75c1b5d5f5d8b5a64849',1,'carta']]],
   ['blocksmoothsse_6',['BlockSmoothSSE',['../namespacecarta.html#a3d79fcec84ed84bfc770c589c2f12ea1',1,'carta']]],
   ['bounds_7',['bounds',['../structcarta_1_1Bounds.html#a339f5710352716086aa262f4c91d9d55',1,'carta::Bounds::Bounds()'],['../structcarta_1_1Bounds.html#aab9626e93239d66bd1ac970d18733984',1,'carta::Bounds::Bounds(T min_, T max_)'],['../structcarta_1_1Bounds.html#a39658fa57fa5612d549b64079b756a9d',1,'carta::Bounds::Bounds(const CARTA::DoubleBounds &amp;bounds)']]],
-  ['buildanimationobject_8',['BuildAnimationObject',['../classcarta_1_1Session.html#af35d01f76314dfa92b6cb9b63280210a',1,'carta::Session']]]
+  ['buildanimationobject_8',['BuildAnimationObject',['../classcarta_1_1Session.html#ab5e210a4e6fa850ee38cd4565fcd92f7',1,'carta::Session']]]
 ];

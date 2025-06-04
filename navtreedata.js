@@ -92,7 +92,7 @@ var NAVTREEINDEX =
 "classcarta_1_1PvPreviewCube.html#ab888d98b617edab342100805d3833538",
 "classcarta_1_1RegionHandler.html#a2f27f6890487e19f0eb43331962f2fb2",
 "classcarta_1_1Session.html#a1ffc82b5974708fbeb68b57fb263c637",
-"classcarta_1_1Session.html#af04404d4795dc3973358399dc3ceb6d7",
+"classcarta_1_1Session.html#aef4b334b4727ea531b229d242c3108b2",
 "classcarta_1_1TableController.html#a4867d1e5f224b6c2f6e9a3d1786e3fd7",
 "classcarta_1_1queuing__rw__mutex.html#a214fb47b8f06320ef0a5f182a40ece6d",
 "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a0a9501840acacfc8efe7522f5340000c",

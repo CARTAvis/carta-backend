@@ -23,7 +23,7 @@ var searchData=
   ['bounds_3c_20double_20_3e_20',['Bounds&lt; double &gt;',['../structcarta_1_1Bounds.html',1,'carta']]],
   ['bpa_21',['bpa',['../structcarta_1_1BeamInfo.html#aea0cdef8ea56122dfb6ef8037e749ac8',1,'carta::BeamInfo']]],
   ['browser_22',['browser',['../structcarta_1_1ProgramSettings.html#a09c0ed2f5a3eff7e84ca8e25ab58e373',1,'carta::ProgramSettings']]],
-  ['buildanimationobject_23',['BuildAnimationObject',['../classcarta_1_1Session.html#af35d01f76314dfa92b6cb9b63280210a',1,'carta::Session']]],
+  ['buildanimationobject_23',['BuildAnimationObject',['../classcarta_1_1Session.html#ab5e210a4e6fa850ee38cd4565fcd92f7',1,'carta::Session']]],
   ['building_20and_20running_20unit_20tests_24',['Building and running unit tests',['../md_docs_2static_2faq.html#autotoc_md0',1,'']]],
   ['building_20with_20asan_20flags_25',['Building with ASAN flags',['../md_docs_2static_2faq.html#autotoc_md1',1,'']]]
 ];
