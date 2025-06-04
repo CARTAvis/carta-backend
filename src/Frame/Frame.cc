@@ -2513,17 +2513,21 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     int mip = _vector_field.Mip();
     bool fractional = _vector_field.Fractional();
     float threshold = _vector_field.Threshold();
-    bool calculate_pi_pa = _vector_field.CalculatePi() || _vector_field.CalculatePa();
-    bool current_stokes_pi_pa = _vector_field.CurrStokesAsPi() || _vector_field.CurrStokesAsPa();
+    CARTA::PolarizationType threshold_option = _vector_field.ThresholdOption();
+    bool calculate_pi = _vector_field.CalculatePi();
+    bool calculate_pa = _vector_field.CalculatePa();
+    bool current_stokes_pi = _vector_field.CurrStokesAsPi();
+    bool current_stokes_pa = _vector_field.CurrStokesAsPa();
 
-    // Initialize stokes maps for their flags, indices and data
+    // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
     std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
 
     // Set stokes flags and get their indices
-    stokes_flag["I"] = (fractional || !std::isnan(threshold)) && GetStokesTypeIndex("I", stokes_indices["I"]);
-    stokes_flag["Q"] = calculate_pi_pa && GetStokesTypeIndex("Q", stokes_indices["Q"]);
-    stokes_flag["U"] = calculate_pi_pa && GetStokesTypeIndex("U", stokes_indices["U"]);
+    bool use_threshold_I = !std::isnan(threshold) && ((calculate_pi && threshold_option == CARTA::PolarizationType::I) || calculate_pa);
+    stokes_flag["I"] = (fractional || use_threshold_I) && GetStokesTypeIndex("I", stokes_indices["I"]);
+    stokes_flag["Q"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("Q", stokes_indices["Q"]);
+    stokes_flag["U"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("U", stokes_indices["U"]);
 
     // Get tiles
     std::vector<Tile> tiles;
@@ -2538,14 +2542,14 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
         double progress = (double)(i + 1) / tiles.size();
 
         // Get current stokes data
-        if (current_stokes_pi_pa) {
+        if (current_stokes_pi || current_stokes_pa) {
             if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, CurrentStokes(), bounds, mip)) {
                 return false;
             }
         }
 
         // Get stokes data I, Q, or U
-        if (calculate_pi_pa) {
+        if (calculate_pi || calculate_pa) {
             for (auto one : stokes_flag) {
                 std::string stokes = one.first;
                 if (stokes_flag[stokes] &&

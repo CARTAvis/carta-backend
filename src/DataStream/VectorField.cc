@@ -79,7 +79,7 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
         }
 
         // Set NAN for PI/FPI if stokes or pa is NAN or below the threshold
-        if (stokes_flag["I"]) {
+        if (stokes_flag["I"] && _threshold_option == CARTA::PolarizationType::I) {
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), threshold_cut);
         } else {
             std::for_each(pi.begin(), pi.end(), threshold_cut);
@@ -97,8 +97,6 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
         // Set NAN for PA if stokes or pa is NAN or below the threshold
         if (stokes_flag["I"]) {
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
-        } else {
-            std::for_each(pa.begin(), pa.end(), threshold_cut);
         }
         FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
     }
@@ -134,10 +132,12 @@ bool VectorField::IsEqual(const CARTA::SetVectorOverlayParameters& message) {
     int stokes_angle = message.stokes_angle();
     CARTA::CompressionType compression_type = message.compression_type();
     float compression_quality = message.compression_quality();
+    CARTA::PolarizationType threshold_option = message.threshold_option();
 
     return (file_id == _file_id && smoothing_factor == _smoothing_factor && fractional == _fractional && threshold == _threshold &&
             debiasing == _debiasing && q_error == _q_error && u_error == _u_error && stokes_intensity == _stokes_intensity &&
-            stokes_angle == _stokes_angle && compression_type == _compression_type && compression_quality == _compression_quality);
+            stokes_angle == _stokes_angle && compression_type == _compression_type && compression_quality == _compression_quality &&
+            threshold_option == _threshold_option);
 }
 
 void VectorField::RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) {
@@ -152,8 +152,9 @@ void VectorField::RenewParameters(const CARTA::SetVectorOverlayParameters& messa
     _stokes_angle = message.stokes_angle();
     _compression_type = message.compression_type();
     _compression_quality = message.compression_quality();
-    bool has_stokes_axis(stokes_axis > -1);
+    _threshold_option = message.threshold_option();
 
+    bool has_stokes_axis(stokes_axis > -1);
     _calculate_pi = _stokes_intensity == 1 && has_stokes_axis;
     _calculate_pa = _stokes_angle == 1 && has_stokes_axis;
     _current_stokes_as_pi = (_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis;
