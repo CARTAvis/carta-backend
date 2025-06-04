@@ -42,6 +42,8 @@ private:
     uint32_t _session_number;
     std::unordered_map<uint32_t, Session*> _sessions;
     std::mutex _sessions_mutex;
+    // Map from internal session ID to actual session ID
+    std::unordered_map<uint32_t, uint32_t> _real_session_id;
     // uWebSockets app
     uWS::App _app;
     // Shared objects
