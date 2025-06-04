@@ -17,6 +17,7 @@ var classcarta_1_1SessionManager =
     [ "_app", "classcarta_1_1SessionManager.html#a814fed51ea499334cb630cdcc7d103a1", null ],
     [ "_auth_token", "classcarta_1_1SessionManager.html#ab4197e156cfa415dcf58c2904272b793", null ],
     [ "_file_list_handler", "classcarta_1_1SessionManager.html#a6baea661a21a439edb276cdccb36d302", null ],
+    [ "_real_session_id", "classcarta_1_1SessionManager.html#a5d28f8c5fedeeb1da3787201fe188548", null ],
     [ "_session_number", "classcarta_1_1SessionManager.html#a81f946da8ecac9186534a2586dea1b31", null ],
     [ "_sessions", "classcarta_1_1SessionManager.html#a3d2a62b00cd85a8678ec688f64c7c996", null ],
     [ "_sessions_mutex", "classcarta_1_1SessionManager.html#a1d3389f5c2805bfd1b342f106f9b1430", null ],

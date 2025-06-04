@@ -1,5 +1,7 @@
 var NAVTREEINDEX18 =
 {
+"structcarta_1_1ProgramSettings.html#ad9b6834e535bfd4913323ff4e109e7ac":[3,0,0,63,18],
+"structcarta_1_1ProgramSettings.html#ada065e7f7ffd32d0ff0bf815c14ba9f0":[3,0,0,63,47],
 "structcarta_1_1ProgramSettings.html#ada065e7f7ffd32d0ff0bf815c14ba9f0":[4,0,0,62,47],
 "structcarta_1_1ProgramSettings.html#ae0230976c9aaa51446bd75fefd1aeb7f":[3,0,0,63,15],
 "structcarta_1_1ProgramSettings.html#ae0230976c9aaa51446bd75fefd1aeb7f":[4,0,0,62,15],
@@ -247,7 +249,5 @@ var NAVTREEINDEX18 =
 "structcarta_1_1TilePool.html#a1e372d4e2eab9e4036a2e485ed95463e":[3,0,0,105,8],
 "structcarta_1_1TilePool.html#a2c84a3959f2ebc482fafce66ad2aeef7":[4,0,0,104,7],
 "structcarta_1_1TilePool.html#a2c84a3959f2ebc482fafce66ad2aeef7":[3,0,0,105,7],
-"structcarta_1_1TilePool.html#a36dcf5cd457723eafb7f436addd7ea3a":[4,0,0,104,5],
-"structcarta_1_1TilePool.html#a36dcf5cd457723eafb7f436addd7ea3a":[3,0,0,105,5],
-"structcarta_1_1TilePool.html#a8470d704adce77aad983c9f292723cae":[4,0,0,104,6]
+"structcarta_1_1TilePool.html#a36dcf5cd457723eafb7f436addd7ea3a":[4,0,0,104,5]
 };

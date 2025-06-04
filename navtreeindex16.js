@@ -1,5 +1,7 @@
 var NAVTREEINDEX16 =
 {
+"namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a5c8e8078d799e20f618ef910674d10cf":[3,0,0,0,3,23],
+"namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a6811254e01b3550bdb2dc46f204730dc":[3,0,0,0,3,5],
 "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a74c53bcd3dcb2bb79993b2fec37d362a":[3,0,0,0,3,1],
 "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a78c14c14c727aa5184e877d2e6baf5f5":[3,0,0,0,3,19],
 "namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a7e1e1680da9d615838bfc407b2fa4552":[3,0,0,0,3,6],
@@ -247,7 +249,5 @@ var NAVTREEINDEX16 =
 "structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a02da78ef0af17a8591dd0151fa14d1ef":[3,0,0,0,1,5],
 "structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a192ab1eb4c5d959cc061900c5fcf34f9":[4,0,0,0,1,7],
 "structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a192ab1eb4c5d959cc061900c5fcf34f9":[3,0,0,0,1,7],
-"structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a66525d6fee5e36c683768d6d965d9e08":[4,0,0,0,1,2],
-"structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a66525d6fee5e36c683768d6d965d9e08":[3,0,0,0,1,2],
-"structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a852b3644ddc7baa615f18d16726e263a":[3,0,0,0,1,8]
+"structcarta_1_1FileInfo_1_1RegionSpectralStats.html#a66525d6fee5e36c683768d6d965d9e08":[4,0,0,0,1,2]
 };
