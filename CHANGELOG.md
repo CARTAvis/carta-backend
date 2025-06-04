@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix spatial profile for point region in matched image ([#1405](https://github.com/CARTAvis/carta-backend/issues/1405)).
 * Fix casacore reformatting GILDAS unit ([#1423](https://github.com/CARTAvis/carta-backend/issues/1423)).
 * Fix removing single beam defined in BEAMS table not in headers ([#1432](https://github.com/CARTAvis/carta-backend/issues/1432)).
+* Fix crash when animator is started while PV preview is active ([#1441](https://github.com/CARTAvis/carta-backend/issues/1441)).
 
 ## [5.0.0-beta.1]
 
