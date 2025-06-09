@@ -89,7 +89,6 @@ void SessionManager::OnConnect(WSType* ws) {
     // create a Session
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
     _sessions[session_id] = new Session(ws, loop, session_id, address, _file_list_handler);
-    _real_session_id[_sessions[session_id]->GetId()] = session_id;
     _sessions[session_id]->IncreaseRefCount();
 
     spdlog::info("Session {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
@@ -160,7 +159,9 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::REGISTER_VIEWER: {
                     CARTA::RegisterViewer message;
                     if (message.ParseFromArray(event_buf, event_length)) {
+                        auto real_session_id = session->GetId();
                         session->OnRegisterViewer(message, head.icd_version, head.request_id);
+                        _real_session_id[session->GetId()] = real_session_id;
                         message_parsed = true;
                     }
                     break;
@@ -170,7 +171,6 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     spdlog::debug("({})({}) resuming session", fmt::ptr(session), session->GetId());
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnResumeSession(message, head.request_id);
-                        _real_session_id[session->GetId()] = session_id;
                         message_parsed = true;
                     }
                     break;
