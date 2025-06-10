@@ -22,25 +22,26 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     size_t num_components = initial_values.size();
 
     std::vector<int> centroid_indexes;
-    if (num_components == 1) {
-        centroid_indexes = {0};
-    } else {
-        for (float i = 4.0; i >= 0.0; i -= 1.0) {
+    for (float i = 4.0; i >= 0.0; i -= 1.0) {
+        if (num_components == 1) {
+            centroid_indexes = {0};
+        } else {
             spdlog::debug("Generating centroids using KMeans++ with threshold of {} * MAD = {}", i, image_std * i);
             centroid_indexes = KMeansPlusPlus(num_components, image_std * i);
-            if (centroid_indexes.size() == num_components) {
-                break;
-            }
         }
 
-        if (centroid_indexes.size() == 0) {
-            spdlog::debug("Failed to generate centroids using KMeans++.");
-            return false;
+        if (centroid_indexes.size() == num_components) {
+            break;
         }
+    }
 
-        if (centroid_indexes.size() < num_components) {
-            spdlog::debug("Generated {} centroids instead of {}.", centroid_indexes.size(), num_components);
-        }
+    if (centroid_indexes.size() == 0) {
+        spdlog::debug("Failed to generate centroids using KMeans++.");
+        return false;
+    }
+
+    if (centroid_indexes.size() < num_components) {
+        spdlog::debug("Generated {} centroids instead of {}.", centroid_indexes.size(), num_components);
     }
 
     std::vector<double> center_x_tmp(num_components, 0.0);
