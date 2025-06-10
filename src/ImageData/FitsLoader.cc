@@ -6,14 +6,12 @@
 
 #include "FitsLoader.h"
 
-#include <fitsio.h>
-#include <regex>
-
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/images/Images/FITSImage.h>
 
 #include "CartaFitsImage.h"
 #include "CompressedFits.h"
+#include "FitsUtil.h"
 #include "Util/Casacore.h"
 #include "Util/FileSystem.h"
 
@@ -70,7 +68,7 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
             use_casacore_fits = false;
         } else {
             std::string error;
-            auto num_headers = GetNumImageHeaders(_filename, hdu_num, error);
+            auto num_headers = GetNumImageHeaders(hdu_num, error);
 
             if (num_headers == 0) {
                 throw(casacore::AipsError(error));
@@ -96,7 +94,7 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
             } else if (_is_http) {
                 _image.reset(new CartaFitsImage(_filename, hdu_num, true));
             } else if (use_casacore_fits) {
-                if (Is64BitBeamsTable(_filename)) {
+                if (Is64BitBeamsTable()) {
                     use_casacore_fits = false;
                     _image.reset(new CartaFitsImage(_filename, hdu_num));
                 } else {
@@ -146,27 +144,18 @@ void FitsLoader::AllocateImage(const std::string& hdu) {
     }
 }
 
-int FitsLoader::GetNumImageHeaders(const std::string& filename, int hdu, std::string& error) {
+int FitsLoader::GetNumImageHeaders(unsigned int hdu_num, std::string& error) {
     // Return number of FITS headers if image hdu, 0 if error.
     int num_headers(0);
 
     // Open file read-only
     fitsfile* fptr(nullptr);
-    int status(0);
-    fits_open_file(&fptr, filename.c_str(), 0, &status);
-    if (status) {
-        error = "Error reading FITS file.";
+    int hdu_type;
+    if (!OpenHdu(hdu_num, fptr, hdu_type)) {
         return num_headers;
     }
 
-    // Advance to hdu (FITS hdu is 1-based) and check if image
-    int hdutype(-1);
-    fits_movabs_hdu(fptr, hdu + 1, &hdutype, &status);
-    if (status) {
-        error = "Cannot advance to requested HDU.";
-        return num_headers;
-    }
-    if (hdutype != IMAGE_HDU) {
+    if (hdu_type != IMAGE_HDU) {
         error = "HDU is not an image.";
         return num_headers;
     }
@@ -174,7 +163,7 @@ int FitsLoader::GetNumImageHeaders(const std::string& filename, int hdu, std::st
     // Check if image exists in HDU
     std::string key("NAXIS");
     char* comment(nullptr); // unused
-    int naxis(0);
+    int status(0), naxis(0);
     fits_read_key(fptr, TINT, key.c_str(), &naxis, comment, &status);
     if (naxis == 0) {
         error = "HDU image is empty.";
@@ -195,21 +184,18 @@ void FitsLoader::ResetImageBeam(unsigned int hdu_num) {
         return;
     }
 
-    bool has_beam_headers = HasBeamHeaders(hdu_num); // BMAJ, BMIN, and BPA
+    // Check for single beam not set from beam table or headers
+    auto image_info = _image->imageInfo();
+    bool has_single_beam = image_info.hasBeam() && image_info.getBeamSet().hasSingleBeam();
 
-    if (!has_beam_headers) {
-        auto image_info = _image->imageInfo();
-
-        if (image_info.hasBeam() && image_info.getBeamSet().hasSingleBeam()) {
-            // Remove beam set by casacore (first history beam)
-            image_info.removeRestoringBeam();
-            _image->setImageInfo(image_info);
-        }
+    if (has_single_beam && !HasBeamsTable() && !HasBeamHeaders(hdu_num)) {
+        // Remove beam set by casacore from first history beam
+        image_info.removeRestoringBeam();
+        _image->setImageInfo(image_info);
 
         if (_support_aips_beam) {
             // Set beam from last history header instead
             casacore::Quantity major, minor, pa;
-
             if (GetLastHistoryBeam(hdu_num, major, minor, pa)) {
                 image_info.setRestoringBeam(major, minor, pa);
                 _image->setImageInfo(image_info);
@@ -219,19 +205,28 @@ void FitsLoader::ResetImageBeam(unsigned int hdu_num) {
     }
 }
 
+bool FitsLoader::HasBeamsTable() {
+    fitsfile* fptr(nullptr);
+    if (!OpenBeamsTable(fptr)) {
+        return false;
+    }
+
+    int status(0);
+    fits_close_file(fptr, &status);
+    return true;
+}
+
 bool FitsLoader::HasBeamHeaders(unsigned int hdu_num) {
     // Check headers for BMAJ, BMIN, BPA keywords
-    fitsfile* fptr;
-    int status(0), hdu(hdu_num + 1); // 1-based for FITS
-    int* hdutype(nullptr);
-
-    // Open file and move to hdu
-    fits_open_file(&fptr, _filename.c_str(), 0, &status);
-    fits_movabs_hdu(fptr, hdu, hdutype, &status);
+    fitsfile* fptr(nullptr);
+    int hdu_type;
+    if (!OpenHdu(hdu_num, fptr, hdu_type)) {
+        return false;
+    }
 
     // Read headers
     std::string record(80, 0);
-    int key_num(1);
+    int status(0), key_num(1);
     bool bmaj_found(false), bmin_found(false), bpa_found(false);
     bool found_beam(false);
 
@@ -258,16 +253,14 @@ bool FitsLoader::HasBeamHeaders(unsigned int hdu_num) {
 bool FitsLoader::GetLastHistoryBeam(unsigned int hdu_num, casacore::Quantity& major, casacore::Quantity& minor, casacore::Quantity& pa) {
     // Check HISTORY headers for BMAJ, BMIN, BPA, Beam keywords
     // Check headers for BMAJ, BMIN, BPA keywords
-    fitsfile* fptr;
-    int status(0), hdu(hdu_num + 1); // 1-based for FITS
-    int* hdutype(nullptr);
-
-    // Open file and move to hdu
-    fits_open_file(&fptr, _filename.c_str(), 0, &status);
-    fits_movabs_hdu(fptr, hdu, hdutype, &status);
+    fitsfile* fptr(nullptr);
+    int hdu_type;
+    if (!OpenHdu(hdu_num, fptr, hdu_type)) {
+        return false;
+    }
 
     // Read headers in order, keep the last one
-    int key_num(1);
+    int status(0), key_num(1);
     bool found_history_beam(false);
 
     while (status == 0) {
@@ -299,46 +292,79 @@ bool FitsLoader::GetLastHistoryBeam(unsigned int hdu_num, casacore::Quantity& ma
     return found_history_beam;
 }
 
-bool FitsLoader::Is64BitBeamsTable(const std::string& filename) {
-    fitsfile* fptr;
-    int status(0);
-    fits_open_file(&fptr, filename.c_str(), 0, &status);
-
-    if (status) {
-        spdlog::error("Error opening FITS file.");
-        return false;
-    }
-
-    // Open binary table extension with name BEAMS
-    int hdutype(BINARY_TBL), extver(0);
-    std::string extname("BEAMS");
-    status = 0;
-    fits_movnam_hdu(fptr, hdutype, extname.data(), extver, &status);
-
-    if (status) {
-        status = 0;
-        fits_close_file(fptr, &status);
-        spdlog::info("Could not find BEAMS table.");
+bool FitsLoader::Is64BitBeamsTable() {
+    // Returns whether FITS file has BEAMS table with TDOUBLE type
+    fitsfile* fptr(nullptr);
+    if (!OpenBeamsTable(fptr)) {
+        spdlog::debug("Could not find BEAMS table.");
         return false;
     }
 
     // Get BEAMS columns data type
-    int casesen(CASEINSEN), colnum(0), typecode(0);
+    int casesen(CASEINSEN), colnum(0), typecode(0), status(0);
     long repeat, width;
-    std::vector<std::string> keys = {"BMAJ", "BMIN", "BPA", "CHAN", "POL"};
+    std::vector<std::string> keys = {"BMAJ", "BMIN", "BPA"};
     for (auto& key : keys) {
         status = 0;
         fits_get_colnum(fptr, casesen, key.data(), &colnum, &status);
         fits_get_coltype(fptr, colnum, &typecode, &repeat, &width, &status);
         if (typecode == TDOUBLE) {
             fits_close_file(fptr, &status);
-            spdlog::warn("BEAMS table consists of 64-bit parameters.");
+            spdlog::warn("Using CARTA FITS image for BEAMS table with 64-bit parameters.");
             return true;
         }
     }
 
     fits_close_file(fptr, &status);
     return false;
+}
+
+bool FitsLoader::OpenHdu(unsigned int hdu_num, fitsfile*& fptr, int& hdu_type) {
+    // Open FITS file hdu.  Returns success.
+    // If success, returns fptr moved to hdu, and hdu type, else closes fptr.
+    int status(0);
+
+    // Open file and move to hdu
+    fits_open_file(&fptr, _filename.c_str(), 0, &status);
+    if (status) {
+        spdlog::error("Failed to open FITS file: {}", _filename);
+        return false;
+    }
+
+    int hdu(hdu_num + 1); // 1-based for FITS
+    fits_movabs_hdu(fptr, hdu, &hdu_type, &status);
+    if (status) {
+        spdlog::error("Failed to advance to FITS hdu {}", hdu_num + 1);
+        status = 0;
+        fits_close_file(fptr, &status);
+        return false;
+    }
+    return true;
+}
+
+bool FitsLoader::OpenBeamsTable(fitsfile*& fptr) {
+    // Open binary table with name BEAMS.  Returns success.
+    // If success, returns fptr moved to beams table hdu, else closes fptr.
+    int status(0);
+    fits_open_file(&fptr, _filename.c_str(), 0, &status);
+
+    if (status) {
+        spdlog::error("Failed to open FITS file: {}", _filename);
+        return false;
+    }
+
+    // Open binary table extension with name BEAMS
+    bool has_beams_table(false);
+    int hdutype(BINARY_TBL), extver(0);
+    std::string extname("BEAMS");
+    status = 0;
+    fits_movnam_hdu(fptr, hdutype, extname.data(), extver, &status);
+    if (status) {
+        status = 0;
+        fits_close_file(fptr, &status);
+        return false;
+    }
+    return true;
 }
 
 } // namespace carta
