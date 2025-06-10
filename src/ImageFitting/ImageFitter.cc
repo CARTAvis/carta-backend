@@ -56,7 +56,14 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
         success = CalculateInitialValues(initial_values);
         if (success) {
             initialValueLog = InitialValueCalculator::GetLog(initial_values, _unit);
-            success = SetInitialValues(initial_values, background_offset, fixed_params);
+
+            if (initial_values.size() < fixed_params.size()) {
+                std::vector<bool> generated_fixed_params(initial_values.size() * 6 + 1, false);
+                generated_fixed_params.back() = fixed_params.back(); // background offset
+                success = SetInitialValues(initial_values, background_offset, generated_fixed_params);
+            } else {
+                success = SetInitialValues(initial_values, background_offset, fixed_params);
+            }
         }
     }
 

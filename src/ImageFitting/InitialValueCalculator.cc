@@ -47,7 +47,7 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     std::vector<double> center_y_tmp(num_components, 0.0);
     std::vector<double> radius_tmp(num_components, 0.0);
     std::vector<std::tuple<double, double, double, double, double, double>> estimated_components_tmp = MethodOfMoments(centroid_indexes);
-    for (size_t i = 0; i < num_components; ++i) {
+    for (size_t i = 0; i < estimated_components_tmp.size(); ++i) {
         auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components_tmp[i];
         center_x_tmp[i] = center_x;
         center_y_tmp[i] = center_y;
@@ -57,11 +57,38 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
         MethodOfMoments(centroid_indexes, true, center_x_tmp, center_y_tmp, radius_tmp);
 
     initial_values.clear();
-    for (size_t i = 0; i < num_components; ++i) {
+    for (size_t i = 0; i < estimated_components.size(); ++i) {
         auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components[i];
+
+        if (std::isnan(center_x) || std::isnan(center_y) || std::isnan(amp) || std::isnan(fwhm_x) || std::isnan(fwhm_y) || std::isnan(pa)) {
+            spdlog::debug(
+                "Invalid initial value for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y, amp, fwhm_x, fwhm_y, pa);
+            continue;
+        }
+
+        if (fwhm_x > std::max(_width, _height) * 2 || fwhm_y > std::max(_width, _height) * 2) {
+            spdlog::debug("FWHM too large for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y, amp, fwhm_x, fwhm_y, pa);
+            continue;
+        }
+
+        if (center_x < -std::max(fwhm_x, fwhm_y) / 4 || center_x > _width + std::max(fwhm_x, fwhm_y) / 4 ||
+            center_y < -std::max(fwhm_x, fwhm_y) / 4 || center_y > _height + std::max(fwhm_x, fwhm_y) / 4) {
+            spdlog::debug("Center too far from the image boundary for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y, amp,
+                fwhm_x, fwhm_y, pa);
+            continue;
+        }
+
         auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
         auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
         auto component = Message::GaussianComponent(center, amp, fwhm, pa);
+        initial_values.push_back(component);
+    }
+
+    // If no valid initial values were generated, set to default values
+    if (initial_values.empty()) {
+        auto center = Message::DoublePoint(_width / 2 + _offset_x, _height / 2 + _offset_y);
+        auto fwhm = Message::DoublePoint(std::min(_width, _height) / 2, std::min(_width, _height) / 2);
+        auto component = Message::GaussianComponent(center, 1.0, fwhm, 0.0);
         initial_values.push_back(component);
     }
 
