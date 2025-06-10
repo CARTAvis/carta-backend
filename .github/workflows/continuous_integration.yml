@@ -126,8 +126,9 @@ jobs:
           git add badge-coverage.svg
           lastcommit=`git log -1 --pretty=format:"%h %s"`
           git stash
+          git remote set-branches --add origin 'gh-storage'
+          git fetch --depth 1 origin gh-storage
           git checkout gh-storage
-          git pull
           git checkout stash@{0} -- badge-coverage.svg
           git diff --staged --quiet || { git commit -m "Updated coverage @ ${lastcommit}" && git push; }
           
