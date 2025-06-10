@@ -2116,19 +2116,11 @@ bool Session::SendVectorFieldData(int file_id) {
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
     logger::LogSentEventType(event_type);
 
-    size_t message_length = message.ByteSizeLong();
-    size_t required_size = message_length + sizeof(EventHeader);
-    std::pair<std::vector<char>, bool> msg_vs_compress;
-    std::vector<char>& msg = msg_vs_compress.first;
-    msg.resize(required_size, 0);
-    EventHeader* head = (EventHeader*)msg.data();
+    std::vector<char> msg = Message::EncodeMessage(event_type, event_id, message);
 
-    head->type = event_type;
-    head->icd_version = ICD_VERSION;
-    head->request_id = event_id;
-    message.SerializeToArray(msg.data() + sizeof(EventHeader), message_length);
     // Skip compression on files smaller than 1 kB
-    msg_vs_compress.second = compress && required_size > 1024;
+    auto msg_vs_compress = std::make_pair(std::move(msg), compress && msg.size() > 1024);
+
     _out_msgs.push(msg_vs_compress);
 
     // uWS::Loop::defer(function) is the only thread-safe function.
@@ -2172,7 +2164,7 @@ void Session::SendLogEvent(const std::string& message, std::vector<std::string> 
 // *********************************************************************************
 // ANIMATION
 
-void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id) {
+bool Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id) {
     CARTA::AnimationFrame start_frame, first_frame, last_frame, delta_frame;
     int file_id;
     uint32_t frame_rate;
@@ -2202,7 +2194,9 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     } else {
         auto ack_message = Message::StartAnimationAck(false, _animation_id, "Incorrect file ID");
         SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
+        return false;
     }
+    return true;
 }
 
 void Session::ExecuteAnimationFrameInner(int animation_id) {
