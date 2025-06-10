@@ -2516,8 +2516,12 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     CARTA::PolarizationType threshold_option = _vector_field.ThresholdOption();
     bool calculate_pi = _vector_field.CalculatePi();
     bool calculate_pa = _vector_field.CalculatePa();
-    bool current_stokes_pi = _vector_field.CurrStokesAsPi();
-    bool current_stokes_pa = _vector_field.CurrStokesAsPa();
+    bool current_stokes_as_pi = _vector_field.CurrStokesAsPi();
+    bool current_stokes_as_pa = _vector_field.CurrStokesAsPa();
+
+    // Get tiles
+    std::vector<Tile> tiles;
+    GetTiles(_dims.width, _dims.height, mip, tiles);
 
     // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
@@ -2529,10 +2533,6 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     stokes_flag["Q"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("Q", stokes_indices["Q"]);
     stokes_flag["U"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("U", stokes_indices["U"]);
 
-    // Get tiles
-    std::vector<Tile> tiles;
-    GetTiles(_dims.width, _dims.height, mip, tiles);
-
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
         auto& tile = tiles[i];
@@ -2542,7 +2542,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
         double progress = (double)(i + 1) / tiles.size();
 
         // Get current stokes data
-        if (current_stokes_pi || current_stokes_pa) {
+        if (current_stokes_as_pi || current_stokes_as_pa) {
             if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, CurrentStokes(), bounds, mip)) {
                 return false;
             }

@@ -95,7 +95,7 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
         std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), calc_pa);
 
         // Set NAN for PA if stokes or pa is NAN or below the threshold
-        if (stokes_flag["I"]) {
+        if (stokes_flag["I"] && _threshold_option == CARTA::PolarizationType::I) {
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
         } else {
             std::for_each(pa.begin(), pa.end(), threshold_cut);
