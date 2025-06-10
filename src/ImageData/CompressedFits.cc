@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cmath>
 
+#include "ImageData/FitsUtil.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 #include "Util/Casacore.h"
