@@ -19,74 +19,76 @@ InitialValueCalculator::InitialValueCalculator(float* image, size_t width, size_
 }
 
 bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, float image_std) {
-    size_t num_components = initial_values.size();
+    size_t request_num_components = initial_values.size();
+    initial_values.clear();
 
-    std::vector<int> centroid_indexes;
     for (float i = 4.0; i >= 0.0; i -= 1.0) {
-        if (num_components == 1) {
+        std::vector<int> centroid_indexes;
+        if (request_num_components == 1) {
             centroid_indexes = {0};
         } else {
             spdlog::debug("Generating centroids using KMeans++ with threshold of {} * MAD = {}", i, image_std * i);
-            centroid_indexes = KMeansPlusPlus(num_components, image_std * i);
+            centroid_indexes = KMeansPlusPlus(request_num_components, image_std * i);
         }
 
-        if (centroid_indexes.size() == num_components) {
+        if (centroid_indexes.size() < request_num_components && i > 0.0) {
+            spdlog::debug("Generated {} centroid(s) instead of {}.", centroid_indexes.size(), request_num_components);
+            continue;
+        }
+
+        spdlog::debug("Generating initial values using method of moments for {} component(s).", centroid_indexes.size());
+        std::vector<std::tuple<double, double, double, double, double, double>> estimated_components_tmp =
+            MethodOfMoments(centroid_indexes);
+        std::vector<double> center_x_tmp(estimated_components_tmp.size(), 0.0);
+        std::vector<double> center_y_tmp(estimated_components_tmp.size(), 0.0);
+        std::vector<double> radius_tmp(estimated_components_tmp.size(), 0.0);
+        for (size_t i = 0; i < estimated_components_tmp.size(); ++i) {
+            auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components_tmp[i];
+            center_x_tmp[i] = center_x;
+            center_y_tmp[i] = center_y;
+            radius_tmp[i] = std::max(fwhm_x, fwhm_y);
+        }
+        std::vector<std::tuple<double, double, double, double, double, double>> estimated_components =
+            MethodOfMoments(centroid_indexes, true, center_x_tmp, center_y_tmp, radius_tmp);
+
+        initial_values.clear();
+        for (size_t i = 0; i < estimated_components.size(); ++i) {
+            auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components[i];
+
+            if (std::isnan(center_x) || std::isnan(center_y) || std::isnan(amp) || std::isnan(fwhm_x) || std::isnan(fwhm_y) ||
+                std::isnan(pa)) {
+                spdlog::debug(
+                    "Invalid initial value for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y, amp, fwhm_x, fwhm_y, pa);
+                continue;
+            }
+
+            if (fwhm_x > std::max(_width, _height) * 2 || fwhm_y > std::max(_width, _height) * 2) {
+                spdlog::debug("FWHM too large for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y, amp, fwhm_x, fwhm_y, pa);
+                continue;
+            }
+
+            if (center_x < -std::max(fwhm_x, fwhm_y) / 4 || center_x > _width + std::max(fwhm_x, fwhm_y) / 4 ||
+                center_y < -std::max(fwhm_x, fwhm_y) / 4 || center_y > _height + std::max(fwhm_x, fwhm_y) / 4) {
+                spdlog::debug("Center too far from the image boundary for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y,
+                    amp, fwhm_x, fwhm_y, pa);
+                continue;
+            }
+
+            auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
+            auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
+            auto component = Message::GaussianComponent(center, amp, fwhm, pa);
+            initial_values.push_back(component);
+        }
+
+        if (initial_values.size() == request_num_components) {
             break;
         }
+
+        spdlog::debug("Generated initial values of {} component(s) instead of {}.", initial_values.size(), request_num_components);
     }
 
-    if (centroid_indexes.size() == 0) {
-        spdlog::debug("Failed to generate centroids using KMeans++.");
-        return false;
-    }
-
-    if (centroid_indexes.size() < num_components) {
-        spdlog::debug("Generated {} centroids instead of {}.", centroid_indexes.size(), num_components);
-    }
-
-    std::vector<double> center_x_tmp(num_components, 0.0);
-    std::vector<double> center_y_tmp(num_components, 0.0);
-    std::vector<double> radius_tmp(num_components, 0.0);
-    std::vector<std::tuple<double, double, double, double, double, double>> estimated_components_tmp = MethodOfMoments(centroid_indexes);
-    for (size_t i = 0; i < estimated_components_tmp.size(); ++i) {
-        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components_tmp[i];
-        center_x_tmp[i] = center_x;
-        center_y_tmp[i] = center_y;
-        radius_tmp[i] = std::max(fwhm_x, fwhm_y);
-    }
-    std::vector<std::tuple<double, double, double, double, double, double>> estimated_components =
-        MethodOfMoments(centroid_indexes, true, center_x_tmp, center_y_tmp, radius_tmp);
-
-    initial_values.clear();
-    for (size_t i = 0; i < estimated_components.size(); ++i) {
-        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components[i];
-
-        if (std::isnan(center_x) || std::isnan(center_y) || std::isnan(amp) || std::isnan(fwhm_x) || std::isnan(fwhm_y) || std::isnan(pa)) {
-            spdlog::debug(
-                "Invalid initial value for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y, amp, fwhm_x, fwhm_y, pa);
-            continue;
-        }
-
-        if (fwhm_x > std::max(_width, _height) * 2 || fwhm_y > std::max(_width, _height) * 2) {
-            spdlog::debug("FWHM too large for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y, amp, fwhm_x, fwhm_y, pa);
-            continue;
-        }
-
-        if (center_x < -std::max(fwhm_x, fwhm_y) / 4 || center_x > _width + std::max(fwhm_x, fwhm_y) / 4 ||
-            center_y < -std::max(fwhm_x, fwhm_y) / 4 || center_y > _height + std::max(fwhm_x, fwhm_y) / 4) {
-            spdlog::debug("Center too far from the image boundary for component {}: ({}, {}, {}, {}, {}, {})", i, center_x, center_y, amp,
-                fwhm_x, fwhm_y, pa);
-            continue;
-        }
-
-        auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
-        auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
-        auto component = Message::GaussianComponent(center, amp, fwhm, pa);
-        initial_values.push_back(component);
-    }
-
-    // If no valid initial values were generated, set to default values
     if (initial_values.empty()) {
+        spdlog::debug("No valid initial values generated, setting default values.");
         auto center = Message::DoublePoint(_width / 2 + _offset_x, _height / 2 + _offset_y);
         auto fwhm = Message::DoublePoint(std::min(_width, _height) / 2, std::min(_width, _height) / 2);
         auto component = Message::GaussianComponent(center, 1.0, fwhm, 0.0);
