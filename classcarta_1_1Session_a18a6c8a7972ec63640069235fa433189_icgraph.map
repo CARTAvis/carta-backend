@@ -1,7 +1,5 @@
 <map id="carta::Session::OnStopPvPreview" name="carta::Session::OnStopPvPreview">
-<area shape="rect" id="Node000001" title=" " alt="" coords="443,5,627,45"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,5,395,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="428,28,395,28,395,23,428,23"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,5,176,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="210,28,176,28,176,23,210,23"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="232,5,416,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1SessionManager.html#ae05f46f890db019dc06d5e3b7a41ad66" title=" " alt="" coords="5,5,184,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="218,28,184,28,184,23,218,23"/>
 </map>

@@ -99,6 +99,7 @@ $(document).ready(function(){initNavTree('classcarta_1_1SessionManager.html','')
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
+<a href="#pri-static-attribs">Static Private Attributes</a> &#124;
 <a href="classcarta_1_1SessionManager-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">carta::SessionManager Class Reference</div></div>
 </div><!--header-->
@@ -115,6 +116,8 @@ Collaboration diagram for carta::SessionManager:</div>
 Public Types</h2></td></tr>
 <tr class="memitem:aaec90d9c096faa3ecd45b1a93276292c" id="r_aaec90d9c096faa3ecd45b1a93276292c"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#aaec90d9c096faa3ecd45b1a93276292c">WSType</a> = uWS::WebSocket&lt; false, true, <a class="el" href="structcarta_1_1PerSocketData.html">PerSocketData</a> &gt;</td></tr>
 <tr class="separator:aaec90d9c096faa3ecd45b1a93276292c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f59e018ad8e04f75011f01479809c99" id="r_a0f59e018ad8e04f75011f01479809c99"><td class="memItemLeft" align="right" valign="top">typedef void(SessionManager::*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a0f59e018ad8e04f75011f01479809c99">MessageHandler</a>) (<a class="el" href="classcarta_1_1Session.html">Session</a> *, std::string_view, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;)</td></tr>
+<tr class="separator:a0f59e018ad8e04f75011f01479809c99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -145,6 +148,90 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
+<tr class="memitem:ae43bb1d833a685ea00afee3c932aad1c" id="r_ae43bb1d833a685ea00afee3c932aad1c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ae43bb1d833a685ea00afee3c932aad1c">RegisterViewerHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ae43bb1d833a685ea00afee3c932aad1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53c673a177a1b9892d9d27f86598c0dc" id="r_a53c673a177a1b9892d9d27f86598c0dc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a53c673a177a1b9892d9d27f86598c0dc">ResumeSessionHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a53c673a177a1b9892d9d27f86598c0dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa323fddefb907e2e08be97612a0ea8f8" id="r_aa323fddefb907e2e08be97612a0ea8f8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#aa323fddefb907e2e08be97612a0ea8f8">SetImageChannelsHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:aa323fddefb907e2e08be97612a0ea8f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6bde235f7042fed7ff5bf2e376e9ba0" id="r_ac6bde235f7042fed7ff5bf2e376e9ba0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ac6bde235f7042fed7ff5bf2e376e9ba0">SetCursorHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ac6bde235f7042fed7ff5bf2e376e9ba0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21f3ce19e9de6faf51539f64763b41d2" id="r_a21f3ce19e9de6faf51539f64763b41d2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a21f3ce19e9de6faf51539f64763b41d2">SetHistogramRequirementsHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a21f3ce19e9de6faf51539f64763b41d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b08da825702d4d0186d3bc6b377828a" id="r_a0b08da825702d4d0186d3bc6b377828a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a0b08da825702d4d0186d3bc6b377828a">CloseFileHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a0b08da825702d4d0186d3bc6b377828a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a00c0b61255b32deb2de151faf89ae2fa" id="r_a00c0b61255b32deb2de151faf89ae2fa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a00c0b61255b32deb2de151faf89ae2fa">StartAnimationHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a00c0b61255b32deb2de151faf89ae2fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a642ecdf35f6781582ee5bcc7843b3d73" id="r_a642ecdf35f6781582ee5bcc7843b3d73"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a642ecdf35f6781582ee5bcc7843b3d73">AnimationFlowControlHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a642ecdf35f6781582ee5bcc7843b3d73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2987b93766b1bdc7a22519084c26760" id="r_ad2987b93766b1bdc7a22519084c26760"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ad2987b93766b1bdc7a22519084c26760">FileInfoRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ad2987b93766b1bdc7a22519084c26760"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0167d6b0810822643233af3ba348aa94" id="r_a0167d6b0810822643233af3ba348aa94"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a0167d6b0810822643233af3ba348aa94">OpenFileHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a0167d6b0810822643233af3ba348aa94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a063fd7f8cd3f96311745e343ef329708" id="r_a063fd7f8cd3f96311745e343ef329708"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a063fd7f8cd3f96311745e343ef329708">AddRequiredTilesHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a063fd7f8cd3f96311745e343ef329708"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19f0dbf9e2f999b66a75c91215db7e31" id="r_a19f0dbf9e2f999b66a75c91215db7e31"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a19f0dbf9e2f999b66a75c91215db7e31">RegionFileInfoRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a19f0dbf9e2f999b66a75c91215db7e31"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47a87d0d20b600de143cbb5b29eb2170" id="r_a47a87d0d20b600de143cbb5b29eb2170"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a47a87d0d20b600de143cbb5b29eb2170">ImportRegionHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a47a87d0d20b600de143cbb5b29eb2170"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41853cd653581a1fa5bf7f7f136bce54" id="r_a41853cd653581a1fa5bf7f7f136bce54"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a41853cd653581a1fa5bf7f7f136bce54">ExportRegionHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a41853cd653581a1fa5bf7f7f136bce54"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6071880613a87964d32b9e3fc9022188" id="r_a6071880613a87964d32b9e3fc9022188"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a6071880613a87964d32b9e3fc9022188">SetContourParametersHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a6071880613a87964d32b9e3fc9022188"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ec148545235e6d4d5cca43a74674484" id="r_a0ec148545235e6d4d5cca43a74674484"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a0ec148545235e6d4d5cca43a74674484">ScriptingResponseHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a0ec148545235e6d4d5cca43a74674484"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b2df3617d0ec93666d8008087b7b3c2" id="r_a1b2df3617d0ec93666d8008087b7b3c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a1b2df3617d0ec93666d8008087b7b3c2">SetRegionHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a1b2df3617d0ec93666d8008087b7b3c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a0527148f056ca429766a7edd6a7592" id="r_a7a0527148f056ca429766a7edd6a7592"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a7a0527148f056ca429766a7edd6a7592">RemoveRegionHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a7a0527148f056ca429766a7edd6a7592"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9267356ad3b699b325ddb3f2327a25bb" id="r_a9267356ad3b699b325ddb3f2327a25bb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a9267356ad3b699b325ddb3f2327a25bb">SetSpectralRequirementsHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a9267356ad3b699b325ddb3f2327a25bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2eb9581fbedbd4cae8b40f2cbc1396e" id="r_ad2eb9581fbedbd4cae8b40f2cbc1396e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ad2eb9581fbedbd4cae8b40f2cbc1396e">CatalogFileInfoRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ad2eb9581fbedbd4cae8b40f2cbc1396e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5bb67d6066cd43f6ab5dcd0120f73b0" id="r_ae5bb67d6066cd43f6ab5dcd0120f73b0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ae5bb67d6066cd43f6ab5dcd0120f73b0">OpenCatalogFileHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ae5bb67d6066cd43f6ab5dcd0120f73b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acdbba568e94dc76e9ee84f3354335f35" id="r_acdbba568e94dc76e9ee84f3354335f35"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#acdbba568e94dc76e9ee84f3354335f35">CloseCatalogFileHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:acdbba568e94dc76e9ee84f3354335f35"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ac70007ffc1fdf2863311f36cabd95d" id="r_a6ac70007ffc1fdf2863311f36cabd95d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a6ac70007ffc1fdf2863311f36cabd95d">CatalogFilterRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a6ac70007ffc1fdf2863311f36cabd95d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a5ba968225a9d30469e935f6785d146" id="r_a0a5ba968225a9d30469e935f6785d146"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a0a5ba968225a9d30469e935f6785d146">StopMomentCalcHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a0a5ba968225a9d30469e935f6785d146"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb14f767a25a10cbc9a9a4bc4f6a0d76" id="r_abb14f767a25a10cbc9a9a4bc4f6a0d76"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#abb14f767a25a10cbc9a9a4bc4f6a0d76">SaveFileHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:abb14f767a25a10cbc9a9a4bc4f6a0d76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c974f0bd6c2bf93b4fd71064124fb9e" id="r_a3c974f0bd6c2bf93b4fd71064124fb9e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a3c974f0bd6c2bf93b4fd71064124fb9e">ConcatStokesFilesHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a3c974f0bd6c2bf93b4fd71064124fb9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad63659a3bb550f803a4ae1966951f417" id="r_ad63659a3bb550f803a4ae1966951f417"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ad63659a3bb550f803a4ae1966951f417">StopFileListHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ad63659a3bb550f803a4ae1966951f417"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2d89d6f334b654636a5c7692bd2e1c7" id="r_aa2d89d6f334b654636a5c7692bd2e1c7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#aa2d89d6f334b654636a5c7692bd2e1c7">SetSpatialRequirementsHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:aa2d89d6f334b654636a5c7692bd2e1c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17bb49742cbbc81728d6f46a956c2852" id="r_a17bb49742cbbc81728d6f46a956c2852"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a17bb49742cbbc81728d6f46a956c2852">SetStatsRequirementsHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a17bb49742cbbc81728d6f46a956c2852"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63b272534747a0375fa3b505b0f5dfec" id="r_a63b272534747a0375fa3b505b0f5dfec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a63b272534747a0375fa3b505b0f5dfec">MomentRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a63b272534747a0375fa3b505b0f5dfec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f5307b812077be37c5d0cba77ba9f34" id="r_a2f5307b812077be37c5d0cba77ba9f34"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a2f5307b812077be37c5d0cba77ba9f34">FileListRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a2f5307b812077be37c5d0cba77ba9f34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abceadb549148c0f3523d4bcc926bdfc8" id="r_abceadb549148c0f3523d4bcc926bdfc8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#abceadb549148c0f3523d4bcc926bdfc8">RegionListRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:abceadb549148c0f3523d4bcc926bdfc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a490eee31a9513dc1bf60efd4432e4bce" id="r_a490eee31a9513dc1bf60efd4432e4bce"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a490eee31a9513dc1bf60efd4432e4bce">CatalogListRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a490eee31a9513dc1bf60efd4432e4bce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a222f1b36fc1c176d08459fb0e30687ad" id="r_a222f1b36fc1c176d08459fb0e30687ad"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a222f1b36fc1c176d08459fb0e30687ad">PvRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a222f1b36fc1c176d08459fb0e30687ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac77a053fc7ba00d3636fef6aad546ff5" id="r_ac77a053fc7ba00d3636fef6aad546ff5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ac77a053fc7ba00d3636fef6aad546ff5">StopPvCalcHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ac77a053fc7ba00d3636fef6aad546ff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac63d2786f3752ff8bfa1110320b8586b" id="r_ac63d2786f3752ff8bfa1110320b8586b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ac63d2786f3752ff8bfa1110320b8586b">FittingRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ac63d2786f3752ff8bfa1110320b8586b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9727fb75c80c2096765c3f9e4b70d342" id="r_a9727fb75c80c2096765c3f9e4b70d342"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a9727fb75c80c2096765c3f9e4b70d342">SetVectorOverlayParametersHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a9727fb75c80c2096765c3f9e4b70d342"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5fd795e7cdd42e4feae465d4acdc013" id="r_ac5fd795e7cdd42e4feae465d4acdc013"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ac5fd795e7cdd42e4feae465d4acdc013">StopFittingHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ac5fd795e7cdd42e4feae465d4acdc013"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae05f46f890db019dc06d5e3b7a41ad66" id="r_ae05f46f890db019dc06d5e3b7a41ad66"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#ae05f46f890db019dc06d5e3b7a41ad66">StopPvPreviewHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:ae05f46f890db019dc06d5e3b7a41ad66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f4b55991e5ec76cfb5894687d7a4a5e" id="r_a4f4b55991e5ec76cfb5894687d7a4a5e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a4f4b55991e5ec76cfb5894687d7a4a5e">ClosePvReviewHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a4f4b55991e5ec76cfb5894687d7a4a5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef52053a9088af0c0663a8053c49e9e2" id="r_aef52053a9088af0c0663a8053c49e9e2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#aef52053a9088af0c0663a8053c49e9e2">RemoteFileRequestHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:aef52053a9088af0c0663a8053c49e9e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3703920a32dfd9602379759b23dd69c5" id="r_a3703920a32dfd9602379759b23dd69c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a3703920a32dfd9602379759b23dd69c5">ChannelMapFlowControlHandler</a> (<a class="el" href="classcarta_1_1Session.html">Session</a> *session, std::string_view sv_message, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;head)</td></tr>
+<tr class="separator:a3703920a32dfd9602379759b23dd69c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a16f9a3e4944b8b34fdf48e4cebdfbd2f" id="r_a16f9a3e4944b8b34fdf48e4cebdfbd2f"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a16f9a3e4944b8b34fdf48e4cebdfbd2f">IPAsText</a> (std::string_view binary)</td></tr>
 <tr class="separator:a16f9a3e4944b8b34fdf48e4cebdfbd2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -166,8 +253,27 @@ Private Attributes</h2></td></tr>
 <tr class="separator:ab4197e156cfa415dcf58c2904272b793"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6baea661a21a439edb276cdccb36d302" id="r_a6baea661a21a439edb276cdccb36d302"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classcarta_1_1FileListHandler.html">FileListHandler</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#a6baea661a21a439edb276cdccb36d302">_file_list_handler</a></td></tr>
 <tr class="separator:a6baea661a21a439edb276cdccb36d302"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-attribs" name="pri-static-attribs"></a>
+Static Private Attributes</h2></td></tr>
+<tr class="memitem:afe5e98237ff76a2fd643b48f03b57d8e" id="r_afe5e98237ff76a2fd643b48f03b57d8e"><td class="memItemLeft" align="right" valign="top">static std::unordered_map&lt; CARTA::EventType, <a class="el" href="classcarta_1_1SessionManager.html#a0f59e018ad8e04f75011f01479809c99">MessageHandler</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1SessionManager.html#afe5e98237ff76a2fd643b48f03b57d8e">_message_handlers</a></td></tr>
+<tr class="separator:afe5e98237ff76a2fd643b48f03b57d8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Typedef Documentation</h2>
+<a id="a0f59e018ad8e04f75011f01479809c99" name="a0f59e018ad8e04f75011f01479809c99"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f59e018ad8e04f75011f01479809c99">&#9670;&#160;</a></span>MessageHandler</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef void(SessionManager::* carta::SessionManager::MessageHandler) (<a class="el" href="classcarta_1_1Session.html">Session</a> *, std::string_view, const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="aaec90d9c096faa3ecd45b1a93276292c" name="aaec90d9c096faa3ecd45b1a93276292c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aaec90d9c096faa3ecd45b1a93276292c">&#9670;&#160;</a></span>WSType</h2>
 
@@ -218,6 +324,100 @@ Private Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a063fd7f8cd3f96311745e343ef329708" name="a063fd7f8cd3f96311745e343ef329708"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a063fd7f8cd3f96311745e343ef329708">&#9670;&#160;</a></span>AddRequiredTilesHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::AddRequiredTilesHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a063fd7f8cd3f96311745e343ef329708_cgraph.svg" width="419" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a642ecdf35f6781582ee5bcc7843b3d73" name="a642ecdf35f6781582ee5bcc7843b3d73"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a642ecdf35f6781582ee5bcc7843b3d73">&#9670;&#160;</a></span>AnimationFlowControlHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::AnimationFlowControlHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a642ecdf35f6781582ee5bcc7843b3d73_cgraph.svg" width="100%" height="434"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
 <a id="a0a4ea59c7c670581d9876f778aa32bf1" name="a0a4ea59c7c670581d9876f778aa32bf1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0a4ea59c7c670581d9876f778aa32bf1">&#9670;&#160;</a></span>App()</h2>
 
@@ -232,6 +432,382 @@ Private Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad2eb9581fbedbd4cae8b40f2cbc1396e" name="ad2eb9581fbedbd4cae8b40f2cbc1396e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2eb9581fbedbd4cae8b40f2cbc1396e">&#9670;&#160;</a></span>CatalogFileInfoRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::CatalogFileInfoRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ad2eb9581fbedbd4cae8b40f2cbc1396e_cgraph.svg" width="100%" height="461"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a6ac70007ffc1fdf2863311f36cabd95d" name="a6ac70007ffc1fdf2863311f36cabd95d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ac70007ffc1fdf2863311f36cabd95d">&#9670;&#160;</a></span>CatalogFilterRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::CatalogFilterRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a6ac70007ffc1fdf2863311f36cabd95d_cgraph.svg" width="100%" height="461"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a490eee31a9513dc1bf60efd4432e4bce" name="a490eee31a9513dc1bf60efd4432e4bce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a490eee31a9513dc1bf60efd4432e4bce">&#9670;&#160;</a></span>CatalogListRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::CatalogListRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a490eee31a9513dc1bf60efd4432e4bce_cgraph.svg" width="431" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a3703920a32dfd9602379759b23dd69c5" name="a3703920a32dfd9602379759b23dd69c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3703920a32dfd9602379759b23dd69c5">&#9670;&#160;</a></span>ChannelMapFlowControlHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::ChannelMapFlowControlHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a3703920a32dfd9602379759b23dd69c5_cgraph.svg" width="519" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="acdbba568e94dc76e9ee84f3354335f35" name="acdbba568e94dc76e9ee84f3354335f35"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acdbba568e94dc76e9ee84f3354335f35">&#9670;&#160;</a></span>CloseCatalogFileHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::CloseCatalogFileHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_acdbba568e94dc76e9ee84f3354335f35_cgraph.svg" width="498" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a0b08da825702d4d0186d3bc6b377828a" name="a0b08da825702d4d0186d3bc6b377828a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0b08da825702d4d0186d3bc6b377828a">&#9670;&#160;</a></span>CloseFileHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::CloseFileHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a0b08da825702d4d0186d3bc6b377828a_cgraph.svg" width="100%" height="424"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a4f4b55991e5ec76cfb5894687d7a4a5e" name="a4f4b55991e5ec76cfb5894687d7a4a5e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4f4b55991e5ec76cfb5894687d7a4a5e">&#9670;&#160;</a></span>ClosePvReviewHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::ClosePvReviewHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a4f4b55991e5ec76cfb5894687d7a4a5e_cgraph.svg" width="431" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a3c974f0bd6c2bf93b4fd71064124fb9e" name="a3c974f0bd6c2bf93b4fd71064124fb9e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c974f0bd6c2bf93b4fd71064124fb9e">&#9670;&#160;</a></span>ConcatStokesFilesHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::ConcatStokesFilesHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a3c974f0bd6c2bf93b4fd71064124fb9e_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
 
 </div>
 </div>
@@ -259,6 +835,241 @@ Here is the call graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a692b5f2bcc6bdc21ce76424e09e50151_icgraph.svg" width="619" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a41853cd653581a1fa5bf7f7f136bce54" name="a41853cd653581a1fa5bf7f7f136bce54"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a41853cd653581a1fa5bf7f7f136bce54">&#9670;&#160;</a></span>ExportRegionHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::ExportRegionHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a41853cd653581a1fa5bf7f7f136bce54_cgraph.svg" width="100%" height="461"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="ad2987b93766b1bdc7a22519084c26760" name="ad2987b93766b1bdc7a22519084c26760"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2987b93766b1bdc7a22519084c26760">&#9670;&#160;</a></span>FileInfoRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::FileInfoRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ad2987b93766b1bdc7a22519084c26760_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a2f5307b812077be37c5d0cba77ba9f34" name="a2f5307b812077be37c5d0cba77ba9f34"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2f5307b812077be37c5d0cba77ba9f34">&#9670;&#160;</a></span>FileListRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::FileListRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a2f5307b812077be37c5d0cba77ba9f34_cgraph.svg" width="404" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ac63d2786f3752ff8bfa1110320b8586b" name="ac63d2786f3752ff8bfa1110320b8586b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac63d2786f3752ff8bfa1110320b8586b">&#9670;&#160;</a></span>FittingRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::FittingRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ac63d2786f3752ff8bfa1110320b8586b_cgraph.svg" width="399" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a47a87d0d20b600de143cbb5b29eb2170" name="a47a87d0d20b600de143cbb5b29eb2170"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47a87d0d20b600de143cbb5b29eb2170">&#9670;&#160;</a></span>ImportRegionHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::ImportRegionHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a47a87d0d20b600de143cbb5b29eb2170_cgraph.svg" width="100%" height="559"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -331,6 +1142,53 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a63b272534747a0375fa3b505b0f5dfec" name="a63b272534747a0375fa3b505b0f5dfec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a63b272534747a0375fa3b505b0f5dfec">&#9670;&#160;</a></span>MomentRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::MomentRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a63b272534747a0375fa3b505b0f5dfec_cgraph.svg" width="412" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 
 </div>
 </div>
@@ -463,7 +1321,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a474c31666cb3b22fcbe8af5f945d2950_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a474c31666cb3b22fcbe8af5f945d2950_cgraph.svg" width="662" height="343"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -545,6 +1403,429 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="ae5bb67d6066cd43f6ab5dcd0120f73b0" name="ae5bb67d6066cd43f6ab5dcd0120f73b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae5bb67d6066cd43f6ab5dcd0120f73b0">&#9670;&#160;</a></span>OpenCatalogFileHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::OpenCatalogFileHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ae5bb67d6066cd43f6ab5dcd0120f73b0_cgraph.svg" width="100%" height="461"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a0167d6b0810822643233af3ba348aa94" name="a0167d6b0810822643233af3ba348aa94"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0167d6b0810822643233af3ba348aa94">&#9670;&#160;</a></span>OpenFileHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::OpenFileHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a0167d6b0810822643233af3ba348aa94_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a222f1b36fc1c176d08459fb0e30687ad" name="a222f1b36fc1c176d08459fb0e30687ad"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a222f1b36fc1c176d08459fb0e30687ad">&#9670;&#160;</a></span>PvRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::PvRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a222f1b36fc1c176d08459fb0e30687ad_cgraph.svg" width="448" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a19f0dbf9e2f999b66a75c91215db7e31" name="a19f0dbf9e2f999b66a75c91215db7e31"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a19f0dbf9e2f999b66a75c91215db7e31">&#9670;&#160;</a></span>RegionFileInfoRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::RegionFileInfoRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a19f0dbf9e2f999b66a75c91215db7e31_cgraph.svg" width="100%" height="461"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="abceadb549148c0f3523d4bcc926bdfc8" name="abceadb549148c0f3523d4bcc926bdfc8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abceadb549148c0f3523d4bcc926bdfc8">&#9670;&#160;</a></span>RegionListRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::RegionListRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_abceadb549148c0f3523d4bcc926bdfc8_cgraph.svg" width="427" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ae43bb1d833a685ea00afee3c932aad1c" name="ae43bb1d833a685ea00afee3c932aad1c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae43bb1d833a685ea00afee3c932aad1c">&#9670;&#160;</a></span>RegisterViewerHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::RegisterViewerHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ae43bb1d833a685ea00afee3c932aad1c_cgraph.svg" width="100%" height="513"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="aef52053a9088af0c0663a8053c49e9e2" name="aef52053a9088af0c0663a8053c49e9e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aef52053a9088af0c0663a8053c49e9e2">&#9670;&#160;</a></span>RemoteFileRequestHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::RemoteFileRequestHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_aef52053a9088af0c0663a8053c49e9e2_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a7a0527148f056ca429766a7edd6a7592" name="a7a0527148f056ca429766a7edd6a7592"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a0527148f056ca429766a7edd6a7592">&#9670;&#160;</a></span>RemoveRegionHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::RemoveRegionHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a7a0527148f056ca429766a7edd6a7592_cgraph.svg" width="432" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a53c673a177a1b9892d9d27f86598c0dc" name="a53c673a177a1b9892d9d27f86598c0dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a53c673a177a1b9892d9d27f86598c0dc">&#9670;&#160;</a></span>ResumeSessionHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::ResumeSessionHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a53c673a177a1b9892d9d27f86598c0dc_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
 <a id="ab4e4e7f0244bd6843e70ab91652debf6" name="ab4e4e7f0244bd6843e70ab91652debf6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab4e4e7f0244bd6843e70ab91652debf6">&#9670;&#160;</a></span>RunApp()</h2>
 
@@ -563,6 +1844,100 @@ Here is the caller graph for this function:</div>
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ab4e4e7f0244bd6843e70ab91652debf6_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="abb14f767a25a10cbc9a9a4bc4f6a0d76" name="abb14f767a25a10cbc9a9a4bc4f6a0d76"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb14f767a25a10cbc9a9a4bc4f6a0d76">&#9670;&#160;</a></span>SaveFileHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SaveFileHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_abb14f767a25a10cbc9a9a4bc4f6a0d76_cgraph.svg" width="100%" height="461"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a0ec148545235e6d4d5cca43a74674484" name="a0ec148545235e6d4d5cca43a74674484"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ec148545235e6d4d5cca43a74674484">&#9670;&#160;</a></span>ScriptingResponseHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::ScriptingResponseHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a0ec148545235e6d4d5cca43a74674484_cgraph.svg" width="456" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -642,6 +2017,711 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
+<a id="a6071880613a87964d32b9e3fc9022188" name="a6071880613a87964d32b9e3fc9022188"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6071880613a87964d32b9e3fc9022188">&#9670;&#160;</a></span>SetContourParametersHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetContourParametersHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a6071880613a87964d32b9e3fc9022188_cgraph.svg" width="451" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ac6bde235f7042fed7ff5bf2e376e9ba0" name="ac6bde235f7042fed7ff5bf2e376e9ba0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac6bde235f7042fed7ff5bf2e376e9ba0">&#9670;&#160;</a></span>SetCursorHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetCursorHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ac6bde235f7042fed7ff5bf2e376e9ba0_cgraph.svg" width="624" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a21f3ce19e9de6faf51539f64763b41d2" name="a21f3ce19e9de6faf51539f64763b41d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a21f3ce19e9de6faf51539f64763b41d2">&#9670;&#160;</a></span>SetHistogramRequirementsHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetHistogramRequirementsHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a21f3ce19e9de6faf51539f64763b41d2_cgraph.svg" width="100%" height="434"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="aa323fddefb907e2e08be97612a0ea8f8" name="aa323fddefb907e2e08be97612a0ea8f8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa323fddefb907e2e08be97612a0ea8f8">&#9670;&#160;</a></span>SetImageChannelsHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetImageChannelsHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_aa323fddefb907e2e08be97612a0ea8f8_cgraph.svg" width="100%" height="510"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a1b2df3617d0ec93666d8008087b7b3c2" name="a1b2df3617d0ec93666d8008087b7b3c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b2df3617d0ec93666d8008087b7b3c2">&#9670;&#160;</a></span>SetRegionHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetRegionHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a1b2df3617d0ec93666d8008087b7b3c2_cgraph.svg" width="100%" height="461"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="aa2d89d6f334b654636a5c7692bd2e1c7" name="aa2d89d6f334b654636a5c7692bd2e1c7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa2d89d6f334b654636a5c7692bd2e1c7">&#9670;&#160;</a></span>SetSpatialRequirementsHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetSpatialRequirementsHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_aa2d89d6f334b654636a5c7692bd2e1c7_cgraph.svg" width="463" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a9267356ad3b699b325ddb3f2327a25bb" name="a9267356ad3b699b325ddb3f2327a25bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9267356ad3b699b325ddb3f2327a25bb">&#9670;&#160;</a></span>SetSpectralRequirementsHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetSpectralRequirementsHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a9267356ad3b699b325ddb3f2327a25bb_cgraph.svg" width="100%" height="468"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a17bb49742cbbc81728d6f46a956c2852" name="a17bb49742cbbc81728d6f46a956c2852"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17bb49742cbbc81728d6f46a956c2852">&#9670;&#160;</a></span>SetStatsRequirementsHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetStatsRequirementsHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a17bb49742cbbc81728d6f46a956c2852_cgraph.svg" width="451" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a9727fb75c80c2096765c3f9e4b70d342" name="a9727fb75c80c2096765c3f9e4b70d342"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9727fb75c80c2096765c3f9e4b70d342">&#9670;&#160;</a></span>SetVectorOverlayParametersHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::SetVectorOverlayParametersHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a9727fb75c80c2096765c3f9e4b70d342_cgraph.svg" width="442" height="66"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a00c0b61255b32deb2de151faf89ae2fa" name="a00c0b61255b32deb2de151faf89ae2fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a00c0b61255b32deb2de151faf89ae2fa">&#9670;&#160;</a></span>StartAnimationHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::StartAnimationHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a00c0b61255b32deb2de151faf89ae2fa_cgraph.svg" width="455" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ad63659a3bb550f803a4ae1966951f417" name="ad63659a3bb550f803a4ae1966951f417"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad63659a3bb550f803a4ae1966951f417">&#9670;&#160;</a></span>StopFileListHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::StopFileListHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ad63659a3bb550f803a4ae1966951f417_cgraph.svg" width="430" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ac5fd795e7cdd42e4feae465d4acdc013" name="ac5fd795e7cdd42e4feae465d4acdc013"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac5fd795e7cdd42e4feae465d4acdc013">&#9670;&#160;</a></span>StopFittingHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::StopFittingHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ac5fd795e7cdd42e4feae465d4acdc013_cgraph.svg" width="439" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a0a5ba968225a9d30469e935f6785d146" name="a0a5ba968225a9d30469e935f6785d146"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0a5ba968225a9d30469e935f6785d146">&#9670;&#160;</a></span>StopMomentCalcHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::StopMomentCalcHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_a0a5ba968225a9d30469e935f6785d146_cgraph.svg" width="502" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ac77a053fc7ba00d3636fef6aad546ff5" name="ac77a053fc7ba00d3636fef6aad546ff5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac77a053fc7ba00d3636fef6aad546ff5">&#9670;&#160;</a></span>StopPvCalcHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::StopPvCalcHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ac77a053fc7ba00d3636fef6aad546ff5_cgraph.svg" width="442" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ae05f46f890db019dc06d5e3b7a41ad66" name="ae05f46f890db019dc06d5e3b7a41ad66"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae05f46f890db019dc06d5e3b7a41ad66">&#9670;&#160;</a></span>StopPvPreviewHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::SessionManager::StopPvPreviewHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Session.html">Session</a> *&#160;</td>
+          <td class="paramname"><em>session</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1EventHeader.html">EventHeader</a> &amp;&#160;</td>
+          <td class="paramname"><em>head</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1SessionManager_ae05f46f890db019dc06d5e3b7a41ad66_cgraph.svg" width="422" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
 <h2 class="groupheader">Member Data Documentation</h2>
 <a id="a814fed51ea499334cb630cdcc7d103a1" name="a814fed51ea499334cb630cdcc7d103a1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a814fed51ea499334cb630cdcc7d103a1">&#9670;&#160;</a></span>_app</h2>
@@ -703,6 +2783,28 @@ Here is the call graph for this function:</div>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="afe5e98237ff76a2fd643b48f03b57d8e" name="afe5e98237ff76a2fd643b48f03b57d8e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe5e98237ff76a2fd643b48f03b57d8e">&#9670;&#160;</a></span>_message_handlers</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unordered_map&lt; CARTA::EventType, <a class="el" href="classcarta_1_1SessionManager.html#a0f59e018ad8e04f75011f01479809c99">SessionManager::MessageHandler</a> &gt; carta::SessionManager::_message_handlers</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span><span class="mlabel">private</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

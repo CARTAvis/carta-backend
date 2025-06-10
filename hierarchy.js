@@ -37,6 +37,11 @@ var hierarchy =
     ] ],
     [ "carta::EnumClassHash", "structcarta_1_1EnumClassHash.html", null ],
     [ "carta::EventHeader", "structcarta_1_1EventHeader.html", null ],
+    [ "std::exception", null, [
+      [ "std::runtime_error", null, [
+        [ "message_parsing_exception", "structmessage__parsing__exception.html", null ]
+      ] ]
+    ] ],
     [ "carta::FileExtInfoLoader", "classcarta_1_1FileExtInfoLoader.html", null ],
     [ "carta::FileInfoLoader", "classcarta_1_1FileInfoLoader.html", null ],
     [ "carta::FileListHandler", "classcarta_1_1FileListHandler.html", null ],

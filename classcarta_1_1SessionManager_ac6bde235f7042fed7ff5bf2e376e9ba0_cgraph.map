@@ -1,0 +1,9 @@
+<map id="carta::SessionManager::SetCursorHandler" name="carta::SessionManager::SetCursorHandler">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,176,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#a6f3187e3a8df59e5750672be1781c0cc" title=" " alt="" coords="224,5,412,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,43,210,38,211,43,177,48"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1ThreadManager.html#a5a2489e2d7dfb13701cda9077f3c1db7" title=" " alt="" coords="235,69,401,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="177,67,222,73,222,78,176,72"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CursorSettings.html#a9a9bd44008f78f667d77d88063f11687" title=" " alt="" coords="460,5,619,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="412,23,446,23,446,28,412,28"/>
+</map>

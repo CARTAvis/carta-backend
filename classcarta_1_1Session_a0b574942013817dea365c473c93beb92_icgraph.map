@@ -1,9 +1,7 @@
 <map id="carta::Session::ImageChannelLock" name="carta::Session::ImageChannelLock">
-<area shape="rect" id="Node000001" title=" " alt="" coords="487,45,732,70"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="224,5,439,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="485,46,439,40,439,35,486,40"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="246,69,417,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="486,74,417,82,416,77,485,69"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,69,176,109"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="232,92,176,92,176,87,232,87"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="268,45,513,70"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="5,5,220,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="266,46,220,40,221,35,267,40"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1SessionManager.html#aa323fddefb907e2e08be97612a0ea8f8" title=" " alt="" coords="11,69,214,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="267,74,214,80,214,75,266,69"/>
 </map>

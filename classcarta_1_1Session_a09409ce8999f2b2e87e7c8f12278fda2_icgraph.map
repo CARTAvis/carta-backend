@@ -1,9 +1,7 @@
 <map id="carta::Session::ConnectCalled" name="carta::Session::ConnectCalled">
-<area shape="rect" id="Node000001" title=" " alt="" coords="683,13,897,38"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="443,5,635,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="669,28,635,28,635,23,669,23"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,5,395,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="429,28,395,28,395,23,429,23"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,5,176,45"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="210,28,176,28,176,23,210,23"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="477,13,692,38"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="237,5,429,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="464,28,429,28,429,23,464,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1SessionManager.html#a53c673a177a1b9892d9d27f86598c0dc" title=" " alt="" coords="5,5,189,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="224,28,189,28,189,23,224,23"/>
 </map>

@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['scriptingrequesthandler_0',['ScriptingRequestHandler',['../namespacecarta.html#a9c9b76ff62d08b7bdc3c98bdd0575b86',1,'carta']]],
-  ['scriptingresponsecallback_1',['ScriptingResponseCallback',['../namespacecarta.html#a1cc3d56faa02d25cd8ab44f4088c4c2e',1,'carta']]],
-  ['scriptingsessionclosedcallback_2',['ScriptingSessionClosedCallback',['../namespacecarta.html#aae6a40ab940ff7220ea3869e4b0a12e8',1,'carta']]]
+  ['req_0',['Req',['../namespacecarta.html#a734df587cce5cbf3b5b11348f2b1ff08',1,'carta']]],
+  ['res_1',['Res',['../namespacecarta.html#a9a9fe0f86f7e331bd55b6875dd3ce036',1,'carta']]]
 ];

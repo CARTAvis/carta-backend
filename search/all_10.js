@@ -1,7 +1,7 @@
 var searchData=
 [
   ['parallel_5fsort_0',['parallel_sort',['../ThreadingManager_8h.html#a87b890d73d45a0741e3abfd2901db2b5',1,'ThreadingManager.h']]],
-  ['parameters_1',['parameters',['../classcarta_1_1Table.html#a7e97191238031e92ec7a8b7403f97074',1,'carta::Table::Parameters()'],['../classcarta_1_1PvPreviewCube.html#a20c1cdfb35028362166d761cdb8d0225',1,'carta::PvPreviewCube::parameters()']]],
+  ['parameters_1',['parameters',['../classcarta_1_1PvPreviewCube.html#a20c1cdfb35028362166d761cdb8d0225',1,'carta::PvPreviewCube::parameters()'],['../classcarta_1_1Table.html#a7e97191238031e92ec7a8b7403f97074',1,'carta::Table::Parameters()']]],
   ['paramtoquantity_2',['ParamToQuantity',['../classcarta_1_1Ds9ImportExport.html#ac467f316f95fb7df1f782c59834cc104',1,'carta::Ds9ImportExport']]],
   ['parsecmd_3',['ParseCmd',['../classcarta_1_1WebBrowser.html#a215b7b5d07c541e892dd2ff129eb8dae',1,'carta::WebBrowser']]],
   ['parseerror_4',['ParseError',['../classcarta_1_1Table.html#a49b8a4da70de7ff9aa55b78e210c01f6',1,'carta::Table']]],
@@ -21,7 +21,7 @@ var searchData=
   ['pointschanged_18',['PointsChanged',['../structcarta_1_1RegionState.html#ac7fc86b0c78d7486b6b1b1829e60b154',1,'carta::RegionState']]],
   ['pointsfinite_19',['PointsFinite',['../classcarta_1_1Region.html#a0c8c223a201694769ef446cee2a6015d',1,'carta::Region']]],
   ['pointstoimagepixels_20',['PointsToImagePixels',['../classcarta_1_1RegionConverter.html#ad09346a7964a687c402f4ef8c29173f6',1,'carta::RegionConverter']]],
-  ['pointxy_21',['pointxy',['../structPointXy.html',1,'PointXy'],['../structPointXy.html#a2ea924810b76cb83c3175de2ba2dc31b',1,'PointXy::PointXy(float x_, float y_)'],['../structPointXy.html#a621610a5d2f12457e8ff10110972f81c',1,'PointXy::PointXy()']]],
+  ['pointxy_21',['pointxy',['../structPointXy.html',1,'PointXy'],['../structPointXy.html#a621610a5d2f12457e8ff10110972f81c',1,'PointXy::PointXy()'],['../structPointXy.html#a2ea924810b76cb83c3175de2ba2dc31b',1,'PointXy::PointXy(float x_, float y_)']]],
   ['polarizationcalculator_22',['polarizationcalculator',['../classcarta_1_1PolarizationCalculator.html',1,'carta::PolarizationCalculator'],['../classcarta_1_1PolarizationCalculator.html#a7b287776319ca3cce5e310f5045be40a',1,'carta::PolarizationCalculator::PolarizationCalculator()']]],
   ['polarizationcalculator_2ecc_23',['PolarizationCalculator.cc',['../PolarizationCalculator_8cc.html',1,'']]],
   ['polarizationcalculator_2eh_24',['PolarizationCalculator.h',['../PolarizationCalculator_8h.html',1,'']]],
@@ -34,7 +34,7 @@ var searchData=
   ['positionaxistype_31',['PositionAxisType',['../classcarta_1_1PvGenerator.html#a27ddd8981d12949f293d2ca97b6a1ca3',1,'carta::PvGenerator']]],
   ['postlocally_32',['postLocally',['../classcarta_1_1CartaLogSink.html#a699156dafb1fe21ed4e26bdac0c76259',1,'carta::CartaLogSink']]],
   ['previewcubeparameters_33',['previewcubeparameters',['../structcarta_1_1PreviewCubeParameters.html#a482a258174b891bb8b1399b6592e6916',1,'carta::PreviewCubeParameters::PreviewCubeParameters()'],['../structcarta_1_1PreviewCubeParameters.html#a5b95d72542b212d4974e0c743e5d8ed8',1,'carta::PreviewCubeParameters::PreviewCubeParameters(int file_id_, int region_id_, const AxisRange &amp;spectral_range_, int rebin_xy_, int rebin_z_, int stokes_, RegionState &amp;region_state_)'],['../structcarta_1_1PreviewCubeParameters.html',1,'carta::PreviewCubeParameters']]],
-  ['previewcutparameters_34',['previewcutparameters',['../structcarta_1_1PreviewCutParameters.html#aa4a54c3824767809268817a9c957c870',1,'carta::PreviewCutParameters::PreviewCutParameters()'],['../structcarta_1_1PreviewCutParameters.html',1,'carta::PreviewCutParameters'],['../structcarta_1_1PreviewCutParameters.html#a359110c97997a541912b7c147774f0dc',1,'carta::PreviewCutParameters::PreviewCutParameters()']]],
+  ['previewcutparameters_34',['previewcutparameters',['../structcarta_1_1PreviewCutParameters.html#aa4a54c3824767809268817a9c957c870',1,'carta::PreviewCutParameters::PreviewCutParameters()'],['../structcarta_1_1PreviewCutParameters.html#a359110c97997a541912b7c147774f0dc',1,'carta::PreviewCutParameters::PreviewCutParameters(int file_id_, int region_id_, int width_, bool reverse_, CARTA::CompressionType compression_, float image_quality_, float animation_quality_, int reference_file_id_)'],['../structcarta_1_1PreviewCutParameters.html',1,'carta::PreviewCutParameters']]],
   ['print_5fccode_5f_35',['print_ccode_',['../classspdlog_1_1sinks_1_1carta__sink.html#abadad5280f86b10fc942efc4ccc4a9d6',1,'spdlog::sinks::carta_sink']]],
   ['print_5frange_5f_36',['print_range_',['../classspdlog_1_1sinks_1_1carta__sink.html#a8c7ff4b429a27e83a19e84cba0cf683d',1,'spdlog::sinks::carta_sink']]],
   ['processfilelines_37',['processfilelines',['../classcarta_1_1CrtfImportExport.html#a8c42abb411b254f52088f70ca8c51a63',1,'carta::CrtfImportExport::ProcessFileLines()'],['../classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588',1,'carta::Ds9ImportExport::ProcessFileLines()']]],
@@ -45,7 +45,7 @@ var searchData=
   ['programsettings_2eh_42',['ProgramSettings.h',['../ProgramSettings_8h.html',1,'']]],
   ['progress_5freport_5finterval_43',['PROGRESS_REPORT_INTERVAL',['../MomentGenerator_8h.html#a0001b689e5e732949842a82a44614cce',1,'MomentGenerator.h']]],
   ['pull_44',['Pull',['../structcarta_1_1TilePool.html#a36dcf5cd457723eafb7f436addd7ea3a',1,'carta::TilePool']]],
-  ['push_45',['push',['../structcarta_1_1TilePool.html#a8470d704adce77aad983c9f292723cae',1,'carta::TilePool::Push()'],['../classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1',1,'carta::concurrent_queue::push()']]],
+  ['push_45',['push',['../classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1',1,'carta::concurrent_queue::push()'],['../structcarta_1_1TilePool.html#a8470d704adce77aad983c9f292723cae',1,'carta::TilePool::Push()']]],
   ['pushfilepaths_46',['PushFilePaths',['../structcarta_1_1ProgramSettings.html#a050edf157d560b52356b2b36af7ab69b',1,'carta::ProgramSettings']]],
   ['pvgenerator_47',['pvgenerator',['../classcarta_1_1PvGenerator.html#a503623260e7f87019b3e9c077f440df2',1,'carta::PvGenerator::PvGenerator()'],['../classcarta_1_1PvGenerator.html',1,'carta::PvGenerator']]],
   ['pvgenerator_2ecc_48',['PvGenerator.cc',['../PvGenerator_8cc.html',1,'']]],
@@ -58,5 +58,6 @@ var searchData=
   ['pvpreviewcut_2eh_55',['PvPreviewCut.h',['../PvPreviewCut_8h.html',1,'']]],
   ['pvpreviewupdatetask_56',['pvpreviewupdatetask',['../classcarta_1_1PvPreviewUpdateTask.html',1,'carta::PvPreviewUpdateTask'],['../classcarta_1_1PvPreviewUpdateTask.html#a020420d305a4d4015b96d4914213a49f',1,'carta::PvPreviewUpdateTask::PvPreviewUpdateTask()']]],
   ['pvprogress_57',['PvProgress',['../classMessage.html#ac34ea433d655711badf7ac0a7a230179',1,'Message']]],
-  ['pvrequest_58',['PvRequest',['../classMessage.html#a0b7f372e72e3c2852fc3c77215e0c95e',1,'Message']]]
+  ['pvrequest_58',['PvRequest',['../classMessage.html#a0b7f372e72e3c2852fc3c77215e0c95e',1,'Message']]],
+  ['pvrequesthandler_59',['PvRequestHandler',['../classcarta_1_1SessionManager.html#a222f1b36fc1c176d08459fb0e30687ad',1,'carta::SessionManager']]]
 ];

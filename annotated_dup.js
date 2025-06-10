@@ -128,5 +128,6 @@ var annotated_dup =
     [ "AxisRange", "structAxisRange.html", "structAxisRange" ],
     [ "DimsInfo", "structDimsInfo.html", "structDimsInfo" ],
     [ "Message", "classMessage.html", "classMessage" ],
+    [ "message_parsing_exception", "structmessage__parsing__exception.html", null ],
     [ "PointXy", "structPointXy.html", "structPointXy" ]
 ];

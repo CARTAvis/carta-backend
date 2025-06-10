@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['profilesmap_0',['ProfilesMap',['../classcarta_1_1RegionHandler.html#acae0b3191b4abf7c72582f3566db5cb2',1,'carta::RegionHandler']]]
+  ['messagehandler_0',['MessageHandler',['../classcarta_1_1SessionManager.html#a0f59e018ad8e04f75011f01479809c99',1,'carta::SessionManager']]]
 ];

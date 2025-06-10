@@ -1,18 +1,20 @@
 <map id="carta::Session::OnRegionFileInfoRequest" name="carta::Session::OnRegionFileInfoRequest">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,87,189,127"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#af5f45b72e3fb7d4ad6fbf32fcc9da912" title=" " alt="" coords="499,70,689,95"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,100,485,85,485,91,190,105"/>
-<area shape="rect" id="Node000007" href="$classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451" title=" " alt="" coords="237,119,451,145"/>
-<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="190,113,224,117,223,122,189,119"/>
-<area shape="rect" id="Node000003" href="$namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" title=" " alt="" coords="737,13,968,38"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="651,67,737,48,780,38,781,44,738,53,652,73"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" title=" " alt="" coords="763,63,942,103"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="690,80,750,80,750,85,690,85"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d" title=" " alt="" coords="763,127,942,167"/>
-<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="647,93,759,121,757,126,646,98"/>
-<area shape="rect" id="Node000004" href="$namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" title=" " alt="" coords="1016,5,1171,45"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="968,23,1002,23,1002,28,968,28"/>
-<area shape="poly" id="edge8_Node000007_Node000002" title=" " alt="" coords="409,117,515,95,516,101,410,122"/>
-<area shape="rect" id="Node000008" href="$classMessage.html#a99e84f303d54a46b1cf582bf343c7f29" title=" " alt="" coords="519,119,669,145"/>
-<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="451,129,505,129,505,135,451,135"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,101,189,141"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#af5f45b72e3fb7d4ad6fbf32fcc9da912" title=" " alt="" coords="499,84,689,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,114,485,99,485,105,190,119"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451" title=" " alt="" coords="237,133,451,159"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="190,127,224,131,223,136,189,133"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#ad7554f7b047d88c0106266229a2f7f74" title="Encodes a protobuf message with a CARTA event header for transmission." alt="" coords="756,5,949,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="624,81,737,41,773,31,774,36,738,46,626,86"/>
+<area shape="rect" id="Node000004" href="$namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" title=" " alt="" coords="737,55,968,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="689,83,727,79,727,84,690,89"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" title=" " alt="" coords="763,105,942,145"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="690,104,750,111,749,116,689,110"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d" title=" " alt="" coords="763,169,942,209"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="657,107,691,120,715,137,739,154,755,161,753,166,736,159,712,141,688,124,655,112"/>
+<area shape="rect" id="Node000005" href="$namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" title=" " alt="" coords="1016,47,1171,87"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="968,65,1002,65,1002,70,968,70"/>
+<area shape="poly" id="edge9_Node000008_Node000002" title=" " alt="" coords="409,131,515,109,516,115,410,136"/>
+<area shape="rect" id="Node000009" href="$classMessage.html#a99e84f303d54a46b1cf582bf343c7f29" title=" " alt="" coords="519,133,669,159"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="451,143,505,143,505,149,451,149"/>
 </map>

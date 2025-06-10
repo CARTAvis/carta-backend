@@ -1,0 +1,11 @@
+<map id="carta::SessionManager::CloseFileHandler" name="carta::SessionManager::CloseFileHandler">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,176,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#a05f27239922f154deb2a3e00ee81097f" title=" " alt="" coords="224,77,423,102"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,87,210,87,210,92,176,92"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#a52f5c3d0a8e54f6e14f54d5b2b4d1915" title=" " alt="" coords="471,5,676,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="373,74,481,46,482,51,375,79"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CursorSettings.html#a5ec299f2396ffb9ec97350328cbfd241" title=" " alt="" coords="494,69,653,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="423,87,480,87,480,92,423,92"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Session.html#aab36b319ffe1c796a753ea63b1eee575" title=" " alt="" coords="471,134,676,159"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="380,99,504,128,503,133,379,105"/>
+</map>

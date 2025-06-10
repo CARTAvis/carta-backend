@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['parameters_0',['parameters',['../classcarta_1_1PvPreviewCube.html#a20c1cdfb35028362166d761cdb8d0225',1,'carta::PvPreviewCube::parameters()'],['../classcarta_1_1Table.html#a7e97191238031e92ec7a8b7403f97074',1,'carta::Table::Parameters()']]],
+  ['parameters_0',['parameters',['../classcarta_1_1Table.html#a7e97191238031e92ec7a8b7403f97074',1,'carta::Table::Parameters()'],['../classcarta_1_1PvPreviewCube.html#a20c1cdfb35028362166d761cdb8d0225',1,'carta::PvPreviewCube::parameters()']]],
   ['paramtoquantity_1',['ParamToQuantity',['../classcarta_1_1Ds9ImportExport.html#ac467f316f95fb7df1f782c59834cc104',1,'carta::Ds9ImportExport']]],
   ['parsecmd_2',['ParseCmd',['../classcarta_1_1WebBrowser.html#a215b7b5d07c541e892dd2ff129eb8dae',1,'carta::WebBrowser']]],
   ['parseerror_3',['ParseError',['../classcarta_1_1Table.html#a49b8a4da70de7ff9aa55b78e210c01f6',1,'carta::Table']]],
@@ -28,12 +28,13 @@ var searchData=
   ['processfilelines_25',['processfilelines',['../classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588',1,'carta::Ds9ImportExport::ProcessFileLines()'],['../classcarta_1_1CrtfImportExport.html#a8c42abb411b254f52088f70ca8c51a63',1,'carta::CrtfImportExport::ProcessFileLines()']]],
   ['programsettings_26',['programsettings',['../structcarta_1_1ProgramSettings.html#afec747a7616313a7f49b1142658a4278',1,'carta::ProgramSettings::ProgramSettings()=default'],['../structcarta_1_1ProgramSettings.html#a508188c0f555b31180deafb1298093fb',1,'carta::ProgramSettings::ProgramSettings(int argc, char **argv)']]],
   ['pull_27',['Pull',['../structcarta_1_1TilePool.html#a36dcf5cd457723eafb7f436addd7ea3a',1,'carta::TilePool']]],
-  ['push_28',['push',['../classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1',1,'carta::concurrent_queue::push()'],['../structcarta_1_1TilePool.html#a8470d704adce77aad983c9f292723cae',1,'carta::TilePool::Push()']]],
+  ['push_28',['push',['../structcarta_1_1TilePool.html#a8470d704adce77aad983c9f292723cae',1,'carta::TilePool::Push()'],['../classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1',1,'carta::concurrent_queue::push()']]],
   ['pushfilepaths_29',['PushFilePaths',['../structcarta_1_1ProgramSettings.html#a050edf157d560b52356b2b36af7ab69b',1,'carta::ProgramSettings']]],
   ['pvgenerator_30',['PvGenerator',['../classcarta_1_1PvGenerator.html#a503623260e7f87019b3e9c077f440df2',1,'carta::PvGenerator']]],
   ['pvpreviewcube_31',['PvPreviewCube',['../classcarta_1_1PvPreviewCube.html#ab77289491f8ee53bb8d1db7da8799414',1,'carta::PvPreviewCube']]],
   ['pvpreviewcut_32',['PvPreviewCut',['../classcarta_1_1PvPreviewCut.html#a13178f0ba52fb9b188d10e14dc0bcc1e',1,'carta::PvPreviewCut']]],
   ['pvpreviewupdatetask_33',['PvPreviewUpdateTask',['../classcarta_1_1PvPreviewUpdateTask.html#a020420d305a4d4015b96d4914213a49f',1,'carta::PvPreviewUpdateTask']]],
   ['pvprogress_34',['PvProgress',['../classMessage.html#ac34ea433d655711badf7ac0a7a230179',1,'Message']]],
-  ['pvrequest_35',['PvRequest',['../classMessage.html#a0b7f372e72e3c2852fc3c77215e0c95e',1,'Message']]]
+  ['pvrequest_35',['PvRequest',['../classMessage.html#a0b7f372e72e3c2852fc3c77215e0c95e',1,'Message']]],
+  ['pvrequesthandler_36',['PvRequestHandler',['../classcarta_1_1SessionManager.html#a222f1b36fc1c176d08459fb0e30687ad',1,'carta::SessionManager']]]
 ];

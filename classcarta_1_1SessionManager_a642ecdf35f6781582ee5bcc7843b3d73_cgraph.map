@@ -1,0 +1,11 @@
+<map id="carta::SessionManager::AnimationFlowControlHandler" name="carta::SessionManager::AnimationFlowControlHandler">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,232,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#a5738e575acc2761f8fa66254811b38e4" title=" " alt="" coords="280,69,515,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="232,87,266,87,266,92,232,92"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#a6e3719e8d244e28cdf5a80725b0727ff" title=" " alt="" coords="571,5,754,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="480,67,566,46,567,51,482,72"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Session.html#a2056d6a966688ba48bd90bbd5bea5539" title=" " alt="" coords="563,69,763,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="515,87,549,87,549,92,515,92"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1ThreadManager.html#a5a2489e2d7dfb13701cda9077f3c1db7" title=" " alt="" coords="580,133,745,173"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="482,107,567,128,566,133,480,112"/>
+</map>

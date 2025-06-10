@@ -46,9 +46,9 @@
   </g>
 </defs>
 <script type="application/ecmascript">
-var viewWidth = 675;
+var viewWidth = 518;
 var viewHeight = 38;
-var sectionId = 'dynsection-25';
+var sectionId = 'dynsection-27';
 </script>
 <script type="application/ecmascript" xlink:href="svg.min.js"/>
 <svg id="graph" class="graph">
@@ -58,8 +58,8 @@ var sectionId = 'dynsection-25';
 <g id="Node000001" class="node">
 <title>Node1</title>
 <g id="a_Node000001"><a xlink:title=" ">
-<polygon fill="#999999" stroke="#666666" points="667,-24.5 509,-24.5 509,-5.5 667,-5.5 667,-24.5"/>
-<text text-anchor="middle" x="588" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::RegisterViewerAck</text>
+<polygon fill="#999999" stroke="#666666" points="510,-24.5 352,-24.5 352,-5.5 510,-5.5 510,-24.5"/>
+<text text-anchor="middle" x="431" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::RegisterViewerAck</text>
 </a>
 </g>
 </g>
@@ -67,9 +67,9 @@ var sectionId = 'dynsection-25';
 <g id="Node000002" class="node">
 <title>Node2</title>
 <g id="a_Node000002"><a xlink:href="classcarta_1_1Session.html#add3b0e0836be0e2fa056cb7cc0607f72" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="473,-30 328,-30 328,0 473,0 473,-30"/>
-<text text-anchor="start" x="336" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnRegister</text>
-<text text-anchor="middle" x="400.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">Viewer</text>
+<polygon fill="white" stroke="#666666" points="316,-30 171,-30 171,0 316,0 316,-30"/>
+<text text-anchor="start" x="179" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnRegister</text>
+<text text-anchor="middle" x="243.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">Viewer</text>
 </a>
 </g>
 </g>
@@ -77,18 +77,18 @@ var sectionId = 'dynsection-25';
 <g id="edge1_Node000001_Node000002" class="edge">
 <title>Node1&#45;&gt;Node2</title>
 <g id="a_edge1_Node000001_Node000002"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M498.78,-15C490.16,-15 481.48,-15 473.04,-15"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="498.87,-18.5 508.87,-15 498.87,-11.5 498.87,-18.5"/>
+<path fill="none" stroke="#63b8ff" d="M341.78,-15C333.16,-15 324.48,-15 316.04,-15"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="341.87,-18.5 351.87,-15 341.87,-11.5 341.87,-18.5"/>
 </a>
 </g>
 </g>
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="292,-30 164,-30 164,0 292,0 292,-30"/>
-<text text-anchor="start" x="172" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SessionManager</text>
-<text text-anchor="middle" x="228" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::OnMessage</text>
+<g id="a_Node000003"><a xlink:href="classcarta_1_1SessionManager.html#ae43bb1d833a685ea00afee3c932aad1c" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="135,-30 0,-30 0,0 135,0 135,-30"/>
+<text text-anchor="start" x="8" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SessionManager</text>
+<text text-anchor="middle" x="67.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::RegisterViewerHandler</text>
 </a>
 </g>
 </g>
@@ -96,27 +96,8 @@ var sectionId = 'dynsection-25';
 <g id="edge2_Node000002_Node000003" class="edge">
 <title>Node2&#45;&gt;Node3</title>
 <g id="a_edge2_Node000002_Node000003"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M317.64,-15C309.05,-15 300.41,-15 292.07,-15"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="317.69,-18.5 327.69,-15 317.69,-11.5 317.69,-18.5"/>
-</a>
-</g>
-</g>
-<!-- Node4 -->
-<g id="Node000004" class="node">
-<title>Node4</title>
-<g id="a_Node000004"><a xlink:href="classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="128,-30 0,-30 0,0 128,0 128,-30"/>
-<text text-anchor="start" x="8" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SessionManager</text>
-<text text-anchor="middle" x="64" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::RunApp</text>
-</a>
-</g>
-</g>
-<!-- Node3&#45;&gt;Node4 -->
-<g id="edge3_Node000003_Node000004" class="edge">
-<title>Node3&#45;&gt;Node4</title>
-<g id="a_edge3_Node000003_Node000004"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M153.63,-15C145.14,-15 136.53,-15 128.19,-15"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="153.9,-18.5 163.9,-15 153.9,-11.5 153.9,-18.5"/>
+<path fill="none" stroke="#63b8ff" d="M160.94,-15C152.34,-15 143.67,-15 135.27,-15"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="160.97,-18.5 170.97,-15 160.97,-11.5 160.97,-18.5"/>
 </a>
 </g>
 </g>

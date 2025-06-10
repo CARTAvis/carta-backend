@@ -1,7 +1,5 @@
 <map id="carta::Session::OnStopMomentCalc" name="carta::Session::OnStopMomentCalc">
-<area shape="rect" id="Node000001" title=" " alt="" coords="443,13,693,38"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,5,395,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="429,28,395,28,395,23,429,23"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,5,176,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="210,28,176,28,176,23,210,23"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="245,13,496,38"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1SessionManager.html#a0a5ba968225a9d30469e935f6785d146" title=" " alt="" coords="5,5,197,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="232,28,198,28,198,23,232,23"/>
 </map>

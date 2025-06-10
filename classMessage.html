@@ -226,12 +226,15 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a50066c9b8734724d4be0ced5e2143dfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a03594461e68b148a3398fbaad3d651a7" id="r_a03594461e68b148a3398fbaad3d651a7"><td class="memItemLeft" align="right" valign="top">static CARTA::ListProgress&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a03594461e68b148a3398fbaad3d651a7">ListProgress</a> (const CARTA::FileListType &amp;file_list_type, int32_t total_count, int32_t checked_count, float percentage)</td></tr>
 <tr class="separator:a03594461e68b148a3398fbaad3d651a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51a727e617bb0fe05ac48d6f9354ef09" id="r_a51a727e617bb0fe05ac48d6f9354ef09"><td class="memItemLeft" align="right" valign="top">static CARTA::EventType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a51a727e617bb0fe05ac48d6f9354ef09">EventType</a> (std::vector&lt; char &gt; &amp;message)</td></tr>
-<tr class="separator:a51a727e617bb0fe05ac48d6f9354ef09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8a8b06331a96f3ed7e0e7e659203159e" id="r_a8a8b06331a96f3ed7e0e7e659203159e"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a8a8b06331a96f3ed7e0e7e659203159e"><td class="memTemplItemLeft" align="right" valign="top">static T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classMessage.html#a8a8b06331a96f3ed7e0e7e659203159e">DecodeMessage</a> (std::vector&lt; char &gt; &amp;message)</td></tr>
-<tr class="memdesc:a8a8b06331a96f3ed7e0e7e659203159e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decodes a message from a vector of bytes into a specific type.  <br /></td></tr>
-<tr class="separator:a8a8b06331a96f3ed7e0e7e659203159e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0784bcc9c31f5081ebe4a12da031f2eb" id="r_a0784bcc9c31f5081ebe4a12da031f2eb"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structcarta_1_1EventHeader.html">carta::EventHeader</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a0784bcc9c31f5081ebe4a12da031f2eb">GetEventHeader</a> (std::string_view message)</td></tr>
+<tr class="separator:a0784bcc9c31f5081ebe4a12da031f2eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d981a1cec15972f98b2fe2ec5716ae6" id="r_a2d981a1cec15972f98b2fe2ec5716ae6"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a2d981a1cec15972f98b2fe2ec5716ae6"><td class="memTemplItemLeft" align="right" valign="top">static T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classMessage.html#a2d981a1cec15972f98b2fe2ec5716ae6">DecodeMessage</a> (std::string_view sv_message)</td></tr>
+<tr class="memdesc:a2d981a1cec15972f98b2fe2ec5716ae6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decodes a message from a buffer of characters into an object of type T and can be used to decode various types of messages.  <br /></td></tr>
+<tr class="separator:a2d981a1cec15972f98b2fe2ec5716ae6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7554f7b047d88c0106266229a2f7f74" id="r_ad7554f7b047d88c0106266229a2f7f74"><td class="memItemLeft" align="right" valign="top">static std::vector&lt; char &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ad7554f7b047d88c0106266229a2f7f74">EncodeMessage</a> (CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite &amp;message)</td></tr>
+<tr class="memdesc:ad7554f7b047d88c0106266229a2f7f74"><td class="mdescLeft">&#160;</td><td class="mdescRight">Encodes a protobuf message with a <a class="el" href="namespaceCARTA.html">CARTA</a> event header for transmission.  <br /></td></tr>
+<tr class="separator:ad7554f7b047d88c0106266229a2f7f74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -507,7 +510,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_acfdc04d3a74a1759ad075074bf2c19b1_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_acfdc04d3a74a1759ad075074bf2c19b1_icgraph.svg" width="630" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -612,8 +615,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a8a8b06331a96f3ed7e0e7e659203159e" name="a8a8b06331a96f3ed7e0e7e659203159e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8a8b06331a96f3ed7e0e7e659203159e">&#9670;&#160;</a></span>DecodeMessage()</h2>
+<a id="a2d981a1cec15972f98b2fe2ec5716ae6" name="a2d981a1cec15972f98b2fe2ec5716ae6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d981a1cec15972f98b2fe2ec5716ae6">&#9670;&#160;</a></span>DecodeMessage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -626,8 +629,8 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="memname">T Message::DecodeMessage </td>
           <td>(</td>
-          <td class="paramtype">std::vector&lt; char &gt; &amp;&#160;</td>
-          <td class="paramname"><em>message</em></td><td>)</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>sv_message</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -638,21 +641,27 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Decodes a message from a vector of bytes into a specific type. </p>
+<p>Decodes a message from a buffer of characters into an object of type T and can be used to decode various types of messages. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">T</td><td>The type of the message to decode. It must have a <code>ParseFromArray</code> method. </td></tr>
+    <tr><td class="paramname">T</td><td>The type of the object to decode the message into. T must have a member function <code>ParseFromArray(const void*, int)</code> to parse the data. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">message</td><td>A vector of characters containing the encoded message data. </td></tr>
+    <tr><td class="paramname">sv_message</td><td>The message to decode. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>The decoded message of type <code>T</code>.</dd></dl>
-<p>This function extracts the payload from a given message buffer, ignoring the event header, and deserializes it into an object of template type <code>T</code> using <code>ParseFromArray</code>. </p>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">std::runtime_error</td><td>If the message cannot be parsed. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The decoded message of type T.</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This function uses a static_assert to ensure that T has a member function <code>ParseFromArray</code>. If T does not have this member function, a compilation error will occur. The function also throws a runtime error if the parsing fails, providing information about the session ID and the type of the message. </dd></dl>
 
 </div>
 </div>
@@ -693,6 +702,65 @@ template&lt;typename T &gt; </div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_a2e8cdef60c335b1a50208053aa4b7f22_icgraph.svg" width="600" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ad7554f7b047d88c0106266229a2f7f74" name="ad7554f7b047d88c0106266229a2f7f74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad7554f7b047d88c0106266229a2f7f74">&#9670;&#160;</a></span>EncodeMessage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; char &gt; Message::EncodeMessage </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::EventType&#160;</td>
+          <td class="paramname"><em>event_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>event_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const google::protobuf::MessageLite &amp;&#160;</td>
+          <td class="paramname"><em>message</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Encodes a protobuf message with a <a class="el" href="namespaceCARTA.html">CARTA</a> event header for transmission. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">event_type</td><td>The <a class="el" href="namespaceCARTA.html">CARTA</a> event type to encode in the header. </td></tr>
+    <tr><td class="paramname">event_id</td><td>The event or request ID to encode in the header. </td></tr>
+    <tr><td class="paramname">message</td><td>The protobuf message to serialize and encode. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A std::vector&lt;char&gt; containing the header followed by the serialized message.</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This function creates a binary buffer containing a CARTA::EventHeader followed by the serialized protobuf message. The header includes the event type, protocol version, and event/request ID. </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_ad7554f7b047d88c0106266229a2f7f74_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -744,32 +812,6 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a51a727e617bb0fe05ac48d6f9354ef09" name="a51a727e617bb0fe05ac48d6f9354ef09"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a51a727e617bb0fe05ac48d6f9354ef09">&#9670;&#160;</a></span>EventType()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">CARTA::EventType Message::EventType </td>
-          <td>(</td>
-          <td class="paramtype">std::vector&lt; char &gt; &amp;&#160;</td>
-          <td class="paramname"><em>message</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a56ce2597eac9076f1a3e5dbe8ecc2e28" name="a56ce2597eac9076f1a3e5dbe8ecc2e28"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a56ce2597eac9076f1a3e5dbe8ecc2e28">&#9670;&#160;</a></span>FileInfo()</h2>
 
@@ -818,7 +860,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a56ce2597eac9076f1a3e5dbe8ecc2e28_icgraph.svg" width="100%" height="588"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a56ce2597eac9076f1a3e5dbe8ecc2e28_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1021,6 +1063,37 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a0784bcc9c31f5081ebe4a12da031f2eb" name="a0784bcc9c31f5081ebe4a12da031f2eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0784bcc9c31f5081ebe4a12da031f2eb">&#9670;&#160;</a></span>GetEventHeader()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structcarta_1_1EventHeader.html">carta::EventHeader</a> Message::GetEventHeader </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>message</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_a0784bcc9c31f5081ebe4a12da031f2eb_icgraph.svg" width="643" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
 <a id="a2db1e87dde5d0eb661c819b9a6f02604" name="a2db1e87dde5d0eb661c819b9a6f02604"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2db1e87dde5d0eb661c819b9a6f02604">&#9670;&#160;</a></span>ImageBounds()</h2>
 
@@ -1176,7 +1249,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a0db7f4318b8c6ee01d0601c7cd509f97_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_a0db7f4318b8c6ee01d0601c7cd509f97_icgraph.svg" width="660" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -1443,7 +1516,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a9d5199432a1267740c0ae22d436d5e30_icgraph.svg" width="100%" height="581"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a9d5199432a1267740c0ae22d436d5e30_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -2560,7 +2633,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a916c7171fc85a251d96cbe4d3d6e7dbe_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_a916c7171fc85a251d96cbe4d3d6e7dbe_icgraph.svg" width="638" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -2649,7 +2722,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a75d7d86b23309ae2a94359dc64e923a0_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a75d7d86b23309ae2a94359dc64e923a0_icgraph.svg" width="100%" height="386"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>

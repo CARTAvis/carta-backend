@@ -1,17 +1,15 @@
 <map id="Message::AddRequiredTiles" name="Message::AddRequiredTiles">
-<area shape="rect" id="Node000001" title=" " alt="" coords="977,74,1180,99"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#af5f49139f41c92e209aee736bb1cd260" title=" " alt="" coords="728,37,929,77"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="963,76,929,72,930,66,964,71"/>
-<area shape="rect" id="Node000008" href="$classMessage.html#a072b42f0fb513679105c65ed1ef266e9" title=" " alt="" coords="750,102,907,127"/>
-<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="964,102,908,109,907,103,963,97"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4" title=" " alt="" coords="487,5,680,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="714,45,680,41,681,35,715,40"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="487,69,679,109"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="715,75,680,79,679,74,714,70"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="224,5,439,45"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="473,28,439,28,439,23,473,23"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="246,69,417,109"/>
-<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="473,92,417,92,417,87,473,87"/>
-<area shape="rect" id="Node000007" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,69,176,109"/>
-<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="232,92,176,92,176,87,232,87"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="759,74,961,99"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#af5f49139f41c92e209aee736bb1cd260" title=" " alt="" coords="509,37,711,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="745,76,711,72,711,66,745,71"/>
+<area shape="rect" id="Node000007" href="$classMessage.html#a072b42f0fb513679105c65ed1ef266e9" title=" " alt="" coords="531,102,689,127"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="745,102,689,109,689,103,744,97"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4" title=" " alt="" coords="268,5,461,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="496,45,461,41,462,35,496,40"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="269,69,461,109"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="496,75,461,79,461,74,495,70"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="5,5,220,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="254,28,220,28,220,23,254,23"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1SessionManager.html#a53c673a177a1b9892d9d27f86598c0dc" title=" " alt="" coords="21,69,205,109"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="255,92,205,92,205,87,255,87"/>
 </map>
