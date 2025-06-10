@@ -2524,7 +2524,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
 
     // Set stokes flags and get their indices
-    bool use_threshold_I = !std::isnan(threshold) && ((calculate_pi && threshold_option == CARTA::PolarizationType::I) || calculate_pa);
+    bool use_threshold_I = !std::isnan(threshold) && threshold_option == CARTA::PolarizationType::I;
     stokes_flag["I"] = (fractional || use_threshold_I) && GetStokesTypeIndex("I", stokes_indices["I"]);
     stokes_flag["Q"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("Q", stokes_indices["Q"]);
     stokes_flag["U"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("U", stokes_indices["U"]);

@@ -97,6 +97,8 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
         // Set NAN for PA if stokes or pa is NAN or below the threshold
         if (stokes_flag["I"]) {
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
+        } else {
+            std::for_each(pa.begin(), pa.end(), threshold_cut);
         }
         FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
     }
