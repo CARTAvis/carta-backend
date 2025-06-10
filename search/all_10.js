@@ -6,7 +6,7 @@ var searchData=
   ['parsecmd_3',['ParseCmd',['../classcarta_1_1WebBrowser.html#a215b7b5d07c541e892dd2ff129eb8dae',1,'carta::WebBrowser']]],
   ['parseerror_4',['ParseError',['../classcarta_1_1Table.html#a49b8a4da70de7ff9aa55b78e210c01f6',1,'carta::Table']]],
   ['parsefitscard_5',['ParseFitsCard',['../classcarta_1_1CompressedFits.html#a44ffd0a06a3f94f38e9f714a265f4910',1,'carta::CompressedFits']]],
-  ['parsehistorybeamheader_6',['parsehistorybeamheader',['../Casacore_8h.html#a460085220f0ce6d3fe661fba5877a796',1,'ParseHistoryBeamHeader(std::string &amp;header, std::string &amp;bmaj, std::string &amp;bmin, std::string &amp;bpa):&#160;Casacore.cc'],['../Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796',1,'ParseHistoryBeamHeader(std::string &amp;header, std::string &amp;bmaj, std::string &amp;bmin, std::string &amp;bpa):&#160;Casacore.cc']]],
+  ['parsehistorybeamheader_6',['parsehistorybeamheader',['../FitsUtil_8h.html#a460085220f0ce6d3fe661fba5877a796',1,'ParseHistoryBeamHeader(std::string &amp;header, std::string &amp;bmaj, std::string &amp;bmin, std::string &amp;bpa):&#160;FitsUtil.cc'],['../FitsUtil_8cc.html#a460085220f0ce6d3fe661fba5877a796',1,'ParseHistoryBeamHeader(std::string &amp;header, std::string &amp;bmaj, std::string &amp;bmin, std::string &amp;bpa):&#160;FitsUtil.cc']]],
   ['parseregionparameters_7',['ParseRegionParameters',['../classcarta_1_1RegionImportExport.html#ace29fa615ac0800a59cfd12c9259d278',1,'carta::RegionImportExport']]],
   ['peek_8',['Peek',['../classcarta_1_1TileCache.html#a9e0945f80607eeea5c15df193b44befa',1,'carta::TileCache']]],
   ['percentile_5franks_9',['percentile_ranks',['../structcarta_1_1FileInfo_1_1ImageStats.html#ae1e3d71fe03d319d216da33622253527',1,'carta::FileInfo::ImageStats']]],

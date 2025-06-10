@@ -1,5 +1,7 @@
 var NAVTREEINDEX1 =
 {
+"LoaderCache_8cc.html":[5,0,1,0,0],
+"LoaderCache_8h.html":[5,0,1,0,1],
 "Logger_8cc.html":[5,0,1,9,2],
 "Logger_8cc.html#a23c9bf75209165cf69eb8d50f64b81b4":[5,0,1,9,2,2],
 "Logger_8cc.html#a579b36ca7fa898b7052001d151fc34cd":[5,0,1,9,2,3],
@@ -34,7 +36,7 @@ var NAVTREEINDEX1 =
 "Message_8tcc.html#a508367ca664d17c3de6c8f0e6c4bf07d":[5,0,1,16,10,1],
 "MimeTypes_8h.html":[5,0,1,4,2],
 "MimeTypes_8h.html#a55d0e4a09efee3dc6cb3aa79af60bbbb":[5,0,1,4,2,0],
-"MiriadLoader_8h.html":[5,0,1,5,25],
+"MiriadLoader_8h.html":[5,0,1,5,27],
 "MomentGenerator_8cc.html":[5,0,1,7,5],
 "MomentGenerator_8cc.html#ad3a7e1777d23e5cb42ceac0f38b09859":[5,0,1,7,5,0],
 "MomentGenerator_8h.html":[5,0,1,7,6],
@@ -44,8 +46,8 @@ var NAVTREEINDEX1 =
 "OnMessageTask_8h.html":[5,0,1,12,6],
 "OnMessageTask_8tcc.html":[5,0,1,12,7],
 "OnMessageTask_8tcc.html#aa3730b7da59a371ee9d7999b1a0bff3c":[5,0,1,12,7,1],
-"PolarizationCalculator_8cc.html":[5,0,1,5,26],
-"PolarizationCalculator_8h.html":[5,0,1,5,27],
+"PolarizationCalculator_8cc.html":[5,0,1,5,28],
+"PolarizationCalculator_8h.html":[5,0,1,5,29],
 "ProgramSettings_8cc.html":[5,0,1,10,1],
 "ProgramSettings_8cc.html#aa3581dda6f86c582d960a381773a4192":[5,0,1,10,1,1],
 "ProgramSettings_8cc.html#ab701e3ac61a85b337ec5c1abaad6742d":[5,0,1,10,1,0],
@@ -123,8 +125,8 @@ var NAVTREEINDEX1 =
 "StatsCalculator_8h.html#a385968df288a71e88ec0fecc88dd07bf":[5,0,1,8,5,2],
 "StatsCalculator_8h.html#a3d967873206a1f0ff9062a2ecf29ae6b":[5,0,1,8,5,1],
 "StatsCalculator_8h.html#a96f7cab56516141317895bada342c0b1":[5,0,1,8,5,0],
-"StokesFilesConnector_8cc.html":[5,0,1,5,28],
-"StokesFilesConnector_8h.html":[5,0,1,5,29],
+"StokesFilesConnector_8cc.html":[5,0,1,5,30],
+"StokesFilesConnector_8h.html":[5,0,1,5,31],
 "Stokes_8cc.html":[5,0,1,16,13],
 "Stokes_8h.html":[5,0,1,16,14],
 "String_8cc.html":[5,0,1,16,15],
@@ -247,7 +249,5 @@ var NAVTREEINDEX1 =
 "classMessage.html#af2a443107871719730e5e8ad6bf0179c":[4,0,7,52],
 "classMessage.html#afc2a3c83d6b506ed8b71e54dbce0f9ab":[4,0,7,38],
 "classMessage.html#afc5c954ad1784b8c550c42331df6dd2c":[4,0,7,56],
-"classMessage.html#aff42cb06470d65aa915523847fcff7e1":[4,0,7,45],
-"classansicolor__sink.html":[4,0,3],
-"classcarta_1_1AnimationObject.html":[3,0,0,2]
+"classMessage.html#aff42cb06470d65aa915523847fcff7e1":[4,0,7,45]
 };

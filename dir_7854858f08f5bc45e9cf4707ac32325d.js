@@ -19,6 +19,8 @@ var dir_7854858f08f5bc45e9cf4707ac32325d =
     [ "FileLoader.h", "FileLoader_8h.html", "FileLoader_8h" ],
     [ "FitsLoader.cc", "FitsLoader_8cc.html", null ],
     [ "FitsLoader.h", "FitsLoader_8h.html", "FitsLoader_8h" ],
+    [ "FitsUtil.cc", "FitsUtil_8cc.html", "FitsUtil_8cc" ],
+    [ "FitsUtil.h", "FitsUtil_8h.html", "FitsUtil_8h" ],
     [ "Hdf5Attributes.cc", "Hdf5Attributes_8cc.html", null ],
     [ "Hdf5Attributes.h", "Hdf5Attributes_8h.html", "Hdf5Attributes_8h" ],
     [ "Hdf5Loader.cc", "Hdf5Loader_8cc.html", null ],

@@ -50,7 +50,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" target="_top" xlink:title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression.">
+<g id="a_Node000003"><a xlink:href="FitsUtil_8cc.html#a460085220f0ce6d3fe661fba5877a796" target="_top" xlink:title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression.">
 <polygon fill="white" stroke="#666666" points="296,-19 154,-19 154,0 296,0 296,-19"/>
 <text text-anchor="middle" x="225" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">ParseHistoryBeamHeader</text>
 </a>

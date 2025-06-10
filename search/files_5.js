@@ -18,6 +18,8 @@ var searchData=
   ['fitshdulist_2eh_15',['FitsHduList.h',['../FitsHduList_8h.html',1,'']]],
   ['fitsloader_2ecc_16',['FitsLoader.cc',['../FitsLoader_8cc.html',1,'']]],
   ['fitsloader_2eh_17',['FitsLoader.h',['../FitsLoader_8h.html',1,'']]],
-  ['frame_2ecc_18',['Frame.cc',['../Frame_8cc.html',1,'']]],
-  ['frame_2eh_19',['Frame.h',['../Frame_8h.html',1,'']]]
+  ['fitsutil_2ecc_18',['FitsUtil.cc',['../FitsUtil_8cc.html',1,'']]],
+  ['fitsutil_2eh_19',['FitsUtil.h',['../FitsUtil_8h.html',1,'']]],
+  ['frame_2ecc_20',['Frame.cc',['../Frame_8cc.html',1,'']]],
+  ['frame_2eh_21',['Frame.h',['../Frame_8h.html',1,'']]]
 ];

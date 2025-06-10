@@ -48,7 +48,7 @@ var searchData=
   ['checkcancelanimationonfileclose_45',['CheckCancelAnimationOnFileClose',['../classcarta_1_1Session.html#a52f5c3d0a8e54f6e14f54d5b2b4d1915',1,'carta::Session']]],
   ['checkfilestatus_46',['CheckFileStatus',['../classcarta_1_1CartaFitsImage.html#ae9f5024c4841b03d1f8a2053457776ac',1,'carta::CartaFitsImage']]],
   ['checkfitsheaders_47',['CheckFitsHeaders',['../classcarta_1_1FitsHduList.html#a55f0f93cc0c2dd4811cc702559455856',1,'carta::FitsHduList']]],
-  ['checkfolderpaths_48',['checkfolderpaths',['../Casacore_8h.html#aa05a1fe4e2176aee249351f3e2544441',1,'CheckFolderPaths(std::string &amp;top_level_string, std::string &amp;starting_string):&#160;Casacore.h'],['../Casacore_8cc.html#ab60f76f2282c51336d32de6a0e54df6d',1,'CheckFolderPaths(string &amp;top_level_string, string &amp;starting_string):&#160;Casacore.cc']]],
+  ['checkfolderpaths_48',['checkfolderpaths',['../File_8h.html#aa05a1fe4e2176aee249351f3e2544441',1,'CheckFolderPaths(std::string &amp;top_level_string, std::string &amp;starting_string):&#160;File.cc'],['../File_8cc.html#aa05a1fe4e2176aee249351f3e2544441',1,'CheckFolderPaths(std::string &amp;top_level_string, std::string &amp;starting_string):&#160;File.cc']]],
   ['checklinearoffsets_49',['CheckLinearOffsets',['../classcarta_1_1LineBoxRegions.html#a67e4579a3ef3eb21ae3abd1db415725a',1,'carta::LineBoxRegions']]],
   ['checkpoints_50',['CheckPoints',['../classcarta_1_1Region.html#a444b707d8eb2cbaab7215ab75972de79',1,'carta::Region']]],
   ['checkstokes_51',['CheckStokes',['../classcarta_1_1Frame.html#a3872d048935ea5600bcabfff67fa7214',1,'carta::Frame']]],

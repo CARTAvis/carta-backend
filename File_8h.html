@@ -132,6 +132,12 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:aa05a1fe4e2176aee249351f3e2544441" id="r_aa05a1fe4e2176aee249351f3e2544441"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8h.html#aa05a1fe4e2176aee249351f3e2544441">CheckFolderPaths</a> (std::string &amp;top_level_string, std::string &amp;starting_string)</td></tr>
+<tr class="memdesc:aa05a1fe4e2176aee249351f3e2544441"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validates and resolves folder paths, ensuring the starting directory is within the top-level directory.  <br /></td></tr>
+<tr class="separator:aa05a1fe4e2176aee249351f3e2544441"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa743c537861c278f5c5620fa996f8153" id="r_aa743c537861c278f5c5620fa996f8153"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8h.html#aa743c537861c278f5c5620fa996f8153">IsSubdirectory</a> (std::string folder, std::string top_folder)</td></tr>
+<tr class="memdesc:aa743c537861c278f5c5620fa996f8153"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines whether a given folder is a subdirectory of a specified top-level folder.  <br /></td></tr>
+<tr class="separator:aa743c537861c278f5c5620fa996f8153"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60e903fd2ab0ea7b240f649d3d207339" id="r_a60e903fd2ab0ea7b240f649d3d207339"><td class="memItemLeft" align="right" valign="top">CARTA::FileType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="File_8h.html#a60e903fd2ab0ea7b240f649d3d207339">GuessImageType</a> (const std::string &amp;path_string, bool check_content)</td></tr>
 <tr class="memdesc:a60e903fd2ab0ea7b240f649d3d207339"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the image file type based on its content or extension.  <br /></td></tr>
 <tr class="separator:a60e903fd2ab0ea7b240f649d3d207339"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -260,6 +266,59 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="aa05a1fe4e2176aee249351f3e2544441" name="aa05a1fe4e2176aee249351f3e2544441"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa05a1fe4e2176aee249351f3e2544441">&#9670;&#160;</a></span>CheckFolderPaths()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool CheckFolderPaths </td>
+          <td>(</td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>top_level_string</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>starting_string</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Validates and resolves folder paths, ensuring the starting directory is within the top-level directory. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">top_level_string</td><td>Reference to the top-level directory path. It is updated to its resolved absolute path. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">starting_string</td><td>Reference to the starting directory path. It is updated to its resolved absolute path.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the paths are valid and the starting directory is within the top-level directory, otherwise <code>false</code>.</dd></dl>
+<p>This function checks and resolves the given top-level and starting directories. If default placeholder values ("base" or "root") are found, they are replaced accordingly. The function verifies that both directories exist and are accessible, and ensures that the starting directory is a valid subdirectory of the top-level directory.</p>
+<dl class="section note"><dt>Note</dt><dd>If <code>starting_string</code> is invalid, it is replaced with <code>top_level_string</code>. </dd>
+<dd>
+If <code>starting_string</code> is not a subdirectory of <code>top_level_string</code>, the function logs a critical error and returns <code>false</code>.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>If both <code>top_level_string</code> and <code>starting_string</code> are set to their default placeholders ("base" and "root"), the function logs a critical error and returns <code>false</code>. </dd></dl>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="File_8h_aa05a1fe4e2176aee249351f3e2544441_cgraph.svg" width="311" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="File_8h_aa05a1fe4e2176aee249351f3e2544441_icgraph.svg" width="251" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
 <a id="a7e6d57b61e0979a7171bb2e6519093f9" name="a7e6d57b61e0979a7171bb2e6519093f9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7e6d57b61e0979a7171bb2e6519093f9">&#9670;&#160;</a></span>GetMagicNumber()</h2>
 
@@ -608,6 +667,51 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="File_8h_ac3253b9c72cf4368b08803ef2a0102bb_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="aa743c537861c278f5c5620fa996f8153" name="aa743c537861c278f5c5620fa996f8153"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa743c537861c278f5c5620fa996f8153">&#9670;&#160;</a></span>IsSubdirectory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool IsSubdirectory </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>folder</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>top_folder</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Determines whether a given folder is a subdirectory of a specified top-level folder. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">folder</td><td>The folder path to check, represented as a string. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">top_folder</td><td>The top-level folder path to compare against, represented as a string.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if <code>folder</code> is a subdirectory of <code>top_folder</code> or the same directory, <code>false</code> otherwise.</dd></dl>
+<p>This function checks if <code>folder</code> is a subdirectory of <code>top_folder</code> by resolving both paths to their absolute, weakly canonical forms and then traversing up the directory hierarchy.</p>
+<dl class="section warning"><dt>Warning</dt><dd>If <code>top_folder</code> is empty, the function will always return <code>true</code>. </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="File_8h_aa743c537861c278f5c5620fa996f8153_icgraph.svg" width="414" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>

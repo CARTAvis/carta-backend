@@ -115,11 +115,6 @@ Include dependency graph for Casacore.cc:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a8bd36af5b1f82b7ccee35f089787ec99" id="r_a8bd36af5b1f82b7ccee35f089787ec99"><td class="memItemLeft" align="right" valign="top">const std::regex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99">GILDAS_REGEX</a> (&quot; *[a-zA-Z]+[ .]+\\&zwj;(T[a-zA-Z_]+[*.]*\\&zwj;) *&quot;)</td></tr>
 <tr class="separator:a8bd36af5b1f82b7ccee35f089787ec99"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab60f76f2282c51336d32de6a0e54df6d" id="r_ab60f76f2282c51336d32de6a0e54df6d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#ab60f76f2282c51336d32de6a0e54df6d">CheckFolderPaths</a> (string &amp;top_level_string, string &amp;starting_string)</td></tr>
-<tr class="separator:ab60f76f2282c51336d32de6a0e54df6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa743c537861c278f5c5620fa996f8153" id="r_aa743c537861c278f5c5620fa996f8153"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#aa743c537861c278f5c5620fa996f8153">IsSubdirectory</a> (std::string folder, std::string top_folder)</td></tr>
-<tr class="memdesc:aa743c537861c278f5c5620fa996f8153"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines whether a given folder is a subdirectory of a specified top-level folder.  <br /></td></tr>
-<tr class="separator:aa743c537861c278f5c5620fa996f8153"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad560f4fdd266b9e1503ae3f24a60aa52" id="r_ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52">GetResolvedFilename</a> (const std::string &amp;root_dir, const std::string &amp;directory, const std::string &amp;file, std::string &amp;message)</td></tr>
 <tr class="memdesc:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolves a file path based on a given root directory and relative subdirectory.  <br /></td></tr>
 <tr class="separator:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -137,54 +132,8 @@ Functions</h2></td></tr>
 <tr class="separator:a8733accb41db0f83703779c667ae852e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1417964e00800b515ec0913adaa1957" id="r_af1417964e00800b515ec0913adaa1957"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957">IsGildasUnit</a> (const casacore::String &amp;unit)</td></tr>
 <tr class="separator:af1417964e00800b515ec0913adaa1957"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a460085220f0ce6d3fe661fba5877a796" id="r_a460085220f0ce6d3fe661fba5877a796"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796">ParseHistoryBeamHeader</a> (std::string &amp;header, std::string &amp;bmaj, std::string &amp;bmin, std::string &amp;bpa)</td></tr>
-<tr class="memdesc:a460085220f0ce6d3fe661fba5877a796"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses an AIPS-style beam header to extract beam parameters with regular expression.  <br /></td></tr>
-<tr class="separator:a460085220f0ce6d3fe661fba5877a796"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="ab60f76f2282c51336d32de6a0e54df6d" name="ab60f76f2282c51336d32de6a0e54df6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab60f76f2282c51336d32de6a0e54df6d">&#9670;&#160;</a></span>CheckFolderPaths()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool CheckFolderPaths </td>
-          <td>(</td>
-          <td class="paramtype">string &amp;&#160;</td>
-          <td class="paramname"><em>top_level_string</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">string &amp;&#160;</td>
-          <td class="paramname"><em>starting_string</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>This function checks and resolves the given top-level and starting directories. If default placeholder values ("base" or "root") are found, they are replaced accordingly. The function verifies that both directories exist and are accessible, and ensures that the starting directory is a valid subdirectory of the top-level directory.</p>
-<dl class="section note"><dt>Note</dt><dd>If <code>starting_string</code> is invalid, it is replaced with <code>top_level_string</code>. </dd>
-<dd>
-If <code>starting_string</code> is not a subdirectory of <code>top_level_string</code>, the function logs a critical error and returns <code>false</code>.</dd></dl>
-<dl class="section warning"><dt>Warning</dt><dd>If both <code>top_level_string</code> and <code>starting_string</code> are set to their default placeholders ("base" and "root"), the function logs a critical error and returns <code>false</code>. </dd></dl>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_ab60f76f2282c51336d32de6a0e54df6d_cgraph.svg" width="311" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_ab60f76f2282c51336d32de6a0e54df6d_icgraph.svg" width="251" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-
-</div>
-</div>
 <a id="a1859ccacb65ced54041fd75f602c75c1" name="a1859ccacb65ced54041fd75f602c75c1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1859ccacb65ced54041fd75f602c75c1">&#9670;&#160;</a></span>FormatBeam()</h2>
 
@@ -399,43 +348,6 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aa743c537861c278f5c5620fa996f8153" name="aa743c537861c278f5c5620fa996f8153"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa743c537861c278f5c5620fa996f8153">&#9670;&#160;</a></span>IsSubdirectory()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool IsSubdirectory </td>
-          <td>(</td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>folder</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>top_folder</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Determines whether a given folder is a subdirectory of a specified top-level folder. </p>
-<p>This function checks if <code>folder</code> is a subdirectory of <code>top_folder</code> by resolving both paths to their absolute, weakly canonical forms and then traversing up the directory hierarchy.</p>
-<dl class="section warning"><dt>Warning</dt><dd>If <code>top_folder</code> is empty, the function will always return <code>true</code>. </dd></dl>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_aa743c537861c278f5c5620fa996f8153_icgraph.svg" width="414" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-
-</div>
-</div>
 <a id="a8733accb41db0f83703779c667ae852e" name="a8733accb41db0f83703779c667ae852e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8733accb41db0f83703779c667ae852e">&#9670;&#160;</a></span>NormalizeUnit()</h2>
 
@@ -471,56 +383,6 @@ Here is the call graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_a8733accb41db0f83703779c667ae852e_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
-</div>
-
-</div>
-</div>
-<a id="a460085220f0ce6d3fe661fba5877a796" name="a460085220f0ce6d3fe661fba5877a796"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a460085220f0ce6d3fe661fba5877a796">&#9670;&#160;</a></span>ParseHistoryBeamHeader()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool ParseHistoryBeamHeader </td>
-          <td>(</td>
-          <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>header</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>bmaj</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>bmin</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>bpa</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Parses an AIPS-style beam header to extract beam parameters with regular expression. </p>
-<p>This function uses regular expressions to extract the major axis (BMAJ), minor axis (BMIN), and position angle (BPA) from an AIPS-style history beam header string. It handles two common formats: one using "Beam =" notation and another using "BMAJ=", "BMIN=", and "BPA=" notation.</p>
-<dl class="section note"><dt>Note</dt><dd>Units are normalized to "deg" when "degrees" is found in the header.</dd></dl>
-<dl class="section warning"><dt>Warning</dt><dd>If the header format does not match expected patterns, the function logs a debug message and returns <code>false</code>. </dd></dl>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_a460085220f0ce6d3fe661fba5877a796_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>

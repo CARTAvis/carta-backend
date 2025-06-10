@@ -8,7 +8,7 @@
 <area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="137,107,197,127,195,132,136,112"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1FitsLoader.html#a1147e09123e26bb9bc28f57786541fef" title=" " alt="" coords="423,9,561,49"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="345,67,409,49,410,54,346,72"/>
-<area shape="rect" id="Node000004" href="$Casacore_8cc.html#a460085220f0ce6d3fe661fba5877a796" title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression." alt="" coords="397,77,587,102"/>
+<area shape="rect" id="Node000004" href="$FitsUtil_8cc.html#a460085220f0ce6d3fe661fba5877a796" title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression." alt="" coords="397,77,587,102"/>
 <area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="350,87,384,87,384,92,350,92"/>
 <area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="341,24,409,25,409,30,341,29"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1FitsLoader.html#aa7400a4ed627290250fa68427dbca5fb" title=" " alt="" coords="423,133,561,173"/>

@@ -7,6 +7,7 @@ var File_8h =
     [ "HDF5_MAGIC_NUMBER", "File_8h.html#a214733e92e196bdeb1c4596f295a408a", null ],
     [ "TEMP_FILE_ID", "File_8h.html#a7294d7c82c93e8825893a2529c82b06b", null ],
     [ "XML_MAGIC_NUMBER", "File_8h.html#ac38cbd82cae0510f16671b10bfaeee2a", null ],
+    [ "CheckFolderPaths", "File_8h.html#aa05a1fe4e2176aee249351f3e2544441", null ],
     [ "GetMagicNumber", "File_8h.html#a7e6d57b61e0979a7171bb2e6519093f9", null ],
     [ "GetNumItems", "File_8h.html#aa6f49a48edd9827968c16d1cc91e25f5", null ],
     [ "GuessImageType", "File_8h.html#a60e903fd2ab0ea7b240f649d3d207339", null ],
@@ -15,5 +16,6 @@ var File_8h =
     [ "IsCompressedFits", "File_8h.html#a75f8a4cb14c9fca8730255b6fee82794", null ],
     [ "IsGzMagicNumber", "File_8h.html#a0b28b83747dc07e95f4a0e1b5b4db83e", null ],
     [ "IsRemoteHttpFile", "File_8h.html#ac3253b9c72cf4368b08803ef2a0102bb", null ],
+    [ "IsSubdirectory", "File_8h.html#aa743c537861c278f5c5620fa996f8153", null ],
     [ "SearchPath", "File_8h.html#add15dd288b07460bb502c1b6fa632371", null ]
 ];
