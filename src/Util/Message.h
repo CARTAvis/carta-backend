@@ -153,9 +153,8 @@ public:
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
     static void AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count);
     static void AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
-    static void AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value, double numeric_value);
-    void RegionHandler::AddImportedRegion(int& region_id, const RegionProperties& imported_region, std::shared_ptr<Frame> frame,
-        std::unordered_map<int, CARTA::RegionInfo>* region_info_map, std::unordered_map<int, CARTA::RegionStyle>* region_style_map);
+    static void AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);
+    static CARTA::ImportRegionAck& AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

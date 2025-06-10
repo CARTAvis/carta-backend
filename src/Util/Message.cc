@@ -679,37 +679,27 @@ void Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string na
     entry->set_entry_type(CARTA::EntryType::STRING);
 }
 
-void Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value, double numeric_value) {
+void Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
     auto entry = response.add_computed_entries();
     entry->set_name(name);
     entry->set_value(value);
-    entry->set_entry_type(CARTA::EntryType::INT);
+    entry->set_entry_type(type);
     entry->set_numeric_value(numeric_value);
 }
 
-void RegionHandler::AddImportedRegion(int& region_id, const RegionProperties& imported_region, std::shared_ptr<Frame> frame,
-    std::unordered_map<int, CARTA::RegionInfo>* region_info_map, std::unordered_map<int, CARTA::RegionStyle>* region_style_map) {
-    auto region_state = imported_region.state;
-    auto region_style = imported_region.style;
+CARTA::ImportRegionAck& Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
+    auto region_info_map = import_ack.mutable_regions();
+    auto region_style_map = import_ack.mutable_region_styles();
 
-    auto region_csys = frame->CoordinateSystem();
-    auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
+    // Set CARTA::RegionInfo
+    CARTA::RegionInfo region_info;
+    region_info.set_region_type(region_type);
+    *region_info.mutable_control_points() = {control_points.begin(), control_points.end()};
+    region_info.set_rotation(region_rotation);
 
-    if (region && region->IsValid()) {
-        std::unique_lock<std::mutex> region_lock(_region_mutex);
-        _regions[region_id] = std::move(region);
-        region_lock.unlock();
-
-        // Set CARTA::RegionInfo
-        CARTA::RegionInfo region_info;
-        region_info.set_region_type(region_state.type);
-        *region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
-        region_info.set_rotation(region_state.rotation);
-
-        // Add info and style to import_ack; increment region id for next region
-        (*region_info_map)[region_id] = region_info;
-        (*region_style_map)[region_id++] = region_style;
-    }
+    // Add info and style to import_ack; increment region id for next region
+    (*region_info_map)[region_id] = region_info;
+    (*region_style_map)[region_id++] = region_style;
 }
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,

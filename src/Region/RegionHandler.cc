@@ -24,6 +24,7 @@
 #include "Timer/Timer.h"
 #include "Util/File.h"
 #include "Util/Image.h"
+#include "Util/Message.h"
 
 #define LINE_PROFILE_PROGRESS_INTERVAL 500
 
@@ -196,7 +197,19 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     auto region_info_map = import_ack.mutable_regions();
     auto region_style_map = import_ack.mutable_region_styles();
     for (auto& imported_region : region_list) {
-        AddImportedRegion(region_id, imported_region, frame, region_info_map, region_style_map);
+        auto region_state = imported_region.state;
+        auto region_style = imported_region.style;
+
+        auto region_csys = frame->CoordinateSystem();
+        auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
+
+        if (region && region->IsValid()) {
+            std::unique_lock<std::mutex> region_lock(_region_mutex);
+            _regions[region_id] = std::move(region);
+            region_lock.unlock();
+
+            Message::AddImportedRegion(import_ack, region_id, region_state.type, region_state.control_points, region_state.rotation, region_style);
+        }
     }
 }
 
