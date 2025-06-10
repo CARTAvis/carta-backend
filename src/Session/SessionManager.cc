@@ -78,6 +78,7 @@ void SessionManager::DeleteSession(uint32_t session_id) {
             Session* ss = ssp.second;
             spdlog::info("\tMap id {}, session id {}, session ptr {}", ssp.first, ss->GetId(), fmt::ptr(ss));
         }
+        _real_session_id.erase(session->GetId());
         delete session;
         _sessions.erase(session_id);
     } else {
@@ -130,7 +131,6 @@ void SessionManager::OnConnect(WSType* ws) {
     // create a Session
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
     _sessions[session_id] = new Session(ws, loop, session_id, address, _file_list_handler);
-
     _sessions[session_id]->IncreaseRefCount();
 
     spdlog::info("Session {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
@@ -277,7 +277,7 @@ bool SessionManager::SendScriptingRequest(int& session_id, uint32_t& scripting_r
     std::string& parameters, bool& async, std::string& return_path, ScriptingResponseCallback callback,
     ScriptingSessionClosedCallback session_closed_callback) {
     try {
-        auto session = _sessions.at(session_id);
+        auto session = _sessions.at(_real_session_id.at(session_id));
         auto message = Message::ScriptingRequest(scripting_request_id, target, action, parameters, async, return_path);
         session->SendScriptingRequest(message, callback, session_closed_callback);
         return true;
@@ -288,7 +288,7 @@ bool SessionManager::SendScriptingRequest(int& session_id, uint32_t& scripting_r
 
 void SessionManager::OnScriptingAbort(int session_id, uint32_t scripting_request_id) {
     try {
-        auto session = _sessions.at(session_id);
+        auto session = _sessions.at(_real_session_id.at(session_id));
         session->OnScriptingAbort(scripting_request_id);
     } catch (const std::out_of_range& e) {
         // Session is gone; nothing to do
@@ -313,7 +313,9 @@ std::string SessionManager::IPAsText(std::string_view binary) {
 
 void SessionManager::RegisterViewerHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
     CARTA::RegisterViewer message = Message::DecodeMessage<CARTA::RegisterViewer>(sv_message);
+    auto real_session_id = session->GetId();
     session->OnRegisterViewer(message, head.icd_version, head.request_id);
+    _real_session_id[session->GetId()] = real_session_id;
 }
 
 void SessionManager::ResumeSessionHandler(Session* session, std::string_view sv_message, const EventHeader& head) {

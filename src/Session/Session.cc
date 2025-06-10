@@ -2164,7 +2164,7 @@ void Session::SendLogEvent(const std::string& message, std::vector<std::string> 
 // *********************************************************************************
 // ANIMATION
 
-void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id) {
+bool Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id) {
     CARTA::AnimationFrame start_frame, first_frame, last_frame, delta_frame;
     int file_id;
     uint32_t frame_rate;
@@ -2194,7 +2194,9 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     } else {
         auto ack_message = Message::StartAnimationAck(false, _animation_id, "Incorrect file ID");
         SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
+        return false;
     }
+    return true;
 }
 
 void Session::ExecuteAnimationFrameInner(int animation_id) {

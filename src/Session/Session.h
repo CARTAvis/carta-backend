@@ -121,7 +121,7 @@ public:
     void CancelAnimation() {
         _animation_object->CancelExecution();
     }
-    void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
+    bool BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
     void ExecuteAnimationFrameInner(int animation_id);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
