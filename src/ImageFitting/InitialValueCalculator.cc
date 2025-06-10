@@ -25,7 +25,22 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     if (num_components == 1) {
         centroid_indexes = {0};
     } else {
-        centroid_indexes = KMeansPlusPlus(num_components, image_std * 4.0);
+        for (float i = 4.0; i >= 0.0; i -= 1.0) {
+            spdlog::debug("Generating centroids using KMeans++ with threshold of {} * MAD = {}", i, image_std * i);
+            centroid_indexes = KMeansPlusPlus(num_components, image_std * i);
+            if (centroid_indexes.size() == num_components) {
+                break;
+            }
+        }
+
+        if (centroid_indexes.size() == 0) {
+            spdlog::debug("Failed to generate centroids using KMeans++.");
+            return false;
+        }
+
+        if (centroid_indexes.size() < num_components) {
+            spdlog::debug("Generated {} centroids instead of {}.", centroid_indexes.size(), num_components);
+        }
     }
 
     std::vector<double> center_x_tmp(num_components, 0.0);
@@ -125,18 +140,33 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
     std::vector<int> centroid_indexes;
     centroid_indexes.reserve(num_components);
 
+    // Select the first centroid randomly, weighted by the the absolute values
+    // Initialize the first centroid index randomly
     float first_centroid_index = rand() % size;
-    // Generate a random number between 0 and the total sum of the weights
+
+    // Calculate the sum of the absolute values
     double sum = 0.0;
+    int sample_num = 0;
     for (size_t i = 0; i < size; ++i) {
         if (std::abs(_image[i]) < threshold) {
             continue;
         }
         sum += std::abs(_image[i]);
+        sample_num++;
     }
+
+    // Return empty vector if there are not enough data points
+    spdlog::debug("Total data points: {}", sample_num);
+    if (sample_num < num_components) {
+        spdlog::debug("Insufficient data points with the given threshold.");
+        return centroid_indexes;
+    }
+
+    // Generate a random number between 0 and the sum of the absolute values
     std::default_random_engine generator;
     std::uniform_real_distribution<double> distribution(0.0, sum);
     double random_value = distribution(generator);
+
     // Find the index where the random number falls in the cumulative distribution
     sum = 0.0;
     for (size_t i = 0; i < size; ++i) {
@@ -151,6 +181,8 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
     }
     centroid_indexes.push_back(first_centroid_index);
 
+    // Select the next centroid randomly, weighted by the weighted potential
+    // Calculate the sum of the weighted potential
     float current_potential = 0.0;
     for (int i = 0; i < size; ++i) {
         if (std::abs(_image[i]) < threshold) {
@@ -162,15 +194,18 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
     }
 
     for (size_t k = 1; k < num_components; ++k) {
+        // Initialize the next centroid index randomly
         float next_centroid_index = rand() % size;
-        float min_potential = std::numeric_limits<float>::max();
 
+        // Try for a number of trials to find the next centroid index
+        float min_potential = std::numeric_limits<float>::max();
         for (size_t t = 0; t < trial_num; ++t) {
             int centroid_index_candidate = 0;
 
-            // Generate a random number between 0 and the weighted potential
+            // Generate a random number between 0 and the sum of the weighted potential
             std::uniform_real_distribution<float> distribution(0.0, current_potential);
             random_value = distribution(generator);
+
             // Find the index where the random number falls in the cumulative distribution
             float sum = 0.0;
             for (int i = 0; i < size; ++i) {
@@ -193,6 +228,7 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
                 }
             }
 
+            // Calculate the sum of the weighted potential
             float candidate_potential = 0.0;
             for (int i = 0; i < size; ++i) {
                 if (std::abs(_image[i]) < threshold) {
@@ -216,6 +252,7 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
                 candidate_potential += std::abs(_image[i]) * min_distance;
             }
 
+            // If the candidate potential is less than the minimum potential, update the next centroid index
             if (candidate_potential < min_potential) {
                 min_potential = candidate_potential;
                 next_centroid_index = centroid_index_candidate;
@@ -225,6 +262,10 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
         current_potential = min_potential;
         centroid_indexes.push_back(next_centroid_index);
     }
+
+    // Remove duplicate centroid indexes
+    std::sort(centroid_indexes.begin(), centroid_indexes.end());
+    centroid_indexes.erase(std::unique(centroid_indexes.begin(), centroid_indexes.end()), centroid_indexes.end());
 
     spdlog::debug("Generated {} centroids.", centroid_indexes.size());
     for (size_t i = 0; i < centroid_indexes.size(); ++i) {

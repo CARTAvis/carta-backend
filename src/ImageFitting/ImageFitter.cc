@@ -52,6 +52,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
 
     std::string initialValueLog = "";
     if (!success) {
+        spdlog::info("Generating initial values for fitting.");
         success = CalculateInitialValues(initial_values);
         if (success) {
             initialValueLog = InitialValueCalculator::GetLog(initial_values, _unit);
@@ -60,7 +61,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     }
 
     if (!success) {
-        fitting_response.set_message("error in setting initial values");
+        fitting_response.set_message("failed to set initial values");
         fitting_response.set_success(success);
 
         gsl_vector_free(_fit_values);
@@ -189,7 +190,7 @@ bool ImageFitter::SetInitialValues(
         _fit_errors = gsl_vector_alloc(p);
         for (size_t i = 0; i < p - 1; i++) {
             if (isnan(_fit_data.initial_values[i])) {
-                spdlog::info("Found invalid value in the provided initial values.");
+                spdlog::debug("Found invalid value in the provided initial values.");
                 return false;
             }
 
@@ -204,7 +205,7 @@ bool ImageFitter::SetInitialValues(
         size_t iter = 0;
         for (size_t i = 0; i < fixed_params.size(); i++) {
             if (isnan(_fit_data.initial_values[i])) {
-                spdlog::info("Found invalid value in the provided initial values.");
+                spdlog::debug("Found invalid value in the provided initial values.");
                 return false;
             }
 
