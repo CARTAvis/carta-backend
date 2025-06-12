@@ -6,8 +6,8 @@
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="172,108,244,98,245,103,173,113"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1HttpServer.html#a18e362a5de3bde7f163d2c0382a9b848" title=" " alt="" coords="220,133,437,173"/>
 <area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="173,130,207,134,206,140,172,135"/>
-<area shape="rect" id="Node000010" href="$classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" title=" " alt="" coords="258,197,399,237"/>
-<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="128,139,221,183,245,192,244,197,219,188,126,144"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" title=" " alt="" coords="258,197,399,237"/>
+<area shape="poly" id="edge13_Node000001_Node000012" title=" " alt="" coords="128,139,221,183,245,192,244,197,219,188,126,144"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1HttpServer.html#a3d73c3c23b0a75f2db9496c6a027d0e9" title=" " alt="" coords="502,5,643,45"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="408,23,488,23,488,28,408,28"/>
 <area shape="rect" id="Node000005" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="501,77,644,102"/>
@@ -16,6 +16,12 @@
 <area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="644,87,694,87,694,92,644,92"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="485,129,660,169"/>
 <area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="438,149,472,148,472,154,438,154"/>
-<area shape="rect" id="Node000009" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="494,193,651,233"/>
-<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="411,171,481,188,480,193,410,176"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="494,193,651,233"/>
+<area shape="poly" id="edge10_Node000007_Node000011" title=" " alt="" coords="411,171,481,188,480,193,410,176"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1Json.html#abcea36607c8f081e7d1619f2578ee005" title=" " alt="" coords="735,150,891,175"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="660,152,722,155,721,160,660,157"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1Json.html#a610b7e17d774c7deb762d25dbd3dc86c" title=" " alt="" coords="967,175,1117,201"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="892,169,953,176,953,181,892,174"/>
+<area shape="poly" id="edge12_Node000011_Node000009" title=" " alt="" coords="651,194,739,176,740,181,652,199"/>
+<area shape="poly" id="edge11_Node000011_Node000010" title=" " alt="" coords="651,206,953,190,953,195,652,212"/>
 </map>

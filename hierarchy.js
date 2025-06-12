@@ -36,6 +36,9 @@ var hierarchy =
       [ "carta::TilePool", "structcarta_1_1TilePool.html", null ]
     ] ],
     [ "carta::EnumClassHash", "structcarta_1_1EnumClassHash.html", null ],
+    [ "json_schema::error_handler", null, [
+      [ "carta::JsonCustomErrorHandler", "classcarta_1_1JsonCustomErrorHandler.html", null ]
+    ] ],
     [ "carta::EventHeader", "structcarta_1_1EventHeader.html", null ],
     [ "std::exception", null, [
       [ "std::runtime_error", null, [
@@ -79,6 +82,7 @@ var hierarchy =
       [ "carta::Image2DConvolver< casacore::Float >", "classcarta_1_1Image2DConvolver.html", null ],
       [ "carta::Image2DConvolver< T >", "classcarta_1_1Image2DConvolver.html", null ]
     ] ],
+    [ "carta::Json", "classcarta_1_1Json.html", null ],
     [ "carta::LineBoxRegions", "classcarta_1_1LineBoxRegions.html", null ],
     [ "carta::ListProgressReporter", "classcarta_1_1ListProgressReporter.html", null ],
     [ "carta::LoaderCache", "classcarta_1_1LoaderCache.html", null ],

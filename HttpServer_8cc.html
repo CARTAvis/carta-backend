@@ -108,6 +108,7 @@ $(document).ready(function(){initNavTree('HttpServer_8cc.html',''); initResizabl
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &quot;<a class="el" href="Logger_8h.html">Logger/Logger.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="MimeTypes_8h.html">MimeTypes.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Json_8h.html">Util/Json.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="String_8h.html">Util/String.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Token_8h.html">Util/Token.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
@@ -130,14 +131,8 @@ Typedefs</h2></td></tr>
 Variables</h2></td></tr>
 <tr class="memitem:a0adeabfb442db034ca83092b1a2ee1e4" id="r_a0adeabfb442db034ca83092b1a2ee1e4"><td class="memItemLeft" align="right" valign="top">const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a0adeabfb442db034ca83092b1a2ee1e4">carta::SUCCESS_STRING</a> = <a class="el" href="HttpServer_8cc.html#ab701e3ac61a85b337ec5c1abaad6742d">json</a>({{&quot;success&quot;, true}}).dump()</td></tr>
 <tr class="separator:a0adeabfb442db034ca83092b1a2ee1e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1507d2cefdaa01d5695e4fb962c01281" id="r_a1507d2cefdaa01d5695e4fb962c01281"><td class="memItemLeft" align="right" valign="top">const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a1507d2cefdaa01d5695e4fb962c01281">carta::LAYOUT</a> = &quot;layout&quot;</td></tr>
-<tr class="separator:a1507d2cefdaa01d5695e4fb962c01281"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a276b31a07a77cce605e901c674d66356" id="r_a276b31a07a77cce605e901c674d66356"><td class="memItemLeft" align="right" valign="top">const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a276b31a07a77cce605e901c674d66356">carta::SNIPPET</a> = &quot;snippet&quot;</td></tr>
-<tr class="separator:a276b31a07a77cce605e901c674d66356"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af9830509695cfe9bd0ed310dec7033be" id="r_af9830509695cfe9bd0ed310dec7033be"><td class="memItemLeft" align="right" valign="top">const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#af9830509695cfe9bd0ed310dec7033be">carta::WORKSPACE</a> = &quot;workspace&quot;</td></tr>
-<tr class="separator:af9830509695cfe9bd0ed310dec7033be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ae770367fed7f2b28315cd997b3dae1" id="r_a6ae770367fed7f2b28315cd997b3dae1"><td class="memItemLeft" align="right" valign="top">const std::unordered_map&lt; std::string, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a6ae770367fed7f2b28315cd997b3dae1">carta::SCHEMA_URLS</a></td></tr>
-<tr class="separator:a6ae770367fed7f2b28315cd997b3dae1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a894ff549c3828e8eb37d9ade86e176a8" id="r_a894ff549c3828e8eb37d9ade86e176a8"><td class="memItemLeft" align="right" valign="top">const std::unordered_set&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a894ff549c3828e8eb37d9ade86e176a8">carta::OBJECT_TYPES</a> = {&quot;layout&quot;, &quot;snippet&quot;, &quot;workspace&quot;}</td></tr>
+<tr class="separator:a894ff549c3828e8eb37d9ade86e176a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="ab701e3ac61a85b337ec5c1abaad6742d" name="ab701e3ac61a85b337ec5c1abaad6742d"></a>

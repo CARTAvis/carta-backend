@@ -10,7 +10,7 @@ var searchData=
   ['entries_7',['entries',['../classcarta_1_1DataColumn.html#a5e0508c0706809c23a0a458cddf61d85',1,'carta::DataColumn']]],
   ['enumclasshash_8',['EnumClassHash',['../structcarta_1_1EnumClassHash.html',1,'carta']]],
   ['equal_9',['Equal',['../structcarta_1_1Bounds.html#a77aab47e51cc436b8cf483baca525af7',1,'carta::Bounds']]],
-  ['error_10',['Error',['../classcarta_1_1WebBrowser.html#a7d1f41f018d2693505b6383ff9c8dad9',1,'carta::WebBrowser']]],
+  ['error_10',['error',['../classcarta_1_1JsonCustomErrorHandler.html#a69ce79e47ecf44a6f1434b19ab3e6a6c',1,'carta::JsonCustomErrorHandler::error()'],['../classcarta_1_1WebBrowser.html#a7d1f41f018d2693505b6383ff9c8dad9',1,'carta::WebBrowser::Error()']]],
   ['errordata_11',['ErrorData',['../classMessage.html#a99e84f303d54a46b1cf582bf343c7f29',1,'Message']]],
   ['errorhandler_12',['ErrorHandler',['../classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4',1,'carta::ImageFitter']]],
   ['event_5fthread_5fcount_13',['event_thread_count',['../structcarta_1_1ProgramSettings.html#a3772b83ba0121d6da52f12874a46d3c5',1,'carta::ProgramSettings']]],

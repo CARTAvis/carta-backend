@@ -57,6 +57,8 @@ var annotated_dup =
       [ "ImageFitter", "classcarta_1_1ImageFitter.html", "classcarta_1_1ImageFitter" ],
       [ "ImageMoments", "classcarta_1_1ImageMoments.html", "classcarta_1_1ImageMoments" ],
       [ "ImagePtrLoader", "classcarta_1_1ImagePtrLoader.html", "classcarta_1_1ImagePtrLoader" ],
+      [ "Json", "classcarta_1_1Json.html", "classcarta_1_1Json" ],
+      [ "JsonCustomErrorHandler", "classcarta_1_1JsonCustomErrorHandler.html", "classcarta_1_1JsonCustomErrorHandler" ],
       [ "LineBoxRegions", "classcarta_1_1LineBoxRegions.html", "classcarta_1_1LineBoxRegions" ],
       [ "ListProgressReporter", "classcarta_1_1ListProgressReporter.html", "classcarta_1_1ListProgressReporter" ],
       [ "LoaderCache", "classcarta_1_1LoaderCache.html", "classcarta_1_1LoaderCache" ],

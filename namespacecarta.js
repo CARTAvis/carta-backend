@@ -59,6 +59,8 @@ var namespacecarta =
     [ "ImageFitter", "classcarta_1_1ImageFitter.html", "classcarta_1_1ImageFitter" ],
     [ "ImageMoments", "classcarta_1_1ImageMoments.html", "classcarta_1_1ImageMoments" ],
     [ "ImagePtrLoader", "classcarta_1_1ImagePtrLoader.html", "classcarta_1_1ImagePtrLoader" ],
+    [ "Json", "classcarta_1_1Json.html", "classcarta_1_1Json" ],
+    [ "JsonCustomErrorHandler", "classcarta_1_1JsonCustomErrorHandler.html", "classcarta_1_1JsonCustomErrorHandler" ],
     [ "LineBoxRegions", "classcarta_1_1LineBoxRegions.html", "classcarta_1_1LineBoxRegions" ],
     [ "ListProgressReporter", "classcarta_1_1ListProgressReporter.html", "classcarta_1_1ListProgressReporter" ],
     [ "LoaderCache", "classcarta_1_1LoaderCache.html", "classcarta_1_1LoaderCache" ],
@@ -166,10 +168,7 @@ var namespacecarta =
     [ "TrimSpaces", "namespacecarta.html#a928af6c5078150f8c0cafc2a32a6b05c", null ],
     [ "FileTypeString", "namespacecarta.html#aa00c6e2a51560be72e87cad1c67f7d2a", null ],
     [ "ICD_VERSION", "namespacecarta.html#ab956cf731110ba23b135cca4982ce525", null ],
-    [ "LAYOUT", "namespacecarta.html#a1507d2cefdaa01d5695e4fb962c01281", null ],
     [ "MimeTypes", "namespacecarta.html#a55d0e4a09efee3dc6cb3aa79af60bbbb", null ],
-    [ "SCHEMA_URLS", "namespacecarta.html#a6ae770367fed7f2b28315cd997b3dae1", null ],
-    [ "SNIPPET", "namespacecarta.html#a276b31a07a77cce605e901c674d66356", null ],
-    [ "SUCCESS_STRING", "namespacecarta.html#a0adeabfb442db034ca83092b1a2ee1e4", null ],
-    [ "WORKSPACE", "namespacecarta.html#af9830509695cfe9bd0ed310dec7033be", null ]
+    [ "OBJECT_TYPES", "namespacecarta.html#a894ff549c3828e8eb37d9ade86e176a8", null ],
+    [ "SUCCESS_STRING", "namespacecarta.html#a0adeabfb442db034ca83092b1a2ee1e4", null ]
 ];

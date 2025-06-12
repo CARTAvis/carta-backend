@@ -4,18 +4,24 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="133,141,281,64,283,69,136,146"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1HttpServer.html#a8387ce0b6ef632f5287b9c6a9f90d338" title=" " alt="" coords="232,112,436,152"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="184,149,218,145,219,150,184,155"/>
-<area shape="rect" id="Node000007" href="$classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" title=" " alt="" coords="263,176,405,216"/>
-<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="184,173,250,182,249,187,184,179"/>
-<area shape="rect" id="Node000010" href="$classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" title=" " alt="" coords="263,240,405,280"/>
-<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="136,182,233,226,253,233,251,238,231,230,134,187"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" title=" " alt="" coords="263,176,405,216"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="184,173,250,182,249,187,184,179"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" title=" " alt="" coords="263,240,405,280"/>
+<area shape="poly" id="edge13_Node000001_Node000012" title=" " alt="" coords="136,182,233,226,253,233,251,238,231,230,134,187"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1HttpServer.html#a3d73c3c23b0a75f2db9496c6a027d0e9" title=" " alt="" coords="501,5,642,45"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="413,32,487,28,487,33,414,38"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="484,69,659,109"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="436,111,470,105,471,110,437,116"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="493,133,650,173"/>
-<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="436,139,480,142,479,148,436,144"/>
-<area shape="rect" id="Node000008" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="500,198,643,223"/>
-<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="405,198,486,203,486,208,405,203"/>
-<area shape="rect" id="Node000009" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title="Performs a constant&#45;time comparison of two strings." alt="" coords="707,198,917,223"/>
-<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="643,208,693,208,693,213,643,213"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="493,133,650,173"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="436,139,480,142,479,148,436,144"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Json.html#abcea36607c8f081e7d1619f2578ee005" title=" " alt="" coords="734,90,890,115"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="659,92,720,95,720,100,659,97"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Json.html#a610b7e17d774c7deb762d25dbd3dc86c" title=" " alt="" coords="965,115,1116,141"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="891,109,952,116,951,121,890,114"/>
+<area shape="poly" id="edge9_Node000008_Node000006" title=" " alt="" coords="650,134,737,116,738,121,651,139"/>
+<area shape="poly" id="edge8_Node000008_Node000007" title=" " alt="" coords="650,146,951,130,952,135,650,152"/>
+<area shape="rect" id="Node000010" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="500,198,643,223"/>
+<area shape="poly" id="edge11_Node000009_Node000010" title=" " alt="" coords="405,198,486,203,486,208,405,203"/>
+<area shape="rect" id="Node000011" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title="Performs a constant&#45;time comparison of two strings." alt="" coords="707,198,917,223"/>
+<area shape="poly" id="edge12_Node000010_Node000011" title=" " alt="" coords="643,208,693,208,693,213,643,213"/>
 </map>
