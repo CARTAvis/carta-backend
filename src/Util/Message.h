@@ -158,8 +158,8 @@ public:
         CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);
     static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
         std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
-    static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& spatial_profile, std::string coordinate, int start, int end,
-        casacore::Float* profile_data, size_t profile_size, int mip);
+    static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& response, std::string coordinate, int start, int end,
+    casacore::Float* profile_data, size_t profile_size, int mip);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

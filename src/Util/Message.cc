@@ -665,7 +665,7 @@ CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const strin
     return message;
 }
 
-CARTA::FileListResponse& Message::AddDirectory(
+CARTA::FileListResponse Message::AddDirectory(
     CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count) {
     auto* directory_info = response.add_subdirectories();
     directory_info->set_name(name);
@@ -674,7 +674,7 @@ CARTA::FileListResponse& Message::AddDirectory(
     return response;
 }
 
-CARTA::FileInfoExtended& Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
+CARTA::FileInfoExtended Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
     auto entry = response.add_computed_entries();
     entry->set_name(name);
     entry->set_value(value);
@@ -682,7 +682,7 @@ CARTA::FileInfoExtended& Message::AddComputedEntry(CARTA::FileInfoExtended& resp
     return response;
 }
 
-CARTA::FileInfoExtended& Message::AddComputedEntry(
+CARTA::FileInfoExtended Message::AddComputedEntry(
     CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
     auto entry = response.add_computed_entries();
     entry->set_name(name);
@@ -692,7 +692,7 @@ CARTA::FileInfoExtended& Message::AddComputedEntry(
     return response;
 }
 
-CARTA::ImportRegionAck& Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
+CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
     std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
     // Set CARTA::RegionInfo
     CARTA::RegionInfo region_info;
@@ -705,15 +705,15 @@ CARTA::ImportRegionAck& Message::AddImportedRegion(CARTA::ImportRegionAck& impor
     (*import_ack.mutable_region_styles())[region_id] = region_style;
 }
 
-CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& response, std::string coordinate, int start, int end,
+CARTA::SpatialProfileData Message::AddProfile(CARTA::SpatialProfileData& response, std::string coordinate, int start, int end,
     casacore::Float* profile_data, size_t profile_size, int mip) {
     // add SpatialProfile to message
     auto spatial_profile = response.add_profiles();
-    spatial_profile->set_coordinate(config.coordinate());
+    spatial_profile->set_coordinate(coordinate);
     // Should these be set to the rounded endpoints if the data is downsampled or decimated?
-    spatial_profile->set_start(requested_start);
-    spatial_profile->set_end(requested_end);
-    spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+    spatial_profile->set_start(start);
+    spatial_profile->set_end(end);
+    spatial_profile->set_raw_values_fp32(profile_data, profile_size);
     spatial_profile->set_mip(mip);
     return response;
 }
