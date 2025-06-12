@@ -665,32 +665,35 @@ CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const strin
     return message;
 }
 
-void Message::AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count) {
+CARTA::FileListResponse& Message::AddDirectory(
+    CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count) {
     auto* directory_info = response.add_subdirectories();
     directory_info->set_name(name);
     directory_info->set_date(date);
     directory_info->set_item_count(item_count);
+    return response;
 }
 
-void Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
+CARTA::FileInfoExtended& Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
     auto entry = response.add_computed_entries();
     entry->set_name(name);
     entry->set_value(value);
     entry->set_entry_type(CARTA::EntryType::STRING);
+    return response;
 }
 
-void Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
+CARTA::FileInfoExtended& Message::AddComputedEntry(
+    CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
     auto entry = response.add_computed_entries();
     entry->set_name(name);
     entry->set_value(value);
     entry->set_entry_type(type);
     entry->set_numeric_value(numeric_value);
+    return response;
 }
 
-CARTA::ImportRegionAck& Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
-    auto region_info_map = import_ack.mutable_regions();
-    auto region_style_map = import_ack.mutable_region_styles();
-
+CARTA::ImportRegionAck& Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
+    std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
     // Set CARTA::RegionInfo
     CARTA::RegionInfo region_info;
     region_info.set_region_type(region_type);
@@ -698,8 +701,21 @@ CARTA::ImportRegionAck& Message::AddImportedRegion(CARTA::ImportRegionAck& impor
     region_info.set_rotation(region_rotation);
 
     // Add info and style to import_ack; increment region id for next region
-    (*region_info_map)[region_id] = region_info;
-    (*region_style_map)[region_id++] = region_style;
+    (*import_ack.mutable_regions())[region_id] = region_info;
+    (*import_ack.mutable_region_styles())[region_id] = region_style;
+}
+
+CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& response, std::string coordinate, int start, int end,
+    casacore::Float* profile_data, size_t profile_size, int mip) {
+    // add SpatialProfile to message
+    auto spatial_profile = response.add_profiles();
+    spatial_profile->set_coordinate(config.coordinate());
+    // Should these be set to the rounded endpoints if the data is downsampled or decimated?
+    spatial_profile->set_start(requested_start);
+    spatial_profile->set_end(requested_end);
+    spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+    spatial_profile->set_mip(mip);
+    return response;
 }
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,

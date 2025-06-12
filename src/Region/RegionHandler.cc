@@ -194,8 +194,6 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     import_ack.set_success(true);
     import_ack.set_message(error);
     int region_id = GetNextRegionId();
-    auto region_info_map = import_ack.mutable_regions();
-    auto region_style_map = import_ack.mutable_region_styles();
     for (auto& imported_region : region_list) {
         auto region_state = imported_region.state;
         auto region_style = imported_region.style;
@@ -208,7 +206,10 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             _regions[region_id] = std::move(region);
             region_lock.unlock();
 
-            Message::AddImportedRegion(import_ack, region_id, region_state.type, region_state.control_points, region_state.rotation, region_style);
+            Message::AddImportedRegion(
+                import_ack, region_id, region_state.type, region_state.control_points, region_state.rotation, region_style);
+            
+            region_id++;
         }
     }
 }

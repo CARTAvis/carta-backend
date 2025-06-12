@@ -773,11 +773,13 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 
     if (axes.spectral >= 0) {
         // header entry for number of channels
-        Message::AddComputedEntry(extended_info, "Number of channels", std::to_string(dims.num_channels), CARTA::EntryType::INT, dims.num_channels);
+        Message::AddComputedEntry(
+            extended_info, "Number of channels", std::to_string(dims.num_channels), CARTA::EntryType::INT, dims.num_channels);
     }
     if (axes.stokes >= 0) {
         // header entry for number of stokes
-        Message::AddComputedEntry(extended_info, "Number of polarizations", std::to_string(dims.num_stokes), CARTA::EntryType::INT, dims.num_stokes);
+        Message::AddComputedEntry(
+            extended_info, "Number of polarizations", std::to_string(dims.num_stokes), CARTA::EntryType::INT, dims.num_stokes);
     }
 }
 

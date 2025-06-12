@@ -151,10 +151,15 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
-    static void AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count);
-    static void AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
-    static void AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);
-    static CARTA::ImportRegionAck& AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
+    static CARTA::FileListResponse AddDirectory(
+        CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count);
+    static CARTA::FileInfoExtended AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
+    static CARTA::FileInfoExtended AddComputedEntry(
+        CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);
+    static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
+        std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
+    static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& spatial_profile, std::string coordinate, int start, int end,
+        casacore::Float* profile_data, size_t profile_size, int mip);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
