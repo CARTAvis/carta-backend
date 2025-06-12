@@ -208,7 +208,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 
             Message::AddImportedRegion(
                 import_ack, region_id, region_state.type, region_state.control_points, region_state.rotation, region_style);
-            
+
             region_id++;
         }
     }
