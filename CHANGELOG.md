@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix removing single beam defined in BEAMS table not in headers ([#1432](https://github.com/CARTAvis/carta-backend/issues/1432)).
 * Fix crash when animator is started while PV preview is active ([#1441](https://github.com/CARTAvis/carta-backend/issues/1441)).
 
+### Changed
+* Bumped uSockets to the latest version while modifying how the uSockets and uWebSockets dependencies are fetched ([#1411](https://github.com/CARTAvis/carta-backend/issues/1411)).
+
 ## [5.0.0-beta.1]
 
 ### Added
