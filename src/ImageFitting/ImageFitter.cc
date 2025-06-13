@@ -50,12 +50,12 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     CalculateNanNumAndStd();
     success = SetInitialValues(initial_values, background_offset, fixed_params);
 
-    std::string initialValueLog = "";
+    std::string initial_value_log = "";
     if (!success) {
         spdlog::info("Generating initial values for fitting.");
         success = CalculateInitialValues(initial_values);
         if (success) {
-            initialValueLog = InitialValueCalculator::GetLog(initial_values, _unit);
+            initial_value_log = InitialValueCalculator::GetLog(initial_values, _unit);
 
             if (initial_values.size() < fixed_params.size()) {
                 std::vector<bool> generated_fixed_params(initial_values.size() * 6 + 1, false);
@@ -131,7 +131,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
             fitting_response.set_offset_value(background_offset);
             fitting_response.set_offset_error(background_offset_error);
 
-            fitting_response.set_log(initialValueLog + GetLog());
+            fitting_response.set_log(initial_value_log + GetLog());
         }
     }
     fitting_response.set_success(success);
