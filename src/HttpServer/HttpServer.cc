@@ -13,6 +13,7 @@
 
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
+#include "Util/Json.h"
 #include "Util/String.h"
 #include "Util/Token.h"
 
@@ -25,12 +26,7 @@ using json = nlohmann::json;
 namespace carta {
 
 const std::string SUCCESS_STRING = json({{"success", true}}).dump();
-const std::string LAYOUT = "layout";
-const std::string SNIPPET = "snippet";
-const std::string WORKSPACE = "workspace";
-
-const std::unordered_map<std::string, std::string> SCHEMA_URLS = {
-    {LAYOUT, CARTA_LAYOUT_SCHEMA_URL}, {SNIPPET, CARTA_SNIPPET_SCHEMA_URL}, {WORKSPACE, CARTA_WORKSPACE_SCHEMA_URL}};
+const std::unordered_set<std::string> OBJECT_TYPES = {"layout", "snippet", "workspace"};
 
 uint32_t HttpServer::_scripting_request_id = 0;
 
@@ -73,18 +69,21 @@ void HttpServer::RegisterRoutes() {
         app.put(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleSetPreferences(res, req); });
         app.del(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleClearPreferences(res, req); });
 
-        for (const auto& elem : SCHEMA_URLS) {
-            const auto& object_type = elem.first;
-            app.get(fmt::format("{}/api/database/list/{}s", _url_prefix, object_type),
-                [&](auto res, auto req) { HandleGetObjectList(object_type, res, req); });
-            app.get(fmt::format("{}/api/database/{}s", _url_prefix, object_type),
-                [&](auto res, auto req) { HandleGetObjects(object_type, res, req); });
-            app.get(fmt::format("{}/api/database/{}/:name", _url_prefix, object_type),
-                [&](auto res, auto req) { HandleGetObject(object_type, res, req); });
+        for (const auto& object_type : OBJECT_TYPES) {
             app.put(fmt::format("{}/api/database/{}", _url_prefix, object_type),
                 [&](auto res, auto req) { HandleSetObject(object_type, res, req); });
             app.del(fmt::format("{}/api/database/{}", _url_prefix, object_type),
                 [&](auto res, auto req) { HandleClearObject(object_type, res, req); });
+
+            if (object_type == "workspace") {
+                app.get(fmt::format("{}/api/database/list/{}s", _url_prefix, object_type),
+                    [&](auto res, auto req) { HandleGetObjectList(object_type, res, req); });
+                app.get(fmt::format("{}/api/database/{}/:name", _url_prefix, object_type),
+                    [&](auto res, auto req) { HandleGetObject(object_type, res, req); });
+            } else {
+                app.get(fmt::format("{}/api/database/{}s", _url_prefix, object_type),
+                    [&](auto res, auto req) { HandleGetObjects(object_type, res, req); });
+            }
         }
     } else {
         app.get(fmt::format("{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
@@ -226,33 +225,48 @@ void HttpServer::AddCorsHeaders(Res* res) {
 
 json HttpServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
+    json obj = {};
+
+    if (!fs::exists(preferences_path)) {
+        return {{"version", 1}};
+    }
+
+    std::ifstream file(preferences_path.string());
+    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
     try {
-        if (!fs::exists(preferences_path)) {
-            return {{"version", 1}};
-        }
-        std::ifstream file(preferences_path.string());
-        std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        return json::parse(json_string);
+        obj = json::parse(json_string);
     } catch (json::parse_error e) {
         spdlog::warn(e.what());
         return {};
     }
+
+    bool valid(true);
+    auto error_callback = [&](const json::json_pointer& pointer, const json& instance, const std::string& message) {
+        spdlog::debug("Error validating preferences at {} with value {}: {}", pointer.to_string(), instance.dump(), message);
+        valid = false;
+    };
+
+    JsonCustomErrorHandler error_handler(error_callback);
+    Json::Validator("preferences").validate(obj, error_handler);
+
+    if (!valid) {
+        spdlog::warn("Returning invalid preferences.");
+    }
+
+    return obj;
 }
 
 bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
-    if (_read_only_mode) {
-        spdlog::warn("Writing preferences file is not allowed in read-only mode");
-        return false;
-    }
-
     auto preferences_path = _config_folder / "preferences.json";
 
     try {
         fs::create_directories(preferences_path.parent_path().string());
         std::ofstream file(preferences_path.string());
         // Ensure correct schema and version values are written
-        obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
+        obj["$schema"] = Json::Schema("preferences")["$id"];
         obj["version"] = 2;
+        Json::Validator("preferences").validate(obj);
         auto json_string = obj.dump(4);
         file << json_string;
         return true;
@@ -300,6 +314,11 @@ void HttpServer::HandleGetPreferences(Res* res, Req* req) {
 }
 
 std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing preferences file is not allowed in read-only mode");
+        return HTTP_400;
+    }
+
     try {
         json update_data = json::parse(buffer);
         json existing_data = GetExistingPreferences();
@@ -312,11 +331,11 @@ std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buff
         }
 
         if (modified_key_count) {
-            spdlog::debug("Updated {} preferences", modified_key_count);
             if (WritePreferencesFile(existing_data)) {
+                spdlog::debug("Updated {} preferences", modified_key_count);
                 return HTTP_200;
             } else {
-                return HTTP_500;
+                return HTTP_400;
             }
         } else {
             return HTTP_200;
@@ -348,6 +367,11 @@ void HttpServer::HandleSetPreferences(Res* res, Req* req) {
 }
 
 std::string_view HttpServer::ClearPreferencesFromString(const std::string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing preferences file is not allowed in read-only mode");
+        return HTTP_400;
+    }
+
     try {
         json post_data = json::parse(buffer);
         auto keys_array = post_data["keys"];
@@ -365,9 +389,11 @@ std::string_view HttpServer::ClearPreferencesFromString(const std::string& buffe
                     }
                 }
                 if (modified_key_count) {
-                    spdlog::debug("Cleared {} preferences", modified_key_count);
                     if (WritePreferencesFile(existing_data)) {
+                        spdlog::debug("Cleared {} preferences", modified_key_count);
                         return HTTP_200;
+                    } else {
+                        return HTTP_400;
                     }
                 } else {
                     return HTTP_200;
@@ -444,7 +470,7 @@ void HttpServer::HandleGetObject(const std::string& object_type, Res* res, Req* 
     }
     auto object_name_string = SafeStringUnescape(std::string(object_name));
     json existing_object = GetExistingObject(object_type, object_name_string);
-    if (existing_object == nullptr) {
+    if (existing_object.empty()) {
         res->writeStatus(HTTP_404)->end();
         return;
     }
@@ -507,9 +533,9 @@ nlohmann::json HttpServer::GetExistingObjectList(const std::string& object_type)
         for (auto& p : fs::directory_iterator(object_folder)) {
             try {
                 std::string filename = p.path().filename().string();
-                std::regex object_regex(R"(^(.+)\.json$)");
+                std::regex object_regex(R"((.+)\.json)");
                 std::smatch sm;
-                if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+                if (fs::is_regular_file(p, error_code) && regex_match(filename, sm, object_regex)) {
                     std::string object_name = sm[1];
                     // Get modified date and fill JSON object
                     struct stat file_stats;
@@ -532,22 +558,44 @@ nlohmann::json HttpServer::GetExistingObjectList(const std::string& object_type)
     return list;
 }
 
-nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, const std::string& object_name) {
-    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
-    std::error_code error_code;
+nlohmann::json HttpServer::GetObjectFromPath(const fs::path& path, const std::string& object_type) {
+    json obj = {};
+    std::ifstream file(path);
+    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
     try {
-        std::string filename = object_path.filename().string();
-        if (fs::is_regular_file(object_path, error_code)) {
-            std::ifstream file(object_path);
-            std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-            json obj = json::parse(json_string);
-            return obj;
-        }
+        obj = json::parse(json_string);
     } catch (json::exception e) {
         spdlog::warn(e.what());
+        return obj;
     }
-    return nullptr;
+
+    bool valid(true);
+    auto error_callback = [&](const json::json_pointer& pointer, const json& instance, const std::string& message) {
+        spdlog::debug("Error validating {} at {} with value {}: {}", object_type, pointer.to_string(), instance.dump(), message);
+        valid = false;
+    };
+
+    JsonCustomErrorHandler error_handler(error_callback);
+    Json::Validator(object_type).validate(obj, error_handler);
+
+    if (!valid) {
+        spdlog::warn("Returning invalid {}.", object_type);
+    }
+
+    return obj;
+}
+
+nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, const std::string& object_name) {
+    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
+    json obj = {};
+    std::error_code error_code;
+
+    if (fs::is_regular_file(object_path, error_code)) {
+        obj = GetObjectFromPath(object_path, object_type);
+    }
+
+    return obj;
 }
 
 nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
@@ -557,19 +605,15 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
 
     if (fs::exists(object_folder, error_code)) {
         for (auto& p : fs::directory_iterator(object_folder)) {
-            try {
-                std::string filename = p.path().filename().string();
-                std::regex object_regex(R"(^(.+)\.json$)");
-                std::smatch sm;
-                if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+            std::string filename = p.path().filename().string();
+            std::regex object_regex(R"((.+)\.json)");
+            std::smatch sm;
+            if (fs::is_regular_file(p, error_code) && regex_match(filename, sm, object_regex)) {
+                auto obj = GetObjectFromPath(p.path(), object_type);
+                if (!obj.empty()) {
                     std::string object_name = sm[1];
-                    std::ifstream file(p.path().string());
-                    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-                    json obj = json::parse(json_string);
                     objects[object_name] = obj;
                 }
-            } catch (json::exception e) {
-                spdlog::warn(e.what());
             }
         }
     }
@@ -577,23 +621,20 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
 }
 
 bool HttpServer::WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj) {
-    if (_read_only_mode) {
-        spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
-        return false;
-    }
-
     auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
 
     try {
         fs::create_directories(object_path.parent_path());
         std::ofstream file(object_path.string());
         // Ensure correct schema value is written
-        if (SCHEMA_URLS.count(object_type)) {
-            obj["$schema"] = SCHEMA_URLS.at(object_type);
+        if (OBJECT_TYPES.count(object_type)) {
+            obj["$schema"] = Json::Schema(object_type)["$id"];
         } else {
             spdlog::error("Unknown object types: {}.", object_type);
             return false;
         }
+
+        Json::Validator(object_type).validate(obj);
 
         auto json_string = obj.dump(4);
         file << json_string;
@@ -608,6 +649,11 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
 }
 
 std::string_view HttpServer::SetObjectFromString(const std::string& object_type, const std::string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
+        return HTTP_400;
+    }
+
     try {
         std::string field_name = object_type + "Name";
         json post_data = json::parse(buffer);
