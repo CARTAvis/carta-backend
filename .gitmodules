@@ -36,3 +36,11 @@
 	path = third-party/nlohmann_json
 	url = https://github.com/nlohmann/json
 	shallow = true
+[submodule "third-party/uWebSockets"]
+	path = third-party/uWebSockets
+	url = https://github.com/uNetworking/uWebSockets.git
+	shallow = true
+[submodule "third-party/uSockets"]
+	path = third-party/uSockets
+	url = https://github.com/uNetworking/uSockets.git
+	shallow = true
