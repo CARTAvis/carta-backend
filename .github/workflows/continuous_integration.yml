@@ -39,6 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+            submodules: recursive
 
       - name: Fix ownership
         run: |
@@ -53,7 +55,7 @@ jobs:
       - name: Build backend
         shell: bash
         run: |
-          git submodule update --init --recursive
+          cmake --version
           mkdir build && cd build
           cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
                    -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer --coverage' \
@@ -138,6 +140,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+            submodules: recursive
 
       - name: System information
         shell: bash
@@ -148,7 +152,7 @@ jobs:
       - name: Build backend  
         shell: bash
         run: |
-          git submodule update --init --recursive
+          cmake --version
           mkdir build && cd build
           cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
                    -DDevSuppressExternalWarnings=ON \
@@ -191,6 +195,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+            submodules: recursive
 
       - name: Fix ownership
         run: |
@@ -205,7 +211,7 @@ jobs:
       - name: Build backend
         shell: bash
         run: |
-          git submodule update --init --recursive
+          cmake --version
           mkdir build && cd build
           cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
                    -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
