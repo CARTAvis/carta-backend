@@ -10,12 +10,12 @@
 
 using namespace carta;
 
-InitialValueCalculator::InitialValueCalculator(float* image, size_t width, size_t height, size_t offset_x, size_t offset_y) {
-    _image = image;
-    _width = width;
-    _height = height;
-    _offset_x = offset_x;
-    _offset_y = offset_y;
+InitialValueCalculator::InitialValueCalculator(FitData* fit_data) {
+    _image = fit_data->data;
+    _width = fit_data->width;
+    _height = fit_data->n / fit_data->width;
+    _offset_x = fit_data->offset_x;
+    _offset_y = fit_data->offset_y;
 }
 
 bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, float image_std) {

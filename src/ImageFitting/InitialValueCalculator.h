@@ -12,6 +12,7 @@
 
 #include <carta-protobuf/fitting_request.pb.h>
 
+#include "ImageFitting/Util.h"
 #include "Logger/Logger.h"
 #include "Util/Message.h"
 
@@ -22,13 +23,9 @@ class InitialValueCalculator {
 public:
     /**
      * @brief Constructor for the InitialValueCalculator class.
-     * @param image Pointer to the image data
-     * @param width The width of the image
-     * @param height The height of the image
-     * @param offset_x X-axis offset from the fitting region to the entire image
-     * @param offset_y Y-axis offset from the fitting region to the entire image
+     * @param fit_data Fitting-related data
      */
-    InitialValueCalculator(float* image, size_t width, size_t height, size_t offset_x, size_t offset_y);
+    InitialValueCalculator(FitData* fit_data);
     /**
      * @brief Calculate initial values from the provided image data.
      * @param initial_values Vector to store the resulting initial values
