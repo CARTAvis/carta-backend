@@ -65,26 +65,23 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
     }
 
     // Calculate PI and PA using stokes data I, Q or U
-    if (_calculate_pi) {
-        std::vector<float> pi;
-        pi.resize(width * height);
-
+    std::vector<float> pi;
+    if (_calculate_pi || _threshold_option == CARTA::PolarizationType::Plinear) {
         // Lambda function to calculate PI, errors are applied
         CalcPi calc_pi(_q_error, _u_error);
-
+        pi.resize(width * height);
         std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pi.begin(), calc_pi);
         if (_fractional) { // Calculate fractional PI
             CalcFpi calc_fpi;
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), calc_fpi);
         }
 
-        // Set NAN for PI/FPI if stokes or pa is NAN or below the threshold
+        // Set NAN for PI/FPI if stokes I or Plinear (pi) is NAN or below the threshold
         if (stokes_flag["I"] && _threshold_option == CARTA::PolarizationType::I) {
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), threshold_cut);
         } else {
             std::for_each(pi.begin(), pi.end(), threshold_cut);
         }
-
         FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
     }
 
@@ -94,11 +91,11 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
         CalcPa calc_pa;
         std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), calc_pa);
 
-        // Set NAN for PA if stokes or pa is NAN or below the threshold
+        // Set NAN for PA if stokes I or Plinear (pi) is NAN or below the threshold
         if (stokes_flag["I"] && _threshold_option == CARTA::PolarizationType::I) {
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
         } else {
-            std::for_each(pa.begin(), pa.end(), threshold_cut);
+            std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
         }
         FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
     }
