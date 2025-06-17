@@ -27,7 +27,7 @@ struct FitData {
     size_t offset_y;
     /** @brief Indexes of the Gaussian parameters in the fittig parameters. */
     std::vector<int> fit_values_indexes;
-    /** @brief Initial fitting parameters. */
+    /** @brief Initial values of the unfixed parameters. */
     std::vector<double> initial_values;
     /** @brief Whether to stop the fitting process. */
     bool stop_fitting;

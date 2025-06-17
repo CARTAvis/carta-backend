@@ -50,7 +50,7 @@ public:
      * @param image Pointer to the image data
      * @param beam_size Beam size of the image
      * @param unit Unit of the image
-     * @param initial_values Initial fitting parameters
+     * @param initial_values Initial values of the fixed and unfixed Gaussian parameters
      * @param fixed_params Whether the fitting parameters are fixed
      * @param background_offset Background offset of the image
      * @param solver The type of solver to use.
