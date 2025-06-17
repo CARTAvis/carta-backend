@@ -11,6 +11,7 @@
 
 #include "CartaFitsImage.h"
 #include "CompressedFits.h"
+#include "FitsUtil.h"
 #include "Util/Casacore.h"
 #include "Util/FileSystem.h"
 

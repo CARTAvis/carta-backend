@@ -6,6 +6,7 @@
 
 #include "String.h"
 
+#include <spdlog/spdlog.h>
 #include <iomanip>
 #include <regex>
 #include <sstream>
