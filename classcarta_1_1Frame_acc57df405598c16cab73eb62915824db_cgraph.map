@@ -1,7 +1,13 @@
 <map id="carta::Frame::GetRegionStats" name="carta::Frame::GetRegionStats">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,35,219,60"/>
-<area shape="rect" id="Node000002" href="$namespacecarta.html#a385968df288a71e88ec0fecc88dd07bf" title=" " alt="" coords="285,5,452,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,32,271,26,272,32,219,38"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ac7f0c67f2a09b79662fea052e406895b" title=" " alt="" coords="267,55,471,95"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="219,56,254,60,253,65,219,62"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,59,219,84"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#ad170096e224b353fb6640af99aa07cd2" title="Calculate statistics for an image or a region applied to an image." alt="" coords="285,29,452,55"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,56,271,50,272,56,219,62"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Frame.html#ac7f0c67f2a09b79662fea052e406895b" title=" " alt="" coords="267,79,471,119"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="219,80,254,84,253,89,219,86"/>
+<area shape="rect" id="Node000003" href="$namespacecarta.html#abb062a6fb38ecb29210058e4e4417b7b" title="Calculate flux density statistics for an image or a region applied to an image." alt="" coords="519,5,719,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="452,31,505,26,505,32,452,37"/>
+<area shape="rect" id="Node000005" href="$namespacecarta.html#ad8b192f665b49ae5cafe68ce415e9b30" title="Calculate statistics related to the image/region position." alt="" coords="533,55,704,80"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="452,48,520,55,519,60,452,53"/>
+<area shape="rect" id="Node000004" href="$namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8" title="Get the area of the beam in the given unit for an image or a region applied to an image." alt="" coords="767,5,921,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="719,15,753,15,753,21,719,21"/>
 </map>

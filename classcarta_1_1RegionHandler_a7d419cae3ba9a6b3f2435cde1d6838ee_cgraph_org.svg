@@ -59,7 +59,7 @@
 <!-- Node9 -->
 <g id="Node000009" class="node">
 <title>Node9</title>
-<g id="a_Node000009"><a xlink:href="namespacecarta.html#a96f7cab56516141317895bada342c0b1" target="_top" xlink:title=" ">
+<g id="a_Node000009"><a xlink:href="namespacecarta.html#a96f7cab56516141317895bada342c0b1" target="_top" xlink:title="Calculate basic stats from a float vector using BasicStatsCalculator.">
 <polygon fill="white" stroke="#666666" points="324.5,-431 205.5,-431 205.5,-412 324.5,-412 324.5,-431"/>
 <text text-anchor="middle" x="265" y="-419" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CalcBasicStats</text>
 </a>
@@ -77,7 +77,7 @@
 <!-- Node12 -->
 <g id="Node000012" class="node">
 <title>Node12</title>
-<g id="a_Node000012"><a xlink:href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" target="_top" xlink:title=" ">
+<g id="a_Node000012"><a xlink:href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" target="_top" xlink:title="Calculate a histogram from a float vector using Histogram.">
 <polygon fill="white" stroke="#666666" points="324.5,-394 205.5,-394 205.5,-375 324.5,-375 324.5,-394"/>
 <text text-anchor="middle" x="265" y="-382" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CalcHistogram</text>
 </a>

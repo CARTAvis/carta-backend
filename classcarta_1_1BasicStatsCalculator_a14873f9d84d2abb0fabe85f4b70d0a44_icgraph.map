@@ -1,6 +1,6 @@
 <map id="carta::BasicStatsCalculator::reduce" name="carta::BasicStatsCalculator::reduce">
 <area shape="rect" id="Node000001" title=" " alt="" coords="933,63,1131,103"/>
-<area shape="rect" id="Node000002" href="$namespacecarta.html#a96f7cab56516141317895bada342c0b1" title=" " alt="" coords="727,70,885,95"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a96f7cab56516141317895bada342c0b1" title="Calculate basic stats from a float vector using BasicStatsCalculator." alt="" coords="727,70,885,95"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="919,85,885,85,885,80,919,80"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a7d419cae3ba9a6b3f2435cde1d6838ee" title=" " alt="" coords="477,5,677,45"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="741,69,657,48,658,43,742,64"/>

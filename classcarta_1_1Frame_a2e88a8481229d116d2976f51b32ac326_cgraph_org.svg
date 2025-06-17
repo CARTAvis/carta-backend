@@ -56,7 +56,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" target="_top" xlink:title="Calculate a histogram from a float vector using Histogram.">
 <polygon fill="white" stroke="#666666" points="356,-263 237,-263 237,-244 356,-244 356,-263"/>
 <text text-anchor="middle" x="296.5" y="-251" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CalcHistogram</text>
 </a>

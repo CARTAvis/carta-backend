@@ -4,9 +4,9 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,253,177,202,212,174,249,148,290,128,292,132,252,153,215,178,180,206,126,257"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="550,142,709,182"/>
 <area shape="poly" id="edge19_Node000001_Node000007" title=" " alt="" coords="135,253,187,224,250,198,324,181,400,169,536,160,536,165,400,174,325,186,251,203,190,229,138,258"/>
-<area shape="rect" id="Node000009" href="$namespacecarta.html#a96f7cab56516141317895bada342c0b1" title=" " alt="" coords="287,214,446,239"/>
+<area shape="rect" id="Node000009" href="$namespacecarta.html#a96f7cab56516141317895bada342c0b1" title="Calculate basic stats from a float vector using BasicStatsCalculator." alt="" coords="287,214,446,239"/>
 <area shape="poly" id="edge12_Node000001_Node000009" title=" " alt="" coords="202,254,285,239,286,244,203,260"/>
-<area shape="rect" id="Node000012" href="$namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" title=" " alt="" coords="287,263,446,288"/>
+<area shape="rect" id="Node000012" href="$namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" title="Calculate a histogram from a float vector using Histogram." alt="" coords="287,263,446,288"/>
 <area shape="poly" id="edge15_Node000001_Node000012" title=" " alt="" coords="203,273,273,273,273,278,203,278"/>
 <area shape="rect" id="Node000014" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="287,312,447,338"/>
 <area shape="poly" id="edge17_Node000001_Node000014" title=" " alt="" coords="203,291,286,307,285,312,202,297"/>

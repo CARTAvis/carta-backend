@@ -101,10 +101,8 @@ $(document).ready(function(){initNavTree('StatsCalculator_8cc.html',''); initRes
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="StatsCalculator_8h.html">StatsCalculator.h</a>&quot;</code><br />
-<code>#include &lt;cmath&gt;</code><br />
-<code>#include &lt;limits&gt;</code><br />
 <code>#include &lt;casacore/casa/Arrays/ArrayMath.h&gt;</code><br />
-<code>#include &lt;casacore/images/Images/ImageStatistics.h&gt;</code><br />
+<code>#include &quot;<a class="el" href="Logger_8h.html">Logger/Logger.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for StatsCalculator.cc:</div>
 <div class="dyncontent">
@@ -119,11 +117,23 @@ Namespaces</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a96f7cab56516141317895bada342c0b1" id="r_a96f7cab56516141317895bada342c0b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a96f7cab56516141317895bada342c0b1">carta::CalcBasicStats</a> (<a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &amp;stats, const float *data, const size_t data_size)</td></tr>
+<tr class="memdesc:a96f7cab56516141317895bada342c0b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate basic stats from a float vector using <a class="el" href="classcarta_1_1BasicStatsCalculator.html">BasicStatsCalculator</a>.  <br /></td></tr>
 <tr class="separator:a96f7cab56516141317895bada342c0b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d967873206a1f0ff9062a2ecf29ae6b" id="r_a3d967873206a1f0ff9062a2ecf29ae6b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1Histogram.html">Histogram</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b">carta::CalcHistogram</a> (int num_bins, const <a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> &amp;bounds, const float *data, const size_t data_size)</td></tr>
+<tr class="memdesc:a3d967873206a1f0ff9062a2ecf29ae6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate a histogram from a float vector using <a class="el" href="classcarta_1_1Histogram.html">Histogram</a>.  <br /></td></tr>
 <tr class="separator:a3d967873206a1f0ff9062a2ecf29ae6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a385968df288a71e88ec0fecc88dd07bf" id="r_a385968df288a71e88ec0fecc88dd07bf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a385968df288a71e88ec0fecc88dd07bf">carta::CalcStatsValues</a> (std::map&lt; CARTA::StatsType, std::vector&lt; double &gt; &gt; &amp;stats_values, const std::vector&lt; CARTA::StatsType &gt; &amp;requested_stats, const casacore::ImageInterface&lt; float &gt; &amp;image, bool per_channel)</td></tr>
-<tr class="separator:a385968df288a71e88ec0fecc88dd07bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad170096e224b353fb6640af99aa07cd2" id="r_ad170096e224b353fb6640af99aa07cd2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ad170096e224b353fb6640af99aa07cd2">carta::CalcStatsValues</a> (std::map&lt; CARTA::StatsType, std::vector&lt; double &gt; &gt; &amp;stats_values, const std::vector&lt; CARTA::StatsType &gt; &amp;requested_stats, const casacore::ImageInterface&lt; float &gt; &amp;image, bool per_channel=true)</td></tr>
+<tr class="memdesc:ad170096e224b353fb6640af99aa07cd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate statistics for an image or a region applied to an image.  <br /></td></tr>
+<tr class="separator:ad170096e224b353fb6640af99aa07cd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8b192f665b49ae5cafe68ce415e9b30" id="r_ad8b192f665b49ae5cafe68ce415e9b30"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ad8b192f665b49ae5cafe68ce415e9b30">carta::GetPositionStats</a> (const casacore::ImageInterface&lt; float &gt; &amp;image, casacore::ImageStatistics&lt; float &gt; image_stats, CARTA::StatsType carta_stats_type, std::vector&lt; double &gt; &amp;dbl_result)</td></tr>
+<tr class="memdesc:ad8b192f665b49ae5cafe68ce415e9b30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate statistics related to the image/region position.  <br /></td></tr>
+<tr class="separator:ad8b192f665b49ae5cafe68ce415e9b30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb062a6fb38ecb29210058e4e4417b7b" id="r_abb062a6fb38ecb29210058e4e4417b7b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#abb062a6fb38ecb29210058e4e4417b7b">carta::ComputeFluxDensity</a> (const casacore::ImageInterface&lt; float &gt; &amp;image, casacore::ImageStatistics&lt; float &gt; image_stats, std::vector&lt; double &gt; &amp;result)</td></tr>
+<tr class="memdesc:abb062a6fb38ecb29210058e4e4417b7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate flux density statistics for an image or a region applied to an image.  <br /></td></tr>
+<tr class="separator:abb062a6fb38ecb29210058e4e4417b7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68704e5ff32840645f473a1f5fb801a8" id="r_a68704e5ff32840645f473a1f5fb801a8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8">carta::GetBeamArea</a> (const casacore::ImageInterface&lt; float &gt; &amp;image, const casacore::String unit, double &amp;beam_area)</td></tr>
+<tr class="memdesc:a68704e5ff32840645f473a1f5fb801a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the area of the beam in the given unit for an image or a region applied to an image.  <br /></td></tr>
+<tr class="separator:a68704e5ff32840645f473a1f5fb801a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

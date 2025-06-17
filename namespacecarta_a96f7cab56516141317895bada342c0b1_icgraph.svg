@@ -57,7 +57,7 @@ var sectionId = 'dynsection-9';
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title=" ">
+<g id="a_Node000001"><a xlink:title="Calculate basic stats from a float vector using BasicStatsCalculator.">
 <polygon fill="#999999" stroke="#666666" points="660,-67.5 541,-67.5 541,-48.5 660,-48.5 660,-67.5"/>
 <text text-anchor="middle" x="600.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CalcBasicStats</text>
 </a>

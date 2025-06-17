@@ -1,5 +1,5 @@
 <map id="carta::CalcBasicStats" name="carta::CalcBasicStats">
-<area shape="rect" id="Node000001" title=" " alt="" coords="727,70,885,95"/>
+<area shape="rect" id="Node000001" title="Calculate basic stats from a float vector using BasicStatsCalculator." alt="" coords="727,70,885,95"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a7d419cae3ba9a6b3f2435cde1d6838ee" title=" " alt="" coords="477,5,677,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="741,69,657,48,658,43,742,64"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a1bd6cad34fcc337311218150f6771850" title=" " alt="" coords="476,70,679,95"/>

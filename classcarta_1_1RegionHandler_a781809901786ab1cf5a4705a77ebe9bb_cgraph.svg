@@ -133,7 +133,7 @@ var sectionId = 'dynsection-22';
 <!-- Node10 -->
 <g id="Node000010" class="node">
 <title>Node10</title>
-<g id="a_Node000010"><a xlink:href="namespacecarta.html#a96f7cab56516141317895bada342c0b1" target="_top" xlink:title=" ">
+<g id="a_Node000010"><a xlink:href="namespacecarta.html#a96f7cab56516141317895bada342c0b1" target="_top" xlink:title="Calculate basic stats from a float vector using BasicStatsCalculator.">
 <polygon fill="white" stroke="#666666" points="511.5,-130 392.5,-130 392.5,-111 511.5,-111 511.5,-130"/>
 <text text-anchor="middle" x="452" y="-118" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CalcBasicStats</text>
 </a>
@@ -151,7 +151,7 @@ var sectionId = 'dynsection-22';
 <!-- Node13 -->
 <g id="Node000013" class="node">
 <title>Node13</title>
-<g id="a_Node000013"><a xlink:href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" target="_top" xlink:title=" ">
+<g id="a_Node000013"><a xlink:href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" target="_top" xlink:title="Calculate a histogram from a float vector using Histogram.">
 <polygon fill="white" stroke="#666666" points="511.5,-19 392.5,-19 392.5,0 511.5,0 511.5,-19"/>
 <text text-anchor="middle" x="452" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CalcHistogram</text>
 </a>

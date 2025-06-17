@@ -1,5 +1,5 @@
 <map id="carta::CalcHistogram" name="carta::CalcHistogram">
-<area shape="rect" id="Node000001" title=" " alt="" coords="536,70,695,95"/>
+<area shape="rect" id="Node000001" title="Calculate a histogram from a float vector using Histogram." alt="" coords="536,70,695,95"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326" title=" " alt="" coords="247,13,488,38"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="552,69,487,53,430,41,431,35,489,48,553,64"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a7d419cae3ba9a6b3f2435cde1d6838ee" title=" " alt="" coords="267,63,467,103"/>

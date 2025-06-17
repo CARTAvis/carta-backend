@@ -1,6 +1,6 @@
 <map id="carta::Bounds::Invalid" name="carta::Bounds::Invalid">
 <area shape="rect" id="Node000001" title=" " alt="" coords="743,70,905,95"/>
-<area shape="rect" id="Node000002" href="$namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" title=" " alt="" coords="536,70,695,95"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" title="Calculate a histogram from a float vector using Histogram." alt="" coords="536,70,695,95"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="729,85,695,85,695,80,729,80"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326" title=" " alt="" coords="247,13,488,38"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="552,69,487,53,430,41,431,35,489,48,553,64"/>

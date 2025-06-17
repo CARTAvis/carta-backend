@@ -429,11 +429,23 @@ Functions</h2></td></tr>
 <tr class="memitem:a6fd1aefcf08b3fb1c823b3d76943d365" id="r_a6fd1aefcf08b3fb1c823b3d76943d365"><td class="memItemLeft" align="right" valign="top">static std::unordered_map&lt; int, casacore::DataType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a6fd1aefcf08b3fb1c823b3d76943d365">bitpix_types</a> ({{8, casacore::DataType::TpChar}, {16, casacore::DataType::TpShort}, {32, casacore::DataType::TpInt}, {64, casacore::DataType::TpInt64}, {-32, casacore::DataType::TpFloat}, {-64, casacore::DataType::TpDouble}})</td></tr>
 <tr class="separator:a6fd1aefcf08b3fb1c823b3d76943d365"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96f7cab56516141317895bada342c0b1" id="r_a96f7cab56516141317895bada342c0b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a96f7cab56516141317895bada342c0b1">CalcBasicStats</a> (<a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &amp;stats, const float *data, const size_t data_size)</td></tr>
+<tr class="memdesc:a96f7cab56516141317895bada342c0b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate basic stats from a float vector using <a class="el" href="classcarta_1_1BasicStatsCalculator.html">BasicStatsCalculator</a>.  <br /></td></tr>
 <tr class="separator:a96f7cab56516141317895bada342c0b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d967873206a1f0ff9062a2ecf29ae6b" id="r_a3d967873206a1f0ff9062a2ecf29ae6b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1Histogram.html">Histogram</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b">CalcHistogram</a> (int num_bins, const <a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> &amp;bounds, const float *data, const size_t data_size)</td></tr>
+<tr class="memdesc:a3d967873206a1f0ff9062a2ecf29ae6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate a histogram from a float vector using <a class="el" href="classcarta_1_1Histogram.html">Histogram</a>.  <br /></td></tr>
 <tr class="separator:a3d967873206a1f0ff9062a2ecf29ae6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a385968df288a71e88ec0fecc88dd07bf" id="r_a385968df288a71e88ec0fecc88dd07bf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a385968df288a71e88ec0fecc88dd07bf">CalcStatsValues</a> (std::map&lt; CARTA::StatsType, std::vector&lt; double &gt; &gt; &amp;stats_values, const std::vector&lt; CARTA::StatsType &gt; &amp;requested_stats, const casacore::ImageInterface&lt; float &gt; &amp;image, bool per_channel)</td></tr>
-<tr class="separator:a385968df288a71e88ec0fecc88dd07bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad170096e224b353fb6640af99aa07cd2" id="r_ad170096e224b353fb6640af99aa07cd2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ad170096e224b353fb6640af99aa07cd2">CalcStatsValues</a> (std::map&lt; CARTA::StatsType, std::vector&lt; double &gt; &gt; &amp;stats_values, const std::vector&lt; CARTA::StatsType &gt; &amp;requested_stats, const casacore::ImageInterface&lt; float &gt; &amp;image, bool per_channel=true)</td></tr>
+<tr class="memdesc:ad170096e224b353fb6640af99aa07cd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate statistics for an image or a region applied to an image.  <br /></td></tr>
+<tr class="separator:ad170096e224b353fb6640af99aa07cd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8b192f665b49ae5cafe68ce415e9b30" id="r_ad8b192f665b49ae5cafe68ce415e9b30"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ad8b192f665b49ae5cafe68ce415e9b30">GetPositionStats</a> (const casacore::ImageInterface&lt; float &gt; &amp;image, casacore::ImageStatistics&lt; float &gt; image_stats, CARTA::StatsType carta_stats_type, std::vector&lt; double &gt; &amp;dbl_result)</td></tr>
+<tr class="memdesc:ad8b192f665b49ae5cafe68ce415e9b30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate statistics related to the image/region position.  <br /></td></tr>
+<tr class="separator:ad8b192f665b49ae5cafe68ce415e9b30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb062a6fb38ecb29210058e4e4417b7b" id="r_abb062a6fb38ecb29210058e4e4417b7b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#abb062a6fb38ecb29210058e4e4417b7b">ComputeFluxDensity</a> (const casacore::ImageInterface&lt; float &gt; &amp;image, casacore::ImageStatistics&lt; float &gt; image_stats, std::vector&lt; double &gt; &amp;result)</td></tr>
+<tr class="memdesc:abb062a6fb38ecb29210058e4e4417b7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate flux density statistics for an image or a region applied to an image.  <br /></td></tr>
+<tr class="separator:abb062a6fb38ecb29210058e4e4417b7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68704e5ff32840645f473a1f5fb801a8" id="r_a68704e5ff32840645f473a1f5fb801a8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8">GetBeamArea</a> (const casacore::ImageInterface&lt; float &gt; &amp;image, const casacore::String unit, double &amp;beam_area)</td></tr>
+<tr class="memdesc:a68704e5ff32840645f473a1f5fb801a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the area of the beam in the given unit for an image or a region applied to an image.  <br /></td></tr>
+<tr class="separator:a68704e5ff32840645f473a1f5fb801a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192" id="r_aa3581dda6f86c582d960a381773a4192"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aa3581dda6f86c582d960a381773a4192">applyOptionalArgument</a> (T &amp;val, const string &amp;argument_name, const cxxopts::ParseResult &amp;results)</td></tr>
 <tr class="separator:aa3581dda6f86c582d960a381773a4192"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -455,6 +467,9 @@ Variables</h2></td></tr>
 <tr class="separator:a894ff549c3828e8eb37d9ade86e176a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a55d0e4a09efee3dc6cb3aa79af60bbbb" id="r_a55d0e4a09efee3dc6cb3aa79af60bbbb"><td class="memItemLeft" align="right" valign="top">static const std::unordered_map&lt; std::string, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a55d0e4a09efee3dc6cb3aa79af60bbbb">MimeTypes</a></td></tr>
 <tr class="separator:a55d0e4a09efee3dc6cb3aa79af60bbbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a558a4b2833be3a1ee6039f6dcce54971" id="r_a558a4b2833be3a1ee6039f6dcce54971"><td class="memItemLeft" align="right" valign="top">static std::unordered_map&lt; CARTA::StatsType, casacore::LatticeStatsBase::StatisticsTypes &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a558a4b2833be3a1ee6039f6dcce54971">carta_stats_to_casacore</a></td></tr>
+<tr class="memdesc:a558a4b2833be3a1ee6039f6dcce54971"><td class="mdescLeft">&#160;</td><td class="mdescRight">Functions to calculate image and region statistics and histograms.  <br /></td></tr>
+<tr class="separator:a558a4b2833be3a1ee6039f6dcce54971"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab956cf731110ba23b135cca4982ce525" id="r_ab956cf731110ba23b135cca4982ce525"><td class="memItemLeft" align="right" valign="top">const uint16_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ab956cf731110ba23b135cca4982ce525">ICD_VERSION</a> = 30</td></tr>
 <tr class="separator:ab956cf731110ba23b135cca4982ce525"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -951,6 +966,16 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Calculate basic stats from a float vector using <a class="el" href="classcarta_1_1BasicStatsCalculator.html">BasicStatsCalculator</a>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">stats</td><td>The results returned in a <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a> struct </td></tr>
+    <tr><td class="paramname">data</td><td>The pointer to the float vector </td></tr>
+    <tr><td class="paramname">data_size</td><td>The size of the float vector </td></tr>
+  </table>
+  </dd>
+</dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -1001,6 +1026,18 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Calculate a histogram from a float vector using <a class="el" href="classcarta_1_1Histogram.html">Histogram</a>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">num_bins</td><td>The number of bins for the histogram </td></tr>
+    <tr><td class="paramname">bounds</td><td>The min and max for the histogram in a HistogramBounds struct </td></tr>
+    <tr><td class="paramname">data</td><td>The pointer to the float vector </td></tr>
+    <tr><td class="paramname">data_size</td><td>The size of the float vector </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The histogram </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -1014,8 +1051,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a385968df288a71e88ec0fecc88dd07bf" name="a385968df288a71e88ec0fecc88dd07bf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a385968df288a71e88ec0fecc88dd07bf">&#9670;&#160;</a></span>CalcStatsValues()</h2>
+<a id="ad170096e224b353fb6640af99aa07cd2" name="ad170096e224b353fb6640af99aa07cd2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad170096e224b353fb6640af99aa07cd2">&#9670;&#160;</a></span>CalcStatsValues()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1042,7 +1079,7 @@ Here is the caller graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>per_channel</em>&#160;</td>
+          <td class="paramname"><em>per_channel</em> = <code>true</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -1051,10 +1088,30 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Calculate statistics for an image or a region applied to an image. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">stats_values</td><td>Map to return results by StatsType </td></tr>
+    <tr><td class="paramname">requested_stats</td><td>Vector of statistics type to calculate </td></tr>
+    <tr><td class="paramname">image</td><td>The image or region applied to an image (casacore::SubImage) </td></tr>
+    <tr><td class="paramname">per_channel</td><td>Whether to calculate statistics per channel plane or single stats for the entire image </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Whether the calculation succeeded</dd></dl>
+<p>Some statistics are calculated using the functions below, while others use casacore::ImageStatistics. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="namespacecarta.html#ad8b192f665b49ae5cafe68ce415e9b30" title="Calculate statistics related to the image/region position.">GetPositionStats</a> </dd>
+<dd>
+<a class="el" href="namespacecarta.html#abb062a6fb38ecb29210058e4e4417b7b" title="Calculate flux density statistics for an image or a region applied to an image.">ComputeFluxDensity</a> </dd></dl>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_ad170096e224b353fb6640af99aa07cd2_cgraph.svg" width="628" height="86"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a385968df288a71e88ec0fecc88dd07bf_icgraph.svg" width="663" height="94"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_ad170096e224b353fb6640af99aa07cd2_icgraph.svg" width="663" height="94"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -1254,6 +1311,64 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="abb062a6fb38ecb29210058e4e4417b7b" name="abb062a6fb38ecb29210058e4e4417b7b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb062a6fb38ecb29210058e4e4417b7b">&#9670;&#160;</a></span>ComputeFluxDensity()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::ComputeFluxDensity </td>
+          <td>(</td>
+          <td class="paramtype">const casacore::ImageInterface&lt; float &gt; &amp;&#160;</td>
+          <td class="paramname"><em>image</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">casacore::ImageStatistics&lt; float &gt;&#160;</td>
+          <td class="paramname"><em>image_stats</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; double &gt; &amp;&#160;</td>
+          <td class="paramname"><em>result</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Calculate flux density statistics for an image or a region applied to an image. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>The image or region applied to an image (casacore::SubImage) </td></tr>
+    <tr><td class="paramname">image_stats</td><td>The casacore::ImageStatistics object for the image </td></tr>
+    <tr><td class="paramname">result</td><td>Double vector to return the flux density result </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Whether the calculation succeeded</dd></dl>
+<p>Flux density calculation fails when image unit is not compatible or when the unit is per beam but no beam is defined. ImageStatistics is used to retrieve the sum. GetBeamArea is called when the image unit is per beam. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="namespacecarta.html#ad170096e224b353fb6640af99aa07cd2" title="Calculate statistics for an image or a region applied to an image.">CalcStatsValues</a> </dd>
+<dd>
+<a class="el" href="namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8" title="Get the area of the beam in the given unit for an image or a region applied to an image.">GetBeamArea</a> </dd></dl>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_abb062a6fb38ecb29210058e4e4417b7b_cgraph.svg" width="414" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_abb062a6fb38ecb29210058e4e4417b7b_icgraph.svg" width="100%" height="370"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
 <a id="a749005ecb48d6c06c1214277a719ae7f" name="a749005ecb48d6c06c1214277a719ae7f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a749005ecb48d6c06c1214277a719ae7f">&#9670;&#160;</a></span>Decompress()</h2>
 
@@ -1401,6 +1516,57 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a68704e5ff32840645f473a1f5fb801a8" name="a68704e5ff32840645f473a1f5fb801a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a68704e5ff32840645f473a1f5fb801a8">&#9670;&#160;</a></span>GetBeamArea()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::GetBeamArea </td>
+          <td>(</td>
+          <td class="paramtype">const casacore::ImageInterface&lt; float &gt; &amp;&#160;</td>
+          <td class="paramname"><em>image</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const casacore::String&#160;</td>
+          <td class="paramname"><em>unit</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>beam_area</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the area of the beam in the given unit for an image or a region applied to an image. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>The image or region applied to an image (casacore::SubImage) </td></tr>
+    <tr><td class="paramname">unit</td><td>The unit to use for the area calculation, based on the image unit </td></tr>
+    <tr><td class="paramname">beam_area</td><td>The result of the calculation </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Whether the calculation succeeded</dd></dl>
+<p>The beam area calculation fails when the image has no beam. casacore::ImageInfo is used to get the area of the beam. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="namespacecarta.html#abb062a6fb38ecb29210058e4e4417b7b" title="Calculate flux density statistics for an image or a region applied to an image.">ComputeFluxDensity</a> </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a68704e5ff32840645f473a1f5fb801a8_icgraph.svg" width="100%" height="370"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
 <a id="a95828b5aa32c7a2363d7679a2cb91b77" name="a95828b5aa32c7a2363d7679a2cb91b77"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a95828b5aa32c7a2363d7679a2cb91b77">&#9670;&#160;</a></span>GetImageBounds()</h2>
 
@@ -1522,6 +1688,63 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad8b192f665b49ae5cafe68ce415e9b30" name="ad8b192f665b49ae5cafe68ce415e9b30"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8b192f665b49ae5cafe68ce415e9b30">&#9670;&#160;</a></span>GetPositionStats()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::GetPositionStats </td>
+          <td>(</td>
+          <td class="paramtype">const casacore::ImageInterface&lt; float &gt; &amp;&#160;</td>
+          <td class="paramname"><em>image</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">casacore::ImageStatistics&lt; float &gt;&#160;</td>
+          <td class="paramname"><em>image_stats</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::StatsType&#160;</td>
+          <td class="paramname"><em>carta_stats_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; double &gt; &amp;&#160;</td>
+          <td class="paramname"><em>dbl_result</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Calculate statistics related to the image/region position. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>The image or region applied to an image (casacore::SubImage) </td></tr>
+    <tr><td class="paramname">image_stats</td><td>The casacore::ImageStatistics object for the image </td></tr>
+    <tr><td class="paramname">carta_stats_type</td><td>The position statistics type to calculate </td></tr>
+    <tr><td class="paramname">dbl_result</td><td>Double vector to return the statistics result</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>The casacore::Slicer defining the image bounds is used to determine Blc and Trc. ImageStatistics is used to retrieve the minimum and maximum position. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="namespacecarta.html#ad170096e224b353fb6640af99aa07cd2" title="Calculate statistics for an image or a region applied to an image.">CalcStatsValues</a> </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_ad8b192f665b49ae5cafe68ce415e9b30_icgraph.svg" width="100%" height="370"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
 
 </div>
 </div>
@@ -2328,6 +2551,39 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Variable Documentation</h2>
+<a id="a558a4b2833be3a1ee6039f6dcce54971" name="a558a4b2833be3a1ee6039f6dcce54971"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a558a4b2833be3a1ee6039f6dcce54971">&#9670;&#160;</a></span>carta_stats_to_casacore</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unordered_map&lt;CARTA::StatsType, casacore::LatticeStatsBase::StatisticsTypes&gt; carta::carta_stats_to_casacore</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">{</div>
+<div class="line">    {CARTA::StatsType::Sum, casacore::LatticeStatsBase::SUM}, {CARTA::StatsType::Mean, casacore::LatticeStatsBase::MEAN},</div>
+<div class="line">    {CARTA::StatsType::RMS, casacore::LatticeStatsBase::RMS}, {CARTA::StatsType::Sigma, casacore::LatticeStatsBase::SIGMA},</div>
+<div class="line">    {CARTA::StatsType::SumSq, casacore::LatticeStatsBase::SUMSQ}, {CARTA::StatsType::Min, casacore::LatticeStatsBase::MIN},</div>
+<div class="line">    {CARTA::StatsType::Extrema, casacore::LatticeStatsBase::MIN}, {CARTA::StatsType::Max, casacore::LatticeStatsBase::MAX}}</div>
+</div><!-- fragment -->
+<p>Functions to calculate image and region statistics and histograms. </p>
+<p>These function are used to calculate basic statistics for histograms, per-channel image and region statistics for Z profiles, and per-plane image and region statistics. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="classcarta_1_1BasicStatsCalculator.html">BasicStatsCalculator</a> </dd>
+<dd>
+<a class="el" href="classcarta_1_1Histogram.html">Histogram</a></dd></dl>
+<p>This map is used to convert the <a class="el" href="namespaceCARTA.html">CARTA</a> StatsType enum to the casacore StatisticsTypes enum </p>
+
+</div>
+</div>
 <a id="aa00c6e2a51560be72e87cad1c67f7d2a" name="aa00c6e2a51560be72e87cad1c67f7d2a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa00c6e2a51560be72e87cad1c67f7d2a">&#9670;&#160;</a></span>FileTypeString</h2>
 
