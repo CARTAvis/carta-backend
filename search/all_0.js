@@ -356,7 +356,7 @@ var searchData=
   ['_5fsupport_5faips_5fbeam_353',['_support_aips_beam',['../classcarta_1_1CompressedFits.html#a1c188b0f9fe9c2ee3aa4b3c182266545',1,'carta::CompressedFits::_support_aips_beam'],['../classcarta_1_1FileLoader.html#a7c77a8bba60591339aeac6fc4a7f3327',1,'carta::FileLoader::_support_aips_beam']]],
   ['_5fsupportsmultipleregions_354',['_supportsMultipleRegions',['../classcarta_1_1Image2DConvolver.html#abf9e6aca57ea59784bc4ac4401fc2264',1,'carta::Image2DConvolver']]],
   ['_5fswizzled_5fimage_355',['_swizzled_image',['../classcarta_1_1Hdf5Loader.html#a060be76b21ef81e482f1bdf22b7c617e',1,'carta::Hdf5Loader']]],
-  ['_5fsync_5fid_356',['_sync_id',['../classcarta_1_1Session.html#ac4d32c51c4ae8714e4a050aa15c41449',1,'carta::Session']]],
+  ['_5fsync_5fid_356',['_sync_id',['../classcarta_1_1Session.html#afbf7efcf709aeb47a215aa63a1f92a71',1,'carta::Session']]],
   ['_5ft_5flast_357',['_t_last',['../classcarta_1_1AnimationObject.html#a909cd727a19499571f742185bd3a396e',1,'carta::AnimationObject']]],
   ['_5ft_5fstart_358',['_t_start',['../classcarta_1_1AnimationObject.html#a90c9520e3426e3c06ed48574a7f35495',1,'carta::AnimationObject::_t_start'],['../classcarta_1_1Timer.html#a6bd1978a731d3f335cd8974d0b5ead54',1,'carta::Timer::_t_start']]],
   ['_5ftable_359',['_table',['../classcarta_1_1TableView.html#a0dbde699288663702446670f6fc1aa33',1,'carta::TableView']]],
