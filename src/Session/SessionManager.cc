@@ -197,15 +197,11 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             return;
         }
 
-        auto start_time = std::chrono::high_resolution_clock::now();
         try {
             std::invoke(handler, this, session, sv_message, head);
         } catch (const message_parsing_exception& e) {
             spdlog::error("Error handling event {} in session {}: {}", event_type, session->GetId(), e.what());
         }
-        auto end_time = std::chrono::high_resolution_clock::now();
-        spdlog::info("Processed event {} in {} ms", event_type,
-            std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count());
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {
             auto t_session = session->GetLastMessageTimestamp();
