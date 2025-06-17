@@ -702,6 +702,8 @@ CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import
     // Add info and style to import_ack; increment region id for next region
     (*import_ack.mutable_regions())[region_id] = region_info;
     (*import_ack.mutable_region_styles())[region_id] = region_style;
+
+    return import_ack;
 }
 
 CARTA::SpatialProfileData Message::AddProfile(CARTA::SpatialProfileData& response, std::string coordinate, int start, int end,
