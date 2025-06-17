@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 project(carta_backend)
 
 include_directories(src)
@@ -175,6 +175,18 @@ include_directories(${CMAKE_SOURCE_DIR}/third-party/pugixml/src)
 #spdlog
 add_subdirectory(third-party/spdlog)
 
+# JSON schemas
+add_subdirectory(schemas)
+
+# nlohmann/json
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_Install OFF CACHE INTERNAL "")
+add_subdirectory(third-party/nlohmann_json)
+
+# json-schema-validator
+set(nlohmann_json_VERSION "v3.11.3")
+add_subdirectory(third-party/json-schema-validator)
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
@@ -187,6 +199,8 @@ set(LINK_LIBS
         cfitsio
         wcs
         gsl
+        nlohmann_json::nlohmann_json
+        nlohmann_json_schema_validator
         casa_casa
         casa_coordinates
         casa_tables
@@ -225,6 +239,7 @@ set(SOURCE_FILES
         src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc
         src/ImageData/FitsLoader.cc
+        src/ImageData/FitsUtil.cc
         src/ImageData/Hdf5Attributes.cc
         src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
@@ -262,6 +277,7 @@ set(SOURCE_FILES
         src/Util/App.cc
         src/Util/Casacore.cc
         src/Util/File.cc
+        src/Util/Json.cc
         src/Util/Message.cc
         src/Util/Stokes.cc
         src/Util/String.cc

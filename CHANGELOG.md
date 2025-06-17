@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix casacore reformatting GILDAS unit ([#1423](https://github.com/CARTAvis/carta-backend/issues/1423)).
 * Fix removing single beam defined in BEAMS table not in headers ([#1432](https://github.com/CARTAvis/carta-backend/issues/1432)).
 * Fix crash when animator is started while PV preview is active ([#1441](https://github.com/CARTAvis/carta-backend/issues/1441)).
+* Fix flux density computation for additional image units including MJy/sr ([#1343](https://github.com/CARTAvis/carta-backend/issues/1343)).
 * Fix occasional duplication of sync IDs in messages during image fitting ([#1466](https://github.com/CARTAvis/carta-backend/issues/1466)).
 
 ## [5.0.0-beta.1]
