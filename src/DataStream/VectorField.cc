@@ -66,7 +66,7 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
 
     // Calculate PI and PA using stokes data I, Q or U
     std::vector<float> pi;
-    if (_calculate_pi || _threshold_option == CARTA::PolarizationType::Plinear) {
+    if (_calculate_pi || (_calculate_pa && _threshold_option == CARTA::PolarizationType::Plinear)) {
         // Lambda function to calculate PI, errors are applied
         CalcPi calc_pi(_q_error, _u_error);
         pi.resize(width * height);
@@ -82,7 +82,11 @@ void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<floa
         } else {
             std::for_each(pi.begin(), pi.end(), threshold_cut);
         }
-        FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
+
+        if (_calculate_pi) {
+            FillTileData(
+                tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
+        }
     }
 
     if (_calculate_pa) {
