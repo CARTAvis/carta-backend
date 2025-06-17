@@ -33,7 +33,11 @@ public:
      * @return Whether the parameters are successfully generated
      */
     bool CalculateInitialValues();
-
+    /**
+     * @brief Create a log message describing the generated intial values.
+     * @param image_unit Unit of the image
+     * @return The log message
+     */
     std::string GetLog(std::string image_unit);
 
 private:
