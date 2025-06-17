@@ -10,24 +10,26 @@
 
 using namespace carta;
 
-InitialValueCalculator::InitialValueCalculator(FitData* fit_data)
+InitialValueCalculator::InitialValueCalculator(FitData* fit_data, std::vector<CARTA::GaussianComponent>& initial_values, float image_std)
     : _image(fit_data->data),
       _width(fit_data->width),
       _height(fit_data->n / fit_data->width),
       _offset_x(fit_data->offset_x),
-      _offset_y(fit_data->offset_y) {}
+      _offset_y(fit_data->offset_y),
+      _initial_values(initial_values),
+      _image_std(image_std) {}
 
-bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, float image_std) {
-    size_t request_num_components = initial_values.size();
-    initial_values.clear();
+bool InitialValueCalculator::CalculateInitialValues() {
+    size_t request_num_components = _initial_values.size();
+    _initial_values.clear();
 
     for (float i = 4.0; i >= 0.0; i -= 1.0) {
         std::vector<int> centroid_indexes;
         if (request_num_components == 1) {
             centroid_indexes = {0};
         } else {
-            spdlog::debug("Generating centroids using KMeans++ with threshold of {} * MAD = {}", i, image_std * i);
-            centroid_indexes = KMeansPlusPlus(request_num_components, image_std * i);
+            spdlog::debug("Generating centroids using KMeans++ with threshold of {} * MAD = {}", i, _image_std * i);
+            centroid_indexes = KMeansPlusPlus(request_num_components, _image_std * i);
         }
 
         if (centroid_indexes.size() < request_num_components && i > 0.0) {
@@ -50,7 +52,7 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
         std::vector<std::tuple<double, double, double, double, double, double>> estimated_components =
             MethodOfMoments(centroid_indexes, true, center_x_tmp, center_y_tmp, radius_tmp);
 
-        initial_values.clear();
+        _initial_values.clear();
         for (size_t i = 0; i < estimated_components.size(); ++i) {
             auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components[i];
 
@@ -76,22 +78,22 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
             auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
             auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
             auto component = Message::GaussianComponent(center, amp, fwhm, pa);
-            initial_values.push_back(component);
+            _initial_values.push_back(component);
         }
 
-        if (initial_values.size() == request_num_components) {
+        if (_initial_values.size() == request_num_components) {
             break;
         }
 
-        spdlog::debug("Generated initial values of {} component(s) instead of {}.", initial_values.size(), request_num_components);
+        spdlog::debug("Generated initial values of {} component(s) instead of {}.", _initial_values.size(), request_num_components);
     }
 
-    if (initial_values.empty()) {
+    if (_initial_values.empty()) {
         spdlog::debug("No valid initial values generated, setting default values.");
         auto center = Message::DoublePoint(_width / 2 + _offset_x, _height / 2 + _offset_y);
         auto fwhm = Message::DoublePoint(std::min(_width, _height) / 2, std::min(_width, _height) / 2);
         auto component = Message::GaussianComponent(center, 1.0, fwhm, 0.0);
-        initial_values.push_back(component);
+        _initial_values.push_back(component);
     }
 
     return true;
