@@ -53,7 +53,8 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     std::string initial_value_log = "";
     if (!success) {
         spdlog::info("Generating initial values for fitting.");
-        success = CalculateInitialValues(initial_values);
+        InitialValueCalculator* calculator = new InitialValueCalculator(&_fit_data, initial_values, _image_std);
+        success = calculator->CalculateInitialValues();
         if (success) {
             initial_value_log = InitialValueCalculator::GetLog(initial_values, _unit);
 
@@ -228,12 +229,6 @@ bool ImageFitter::SetInitialValues(
     _fdf.p = p;
 
     return true;
-}
-
-bool ImageFitter::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
-    InitialValueCalculator* calculator = new InitialValueCalculator(&_fit_data, initial_values, _image_std);
-    bool success = calculator->CalculateInitialValues();
-    return success;
 }
 
 int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {

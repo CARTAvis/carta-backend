@@ -131,12 +131,6 @@ private:
     bool SetInitialValues(
         const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params);
     /**
-     * @brief Calculate initial fitting parameters from the provided image data.
-     * @param initial_values Vector to store the resulting initial fitting parameters
-     * @return Whether the process is successful
-     */
-    bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values);
-    /**
      * @brief Main function for the multiple Gaussian image fitting.
      * @param solver The type of solver to use
      * @return The status of the fitting: zero for success or non-zero for error codes
