@@ -306,14 +306,14 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
     return centroid_indexes;
 }
 
-std::string InitialValueCalculator::GetLog(std::vector<CARTA::GaussianComponent>& initial_values, std::string image_unit) {
+std::string InitialValueCalculator::GetLog(std::string image_unit) {
     if (image_unit.empty()) {
         image_unit = "arbitrary";
     }
 
-    std::string log = fmt::format("Generated initial values of {} component(s)\n", initial_values.size());
-    for (size_t i = 0; i < initial_values.size(); i++) {
-        CARTA::GaussianComponent component = initial_values[i];
+    std::string log = fmt::format("Generated initial values of {} component(s)\n", _initial_values.size());
+    for (size_t i = 0; i < _initial_values.size(); i++) {
+        CARTA::GaussianComponent component = _initial_values[i];
         log += fmt::format("Component #{}:\n", i + 1);
 
         log += fmt::format("Center X        = {:6f} (px)\n", component.center().x());

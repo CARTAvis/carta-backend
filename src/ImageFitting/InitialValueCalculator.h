@@ -34,7 +34,7 @@ public:
      */
     bool CalculateInitialValues();
 
-    static std::string GetLog(std::vector<CARTA::GaussianComponent>& initial_values, std::string image_unit);
+    std::string GetLog(std::string image_unit);
 
 private:
     /** @brief Pointer to the image data. */
