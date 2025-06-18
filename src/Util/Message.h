@@ -118,11 +118,10 @@ public:
     static CARTA::SpectralProfileData SpectralProfileData(int32_t stokes, float progress, int32_t file_id = 0, int32_t region_id = 0,
         const std::string& coordinate = "", const std::vector<CARTA::StatsType>& required_stats = {},
         const std::map<CARTA::StatsType, std::vector<double>>& spectral_data = {});
-    static CARTA::SpatialProfileData SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value,
-        int32_t file_id = 0, int32_t region_id = 0, int32_t start = 0, int32_t end = 0,
-        const std::vector<float>& profile = std::vector<float>(0.0), const std::string& coordinate = "", int32_t mip = 0,
-        CARTA::ProfileAxisType axis_type = CARTA::ProfileAxisType::Offset, float crpix = 0.0f, float crval = 0.0f, float cdelt = 0.0f,
-        const std::string& unit = "");
+    static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
+        int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
+        CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit);
+    static CARTA::SpatialProfileData SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value);
     static CARTA::RasterTileSync RasterTileSync(
         int32_t file_id, int32_t channel, int32_t stokes, int32_t sync_id, int32_t animation_id, int32_t tile_count, bool end_sync);
     static CARTA::SetRegionAck SetRegionAck(int32_t region_id, bool success, std::string err_message);
@@ -160,6 +159,8 @@ public:
         std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
     static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& response, std::string coordinate, int start, int end,
         casacore::Float* profile_data, size_t profile_size, int mip);
+    static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& message, int32_t file_id, int32_t region_id, int32_t start,
+        std::vector<float>& profile, std::string& coordinate, int32_t mip, CARTA::ProfileAxisType axis_type, casacore::Quantity& increment);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
