@@ -53,10 +53,11 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     std::string initial_value_log = "";
     if (!success) {
         spdlog::info("Generating initial values for fitting.");
-        InitialValueCalculator* calculator = new InitialValueCalculator(&_fit_data, initial_values, _image_std);
-        success = calculator->CalculateInitialValues();
+        InitialValueCalculator* calculator = new InitialValueCalculator(&_fit_data, _image_std);
+        success = calculator->CalculateInitialValues(initial_values);
         if (success) {
-            initial_value_log = calculator->GetLog(_unit);
+            // ToDo: move into CalculateInitialValues
+            // initial_value_log = calculator->GetLog(_unit);
 
             if (initial_values.size() < fixed_params.size()) {
                 std::vector<bool> generated_fixed_params(initial_values.size() * 6 + 1, false);

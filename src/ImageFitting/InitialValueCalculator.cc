@@ -10,18 +10,17 @@
 
 using namespace carta;
 
-InitialValueCalculator::InitialValueCalculator(FitData* fit_data, std::vector<CARTA::GaussianComponent>& initial_values, float image_std)
+InitialValueCalculator::InitialValueCalculator(FitData* fit_data, float image_std)
     : _image(fit_data->data),
       _width(fit_data->width),
       _height(fit_data->n / fit_data->width),
       _offset_x(fit_data->offset_x),
       _offset_y(fit_data->offset_y),
-      _initial_values(initial_values),
       _image_std(image_std) {}
 
-bool InitialValueCalculator::CalculateInitialValues() {
-    size_t request_num_components = _initial_values.size();
-    _initial_values.clear();
+bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
+    size_t request_num_components = initial_values.size();
+    initial_values.clear();
 
     for (float i = 4.0; i >= 0.0; i -= 1.0) {
         std::vector<int> centroid_indexes;
@@ -52,7 +51,7 @@ bool InitialValueCalculator::CalculateInitialValues() {
         std::vector<std::tuple<double, double, double, double, double, double>> estimated_components =
             MethodOfMoments(centroid_indexes, true, center_x_tmp, center_y_tmp, radius_tmp);
 
-        _initial_values.clear();
+        initial_values.clear();
         for (size_t i = 0; i < estimated_components.size(); ++i) {
             auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components[i];
 
@@ -78,22 +77,22 @@ bool InitialValueCalculator::CalculateInitialValues() {
             auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
             auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
             auto component = Message::GaussianComponent(center, amp, fwhm, pa);
-            _initial_values.push_back(component);
+            initial_values.push_back(component);
         }
 
-        if (_initial_values.size() == request_num_components) {
+        if (initial_values.size() == request_num_components) {
             break;
         }
 
-        spdlog::debug("Generated initial values of {} component(s) instead of {}.", _initial_values.size(), request_num_components);
+        spdlog::debug("Generated initial values of {} component(s) instead of {}.", initial_values.size(), request_num_components);
     }
 
-    if (_initial_values.empty()) {
+    if (initial_values.empty()) {
         spdlog::debug("No valid initial values generated, setting default values.");
         auto center = Message::DoublePoint(_width / 2 + _offset_x, _height / 2 + _offset_y);
         auto fwhm = Message::DoublePoint(std::min(_width, _height) / 2, std::min(_width, _height) / 2);
         auto component = Message::GaussianComponent(center, 1.0, fwhm, 0.0);
-        _initial_values.push_back(component);
+        initial_values.push_back(component);
     }
 
     return true;
@@ -306,24 +305,24 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
     return centroid_indexes;
 }
 
-std::string InitialValueCalculator::GetLog(std::string image_unit) {
-    if (image_unit.empty()) {
-        image_unit = "arbitrary";
-    }
+// std::string InitialValueCalculator::GetLog(std::string image_unit) {
+//     if (image_unit.empty()) {
+//         image_unit = "arbitrary";
+//     }
 
-    std::string log = fmt::format("Generated initial values of {} component(s)\n", _initial_values.size());
-    for (size_t i = 0; i < _initial_values.size(); i++) {
-        CARTA::GaussianComponent component = _initial_values[i];
-        log += fmt::format("Component #{}:\n", i + 1);
+//     std::string log = fmt::format("Generated initial values of {} component(s)\n", initial_values.size());
+//     for (size_t i = 0; i < initial_values.size(); i++) {
+//         CARTA::GaussianComponent component = initial_values[i];
+//         log += fmt::format("Component #{}:\n", i + 1);
 
-        log += fmt::format("Center X        = {:6f} (px)\n", component.center().x());
-        log += fmt::format("Center Y        = {:6f} (px)\n", component.center().y());
-        log += fmt::format("Amplitude       = {:6f} ({})\n", component.amp(), image_unit);
-        log += fmt::format("FWHM Major Axis = {:6f} (px)\n", component.fwhm().x());
-        log += fmt::format("FWHM Minor Axis = {:6f} (px)\n", component.fwhm().y());
-        log += fmt::format("P.A.            = {:6f} (deg)\n", component.pa());
-        log += "\n";
-    }
+//         log += fmt::format("Center X        = {:6f} (px)\n", component.center().x());
+//         log += fmt::format("Center Y        = {:6f} (px)\n", component.center().y());
+//         log += fmt::format("Amplitude       = {:6f} ({})\n", component.amp(), image_unit);
+//         log += fmt::format("FWHM Major Axis = {:6f} (px)\n", component.fwhm().x());
+//         log += fmt::format("FWHM Minor Axis = {:6f} (px)\n", component.fwhm().y());
+//         log += fmt::format("P.A.            = {:6f} (deg)\n", component.pa());
+//         log += "\n";
+//     }
 
-    return log;
-}
+//     return log;
+// }

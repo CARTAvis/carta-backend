@@ -24,15 +24,15 @@ public:
     /**
      * @brief Constructor for the InitialValueCalculator class.
      * @param fit_data Fitting-related data
-     * @param initial_values Vector to store the resulting initial values
      * @param image_std Standard deviation of the image data
      */
-    InitialValueCalculator(FitData* fit_data, std::vector<CARTA::GaussianComponent>& initial_values, float image_std);
+    InitialValueCalculator(FitData* fit_data, float image_std);
     /**
      * @brief Calculate initial values from the provided image data.
+     * @param initial_values Vector to store the resulting initial values
      * @return Whether the parameters are successfully generated
      */
-    bool CalculateInitialValues();
+    bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values);
     /**
      * @brief Create a log message describing the generated intial values.
      * @param image_unit Unit of the image
@@ -51,8 +51,6 @@ private:
     size_t _offset_x;
     /** @brief Y-axis offset from the fitting region to the entire image. */
     size_t _offset_y;
-    /** @brief Initial values of the fixed and unfixed Gaussian parameters. */
-    std::vector<CARTA::GaussianComponent>& _initial_values;
     /** @brief Standard deviation of the image data. */
     double _image_std;
 
