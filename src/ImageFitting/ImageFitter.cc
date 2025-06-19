@@ -554,13 +554,6 @@ GaussianParams ImageFitter::GetGaussianParams(const gsl_vector* value_vector, si
     return params;
 }
 
-CARTA::GaussianComponent ImageFitter::GetGaussianComponent(GaussianParams params) {
-    auto center = Message::DoublePoint(params.center_x, params.center_y);
-    auto fwhm = Message::DoublePoint(params.fwhm_x, params.fwhm_y);
-    auto component = Message::GaussianComponent(center, params.amp, fwhm, params.pa);
-    return component;
-}
-
 double ImageFitter::GetMedianAbsDeviation(const size_t n, double x[]) {
     double* work = (double*)malloc(n * sizeof(double));
     double mad;
