@@ -33,6 +33,18 @@ struct FitData {
     bool stop_fitting;
 };
 
+struct GaussianParams {
+    double center_x;
+    double center_y;
+    double amp;
+    double fwhm_x;
+    double fwhm_y;
+    double pa;
+
+    GaussianParams(double center_x, double center_y, double amp, double fwhm_x, double fwhm_y, double pa)
+        : center_x(center_x), center_y(center_y), amp(amp), fwhm_x(fwhm_x), fwhm_y(fwhm_y), pa(pa) {}
+};
+
 } // namespace carta
 
 #endif // CARTA_SRC_IMAGEFITTING_UTIL_H_

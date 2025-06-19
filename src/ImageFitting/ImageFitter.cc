@@ -307,9 +307,11 @@ void ImageFitter::CalculateErrors() {
     }
 
     for (size_t i = 0; i < _num_components; i++) {
-        double center_x, center_y, amp, fwhm_x, fwhm_y, pa;
-        std::tie(center_x, center_y, amp, fwhm_x, fwhm_y, pa) =
-            GetGaussianParams(_fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, 0, 0);
+        GaussianParams params = GetGaussianParams(_fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, 0, 0);
+        double amp = params.amp;
+        double fwhm_x = params.fwhm_x;
+        double fwhm_y = params.fwhm_y;
+        double pa = params.pa;
         double center_x_err, center_y_err, amp_err, fwhm_x_err, fwhm_y_err, pa_err;
 
         if (_beam_size > 0) {
@@ -479,8 +481,13 @@ int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector*
             return GSL_SUCCESS;
         }
 
-        double center_x, center_y, amp, fwhm_x, fwhm_y, pa;
-        std::tie(center_x, center_y, amp, fwhm_x, fwhm_y, pa) = GetGaussianParams(fit_values, k, d->fit_values_indexes, d->initial_values);
+        GaussianParams params = GetGaussianParams(fit_values, k, d->fit_values_indexes, d->initial_values);
+        double center_x = params.center_x;
+        double center_y = params.center_y;
+        double amp = params.amp;
+        double fwhm_x = params.fwhm_x;
+        double fwhm_y = params.fwhm_y;
+        double pa = params.pa;
 
         const double dbl_sq_std_x = 2 * fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA;
         const double dbl_sq_std_y = 2 * fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA;
@@ -531,8 +538,8 @@ void ImageFitter::ErrorHandler(const char* reason, const char* file, int line, i
     spdlog::error("gsl error: {} line{}: {}", file, line, reason);
 }
 
-std::tuple<double, double, double, double, double, double> ImageFitter::GetGaussianParams(const gsl_vector* value_vector, size_t index,
-    std::vector<int>& fit_values_indexes, std::vector<double>& initial_values, size_t offset_x, size_t offset_y) {
+GaussianParams ImageFitter::GetGaussianParams(const gsl_vector* value_vector, size_t index, std::vector<int>& fit_values_indexes,
+    std::vector<double>& initial_values, size_t offset_x, size_t offset_y) {
     auto getParam = [&](int i) {
         int fit_values_index = fit_values_indexes[index + i];
         return fit_values_index < 0 ? initial_values[index + i] : gsl_vector_get(value_vector, fit_values_index);
@@ -543,15 +550,14 @@ std::tuple<double, double, double, double, double, double> ImageFitter::GetGauss
     double fwhm_x = getParam(3);
     double fwhm_y = getParam(4);
     double pa = getParam(5);
-    std::tuple<double, double, double, double, double, double> params = {center_x, center_y, amp, fwhm_x, fwhm_y, pa};
+    GaussianParams params(center_x, center_y, amp, fwhm_x, fwhm_y, pa);
     return params;
 }
 
-CARTA::GaussianComponent ImageFitter::GetGaussianComponent(std::tuple<double, double, double, double, double, double> params) {
-    auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = params;
-    auto center = Message::DoublePoint(center_x, center_y);
-    auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
-    auto component = Message::GaussianComponent(center, amp, fwhm, pa);
+CARTA::GaussianComponent ImageFitter::GetGaussianComponent(GaussianParams params) {
+    auto center = Message::DoublePoint(params.center_x, params.center_y);
+    auto fwhm = Message::DoublePoint(params.fwhm_x, params.fwhm_y);
+    auto component = Message::GaussianComponent(center, params.amp, fwhm, params.pa);
     return component;
 }
 

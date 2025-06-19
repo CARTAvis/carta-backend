@@ -203,19 +203,19 @@ private:
      * @param offset_y Y-axis offset from the fitting region to the entire image
      * @return A tuple of Gaussian parameters: center x, center y, amplitude, FWHM x, FWHM y, and position angle
      */
-    static std::tuple<double, double, double, double, double, double> GetGaussianParams(const gsl_vector* value_vector, size_t index,
-        std::vector<int>& fit_values_indexes, std::vector<double>& initial_values, size_t offset_x = 0, size_t offset_y = 0);
+    static GaussianParams GetGaussianParams(const gsl_vector* value_vector, size_t index, std::vector<int>& fit_values_indexes,
+        std::vector<double>& initial_values, size_t offset_x = 0, size_t offset_y = 0);
     /**
      * @brief Create a Gaussian component sub-message from Gaussian parameters.
      * @param params A tuple of Gaussian parameters: center x, center y, amplitude, FWHM x, FWHM y, and position angle
      * @return A Gaussian component sub-message
      */
-    static CARTA::GaussianComponent GetGaussianComponent(std::tuple<double, double, double, double, double, double> params);
+    static CARTA::GaussianComponent GetGaussianComponent(GaussianParams params);
     /**
      * @brief Calculate the Median Absolute Deviation (MAD) of an array of data.
-     * @param n The number of data points in the array.
-     * @param x An array containing the data points.
-     * @return The calculated MAD.
+     * @param n The number of data points in the array
+     * @param x An array containing the data points
+     * @return The calculated MAD
      */
     static double GetMedianAbsDeviation(const size_t n, double x[]);
 };
