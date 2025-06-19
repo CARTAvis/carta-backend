@@ -25,8 +25,9 @@ public:
      * @brief Constructor for the InitialValueCalculator class.
      * @param fit_data Fitting-related data
      * @param image_std Standard deviation of the image data
+     * @param image_unit Unit of the image
      */
-    InitialValueCalculator(FitData* fit_data, float image_std);
+    InitialValueCalculator(FitData* fit_data, float image_std, std::string image_unit);
     /**
      * @brief Calculate initial values from the provided image data.
      * @param initial_values Vector to store the resulting initial values
@@ -53,6 +54,8 @@ private:
     size_t _offset_y;
     /** @brief Standard deviation of the image data. */
     double _image_std;
+    /** @brief Unit of the image. */
+    std::string _image_unit;
 
     std::vector<std::tuple<double, double, double, double, double, double>> MethodOfMoments(std::vector<int> centroid_indexes = {0},
         bool apply_filter = false, std::vector<double> center_x = {}, std::vector<double> center_y = {}, std::vector<double> radius = {});
