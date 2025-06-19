@@ -364,7 +364,7 @@ void SessionManager::StartAnimationHandler(Session* session, std::string_view sv
 };
 
 void SessionManager::StopAnimationHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
-    CARTA::StopAnimation message = Message::DecodeMessage<CARTA::StartAnimation>(sv_message);
+    CARTA::StopAnimation message = Message::DecodeMessage<CARTA::StopAnimation>(sv_message);
     session->StopAnimation(message.file_id(), message.end_frame());
 };
 
