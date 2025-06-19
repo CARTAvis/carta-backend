@@ -79,10 +79,7 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
                 continue;
             }
 
-            auto center = Message::DoublePoint(center_x + _offset_x, center_y + _offset_y);
-            auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
-            auto component = Message::GaussianComponent(center, amp, fwhm, pa);
-            initial_values.push_back(component);
+            initial_values.push_back(GetGaussianComponent(params));
         }
 
         if (initial_values.size() == request_num_components) {
@@ -94,10 +91,10 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
 
     if (initial_values.empty()) {
         spdlog::debug("No valid initial values generated, setting default values.");
-        auto center = Message::DoublePoint(_width / 2 + _offset_x, _height / 2 + _offset_y);
-        auto fwhm = Message::DoublePoint(std::min(_width, _height) / 2, std::min(_width, _height) / 2);
-        auto component = Message::GaussianComponent(center, 1.0, fwhm, 0.0);
-        initial_values.push_back(component);
+        double center_x = _width / 2 + _offset_x;
+        double center_y = _height / 2 + _offset_y;
+        double fwhm = std::min(_width, _height) / 2;
+        initial_values.push_back(GetGaussianComponent(GaussianParams(center_x, center_y, 1.0, fwhm, fwhm, 0.0)));
     }
 
     log = GetLog(initial_values);
