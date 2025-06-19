@@ -52,8 +52,8 @@ private:
     /** @brief Unit of the image. */
     std::string _image_unit;
 
-    std::vector<std::tuple<double, double, double, double, double, double>> MethodOfMoments(std::vector<int> centroid_indexes = {0},
-        bool apply_filter = false, std::vector<double> center_x = {}, std::vector<double> center_y = {}, std::vector<double> radius = {});
+    std::vector<GaussianParams> MethodOfMoments(std::vector<int> centroid_indexes = {0}, bool apply_filter = false,
+        std::vector<double> center_x = {}, std::vector<double> center_y = {}, std::vector<double> radius = {});
     std::vector<int> KMeansPlusPlus(size_t num_components, float threshold);
     std::string GetLog(std::vector<CARTA::GaussianComponent>& initial_values);
 };

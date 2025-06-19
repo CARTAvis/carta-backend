@@ -38,23 +38,27 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
         }
 
         spdlog::debug("Generating initial values using method of moments for {} component(s).", centroid_indexes.size());
-        std::vector<std::tuple<double, double, double, double, double, double>> estimated_components_tmp =
-            MethodOfMoments(centroid_indexes);
+        std::vector<GaussianParams> estimated_components_tmp = MethodOfMoments(centroid_indexes);
         std::vector<double> center_x_tmp(estimated_components_tmp.size(), 0.0);
         std::vector<double> center_y_tmp(estimated_components_tmp.size(), 0.0);
         std::vector<double> radius_tmp(estimated_components_tmp.size(), 0.0);
         for (size_t i = 0; i < estimated_components_tmp.size(); ++i) {
-            auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components_tmp[i];
-            center_x_tmp[i] = center_x;
-            center_y_tmp[i] = center_y;
-            radius_tmp[i] = std::max(fwhm_x, fwhm_y);
+            GaussianParams params = estimated_components_tmp[i];
+            center_x_tmp[i] = params.center_x;
+            center_y_tmp[i] = params.center_y;
+            radius_tmp[i] = std::max(params.fwhm_x, params.fwhm_y);
         }
-        std::vector<std::tuple<double, double, double, double, double, double>> estimated_components =
-            MethodOfMoments(centroid_indexes, true, center_x_tmp, center_y_tmp, radius_tmp);
+        std::vector<GaussianParams> estimated_components = MethodOfMoments(centroid_indexes, true, center_x_tmp, center_y_tmp, radius_tmp);
 
         initial_values.clear();
         for (size_t i = 0; i < estimated_components.size(); ++i) {
-            auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = estimated_components[i];
+            GaussianParams params = estimated_components[i];
+            double center_x = params.center_x;
+            double center_y = params.center_y;
+            double amp = params.amp;
+            double fwhm_x = params.fwhm_x;
+            double fwhm_y = params.fwhm_y;
+            double pa = params.pa;
 
             if (std::isnan(center_x) || std::isnan(center_y) || std::isnan(amp) || std::isnan(fwhm_x) || std::isnan(fwhm_y) ||
                 std::isnan(pa)) {
@@ -101,10 +105,9 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
     return true;
 }
 
-std::vector<std::tuple<double, double, double, double, double, double>> InitialValueCalculator::MethodOfMoments(
-    std::vector<int> centroid_indexes, bool apply_filter, std::vector<double> center_x, std::vector<double> center_y,
-    std::vector<double> radius) {
-    std::vector<std::tuple<double, double, double, double, double, double>> result;
+std::vector<GaussianParams> InitialValueCalculator::MethodOfMoments(std::vector<int> centroid_indexes, bool apply_filter,
+    std::vector<double> center_x, std::vector<double> center_y, std::vector<double> radius) {
+    std::vector<GaussianParams> result;
     std::vector<double> m0(centroid_indexes.size(), 0.0);
     std::vector<double> mx(centroid_indexes.size(), 0.0);
     std::vector<double> my(centroid_indexes.size(), 0.0);
@@ -160,7 +163,7 @@ std::vector<std::tuple<double, double, double, double, double, double>> InitialV
         double fwhm_y = std::sqrt(0.5 * (std::abs(mxx[k] + myy[k] - tmp))) * SIGMA_TO_FWHM;
         double pa = -0.5 * std::atan2(2.0 * mxy[k], myy[k] - mxx[k]) * 180.0 / M_PI;
 
-        result.push_back({mx[k], my[k], amp, fwhm_x, fwhm_y, pa});
+        result.push_back(GaussianParams(mx[k], my[k], amp, fwhm_x, fwhm_y, pa));
     }
 
     return result;
