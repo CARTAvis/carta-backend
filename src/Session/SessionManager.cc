@@ -48,16 +48,14 @@ std::unordered_map<CARTA::EventType, SessionManager::MessageHandler> SessionMana
     {CARTA::EventType::FILE_LIST_REQUEST, &SessionManager::FileListRequestHandler},
     {CARTA::EventType::REGION_LIST_REQUEST, &SessionManager::RegionListRequestHandler},
     {CARTA::EventType::CATALOG_LIST_REQUEST, &SessionManager::CatalogListRequestHandler},
-    {CARTA::EventType::PV_REQUEST, &SessionManager::PvRequestHandler}, 
-    {CARTA::EventType::STOP_PV_CALC, &SessionManager::StopPvCalcHandler},
+    {CARTA::EventType::PV_REQUEST, &SessionManager::PvRequestHandler}, {CARTA::EventType::STOP_PV_CALC, &SessionManager::StopPvCalcHandler},
     {CARTA::EventType::FITTING_REQUEST, &SessionManager::FittingRequestHandler},
     {CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS, &SessionManager::SetVectorOverlayParametersHandler},
     {CARTA::EventType::STOP_FITTING, &SessionManager::StopFittingHandler},
     {CARTA::EventType::STOP_PV_PREVIEW, &SessionManager::StopPvPreviewHandler},
     {CARTA::EventType::CLOSE_PV_PREVIEW, &SessionManager::ClosePvPreviewHandler},
     {CARTA::EventType::REMOTE_FILE_REQUEST, &SessionManager::RemoteFileRequestHandler},
-    {CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL, &SessionManager::ChannelMapFlowControlHandler}
-};
+    {CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL, &SessionManager::ChannelMapFlowControlHandler}};
 
 SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
