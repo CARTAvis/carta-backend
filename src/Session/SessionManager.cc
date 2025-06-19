@@ -21,6 +21,7 @@ std::unordered_map<CARTA::EventType, SessionManager::MessageHandler> SessionMana
     {CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS, &SessionManager::SetHistogramRequirementsHandler},
     {CARTA::EventType::CLOSE_FILE, &SessionManager::CloseFileHandler},
     {CARTA::EventType::START_ANIMATION, &SessionManager::StartAnimationHandler},
+    {CARTA::EventType::STOP_ANIMATION, &SessionManager::StopAnimationHandler},
     {CARTA::EventType::ANIMATION_FLOW_CONTROL, &SessionManager::AnimationFlowControlHandler},
     {CARTA::EventType::FILE_INFO_REQUEST, &SessionManager::FileInfoRequestHandler},
     {CARTA::EventType::OPEN_FILE, &SessionManager::OpenFileHandler},
@@ -47,13 +48,16 @@ std::unordered_map<CARTA::EventType, SessionManager::MessageHandler> SessionMana
     {CARTA::EventType::FILE_LIST_REQUEST, &SessionManager::FileListRequestHandler},
     {CARTA::EventType::REGION_LIST_REQUEST, &SessionManager::RegionListRequestHandler},
     {CARTA::EventType::CATALOG_LIST_REQUEST, &SessionManager::CatalogListRequestHandler},
-    {CARTA::EventType::PV_REQUEST, &SessionManager::PvRequestHandler}, {CARTA::EventType::STOP_PV_CALC, &SessionManager::StopPvCalcHandler},
+    {CARTA::EventType::PV_REQUEST, &SessionManager::PvRequestHandler}, 
+    {CARTA::EventType::STOP_PV_CALC, &SessionManager::StopPvCalcHandler},
     {CARTA::EventType::FITTING_REQUEST, &SessionManager::FittingRequestHandler},
     {CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS, &SessionManager::SetVectorOverlayParametersHandler},
     {CARTA::EventType::STOP_FITTING, &SessionManager::StopFittingHandler},
     {CARTA::EventType::STOP_PV_PREVIEW, &SessionManager::StopPvPreviewHandler},
+    {CARTA::EventType::CLOSE_PV_PREVIEW, &SessionManager::ClosePvPreviewHandler},
     {CARTA::EventType::REMOTE_FILE_REQUEST, &SessionManager::RemoteFileRequestHandler},
-    {CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL, &SessionManager::ChannelMapFlowControlHandler}};
+    {CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL, &SessionManager::ChannelMapFlowControlHandler}
+};
 
 SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
@@ -361,6 +365,11 @@ void SessionManager::StartAnimationHandler(Session* session, std::string_view sv
     ThreadManager::QueueTask(tsk);
 };
 
+void SessionManager::StopAnimationHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+    CARTA::StopAnimation message = Message::DecodeMessage<CARTA::StartAnimation>(sv_message);
+    session->StopAnimation(message.file_id(), message.end_frame());
+};
+
 void SessionManager::AnimationFlowControlHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
     CARTA::AnimationFlowControl message = Message::DecodeMessage<CARTA::AnimationFlowControl>(sv_message);
     session->HandleAnimationFlowControlEvt(message);
@@ -544,7 +553,7 @@ void SessionManager::StopPvPreviewHandler(Session* session, std::string_view sv_
     session->OnStopPvPreview(message);
 };
 
-void SessionManager::ClosePvReviewHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::ClosePvPreviewHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
     CARTA::ClosePvPreview message = Message::DecodeMessage<CARTA::ClosePvPreview>(sv_message);
     session->OnClosePvPreview(message);
 };
