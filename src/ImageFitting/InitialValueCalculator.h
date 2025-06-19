@@ -31,9 +31,10 @@ public:
     /**
      * @brief Calculate initial values from the provided image data.
      * @param initial_values Vector to store the resulting initial values
+     * @param log String to store the log message describing the generated intial values
      * @return Whether the parameters are successfully generated
      */
-    bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values);
+    bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, std::string& log);
     /**
      * @brief Create a log message describing the generated intial values.
      * @param image_unit Unit of the image

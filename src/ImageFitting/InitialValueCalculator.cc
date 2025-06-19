@@ -19,7 +19,7 @@ InitialValueCalculator::InitialValueCalculator(FitData* fit_data, float image_st
       _image_std(image_std),
       _image_unit(image_unit) {}
 
-bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
+bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, std::string& log) {
     size_t request_num_components = initial_values.size();
     initial_values.clear();
 
@@ -95,6 +95,9 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
         auto component = Message::GaussianComponent(center, 1.0, fwhm, 0.0);
         initial_values.push_back(component);
     }
+
+    // ToDo: call GetLog
+    log = "";
 
     return true;
 }
