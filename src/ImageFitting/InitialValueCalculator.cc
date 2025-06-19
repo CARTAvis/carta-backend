@@ -17,7 +17,7 @@ InitialValueCalculator::InitialValueCalculator(FitData* fit_data, float image_st
       _offset_x(fit_data->offset_x),
       _offset_y(fit_data->offset_y),
       _image_std(image_std),
-      _image_unit(image_unit) {}
+      _image_unit(image_unit.empty() ? "arbitrary" : image_unit) {}
 
 bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, std::string& log) {
     size_t request_num_components = initial_values.size();
@@ -96,8 +96,7 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
         initial_values.push_back(component);
     }
 
-    // ToDo: call GetLog
-    log = "";
+    log = GetLog(initial_values);
 
     return true;
 }
@@ -309,24 +308,20 @@ std::vector<int> InitialValueCalculator::KMeansPlusPlus(size_t num_components, f
     return centroid_indexes;
 }
 
-// std::string InitialValueCalculator::GetLog(std::string image_unit) {
-//     if (image_unit.empty()) {
-//         image_unit = "arbitrary";
-//     }
+std::string InitialValueCalculator::GetLog(std::vector<CARTA::GaussianComponent>& initial_values) {
+    std::string log = fmt::format("Generated initial values of {} component(s)\n", initial_values.size());
+    for (size_t i = 0; i < initial_values.size(); i++) {
+        CARTA::GaussianComponent component = initial_values[i];
+        log += fmt::format("Component #{}:\n", i + 1);
 
-//     std::string log = fmt::format("Generated initial values of {} component(s)\n", initial_values.size());
-//     for (size_t i = 0; i < initial_values.size(); i++) {
-//         CARTA::GaussianComponent component = initial_values[i];
-//         log += fmt::format("Component #{}:\n", i + 1);
+        log += fmt::format("Center X        = {:6f} (px)\n", component.center().x());
+        log += fmt::format("Center Y        = {:6f} (px)\n", component.center().y());
+        log += fmt::format("Amplitude       = {:6f} ({})\n", component.amp(), _image_unit);
+        log += fmt::format("FWHM Major Axis = {:6f} (px)\n", component.fwhm().x());
+        log += fmt::format("FWHM Minor Axis = {:6f} (px)\n", component.fwhm().y());
+        log += fmt::format("P.A.            = {:6f} (deg)\n", component.pa());
+        log += "\n";
+    }
 
-//         log += fmt::format("Center X        = {:6f} (px)\n", component.center().x());
-//         log += fmt::format("Center Y        = {:6f} (px)\n", component.center().y());
-//         log += fmt::format("Amplitude       = {:6f} ({})\n", component.amp(), image_unit);
-//         log += fmt::format("FWHM Major Axis = {:6f} (px)\n", component.fwhm().x());
-//         log += fmt::format("FWHM Minor Axis = {:6f} (px)\n", component.fwhm().y());
-//         log += fmt::format("P.A.            = {:6f} (deg)\n", component.pa());
-//         log += "\n";
-//     }
-
-//     return log;
-// }
+    return log;
+}

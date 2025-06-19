@@ -35,12 +35,6 @@ public:
      * @return Whether the parameters are successfully generated
      */
     bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values, std::string& log);
-    /**
-     * @brief Create a log message describing the generated intial values.
-     * @param image_unit Unit of the image
-     * @return The log message
-     */
-    std::string GetLog(std::string image_unit);
 
 private:
     /** @brief Pointer to the image data. */
@@ -61,6 +55,7 @@ private:
     std::vector<std::tuple<double, double, double, double, double, double>> MethodOfMoments(std::vector<int> centroid_indexes = {0},
         bool apply_filter = false, std::vector<double> center_x = {}, std::vector<double> center_y = {}, std::vector<double> radius = {});
     std::vector<int> KMeansPlusPlus(size_t num_components, float threshold);
+    std::string GetLog(std::vector<CARTA::GaussianComponent>& initial_values);
 };
 
 } // namespace carta
