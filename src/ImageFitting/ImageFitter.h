@@ -201,7 +201,7 @@ private:
      * @param initial_values Initial fitting parameter
      * @param offset_x X-axis offset from the fitting region to the entire image
      * @param offset_y Y-axis offset from the fitting region to the entire image
-     * @return A tuple of Gaussian parameters: center x, center y, amplitude, FWHM x, FWHM y, and position angle
+     * @return Gaussian parameters including center x, center y, amplitude, FWHM x, FWHM y, and position angle
      */
     static GaussianParams GetGaussianParams(const gsl_vector* value_vector, size_t index, std::vector<int>& fit_values_indexes,
         std::vector<double>& initial_values, size_t offset_x = 0, size_t offset_y = 0);

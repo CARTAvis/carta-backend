@@ -37,21 +37,37 @@ struct FitData {
     bool stop_fitting;
 };
 
+/** @brief Data structure for storing parameters of a Gaussian component. */
 struct GaussianParams {
+    /** @brief X-coordinate of the center in pixels. */
     double center_x;
+    /** @brief Y-coordinate of the center in pixels. */
     double center_y;
+    /** @brief Amplitude of the component. */
     double amp;
+    /** @brief Full width at half maximum along x-coordinate in pixels. */
     double fwhm_x;
+    /** @brief Full width at half maximum along y-coordinate in pixels. */
     double fwhm_y;
+    /** @brief Position angle in degrees. */
     double pa;
 
+    /**
+     * @brief Constructor for GaussianParams.
+     * @param center_x X-coordinate of the center in pixels
+     * @param center_y Y-coordinate of the center in pixels
+     * @param amp Amplitude of the component
+     * @param fwhm_x Full width at half maximum along x-coordinate in pixels
+     * @param fwhm_y Full width at half maximum along y-coordinate in pixels
+     * @param pa Position angle in degrees
+     */
     GaussianParams(double center_x, double center_y, double amp, double fwhm_x, double fwhm_y, double pa)
         : center_x(center_x), center_y(center_y), amp(amp), fwhm_x(fwhm_x), fwhm_y(fwhm_y), pa(pa) {}
 };
 
 /**
  * @brief Create a Gaussian component sub-message from Gaussian parameters.
- * @param params A tuple of Gaussian parameters: center x, center y, amplitude, FWHM x, FWHM y, and position angle
+ * @param params Gaussian parameters including center x, center y, amplitude, FWHM x, FWHM y, and position angle
  * @return A Gaussian component sub-message
  */
 inline CARTA::GaussianComponent GetGaussianComponent(GaussianParams params) {
