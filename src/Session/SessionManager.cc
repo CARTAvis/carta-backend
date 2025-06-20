@@ -196,16 +196,17 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
 
         logger::LogReceivedEventType(event_type);
 
-        auto handler = _message_handlers.find(event_type);
-        if (handler == _message_handlers.end()) {
+        MessageHandler handler;
+        try {
+            handler = _message_handlers.at(event_type);
+        } catch (const std::out_of_range& e) {
             spdlog::error("Handler not found for event type: {}", CARTA::EventType_Name(event_type));
-            return;
         }
 
         try {
-            std::invoke(handler->second, this, session, sv_message, head);
+            std::invoke(handler, this, session, sv_message, head);
         } catch (const message_parsing_exception& e) {
-            spdlog::error("Error handling event {} in session {}: {}", event_type, session->GetId(), e.what());
+            spdlog::error("Error handling event {} in session {}: {}", CARTA::EventType_Name(event_type), session->GetId(), e.what());
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {
