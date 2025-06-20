@@ -307,11 +307,8 @@ void ImageFitter::CalculateErrors() {
     }
 
     for (size_t i = 0; i < _num_components; i++) {
-        GaussianParams params = GetGaussianParams(_fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, 0, 0);
-        double amp = params.amp;
-        double fwhm_x = params.fwhm_x;
-        double fwhm_y = params.fwhm_y;
-        double pa = params.pa;
+        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] =
+            GetGaussianParams(_fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, 0, 0);
         double center_x_err, center_y_err, amp_err, fwhm_x_err, fwhm_y_err, pa_err;
 
         if (_beam_size > 0) {
