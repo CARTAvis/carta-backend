@@ -80,8 +80,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "AnimationObject_8h.html",
-"Logger_8cc.html#a7b334512783c98ccfdac74bd38aa2f9f",
-"classMessage.html#afc5c954ad1784b8c550c42331df6dd2c",
+"Logger_8cc.html#a579b36ca7fa898b7052001d151fc34cd",
+"classMessage.html#afc2a3c83d6b506ed8b71e54dbce0f9ab",
 "classcarta_1_1CartaHdf5Image.html#a8c35644daa801bbc6dc807bf333707fd",
 "classcarta_1_1CrtfImportExport.html",
 "classcarta_1_1FileExtInfoLoader.html#a7b224a9328d7bbc3cce2dca28ee98893",
@@ -95,7 +95,7 @@ var NAVTREEINDEX =
 "classcarta_1_1Session.html#adc48fa2da283f2ece0ae232158891942",
 "classcarta_1_1Stokes.html#a3fc7f253e7f138dd0a8830668fdd874e",
 "classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88",
-"functions_type.html",
+"functions_t.html",
 "structcarta_1_1BeamTableInfo.html#a9395c046a2f25e6ac58b5fd9439e52f5",
 "structcarta_1_1PerSocketData.html#af143d87a1f2dea901004a20ed54d2e80",
 "structcarta_1_1SpectralCache.html#adcb4e31c3f754d8b0626e01aa4d559fc"
