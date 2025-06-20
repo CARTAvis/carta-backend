@@ -107,12 +107,12 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
                 auto values = GetGaussianParams(
                     _fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, _fit_data.offset_x, _fit_data.offset_y);
                 fitting_response.add_result_values();
-                *fitting_response.mutable_result_values(i) = GetGaussianComponent(values);
+                *fitting_response.mutable_result_values(i) = values.GetGaussianComponent();
 
                 std::vector<double> zeros(6, 0.0);
                 auto errors = GetGaussianParams(_fit_errors, i * 6, _fit_data.fit_values_indexes, zeros);
                 fitting_response.add_result_errors();
-                *fitting_response.mutable_result_errors(i) = GetGaussianComponent(errors);
+                *fitting_response.mutable_result_errors(i) = errors.GetGaussianComponent();
             }
 
             if (_integrated_flux_values.size() == _num_components && _integrated_flux_errors.size() == _num_components) {

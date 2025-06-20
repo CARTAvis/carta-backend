@@ -63,18 +63,17 @@ struct GaussianParams {
      */
     GaussianParams(double center_x, double center_y, double amp, double fwhm_x, double fwhm_y, double pa)
         : center_x(center_x), center_y(center_y), amp(amp), fwhm_x(fwhm_x), fwhm_y(fwhm_y), pa(pa) {}
-};
 
-/**
- * @brief Create a Gaussian component sub-message from Gaussian parameters.
- * @param params Gaussian parameters including center x, center y, amplitude, FWHM x, FWHM y, and position angle
- * @return A Gaussian component sub-message
- */
-inline CARTA::GaussianComponent GetGaussianComponent(GaussianParams params) {
-    auto center = Message::DoublePoint(params.center_x, params.center_y);
-    auto fwhm = Message::DoublePoint(params.fwhm_x, params.fwhm_y);
-    auto component = Message::GaussianComponent(center, params.amp, fwhm, params.pa);
-    return component;
+    /**
+     * @brief Create a Gaussian component sub-message.
+     * @return A Gaussian component sub-message
+     */
+    CARTA::GaussianComponent GetGaussianComponent() {
+        auto center = Message::DoublePoint(center_x, center_y);
+        auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
+        auto component = Message::GaussianComponent(center, amp, fwhm, pa);
+        return component;
+    };
 };
 
 } // namespace carta

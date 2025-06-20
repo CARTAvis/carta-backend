@@ -79,7 +79,7 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
                 continue;
             }
 
-            initial_values.push_back(GetGaussianComponent(params));
+            initial_values.push_back(params.GetGaussianComponent());
         }
 
         if (initial_values.size() == request_num_components) {
@@ -94,7 +94,8 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
         double center_x = _width / 2 + _offset_x;
         double center_y = _height / 2 + _offset_y;
         double fwhm = std::min(_width, _height) / 2;
-        initial_values.push_back(GetGaussianComponent(GaussianParams(center_x, center_y, 1.0, fwhm, fwhm, 0.0)));
+        GaussianParams params = GaussianParams(center_x, center_y, 1.0, fwhm, fwhm, 0.0);
+        initial_values.push_back(params.GetGaussianComponent());
     }
 
     log = GetLog(initial_values);
