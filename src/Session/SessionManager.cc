@@ -187,20 +187,23 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
         session->UpdateLastMessageTimestamp();
 
         EventHeader head = Message::GetEventHeader(sv_message);
-
         CARTA::EventType event_type = head.GetType();
+
+        if (CARTA::EventType_IsValid(event_type) == "") {
+            spdlog::error("Bad event type: {}", event_type);
+            return;
+        }
+
         logger::LogReceivedEventType(event_type);
-        MessageHandler handler;
-        try {
-            handler = _message_handlers.at(event_type);
-        } catch (const std::out_of_range& e) {
-            spdlog::error("Handler not found for event type: {}", event_type);
-            std::cerr << "Out of range error: " << e.what() << std::endl;
+
+        auto handler = _message_handlers.find(event_type);
+        if (handler == _message_handlers.end()) {
+            spdlog::error("Handler not found for event type: {}", CARTA::EventType_Name(event_type));
             return;
         }
 
         try {
-            std::invoke(handler, this, session, sv_message, head);
+            std::invoke(handler->second, this, session, sv_message, head);
         } catch (const message_parsing_exception& e) {
             spdlog::error("Error handling event {} in session {}: {}", event_type, session->GetId(), e.what());
         }
