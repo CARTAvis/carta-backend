@@ -326,7 +326,7 @@ protected:
     SessionContext _animation_context;
 
     std::atomic<int> _ref_count;
-    int _sync_id;
+    std::atomic<int> _sync_id;
     int _animation_id;
     bool _connected;
     static volatile int _num_sessions;
