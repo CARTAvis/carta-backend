@@ -60,21 +60,25 @@ bool InitialValueCalculator::CalculateInitialValues(std::vector<CARTA::GaussianC
             double fwhm_y = params.fwhm_y;
             double pa = params.pa;
 
-            if (std::isnan(center_x) || std::isnan(center_y) || std::isnan(amp) || std::isnan(fwhm_x) || std::isnan(fwhm_y) ||
-                std::isnan(pa)) {
-                spdlog::debug("Invalid initial value for component {}.", i + 1);
-                continue;
-            }
+            if (request_num_components > 1) {
+                if (std::isnan(center_x) || std::isnan(center_y) || std::isnan(amp) || std::isnan(fwhm_x) || std::isnan(fwhm_y) ||
+                    std::isnan(pa)) {
+                    spdlog::debug("Invalid initial value for component {}.", i + 1);
+                    continue;
+                }
 
-            if (fwhm_x > std::max(_width, _height) * 2 || fwhm_y > std::max(_width, _height) * 2) {
-                spdlog::debug("FWHM too large for component {}.", i + 1);
-                continue;
-            }
+                if (fwhm_x > std::max(_width, _height) * 2 || fwhm_y > std::max(_width, _height) * 2) {
+                    spdlog::debug("FWHM too large for component {}.", i + 1);
+                    continue;
+                }
 
-            if (center_x < -std::max(fwhm_x, fwhm_y) / 4 || center_x > _width + std::max(fwhm_x, fwhm_y) / 4 ||
-                center_y < -std::max(fwhm_x, fwhm_y) / 4 || center_y > _height + std::max(fwhm_x, fwhm_y) / 4) {
-                spdlog::debug("Center too far from the image boundary for component {}.", i + 1);
-                continue;
+                if ((center_x - _offset_x) < -std::max(fwhm_x, fwhm_y) / 4 ||
+                    (center_x - _offset_x) > _width + std::max(fwhm_x, fwhm_y) / 4 ||
+                    (center_y - _offset_y) < -std::max(fwhm_x, fwhm_y) / 4 ||
+                    (center_y - _offset_y) > _height + std::max(fwhm_x, fwhm_y) / 4) {
+                    spdlog::debug("Center too far from the image boundary for component {}.", i + 1);
+                    continue;
+                }
             }
 
             initial_values.push_back(params.GetGaussianComponent());
@@ -154,16 +158,18 @@ std::vector<GaussianParams> InitialValueCalculator::MethodOfMoments(std::vector<
         myy[k] = myy[k] / m0[k] - my[k] * my[k];
         mxy[k] = mxy[k] / m0[k] - mx[k] * my[k];
 
+        double center_x = mx[k] + (apply_filter ? _offset_x : 0);
+        double center_y = my[k] + (apply_filter ? _offset_y : 0);
         double amp = m0[k] * 0.5 * std::pow(std::abs(mxx[k] * myy[k] - mxy[k] * mxy[k]), -0.5) / M_PI;
         double tmp = std::sqrt(std::pow(mxx[k] - myy[k], 2.0) + 4.0 * mxy[k] * mxy[k]);
         double fwhm_x = std::sqrt(0.5 * (std::abs(mxx[k] + myy[k] + tmp))) * SIGMA_TO_FWHM;
         double fwhm_y = std::sqrt(0.5 * (std::abs(mxx[k] + myy[k] - tmp))) * SIGMA_TO_FWHM;
         double pa = -0.5 * std::atan2(2.0 * mxy[k], myy[k] - mxx[k]) * 180.0 / M_PI;
 
-        result.push_back(GaussianParams(mx[k], my[k], amp, fwhm_x, fwhm_y, pa));
+        result.push_back(GaussianParams(center_x, center_y, amp, fwhm_x, fwhm_y, pa));
         if (apply_filter) {
             spdlog::debug(
-                "Component #{}: center = ({}, {}), amp = {}, fwhm = ({}, {}), pa = {}", k + 1, mx[k], my[k], amp, fwhm_x, fwhm_y, pa);
+                "Component #{}: center = ({}, {}), amp = {}, fwhm = ({}, {}), pa = {}", k + 1, center_x, center_y, amp, fwhm_x, fwhm_y, pa);
         }
     }
 
