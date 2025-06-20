@@ -189,7 +189,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
         EventHeader head = Message::GetEventHeader(sv_message);
         CARTA::EventType event_type = head.GetType();
 
-        if (CARTA::EventType_IsValid(event_type) == "") {
+        if (!CARTA::EventType_IsValid(event_type)) {
             spdlog::error("Bad event type: {}", event_type);
             return;
         }
