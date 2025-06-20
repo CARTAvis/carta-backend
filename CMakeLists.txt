@@ -288,6 +288,9 @@ set(SOURCE_FILES
 
 add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
 add_executable(carta_backend ${SOURCE_FILES})
+
+add_dependencies(carta_backend carta-schemas)
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(REMOVE_ITEM LINK_LIBS uuid)
     target_link_libraries(carta_backend uv ${LINK_LIBS})
