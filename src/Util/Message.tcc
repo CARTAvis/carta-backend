@@ -9,7 +9,7 @@
 
 #include "Message.h"
 
-struct message_parsing_exception : std::runtime_error {
+struct parsing_exception : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
@@ -17,8 +17,7 @@ template <typename T>
 /**
  * @note This function uses a static_assert to ensure that T has a member function `ParseFromArray`.
  *       If T does not have this member function, a compilation error will occur.
- *       The function also throws a runtime error if the parsing fails, providing information about
- *       the session ID and the type of the message.
+ *       The function also throws a parsing exception if the parsing fails.
  */
 T Message::DecodeMessage(std::string_view sv_message) {
     const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
@@ -27,7 +26,7 @@ T Message::DecodeMessage(std::string_view sv_message) {
         "T must have a member function ParseFromArray(const void*, int)");
     T decoded_message;
     if (!decoded_message.ParseFromArray(event_buf, event_length)) {
-        throw message_parsing_exception("Failed to parse message");
+        throw parsing_exception("Failed to parse message");
     }
     return decoded_message;
 }
