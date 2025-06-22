@@ -202,7 +202,8 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             handler = _message_handlers.at(event_type);
         } catch (const std::out_of_range& e) {
             spdlog::error("Handler not found for event type: {}", CARTA::EventType_Name(event_type));
-            session->SendLogEvent("Handler not found for event type: " + CARTA::EventType_Name(event_type), {"event"}, CARTA::ErrorSeverity::ERROR);
+            session->SendLogEvent(
+                "Handler not found for event type: " + CARTA::EventType_Name(event_type), {"event"}, CARTA::ErrorSeverity::ERROR);
         }
 
         try {
