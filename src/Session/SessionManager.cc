@@ -190,9 +190,9 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
         CARTA::EventType event_type = head.GetType();
 
         if (!CARTA::EventType_IsValid(event_type)) {
-            std::string message = fmt::format("Bad event type: {}", event_type);
-            spdlog::error(message);
-            session->SendLogEvent(message, {"event"}, CARTA::ErrorSeverity::ERROR);
+            std::string error = fmt::format("Bad event type: {}", event_type);
+            spdlog::error(error);
+            session->SendLogEvent(error, {"event"}, CARTA::ErrorSeverity::ERROR);
             return;
         }
 
@@ -202,17 +202,17 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
         try {
             handler = _message_handlers.at(event_type);
         } catch (const std::out_of_range& e) {
-            std::string message = fmt::format("Handler not found for event type: {}", CARTA::EventType_Name(event_type));
-            spdlog::error(message);
-            session->SendLogEvent(message, {"event"}, CARTA::ErrorSeverity::ERROR);
+            std::string error = fmt::format("Handler not found for event type: {}", CARTA::EventType_Name(event_type));
+            spdlog::error(error);
+            session->SendLogEvent(error, {"event"}, CARTA::ErrorSeverity::ERROR);
         }
 
         try {
             std::invoke(handler, this, session, sv_message, head);
         } catch (const message_parsing_exception& e) {
-            std::string message = fmt::format("Error parsing {} message", CARTA::EventType_Name(event_type));
-            spdlog::error(message);
-            session->SendLogEvent(message, {"event"}, CARTA::ErrorSeverity::ERROR);
+            std::string error = fmt::format("Error parsing {} message", CARTA::EventType_Name(event_type));
+            spdlog::error(error);
+            session->SendLogEvent(error, {"event"}, CARTA::ErrorSeverity::ERROR);
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {
