@@ -190,8 +190,9 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
         CARTA::EventType event_type = head.GetType();
 
         if (!CARTA::EventType_IsValid(event_type)) {
-            spdlog::error("Bad event type: {}", event_type);
-            session->SendLogEvent("Bad event type: " + event_type, {"event"}, CARTA::ErrorSeverity::ERROR);
+            std::string message = fmt::format("Bad event type: {}", event_type);
+            spdlog::error(message);
+            session->SendLogEvent(message, {"event"}, CARTA::ErrorSeverity::ERROR);
             return;
         }
 
@@ -201,16 +202,17 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
         try {
             handler = _message_handlers.at(event_type);
         } catch (const std::out_of_range& e) {
-            spdlog::error("Handler not found for event type: {}", CARTA::EventType_Name(event_type));
-            session->SendLogEvent(
-                "Handler not found for event type: " + CARTA::EventType_Name(event_type), {"event"}, CARTA::ErrorSeverity::ERROR);
+            std::string message = fmt::format("Handler not found for event type: {}", CARTA::EventType_Name(event_type));
+            spdlog::error(message);
+            session->SendLogEvent(message, {"event"}, CARTA::ErrorSeverity::ERROR);
         }
 
         try {
             std::invoke(handler, this, session, sv_message, head);
-        } catch (const parsing_exception& e) {
-            spdlog::error("Error handling event: {}", CARTA::EventType_Name(event_type));
-            session->SendLogEvent("Error handling event: " + CARTA::EventType_Name(event_type), {"event"}, CARTA::ErrorSeverity::ERROR);
+        } catch (const message_parsing_exception& e) {
+            std::string message = fmt::format("Error handling event: {}", CARTA::EventType_Name(event_type));
+            spdlog::error(message);
+            session->SendLogEvent(message);
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {

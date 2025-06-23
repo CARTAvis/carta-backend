@@ -9,7 +9,7 @@
 
 #include "Message.h"
 
-struct parsing_exception : std::runtime_error {
+struct message_parsing_exception : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
@@ -26,7 +26,7 @@ T Message::DecodeMessage(std::string_view sv_message) {
         "T must have a member function ParseFromArray(const void*, int)");
     T decoded_message;
     if (!decoded_message.ParseFromArray(event_buf, event_length)) {
-        throw parsing_exception("Failed to parse message");
+        throw message_parsing_exception("Failed to parse message");
     }
     return decoded_message;
 }
