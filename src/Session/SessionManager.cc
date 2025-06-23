@@ -210,7 +210,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
         try {
             std::invoke(handler, this, session, sv_message, head);
         } catch (const message_parsing_exception& e) {
-            std::string message = fmt::format("Error handling event: {}", CARTA::EventType_Name(event_type));
+            std::string message = fmt::format("Error parsing {} message", CARTA::EventType_Name(event_type));
             spdlog::error(message);
             session->SendLogEvent(message, {"event"}, CARTA::ErrorSeverity::ERROR);
         }
