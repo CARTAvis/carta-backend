@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix occasional duplication of sync IDs in messages during image fitting ([#1466](https://github.com/CARTAvis/carta-backend/issues/1466)).
 * Fix import of regions from top-level directory ([#1403](https://github.com/CARTAvis/carta-backend/issues/1403)).
 * Fix compression artifact issue ([#1447](https://github.com/CARTAvis/carta-backend/issues/1447)).
+* Fix applying vector field threshold ([#1415](https://github.com/CARTAvis/carta-backend/issues/1415) and [#1444](https://github.com/CARTAvis/carta-backend/issues/1444)).
 
 ## [5.0.0-beta.1]
 
