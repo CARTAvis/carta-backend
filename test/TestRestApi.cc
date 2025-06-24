@@ -26,8 +26,13 @@ public:
         : carta::HttpServer(session_manager, root_folder, UserDirectory(), auth_token, read_only_mode) {}
     FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
     FRIEND_TEST(RestApiTest, GetExistingPrefs);
+    FRIEND_TEST(RestApiTest, UpdatePrefsEmpty);
+    FRIEND_TEST(RestApiTest, UpdatePrefsNotJson);
+    FRIEND_TEST(RestApiTest, UpdatePrefsInvalidResult);
+    FRIEND_TEST(RestApiTest, UpdatePrefsSingleKey);
+    FRIEND_TEST(RestApiTest, UpdatePrefsKeyList);
     FRIEND_TEST(RestApiTest, DeletePrefsEmpty);
-    FRIEND_TEST(RestApiTest, DeletePrefsInvalid);
+    FRIEND_TEST(RestApiTest, DeletePrefsNotJson);
     FRIEND_TEST(RestApiTest, DeletePrefsIgnoresInvalidKeys);
     FRIEND_TEST(RestApiTest, DeletePrefsHandlesMissingKeys);
     FRIEND_TEST(RestApiTest, DeletePrefsSingleKey);
@@ -35,40 +40,41 @@ public:
     FRIEND_TEST(RestApiTest, SetPrefsReadOnly);
 
     FRIEND_TEST(RestApiTest, EmptyStartingLayouts);
-    FRIEND_TEST(RestApiTest, GetExistingLayoutList);
-    FRIEND_TEST(RestApiTest, GetExistingLayout);
     FRIEND_TEST(RestApiTest, GetExistingLayouts);
     FRIEND_TEST(RestApiTest, DeleteLayout);
     FRIEND_TEST(RestApiTest, DeleteLayoutEmpty);
-    FRIEND_TEST(RestApiTest, DeleteLayoutInvalid);
+    FRIEND_TEST(RestApiTest, DeleteLayoutNotJson);
     FRIEND_TEST(RestApiTest, DeleteLayoutIgnoresInvalidKeys);
     FRIEND_TEST(RestApiTest, DeleteLayoutMissingName);
     FRIEND_TEST(RestApiTest, SetLayout);
+    FRIEND_TEST(RestApiTest, SetLayoutNotJson);
+    FRIEND_TEST(RestApiTest, SetLayoutInvalidResult);
     FRIEND_TEST(RestApiTest, SetLayoutReadOnly);
 
     FRIEND_TEST(RestApiTest, EmptyStartingSnippets);
-    FRIEND_TEST(RestApiTest, GetExistingSnippetList);
-    FRIEND_TEST(RestApiTest, GetExistingSnippet);
     FRIEND_TEST(RestApiTest, GetExistingSnippets);
     FRIEND_TEST(RestApiTest, DeleteSnippet);
     FRIEND_TEST(RestApiTest, DeleteSnippetEmpty);
-    FRIEND_TEST(RestApiTest, DeleteSnippetInvalid);
+    FRIEND_TEST(RestApiTest, DeleteSnippetNotJson);
     FRIEND_TEST(RestApiTest, DeleteSnippetIgnoresInvalidKeys);
     FRIEND_TEST(RestApiTest, DeleteSnippetMissingName);
     FRIEND_TEST(RestApiTest, SetSnippet);
+    FRIEND_TEST(RestApiTest, SetSnippetNotJson);
+    FRIEND_TEST(RestApiTest, SetSnippetInvalidResult);
     FRIEND_TEST(RestApiTest, SetSnippetReadOnly);
 
     FRIEND_TEST(RestApiTest, EmptyStartingWorkspaces);
     FRIEND_TEST(RestApiTest, GetExistingWorkspaceList);
     FRIEND_TEST(RestApiTest, GetExistingWorkspace);
     FRIEND_TEST(RestApiTest, GetMissingWorkspace);
-    FRIEND_TEST(RestApiTest, GetExistingWorkspaces);
     FRIEND_TEST(RestApiTest, DeleteWorkspace);
     FRIEND_TEST(RestApiTest, DeleteWorkspaceEmpty);
-    FRIEND_TEST(RestApiTest, DeleteWorkspaceInvalid);
+    FRIEND_TEST(RestApiTest, DeleteWorkspaceNotJson);
     FRIEND_TEST(RestApiTest, DeleteWorkspaceIgnoresInvalidKeys);
     FRIEND_TEST(RestApiTest, DeleteWorkspaceMissingName);
     FRIEND_TEST(RestApiTest, SetWorkspace);
+    FRIEND_TEST(RestApiTest, SetWorkspaceNotJson);
+    FRIEND_TEST(RestApiTest, SetWorkspaceInvalidResult);
     FRIEND_TEST(RestApiTest, SetWorkspaceReadOnly);
 
     FRIEND_TEST(RestApiTest, SendScriptingRequest);
@@ -100,7 +106,7 @@ public:
         workspaces_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/workspaces";
 
         example_options = R"({
-            "$schema": "https://cartavis.github.io/schemas/preferences_schema_2.json",
+            "$schema": "https://cartavis.org/schemas/preferences_schema_2.json",
             "version": 2,
             "astGridVisible": false,
             "beamColor": "#8A9BA8",
@@ -110,7 +116,7 @@ public:
         })"_json;
 
         example_layout = R"({
-            "$schema": "https://cartavis.github.io/schemas/layout_schema_2.json",
+            "$schema": "https://cartavis.org/schemas/layout_schema_2.json",
             "layoutVersion": 2,
             "docked": {
                 "type": "stack",
@@ -126,7 +132,7 @@ public:
         })"_json;
 
         example_snippet = R"({
-            "$schema": "https://cartavis.github.io/schemas/snippet_schema_1.json",
+            "$schema": "https://cartavis.org/schemas/snippet_schema_1.json",
             "snippetVersion": 1,
             "frontendVersion": "v3.0.0-beta.0",
             "tags": ["example"],
@@ -136,25 +142,31 @@ public:
         })"_json;
 
         example_workspace = R"({
-            "$schema": "https://cartavis.github.io/schemas/workspace_schema_1.json",
+            "$schema": "https://cartavis.org/schemas/workspace_schema_1.json",
             "workspaceVersion": 1,
             "frontendVersion": "v3.0.0-beta.0",
             "description": "Example workspace",
             "files": [{
                 "id": 0,
-                "path": "test/A.fits",
+                "directory": "test",
+                "filename": "A.fits",
                 "hdu": "0",
-                "spatialMatching": true,
                 "renderConfig": {
                   "colormap": "magma"
                 }
             }, {
                 "id": 1,
-                "path": "test/B.fits",
-                "spatialMatching": true
+                "directory": "test",
+                "filename": "B.fits",
+                "references": {
+                    "spatial": 0,
+                    "spectral": 0
+                }
             }],
-            "spatialReference": 0,
-            "spectralReference": 0
+            "references": {
+                "spatial": 0,
+                "spectral": 0
+            }
         })"_json;
     }
     void SetUp() {
@@ -220,15 +232,60 @@ TEST_F(RestApiTest, GetExistingPrefs) {
     EXPECT_EQ(existing_preferences, example_options);
 }
 
-TEST_F(RestApiTest, DeletePrefsEmpty) {
+TEST_F(RestApiTest, UpdatePrefsEmpty) {
     WriteDefaultPrefs();
     auto status = _frontend_server->UpdatePreferencesFromString("");
     EXPECT_EQ(status, HTTP_400);
 }
 
-TEST_F(RestApiTest, DeletePrefsInvalid) {
+TEST_F(RestApiTest, UpdatePrefsNotJson) {
     WriteDefaultPrefs();
     auto status = _frontend_server->UpdatePreferencesFromString("this_is_not_a_json_string");
+    EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, UpdatePrefsInvalidResult) {
+    WriteDefaultPrefs();
+    json prefs = {{"beamColor", 3}};
+    auto status = _frontend_server->UpdatePreferencesFromString(prefs.dump());
+    EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, UpdatePrefsSingleKey) {
+    WriteDefaultPrefs();
+    json prefs = {{"beamType", "solid"}};
+    auto status = _frontend_server->UpdatePreferencesFromString(prefs.dump());
+    EXPECT_EQ(status, HTTP_200);
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_TRUE(existing_preferences["beamType"] == "solid");
+    // Check that only the beamType key has been modified
+    existing_preferences["beamType"] = "open";
+    EXPECT_EQ(existing_preferences, example_options);
+}
+
+TEST_F(RestApiTest, UpdatePrefsKeyList) {
+    WriteDefaultPrefs();
+    json prefs = {{"beamType", "solid"}, {"beamColor", "#FFFFFF"}};
+    auto status = _frontend_server->UpdatePreferencesFromString(prefs.dump());
+    EXPECT_EQ(status, HTTP_200);
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_TRUE(existing_preferences["beamType"] == "solid");
+    EXPECT_TRUE(existing_preferences["beamColor"] == "#FFFFFF");
+    // Check that only the beamType and beamColor keys have been modified
+    existing_preferences["beamType"] = "open";
+    existing_preferences["beamColor"] = "#8A9BA8";
+    EXPECT_EQ(existing_preferences, example_options);
+}
+
+TEST_F(RestApiTest, DeletePrefsEmpty) {
+    WriteDefaultPrefs();
+    auto status = _frontend_server->ClearPreferencesFromString("");
+    EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, DeletePrefsNotJson) {
+    WriteDefaultPrefs();
+    auto status = _frontend_server->ClearPreferencesFromString("this_is_not_a_json_string");
     EXPECT_EQ(status, HTTP_400);
 }
 
@@ -279,35 +336,21 @@ TEST_F(RestApiTest, DeletePrefsKeyList) {
 TEST_F(RestApiTest, SetPrefsReadOnly) {
     json keys = {{"keys"}, example_options};
     auto status = _frontend_server_read_only_mode->UpdatePreferencesFromString(keys.dump());
-    EXPECT_EQ(status, HTTP_500);
+    EXPECT_EQ(status, HTTP_400);
 
     WriteDefaultPrefs();
     keys = {{"keys", {"beamType"}}};
     status = _frontend_server_read_only_mode->ClearPreferencesFromString(keys.dump());
-    EXPECT_EQ(status, HTTP_500);
+    EXPECT_EQ(status, HTTP_400);
 
     keys = {{"keys", {"beamType", "beamColor"}}};
     status = _frontend_server_read_only_mode->ClearPreferencesFromString(keys.dump());
-    EXPECT_EQ(status, HTTP_500);
+    EXPECT_EQ(status, HTTP_400);
 }
 
 TEST_F(RestApiTest, EmptyStartingLayouts) {
     auto existing_layouts = _frontend_server->GetExistingObjects("layout");
     EXPECT_TRUE(existing_layouts.empty());
-}
-
-TEST_F(RestApiTest, GetExistingLayoutList) {
-    WriteDefaultLayouts();
-    auto existing_layouts = _frontend_server->GetExistingObjectList("layout");
-    EXPECT_EQ(existing_layouts[0]["name"], "test_layout");
-    EXPECT_EQ(existing_layouts[1]["name"], "test_layout2");
-    EXPECT_EQ(existing_layouts[2]["name"], "test_layout3");
-}
-
-TEST_F(RestApiTest, GetExistingLayout) {
-    WriteDefaultLayouts();
-    auto existing_layout = _frontend_server->GetExistingObject("layout", "test_layout");
-    EXPECT_EQ(existing_layout, example_layout);
 }
 
 TEST_F(RestApiTest, GetExistingLayouts) {
@@ -336,7 +379,7 @@ TEST_F(RestApiTest, DeleteLayoutEmpty) {
     EXPECT_EQ(existing_layouts["test_layout2"], example_layout);
 }
 
-TEST_F(RestApiTest, DeleteLayoutInvalid) {
+TEST_F(RestApiTest, DeleteLayoutNotJson) {
     WriteDefaultLayouts();
     auto status = _frontend_server->ClearObjectFromString("layout", "this_is_not_a_json_string");
     EXPECT_EQ(status, HTTP_400);
@@ -374,6 +417,18 @@ TEST_F(RestApiTest, SetLayout) {
     EXPECT_TRUE(existing_layouts["test_layout2"].is_null());
 }
 
+TEST_F(RestApiTest, SetLayoutNotJson) {
+    auto status = _frontend_server->SetObjectFromString("layout", "this_is_not_a_json_string");
+    EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, SetLayoutInvalidResult) {
+    // Wrong type
+    json body = {{"layoutName", "created_layout"}, {"layout", {"docked", 3}}};
+    auto status = _frontend_server->SetObjectFromString("layout", body.dump());
+    EXPECT_EQ(status, HTTP_400);
+}
+
 TEST_F(RestApiTest, SetLayoutReadOnly) {
     json body = {{"layoutName", "created_layout"}, {"layout", example_layout}};
     auto status = _frontend_server_read_only_mode->SetObjectFromString("layout", body.dump());
@@ -388,20 +443,6 @@ TEST_F(RestApiTest, SetLayoutReadOnly) {
 TEST_F(RestApiTest, EmptyStartingSnippets) {
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
     EXPECT_TRUE(existing_snippets.empty());
-}
-
-TEST_F(RestApiTest, GetExistingSnippetList) {
-    WriteDefaultSnippets();
-    auto existing_snippets = _frontend_server->GetExistingObjectList("snippet");
-    EXPECT_EQ(existing_snippets[0]["name"], "test_snippet");
-    EXPECT_EQ(existing_snippets[1]["name"], "test_snippet2");
-    EXPECT_EQ(existing_snippets[2]["name"], "test_snippet3");
-}
-
-TEST_F(RestApiTest, GetExistingSnippet) {
-    WriteDefaultSnippets();
-    auto existing_snippet = _frontend_server->GetExistingObject("snippet", "test_snippet");
-    EXPECT_EQ(existing_snippet, example_snippet);
 }
 
 TEST_F(RestApiTest, GetExistingSnippets) {
@@ -430,7 +471,7 @@ TEST_F(RestApiTest, DeleteSnippetEmpty) {
     EXPECT_EQ(existing_snippets["test_snippet2"], example_snippet);
 }
 
-TEST_F(RestApiTest, DeleteSnippetInvalid) {
+TEST_F(RestApiTest, DeleteSnippetNotJson) {
     WriteDefaultSnippets();
     auto status = _frontend_server->ClearObjectFromString("snippet", "this_is_not_a_json_string");
     EXPECT_EQ(status, HTTP_400);
@@ -466,6 +507,18 @@ TEST_F(RestApiTest, SetSnippet) {
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
     EXPECT_EQ(existing_snippets["created_snippet"], example_snippet);
     EXPECT_TRUE(existing_snippets["test_snippet2"].is_null());
+}
+
+TEST_F(RestApiTest, SetSnippetNotJson) {
+    auto status = _frontend_server->SetObjectFromString("snippet", "this_is_not_a_json_string");
+    EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, SetSnippetInvalidResult) {
+    // Missing required values
+    json body = {{"snippetName", "created_snippet"}, {"snippet", {"code", "something"}}};
+    auto status = _frontend_server->SetObjectFromString("snippet", body.dump());
+    EXPECT_EQ(status, HTTP_400);
 }
 
 TEST_F(RestApiTest, SetSnippetReadOnly) {
@@ -505,13 +558,6 @@ TEST_F(RestApiTest, GetMissingWorkspace) {
     EXPECT_EQ(existing_workspace, nullptr);
 }
 
-TEST_F(RestApiTest, GetExistingWorkspaces) {
-    WriteDefaultWorkspaces();
-    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
-    EXPECT_EQ(existing_workspaces["test_workspace"], example_workspace);
-    EXPECT_EQ(existing_workspaces["test_workspace2"], example_workspace);
-}
-
 TEST_F(RestApiTest, DeleteWorkspace) {
     WriteDefaultWorkspaces();
     json body = {{"workspaceName", "test_workspace"}};
@@ -531,7 +577,7 @@ TEST_F(RestApiTest, DeleteWorkspaceEmpty) {
     EXPECT_EQ(existing_workspaces["test_workspace2"], example_workspace);
 }
 
-TEST_F(RestApiTest, DeleteWorkspaceInvalid) {
+TEST_F(RestApiTest, DeleteWorkspaceNotJson) {
     WriteDefaultWorkspaces();
     auto status = _frontend_server->ClearObjectFromString("workspace", "this_is_not_a_json_string");
     EXPECT_EQ(status, HTTP_400);
@@ -567,6 +613,18 @@ TEST_F(RestApiTest, SetWorkspace) {
     auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
     EXPECT_EQ(existing_workspaces["created_workspace"], example_workspace);
     EXPECT_TRUE(existing_workspaces["test_workspace2"].is_null());
+}
+
+TEST_F(RestApiTest, SetWorkspaceNotJson) {
+    auto status = _frontend_server->SetObjectFromString("workspace", "this_is_not_a_json_string");
+    EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, SetWorkspaceInvalidResult) {
+    // Missing required values
+    json body = {{"workspaceName", "created_workspace"}, {"workspace", {{"workspaceVersion", 1}}}};
+    auto status = _frontend_server->SetObjectFromString("workspace", body.dump());
+    EXPECT_EQ(status, HTTP_400);
 }
 
 TEST_F(RestApiTest, SetWorkspaceReadOnly) {

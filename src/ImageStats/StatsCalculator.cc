@@ -8,11 +8,9 @@
 
 #include "StatsCalculator.h"
 
-#include <cmath>
-#include <limits>
-
 #include <casacore/casa/Arrays/ArrayMath.h>
-#include <casacore/images/Images/ImageStatistics.h>
+
+#include "Logger/Logger.h"
 
 namespace carta {
 
@@ -35,8 +33,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
     const casacore::ImageInterface<float>& image, bool per_channel) {
     // Use ImageStatistics to fill statistics values according to type;
     // template type matches image type
-    casacore::ImageStatistics<float> image_stats = casacore::ImageStatistics<float>(image,
-        /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
+    casacore::ImageStatistics<float> image_stats(image, /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
 
     size_t result_size(1); // expected size of returned vector per stat
     if (per_channel) {     // get stats per xy plane
@@ -46,130 +43,222 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
         if (!image_stats.setAxes(display_axes)) {
             return false;
         }
-
         casacore::IPosition xy_axes(display_axes);
         result_size = image.shape().removeAxes(xy_axes).product();
     }
 
+    // num_points used for setting stats results to NaN where num_points is zero.
     casacore::Array<casacore::Double> num_points;
-    size_t num_stats(requested_stats.size());
-    for (size_t i = 0; i < num_stats; ++i) {
-        // get requested statistics values
-        casacore::LatticeStatsBase::StatisticsTypes lattice_stats_type(casacore::LatticeStatsBase::NSTATS);
+    image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
 
-        std::vector<double> dbl_result; // lattice stats
-        std::vector<int> int_result;    // position stats
-        auto carta_stats_type = requested_stats[i];
+    if (!num_points.empty()) {
+        std::vector<double> dbl_result;           // return value in stats_value map
+        casacore::Array<casacore::Double> result; // ImageStatistics result
 
-        switch (carta_stats_type) {
-            case CARTA::StatsType::NumPixels:
-                lattice_stats_type = casacore::LatticeStatsBase::NPTS;
-                break;
-            case CARTA::StatsType::Sum:
-                lattice_stats_type = casacore::LatticeStatsBase::SUM;
-                break;
-            case CARTA::StatsType::FluxDensity:
-                lattice_stats_type = casacore::LatticeStatsBase::FLUX;
-                break;
-            case CARTA::StatsType::Mean:
-                lattice_stats_type = casacore::LatticeStatsBase::MEAN;
-                break;
-            case CARTA::StatsType::RMS:
-                lattice_stats_type = casacore::LatticeStatsBase::RMS;
-                break;
-            case CARTA::StatsType::Sigma:
-                lattice_stats_type = casacore::LatticeStatsBase::SIGMA;
-                break;
-            case CARTA::StatsType::SumSq:
-                lattice_stats_type = casacore::LatticeStatsBase::SUMSQ;
-                break;
-            case CARTA::StatsType::Min:
-            case CARTA::StatsType::Extrema:
-                lattice_stats_type = casacore::LatticeStatsBase::MIN;
-                break;
-            case CARTA::StatsType::Max:
-                lattice_stats_type = casacore::LatticeStatsBase::MAX;
-                break;
-            case CARTA::StatsType::Blc: {
-                const casacore::IPosition blc(image.region().slicer().start());
-                int_result = blc.asStdVector();
-                break;
-            }
-            case CARTA::StatsType::Trc: {
-                const casacore::IPosition trc(image.region().slicer().end());
-                int_result = trc.asStdVector();
-                break;
-            }
-            case CARTA::StatsType::MinPos:
-            case CARTA::StatsType::MaxPos: {
-                if (!per_channel) { // only works when no display axes
-                    const casacore::IPosition blc(image.region().slicer().start());
-                    casacore::IPosition min_pos, max_pos;
-                    image_stats.getMinMaxPos(min_pos, max_pos);
-                    if (carta_stats_type == CARTA::StatsType::MinPos)
-                        int_result = (blc + min_pos).asStdVector();
-                    else // MaxPos
-                        int_result = (blc + max_pos).asStdVector();
+        for (size_t i = 0; i < requested_stats.size(); ++i) {
+            // get requested statistics values
+            auto carta_stats_type = requested_stats[i];
+
+            // Clear previous results
+            dbl_result.clear();
+
+            switch (carta_stats_type) {
+                case CARTA::StatsType::NumPixels: {
+                    num_points.tovector(dbl_result); // Already retrieved before loop
+                    break;
                 }
-                break;
-            }
-            default:
-                break;
-        }
+                case CARTA::StatsType::Blc:
+                case CARTA::StatsType::Trc:
+                case CARTA::StatsType::MinPos:
+                case CARTA::StatsType::MaxPos: {
+                    GetPositionStats(image, image_stats, carta_stats_type, dbl_result);
+                    break;
+                }
+                case CARTA::StatsType::FluxDensity: {
+                    ComputeFluxDensity(image, image_stats, dbl_result);
+                    break;
+                }
+                default: {
+                    try {
+                        casacore::LatticeStatsBase::StatisticsTypes lattice_stats_type = carta_stats_to_casacore.at(carta_stats_type);
+                        result.resize();
 
-        if (lattice_stats_type < casacore::LatticeStatsBase::NSTATS) {
-            casacore::Array<casacore::Double> result;
-            try {
-                if (image_stats.getStatistic(result, lattice_stats_type)) {
-                    // return result Array for stats type
-                    if (anyEQ(result, 0.0)) {
-                        // Convert 0 result to NaN if number of points is zero
-                        if (num_points.empty()) {
-                            image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
-                        }
+                        if (image_stats.getStatistic(result, lattice_stats_type)) {
+                            // return result Array for stats type
+                            if (anyEQ(result, 0.0)) {
+                                // Convert any 0 result to NaN if number of points is zero
+                                for (size_t j = 0; j < result.size(); ++j) {
+                                    casacore::IPosition index(1, j);
+                                    if ((result(index) == 0.0) && (num_points(index) == 0.0)) {
+                                        result(index) = nan("");
+                                    }
+                                }
+                            }
 
-                        for (size_t j = 0; j < result.size(); ++j) {
-                            casacore::IPosition index(1, j);
-                            if ((result(index) == 0.0) && (num_points(index) == 0.0)) {
-                                result(index) = nan("");
+                            if (carta_stats_type == CARTA::StatsType::Extrema) {
+                                // Result is MIN
+                                std::vector<double> min_result;
+                                result.tovector(min_result);
+                                // Get MAX
+                                if (image_stats.getStatistic(result, casacore::LatticeStatsBase::MAX)) {
+                                    std::vector<double> max_result;
+                                    result.tovector(max_result);
+                                    // Result is greater of abs(MIN) and abs(MAX), inserted in dbl_result
+                                    std::transform(min_result.begin(), min_result.end(), max_result.begin(), std::back_inserter(dbl_result),
+                                        [](double min, double max) { return (abs(min) > abs(max) ? min : max); });
+                                }
+                            } else {
+                                result.tovector(dbl_result);
                             }
                         }
+                    } catch (const casacore::AipsError& err) {
+                        // Leave dbl_result empty, to be filled with nan.
+                    } catch (const std::out_of_range& err) {
+                        // Should not happen, all remaining stats types covered in map.
                     }
-
-                    if (carta_stats_type == CARTA::StatsType::Extrema) {
-                        std::vector<double> min_result;
-                        result.tovector(min_result);
-
-                        if (image_stats.getStatistic(result, casacore::LatticeStatsBase::MAX)) {
-                            std::vector<double> max_result;
-                            result.tovector(max_result);
-                            std::transform(min_result.begin(), min_result.end(), max_result.begin(), std::back_inserter(dbl_result),
-                                [](double min, double max) { return (abs(min) > abs(max) ? min : max); });
-                        }
-                    } else {
-                        result.tovector(dbl_result);
-                    }
+                    break;
                 }
-            } catch (const casacore::AipsError& err) {
-                // Catch exception for calculated stat, e.g. flux density; set result to NaN
+            }
+
+            if (dbl_result.empty()) {
+                // Stat failed: set to NaN
                 for (size_t j = 0; j < result_size; ++j) {
                     dbl_result.push_back(nan(""));
                 }
             }
-        }
-
-        if (!int_result.empty()) {
-            dbl_result.reserve(int_result.size());
-            for (unsigned int j = 0; j < int_result.size(); ++j) { // convert to double
-                dbl_result.push_back(static_cast<double>(int_result[j]));
-            }
-        }
-
-        if (!dbl_result.empty()) {
             stats_values.emplace(carta_stats_type, dbl_result);
         }
     }
 
     return true;
 }
+
+void GetPositionStats(const casacore::ImageInterface<float>& image, casacore::ImageStatistics<float> image_stats,
+    CARTA::StatsType carta_stats_type, std::vector<double>& result) {
+    // Calculate position-related stats and return in dbl_result
+    std::vector<int> int_result;
+
+    switch (carta_stats_type) {
+        case CARTA::StatsType::Blc: {
+            const casacore::IPosition blc(image.region().slicer().start());
+            int_result = blc.asStdVector();
+            break;
+        }
+        case CARTA::StatsType::Trc: {
+            const casacore::IPosition trc(image.region().slicer().end());
+            int_result = trc.asStdVector();
+            break;
+        }
+        case CARTA::StatsType::MinPos:
+        case CARTA::StatsType::MaxPos: {
+            const casacore::IPosition blc(image.region().slicer().start());
+            casacore::IPosition min_pos, max_pos;
+            image_stats.getMinMaxPos(min_pos, max_pos);
+
+            if (carta_stats_type == CARTA::StatsType::MinPos) {
+                int_result = (blc + min_pos).asStdVector();
+            } else { // MaxPos
+                int_result = (blc + max_pos).asStdVector();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (!int_result.empty()) {
+        // Convert to double
+        result.reserve(int_result.size());
+        for (unsigned int j = 0; j < int_result.size(); ++j) {
+            result.push_back(static_cast<double>(int_result[j]));
+        }
+    }
+}
+
+bool ComputeFluxDensity(
+    const casacore::ImageInterface<float>& image, casacore::ImageStatistics<float> image_stats, std::vector<double>& result) {
+    // Compute flux density when image has compatible units.  Value returned in flux_density.
+    // Returns whether calculation succeeded.
+    // Return if no image unit.
+    casacore::String bunit(image.units().getName());
+    if (bunit.empty()) {
+        return false;
+    }
+
+    casacore::Array<casacore::Double> stats_result;
+    if (!image_stats.getStatistic(stats_result, casacore::LatticeStatsBase::NPTS)) {
+        return false;
+    }
+    double npixels = stats_result(casacore::IPosition(1, 0));
+    if (npixels == 0.0) {
+        return false;
+    }
+
+    stats_result.resize();
+    if (!image_stats.getStatistic(stats_result, casacore::LatticeStatsBase::SUM)) {
+        return false;
+    }
+    double sum = stats_result(casacore::IPosition(1, 0));
+
+    // Separate unit parts
+    casacore::String flux_unit(bunit);
+    casacore::String per_unit;
+    if (bunit.contains("/")) {
+        flux_unit = bunit.before("/");
+        per_unit = bunit.after("/");
+    }
+
+    if (!flux_unit.contains("Jy") && !flux_unit.contains("K")) {
+        spdlog::warn("Cannot compute flux density for image unit not in Jy or K.");
+        return false;
+    }
+
+    double flux_density;
+    try {
+        // Casacore supports "unit-1" and "/unit" syntax so check for both
+        if (flux_unit.contains("pixel-1") || (per_unit == "pixel") || (flux_unit.contains("Jy") && per_unit.empty())) {
+            flux_density = sum;
+        } else {
+            // Get area for one pixel
+            auto increments = image.coordinates().increment();
+            auto units = image.coordinates().worldAxisUnits();
+            casacore::Quantity area_unit = casacore::Quantity(1.0, units[0]) * casacore::Quantity(1.0, units[1]);
+            casacore::Quantity pixel_area(std::fabs(increments[0] * increments[1]), area_unit.getUnit());
+
+            // Convert pixel area to per_unit
+            if (flux_unit.contains("beam-1") || per_unit.contains("beam")) {
+                double pixel_area_sr = pixel_area.get("sr").getValue();
+                double beam_area_sr;
+                if (!GetBeamArea(image, "sr", beam_area_sr)) {
+                    return false;
+                }
+                flux_density = sum * pixel_area_sr / beam_area_sr;
+            } else if (flux_unit.contains("sr-1") || per_unit == "sr") {
+                double pixel_area_sr = pixel_area.get("sr").getValue();
+                flux_density = sum * pixel_area_sr;
+            } else if (flux_unit.contains("arcsec-2") || per_unit == "arcsec2" || (flux_unit == "K" && per_unit.empty())) {
+                double pixel_area_arcsec2 = pixel_area.get("arcsec2").getValue();
+                flux_density = sum * pixel_area_arcsec2;
+            }
+        }
+    } catch (const casacore::AipsError& err) {
+        return false;
+    }
+
+    result.push_back(flux_density);
+    return true;
+}
+
+bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::String unit, double& beam_area) {
+    // Return restoring beam area in solid angle unit `unit` in `angle`.
+    // Returns false if image has no restoring beam  or unit is not a solid angle unit.
+    if (!image.imageInfo().hasBeam()) {
+        spdlog::warn("Image has no beam for flux density");
+        return false;
+    }
+
+    beam_area = image.imageInfo().restoringBeam().getArea(unit);
+    return true;
+}
+
 } // namespace carta

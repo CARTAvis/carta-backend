@@ -37,6 +37,7 @@ find_program(CONVERTER, fits2idia)
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
+        ImageData/TestFitsUtil.cc
         TestBlockSmooth.cc
         TestContour.cc
         TestCursorSpatialProfiles.cc
@@ -63,7 +64,10 @@ set(TEST_SOURCES
         TestRegionStats.cc
         TestRestApi.cc
         TestTileEncoding.cc
-        TestUtil.cc
+        Util/TestUtilCasacore.cc
+        Util/TestUtilFile.cc
+        Util/TestUtilImage.cc
+        Util/TestUtilString.cc
         TestVoTable.cc)
 
 # Add all the sources in the main project and remove Main.cc

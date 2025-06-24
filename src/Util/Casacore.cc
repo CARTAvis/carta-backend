@@ -6,99 +6,23 @@
 
 #include "Casacore.h"
 
+#include <regex>
+
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
 
 #include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
 
-bool CheckFolderPaths(string& top_level_string, string& starting_string) {
-    // TODO: is this code needed at all? Was it a weird workaround?
-    {
-        if (top_level_string == "base" && starting_string == "root") {
-            spdlog::critical("Must set top level or starting directory. Exiting carta.");
-            return false;
-        }
-        if (top_level_string == "base")
-            top_level_string = starting_string;
-        if (starting_string == "root")
-            starting_string = top_level_string;
-    }
-    // TODO: Migrate to std::filesystem
-    // check top level
-    casacore::File top_level_folder(top_level_string);
-    if (!(top_level_folder.exists() && top_level_folder.isDirectory(true) && top_level_folder.isReadable() &&
-            top_level_folder.isExecutable())) {
-        spdlog::critical("Invalid top level directory, does not exist or is not a readable directory. Exiting carta.");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        top_level_string = top_level_folder.path().resolvedName(); // fails on top level folder /
-    } catch (casacore::AipsError& err) {
-        try {
-            top_level_string = top_level_folder.path().absoluteName();
-        } catch (casacore::AipsError& err) {
-            spdlog::error(err.getMesg());
-        }
-        if (top_level_string.empty())
-            top_level_string = "/";
-    }
-    // check starting folder
-    casacore::File starting_folder(starting_string);
-    if (!(starting_folder.exists() && starting_folder.isDirectory(true) && starting_folder.isReadable() &&
-            starting_folder.isExecutable())) {
-        spdlog::warn("Invalid starting directory, using the provided top level directory instead.");
-        starting_string = top_level_string;
-    } else {
-        // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-        try {
-            starting_string = starting_folder.path().resolvedName(); // fails on top level folder /
-        } catch (casacore::AipsError& err) {
-            try {
-                starting_string = starting_folder.path().absoluteName();
-            } catch (casacore::AipsError& err) {
-                spdlog::error(err.getMesg());
-            }
-            if (starting_string.empty())
-                starting_string = "/";
-        }
-    }
-    bool is_subdirectory = IsSubdirectory(starting_string, top_level_string);
-    if (!is_subdirectory) {
-        spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", starting_string, top_level_string);
-        return false;
-    }
-    return true;
-}
+const std::regex GILDAS_REGEX(" *[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\) *");
 
-bool IsSubdirectory(string folder, string top_folder) {
-    folder = casacore::Path(folder).absoluteName();
-    top_folder = casacore::Path(top_folder).absoluteName();
-    if (top_folder.empty()) {
-        return true;
-    }
-    if (folder == top_folder) {
-        return true;
-    }
-    casacore::Path folder_path(folder);
-    string parent_string(folder_path.dirName());
-    if (parent_string == top_folder) {
-        return true;
-    }
-    while (parent_string != top_folder) { // navigate up directory tree
-        folder_path = casacore::Path(parent_string);
-        parent_string = folder_path.dirName();
-        if (parent_string == top_folder) {
-            return true;
-        } else if (parent_string == "/") {
-            break;
-        }
-    }
-    return false;
-}
-
-casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file, string& message) {
+/**
+ * @details This function constructs an absolute file path using a specified root directory,
+ * a relative subdirectory, and a file name. It checks whether the resulting file path
+ * exists and is readable. If any issue is encountered, an error message is set.
+ */
+casacore::String GetResolvedFilename(
+    const std::string& root_dir, const std::string& directory, const std::string& file, std::string& message) {
     // Given directory (relative to root directory) and file, return resolved file path.
     // Check if file path exists and is readable.
     casacore::String resolved_filename;
@@ -137,6 +61,57 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
     return resolved_filename;
 }
 
+/**
+ * @details This function determines the image type of a directory.  If not an image, returns UNKNOWN type.
+ *
+ * @note If the path is a file, does not check type and returns UNKNOWN.
+ */
+CARTA::FileType FolderImageType(const std::string& folder_path, std::string& message) {
+    // Return CARTA::FileType enum for input folder (image type only for folder only).
+    // Returns UNKNOWN for files (including image files), unsupported image types, and plain directories.
+    // Return parameter `message` is set for unsupported image types.
+    CARTA::FileType carta_type(CARTA::FileType::UNKNOWN);
+    casacore::File input_file(folder_path);
+    if (input_file.isRegular()) {
+        return carta_type;
+    }
+
+    switch (CasacoreImageType(folder_path)) {
+        case casacore::ImageOpener::AIPSPP:
+        case casacore::ImageOpener::IMAGECONCAT:
+        case casacore::ImageOpener::IMAGEEXPR:
+        case casacore::ImageOpener::COMPLISTIMAGE: {
+            carta_type = CARTA::FileType::CASA;
+            break;
+        }
+        case casacore::ImageOpener::MIRIAD: {
+            carta_type = CARTA::FileType::MIRIAD;
+            break;
+        }
+        case casacore::ImageOpener::GIPSY:
+        case casacore::ImageOpener::CAIPS:
+        case casacore::ImageOpener::NEWSTAR: {
+            message = fmt::format("{}: image type not supported", folder_path);
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+
+    return carta_type;
+}
+
+/**
+ * @details This function analyses the spectral coordinate system of the provided `image` and sets
+ * preference flags for velocity, wavelength, and their specific variations. It considers
+ * the image's native spectral type and applies special handling for `CartaMiriadImage` types.
+ *
+ * @note If the image contains a spectral axis, its native type is determined and used to
+ *       update the preference flags accordingly.
+ *
+ * @warning The function modifies the output parameters in place; ensure they are initialized properly.
+ */
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength) {
     prefer_velocity = optical_velocity = prefer_wavelength = air_wavelength = false;
@@ -181,6 +156,14 @@ void GetSpectralCoordPreferences(
     }
 }
 
+/**
+ * @details This function retrieves the major axis, minor axis, and position angle (PA) of
+ * a given `casacore::GaussianBeam` and formats them into a structured string with
+ * six decimal places of precision.
+ *
+ * @note The output format is:
+ *      `"major: <value> <unit> minor: <value> <unit> pa: <value> <unit>"`
+ */
 std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam) {
     std::string result;
     result += fmt::format("major: {:.6f} {} ", gaussian_beam.getMajor().getValue(), gaussian_beam.getMajor().getUnit());
@@ -189,13 +172,33 @@ std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam) {
     return result;
 }
 
+/**
+ * @details This function converts a `casacore::Quantity` into a string representation
+ * with six decimal places of precision, including its unit.
+ */
 std::string FormatQuantity(const casacore::Quantity& quantity) {
     return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
 }
 
+/**
+ * @details This function converts various unit representations into their standardised Casacore
+ * equivalents. It replaces non-standard units with correct forms, fixes case inconsistencies,
+ * and removes invalid characters. Additionally, it attempts to map the unit to a valid
+ * Casacore unit using `UnitMap::fromFITS` and `UnitVal::check`.
+ *
+ * @note If the unit contains a recognized prefix, the function attempts to normalise with and without the prefix.
+ *
+ * @warning If the unit cannot be resolved to a known Casacore unit, it remains unchanged.
+ *
+ * @exception casacore::AipsError Caught internally when Casacore unit conversions fail.
+ */
 void NormalizeUnit(casacore::String& unit) {
     // Convert unit string to "proper" units according to casacore
     // Fix nonstandard units which pass check
+    if (IsGildasUnit(unit)) {
+        return; // do not casacore-ize unit
+    }
+
     unit.gsub("JY", "Jy");
     unit.gsub("jy", "Jy");
     unit.gsub("Beam", "beam");
@@ -205,6 +208,7 @@ void NormalizeUnit(casacore::String& unit) {
     unit.gsub("Jy beam-1", "Jy/beam");
     unit.gsub("Jy beam^-1", "Jy/beam");
     unit.gsub("beam-1 Jy", "Jy/beam");
+    unit.gsub("beam-1.Jy", "Jy/beam");
     unit.gsub("beam^-1 Jy", "Jy/beam");
     unit.gsub("Pixel", "pixel");
     unit.gsub("DEGREE", "deg");
@@ -257,44 +261,12 @@ void NormalizeUnit(casacore::String& unit) {
     }
 }
 
-bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa) {
-    // Parse AIPS beam header using regex_match.
-    // Returns false if regex failed, else true with beam value-unit strings.
-    std::regex r;
-    std::cmatch results;
-    bool matched(false);
-
-    if (header.find("Beam") != std::string::npos) {
-        // Example:
-        // HISTORY RESTOR Beam =  2.000E+00 x  1.800E+00 arcsec, pa =  8.000E+01 degrees
-        r = R"/(.*Beam\s*=\s*([\d.Ee+-]+)\s*x\s*([\d.Ee+-]+)\s*([A-Za-z]*)\s*,*\s*pa\s*=\s*([\d.Ee+-]+)\s*([A-Za-z]*).*)/";
-        matched = std::regex_match(header.c_str(), results, r);
-    } else if (header.find("BMAJ") != std::string::npos) {
-        // Examples:
-        // HISTORY CONVL BMAJ=  5.0000 BMIN=  5.0000 BPA=   0.0/Output beam
-        // HISTORY AIPS   CLEAN BMAJ=  1.3889E-03 BMIN=  1.3889E-03 BPA=   0.00
-        r = R"/(.*BMAJ\s*=\s*([\d.Ee+-]+)\s*BMIN\s*=\s*([\d.Ee+-]+)\s*BPA\s*=\s*([\d.Ee+-]+).*)/";
-        matched = std::regex_match(header.c_str(), results, r);
-    }
-
-    if (matched) {
-        if (results.size() == 4) {
-            // 0 matched expr, 1 bmaj, 2 bmin, 3 bpa. Use default unit.
-            bmaj = results.str(1) + "deg";
-            bmin = results.str(2) + "deg";
-            bpa = results.str(3) + "deg";
-        } else if (results.size() == 6) {
-            // 0 matched expr, 1 bmaj, 2 bmin, 3 unit, 4 bpa, 5 unit
-            auto unit3 = results.str(3);
-            auto unit5 = results.str(5);
-            bmaj = results.str(1) + (unit3 == "degrees" ? "deg" : unit3);
-            bmin = results.str(2) + (unit3 == "degrees" ? "deg" : unit3);
-            bpa = results.str(4) + (unit5 == "degrees" ? "deg" : unit5);
-        } else {
-            spdlog::debug("Unable to set history beam header {}: unexpected format.", header);
-            matched = false;
-        }
-    }
-
-    return matched;
+/**
+ * @details This function uses regex to check if unit is in the GILDAS CLASS software format
+ * "unit (Ttype)" where the "type" describes the temperature T.
+ * It also tests for casacore Unit name changes where " " and "*" are replaced with ".".
+ * For example: "K (Ta*)" -->  "K.(Ta.)" in casacore.
+ */
+bool IsGildasUnit(const casacore::String& unit) {
+    return std::regex_match(unit, GILDAS_REGEX);
 }

@@ -1,74 +1,136 @@
 # CARTA Image Viewer (Backend)
 
-![code coverage](https://img.shields.io/endpoint?style=plastic&url=https%3A%2F%2Fgist.githubusercontent.com%2Fajm-asiaa%2Fecad490776d42844903aeebf5e6d2173%2Fraw)
+![code coverage](https://raw.githubusercontent.com/CARTAvis/carta-backend/refs/heads/gh-storage/badge-coverage.svg)
 
-Backend process for simple web-based interface for viewing radio astronomy images in CASA, FITS, MIRIAD, and HDF5 formats (using the IDIA custom schema for HDF5). Unlike the conventional approach of rendering an image on the backend and sending a rendered image to the frontend client, the backend sends a compressed subset of the data, and the frontend renders the image efficiently on the GPU using WebGL and GLSL shaders. While the data is compressed using the lossy ZFP algorithm, the compression artefacts are generally much less noticeable than those cropping up from full-colour JPEG compression. While data sizes depend on compression quality used, sizes are [comparable](https://docs.google.com/spreadsheets/d/1lp1687TL0bYmbM3jGyjuPd9dYZnrAYGnLIQXWVpnmS0/edit?usp=sharing) with sizes of compressed JPEG images with a 95% quality setting, depending on the colour map used to generate the JPEG image. PNG compression is generally a factor of 2 larger than the ZFP compressed data.
+This is the backend component of the [Cube Analysis and Rendering Tool for Astronomy](https://cartavis.org/), a web-based application for viewing radio astronomy images in CASA, FITS, MIRIAD, and HDF5[^1] formats.
 
-## Ubuntu packages
+Rather than rendering each image and sending it to the frontend client (which is the conventional approach), the backend sends a compressed subset of the data, and the frontend renders the image efficiently on the GPU using WebGL and GLSL shaders.
 
-We provide packages for Ubuntu 20.04 (Focal Fossa) and 18.04 (Bionic Beaver) in [a PPA](https://launchpad.net/~cartavis-team/+archive/ubuntu/carta) on Launchpad. All required dependencies are included in the PPA.
+Although the data is compressed with the lossy ZFP algorithm, the compression artefacts are generally much less noticeable than those produced by full-colour JPEG compression.
 
-To add the PPA:
+While data sizes depend on compression quality, sizes are [comparable](https://docs.google.com/spreadsheets/d/1lp1687TL0bYmbM3jGyjuPd9dYZnrAYGnLIQXWVpnmS0/edit?usp=sharing) with sizes of compressed JPEG images with a 95% quality setting (depending on the colour map used to generate the JPEG image). PNG compression is generally a factor of 2 larger than the ZFP-compressed data.
+
+[^1] using the [custom IDIA schema](https://github.com/CARTAvis/fits2idia).
+
+# Installation
+
+If you are looking for releases of the CARTA application for desktop users, please refer to the [main website](https://cartavis.org/#download).
+
+If you would like to set up CARTA in a multi-user environment, we recommend installing the [CARTA controller](https://carta-controller.readthedocs.io). We provide detailed instructions for a complete deployment of all components on supported platforms.
+
+The rest of this document describes installation of **the backend component only** (for use with a separately installed frontend, or with the controller).
+
+## Linux packages
+
+We provide packages of the backend and all required dependencies for recent Ubuntu LTS releases and recent AlmaLinux releases. They should also work on equivalent distributions closely based on Ubuntu and on RHEL.
+
+The packages install a launcher which allows CARTA to be started from the desktop environment's menu.
+
+The beta package saves user configuration to `.carta-beta` rather than `.carta`.
+
+### Ubuntu
 
 ```shell
 sudo add-apt-repository ppa:cartavis-team/carta
 sudo apt-get update
-```
 
-To install the development version of the backend only (suitable for use with the CARTA controller):
-
-```shell
+# install the latest beta version of the backend only
 sudo apt-get install carta-backend-beta
+
+# OR install the latest stable release version of the backend only
+sudo apt-get install carta-backend
 ```
 
-To install the development version of the backend and frontend (suitable for a desktop install):
+The beta and stable Ubuntu packages use the same install locations, and only one can be installed at a time.
+
+### AlmaLinux (and equivalents)
 
 ```shell
-sudo apt-get install carta-beta
+sudo dnf install epel-release
+sudo dnf install 'dnf-command(copr)'
+sudo dnf copr enable cartavis/carta
+
+# install the latest beta version of the backend only
+sudo dnf install carta-backend-beta
+
+# install the latest stable release version of the backend only
+sudo dnf install carta-backend
 ```
 
-The development package installs a launcher which allows CARTA to be started from the desktop environment's menu.
+The RPM beta package uses a custom install location in `/opt`, and can be installed in parallel with the stable package.
 
-## Building from source
+## Building the development version from source
 
-### Submodules
+### Obtaining the source
 
-The protocol buffer definitions for communication between the backend and frontend, and for communication between the scripting interface and the backend. [µWebSockets](https://github.com/uNetworking/uWebSockets), which builds on [µSockets](https://github.com/uNetworking/uSockets), is used to communicate with the frontend. In order to get the right version of µWebSockets and its dependency µSockets, together with the other two submodules, a git initialisation command must be applied as follows:
+This repository includes several dependencies as submodules:
+* [µWebSockets](https://github.com/uNetworking/uWebSockets) and its dependency [µSockets](https://github.com/uNetworking/uSockets) for communicating with the frontend
+* [CARTA protocol buffer messages](carta-protobuf) define the interface for this communication
+* [CARTA JSON schemas](schemas) define JSON objects used by CARTA components
+* [cxxopts](https://github.com/jarro2783/cxxopts) for parsing commandline options
+* [nlohmann/json](https://github.com/nlohmann/json) for parsing JSON
+* [pugixml](https://github.com/zeux/pugixml) for parsing XML
+* [spdlog](https://github.com/gabime/spdlog) for logging
+* [sse2neon](https://github.com/DLTcollab/sse2neon) for ARM support
+
+Two submodules are not required for building the main source:
+* [image-generator](https://github.com/idia-astro/image-generator) for creating FITS images (from the unit tests; soon to be deprecated)
+* [Doxygen Awesome](https://github.com/jothepro/doxygen-awesome-css), a Doxygen stylesheet (for generating the developer documentation)
+
+You can fetch the submodule contents after you clone the repository:
 ```shell
-git submodule update --init --recursive
+git clone https://github.com/CARTAvis/carta-backend.git
+cd carta-backend
+git submodule update --init
 ```
 
-If you use `git pull` to update an existing checkout of this repository, make sure that you also use `git submodule update` to fetch the appropriate versions of the submodule code.
+We do not recommend fetching the submodules recursively, as this will cause several large unused nested dependencies to be downloaded.
+
+If you use `git pull` to update an existing checkout of this repository, make sure that you also use `git submodule update --init` to fetch the appropriate versions of the submodule code.
 
 ### External dependencies
 
-The backend build depends on the following libraries: 
-* [casacore and casa imageanalysis](https://github.com/CARTAvis/carta-casacore); follow the build instructions.
-* [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly. Build and install from git repo. For best performance, build with AVX extensions.
-* [Zstd](https://github.com/facebook/zstd) for data compression. Debian package `libzstd-dev`.
-* [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu). The Debian package `protobuf-compiler` may also be required.
-* [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support. Debian packages `libhdf5-dev` and `libhdf5-cpp-100`. By default, the serial version of the HDF5 library is targeted.
-* [libuuid](https://linux.die.net/man/3/libuuid) for generating auth tokens (if not using external authentication). Debian package `uuid-dev`.
-* [cfitsio](https://heasarc.gsfc.nasa.gov/fitsio/) library for I/O with FITS format data files. Debian package: `libcfitsio-dev`.
-* [wcslib](https://www.gnu.org/software/gnuastro/manual/html_node/WCSLIB.html) library to handle world coordinate system. Debian package: `wcslib-dev`.
+The backend build depends on the following libraries (this is not an exhaustive list): 
+* [casacore + casa imageanalysis](https://github.com/CARTAvis/carta-casacore). We maintain a custom version of this library.
+* [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly.[^1]
+* [Zstd](https://github.com/facebook/zstd) for data compression.
+* [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats.
+* [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support.
+* [libuuid](https://linux.die.net/man/3/libuuid) for generating auth tokens (if not using external authentication).
+* [cfitsio](https://heasarc.gsfc.nasa.gov/fitsio/) library for I/O with FITS format data files.
+* [wcslib](https://www.gnu.org/software/gnuastro/manual/html_node/WCSLIB.html) library to handle world coordinate system.
+
+We recommend using our [Dockerfiles](Dockerfiles) as a guideline for installing these dependencies on RPM-based and Debian-based distributions. We provide packaged versions of dependencies missing from officially supported distributions.
+
+[^1]: If you build `zfp` from source, enable AVX extensions for the best performance.
 
 ### Build
 
-Use cmake to build:
+We use `cmake` to configure the build.
+
 ```shell
 mkdir build
 cd build
 cmake ..
-make
+make -j8
 ```
 
-For more detailed example commands for installing the dependencies and performing the build on specific Linux distributions, please refer to the provided [Dockerfiles](https://github.com/CARTAvis/carta-backend/tree/dev/Dockerfiles).
+# Running the backend process
 
-## Running the backend process
+The packages provide a `carta` script which wraps the `carta_backend` executable. Both are available on the path. In the source build, the `carta_backend` executable can be found in the `build` directory.
 
-Command-line arguments are in the format `--arg=value` or `--arg value`. Run `carta_backend --help` for a list of options. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `--frontend_folder` argument. Hosting of the frontend can be disabled with the `--no_http` argument. Token-based authentication can be disabled for debugging or development purposes with the `--debug_no_auth` argument.
+Command-line arguments are in the format `--arg=value` or `--arg value`. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `--frontend_folder` argument. Run `carta_backend --help` for a full list of options.
 
-## Developer documentation
+Most options can also be set permanently in a user configuration file (`~/.carta/backend.json`, or `~/.carta-beta/backend.json` for our beta packages) or a global configuration file (`/etc/carta/backend.json`). For example:
+```json
+{
+    "$schema": "https://cartavis.github.io/schemas/preference_backend_schema_2.json",
+    "verbosity": 5,
+    "exit_timeout" : 0
+}
+```
+
+# Developer documentation
 
 Automatically generated Doxygen documentation can be found at [cartavis.org/carta-backend](https://cartavis.org/carta-backend/).
 
