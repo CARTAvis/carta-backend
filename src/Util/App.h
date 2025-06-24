@@ -10,7 +10,7 @@
 #include <string>
 
 // version
-#define VERSION_ID "5.0.0-beta.1"
+#define VERSION_ID "5.0.0-rc.1"
 
 /**
  * @brief Retrieves the absolute path of the currently running executable.
