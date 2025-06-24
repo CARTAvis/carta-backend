@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix crash when animator is started while PV preview is active ([#1441](https://github.com/CARTAvis/carta-backend/issues/1441)).
 * Fix flux density computation for additional image units including MJy/sr ([#1343](https://github.com/CARTAvis/carta-backend/issues/1343)).
 * Fix occasional duplication of sync IDs in messages during image fitting ([#1466](https://github.com/CARTAvis/carta-backend/issues/1466)).
+* Fix import of regions from top-level directory ([#1403](https://github.com/CARTAvis/carta-backend/issues/1403)).
+* Fix compression artifact issue ([#1447](https://github.com/CARTAvis/carta-backend/issues/1447)).
 * Fix applying vector field threshold ([#1415](https://github.com/CARTAvis/carta-backend/issues/1415) and [#1444](https://github.com/CARTAvis/carta-backend/issues/1444)).
 
 ## [5.0.0-beta.1]

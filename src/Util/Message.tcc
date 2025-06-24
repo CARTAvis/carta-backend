@@ -17,8 +17,7 @@ template <typename T>
 /**
  * @note This function uses a static_assert to ensure that T has a member function `ParseFromArray`.
  *       If T does not have this member function, a compilation error will occur.
- *       The function also throws a runtime error if the parsing fails, providing information about
- *       the session ID and the type of the message.
+ *       The function also throws a parsing exception if the parsing fails.
  */
 T Message::DecodeMessage(std::string_view sv_message) {
     const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);

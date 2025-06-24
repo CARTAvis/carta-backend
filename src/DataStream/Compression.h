@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <vector>
 
+#define MAX_COMPRESSION_QUALITY 32
+
 namespace carta {
 
 int Compress(std::vector<float>& array, size_t offset, std::vector<char>& compression_buffer, std::size_t& compressed_size, uint32_t nx,

@@ -118,7 +118,7 @@ void InitLogger() {
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
     if (log_protocol_messages) {
-        auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
+        auto event_name = CARTA::EventType_Name(event_type);
         if (!event_name.empty()) {
             spdlog::debug("[protocol] <== {}", event_name);
         } else {
@@ -129,7 +129,7 @@ void LogReceivedEventType(const CARTA::EventType& event_type) {
 
 void LogSentEventType(const CARTA::EventType& event_type) {
     if (log_protocol_messages) {
-        auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
+        auto event_name = CARTA::EventType_Name(event_type);
         if (!event_name.empty()) {
             spdlog::debug("[protocol] ==> {}", event_name);
         } else {
