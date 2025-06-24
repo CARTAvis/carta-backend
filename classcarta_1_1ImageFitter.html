@@ -119,9 +119,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9cdf83157a2149961d2311086602baf8" id="r_a9cdf83157a2149961d2311086602baf8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a9cdf83157a2149961d2311086602baf8">ImageFitter</a> ()</td></tr>
 <tr class="memdesc:a9cdf83157a2149961d2311086602baf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for the <a class="el" href="classcarta_1_1ImageFitter.html" title="A class for fitting multiple Gaussian components to an image and generating model and residual images...">ImageFitter</a> class.  <br /></td></tr>
 <tr class="separator:a9cdf83157a2149961d2311086602baf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aed4497f70e14e441c9e33950f8f9ab44" id="r_aed4497f70e14e441c9e33950f8f9ab44"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44">FitImage</a> (size_t width, size_t height, float *image, double beam_size, string unit, const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, const std::vector&lt; bool &gt; &amp;fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse &amp;fitting_response, <a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a> progress_callback, size_t offset_x=0, size_t offset_y=0)</td></tr>
-<tr class="memdesc:aed4497f70e14e441c9e33950f8f9ab44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fit Gaussian components to an image and generate fitting results along with model and residual data.  <br /></td></tr>
-<tr class="separator:aed4497f70e14e441c9e33950f8f9ab44"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae73c91c8cc49139e390b6ef72729e262" id="r_ae73c91c8cc49139e390b6ef72729e262"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#ae73c91c8cc49139e390b6ef72729e262">FitImage</a> (size_t width, size_t height, float *image, double beam_size, string unit, std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, const std::vector&lt; bool &gt; &amp;fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse &amp;fitting_response, <a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a> progress_callback, size_t offset_x=0, size_t offset_y=0)</td></tr>
+<tr class="memdesc:ae73c91c8cc49139e390b6ef72729e262"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fit Gaussian components to an image and generate fitting results along with model and residual data.  <br /></td></tr>
+<tr class="separator:ae73c91c8cc49139e390b6ef72729e262"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3d0c501d804cc7eb931e241006e4b97" id="r_af3d0c501d804cc7eb931e241006e4b97"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#af3d0c501d804cc7eb931e241006e4b97">GetGeneratedImages</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt; &gt; image, const casacore::ImageRegion &amp;image_region, const std::string &amp;filename, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;model_image, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;residual_image, CARTA::FittingResponse &amp;fitting_response)</td></tr>
 <tr class="memdesc:af3d0c501d804cc7eb931e241006e4b97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate model and residual images based on the fitting results.  <br /></td></tr>
 <tr class="separator:af3d0c501d804cc7eb931e241006e4b97"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,9 +134,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:aaffd05e392d76e77c31a087af5608ab9" id="r_aaffd05e392d76e77c31a087af5608ab9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aaffd05e392d76e77c31a087af5608ab9">CalculateNanNumAndStd</a> ()</td></tr>
 <tr class="memdesc:aaffd05e392d76e77c31a087af5608ab9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate the number of NaN values and standard deviation of the image data.  <br /></td></tr>
 <tr class="separator:aaffd05e392d76e77c31a087af5608ab9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a621c8378ac1d751ba73f1d3cb6658890" id="r_a621c8378ac1d751ba73f1d3cb6658890"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a621c8378ac1d751ba73f1d3cb6658890">SetInitialValues</a> (const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, double background_offset, const std::vector&lt; bool &gt; &amp;fixed_params)</td></tr>
-<tr class="memdesc:a621c8378ac1d751ba73f1d3cb6658890"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set initial fitting parameters for the fitting.  <br /></td></tr>
-<tr class="separator:a621c8378ac1d751ba73f1d3cb6658890"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f3770f88defaa45f8769d4c06179e80" id="r_a0f3770f88defaa45f8769d4c06179e80"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a0f3770f88defaa45f8769d4c06179e80">SetInitialValues</a> (const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, double background_offset, const std::vector&lt; bool &gt; &amp;fixed_params)</td></tr>
+<tr class="memdesc:a0f3770f88defaa45f8769d4c06179e80"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set initial fitting parameters for the fitting.  <br /></td></tr>
+<tr class="separator:a0f3770f88defaa45f8769d4c06179e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3796f44fac3ba6b9dbe37b9261491abe" id="r_a3796f44fac3ba6b9dbe37b9261491abe"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a3796f44fac3ba6b9dbe37b9261491abe">SolveSystem</a> (CARTA::FittingSolverType solver)</td></tr>
 <tr class="memdesc:a3796f44fac3ba6b9dbe37b9261491abe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Main function for the multiple Gaussian image fitting.  <br /></td></tr>
 <tr class="separator:a3796f44fac3ba6b9dbe37b9261491abe"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,12 +170,9 @@ Static Private Member Functions</h2></td></tr>
 <tr class="memitem:aab6682d3f70cacb34af30da27dee81b4" id="r_aab6682d3f70cacb34af30da27dee81b4"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4">ErrorHandler</a> (const char *reason, const char *file, int line, int gsl_errno)</td></tr>
 <tr class="memdesc:aab6682d3f70cacb34af30da27dee81b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Customize GSL errors.  <br /></td></tr>
 <tr class="separator:aab6682d3f70cacb34af30da27dee81b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b1cb0f92d5233f3c90f06cfe263c043" id="r_a8b1cb0f92d5233f3c90f06cfe263c043"><td class="memItemLeft" align="right" valign="top">static std::tuple&lt; double, double, double, double, double, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043">GetGaussianParams</a> (const gsl_vector *value_vector, size_t index, std::vector&lt; int &gt; &amp;fit_values_indexes, std::vector&lt; double &gt; &amp;initial_values, size_t offset_x=0, size_t offset_y=0)</td></tr>
-<tr class="memdesc:a8b1cb0f92d5233f3c90f06cfe263c043"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract Gaussian parameters from a vector.  <br /></td></tr>
-<tr class="separator:a8b1cb0f92d5233f3c90f06cfe263c043"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7e43e667bf591d24c47a0f5298cc175" id="r_aa7e43e667bf591d24c47a0f5298cc175"><td class="memItemLeft" align="right" valign="top">static CARTA::GaussianComponent&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175">GetGaussianComponent</a> (std::tuple&lt; double, double, double, double, double, double &gt; params)</td></tr>
-<tr class="memdesc:aa7e43e667bf591d24c47a0f5298cc175"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a Gaussian component sub-message from Gaussian parameters.  <br /></td></tr>
-<tr class="separator:aa7e43e667bf591d24c47a0f5298cc175"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85107befa878492e29e4a7693c61f59e" id="r_a85107befa878492e29e4a7693c61f59e"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structcarta_1_1GaussianParams.html">GaussianParams</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a85107befa878492e29e4a7693c61f59e">GetGaussianParams</a> (const gsl_vector *value_vector, size_t index, std::vector&lt; int &gt; &amp;fit_values_indexes, std::vector&lt; double &gt; &amp;initial_values, size_t offset_x=0, size_t offset_y=0)</td></tr>
+<tr class="memdesc:a85107befa878492e29e4a7693c61f59e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract Gaussian parameters from a vector.  <br /></td></tr>
+<tr class="separator:a85107befa878492e29e4a7693c61f59e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a69cbe382ee0df6a3aae2d1e239427b44" id="r_a69cbe382ee0df6a3aae2d1e239427b44"><td class="memItemLeft" align="right" valign="top">static double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a69cbe382ee0df6a3aae2d1e239427b44">GetMedianAbsDeviation</a> (const size_t n, double x[])</td></tr>
 <tr class="memdesc:a69cbe382ee0df6a3aae2d1e239427b44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate the Median Absolute Deviation (MAD) of an array of data.  <br /></td></tr>
 <tr class="separator:a69cbe382ee0df6a3aae2d1e239427b44"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -496,8 +493,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aed4497f70e14e441c9e33950f8f9ab44" name="aed4497f70e14e441c9e33950f8f9ab44"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aed4497f70e14e441c9e33950f8f9ab44">&#9670;&#160;</a></span>FitImage()</h2>
+<a id="ae73c91c8cc49139e390b6ef72729e262" name="ae73c91c8cc49139e390b6ef72729e262"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae73c91c8cc49139e390b6ef72729e262">&#9670;&#160;</a></span>FitImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -535,7 +532,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::vector&lt; CARTA::GaussianComponent &gt; &amp;&#160;</td>
+          <td class="paramtype">std::vector&lt; CARTA::GaussianComponent &gt; &amp;&#160;</td>
           <td class="paramname"><em>initial_values</em>, </td>
         </tr>
         <tr>
@@ -608,7 +605,7 @@ Here is the caller graph for this function:</div>
     <tr><td class="paramname">image</td><td>Pointer to the image data </td></tr>
     <tr><td class="paramname">beam_size</td><td>Beam size of the image </td></tr>
     <tr><td class="paramname">unit</td><td>Unit of the image </td></tr>
-    <tr><td class="paramname">initial_values</td><td>Initial fitting parameters </td></tr>
+    <tr><td class="paramname">initial_values</td><td>Initial values of the fixed and unfixed Gaussian parameters </td></tr>
     <tr><td class="paramname">fixed_params</td><td>Whether the fitting parameters are fixed </td></tr>
     <tr><td class="paramname">background_offset</td><td>Background offset of the image </td></tr>
     <tr><td class="paramname">solver</td><td>The type of solver to use. </td></tr>
@@ -625,7 +622,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_aed4497f70e14e441c9e33950f8f9ab44_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_ae73c91c8cc49139e390b6ef72729e262_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -743,8 +740,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aa7e43e667bf591d24c47a0f5298cc175" name="aa7e43e667bf591d24c47a0f5298cc175"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa7e43e667bf591d24c47a0f5298cc175">&#9670;&#160;</a></span>GetGaussianComponent()</h2>
+<a id="a85107befa878492e29e4a7693c61f59e" name="a85107befa878492e29e4a7693c61f59e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85107befa878492e29e4a7693c61f59e">&#9670;&#160;</a></span>GetGaussianParams()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -753,52 +750,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">CARTA::GaussianComponent ImageFitter::GetGaussianComponent </td>
-          <td>(</td>
-          <td class="paramtype">std::tuple&lt; double, double, double, double, double, double &gt;&#160;</td>
-          <td class="paramname"><em>params</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Create a Gaussian component sub-message from Gaussian parameters. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">params</td><td>Tuple containing Gaussian parameters </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A Gaussian component sub-message </dd></dl>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_aa7e43e667bf591d24c47a0f5298cc175_cgraph.svg" width="470" height="86"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_aa7e43e667bf591d24c47a0f5298cc175_icgraph.svg" width="386" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-
-</div>
-</div>
-<a id="a8b1cb0f92d5233f3c90f06cfe263c043" name="a8b1cb0f92d5233f3c90f06cfe263c043"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8b1cb0f92d5233f3c90f06cfe263c043">&#9670;&#160;</a></span>GetGaussianParams()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::tuple&lt; double, double, double, double, double, double &gt; ImageFitter::GetGaussianParams </td>
+          <td class="memname"><a class="el" href="structcarta_1_1GaussianParams.html">GaussianParams</a> ImageFitter::GetGaussianParams </td>
           <td>(</td>
           <td class="paramtype">const gsl_vector *&#160;</td>
           <td class="paramname"><em>value_vector</em>, </td>
@@ -858,11 +810,11 @@ Here is the caller graph for this function:</div>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A tuple of Gaussian parameters </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>Gaussian parameters including center x, center y, amplitude, FWHM x, FWHM y, and position angle </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a8b1cb0f92d5233f3c90f06cfe263c043_icgraph.svg" width="100%" height="424"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a85107befa878492e29e4a7693c61f59e_icgraph.svg" width="100%" height="424"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1112,12 +1064,12 @@ Here is the caller graph for this function:</div>
 <p>Calculate the Median Absolute Deviation (MAD) of an array of data. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">n</td><td>The number of data points in the array. </td></tr>
-    <tr><td class="paramname">x</td><td>An array containing the data points. </td></tr>
+    <tr><td class="paramname">n</td><td>The number of data points in the array </td></tr>
+    <tr><td class="paramname">x</td><td>An array containing the data points </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>The calculated MAD. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>The calculated MAD </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1126,8 +1078,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a621c8378ac1d751ba73f1d3cb6658890" name="a621c8378ac1d751ba73f1d3cb6658890"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a621c8378ac1d751ba73f1d3cb6658890">&#9670;&#160;</a></span>SetInitialValues()</h2>
+<a id="a0f3770f88defaa45f8769d4c06179e80" name="a0f3770f88defaa45f8769d4c06179e80"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f3770f88defaa45f8769d4c06179e80">&#9670;&#160;</a></span>SetInitialValues()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1136,7 +1088,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void ImageFitter::SetInitialValues </td>
+          <td class="memname">bool ImageFitter::SetInitialValues </td>
           <td>(</td>
           <td class="paramtype">const std::vector&lt; CARTA::GaussianComponent &gt; &amp;&#160;</td>
           <td class="paramname"><em>initial_values</em>, </td>
@@ -1175,10 +1127,11 @@ Here is the caller graph for this function:</div>
   </table>
   </dd>
 </dl>
+<dl class="section return"><dt>Returns</dt><dd>Whether all parameters are valid </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a621c8378ac1d751ba73f1d3cb6658890_icgraph.svg" width="336" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a0f3770f88defaa45f8769d4c06179e80_icgraph.svg" width="336" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -1214,7 +1167,7 @@ Here is the caller graph for this function:</div>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>The status of the fitting </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>The status of the fitting: zero for success or non-zero for error codes </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">

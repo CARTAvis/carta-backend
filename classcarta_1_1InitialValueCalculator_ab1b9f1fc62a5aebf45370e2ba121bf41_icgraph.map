@@ -1,0 +1,5 @@
+<map id="carta::InitialValueCalculator::CalculateInitialValues" name="carta::InitialValueCalculator::CalculateInitialValues">
+<area shape="rect" id="Node000001" title="Calculate initial values from the provided image data." alt="" coords="192,5,395,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1ImageFitter.html#ae73c91c8cc49139e390b6ef72729e262" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,28,144,28,144,23,178,23"/>
+</map>

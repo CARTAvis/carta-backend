@@ -1,11 +1,18 @@
 var searchData=
 [
-  ['validateauthtoken_0',['validateauthtoken',['../Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1',1,'ValidateAuthToken(uWS::HttpRequest *http_request, const std::string &amp;required_token):&#160;Token.cc'],['../Token_8h.html#a9bdf5a1f3fa36deef988a7294f9f85b1',1,'ValidateAuthToken(uWS::HttpRequest *http_request, const std::string &amp;required_token):&#160;Token.cc']]],
-  ['validatechannelstokes_1',['ValidateChannelStokes',['../classcarta_1_1Frame.html#a3c05bb486183edc6f1020a6428bb31e5',1,'carta::Frame']]],
-  ['validator_2',['Validator',['../classcarta_1_1Json.html#abcea36607c8f081e7d1619f2578ee005',1,'carta::Json']]],
-  ['values_3',['Values',['../classcarta_1_1TableView.html#a4c0a426836a7dee8a06f76422adb000e',1,'carta::TableView']]],
-  ['valuesnear_4',['ValuesNear',['../classcarta_1_1RegionConverter.html#ad6c7e6d3a1c967cb7bc28d7618bd94a6',1,'carta::RegionConverter']]],
-  ['vectorfield_5',['VectorField',['../classcarta_1_1VectorField.html#a4cbdaeb4038dfe64d3ef957da9948306',1,'carta::VectorField']]],
-  ['vectoroverlaytiledata_6',['VectorOverlayTileData',['../classMessage.html#ae2014883b61e59f5a8af13ab6109a659',1,'Message']]],
-  ['view_7',['View',['../classcarta_1_1Table.html#a6a02978fe00a695f91ce2f58877d840d',1,'carta::Table']]]
+  ['unsafepeek_0',['UnsafePeek',['../classcarta_1_1TileCache.html#a2d177c8da40cd3050f42848ca8f661d3',1,'carta::TileCache']]],
+  ['updateimagedata_1',['UpdateImageData',['../classcarta_1_1Session.html#aef4b334b4727ea531b229d242c3108b2',1,'carta::Session']]],
+  ['updatelastmessagetimestamp_2',['UpdateLastMessageTimestamp',['../classcarta_1_1Session.html#a4f229e71ff8f733f169ed29da7866082',1,'carta::Session']]],
+  ['updatenewspectralrequirements_3',['UpdateNewSpectralRequirements',['../classcarta_1_1RegionHandler.html#a0eb05bb05f83089ec6767553981760a9',1,'carta::RegionHandler']]],
+  ['updatepreferencesfromstring_4',['UpdatePreferencesFromString',['../classcarta_1_1HttpServer.html#a18e362a5de3bde7f163d2c0382a9b848',1,'carta::HttpServer']]],
+  ['updateprogress_5',['UpdateProgress',['../classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b',1,'carta::ListProgressReporter']]],
+  ['updatepvpreviewimage_6',['UpdatePvPreviewImage',['../classcarta_1_1RegionHandler.html#ab556b1d44e6a4ca48fba195023769038',1,'carta::RegionHandler']]],
+  ['updatepvpreviewregion_7',['UpdatePvPreviewRegion',['../classcarta_1_1RegionHandler.html#ab87a5350ff52c5da3dd49533e4cd39b8',1,'carta::RegionHandler']]],
+  ['updateregion_8',['UpdateRegion',['../classcarta_1_1Region.html#a49cb8010edef8b404b28c21591458b68',1,'carta::Region']]],
+  ['updateregiondata_9',['UpdateRegionData',['../classcarta_1_1Session.html#ac86d5f7886628a9429955f05426f25ab',1,'carta::Session']]],
+  ['us_10',['us',['../structcarta_1_1TimeDelta.html#a2cc2c64715140bada3160a3ca890b1a8',1,'carta::TimeDelta']]],
+  ['useapproximatepolygon_11',['UseApproximatePolygon',['../classcarta_1_1RegionConverter.html#ad8cf08a897e85eb0bfc23ef07c8cebe5',1,'carta::RegionConverter']]],
+  ['useloaderspectraldata_12',['UseLoaderSpectralData',['../classcarta_1_1Frame.html#aa5835d1a307093ce5d75ab0aec98f5c5',1,'carta::Frame']]],
+  ['useregionspectraldata_13',['useregionspectraldata',['../classcarta_1_1FileLoader.html#a5b9332a18c0ff362c8f7371017974408',1,'carta::FileLoader::UseRegionSpectralData()'],['../classcarta_1_1Hdf5Loader.html#a3e977a2be894479c4e26a88bbd4d6dfc',1,'carta::Hdf5Loader::UseRegionSpectralData()']]],
+  ['usetilecache_14',['usetilecache',['../classcarta_1_1FileLoader.html#a7c599d031a7fd5402902ab943f55338e',1,'carta::FileLoader::UseTileCache()'],['../classcarta_1_1Hdf5Loader.html#a00c1f69879b1c2d59bbd902e93c70f31',1,'carta::Hdf5Loader::UseTileCache()']]]
 ];

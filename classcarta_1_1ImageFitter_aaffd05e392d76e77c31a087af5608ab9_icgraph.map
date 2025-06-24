@@ -1,5 +1,5 @@
 <map id="carta::ImageFitter::CalculateNanNumAndStd" name="carta::ImageFitter::CalculateNanNumAndStd">
 <area shape="rect" id="Node000001" title="Calculate the number of NaN values and standard deviation of the image data." alt="" coords="192,5,387,45"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1ImageFitter.html#ae73c91c8cc49139e390b6ef72729e262" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,28,145,28,145,23,178,23"/>
 </map>

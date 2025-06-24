@@ -1,0 +1,15 @@
+<map id="carta::InitialValueCalculator::CalculateInitialValues" name="carta::InitialValueCalculator::CalculateInitialValues">
+<area shape="rect" id="Node000001" title="Calculate initial values from the provided image data." alt="" coords="5,118,208,158"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1GaussianParams.html#a970042a2a344d5e191ed287541dcdd0c" title="Create a Gaussian component sub&#45;message." alt="" coords="263,22,451,62"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="151,115,255,72,276,64,278,69,257,76,153,120"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1InitialValueCalculator.html#a4cf6f972a7f08d06a82166307fa937e8" title=" " alt="" coords="256,86,459,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="208,122,242,118,243,123,208,128"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1InitialValueCalculator.html#a3aaf42322b8a4c214db612242ac9b12f" title=" " alt="" coords="256,150,459,190"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="208,148,243,153,242,158,208,154"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1InitialValueCalculator.html#a1df33db23fd6b9d42a698c7a69ca0696" title=" " alt="" coords="256,214,459,254"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="153,156,257,200,278,207,276,212,255,204,151,161"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#a2e8cdef60c335b1a50208053aa4b7f22" title=" " alt="" coords="535,5,701,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="451,31,520,24,521,30,452,36"/>
+<area shape="rect" id="Node000004" href="$classMessage.html#a0ed9dfcb0fca84572479e2b4abb7af52" title=" " alt="" coords="507,55,729,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="452,48,493,53,493,58,451,54"/>
+</map>

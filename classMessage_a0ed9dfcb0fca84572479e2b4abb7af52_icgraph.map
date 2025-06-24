@@ -1,7 +1,9 @@
 <map id="Message::GaussianComponent" name="Message::GaussianComponent">
-<area shape="rect" id="Node000001" title=" " alt="" coords="428,13,651,38"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175" title="Create a Gaussian component sub&#45;message from Gaussian parameters." alt="" coords="192,5,380,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="414,28,380,28,380,23,414,23"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="178,28,144,28,144,23,178,23"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="679,13,901,38"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1GaussianParams.html#a970042a2a344d5e191ed287541dcdd0c" title="Create a Gaussian component sub&#45;message." alt="" coords="443,5,631,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="665,28,631,28,631,23,665,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1InitialValueCalculator.html#ab1b9f1fc62a5aebf45370e2ba121bf41" title="Calculate initial values from the provided image data." alt="" coords="192,5,395,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="429,28,395,28,395,23,429,23"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1ImageFitter.html#ae73c91c8cc49139e390b6ef72729e262" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="178,28,144,28,144,23,178,23"/>
 </map>

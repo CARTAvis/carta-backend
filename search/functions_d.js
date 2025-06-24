@@ -1,16 +1,20 @@
 var searchData=
 [
-  ['name_0',['name',['../classcarta_1_1CartaHdf5Image.html#a3b9ca60ae8616bc15fa88a76719f8083',1,'carta::CartaHdf5Image::name()'],['../classcarta_1_1CartaMiriadImage.html#a5baebbd7731bbf1f0f7e8d0591d9c720',1,'carta::CartaMiriadImage::name()'],['../classcarta_1_1Stokes.html#ac6e9651a6bcb9a06f8a9d6bd013e5fc1',1,'carta::Stokes::Name()'],['../classcarta_1_1CartaFitsImage.html#abb24134c684eb0c903ffb78b3d5f11e8',1,'carta::CartaFitsImage::name()']]],
-  ['nativetype_1',['NativeType',['../classcarta_1_1CartaMiriadImage.html#abd3dc522a82db77196b31eaba8fb0970',1,'carta::CartaMiriadImage']]],
-  ['nearestneighbor_2',['NearestNeighbor',['../namespacecarta.html#a724d5f79d7c1320592c011bd3bb57e98',1,'carta']]],
-  ['newauthtoken_3',['newauthtoken',['../Token_8h.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc'],['../Token_8cc.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc']]],
-  ['normalizeunit_4',['normalizeunit',['../Casacore_8h.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc'],['../Casacore_8cc.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc']]],
-  ['normpdf_5',['NormPdf',['../namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e',1,'carta']]],
-  ['notimplemented_6',['NotImplemented',['../classcarta_1_1HttpServer.html#a47a6ce88bed3ea5dcc9630b6439b86c6',1,'carta::HttpServer']]],
-  ['numberofsessions_7',['NumberOfSessions',['../classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d',1,'carta::Session']]],
-  ['numcolumns_8',['NumColumns',['../classcarta_1_1Table.html#a82123011be41e2f34f3840099e3790b6',1,'carta::Table']]],
-  ['numentries_9',['numentries',['../classcarta_1_1DataColumn.html#a9a38514c2abb47f8081e95754eeb974d',1,'carta::DataColumn::NumEntries()'],['../classcarta_1_1Column.html#a67245941f2ccebabd2e37de41acc55ec',1,'carta::Column::NumEntries()']]],
-  ['numericfilter_10',['NumericFilter',['../classcarta_1_1TableView.html#a0e5b9336c7ab649c04e138c3e1b35608',1,'carta::TableView']]],
-  ['numrows_11',['numrows',['../classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b',1,'carta::Table::NumRows()'],['../classcarta_1_1TableView.html#ad085ef6d1fb7b1918ed7a82650850ab2',1,'carta::TableView::NumRows()']]],
-  ['numstokes_12',['NumStokes',['../classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9',1,'carta::Frame']]]
+  ['main_0',['main',['../Main_8cc.html#a0ddf1224851353fc92bfbff6f499fa97',1,'Main.cc']]],
+  ['makeanglestring_1',['MakeAngleString',['../classcarta_1_1FileExtInfoLoader.html#afa0abc9c6dd40164f472c7554adc32b6',1,'carta::FileExtInfoLoader']]],
+  ['makekernel_2',['makekernel',['../namespacecarta.html#a41bb4d4534de964f83271afdf638dfcb',1,'carta::MakeKernel(std::vector&lt; float &gt; &amp;kernel, double sigma)'],['../namespacecarta.html#a497f02167a001abee3a4c3aadaa3c837',1,'carta::MakeKernel(vector&lt; float &gt; &amp;kernel, double sigma)']]],
+  ['makepolarizedintensitynode_3',['MakePolarizedIntensityNode',['../classcarta_1_1PolarizationCalculator.html#af800918471188ab3eb863931a4f89dfe',1,'carta::PolarizationCalculator']]],
+  ['makesubimage_4',['MakeSubImage',['../classcarta_1_1PolarizationCalculator.html#a543764de6de30d386feb479601073b71',1,'carta::PolarizationCalculator']]],
+  ['maketotalpolarizedintensitynode_5',['MakeTotalPolarizedIntensityNode',['../classcarta_1_1PolarizationCalculator.html#a43f010357e88c2e9676ad43032e88f51',1,'carta::PolarizationCalculator']]],
+  ['message_6',['Message',['../classMessage.html#a4fc4f717b634e66070366cb7722d7761',1,'Message']]],
+  ['meta_5fdefined_7',['meta_defined',['../structcarta_1_1BeamTableInfo.html#ad16b70a66e2a5ba9ddcf03642fc13181',1,'carta::BeamTableInfo']]],
+  ['methodofmoments_8',['MethodOfMoments',['../classcarta_1_1InitialValueCalculator.html#a1df33db23fd6b9d42a698c7a69ca0696',1,'carta::InitialValueCalculator']]],
+  ['mip_9',['Mip',['../classcarta_1_1VectorField.html#a874f03fd4bea2f49c5b1420d254a9dd8',1,'carta::VectorField']]],
+  ['miptolayer_10',['MipToLayer',['../structcarta_1_1Tile.html#a4b28a507483b4f7227d00799e3c475e2',1,'carta::Tile']]],
+  ['miriadloader_11',['MiriadLoader',['../classcarta_1_1MiriadLoader.html#a2dbf4663937653017f60997586cb0ddb',1,'carta::MiriadLoader']]],
+  ['momentgenerator_12',['MomentGenerator',['../classcarta_1_1MomentGenerator.html#a98a594d6d0d8cf8a8cc7465041b8a290',1,'carta::MomentGenerator']]],
+  ['momentprogress_13',['MomentProgress',['../classMessage.html#a895725a06f0df4252af255b13aa87546',1,'Message']]],
+  ['momentrequesthandler_14',['MomentRequestHandler',['../classcarta_1_1SessionManager.html#a63b272534747a0375fa3b505b0f5dfec',1,'carta::SessionManager']]],
+  ['momentsrequest_15',['MomentsRequest',['../classMessage.html#a6f234b4ef734f525f08e0a4f7197d0a7',1,'Message']]],
+  ['ms_16',['ms',['../structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58',1,'carta::TimeDelta']]]
 ];

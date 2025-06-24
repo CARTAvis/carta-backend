@@ -1,0 +1,15 @@
+<map id="carta::InitialValueCalculator" name="carta::InitialValueCalculator">
+<area shape="rect" id="Node000001" title="A class for calculating initial values used in the image fitting process." alt="" coords="97,197,300,223"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,95,56,120"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="41,131,52,153,68,171,91,185,117,195,115,200,89,190,65,175,48,156,36,134"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="95,95,134,120"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="123,133,130,153,142,172,156,185,173,195,170,199,153,189,138,175,126,155,118,134"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="169,95,229,120"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="201,134,201,197,196,197,196,134"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="260,95,327,120"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="289,134,280,155,266,175,249,189,231,199,228,195,246,185,262,172,275,153,284,132"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="361,95,447,120"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="399,134,387,156,370,175,337,193,301,204,300,199,335,189,366,171,383,153,394,132"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="335,5,473,45"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="407,59,407,94,401,94,401,59"/>
+</map>

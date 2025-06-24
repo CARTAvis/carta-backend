@@ -242,12 +242,12 @@ var NAVTREEINDEX0 =
 "Image_8h.html#ae4624ce3571196977aff046af4639996":[5,0,1,16,7,19],
 "Image_8h.html#aea3cfda4f3a9f978ec759f206cf186fe":[5,0,1,16,7,9],
 "Image_8h.html#afe1a41b875e77bb3099d0aecb3e2266d":[5,0,1,16,7,20],
+"InitialValueCalculator_8cc.html":[5,0,1,6,2],
+"InitialValueCalculator_8cc.html#a3355b9a8b480529ec6893294a2833088":[5,0,1,6,2,0],
+"InitialValueCalculator_8h.html":[5,0,1,6,3],
 "Json_8cc.html":[5,0,1,16,8],
 "Json_8h.html":[5,0,1,16,9],
 "LineBoxRegions_8cc.html":[5,0,1,11,4],
 "LineBoxRegions_8h.html":[5,0,1,11,5],
-"ListProgressReporter_8cc.html":[5,0,1,15,0],
-"ListProgressReporter_8h.html":[5,0,1,15,1],
-"LoaderCache_8cc.html":[5,0,1,0,0],
-"LoaderCache_8h.html":[5,0,1,0,1]
+"ListProgressReporter_8cc.html":[5,0,1,15,0]
 };

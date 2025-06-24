@@ -1,27 +1,4 @@
 var searchData=
 [
-  ['lattice_0',['Lattice',['../classcarta_1_1CartaHdf5Image.html#a36320cf7bcee416c6f244b348daa3ad1',1,'carta::CartaHdf5Image']]],
-  ['layertomip_1',['LayerToMip',['../structcarta_1_1Tile.html#a15de628805a25fcb844b57cfa540d43d',1,'carta::Tile']]],
-  ['lineboxregions_2',['LineBoxRegions',['../classcarta_1_1LineBoxRegions.html#a7e0e5b64d6155af2542eb32f35af5d09',1,'carta::LineBoxRegions']]],
-  ['linemultiapply_3',['LineMultiApply',['../classcarta_1_1ImageMoments.html#aa2a60f2c823ecd9fd19c736c379fbe52',1,'carta::ImageMoments']]],
-  ['listen_4',['Listen',['../classcarta_1_1SessionManager.html#a71d22bfc8046e06cae836ffd1d1c5899',1,'carta::SessionManager']]],
-  ['listprogress_5',['ListProgress',['../classMessage.html#a03594461e68b148a3398fbaad3d651a7',1,'Message']]],
-  ['listprogressreporter_6',['ListProgressReporter',['../classcarta_1_1ListProgressReporter.html#adc4497d9d624c79158ce95c2edb0f178',1,'carta::ListProgressReporter']]],
-  ['loadchunk_7',['LoadChunk',['../classcarta_1_1TileCache.html#a32436ee71719f6852e8e07891f8aecf7',1,'carta::TileCache']]],
-  ['loadcubedata_8',['LoadCubeData',['../classcarta_1_1PvPreviewCube.html#adaba25f353bc8314ec76eb5bdce35b39',1,'carta::PvPreviewCube']]],
-  ['loadercache_9',['LoaderCache',['../classcarta_1_1LoaderCache.html#a177aa0321a683e02e8720c002fdff8fe',1,'carta::LoaderCache']]],
-  ['loadimagestats_10',['LoadImageStats',['../classcarta_1_1FileLoader.html#a4577664e7e2107a923c02da856c93b8d',1,'carta::FileLoader']]],
-  ['loadmipmapdata_11',['LoadMipMapData',['../classcarta_1_1Hdf5Loader.html#aa872fe5a14124def3216a5e688492320',1,'carta::Hdf5Loader']]],
-  ['loadstats2dbasic_12',['LoadStats2DBasic',['../classcarta_1_1FileLoader.html#a0d423ad3facab8a1ada980ff0d7e0981',1,'carta::FileLoader']]],
-  ['loadstats2dhist_13',['LoadStats2DHist',['../classcarta_1_1FileLoader.html#a030ffb2d91352c7df5b30d8181389742',1,'carta::FileLoader']]],
-  ['loadstats2dpercent_14',['LoadStats2DPercent',['../classcarta_1_1FileLoader.html#a1c069ac85889a39847b937aa3bc0c64a',1,'carta::FileLoader']]],
-  ['loadstats3dbasic_15',['LoadStats3DBasic',['../classcarta_1_1FileLoader.html#ac3c508064740ec630eb3587e2a6de6c9',1,'carta::FileLoader']]],
-  ['loadstats3dhist_16',['LoadStats3DHist',['../classcarta_1_1FileLoader.html#afdd8cff4d25da29318d5c793c5f0f373',1,'carta::FileLoader']]],
-  ['loadstats3dpercent_17',['LoadStats3DPercent',['../classcarta_1_1FileLoader.html#a4fadf35c964777024ad46e991944c2fb',1,'carta::FileLoader']]],
-  ['loadswizzleddata_18',['LoadSwizzledData',['../classcarta_1_1Hdf5Loader.html#a805b038f504d25c8b13f3aa483e57cbf',1,'carta::Hdf5Loader']]],
-  ['localid_19',['localId',['../classcarta_1_1CartaLogSink.html#adc912c22314d2c34e11e98b8807021bc',1,'carta::CartaLogSink']]],
-  ['log_20',['log',['../classspdlog_1_1sinks_1_1carta__sink.html#a5626b21e3f2d2f5888efe227c5bee22e',1,'spdlog::sinks::carta_sink']]],
-  ['log_5fprotocol_5fmessages_21',['log_protocol_messages',['../namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4',1,'carta::logger']]],
-  ['logreceivedeventtype_22',['LogReceivedEventType',['../namespacecarta_1_1logger.html#a579b36ca7fa898b7052001d151fc34cd',1,'carta::logger']]],
-  ['logsenteventtype_23',['LogSentEventType',['../namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5',1,'carta::logger']]]
+  ['kmeansplusplus_0',['KMeansPlusPlus',['../classcarta_1_1InitialValueCalculator.html#a3aaf42322b8a4c214db612242ac9b12f',1,'carta::InitialValueCalculator']]]
 ];

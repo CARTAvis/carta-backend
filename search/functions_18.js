@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['yaxis_0',['YAxis',['../classcarta_1_1Frame.html#ae55c804ff85dfbf1b579d78b39af2b1a',1,'carta::Frame']]]
+  ['xaxis_0',['XAxis',['../classcarta_1_1Frame.html#a6085431042b7668d8e87669482cf64f9',1,'carta::Frame']]]
 ];

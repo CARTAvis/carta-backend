@@ -1,0 +1,36 @@
+<map id="carta::ImageFitter::FitImage" name="carta::ImageFitter::FitImage">
+<area shape="rect" id="Node000001" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,365,144,405"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1InitialValueCalculator.html#ab1b9f1fc62a5aebf45370e2ba121bf41" title="Calculate initial values from the provided image data." alt="" coords="192,150,395,190"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="94,362,190,264,259,197,263,201,194,268,97,366"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1ImageFitter.html#aaffd05e392d76e77c31a087af5608ab9" title="Calculate the number of NaN values and standard deviation of the image data." alt="" coords="196,278,391,318"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="123,362,191,334,226,320,228,325,193,339,125,367"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1ImageFitter.html#a85107befa878492e29e4a7693c61f59e" title="Extract Gaussian parameters from a vector." alt="" coords="724,371,885,411"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="144,379,192,378,475,379,710,385,710,390,475,384,192,383,144,385"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1ImageFitter.html#af94fd497184c191cee7e2ccfed44c085" title="Retrieve a log message describing the fitting status." alt="" coords="224,393,363,433"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="145,391,211,399,210,405,144,396"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1ImageFitter.html#a0f3770f88defaa45f8769d4c06179e80" title="Set initial fitting parameters for the fitting." alt="" coords="224,457,363,497"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="112,403,193,442,212,449,210,454,191,447,110,407"/>
+<area shape="rect" id="Node000014" href="$classcarta_1_1ImageFitter.html#a3796f44fac3ba6b9dbe37b9261491abe" title="Main function for the multiple Gaussian image fitting." alt="" coords="224,521,363,561"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="92,403,134,455,162,482,193,506,212,516,210,521,191,511,158,487,130,458,88,407"/>
+<area shape="rect" id="Node000003" href="$structcarta_1_1GaussianParams.html#a970042a2a344d5e191ed287541dcdd0c" title="Create a Gaussian component sub&#45;message." alt="" coords="450,22,638,62"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="320,147,374,110,441,72,458,64,460,69,444,76,377,114,323,152"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1InitialValueCalculator.html#a4cf6f972a7f08d06a82166307fa937e8" title=" " alt="" coords="443,86,645,126"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="372,147,451,127,453,132,373,153"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1InitialValueCalculator.html#a3aaf42322b8a4c214db612242ac9b12f" title=" " alt="" coords="443,150,645,190"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="395,167,429,167,429,173,395,173"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1InitialValueCalculator.html#a1df33db23fd6b9d42a698c7a69ca0696" title=" " alt="" coords="443,214,645,254"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="373,187,453,208,451,213,372,193"/>
+<area shape="rect" id="Node000004" href="$classMessage.html#a2e8cdef60c335b1a50208053aa4b7f22" title=" " alt="" coords="721,5,888,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="638,31,707,24,708,30,638,36"/>
+<area shape="rect" id="Node000005" href="$classMessage.html#a0ed9dfcb0fca84572479e2b4abb7af52" title=" " alt="" coords="693,55,916,80"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="638,48,680,53,679,58,638,54"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1ImageFitter.html#a69cbe382ee0df6a3aae2d1e239427b44" title="Calculate the Median Absolute Deviation (MAD) of an array of data." alt="" coords="450,278,638,318"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="391,295,436,295,436,301,391,301"/>
+<area shape="rect" id="Node000015" href="$classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29" title="Calculate parameter errors after fitting." alt="" coords="475,409,613,449"/>
+<area shape="poly" id="edge14_Node000014_Node000015" title=" " alt="" coords="362,518,394,506,448,480,496,453,499,458,450,485,396,511,364,523"/>
+<area shape="rect" id="Node000016" href="$classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5" title="Calculate the model and residual image data after fitting." alt="" coords="463,505,625,545"/>
+<area shape="poly" id="edge16_Node000014_Node000016" title=" " alt="" coords="363,534,449,528,449,533,363,539"/>
+<area shape="rect" id="Node000017" href="$classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b" title="Called after each iteration of the fitting." alt="" coords="475,569,613,609"/>
+<area shape="poly" id="edge17_Node000014_Node000017" title=" " alt="" coords="364,551,462,570,461,576,363,557"/>
+<area shape="poly" id="edge15_Node000015_Node000011" title=" " alt="" coords="613,416,710,402,711,407,614,421"/>
+</map>

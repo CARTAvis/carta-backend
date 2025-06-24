@@ -69,7 +69,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" target="_top" xlink:title="Extract Gaussian parameters from a vector.">
+<g id="a_Node000004"><a xlink:href="classcarta_1_1ImageFitter.html#a85107befa878492e29e4a7693c61f59e" target="_top" xlink:title="Extract Gaussian parameters from a vector.">
 <polygon fill="white" stroke="#666666" points="401,-30 280,-30 280,0 401,0 401,-30"/>
 <text text-anchor="start" x="288" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="340.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::GetGaussianParams</text>

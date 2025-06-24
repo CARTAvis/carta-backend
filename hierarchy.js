@@ -62,6 +62,7 @@ var hierarchy =
     [ "carta::FitsHduList", "classcarta_1_1FitsHduList.html", null ],
     [ "carta::FitStatus", "structcarta_1_1FitStatus.html", null ],
     [ "carta::Frame", "classcarta_1_1Frame.html", null ],
+    [ "carta::GaussianParams", "structcarta_1_1GaussianParams.html", null ],
     [ "carta::GeneratedImage", "structcarta_1_1GeneratedImage.html", null ],
     [ "std::hash< carta::TileCacheKey >", "structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4.html", null ],
     [ "carta::Hdf5Attributes", "classcarta_1_1Hdf5Attributes.html", null ],
@@ -82,6 +83,7 @@ var hierarchy =
       [ "carta::Image2DConvolver< casacore::Float >", "classcarta_1_1Image2DConvolver.html", null ],
       [ "carta::Image2DConvolver< T >", "classcarta_1_1Image2DConvolver.html", null ]
     ] ],
+    [ "carta::InitialValueCalculator", "classcarta_1_1InitialValueCalculator.html", null ],
     [ "carta::Json", "classcarta_1_1Json.html", null ],
     [ "carta::LineBoxRegions", "classcarta_1_1LineBoxRegions.html", null ],
     [ "carta::ListProgressReporter", "classcarta_1_1ListProgressReporter.html", null ],

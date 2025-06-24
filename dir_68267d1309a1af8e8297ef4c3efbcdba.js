@@ -6,7 +6,7 @@ var dir_68267d1309a1af8e8297ef4c3efbcdba =
     [ "Frame", "dir_7d368d8baac033dda9456cf740143463.html", "dir_7d368d8baac033dda9456cf740143463" ],
     [ "HttpServer", "dir_4a99f788295f63785f66ca2fd29b1a97.html", "dir_4a99f788295f63785f66ca2fd29b1a97" ],
     [ "ImageData", "dir_7854858f08f5bc45e9cf4707ac32325d.html", "dir_7854858f08f5bc45e9cf4707ac32325d" ],
-    [ "ImageFitter", "dir_a4deea2b10adb2e3af69160651050fd2.html", "dir_a4deea2b10adb2e3af69160651050fd2" ],
+    [ "ImageFitting", "dir_dce88305de0a1bc4180b415a60af93af.html", "dir_dce88305de0a1bc4180b415a60af93af" ],
     [ "ImageGenerators", "dir_c1e81cc400cfd81cea8c3638b6fefb69.html", "dir_c1e81cc400cfd81cea8c3638b6fefb69" ],
     [ "ImageStats", "dir_d9b5cabedc73050ebee44a9601fc76bc.html", "dir_d9b5cabedc73050ebee44a9601fc76bc" ],
     [ "Logger", "dir_ce44ad55c7286bf5a6cd8cf01717cab8.html", "dir_ce44ad55c7286bf5a6cd8cf01717cab8" ],
