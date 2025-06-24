@@ -35,10 +35,9 @@ var searchData=
   ['hasvalidchannelmaptiles_32',['HasValidChannelMapTiles',['../classcarta_1_1Session.html#a474b86bbed51663926112f8c3b80a396',1,'carta::Session']]],
   ['hdf5loader_33',['Hdf5Loader',['../classcarta_1_1Hdf5Loader.html#a36e4bd83a1c91dc4252a2e51044b7b3d',1,'carta::Hdf5Loader']]],
   ['height_34',['Height',['../classcarta_1_1Frame.html#a41e6b02b0af60f3ce60a1478a3c56e0d',1,'carta::Frame']]],
-  ['high_5fcompression_5fquality_35',['HIGH_COMPRESSION_QUALITY',['../Frame_8cc.html#a767d851785641c79f694ad3e06d10bac',1,'Frame.cc']]],
-  ['histcontext_36',['HistContext',['../classcarta_1_1Session.html#a82ee3b3fe4244a25beaa15199182d4f3',1,'carta::Session']]],
-  ['histogram_37',['histogram',['../classcarta_1_1Histogram.html#a1368034276c1d537ed733d8eadbd2cbb',1,'carta::Histogram::Histogram()=default'],['../classcarta_1_1Histogram.html#adca34b054443cfdc5585667dbd3ba61a',1,'carta::Histogram::Histogram(int num_bins, const HistogramBounds &amp;bounds, const float *data, const size_t data_size)'],['../classcarta_1_1Histogram.html#a57bd7d0018ca67ebc964a70856a45121',1,'carta::Histogram::Histogram(const Histogram &amp;h)']]],
-  ['histogramcache_38',['HistogramCache',['../structcarta_1_1HistogramCache.html#a2fa37923004ee7e32ecedd9f5334fcde',1,'carta::HistogramCache']]],
-  ['histogramconfig_39',['histogramconfig',['../structcarta_1_1HistogramConfig.html#a1622fed6c7c39ebf1231b20c796d2972',1,'carta::HistogramConfig::HistogramConfig()'],['../structcarta_1_1HistogramConfig.html#ad0dbf15f45db67eafc5e925583d147fb',1,'carta::HistogramConfig::HistogramConfig(const CARTA::HistogramConfig &amp;config)']]],
-  ['httpserver_40',['HttpServer',['../classcarta_1_1HttpServer.html#a5675f5aa73af4ee975dac12606098d98',1,'carta::HttpServer']]]
+  ['histcontext_35',['HistContext',['../classcarta_1_1Session.html#a82ee3b3fe4244a25beaa15199182d4f3',1,'carta::Session']]],
+  ['histogram_36',['histogram',['../classcarta_1_1Histogram.html#a1368034276c1d537ed733d8eadbd2cbb',1,'carta::Histogram::Histogram()=default'],['../classcarta_1_1Histogram.html#adca34b054443cfdc5585667dbd3ba61a',1,'carta::Histogram::Histogram(int num_bins, const HistogramBounds &amp;bounds, const float *data, const size_t data_size)'],['../classcarta_1_1Histogram.html#a57bd7d0018ca67ebc964a70856a45121',1,'carta::Histogram::Histogram(const Histogram &amp;h)']]],
+  ['histogramcache_37',['HistogramCache',['../structcarta_1_1HistogramCache.html#a2fa37923004ee7e32ecedd9f5334fcde',1,'carta::HistogramCache']]],
+  ['histogramconfig_38',['histogramconfig',['../structcarta_1_1HistogramConfig.html#a1622fed6c7c39ebf1231b20c796d2972',1,'carta::HistogramConfig::HistogramConfig()'],['../structcarta_1_1HistogramConfig.html#ad0dbf15f45db67eafc5e925583d147fb',1,'carta::HistogramConfig::HistogramConfig(const CARTA::HistogramConfig &amp;config)']]],
+  ['httpserver_39',['HttpServer',['../classcarta_1_1HttpServer.html#a5675f5aa73af4ee975dac12606098d98',1,'carta::HttpServer']]]
 ];

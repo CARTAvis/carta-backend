@@ -1,5 +1,6 @@
 var Compression_8h =
 [
+    [ "MAX_COMPRESSION_QUALITY", "Compression_8h.html#aad704fbc73ddd5c663b9c6cbde373c67", null ],
     [ "Compress", "Compression_8h.html#ab893c6b5f03810d00b2d92e29bb9b545", null ],
     [ "Decompress", "Compression_8h.html#a749005ecb48d6c06c1214277a719ae7f", null ],
     [ "EncodeIntegers", "Compression_8h.html#ae0d37b236270de77bb23613108e10258", null ],

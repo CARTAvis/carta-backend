@@ -1,17 +1,15 @@
 <map id="carta::Frame::FillRasterTileData" name="carta::Frame::FillRasterTileData">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,150,179,190"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,125,179,165"/>
 <area shape="rect" id="Node000002" href="$namespacecarta.html#a10f0d86089ef00182ca768e7971e1657" title=" " alt="" coords="279,5,407,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="108,148,157,98,190,71,225,48,265,31,267,36,228,52,193,75,161,102,112,152"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="115,122,164,85,226,48,266,32,268,37,228,52,167,89,118,127"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="789,56,949,81"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="136,147,179,131,226,117,375,90,525,74,663,67,775,65,775,70,663,72,526,80,376,95,227,122,181,136,138,152"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="178,125,226,117,377,99,527,85,775,70,776,75,527,91,377,104,227,122,179,130"/>
 <area shape="rect" id="Node000004" href="$namespacecarta.html#a6f90f0f5fadc7ab7bfad3fdc20058cef" title=" " alt="" coords="235,181,450,207"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="179,176,222,180,222,185,178,181"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="179,159,265,176,263,181,178,164"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1Frame.html#ab489d663a29fb9d2d6cdc6b09be9651d" title=" " alt="" coords="227,132,459,157"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="178,159,213,155,213,160,179,164"/>
-<area shape="rect" id="Node000029" href="$Frame_8cc.html#a767d851785641c79f694ad3e06d10bac" title=" " alt="" coords="231,231,454,256"/>
-<area shape="poly" id="edge34_Node000001_Node000029" title=" " alt="" coords="143,188,227,217,260,225,258,230,226,222,141,193"/>
-<area shape="rect" id="Node000030" href="$classcarta_1_1Frame.html#a89b3f2ca9d5109c790cc30b64fc02bc6" title=" " alt="" coords="232,280,453,305"/>
-<area shape="poly" id="edge35_Node000001_Node000030" title=" " alt="" coords="116,188,165,228,196,249,228,266,247,274,245,279,226,271,193,254,162,233,113,192"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="179,142,213,142,213,147,179,147"/>
+<area shape="rect" id="Node000029" href="$classcarta_1_1Frame.html#a89b3f2ca9d5109c790cc30b64fc02bc6" title=" " alt="" coords="232,231,453,256"/>
+<area shape="poly" id="edge34_Node000001_Node000029" title=" " alt="" coords="125,163,172,191,228,217,252,225,250,230,226,222,169,196,122,167"/>
 <area shape="rect" id="Node000006" href="$classcarta_1_1TileCache.html#a4eda64cc5324f96a16c6b877ab4ce7cc" title="Retrieve a tile from the cache." alt="" coords="531,428,690,453"/>
 <area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="445,155,461,167,479,190,489,213,492,236,491,259,491,307,496,332,509,358,540,392,575,418,572,423,536,396,504,361,491,333,485,307,486,259,486,236,484,214,475,193,457,171,442,160"/>
 <area shape="rect" id="Node000011" href="$classcarta_1_1Frame.html#a310f7f896ec0b4288fc3795e5fcf71ec" title=" " alt="" coords="507,156,715,181"/>
