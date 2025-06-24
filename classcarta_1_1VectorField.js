@@ -20,6 +20,7 @@ var classcarta_1_1VectorField =
     [ "RenewParameters", "classcarta_1_1VectorField.html#aacf30e0d374a18daa94062cbb40fa7c0", null ],
     [ "SetParameters", "classcarta_1_1VectorField.html#a7870639a4d7d7747f35ac36d34164148", null ],
     [ "Threshold", "classcarta_1_1VectorField.html#ad02102bc99e41d7aaf8a84ea2528ebd4", null ],
+    [ "ThresholdOption", "classcarta_1_1VectorField.html#a2faca3cba146cb49617095274717ec70", null ],
     [ "_calculate_pa", "classcarta_1_1VectorField.html#aba1b939d323dbe9660ec853a729fdec6", null ],
     [ "_calculate_pi", "classcarta_1_1VectorField.html#ad217652f0efcde578960cfb11172b7d7", null ],
     [ "_compression_quality", "classcarta_1_1VectorField.html#ae2145fb21548c99927059e067dd49133", null ],
@@ -34,5 +35,6 @@ var classcarta_1_1VectorField =
     [ "_stokes_angle", "classcarta_1_1VectorField.html#a9f55cc89e82b46d594b55f21368a84ee", null ],
     [ "_stokes_intensity", "classcarta_1_1VectorField.html#abf5081ae5751270f5f862ec6ed04b50f", null ],
     [ "_threshold", "classcarta_1_1VectorField.html#ae79613af69a11d5eadd62d9b9ccd7269", null ],
+    [ "_threshold_option", "classcarta_1_1VectorField.html#a2151b4356fe294937179748e2e805bb2", null ],
     [ "_u_error", "classcarta_1_1VectorField.html#af2ad39a7ea25e4c6fa188610a9102ce1", null ]
 ];
