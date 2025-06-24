@@ -52,6 +52,7 @@ private:
     void SetHistogramRequirementsHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void CloseFileHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void StartAnimationHandler(Session* session, std::string_view sv_message, const EventHeader& head);
+    void StopAnimationHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void AnimationFlowControlHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void FileInfoRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void OpenFileHandler(Session* session, std::string_view sv_message, const EventHeader& head);
@@ -84,7 +85,7 @@ private:
     void SetVectorOverlayParametersHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void StopFittingHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void StopPvPreviewHandler(Session* session, std::string_view sv_message, const EventHeader& head);
-    void ClosePvReviewHandler(Session* session, std::string_view sv_message, const EventHeader& head);
+    void ClosePvPreviewHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void RemoteFileRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void ChannelMapFlowControlHandler(Session* session, std::string_view sv_message, const EventHeader& head);
 
