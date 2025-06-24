@@ -1,5 +1,7 @@
 var NAVTREEINDEX19 =
 {
+"structcarta_1_1SpectralCache.html#acc19049480a0f7e3f60810b250dd1083":[4,0,0,87,4],
+"structcarta_1_1SpectralCache.html#acc19049480a0f7e3f60810b250dd1083":[3,0,0,88,4],
 "structcarta_1_1SpectralCache.html#adcb4e31c3f754d8b0626e01aa4d559fc":[4,0,0,87,0],
 "structcarta_1_1SpectralCache.html#adcb4e31c3f754d8b0626e01aa4d559fc":[3,0,0,88,0],
 "structcarta_1_1SpectralConfig.html":[4,0,0,88],

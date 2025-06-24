@@ -78,7 +78,7 @@ var searchData=
   ['closeimage_75',['CloseImage',['../classcarta_1_1CartaMiriadImage.html#aa689f8bc75e263bc18df84688f1bd010',1,'carta::CartaMiriadImage']]],
   ['closeimageifupdated_76',['CloseImageIfUpdated',['../classcarta_1_1FileLoader.html#a5101515d2dff6f6621b23699c5c7b3bf',1,'carta::FileLoader']]],
   ['closepvpreview_77',['ClosePvPreview',['../classcarta_1_1RegionHandler.html#a5266dcd3a9f0bb01ea1a2ee2feb53ab4',1,'carta::RegionHandler']]],
-  ['closepvreviewhandler_78',['ClosePvReviewHandler',['../classcarta_1_1SessionManager.html#a4f4b55991e5ec76cfb5894687d7a4a5e',1,'carta::SessionManager']]],
+  ['closepvpreviewhandler_78',['ClosePvPreviewHandler',['../classcarta_1_1SessionManager.html#a35863277ba1acc728c3034d30188daca',1,'carta::SessionManager']]],
   ['column_79',['Column',['../classcarta_1_1Column.html#aea7e3a2008ce54f52b67c1885d99c597',1,'carta::Column']]],
   ['columnfromfitstype_80',['ColumnFromFitsType',['../namespacecarta.html#ab91d60c075ef6cca17b213b9cde59d66',1,'carta']]],
   ['columns_5fdefined_81',['columns_defined',['../structcarta_1_1BeamTableInfo.html#a62d9978cecb2eaec4cc9f0ce65ba6917',1,'carta::BeamTableInfo']]],

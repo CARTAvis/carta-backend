@@ -1,5 +1,7 @@
 var NAVTREEINDEX18 =
 {
+"structcarta_1_1PerSocketData.html#a226a041d5517aa44a47aed986071e76b":[3,0,0,61,0],
+"structcarta_1_1PerSocketData.html#a226a041d5517aa44a47aed986071e76b":[4,0,0,60,0],
 "structcarta_1_1PerSocketData.html#af143d87a1f2dea901004a20ed54d2e80":[4,0,0,60,1],
 "structcarta_1_1PerSocketData.html#af143d87a1f2dea901004a20ed54d2e80":[3,0,0,61,1],
 "structcarta_1_1PreviewCubeParameters.html":[4,0,0,62],
@@ -14,14 +16,14 @@ var NAVTREEINDEX18 =
 "structcarta_1_1PreviewCubeParameters.html#a482a258174b891bb8b1399b6592e6916":[3,0,0,63,0],
 "structcarta_1_1PreviewCubeParameters.html#a517e878aca52c6f14ad34f78ca6c9212":[4,0,0,62,9],
 "structcarta_1_1PreviewCubeParameters.html#a517e878aca52c6f14ad34f78ca6c9212":[3,0,0,63,9],
-"structcarta_1_1PreviewCubeParameters.html#a5b95d72542b212d4974e0c743e5d8ed8":[3,0,0,63,1],
 "structcarta_1_1PreviewCubeParameters.html#a5b95d72542b212d4974e0c743e5d8ed8":[4,0,0,62,1],
+"structcarta_1_1PreviewCubeParameters.html#a5b95d72542b212d4974e0c743e5d8ed8":[3,0,0,63,1],
 "structcarta_1_1PreviewCubeParameters.html#a7d7c6beebbd81e28e004f86472d9db32":[3,0,0,63,4],
 "structcarta_1_1PreviewCubeParameters.html#a7d7c6beebbd81e28e004f86472d9db32":[4,0,0,62,4],
 "structcarta_1_1PreviewCubeParameters.html#a81ad38433028c7bee18aeb670dbbdf78":[3,0,0,63,3],
 "structcarta_1_1PreviewCubeParameters.html#a81ad38433028c7bee18aeb670dbbdf78":[4,0,0,62,3],
-"structcarta_1_1PreviewCubeParameters.html#a97042303fd9725d2367c985dba869ab4":[4,0,0,62,5],
 "structcarta_1_1PreviewCubeParameters.html#a97042303fd9725d2367c985dba869ab4":[3,0,0,63,5],
+"structcarta_1_1PreviewCubeParameters.html#a97042303fd9725d2367c985dba869ab4":[4,0,0,62,5],
 "structcarta_1_1PreviewCubeParameters.html#aee452dfcc1f10a767d09d5a12bc01376":[3,0,0,63,8],
 "structcarta_1_1PreviewCubeParameters.html#aee452dfcc1f10a767d09d5a12bc01376":[4,0,0,62,8],
 "structcarta_1_1PreviewCutParameters.html":[4,0,0,63],
@@ -247,7 +249,5 @@ var NAVTREEINDEX18 =
 "structcarta_1_1SpectralCache.html#a24665dc34474fc6a7dc3bff49d5ac95a":[4,0,0,87,3],
 "structcarta_1_1SpectralCache.html#a24665dc34474fc6a7dc3bff49d5ac95a":[3,0,0,88,3],
 "structcarta_1_1SpectralCache.html#ab9fd2bd9c747c4a7e3e22cba501ddbb7":[4,0,0,87,2],
-"structcarta_1_1SpectralCache.html#ab9fd2bd9c747c4a7e3e22cba501ddbb7":[3,0,0,88,2],
-"structcarta_1_1SpectralCache.html#acc19049480a0f7e3f60810b250dd1083":[4,0,0,87,4],
-"structcarta_1_1SpectralCache.html#acc19049480a0f7e3f60810b250dd1083":[3,0,0,88,4]
+"structcarta_1_1SpectralCache.html#ab9fd2bd9c747c4a7e3e22cba501ddbb7":[3,0,0,88,2]
 };

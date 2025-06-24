@@ -291,6 +291,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a1f7a52d2700e13dd2d835a3cac5af53a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc48fa2da283f2ece0ae232158891942" id="r_adc48fa2da283f2ece0ae232158891942"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#adc48fa2da283f2ece0ae232158891942">SetAnimationActive</a> (bool val)</td></tr>
 <tr class="separator:adc48fa2da283f2ece0ae232158891942"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9614e33dea4622ec90432fa7aad7a451" id="r_a9614e33dea4622ec90432fa7aad7a451"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451">SendLogEvent</a> (const std::string &amp;message, std::vector&lt; std::string &gt; tags, CARTA::ErrorSeverity severity)</td></tr>
+<tr class="separator:a9614e33dea4622ec90432fa7aad7a451"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -348,8 +350,6 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:af5f45b72e3fb7d4ad6fbf32fcc9da912"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae6ff58d2a61d3872bc741f12ed2b91d7" id="r_ae6ff58d2a61d3872bc741f12ed2b91d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ae6ff58d2a61d3872bc741f12ed2b91d7">SendFileEvent</a> (int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite &amp;message, bool compress=true)</td></tr>
 <tr class="separator:ae6ff58d2a61d3872bc741f12ed2b91d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9614e33dea4622ec90432fa7aad7a451" id="r_a9614e33dea4622ec90432fa7aad7a451"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451">SendLogEvent</a> (const std::string &amp;message, std::vector&lt; std::string &gt; tags, CARTA::ErrorSeverity severity)</td></tr>
-<tr class="separator:a9614e33dea4622ec90432fa7aad7a451"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0489a2ddda6953f33c6ffaf93c52f1bf" id="r_a0489a2ddda6953f33c6ffaf93c52f1bf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a0489a2ddda6953f33c6ffaf93c52f1bf">IsInChannelMapRange</a> (int file_id, int channel)</td></tr>
 <tr class="separator:a0489a2ddda6953f33c6ffaf93c52f1bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a474b86bbed51663926112f8c3b80a396" id="r_a474b86bbed51663926112f8c3b80a396"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a474b86bbed51663926112f8c3b80a396">HasValidChannelMapTiles</a> (int file_id, const CARTA::AddRequiredTiles &amp;required_tiles)</td></tr>
@@ -2225,7 +2225,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ad765d3322c80e5186df95735ec7f4d64_icgraph.svg" width="431" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ad765d3322c80e5186df95735ec7f4d64_icgraph.svg" width="435" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -3617,9 +3617,6 @@ Here is the caller graph for this function:</div>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">void Session::SendLogEvent </td>
@@ -3645,11 +3642,6 @@ Here is the caller graph for this function:</div>
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 <div class="dynheader">
 Here is the call graph for this function:</div>
@@ -4223,6 +4215,11 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a50f48862a67578a8c056016e9f1e4ef5_icgraph.svg" width="454" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 
 </div>
 </div>

@@ -661,7 +661,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The decoded message of type T.</dd></dl>
-<dl class="section note"><dt>Note</dt><dd>This function uses a static_assert to ensure that T has a member function <code>ParseFromArray</code>. If T does not have this member function, a compilation error will occur. The function also throws a runtime error if the parsing fails, providing information about the session ID and the type of the message. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This function uses a static_assert to ensure that T has a member function <code>ParseFromArray</code>. If T does not have this member function, a compilation error will occur. The function also throws a parsing exception if the parsing fails. </dd></dl>
 
 </div>
 </div>

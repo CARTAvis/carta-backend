@@ -16,5 +16,5 @@ var searchData=
   ['verbosity_13',['verbosity',['../structcarta_1_1ProgramSettings.html#a0559acf52d432e2492128bd10ba23d7f',1,'carta::ProgramSettings']]],
   ['version_14',['version',['../structcarta_1_1ProgramSettings.html#a2d0a0e0bbef87c89e16bbb3e0d5b1d7c',1,'carta::ProgramSettings']]],
   ['version_5fid_15',['VERSION_ID',['../App_8h.html#a0329409ff88c6a7b673ef9282aaae01c',1,'App.h']]],
-  ['view_16',['view',['../structcarta_1_1TableViewCache.html#a3e22292b01ba5344031a367f4f0f94ec',1,'carta::TableViewCache::view'],['../classcarta_1_1Table.html#a6a02978fe00a695f91ce2f58877d840d',1,'carta::Table::View()']]]
+  ['view_16',['view',['../classcarta_1_1Table.html#a6a02978fe00a695f91ce2f58877d840d',1,'carta::Table::View()'],['../structcarta_1_1TableViewCache.html#a3e22292b01ba5344031a367f4f0f94ec',1,'carta::TableViewCache::view']]]
 ];
