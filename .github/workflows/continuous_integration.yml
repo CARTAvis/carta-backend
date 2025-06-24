@@ -40,7 +40,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            submodules: recursive
+            submodules: true
 
       - name: Fix ownership
         run: |
@@ -141,7 +141,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            submodules: recursive
+            submodules: true
 
       - name: System information
         shell: bash
@@ -196,7 +196,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            submodules: recursive
+            submodules: true
 
       - name: Fix ownership
         run: |
