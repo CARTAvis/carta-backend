@@ -5,6 +5,7 @@
 */
 
 #include "ThreadingManager.h"
+#include "Session/OnMessageTask.h"
 
 namespace carta {
 int ThreadManager::_omp_thread_count = 0;

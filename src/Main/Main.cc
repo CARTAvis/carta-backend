@@ -14,6 +14,7 @@
 #include "Logger/CartaLogSink.h"
 #include "Logger/Logger.h"
 #include "ProgramSettings.h"
+#include "Session/OnMessageTask.h"
 #include "Session/SessionManager.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Util/App.h"

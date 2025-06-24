@@ -17,6 +17,8 @@
 
 #define TASK_THREAD_COUNT 3
 
+using namespace carta;
+
 int main(int argc, char** argv) {
     // Set gtest environment
     testing::InitGoogleTest(&argc, argv);

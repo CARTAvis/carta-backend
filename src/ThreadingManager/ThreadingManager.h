@@ -8,7 +8,9 @@
 #define CARTA_SRC_THREADINGMANAGER_THREADINGMANAGER_H_
 
 #include <omp.h>
-#include "Session/OnMessageTask.h"
+#include <condition_variable>
+#include <list>
+#include <thread>
 
 #define MAX_TILING_TASKS 8
 
@@ -23,6 +25,9 @@
 #endif
 
 namespace carta {
+
+class OnMessageTask;
+
 class ThreadManager {
     static int _omp_thread_count;
     static std::list<OnMessageTask*> _task_queue;

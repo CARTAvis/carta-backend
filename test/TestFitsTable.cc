@@ -5,6 +5,7 @@
 */
 #include <gtest/gtest.h>
 
+#include "Table/DataColumn.tcc"
 #include "Table/Table.h"
 
 #include "CommonTestUtilities.h"

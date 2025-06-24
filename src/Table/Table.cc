@@ -20,7 +20,7 @@
 
 namespace carta {
 
-Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0), _available_rows(0) {
+Table::Table(const std::string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0), _available_rows(0) {
     fs::path file_path(filename);
     std::error_code error_code;
     if (!fs::exists(file_path, error_code)) {
@@ -39,25 +39,25 @@ Table::Table(const string& filename, bool header_only) : _valid(false), _filenam
     }
 }
 
-string Table::GetHeader(const string& filename) {
-    ifstream in(filename);
-    string header_string;
+std::string Table::GetHeader(const std::string& filename) {
+    std::ifstream in(filename);
+    std::string header_string;
 
     if (!in.good()) {
         return header_string;
     }
 
     // Measure entire file size to ensure we don't read past EOF
-    in.seekg(0, ios_base::end);
-    size_t header_size = min(size_t(in.tellg()), size_t(MAX_HEADER_SIZE));
+    in.seekg(0, std::ios_base::end);
+    size_t header_size = std::min(size_t(in.tellg()), size_t(MAX_HEADER_SIZE));
     header_string.resize(header_size);
-    in.seekg(0, ios_base::beg);
+    in.seekg(0, std::ios_base::beg);
     in.read(&header_string[0], header_string.size());
     in.close();
 
     // Resize to exclude the start of the <DATA> tag
     auto data_index = header_string.find("<DATA>");
-    if (data_index != string::npos) {
+    if (data_index != std::string::npos) {
         header_string.resize(data_index);
     }
     return header_string;
@@ -68,7 +68,7 @@ bool Table::ConstructFromXML(bool header_only) {
 
     // read the first 64K only and construct a header from this
     if (header_only) {
-        string header_string = GetHeader(_filename);
+        std::string header_string = GetHeader(_filename);
         auto result = doc.load_string(header_string.c_str(), pugi::parse_default | pugi::parse_fragment);
         if (!result && result.status != pugi::status_end_element_mismatch) {
             spdlog::error(result.description());
@@ -175,10 +175,10 @@ bool Table::PopulateParams(const pugi::xml_node& table) {
     }
 
     for (auto& field : table.children("PARAM")) {
-        string name = field.attribute("name").as_string();
-        string value = field.attribute("value").as_string();
+        std::string name = field.attribute("name").as_string();
+        std::string value = field.attribute("value").as_string();
         auto description_node = field.child("DESCRIPTION");
-        string description;
+        std::string description;
         if (description_node) {
             description = description_node.child_value();
         }
@@ -299,7 +299,7 @@ bool Table::ConstructFromFITS(bool header_only) {
     if (_num_rows) {
         // Read entire table into a memory buffer
         std::size_t size_bytes = total_width * _num_rows;
-        auto buffer = make_unique<uint8_t[]>(size_bytes);
+        auto buffer = std::make_unique<uint8_t[]>(size_bytes);
         fits_read_tblbytes(file_ptr, 1, 1, size_bytes, buffer.get(), &status);
         // File is no longer needed after table is read
         fits_close_file(file_ptr, &status);
@@ -384,7 +384,7 @@ const CARTA::Coosys& Table::Coosys() const {
     return _coosys;
 }
 const std::string Table::Parameters() const {
-    string parameter_string;
+    std::string parameter_string;
 
     for (auto& p : _params) {
         parameter_string += fmt::format("{}: {}\n", p.name, p.value);

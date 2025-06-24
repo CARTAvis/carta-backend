@@ -18,6 +18,8 @@
 #include "Timer/Timer.h"
 #endif
 
+using namespace carta;
+
 class HistogramTest : public ::testing::Test {
 public:
     std::random_device rd;
