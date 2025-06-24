@@ -27,8 +27,6 @@
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 
-static const int HIGH_COMPRESSION_QUALITY(32);
-
 namespace carta {
 
 Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool load_image_cache)
@@ -531,42 +529,40 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
 
             Timer t;
 
-            // compress the data with the default precision
+            // compress the data
             std::vector<char> compression_buffer;
             size_t compressed_size;
-            int precision = lround(compression_quality);
-            Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
-            float compression_ratio = (float)tile_image_data_size / (float)compressed_size;
-            bool use_high_precision(false);
 
-            if (precision < HIGH_COMPRESSION_QUALITY && compression_ratio > 20) {
-                // re-compress the data with a higher precision
-                std::vector<char> compression_buffer_hq;
-                size_t compressed_size_hq;
-                Compress(*tile_data_ptr, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
-                float compression_ratio_hq = (float)tile_image_data_size / (float)compressed_size_hq;
+            // originally requested precision
+            int requested_precision(lround(compression_quality));
 
-                if (compression_ratio_hq > 10) {
-                    // set compression data with high precision
-                    raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
-                    tile_ptr->set_image_data(compression_buffer_hq.data(), compressed_size_hq);
+            auto find_precision = [&](const auto& self, int current, float previous_ratio) -> int {
+                Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, current);
+                float compression_ratio = (float)tile_image_data_size / compressed_size;
 
-                    spdlog::debug("Using high compression quality. Previous compression ratio: {:.3f}", compression_ratio);
-                    compression_ratio = compression_ratio_hq;
-                    use_high_precision = true;
+                // Very large ratio, probably caused by a NaN block: precision makes no difference
+                if (compression_ratio == previous_ratio) {
+                    return current;
                 }
+
+                // Acceptable ratio or no higher precisions to try
+                if (compression_ratio <= 20 || current == MAX_COMPRESSION_QUALITY) {
+                    return current;
+                }
+
+                // Otherwise try a higher precision
+                int next((current + MAX_COMPRESSION_QUALITY + 1) / 2);
+                return self(self, next, compression_ratio);
+            };
+
+            // attempt to select a precision which results in a compression ratio below an acceptable threshold
+            int precision(find_precision(find_precision, requested_precision, -1));
+            if (precision > requested_precision) {
+                spdlog::debug("Upgraded precision to {} (originally requested precision: {}).", precision, requested_precision);
             }
 
-            if (!use_high_precision) {
-                // set compression data with default precision
-                raster_tile_data.set_compression_quality(compression_quality);
-                tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
-            }
-
-            /*
-            spdlog::debug(
-                "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
-            */
+            raster_tile_data.set_compression_quality((float)precision);
+            tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
 
             // Measure duration for compress tile data
             auto dt = t.Elapsed();

@@ -223,6 +223,7 @@ public:
     void SetAnimationActive(bool val) {
         _animation_active = val;
     }
+    void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
 protected:
     // File info for file list (extended info for each hdu_name)
@@ -265,7 +266,6 @@ protected:
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = true);
     void SendFileEvent(
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
-    void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     // Channel map cancellation
     bool IsInChannelMapRange(int file_id, int channel);
