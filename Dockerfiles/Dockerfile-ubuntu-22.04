@@ -16,7 +16,7 @@ RUN \
 
 # Get carta dependencies carta-casacore, fits2idia, and zfp from the cartavis-team PPA
 RUN \
-  add-apt-repository -y ppa:cartavis-team/carta-testing && \
+  add-apt-repository -y ppa:cartavis-team/carta && \
   apt-get update && \
   apt-get -y install carta-casacore-dev fits2idia libzfp-dev
 
