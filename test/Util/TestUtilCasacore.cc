@@ -141,3 +141,14 @@ TEST(UtilTest, CheckGildasUnit) {
     EXPECT_FALSE(IsGildasUnit("K"));
     EXPECT_FALSE(IsGildasUnit("Jy"));
 }
+
+TEST(UtilTest, FolderImageType) {
+    auto pwd = TestRoot() / "data/images";
+    std::string message;
+    // Image files are unknown folder image types
+    EXPECT_EQ(FolderImageType((pwd / "mix/M17_SWex_unit.fits").string(), message), CARTA::FileType::UNKNOWN);
+    EXPECT_EQ(FolderImageType((pwd / "mix/M17_SWex_unit.hdf5").string(), message), CARTA::FileType::UNKNOWN);
+    // Image folders have folder image type
+    EXPECT_EQ(FolderImageType((pwd / "mix/M17_SWex_unit.image").string(), message), CARTA::FileType::CASA);
+    EXPECT_EQ(FolderImageType((pwd / "mix/M17_SWex_unit.miriad").string(), message), CARTA::FileType::MIRIAD);
+}

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix import of regions from top-level directory ([#1403](https://github.com/CARTAvis/carta-backend/issues/1403)).
 * Fix compression artifact issue ([#1447](https://github.com/CARTAvis/carta-backend/issues/1447)).
 * Fix applying vector field threshold ([#1415](https://github.com/CARTAvis/carta-backend/issues/1415) and [#1444](https://github.com/CARTAvis/carta-backend/issues/1444)).
+* Fix slow response to file list by sending basic info only ([#1435](https://github.com/CARTAvis/carta-backend/issues/1435)).
 
 ## [5.0.0-beta.1]
 

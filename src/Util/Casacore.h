@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_UTIL_CASACORE_H_
 #define CARTA_SRC_UTIL_CASACORE_H_
 
+#include <carta-protobuf/enums.pb.h>
+
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
@@ -37,6 +39,16 @@ casacore::String GetResolvedFilename(
 inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& filename) {
     return casacore::ImageOpener::imageType(filename);
 }
+
+/**
+ * @brief Determines the image type of a directory.  Returns unknown for all files.
+ *
+ * @param[in] folder_path The folder path to check, represented as a string.
+ * @param[out] message Error message if an image but not a supported type
+ *
+ * @return The CARTA::FileType of the directory, unknown if not an image.
+ */
+CARTA::FileType FolderImageType(const std::string& folder_path, std::string& message);
 
 /**
  * @brief Determines the spectral coordinate preferences based on an image's native spectral type.
@@ -80,6 +92,14 @@ std::string FormatQuantity(const casacore::Quantity& quantity);
  *       the corrected and validated unit name if possible.
  */
 void NormalizeUnit(casacore::String& unit);
+
+/**
+ * @brief Check if input unit string is in the format used by the GILDAS CLASS software.
+ *
+ * @param[in] unit A unit string to check.
+ *
+ * @return `true` if a GILDAS unit.
+ */
 bool IsGildasUnit(const casacore::String& unit);
 
 #endif // CARTA_SRC_UTIL_CASACORE_H_

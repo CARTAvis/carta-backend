@@ -124,8 +124,45 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
         file_list_response.set_directory(requested_folder);
     }
 
-    // Iterate through directory to generate file list
+    bool list_all_files(filter_mode == CARTA::AllFiles);
+
+    if (list_all_files) {
+        // Check if input directory is an image
+        std::string message;
+        casacore::String full_path(folder_path.path().absoluteName());
+        auto carta_file_type = FolderImageType(full_path, message);
+
+        if (carta_file_type != CARTA::FileType::UNKNOWN) {
+            // Add image with file info
+            auto& file_info = *file_list_response.add_files();
+            // Directory is path above image
+            casacore::Path image_path(full_path);
+            std::string directory(image_path.dirName());
+            file_list_response.set_directory(directory);
+            // Parent is path above directory
+            casacore::Path dir_path(directory);
+            std::string parent(dir_path.dirName());
+            file_list_response.set_parent(parent);
+            // Image name is base name of image path
+            std::string name_only = image_path.baseName();
+            file_info.set_name(name_only);
+            // Add file info
+            FileInfoLoader info_loader = FileInfoLoader(full_path, carta_file_type);
+            info_loader.FillFileInfo(file_info);
+            file_list_response.set_success(true);
+            return;
+        } else if (!message.empty()) {
+            // Unsupported image type
+            file_list_response.set_success(false);
+            file_list_response.set_message(message);
+            result_msg = {message, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+            return;
+        }
+    }
+
+    // Directory is a directory, not image
     try {
+        // Iterate through directory to generate file list
         casacore::Directory start_dir(folder_path);
         casacore::DirectoryIterator dir_iter(start_dir);
 
@@ -133,8 +170,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
         _stop_getting_file_list = false;
         _first_report_made = false;
         ListProgressReporter progress_reporter(start_dir.nEntries(), _progress_callback);
-
-        bool list_all_files(filter_mode == CARTA::AllFiles);
 
         while (!dir_iter.pastEnd()) {
             if (_stop_getting_file_list) {
@@ -147,88 +182,92 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
             if (cc_file.isReadable() && cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                 casacore::String full_path(cc_file.path().absoluteName());
+                std::string name_only = cc_file.path().baseName();
 
-                try {
-                    if (region_list) {
-                        if (cc_file.isRegular(true)) {
-                            auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
-
-                            if (!list_all_files && file_type == CARTA::UNKNOWN) {
-                                // Contents did not work, check extension (e.g. DS9 with no header)
-                                file_type = GuessRegionType(full_path, false);
-                            }
-
-                            if (list_all_files || file_type != CARTA::UNKNOWN) {
-                                // Add file: known region file, or not checking type
-                                auto& file_info = *file_list_response.add_files();
-                                FillRegionFileInfo(file_info, full_path, file_type, false);
-                            }
-                        } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
-                                   (list_all_files || CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN)) {
-                            // Add directory: not image if checking type, or not checking type
-                            casacore::String dir_name(cc_file.path().baseName());
-                            auto directory_info = file_list_response.add_subdirectories();
-                            directory_info->set_name(dir_name);
-                            directory_info->set_date(cc_file.modifyTime());
-                            directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
-                        }
-                    } else {
-                        // Image list
-                        bool add_image_file(false);
-                        CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
-
-                        if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
-                            // Determine if image or directory for image list
-                            auto image_type = CasacoreImageType(full_path);
-
-                            switch (image_type) {
-                                case casacore::ImageOpener::AIPSPP:
-                                case casacore::ImageOpener::IMAGECONCAT:
-                                case casacore::ImageOpener::IMAGEEXPR:
-                                case casacore::ImageOpener::COMPLISTIMAGE: {
-                                    file_type = CARTA::FileType::CASA;
-                                    add_image_file = true;
-                                    break;
-                                }
-                                case casacore::ImageOpener::GIPSY:
-                                case casacore::ImageOpener::CAIPS:
-                                case casacore::ImageOpener::NEWSTAR: {
-                                    std::string image_type_msg = fmt::format("{}: image type not supported", name);
-                                    result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
-                                    break;
-                                }
-                                case casacore::ImageOpener::MIRIAD: {
-                                    file_type = CARTA::FileType::MIRIAD;
-                                    add_image_file = true;
-                                    break;
-                                }
-                                case casacore::ImageOpener::UNKNOWN: {
-                                    // UNKNOWN directories are directories
-                                    casacore::String dir_name(cc_file.path().baseName());
-                                    auto directory_info = file_list_response.add_subdirectories();
-                                    directory_info->set_name(dir_name);
-                                    directory_info->set_date(cc_file.modifyTime());
-                                    directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
-                                    break;
-                                }
-                                default:
-                                    break;
-                            }
-                        } else if (cc_file.isRegular(true)) {
-                            file_type = GuessImageType(full_path, filter_mode == CARTA::Content);
-                            // Add file: known image file, or not checking type
-                            add_image_file = list_all_files || file_type != CARTA::UNKNOWN;
-                        }
-
-                        if (add_image_file) {
-                            auto& file_info = *file_list_response.add_files();
-                            file_info.set_name(name);
-                            FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
-                            info_loader.FillFileInfo(file_info);
-                        }
+                if (list_all_files) {
+                    if (cc_file.isRegular(true)) {
+                        auto& file_info = *file_list_response.add_files();
+                        file_info.set_name(name_only);
+                        FileInfoLoader info_loader = FileInfoLoader(full_path, CARTA::FileType::UNKNOWN);
+                        info_loader.FillFileInfo(file_info);
+                    } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
+                        auto directory_info = file_list_response.add_subdirectories();
+                        directory_info->set_name(name_only);
+                        directory_info->set_date(cc_file.modifyTime());
+                        // skip item count
                     }
-                } catch (casacore::AipsError& err) {
-                    // RegularFileIO error, skip item
+                } else {
+                    try {
+                        if (region_list) {
+                            if (cc_file.isRegular(true)) {
+                                auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
+
+                                if (file_type == CARTA::UNKNOWN) {
+                                    // Contents did not work, check extension (e.g. DS9 with no header)
+                                    file_type = GuessRegionType(full_path, false);
+                                }
+
+                                if (file_type != CARTA::UNKNOWN) {
+                                    // Add file: known region file
+                                    auto& file_info = *file_list_response.add_files();
+                                    FillRegionFileInfo(file_info, full_path, file_type, false);
+                                }
+                            } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
+                                       CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN) {
+                                // Add directory: not image type
+                                auto directory_info = file_list_response.add_subdirectories();
+                                directory_info->set_name(name_only);
+                                directory_info->set_date(cc_file.modifyTime());
+                                directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
+                            }
+                        } else {
+                            // Image list
+                            bool add_image_file(false);
+                            CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
+
+                            if (cc_file.isRegular(true)) {
+                                // Add file if known image file
+                                file_type = GuessImageType(full_path, filter_mode == CARTA::Content);
+                                add_image_file = file_type != CARTA::UNKNOWN;
+                            } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
+                                // Determine if image or directory for image list
+                                std::string message;
+                                file_type = FolderImageType(full_path, message);
+                                switch (file_type) {
+                                    case CARTA::FileType::CASA:
+                                    case CARTA::FileType::MIRIAD: {
+                                        add_image_file = true;
+                                        break;
+                                    }
+                                    case CARTA::FileType::UNKNOWN: {
+                                        if (!message.empty()) {
+                                            // Log unsupported image
+                                            result_msg = {message, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                                        } else {
+                                            // UNKNOWN directories are directories
+                                            auto directory_info = file_list_response.add_subdirectories();
+                                            directory_info->set_name(name_only);
+                                            directory_info->set_date(cc_file.modifyTime());
+                                            directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
+                                        }
+                                        break;
+                                    }
+                                    default: {
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (add_image_file) {
+                                auto& file_info = *file_list_response.add_files();
+                                file_info.set_name(name_only);
+                                FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
+                                info_loader.FillFileInfo(file_info);
+                            }
+                        }
+                    } catch (casacore::AipsError& err) {
+                        // RegularFileIO error, skip item
+                    }
                 }
             }
 

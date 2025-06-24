@@ -62,6 +62,47 @@ casacore::String GetResolvedFilename(
 }
 
 /**
+ * @details This function determines the image type of a directory.  If not an image, returns UNKNOWN type.
+ *
+ * @note If the path is a file, does not check type and returns UNKNOWN.
+ */
+CARTA::FileType FolderImageType(const std::string& folder_path, std::string& message) {
+    // Return CARTA::FileType enum for input folder (image type only for folder only).
+    // Returns UNKNOWN for files (including image files), unsupported image types, and plain directories.
+    // Return parameter `message` is set for unsupported image types.
+    CARTA::FileType carta_type(CARTA::FileType::UNKNOWN);
+    casacore::File input_file(folder_path);
+    if (input_file.isRegular()) {
+        return carta_type;
+    }
+
+    switch (CasacoreImageType(folder_path)) {
+        case casacore::ImageOpener::AIPSPP:
+        case casacore::ImageOpener::IMAGECONCAT:
+        case casacore::ImageOpener::IMAGEEXPR:
+        case casacore::ImageOpener::COMPLISTIMAGE: {
+            carta_type = CARTA::FileType::CASA;
+            break;
+        }
+        case casacore::ImageOpener::MIRIAD: {
+            carta_type = CARTA::FileType::MIRIAD;
+            break;
+        }
+        case casacore::ImageOpener::GIPSY:
+        case casacore::ImageOpener::CAIPS:
+        case casacore::ImageOpener::NEWSTAR: {
+            message = fmt::format("{}: image type not supported", folder_path);
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+
+    return carta_type;
+}
+
+/**
  * @details This function analyses the spectral coordinate system of the provided `image` and sets
  * preference flags for velocity, wavelength, and their specific variations. It considers
  * the image's native spectral type and applies special handling for `CartaMiriadImage` types.
