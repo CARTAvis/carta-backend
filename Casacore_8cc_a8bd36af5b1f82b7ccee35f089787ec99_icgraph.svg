@@ -48,7 +48,7 @@
 <script type="application/ecmascript">
 var viewWidth = 2207;
 var viewHeight = 828;
-var sectionId = 'dynsection-6';
+var sectionId = 'dynsection-8';
 </script>
 <script type="application/ecmascript" xlink:href="svg.min.js"/>
 <svg id="graph" class="graph">
@@ -66,7 +66,7 @@ var sectionId = 'dynsection-6';
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title="Check if input unit string is in the format used by the GILDAS CLASS software.">
 <polygon fill="white" stroke="#666666" points="2072,-483.5 1996,-483.5 1996,-464.5 2072,-464.5 2072,-483.5"/>
 <text text-anchor="middle" x="2034" y="-471.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGildasUnit</text>
 </a>

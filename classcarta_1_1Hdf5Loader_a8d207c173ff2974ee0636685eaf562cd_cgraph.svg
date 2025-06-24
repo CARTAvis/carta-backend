@@ -208,7 +208,7 @@ var sectionId = 'dynsection-10';
 <!-- Node8 -->
 <g id="Node000008" class="node">
 <title>Node8</title>
-<g id="a_Node000008"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title=" ">
+<g id="a_Node000008"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title="Check if input unit string is in the format used by the GILDAS CLASS software.">
 <polygon fill="white" stroke="#666666" points="676,-27.5 600,-27.5 600,-8.5 676,-8.5 676,-27.5"/>
 <text text-anchor="middle" x="638" y="-15.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGildasUnit</text>
 </a>

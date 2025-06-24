@@ -36,7 +36,7 @@
 <area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="723,313,786,320,785,326,722,318"/>
 <area shape="rect" id="Node000013" href="$classcarta_1_1CompressedFits.html#a27e31cc4d4f75f55f592a274b898c416" title=" " alt="" coords="784,515,991,555"/>
 <area shape="poly" id="edge15_Node000012_Node000013" title=" " alt="" coords="717,532,770,532,770,537,717,537"/>
-<area shape="rect" id="Node000016" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title=" " alt="" coords="837,465,938,490"/>
+<area shape="rect" id="Node000016" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title="Check if input unit string is in the format used by the GILDAS CLASS software." alt="" coords="837,465,938,490"/>
 <area shape="poly" id="edge18_Node000015_Node000016" title=" " alt="" coords="692,475,823,475,823,480,692,480"/>
 <area shape="rect" id="Node000017" href="$Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" title=" " alt="" coords="1039,465,1160,490"/>
 <area shape="poly" id="edge19_Node000016_Node000017" title=" " alt="" coords="938,475,1025,475,1025,480,938,480"/>

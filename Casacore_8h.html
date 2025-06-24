@@ -99,13 +99,14 @@ $(document).ready(function(){initNavTree('Casacore_8h.html',''); initResizable()
   <div class="headertitle"><div class="title">Casacore.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;casacore/images/Images/ImageInterface.h&gt;</code><br />
+<div class="textblock"><code>#include &lt;carta-protobuf/enums.pb.h&gt;</code><br />
+<code>#include &lt;casacore/images/Images/ImageInterface.h&gt;</code><br />
 <code>#include &lt;casacore/images/Images/ImageOpener.h&gt;</code><br />
 <code>#include &lt;casacore/scimath/Mathematics/GaussianBeam.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Casacore.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h__incl.svg" width="654" height="124"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h__incl.svg" width="100%" height="393"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -121,6 +122,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a7f2e1b7b1fdc56656757ae21fa22be67" id="r_a7f2e1b7b1fdc56656757ae21fa22be67"><td class="memItemLeft" align="right" valign="top">casacore::ImageOpener::ImageTypes&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67">CasacoreImageType</a> (const std::string &amp;filename)</td></tr>
 <tr class="memdesc:a7f2e1b7b1fdc56656757ae21fa22be67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the image type of a given filename using Casacore.  <br /></td></tr>
 <tr class="separator:a7f2e1b7b1fdc56656757ae21fa22be67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9fc903282263ccf975d7886e526ddac" id="r_ad9fc903282263ccf975d7886e526ddac"><td class="memItemLeft" align="right" valign="top">CARTA::FileType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#ad9fc903282263ccf975d7886e526ddac">FolderImageType</a> (const std::string &amp;folder_path, std::string &amp;message)</td></tr>
+<tr class="memdesc:ad9fc903282263ccf975d7886e526ddac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the image type of a directory. Returns unknown for all files.  <br /></td></tr>
+<tr class="separator:ad9fc903282263ccf975d7886e526ddac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2710acccf40d0db8b686e21bc111cc56" id="r_a2710acccf40d0db8b686e21bc111cc56"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a2710acccf40d0db8b686e21bc111cc56">GetSpectralCoordPreferences</a> (casacore::ImageInterface&lt; float &gt; *image, bool &amp;prefer_velocity, bool &amp;optical_velocity, bool &amp;prefer_wavelength, bool &amp;air_wavelength)</td></tr>
 <tr class="memdesc:a2710acccf40d0db8b686e21bc111cc56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the spectral coordinate preferences based on an image's native spectral type.  <br /></td></tr>
 <tr class="separator:a2710acccf40d0db8b686e21bc111cc56"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,6 +138,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8733accb41db0f83703779c667ae852e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Normalizes a given unit string to conform to standard Casacore unit conventions (case-sensitive).  <br /></td></tr>
 <tr class="separator:a8733accb41db0f83703779c667ae852e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1417964e00800b515ec0913adaa1957" id="r_af1417964e00800b515ec0913adaa1957"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#af1417964e00800b515ec0913adaa1957">IsGildasUnit</a> (const casacore::String &amp;unit)</td></tr>
+<tr class="memdesc:af1417964e00800b515ec0913adaa1957"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if input unit string is in the format used by the GILDAS CLASS software.  <br /></td></tr>
 <tr class="separator:af1417964e00800b515ec0913adaa1957"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
@@ -174,6 +179,56 @@ Functions</h2></td></tr>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_a7f2e1b7b1fdc56656757ae21fa22be67_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="ad9fc903282263ccf975d7886e526ddac" name="ad9fc903282263ccf975d7886e526ddac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9fc903282263ccf975d7886e526ddac">&#9670;&#160;</a></span>FolderImageType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::FileType FolderImageType </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>folder_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>message</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Determines the image type of a directory. Returns unknown for all files. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">folder_path</td><td>The folder path to check, represented as a string. </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">message</td><td>Error message if an image but not a supported type</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The CARTA::FileType of the directory, unknown if not an image.</dd></dl>
+<p>This function determines the image type of a directory. If not an image, returns UNKNOWN type.</p>
+<dl class="section note"><dt>Note</dt><dd>If the path is a file, does not check type and returns UNKNOWN. </dd></dl>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h_ad9fc903282263ccf975d7886e526ddac_cgraph.svg" width="346" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h_ad9fc903282263ccf975d7886e526ddac_icgraph.svg" width="570" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -389,6 +444,15 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Check if input unit string is in the format used by the GILDAS CLASS software. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">unit</td><td>A unit string to check.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if a GILDAS unit.</dd></dl>
 <p>This function uses regex to check if unit is in the GILDAS CLASS software format "unit (Ttype)" where the "type" describes the temperature T. It also tests for casacore Unit name changes where " " and "*" are replaced with ".". For example: "K (Ta*)" --&gt; "K.(Ta.)" in casacore. </p>
 <div class="dynheader">
 Here is the call graph for this function:</div>

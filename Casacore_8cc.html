@@ -118,6 +118,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ad560f4fdd266b9e1503ae3f24a60aa52" id="r_ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52">GetResolvedFilename</a> (const std::string &amp;root_dir, const std::string &amp;directory, const std::string &amp;file, std::string &amp;message)</td></tr>
 <tr class="memdesc:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolves a file path based on a given root directory and relative subdirectory.  <br /></td></tr>
 <tr class="separator:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9fc903282263ccf975d7886e526ddac" id="r_ad9fc903282263ccf975d7886e526ddac"><td class="memItemLeft" align="right" valign="top">CARTA::FileType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#ad9fc903282263ccf975d7886e526ddac">FolderImageType</a> (const std::string &amp;folder_path, std::string &amp;message)</td></tr>
+<tr class="memdesc:ad9fc903282263ccf975d7886e526ddac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the image type of a directory. Returns unknown for all files.  <br /></td></tr>
+<tr class="separator:ad9fc903282263ccf975d7886e526ddac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2710acccf40d0db8b686e21bc111cc56" id="r_a2710acccf40d0db8b686e21bc111cc56"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#a2710acccf40d0db8b686e21bc111cc56">GetSpectralCoordPreferences</a> (casacore::ImageInterface&lt; float &gt; *image, bool &amp;prefer_velocity, bool &amp;optical_velocity, bool &amp;prefer_wavelength, bool &amp;air_wavelength)</td></tr>
 <tr class="memdesc:a2710acccf40d0db8b686e21bc111cc56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the spectral coordinate preferences based on an image's native spectral type.  <br /></td></tr>
 <tr class="separator:a2710acccf40d0db8b686e21bc111cc56"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,9 +134,52 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8733accb41db0f83703779c667ae852e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Normalizes a given unit string to conform to standard Casacore unit conventions (case-sensitive).  <br /></td></tr>
 <tr class="separator:a8733accb41db0f83703779c667ae852e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1417964e00800b515ec0913adaa1957" id="r_af1417964e00800b515ec0913adaa1957"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957">IsGildasUnit</a> (const casacore::String &amp;unit)</td></tr>
+<tr class="memdesc:af1417964e00800b515ec0913adaa1957"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if input unit string is in the format used by the GILDAS CLASS software.  <br /></td></tr>
 <tr class="separator:af1417964e00800b515ec0913adaa1957"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="ad9fc903282263ccf975d7886e526ddac" name="ad9fc903282263ccf975d7886e526ddac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9fc903282263ccf975d7886e526ddac">&#9670;&#160;</a></span>FolderImageType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::FileType FolderImageType </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>folder_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>message</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Determines the image type of a directory. Returns unknown for all files. </p>
+<p>This function determines the image type of a directory. If not an image, returns UNKNOWN type.</p>
+<dl class="section note"><dt>Note</dt><dd>If the path is a file, does not check type and returns UNKNOWN. </dd></dl>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_ad9fc903282263ccf975d7886e526ddac_cgraph.svg" width="346" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8cc_ad9fc903282263ccf975d7886e526ddac_icgraph.svg" width="570" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
 <a id="a1859ccacb65ced54041fd75f602c75c1" name="a1859ccacb65ced54041fd75f602c75c1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1859ccacb65ced54041fd75f602c75c1">&#9670;&#160;</a></span>FormatBeam()</h2>
 
@@ -334,6 +380,8 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Check if input unit string is in the format used by the GILDAS CLASS software. </p>
 <p>This function uses regex to check if unit is in the GILDAS CLASS software format "unit (Ttype)" where the "type" describes the temperature T. It also tests for casacore Unit name changes where " " and "*" are replaced with ".". For example: "K (Ta*)" --&gt; "K.(Ta.)" in casacore. </p>
 <div class="dynheader">
 Here is the call graph for this function:</div>

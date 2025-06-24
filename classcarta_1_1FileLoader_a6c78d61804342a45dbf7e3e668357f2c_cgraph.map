@@ -42,7 +42,7 @@
 <area shape="poly" id="edge23_Node000014_Node000015" title=" " alt="" coords="917,43,1005,32,1005,38,917,48"/>
 <area shape="rect" id="Node000016" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="1030,70,1146,95"/>
 <area shape="poly" id="edge24_Node000014_Node000016" title=" " alt="" coords="917,59,1016,71,1016,77,917,64"/>
-<area shape="rect" id="Node000017" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title=" " alt="" coords="1205,70,1307,95"/>
+<area shape="rect" id="Node000017" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title="Check if input unit string is in the format used by the GILDAS CLASS software." alt="" coords="1205,70,1307,95"/>
 <area shape="poly" id="edge25_Node000016_Node000017" title=" " alt="" coords="1146,80,1191,80,1191,85,1146,85"/>
 <area shape="rect" id="Node000018" href="$Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" title=" " alt="" coords="1355,70,1476,95"/>
 <area shape="poly" id="edge26_Node000017_Node000018" title=" " alt="" coords="1307,80,1341,80,1341,85,1307,85"/>

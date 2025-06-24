@@ -1,5 +1,5 @@
 <map id="IsGildasUnit" name="IsGildasUnit">
-<area shape="rect" id="Node000001" title=" " alt="" coords="2667,454,2768,479"/>
+<area shape="rect" id="Node000001" title="Check if input unit string is in the format used by the GILDAS CLASS software." alt="" coords="2667,454,2768,479"/>
 <area shape="rect" id="Node000002" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="2503,454,2619,479"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="2653,469,2619,469,2619,464,2653,464"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1FileExtInfoLoader.html#a5f5a330e631e555679c7356ac1f71f23" title=" " alt="" coords="2200,383,2455,423"/>

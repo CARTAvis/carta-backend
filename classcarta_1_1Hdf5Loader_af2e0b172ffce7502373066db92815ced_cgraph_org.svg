@@ -434,7 +434,7 @@
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title=" ">
+<g id="a_Node000018"><a xlink:href="Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" target="_top" xlink:title="Check if input unit string is in the format used by the GILDAS CLASS software.">
 <polygon fill="white" stroke="#666666" points="1102,-345.5 1026,-345.5 1026,-326.5 1102,-326.5 1102,-345.5"/>
 <text text-anchor="middle" x="1064" y="-333.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsGildasUnit</text>
 </a>

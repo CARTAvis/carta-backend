@@ -1,5 +1,7 @@
 var NAVTREEINDEX1 =
 {
+"Logger_8cc.html":[5,0,1,9,2],
+"Logger_8cc.html#a23c9bf75209165cf69eb8d50f64b81b4":[5,0,1,9,2,2],
 "Logger_8cc.html#a579b36ca7fa898b7052001d151fc34cd":[5,0,1,9,2,3],
 "Logger_8cc.html#a7b334512783c98ccfdac74bd38aa2f9f":[5,0,1,9,2,0],
 "Logger_8cc.html#a7df43780861a3694ed05db3026e0555f":[5,0,1,9,2,1],
@@ -203,7 +205,6 @@ var NAVTREEINDEX1 =
 "classMessage.html#a1786c235bf5762e8cc2e5e6293fa46b2":[4,0,7,40],
 "classMessage.html#a1dcda15dd079ae04209f6e8e28bd3980":[4,0,7,61],
 "classMessage.html#a1ddbaf9748774ff4043ed66c89e40fff":[4,0,7,46],
-"classMessage.html#a1f2d99cf9b4ad867e9d0160bdbb89c5c":[4,0,7,15],
 "classMessage.html#a281caf592c92b9f16c878afc8446188b":[4,0,7,8],
 "classMessage.html#a2d981a1cec15972f98b2fe2ec5716ae6":[4,0,7,9],
 "classMessage.html#a2db1e87dde5d0eb661c819b9a6f02604":[4,0,7,20],
@@ -248,6 +249,5 @@ var NAVTREEINDEX1 =
 "classMessage.html#ae05dec8a6ddb99079c23bca22516473d":[4,0,7,30],
 "classMessage.html#ae2014883b61e59f5a8af13ab6109a659":[4,0,7,64],
 "classMessage.html#ae4c7fdc05c8b782e3ebfe8a76770d646":[4,0,7,17],
-"classMessage.html#af0ee1f2c4e8dc91a09b2ee7a31020566":[4,0,7,59],
-"classMessage.html#af2a443107871719730e5e8ad6bf0179c":[4,0,7,52]
+"classMessage.html#ae9d612e22dde4c2bb7ab11d5bfc25bca":[4,0,7,15]
 };

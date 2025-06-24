@@ -158,8 +158,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a6f84abf791a095ae8fc37e17d4e204c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b2cc23716faa76064b935b1a24020ea" id="r_a0b2cc23716faa76064b935b1a24020ea"><td class="memItemLeft" align="right" valign="top">static CARTA::SetSpectralRequirements_SpectralConfig&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a0b2cc23716faa76064b935b1a24020ea">SpectralConfig</a> (const std::string &amp;coordinate)</td></tr>
 <tr class="separator:a0b2cc23716faa76064b935b1a24020ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f2d99cf9b4ad867e9d0160bdbb89c5c" id="r_a1f2d99cf9b4ad867e9d0160bdbb89c5c"><td class="memItemLeft" align="right" valign="top">static CARTA::FileListRequest&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a1f2d99cf9b4ad867e9d0160bdbb89c5c">FileListRequest</a> (const std::string &amp;directory)</td></tr>
-<tr class="separator:a1f2d99cf9b4ad867e9d0160bdbb89c5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9d612e22dde4c2bb7ab11d5bfc25bca" id="r_ae9d612e22dde4c2bb7ab11d5bfc25bca"><td class="memItemLeft" align="right" valign="top">static CARTA::FileListRequest&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ae9d612e22dde4c2bb7ab11d5bfc25bca">FileListRequest</a> (const std::string &amp;directory, const CARTA::FileListFilterMode filter_mode=CARTA::FileListFilterMode::Content)</td></tr>
+<tr class="separator:ae9d612e22dde4c2bb7ab11d5bfc25bca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0de8ab3a793899c472db3f50f2babaab" id="r_a0de8ab3a793899c472db3f50f2babaab"><td class="memItemLeft" align="right" valign="top">static CARTA::FileInfoRequest&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a0de8ab3a793899c472db3f50f2babaab">FileInfoRequest</a> (const std::string &amp;directory, const std::string &amp;file, const std::string &amp;hdu=&quot;&quot;)</td></tr>
 <tr class="separator:a0de8ab3a793899c472db3f50f2babaab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a67b174f2dedf2f95388439d86ad2ed03" id="r_a67b174f2dedf2f95388439d86ad2ed03"><td class="memItemLeft" align="right" valign="top">static CARTA::SetContourParameters&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a67b174f2dedf2f95388439d86ad2ed03">SetContourParameters</a> (uint32_t file_id, uint32_t ref_file_id, int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max, const std::vector&lt; double &gt; &amp;levels, CARTA::SmoothingMode smoothing_mode, int32_t smoothing_factor, int32_t decimation_factor, int32_t compression_level, int32_t contour_chunk_size)</td></tr>
@@ -907,8 +907,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a1f2d99cf9b4ad867e9d0160bdbb89c5c" name="a1f2d99cf9b4ad867e9d0160bdbb89c5c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f2d99cf9b4ad867e9d0160bdbb89c5c">&#9670;&#160;</a></span>FileListRequest()</h2>
+<a id="ae9d612e22dde4c2bb7ab11d5bfc25bca" name="ae9d612e22dde4c2bb7ab11d5bfc25bca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9d612e22dde4c2bb7ab11d5bfc25bca">&#9670;&#160;</a></span>FileListRequest()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -920,8 +920,18 @@ Here is the caller graph for this function:</div>
           <td class="memname">CARTA::FileListRequest Message::FileListRequest </td>
           <td>(</td>
           <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>directory</em></td><td>)</td>
+          <td class="paramname"><em>directory</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">const CARTA::FileListFilterMode&#160;</td>
+          <td class="paramname"><em>filter_mode</em> = <code>CARTA::FileListFilterMode::Content</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>

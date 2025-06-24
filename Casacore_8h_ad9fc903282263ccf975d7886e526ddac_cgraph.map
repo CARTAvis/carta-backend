@@ -1,0 +1,5 @@
+<map id="FolderImageType" name="FolderImageType">
+<area shape="rect" id="Node000001" title="Determines the image type of a directory. Returns unknown for all files." alt="" coords="5,5,139,31"/>
+<area shape="rect" id="Node000002" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title="Determines the image type of a given filename using Casacore." alt="" coords="187,5,340,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="139,15,173,15,173,21,139,21"/>
+</map>

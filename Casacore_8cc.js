@@ -1,5 +1,6 @@
 var Casacore_8cc =
 [
+    [ "FolderImageType", "Casacore_8cc.html#ad9fc903282263ccf975d7886e526ddac", null ],
     [ "FormatBeam", "Casacore_8cc.html#a1859ccacb65ced54041fd75f602c75c1", null ],
     [ "FormatQuantity", "Casacore_8cc.html#a8c9fe1e490ee8d17337e07e1f9ac6bdc", null ],
     [ "GetResolvedFilename", "Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52", null ],
