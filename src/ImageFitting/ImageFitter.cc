@@ -25,7 +25,7 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, double beam_size, string unit,
-    const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
+    std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
     CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
     GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
     bool success = false;
@@ -48,7 +48,34 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     _progress_callback = progress_callback;
 
     CalculateNanNumAndStd();
-    SetInitialValues(initial_values, background_offset, fixed_params);
+    success = SetInitialValues(initial_values, background_offset, fixed_params);
+
+    std::string initial_value_log = "";
+    if (!success) {
+        spdlog::info("Generating initial values for fitting.");
+        InitialValueCalculator calculator(&_fit_data, _image_std, _unit);
+        success = calculator.CalculateInitialValues(initial_values, initial_value_log);
+        if (success) {
+            if (initial_values.size() < fixed_params.size()) {
+                std::vector<bool> generated_fixed_params(initial_values.size() * 6 + 1, false);
+                generated_fixed_params.back() = fixed_params.back(); // background offset
+                success = SetInitialValues(initial_values, background_offset, generated_fixed_params);
+            } else {
+                success = SetInitialValues(initial_values, background_offset, fixed_params);
+            }
+        }
+    }
+
+    if (!success) {
+        fitting_response.set_message("failed to set initial values");
+        fitting_response.set_success(success);
+
+        gsl_vector_free(_fit_values);
+        gsl_vector_free(_fit_errors);
+        return false;
+    }
+
+    success = false;
 
     // avoid SolveSystem crashes with insufficient data points
     if (_fit_data.n_notnan < _fit_values->size) {
@@ -80,12 +107,12 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
                 auto values = GetGaussianParams(
                     _fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, _fit_data.offset_x, _fit_data.offset_y);
                 fitting_response.add_result_values();
-                *fitting_response.mutable_result_values(i) = GetGaussianComponent(values);
+                *fitting_response.mutable_result_values(i) = values.GetGaussianComponent();
 
                 std::vector<double> zeros(6, 0.0);
                 auto errors = GetGaussianParams(_fit_errors, i * 6, _fit_data.fit_values_indexes, zeros);
                 fitting_response.add_result_errors();
-                *fitting_response.mutable_result_errors(i) = GetGaussianComponent(errors);
+                *fitting_response.mutable_result_errors(i) = errors.GetGaussianComponent();
             }
 
             if (_integrated_flux_values.size() == _num_components && _integrated_flux_errors.size() == _num_components) {
@@ -103,7 +130,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
             fitting_response.set_offset_value(background_offset);
             fitting_response.set_offset_error(background_offset_error);
 
-            fitting_response.set_log(GetLog());
+            fitting_response.set_log(initial_value_log + GetLog());
         }
     }
     fitting_response.set_success(success);
@@ -145,7 +172,7 @@ void ImageFitter::CalculateNanNumAndStd() {
     spdlog::debug("MAD = {}", _image_std);
 }
 
-void ImageFitter::SetInitialValues(
+bool ImageFitter::SetInitialValues(
     const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params) {
     _num_components = initial_values.size();
     _fit_data.initial_values.clear();
@@ -168,6 +195,11 @@ void ImageFitter::SetInitialValues(
         _fit_values = gsl_vector_alloc(p);
         _fit_errors = gsl_vector_alloc(p);
         for (size_t i = 0; i < p - 1; i++) {
+            if (isnan(_fit_data.initial_values[i])) {
+                spdlog::debug("Found invalid value in the provided initial values.");
+                return false;
+            }
+
             _fit_data.fit_values_indexes.push_back(i);
             gsl_vector_set(_fit_values, i, _fit_data.initial_values[i]);
         }
@@ -178,6 +210,11 @@ void ImageFitter::SetInitialValues(
         _fit_errors = gsl_vector_alloc(p);
         size_t iter = 0;
         for (size_t i = 0; i < fixed_params.size(); i++) {
+            if (isnan(_fit_data.initial_values[i])) {
+                spdlog::debug("Found invalid value in the provided initial values.");
+                return false;
+            }
+
             if (!fixed_params[i]) {
                 _fit_data.fit_values_indexes.push_back(iter);
                 gsl_vector_set(_fit_values, iter, _fit_data.initial_values[i]);
@@ -188,6 +225,8 @@ void ImageFitter::SetInitialValues(
         }
     }
     _fdf.p = p;
+
+    return true;
 }
 
 int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
@@ -268,8 +307,7 @@ void ImageFitter::CalculateErrors() {
     }
 
     for (size_t i = 0; i < _num_components; i++) {
-        double center_x, center_y, amp, fwhm_x, fwhm_y, pa;
-        std::tie(center_x, center_y, amp, fwhm_x, fwhm_y, pa) =
+        auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] =
             GetGaussianParams(_fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, 0, 0);
         double center_x_err, center_y_err, amp_err, fwhm_x_err, fwhm_y_err, pa_err;
 
@@ -440,8 +478,13 @@ int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector*
             return GSL_SUCCESS;
         }
 
-        double center_x, center_y, amp, fwhm_x, fwhm_y, pa;
-        std::tie(center_x, center_y, amp, fwhm_x, fwhm_y, pa) = GetGaussianParams(fit_values, k, d->fit_values_indexes, d->initial_values);
+        GaussianParams params = GetGaussianParams(fit_values, k, d->fit_values_indexes, d->initial_values);
+        double center_x = params.center_x;
+        double center_y = params.center_y;
+        double amp = params.amp;
+        double fwhm_x = params.fwhm_x;
+        double fwhm_y = params.fwhm_y;
+        double pa = params.pa;
 
         const double dbl_sq_std_x = 2 * fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA;
         const double dbl_sq_std_y = 2 * fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA;
@@ -492,8 +535,8 @@ void ImageFitter::ErrorHandler(const char* reason, const char* file, int line, i
     spdlog::error("gsl error: {} line{}: {}", file, line, reason);
 }
 
-std::tuple<double, double, double, double, double, double> ImageFitter::GetGaussianParams(const gsl_vector* value_vector, size_t index,
-    std::vector<int>& fit_values_indexes, std::vector<double>& initial_values, size_t offset_x, size_t offset_y) {
+GaussianParams ImageFitter::GetGaussianParams(const gsl_vector* value_vector, size_t index, std::vector<int>& fit_values_indexes,
+    std::vector<double>& initial_values, size_t offset_x, size_t offset_y) {
     auto getParam = [&](int i) {
         int fit_values_index = fit_values_indexes[index + i];
         return fit_values_index < 0 ? initial_values[index + i] : gsl_vector_get(value_vector, fit_values_index);
@@ -504,16 +547,8 @@ std::tuple<double, double, double, double, double, double> ImageFitter::GetGauss
     double fwhm_x = getParam(3);
     double fwhm_y = getParam(4);
     double pa = getParam(5);
-    std::tuple<double, double, double, double, double, double> params = {center_x, center_y, amp, fwhm_x, fwhm_y, pa};
+    GaussianParams params(center_x, center_y, amp, fwhm_x, fwhm_y, pa);
     return params;
-}
-
-CARTA::GaussianComponent ImageFitter::GetGaussianComponent(std::tuple<double, double, double, double, double, double> params) {
-    auto [center_x, center_y, amp, fwhm_x, fwhm_y, pa] = params;
-    auto center = Message::DoublePoint(center_x, center_y);
-    auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
-    auto component = Message::GaussianComponent(center, amp, fwhm, pa);
-    return component;
 }
 
 double ImageFitter::GetMedianAbsDeviation(const size_t n, double x[]) {

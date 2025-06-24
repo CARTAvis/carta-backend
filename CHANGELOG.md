@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Add support for generating initial values for multiple Gaussian image fitting ([#2095](https://github.com/CARTAvis/carta-frontend/issues/2095)).
+
 ### Fixed
 * Fix empty response to HTTP request with underscores in header names ([#1406](https://github.com/CARTAvis/carta-backend/issues/1406)).
 * Fix scripting being unable to find resumed session ([#1416](https://github.com/CARTAvis/carta-backend/issues/1416)).
