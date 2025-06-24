@@ -2386,17 +2386,20 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
 
     auto stokes_type = Stokes::Get(stokes_string);
     if (stokes_type) {
-        if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
-            stokes_ok = true;
-        } else if (Stokes::IsComputed(stokes_type)) {
+        if (Stokes::IsComputed(stokes_type)) {
             stokes_index = stokes_type;
             stokes_ok = true;
         } else {
-            int assumed_stokes_index = (stokes_type - 1) % 4;
-            if (NumStokes() > assumed_stokes_index) {
-                stokes_index = assumed_stokes_index;
-                stokes_ok = true;
-                spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
+            if (!_loader->GetStokesIndices().empty()) {
+                // Stokes are defined in image
+                stokes_ok = _loader->GetStokesTypeIndex(stokes_type, stokes_index);
+            } else {
+                int assumed_stokes_index = (stokes_type - 1) % 4;
+                if (NumStokes() > assumed_stokes_index) {
+                    stokes_index = assumed_stokes_index;
+                    stokes_ok = true;
+                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
+                }
             }
         }
     }
@@ -2506,6 +2509,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     int mip = _vector_field.Mip();
     bool fractional = _vector_field.Fractional();
     float threshold = _vector_field.Threshold();
+    CARTA::PolarizationType threshold_option = _vector_field.ThresholdOption();
     bool calculate_pi = _vector_field.CalculatePi();
     bool calculate_pa = _vector_field.CalculatePa();
     bool current_stokes_as_pi = _vector_field.CurrStokesAsPi();
@@ -2515,19 +2519,15 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     std::vector<Tile> tiles;
     GetTiles(_dims.width, _dims.height, mip, tiles);
 
-    // Initialize stokes maps for their flags, indices and data
+    // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
     std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
 
     // Set stokes flags and get their indices
-    stokes_flag["I"] = (fractional || !std::isnan(threshold));
-    stokes_flag["Q"] = stokes_flag["U"] = (calculate_pi || calculate_pa);
-    for (auto one : stokes_flag) {
-        std::string stokes = one.first;
-        if (stokes_flag[stokes] && !GetStokesTypeIndex(stokes + "x", stokes_indices[stokes])) {
-            return false;
-        }
-    }
+    bool use_threshold_I = !std::isnan(threshold) && threshold_option == CARTA::PolarizationType::I;
+    stokes_flag["I"] = (fractional || use_threshold_I) && GetStokesTypeIndex("I", stokes_indices["I"]);
+    stokes_flag["Q"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("Q", stokes_indices["Q"]);
+    stokes_flag["U"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("U", stokes_indices["U"]);
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
