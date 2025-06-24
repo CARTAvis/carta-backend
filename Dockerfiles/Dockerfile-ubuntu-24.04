@@ -1,6 +1,4 @@
 FROM ubuntu:24.04
-# Note: kern PPA has been temporarily disabled until kernsuite provide 'jammy' packages. 
-# Until then, the 'casacore-data' package may not be fully up-to-date.
 
 # Install the basic packages
 RUN \
