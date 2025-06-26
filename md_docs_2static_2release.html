@@ -101,16 +101,16 @@ $(document).ready(function(){initNavTree('md_docs_2static_2release.html',''); in
 <h1><a class="anchor" id="autotoc_md4"></a>
 Beta release</h1>
 <ol type="1">
-<li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Change the <code>Unreleased</code> heading to <code>123.0.0-beta.1</code>.</li>
+<li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Change the <code>Unreleased</code> heading to <code>123.0.0-beta.0</code>.</li>
 </ol>
 <ol type="1">
 <li>Create a <code>release/123.0</code> branch using the <code>dev</code> branch.</li>
 </ol>
 <ol type="1">
-<li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-beta.1</code>.</li>
+<li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-beta.0</code>.</li>
 </ol>
 <ol type="1">
-<li>Create a <code>v123.0.0-beta.1</code> tag using the release branch.</li>
+<li>Create a <code>v123.0.0-beta.0</code> tag using the release branch.</li>
 </ol>
 <ol type="1">
 <li>Test the release branch. Make any required fixes in the <code>dev</code> branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.</li>
@@ -130,16 +130,16 @@ Additional beta release</h1>
 <li>Make the required fixes in <code>dev</code>.</li>
 </ol>
 <ol type="1">
-<li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Change the <code>Unreleased</code> heading to <code>123.0.0-beta.2</code>.</li>
+<li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Change the <code>Unreleased</code> heading to <code>123.0.0-beta.1</code>.</li>
 </ol>
 <ol type="1">
 <li>Merge the <code>dev</code> branch into the <code>release/123.0</code> branch.</li>
 </ol>
 <ol type="1">
-<li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-beta.2</code>.</li>
+<li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-beta.1</code>.</li>
 </ol>
 <ol type="1">
-<li>Create a <code>v123.0.0-beta.2</code> tag using the release branch.</li>
+<li>Create a <code>v123.0.0-beta.1</code> tag using the release branch.</li>
 </ol>
 <ol type="1">
 <li>Test the release branch. Make any required fixes in the <code>dev</code> branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.</li>
@@ -156,10 +156,10 @@ Final release</h1>
 <li>Merge the <code>dev</code> branch into the <code>release/123.0</code> branch.</li>
 </ol>
 <ol type="1">
-<li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-rc.1</code>.</li>
+<li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-rc.0</code>.</li>
 </ol>
 <ol type="1">
-<li>Create a <code>v123.0.0-rc.1</code> tag using the release branch.</li>
+<li>Create a <code>v123.0.0-rc.0</code> tag using the release branch.</li>
 </ol>
 <ol type="1">
 <li>Test the release branch. Make any required fixes in the <code>dev</code> branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.</li>
