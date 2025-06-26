@@ -1176,6 +1176,9 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
                 return false;
             }
             profile_lock.unlock();
+
+            std::cout << "preview_image: " << preview_image << std::endl;
+
         }
 
         // Preview image is now set, make frame to access it.
@@ -1982,6 +1985,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         }
         if (!cube_found) {
             _render3d_cubes[viewer_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+            
         }
 
         // If preview cube changed, then frame for its preview image cube is invalid
@@ -1992,6 +1996,20 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     bool preview_cube_loaded = preview_cube->CubeLoaded();
     render3d_cube_lock.unlock();
     // end get PvPreviewCube
+
+    // // message and cancel needed to get the preview image
+    // std::string message;
+    // bool cancel(false);
+    // //check for preview_image
+    // auto preview_image = preview_cube->GetPreviewImage(progress_callback, cancel, message);
+    // if (cancel) {
+    //     // pv_response.set_cancel(cancel);
+    //     // pv_response.set_message(message);
+    //     std::cout << "cancel" << std::endl;
+    //     return false;
+    // }
+
+    // std::cout << "preview_image: " << preview_image << std::endl;
 
     // iterate in spectral range to get subimages of PvPreviewCube
     int num_slices = 4;
@@ -2068,6 +2086,18 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             }
         }
 
+        // // get the preview image: downsampling
+        // preview_image = preview_cube->GetPreviewImage(sub_image, progress_callback, cancel, message);
+        // if (!preview_image || cancel) {
+        //     // pv_response.set_cancel(cancel);
+        //     // pv_response.set_message(message);
+        //     std::cout << "Failed to getdfdfdfdfdf" << std::endl;
+        //     return false;
+        // }
+
+        // std::cout << "preview_image loaded: " << preview_image << std::endl;
+
+
         // preview_image = std::shared_ptr<casacore::ImageInterface<float>>
         // sub_image = casacore::SubImage<float>
         // we need casacore::Array<float> to compress
@@ -2112,16 +2142,38 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
             std::vector<int> nan_encodings;
 
-            auto diff = slices_range.to - slices_range.from + 1;
-            if ( diff < num_slices ) {
-                data_message.set_slice(diff);
-                nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, diff);
-                Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
+            if (num_slices == 1){
+                nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+                Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
             } else {
-                // Check how to compress with NaN values. Give a number of NaN values.
-                nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, num_slices);
-                Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, num_slices, compression_quality);
+                // check how many slices are left
+                auto diff = slices_range.to - slices_range.from + 1;
+                if ( diff < num_slices ) {
+                    data_message.set_slice(diff);
+                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, diff);
+                    Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
+                } else {
+                    // Check how to compress with NaN values. Give a number of NaN values.
+                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, num_slices);
+                    Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, num_slices, compression_quality);
+                }
             }
+
+            // auto diff = slices_range.to - slices_range.from + 1;
+            // if ( diff < num_slices ) {
+            //     data_message.set_slice(diff);
+            //     nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, diff);
+            //     Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
+            // } else {
+            //     // Check how to compress with NaN values. Give a number of NaN values.
+            //     // nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, num_slices);
+            //     // Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, num_slices, compression_quality);
+                
+            //     // This is for 2D, commented lines above are also 2D but using 3D function
+            //     nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+            //     Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
+            // }
+
     
             // auto data_message = Message::Render3DData(file_id, region_id,
             //             viewer_id, compression_buffer, compressed_size, nan_encodings, width, height, num_slices, compression_type,
