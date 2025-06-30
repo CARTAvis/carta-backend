@@ -5,11 +5,10 @@
 */
 
 #include "ThreadManager.h"
-#include "Session/OnMessageTask.h"
 
 namespace carta {
 int ThreadManager::_omp_thread_count = 0;
-std::list<OnMessageTask*> ThreadManager::_task_queue;
+std::list<Task*> ThreadManager::_task_queue;
 std::mutex ThreadManager::_task_queue_mtx;
 std::condition_variable ThreadManager::_task_queue_cv;
 volatile bool ThreadManager::_has_exited = false;
@@ -33,7 +32,7 @@ void ThreadManager::SetThreadLimit(int count) {
     ApplyThreadLimit();
 }
 
-void ThreadManager::QueueTask(OnMessageTask* tsk) {
+void ThreadManager::QueueTask(Task* tsk) {
     std::unique_lock<std::mutex> lock(_task_queue_mtx);
     _task_queue.push_back(tsk);
     _task_queue_cv.notify_one();
@@ -41,7 +40,7 @@ void ThreadManager::QueueTask(OnMessageTask* tsk) {
 
 void ThreadManager::StartEventHandlingThreads(int num_threads) {
     auto thread_lambda = []() {
-        OnMessageTask* tsk;
+        Task* tsk;
 
         do {
             std::unique_lock<std::mutex> lock(_task_queue_mtx);

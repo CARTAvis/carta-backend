@@ -16,11 +16,15 @@
 
 namespace carta {
 
-class OnMessageTask;
+class Task {
+public:
+    virtual ~Task() = default;
+    virtual void execute() = 0;
+};
 
 class ThreadManager {
     static int _omp_thread_count;
-    static std::list<OnMessageTask*> _task_queue;
+    static std::list<Task*> _task_queue;
     static std::mutex _task_queue_mtx;
     static std::condition_variable _task_queue_cv;
     static std::list<std::thread*> _workers;
@@ -30,7 +34,7 @@ public:
     static void ApplyThreadLimit();
     static void SetThreadLimit(int count);
     static void StartEventHandlingThreads(int num_threads);
-    static void QueueTask(OnMessageTask*);
+    static void QueueTask(Task*);
     static void ExitEventHandlingThreads();
 };
 
