@@ -217,7 +217,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                        CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN) {
                                 // Add directory: not image type
                                 Message::AddDirectory(
-                                    file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
+                                    file_list_response, name, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                             }
                         } else {
                             // Image list
@@ -244,7 +244,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                             result_msg = {message, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                                         } else {
                                             // UNKNOWN directories are directories
-                                            Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime(),
+                                            Message::AddDirectory(file_list_response, name, cc_file.modifyTime(),
                                                 GetNumItems(cc_file.path().absoluteName()));
                                         }
                                         break;

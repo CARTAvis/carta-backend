@@ -102,7 +102,6 @@ public:
     static CARTA::ImageProperties ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
         CARTA::RenderMode render_mode, int32_t channel, int32_t stokes);
     static CARTA::ResumeSession ResumeSession(std::vector<CARTA::ImageProperties> images);
-    static CARTA::SetSpectralRequirements_SpectralConfig SpectralConfig(const std::string& coordinate);
     static CARTA::FileListRequest FileListRequest(
         const std::string& directory, const CARTA::FileListFilterMode filter_mode = CARTA::FileListFilterMode::Content);
     static CARTA::FileInfoRequest FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu = "");
