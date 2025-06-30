@@ -93,4 +93,6 @@ protected:
 };
 } // namespace carta
 
+#include "DataColumn.tcc"
+
 #endif // CARTA_SRC_TABLE_COLUMNS_H_

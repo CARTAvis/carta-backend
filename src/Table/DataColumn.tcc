@@ -7,10 +7,7 @@
 #ifndef CARTA_SRC_TABLE_DATACOLUMN_TCC_
 #define CARTA_SRC_TABLE_DATACOLUMN_TCC_
 
-#include "Columns.h"
-
 #include <vector>
-
 #include "ThreadingManager/ThreadingManager.h"
 
 namespace carta {

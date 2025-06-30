@@ -11,9 +11,6 @@
 #include <fitsio.h>
 #include <spdlog/fmt/fmt.h>
 
-#include "DataColumn.tcc"
-#include "ThreadingManager/ThreadingManager.h"
-
 namespace carta {
 
 Column::Column(const std::string& name_chr) {

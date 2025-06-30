@@ -11,10 +11,7 @@
 
 #include <fitsio.h>
 
-#include "../Logger/Logger.h"
-
-#include "DataColumn.tcc"
-#include "ThreadingManager/ThreadingManager.h"
+#include "Logger/Logger.h"
 #include "Util/File.h"
 #include "Util/FileSystem.h"
 
