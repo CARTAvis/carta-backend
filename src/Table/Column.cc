@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "Columns.h"
+#include "Column.h"
 
 #include <memory>
 

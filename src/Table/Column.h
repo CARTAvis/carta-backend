@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_TABLE_COLUMNS_H_
-#define CARTA_SRC_TABLE_COLUMNS_H_
+#ifndef CARTA_SRC_TABLE_COLUMN_H_
+#define CARTA_SRC_TABLE_COLUMN_H_
 
 #include <cmath>
 #include <limits>
@@ -93,4 +93,4 @@ protected:
 
 #include "DataColumn.tcc"
 
-#endif // CARTA_SRC_TABLE_COLUMNS_H_
+#endif // CARTA_SRC_TABLE_COLUMN_H_

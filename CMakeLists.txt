@@ -267,7 +267,7 @@ set(SOURCE_FILES
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
         src/Session/SessionManager.cc
-        src/Table/Columns.cc
+        src/Table/Column.cc
         src/Table/Table.cc
         src/Table/TableController.cc
         src/Table/TableView.cc
