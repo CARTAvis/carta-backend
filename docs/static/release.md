@@ -6,10 +6,10 @@ In this document, 123 is a placeholder for the current release number, and 124 f
 Beta release
 ------------
 
-1. `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0-beta.1`.
+1. `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0-beta.0`.
 1. Create a `release/123.0` branch using the `dev` branch.
-1. `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-beta.1`.
-1. Create a `v123.0.0-beta.1` tag using the release branch.
+1. `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-beta.0`.
+1. Create a `v123.0.0-beta.0` tag using the release branch.
 1. Test the release branch. Make any required fixes in the `dev` branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.
 1. Create packages from the release branch.
 
@@ -24,10 +24,10 @@ Additional beta release
 This process should be followed if changes have to be made after the beta packages have already been published (or even provided to a limited number of users). If there are significant changes in `dev` that should *not* be included in the beta release, follow the point release procedure instead (but adjust the version strings as required).
 
 1. Make the required fixes in `dev`.
-1. `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0-beta.2`.
+1. `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0-beta.1`.
 1. Merge the `dev` branch into the `release/123.0` branch.
-1. `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-beta.2`.
-1. Create a `v123.0.0-beta.2` tag using the release branch.
+1. `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-beta.1`.
+1. Create a `v123.0.0-beta.1` tag using the release branch.
 1. Test the release branch. Make any required fixes in the `dev` branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.
 1. Create packages from the release branch.
 
@@ -36,8 +36,8 @@ Final release
 
 1. `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0`.
 1. Merge the `dev` branch into the `release/123.0` branch.
-1. `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-rc.1`.
-1. Create a `v123.0.0-rc.1` tag using the release branch.
+1. `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-rc.0`.
+1. Create a `v123.0.0-rc.0` tag using the release branch.
 1. Test the release branch. Make any required fixes in the `dev` branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.
 1. `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0`.
 1. Create a `v123.0.0` tag using the release branch.

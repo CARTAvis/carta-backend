@@ -240,6 +240,7 @@ CARTA::FloatBounds Message::FloatBounds(float min, float max) {
     return float_bounds;
 }
 
+// not used
 CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
     CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range, bool keep) {
     CARTA::MomentRequest moment_request;
@@ -305,9 +306,10 @@ CARTA::SetSpectralRequirements_SpectralConfig Message::SpectralConfig(const std:
     return spectral_config;
 }
 
-CARTA::FileListRequest Message::FileListRequest(const std::string& directory) {
+CARTA::FileListRequest Message::FileListRequest(const std::string& directory, const CARTA::FileListFilterMode filter_mode) {
     CARTA::FileListRequest file_list_request;
     file_list_request.set_directory(directory);
+    file_list_request.set_filter_mode(filter_mode);
     return file_list_request;
 }
 
@@ -412,9 +414,27 @@ CARTA::ChannelMapFlowControl Message::ChannelMapFlowControl(int32_t file_id, int
     return message;
 }
 
-CARTA::EventType Message::EventType(std::vector<char>& message) {
-    carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
-    return static_cast<CARTA::EventType>(head.type);
+carta::EventHeader Message::GetEventHeader(std::string_view message) {
+    return *reinterpret_cast<const carta::EventHeader*>(message.data());
+}
+
+/**
+ * @note This function creates a binary buffer containing a CARTA::EventHeader followed by the serialized protobuf message.
+ * The header includes the event type, protocol version, and event/request ID.
+ */
+std::vector<char> Message::EncodeMessage(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message) {
+    size_t message_length = message.ByteSizeLong();
+    size_t required_size = sizeof(carta::EventHeader) + message_length;
+
+    std::vector<char> msg(required_size);
+    carta::EventHeader* header = reinterpret_cast<carta::EventHeader*>(msg.data());
+    header->type = event_type;
+    header->icd_version = carta::ICD_VERSION;
+    header->request_id = event_id;
+
+    message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
+
+    return msg;
 }
 
 CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress, int32_t file_id, int32_t region_id,

@@ -58,7 +58,12 @@ private:
         bool use_image_for_entries, bool is_history_beam);
     void AddComputedEntriesFromHeaders(
         CARTA::FileInfoExtended& extended_info, const AxesInfo& axes, CompressedFits* compressed_fits = nullptr);
-    void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set, bool is_history_beam);
+    void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set,
+        const casacore::Vector<casacore::String>& stokes_names, bool is_history_beam);
+    void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::GaussianBeam& gaussian_beam, const std::string& entry_name,
+        bool is_history_beam);
+    void AddStokesBeamEntries(CARTA::FileInfoExtended& extended_info,
+        std::vector<std::pair<std::string, casacore::GaussianBeam>>& beam_list, bool is_history_beam);
     void AddCoordRanges(
         CARTA::FileInfoExtended& extended_info, const casacore::CoordinateSystem& coord_system, const casacore::IPosition& image_shape);
 

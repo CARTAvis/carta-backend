@@ -11,7 +11,7 @@
 
 #include "Frame/Frame.h"
 #include "ImageData/FileLoader.h"
-#include "ImageFitter/ImageFitter.h"
+#include "ImageFitting/ImageFitter.h"
 #include "Logger/Logger.h"
 #include "Region/RegionHandler.h"
 
