@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_THREADINGMANAGER_THREADINGMANAGER_H_
-#define CARTA_SRC_THREADINGMANAGER_THREADINGMANAGER_H_
+#ifndef CARTA_SRC_THREADMANAGER_THREADMANAGER_H_
+#define CARTA_SRC_THREADMANAGER_THREADMANAGER_H_
 
 #include <omp.h>
 #include <condition_variable>
@@ -13,16 +13,6 @@
 #include <thread>
 
 #define MAX_TILING_TASKS 8
-
-#if __has_include(<parallel/algorithm>)
-#include <parallel/algorithm>
-#define parallel_sort(...) __gnu_parallel::sort(__VA_ARGS__)
-#elif __has_include(<execution>) && defined(_LIBCPP_HAS_PARALLEL_ALGORITHMS)
-#include <execution>
-#define parallel_sort(...) std::sort(std::execution::par_unseq, __VA_ARGS__)
-#else
-#define parallel_sort(...) std::sort(__VA_ARGS__)
-#endif
 
 namespace carta {
 
@@ -46,4 +36,4 @@ public:
 
 } // namespace carta
 
-#endif // CARTA_SRC_THREADINGMANAGER_THREADINGMANAGER_H_
+#endif // CARTA_SRC_THREADMANAGER_THREADMANAGER_H_

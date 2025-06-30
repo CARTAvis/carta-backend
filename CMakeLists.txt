@@ -271,7 +271,7 @@ set(SOURCE_FILES
         src/Table/Table.cc
         src/Table/TableController.cc
         src/Table/TableView.cc
-        src/ThreadingManager/ThreadingManager.cc
+        src/ThreadManager/ThreadManager.cc
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/Util/App.cc
@@ -284,8 +284,7 @@ set(SOURCE_FILES
         src/Util/Token.cc
         src/ImageFitting/ImageFitter.cc
         src/ImageFitting/InitialValueCalculator.cc
-        src/Util/RemoteFiles.cc
-        src/Util/RemoteFiles.h)
+        src/Util/RemoteFiles.cc)
 
 add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
 add_executable(carta_backend ${SOURCE_FILES})

@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "ThreadingManager.h"
+#include "ThreadManager.h"
 #include "Session/OnMessageTask.h"
 
 namespace carta {

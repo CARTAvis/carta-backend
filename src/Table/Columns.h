@@ -22,8 +22,6 @@
 namespace carta {
 
 typedef std::vector<int64_t> IndexList;
-template <class T>
-class DataColumn;
 
 class Column {
 public:

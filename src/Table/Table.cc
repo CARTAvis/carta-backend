@@ -12,6 +12,7 @@
 #include <fitsio.h>
 
 #include "Logger/Logger.h"
+#include "ThreadManager/ThreadManager.h"
 #include "Util/File.h"
 #include "Util/FileSystem.h"
 

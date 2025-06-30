@@ -16,7 +16,7 @@
 #include "ProgramSettings.h"
 #include "Session/OnMessageTask.h"
 #include "Session/SessionManager.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"
 #include "Util/Token.h"

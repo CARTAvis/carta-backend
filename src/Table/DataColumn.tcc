@@ -8,7 +8,7 @@
 #define CARTA_SRC_TABLE_DATACOLUMN_TCC_
 
 #include <vector>
-#include "ThreadingManager/ThreadingManager.h"
+#include "Util/Concurrency.h"
 
 namespace carta {
 

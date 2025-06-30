@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "Logger/Logger.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 
 using namespace carta;
 

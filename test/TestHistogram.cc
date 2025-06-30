@@ -11,7 +11,7 @@
 
 #include "CommonTestUtilities.h"
 #include "ImageStats/Histogram.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 
 #ifdef COMPILE_PERFORMANCE_TESTS
 #include <spdlog/fmt/fmt.h>

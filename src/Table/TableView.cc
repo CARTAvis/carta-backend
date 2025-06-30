@@ -9,9 +9,6 @@
 #include <algorithm>
 #include <numeric>
 
-#include "Table.h"
-#include "ThreadingManager/ThreadingManager.h"
-
 namespace carta {
 
 TableView::TableView(const Table& table) : _table(table) {

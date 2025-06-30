@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "../Logger/Logger.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 #include "Timer/Timer.h"
 
 namespace carta {
