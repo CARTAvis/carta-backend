@@ -156,7 +156,7 @@ public:
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
     static CARTA::FileListResponse AddDirectory(
-        CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count);
+        CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count = 0);
     static CARTA::FileInfoExtended AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
     static CARTA::FileInfoExtended AddComputedEntry(
         CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);

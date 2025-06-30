@@ -695,7 +695,7 @@ CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const strin
     return message;
 }
 
-CARTA::FileListResponse Message::AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count) {
+CARTA::FileListResponse Message::AddDirectory(CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count) {
     auto* directory_info = response.add_subdirectories();
     directory_info->set_name(name);
     directory_info->set_date(date);

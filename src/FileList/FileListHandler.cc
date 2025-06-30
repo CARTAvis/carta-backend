@@ -195,6 +195,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                         auto directory_info = file_list_response.add_subdirectories();
                         directory_info->set_name(name_only);
                         directory_info->set_date(cc_file.modifyTime());
+
+                        Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime());
                         // skip item count
                     }
                 } else {
@@ -217,7 +219,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                        CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN) {
                                 // Add directory: not image type
                                 Message::AddDirectory(
-                                    file_list_response, name, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
+                                    file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                             }
                         } else {
                             // Image list
@@ -245,7 +247,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                         } else {
                                             // UNKNOWN directories are directories
                                             Message::AddDirectory(
-                                                file_list_response, name, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
+                                                file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                                         }
                                         break;
                                     }
