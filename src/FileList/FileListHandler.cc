@@ -183,7 +183,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
             if (cc_file.isReadable() && cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                 casacore::String full_path(cc_file.path().absoluteName());
-                std::string name_only = cc_file.path().baseName();
+                casacore::String name_only = cc_file.path().baseName();
 
                 if (list_all_files) {
                     if (cc_file.isRegular(true)) {
