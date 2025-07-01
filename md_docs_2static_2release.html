@@ -102,20 +102,10 @@ $(document).ready(function(){initNavTree('md_docs_2static_2release.html',''); in
 Beta release</h1>
 <ol type="1">
 <li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Change the <code>Unreleased</code> heading to <code>123.0.0-beta.0</code>.</li>
-</ol>
-<ol type="1">
 <li>Create a <code>release/123.0</code> branch using the <code>dev</code> branch.</li>
-</ol>
-<ol type="1">
 <li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-beta.0</code>.</li>
-</ol>
-<ol type="1">
 <li>Create a <code>v123.0.0-beta.0</code> tag using the release branch.</li>
-</ol>
-<ol type="1">
 <li>Test the release branch. Make any required fixes in the <code>dev</code> branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.</li>
-</ol>
-<ol type="1">
 <li>Create packages from the release branch.</li>
 </ol>
 <h1><a class="anchor" id="autotoc_md5"></a>
@@ -128,57 +118,29 @@ Additional beta release</h1>
 <p>This process should be followed if changes have to be made after the beta packages have already been published (or even provided to a limited number of users). If there are significant changes in <code>dev</code> that should <em>not</em> be included in the beta release, follow the point release procedure instead (but adjust the version strings as required).</p>
 <ol type="1">
 <li>Make the required fixes in <code>dev</code>.</li>
-</ol>
-<ol type="1">
 <li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Change the <code>Unreleased</code> heading to <code>123.0.0-beta.1</code>.</li>
-</ol>
-<ol type="1">
 <li>Merge the <code>dev</code> branch into the <code>release/123.0</code> branch.</li>
-</ol>
-<ol type="1">
 <li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-beta.1</code>.</li>
-</ol>
-<ol type="1">
 <li>Create a <code>v123.0.0-beta.1</code> tag using the release branch.</li>
-</ol>
-<ol type="1">
 <li>Test the release branch. Make any required fixes in the <code>dev</code> branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.</li>
-</ol>
-<ol type="1">
 <li>Create packages from the release branch.</li>
 </ol>
 <h1><a class="anchor" id="autotoc_md7"></a>
 Final release</h1>
 <ol type="1">
 <li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Change the <code>Unreleased</code> heading to <code>123.0.0</code>.</li>
-</ol>
-<ol type="1">
 <li>Merge the <code>dev</code> branch into the <code>release/123.0</code> branch.</li>
-</ol>
-<ol type="1">
 <li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0-rc.0</code>.</li>
-</ol>
-<ol type="1">
 <li>Create a <code>v123.0.0-rc.0</code> tag using the release branch.</li>
-</ol>
-<ol type="1">
 <li>Test the release branch. Make any required fixes in the <code>dev</code> branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.</li>
-</ol>
-<ol type="1">
 <li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.0</code>.</li>
-</ol>
-<ol type="1">
 <li>Create a <code>v123.0.0</code> tag using the release branch.</li>
-</ol>
-<ol type="1">
 <li>Create packages from the release branch.</li>
 </ol>
 <h1><a class="anchor" id="autotoc_md8"></a>
 After final release</h1>
 <ol type="1">
 <li><code>dev</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>124.0.0-dev</code>.</li>
-</ol>
-<ol type="1">
 <li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Create a new <code>Unreleased</code> section.</li>
 </ol>
 <h1><a class="anchor" id="autotoc_md9"></a>
@@ -186,23 +148,11 @@ Point release</h1>
 <p>This process should be followed if important bug fixes have to be released after the final release packages have already been published (or even provided to a limited number of users). If there are no changes in <code>dev</code> that should not be included in the point release, follow the additional beta release procedure instead (but adjust the version strings as required).</p>
 <ol type="1">
 <li>Make the required fixes in <code>dev</code>. Cherry-pick them into the release branch.</li>
-</ol>
-<ol type="1">
 <li><code>dev</code> branch: update <code>CHANGELOG.md</code>. Move the cherry-picked changes from the <code>Unreleased</code> section to a new <code>123.0.1</code> section <em>under</em> <code>Unreleased</code>.</li>
-</ol>
-<ol type="1">
 <li><code>release/123.0</code> branch: update <code>CHANGELOG.md</code>. Copy only the <code>123.0.1</code> section from the changelog in the <code>dev</code> branch.</li>
-</ol>
-<ol type="1">
 <li><code>release/123.0</code> branch: update <code>VERSION_ID</code> string in <code><a class="el" href="App_8h.html">src/Util/App.h</a></code> to <code>123.0.1</code>.</li>
-</ol>
-<ol type="1">
 <li>Create a <code>v123.0.1</code> tag using the release branch.</li>
-</ol>
-<ol type="1">
 <li>Test the release branch. If an issue affects both <code>dev</code> and the release branch, fix it in <code>dev</code> and cherry-pick the changes into the release branch. If an issue is caused by changes in <code>dev</code> which are not included in the point release, make the minimal required changes in the release branch. Ideally, bump the version and create a new tag every time changes are made. If you don't want to bump the version, remember to destroy and recreate the latest tag.</li>
-</ol>
-<ol type="1">
 <li>Create packages from the release branch. </li>
 </ol>
 </div></div><!-- contents -->
