@@ -192,10 +192,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                         FileInfoLoader info_loader = FileInfoLoader(full_path, CARTA::FileType::UNKNOWN);
                         info_loader.FillFileInfo(file_info);
                     } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
-                        auto directory_info = file_list_response.add_subdirectories();
-                        directory_info->set_name(name_only);
-                        directory_info->set_date(cc_file.modifyTime());
-
                         Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime());
                         // skip item count
                     }
