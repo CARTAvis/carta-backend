@@ -68,6 +68,7 @@ public:
     bool FillRender3DData(const CARTA::Render3DRequest& render3d_request, std::shared_ptr<Frame>& frame, std::function<void(CARTA::Render3DResponse render3d_response)> ack_callback, std::function<void(CARTA::Render3DData render3d_data)> cb);
     bool SendRender3DData(int file_id, int region_id, int viewer_id,
     AxisRange& spectral_range, int rebin_xy, int rebin_z, CARTA::CompressionType compression_type, float compression_quality, std::shared_ptr<Frame>& frame, std::function<void(CARTA::Render3DData render3d_data)> cb);
+    void Rebin(casacore::SubImage<float> sub_image, int width, int height, int num_slices, int rebin_xy, int rebin_z, std::vector<float>& rebinned_data);
 
     // Calculate moments
     bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,

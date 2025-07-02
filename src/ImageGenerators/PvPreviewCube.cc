@@ -57,7 +57,6 @@ void PvPreviewCube::SetPreviewRegionOrigin(const casacore::IPosition& origin) {
 std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     GeneratorProgressCallback progress_callback, bool& cancel, std::string& message) {
     // Returns cached preview image; nullptr if not set
-    std::cout << "preview im __. " << _preview_image << " !cubeloaded? " << !CubeLoaded() << std::endl;
     if (_preview_image && !CubeLoaded()) {
         LoadCubeData(progress_callback, cancel);
         if (cancel) {
@@ -73,8 +72,6 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     // Apply downsampling to this subimage if needed.
     // Returns false if sub_image not set, preview image fails, or cancelled.
     cancel = false;
-
-    std::cout << " is it entering here? " << std::endl;
 
     if (_preview_image) {
         // Image already created, load data if cancelled
@@ -94,8 +91,6 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
 
     // For data access, instead of RebinImage (too slow)
     _preview_subimage = sub_image;
-
-    std::cout << "check the doRebin hey" << std::endl;
 
     if (DoRebin()) {
         try {
@@ -130,8 +125,6 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
         // No downsampling, create preview image from SubImage only
         _preview_image.reset(new casacore::SubImage<float>(sub_image));
     }
-
-    std::cout << "oh no we have to loadcubedata again" << std::endl;
     LoadCubeData(progress_callback, cancel);
     if (cancel) {
         message = _cancel_message;
@@ -209,7 +202,6 @@ void PvPreviewCube::StopCube() {
 }
 
 bool PvPreviewCube::DoRebin() {
-    std::cout << "Rebin XY: " << _cube_parameters.rebin_xy << ", Rebin Z: " << _cube_parameters.rebin_z << std::endl;
     return _cube_parameters.rebin_xy > 1 || _cube_parameters.rebin_z > 1;
 }
 
@@ -217,7 +209,6 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
     // Cache preview image data in memory
     // First check if user cancelled.
     if (_stop_cube) {
-        std::cout << "is stop?" << std::endl;
         cancel = true;
         _stop_cube = false; // reset for next preview
         return;
@@ -225,7 +216,6 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
 
     Timer t;
     if (DoRebin()) {
-        std::cout << "into doRebin" << std::endl;
         casacore::Array<float> carta_cube_data;
         int spectral_axis(_preview_subimage.coordinates().spectralAxisNumber());
         auto subimage_shape = _preview_subimage.shape();
@@ -270,8 +260,6 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
                 break;
             }
 
-            std::cout << " around here why not" << std::endl;
-
             // Accumulate rebin_z channels
             std::vector<float> channel_sum(rebin_channel_size, 0.0);
 
@@ -299,8 +287,6 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
             // Get mean for rebin_z
             std::transform(channel_sum.begin(), channel_sum.end(), channel_sum.begin(), [rebin_z](float& s) { return s / (float)rebin_z; });
 
-            std::cout << " around here why not 2" << std::endl;
-
             // Reshape vector to 2D and set cube data for this output channel
             casacore::Vector<float> channel_sumv(channel_sum);
             auto channel_cube_data = channel_sumv.reform(rebin_channel_shape);
@@ -315,8 +301,6 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
                 progress_callback(progress);
             }
         }
-
-        std::cout << "this is the end my only friend the end" << std::endl;
 
         spdlog::performance("PV preview cube data (rebin) loaded in {:.3f} ms", t.Elapsed().ms());
     } else {

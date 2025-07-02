@@ -17,6 +17,7 @@
 
 #include "CrtfImportExport.h"
 #include "DataStream/Compression.h"
+#include "DataStream/Smoothing.h"
 #include "Ds9ImportExport.h"
 #include "ImageData/FileLoader.h"
 #include "ImageStats/StatsCalculator.h"
@@ -339,10 +340,8 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 bool RegionHandler::FrameSet(int file_id) {
     // Check whether a particular file is set or any files are set
     if (file_id == ALL_FILES) {
-        // std::cout << "file_id: " << file_id << " == " << ALL_FILES << std::endl;
         return _frames.size();
     } else {
-        // std::cout << "file_id: " << file_id << " != " << ALL_FILES << std::endl;
         return _frames.count(file_id) && _frames.at(file_id)->IsConnected();
     }
 }
@@ -854,15 +853,12 @@ void RegionHandler::ClearRegionCache(int region_id) {
 bool RegionHandler::RegionFileIdsValid(int region_id, int file_id, bool check_annotation) {
     // Check error conditions and preconditions
     if (((region_id == ALL_REGIONS) && (file_id == ALL_FILES)) || (region_id == CURSOR_REGION_ID)) { // not allowed
-        std::cout << "rfiv 0" << std::endl;
         return false;
     }
     if (!RegionSet(region_id, check_annotation)) { // ID not found, Region is closing, or is annotation
-        std::cout << "rfiv 1" << std::endl;
         return false;
     }
     if (!FrameSet(file_id)) { // no Frame(s) for this id or Frame is closing
-        std::cout << "rfiv 2" << std::endl;
         return false;
     }
     return true;
@@ -875,12 +871,10 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
     if (!RegionFileIdsValid(region_id, file_id, true)) {
-        std::cout << "artf 1" << std::endl;
         return nullptr;
     }
 
     if (!IsClosedRegion(region_id) && !IsPointRegion(region_id)) {
-        std::cout << "artf 2" << std::endl;
         return nullptr;
     }
 
@@ -967,9 +961,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
     // Unpack request message and send it along
     int file_id(pv_request.file_id());
-    std::cout << "file_id: " << file_id << std::endl;
     int region_id(pv_request.region_id());
-    std::cout << "region_id: " << region_id << std::endl;
     int line_width(pv_request.width());
     bool reverse(pv_request.reverse());
     bool keep(pv_request.keep());
@@ -1082,15 +1074,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
 
     auto frame_id = GetPvPreviewFrameId(preview_id);
 
-    std::cout << "frame_id is " << frame_id << std::endl;
-
-    auto a = _frames.size();
-
-    std::cout << "frame size is " << a << std::endl;
-
     bool preview_frame_set = _frames.find(frame_id) != _frames.end();
-
-    std::cout << "preview_frame_set is " << preview_frame_set << std::endl;
 
     std::unique_lock pv_cube_lock(_pv_cube_mutex);
     if (_pv_preview_cubes.find(preview_id) == _pv_preview_cubes.end() ||
@@ -1176,8 +1160,6 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
                 return false;
             }
             profile_lock.unlock();
-
-            std::cout << "preview_image: " << preview_image << std::endl;
 
         }
 
@@ -1820,15 +1802,10 @@ bool RegionHandler::GetRegionHistogramData(
 
 bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_request, std::shared_ptr<Frame>& frame, std::function<void(CARTA::Render3DResponse render3d_response)> ack_callback, std::function<void(CARTA::Render3DData render3d_data)> cb) {
 
-    std::cout << "FillRender3DData" << std::endl;
-
-    std::cout << render3d_request.DebugString() << std::endl;
-
     // Unpack request message
     int file_id(render3d_request.file_id());
     int region_id(render3d_request.region_id());
     int viewer_id(render3d_request.viewer_id());
-    std::cout << "viewer_id" << viewer_id << std::endl;
     AxisRange spectral_range;
     spectral_range = AxisRange(render3d_request.spectral_range().min(), render3d_request.spectral_range().max());
     bool keep(render3d_request.keep());
@@ -1841,33 +1818,24 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
     render3d_response.set_cancel(false);
     render3d_response.set_success(true);
 
-    std::cout << "file_id: " << file_id << std::endl;
-
     bool data_sent = false;
-    
-    std::cout << "region_id: " << region_id << std::endl;
 
-    // if (RegionFileIdsValid(region_id, file_id)) {
-
-    std::cout << "start_checks" << std::endl;
 
     // Checks for 3D rendering
 
     bool is_image_region(region_id == IMAGE_REGION_ID);
-    std::cout << region_id << " or " << IMAGE_REGION_ID << std::endl;
     if (!is_image_region) {
         if (!RegionSet(region_id)) {
             render3d_response.set_message("3D rendering cube requested for invalid region id.");
             render3d_response.set_success(false);
             // return false;
         }
-        std::cout << "check 1 passed" << std::endl;
+
         if (!IsClosedRegion(region_id)) {
             render3d_response.set_message("Region type not supported for 3D Rendering.");
             render3d_response.set_success(false);
             // return false;
         }
-        std::cout << "check 2 passed" << std::endl;
     }
 
     // 3. Image has spectral axis
@@ -1876,8 +1844,6 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
         render3d_response.set_success(false);
         // return false;
     }
-
-    std::cout << "check 3 passed" << std::endl;
 
     // std::cout << "frame->Width(): " << frame->Width() << std::endl;
     // std::cout << "frame->Height(): " << frame->Height() << std::endl;
@@ -1890,8 +1856,6 @@ bool RegionHandler::FillRender3DData(const CARTA::Render3DRequest& render3d_requ
     //     render3d_response.set_success(false);
     //     // return false;
     // }
-
-    std::cout << "check 4 passed" << std::endl;
 
     // Set frame
     if (!FrameSet(file_id)) {
@@ -1997,22 +1961,8 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     render3d_cube_lock.unlock();
     // end get PvPreviewCube
 
-    // // message and cancel needed to get the preview image
-    // std::string message;
-    // bool cancel(false);
-    // //check for preview_image
-    // auto preview_image = preview_cube->GetPreviewImage(progress_callback, cancel, message);
-    // if (cancel) {
-    //     // pv_response.set_cancel(cancel);
-    //     // pv_response.set_message(message);
-    //     std::cout << "cancel" << std::endl;
-    //     return false;
-    // }
-
-    // std::cout << "preview_image: " << preview_image << std::endl;
-
     // iterate in spectral range to get subimages of PvPreviewCube
-    int num_slices = 4;
+    int num_slices = 4 * rebin_z;
     int width;
     int height;
     int depth = spectral_range.to - spectral_range.from + 1;
@@ -2024,7 +1974,10 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
         // Set frame for preview image if needed
         Timer t;
+        // message and cancel needed to get the preview image
+        std::string message;
         bool cancel(false);
+
         if (cancel) {
             std::cout << "cancel" << std::endl;
             // render3d_response.set_cancel(cancel);
@@ -2035,7 +1988,6 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         // Apply preview region or slicer to get SubImage, and set preview region origin.
         casacore::SubImage<float> sub_image;
         if (is_image_region) {
-            // std::cout << "is image_region" << std::endl;
             // Apply slicer to source image to get SubImage
             auto slicer = frame->GetImageSlicer(slices_range, frame->CurrentStokes());
             if (!frame->GetSlicerSubImage(slicer, sub_image)) {
@@ -2052,13 +2004,9 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             // std::cout << "is square region" << std::endl;
             // Apply preview region to source image (LCRegion) to get SubImage
             StokesSource stokes_source(stokes, slices_range);
-            //std::cout << "file_id: " << file_id << std::endl;
-            //std::cout << "region_id: " << region_id << std::endl;
             std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(region_id, file_id, stokes_source);
-            // std::cout << "lc_region: " << lc_region << std::endl;
             if (!lc_region) {
                 //render3d_response.set_message("Failed to set preview region for preview cube (3D rendering).");
-                std::cout << "Failed to set preview region for preview cube (3D rendering)." << std::endl;
                 return false;
             }
 
@@ -2086,18 +2034,6 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             }
         }
 
-        // // get the preview image: downsampling
-        // preview_image = preview_cube->GetPreviewImage(sub_image, progress_callback, cancel, message);
-        // if (!preview_image || cancel) {
-        //     // pv_response.set_cancel(cancel);
-        //     // pv_response.set_message(message);
-        //     std::cout << "Failed to getdfdfdfdfdf" << std::endl;
-        //     return false;
-        // }
-
-        // std::cout << "preview_image loaded: " << preview_image << std::endl;
-
-
         // preview_image = std::shared_ptr<casacore::ImageInterface<float>>
         // sub_image = casacore::SubImage<float>
         // we need casacore::Array<float> to compress
@@ -2111,24 +2047,29 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         compression_quality = 20; // high is 32, use 20 for now
         // compression_type = CARTA::CompressionType::NONE;
         // compression_quality = -1;
-
-        // cout << "send data" << std::endl;
         
         std::vector<char> compression_buffer;
         size_t compressed_size;
         // get data and transform to vector
-        casacore::Array<float> casa_data;
-        sub_image.get(casa_data);
-        std::vector<float> image_data(casa_data.begin(), casa_data.end());
+        std::vector<float> image_data;
+        auto diff = slices_range.to - slices_range.from + 1;
+
+        if (rebin_xy == 1 && rebin_z == 1) {
+            casacore::Array<float> casa_data;
+            sub_image.get(casa_data);
+            image_data.insert(image_data.begin(), casa_data.begin(), casa_data.end());
+        } else {
+            Rebin(sub_image, width, height, diff, rebin_xy, rebin_z, image_data);
+        }
 
         CARTA::Render3DData data_message;
         data_message.set_file_id(file_id);
         data_message.set_region_id(region_id);
         data_message.set_viewer_id(viewer_id);
-        data_message.set_width(width);
-        data_message.set_height(height);
-        data_message.set_depth(depth);
-        data_message.set_slice(num_slices);
+        data_message.set_width(std::ceil(width/rebin_xy));
+        data_message.set_height(std::ceil(height/rebin_xy));
+        data_message.set_depth(std::ceil(depth/rebin_z));
+        data_message.set_slice(num_slices/rebin_z);
         data_message.set_progress(progress);
 
         if (compression_type == CARTA::CompressionType::NONE) {
@@ -2143,41 +2084,20 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             std::vector<int> nan_encodings;
 
             if (num_slices == 1){
-                nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+                nan_encodings = GetNanEncodingsBlock(image_data, 0, std::ceil(width/rebin_xy), std::ceil(height/rebin_xy));
                 Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
             } else {
                 // check how many slices are left
-                auto diff = slices_range.to - slices_range.from + 1;
                 if ( diff < num_slices ) {
                     data_message.set_slice(diff);
-                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, diff);
-                    Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
+                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, std::ceil(width/rebin_xy), std::ceil(height/rebin_xy), std::ceil(diff/rebin_z));
+                    Compress3D(image_data, 0, compression_buffer, compressed_size, std::ceil(width/rebin_xy), std::ceil(width/rebin_xy), diff, compression_quality);
                 } else {
                     // Check how to compress with NaN values. Give a number of NaN values.
-                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, num_slices);
-                    Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, num_slices, compression_quality);
+                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, std::ceil(width/rebin_xy), std::ceil(height/rebin_xy), std::ceil(num_slices/rebin_z));
+                    Compress3D(image_data, 0, compression_buffer, compressed_size, std::ceil(width/rebin_xy), std::ceil(height/rebin_xy), std::ceil(num_slices/rebin_z), compression_quality);
                 }
             }
-
-            // auto diff = slices_range.to - slices_range.from + 1;
-            // if ( diff < num_slices ) {
-            //     data_message.set_slice(diff);
-            //     nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, diff);
-            //     Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
-            // } else {
-            //     // Check how to compress with NaN values. Give a number of NaN values.
-            //     // nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, num_slices);
-            //     // Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, num_slices, compression_quality);
-                
-            //     // This is for 2D, commented lines above are also 2D but using 3D function
-            //     nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
-            //     Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
-            // }
-
-    
-            // auto data_message = Message::Render3DData(file_id, region_id,
-            //             viewer_id, compression_buffer, compressed_size, nan_encodings, width, height, num_slices, compression_type,
-            //             compression_quality, progress);
 
             // std::cout << "image_data size: " << image_data.size() << std::endl;
             // std::cout << "compressed size: " << compressed_size << std::endl;
@@ -2186,7 +2106,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             // std::cout << "width: " << width << std::endl;
             // std::cout << "height: " << height << std::endl;
             // std::cout << "depth: " << depth << std::endl;
-            // std::cout << "slice: " << num_slices << std::endl;
+            // std::cout << "num_slice: " << num_slices << std::endl;
 
             data_message.set_image_data(compression_buffer.data(), compressed_size);
             data_message.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
@@ -2203,6 +2123,63 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     }
     return false;
 }
+
+void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int height, int num_slices, int rebin_xy, int rebin_z, std::vector<float>& rebinned_data) {
+
+    int spectral_axis(sub_image.coordinates().spectralAxisNumber());
+    auto subimage_shape = sub_image.shape();
+
+    size_t rebin_width = std::ceil((float)width / (float)rebin_xy);
+    size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
+    size_t rebin_nchan = std::ceil((float)num_slices / (float)rebin_z);
+
+    casacore::IPosition start(subimage_shape.size(), 0);
+    casacore::IPosition length(subimage_shape);
+    length(spectral_axis) = num_slices;
+
+    size_t rebin_channel_size = rebin_width * rebin_height;
+
+    // std::vector<float> rebinned_data(rebin_channel_size * rebin_nchan, 0.0);
+    // rebinned_data = NAN; // Initialize with NaN
+
+    for (auto ichan = 0; ichan < num_slices; ichan += rebin_z) {
+
+        // Check if can average next rebin_z channels
+        if (ichan + rebin_z - 1 >= num_slices) {
+            break;
+        }
+
+        // Accumulate rebin_z channels
+        std::vector<float> channel_sum(rebin_channel_size, 0.0);
+
+        for (int rebin_chan = 0; rebin_chan < rebin_z; ++rebin_chan) {
+
+            casacore::Array<float> data;
+            casacore::Slicer channel_slicer(start, length);
+            sub_image.getSlice(data, channel_slicer, true);
+            auto channel_data = data.tovector();
+
+            if (rebin_xy > 1) {
+                // Rebin channel data in xy
+                std::vector<float> rebinned_data(rebin_channel_size, 0.0);
+                BlockSmooth(channel_data.data(), rebinned_data.data(), width, height, rebin_width, rebin_height, 0, 0, rebin_xy);
+
+                // Accumulate rebinned channel data
+                std::transform(channel_sum.begin(), channel_sum.end(), rebinned_data.begin(), channel_sum.begin(), std::plus<float>());
+            } else {
+                // Accumulate channel data
+                std::transform(channel_sum.begin(), channel_sum.end(), channel_data.begin(), channel_sum.begin(), std::plus<float>());
+            }
+        }
+
+        // Get mean for rebin_z
+        std::transform(channel_sum.begin(), channel_sum.end(), channel_sum.begin(), [rebin_z](float& s) { return s / (float)rebin_z; });
+
+        // Fill rebinned_data with accumulated channel sums
+        rebinned_data.insert(rebinned_data.end(), channel_sum.begin(), channel_sum.end());
+    }
+}
+
 
 // ***** Fill spectral profile *****
 
