@@ -4,21 +4,43 @@
 [submodule "cxxopts"]
 	path = third-party/cxxopts
 	url = https://github.com/jarro2783/cxxopts
+	shallow = true
 [submodule "spdlog"]
 	path = third-party/spdlog
 	url = https://github.com/gabime/spdlog.git
+	shallow = true
 [submodule "sse2neon"]
 	path = third-party/sse2neon
 	url = https://github.com/DLTcollab/sse2neon.git
-[submodule "third-party/json"]
-	path = third-party/json
-	url = https://github.com/astoeckel/json.git
+	shallow = true
 [submodule "test/image-generator"]
 	path = third-party/image-generator
 	url = https://github.com/idia-astro/image-generator
+	shallow = true
 [submodule "third-party/pugixml"]
 	path = third-party/pugixml
 	url = https://github.com/zeux/pugixml.git
+	shallow = true
 [submodule "docs/doxygen-awesome-css"]
 	path = docs/doxygen-awesome-css
 	url = https://github.com/jothepro/doxygen-awesome-css.git
+	shallow = true
+[submodule "schemas"]
+	path = schemas
+	url = https://github.com/CARTAvis/schemas.git
+[submodule "third-party/json-schema-validator"]
+	path = third-party/json-schema-validator
+	url = https://github.com/pboettch/json-schema-validator
+	shallow = true
+[submodule "third-party/nlohmann_json"]
+	path = third-party/nlohmann_json
+	url = https://github.com/nlohmann/json
+	shallow = true
+[submodule "third-party/uWebSockets"]
+	path = third-party/uWebSockets
+	url = https://github.com/uNetworking/uWebSockets.git
+	shallow = true
+[submodule "third-party/uSockets"]
+	path = third-party/uSockets
+	url = https://github.com/uNetworking/uSockets.git
+	shallow = true

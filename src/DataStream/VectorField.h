@@ -39,6 +39,9 @@ public:
     float Threshold() const {
         return _threshold;
     }
+    CARTA::PolarizationType ThresholdOption() const {
+        return _threshold_option;
+    }
     bool CalculatePi() const {
         return _calculate_pi;
     }
@@ -124,6 +127,7 @@ protected:
     int _stokes_angle;
     CARTA::CompressionType _compression_type;
     float _compression_quality;
+    CARTA::PolarizationType _threshold_option;
 
     // Extra variables to be determined based on the existence of stokes axis
     bool _calculate_pi;

@@ -7,33 +7,11 @@
 #ifndef CARTA_SRC_UTIL_CASACORE_H_
 #define CARTA_SRC_UTIL_CASACORE_H_
 
+#include <carta-protobuf/enums.pb.h>
+
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
-
-/**
- * @brief Validates and resolves folder paths, ensuring the starting directory is within the top-level directory.
- *
- * @param[in,out] top_level_string Reference to the top-level directory path.
- *                                  It is updated to its resolved absolute path.
- * @param[in,out] starting_string Reference to the starting directory path.
- *                                  It is updated to its resolved absolute path.
- *
- * @return `true` if the paths are valid and the starting directory is within the top-level directory,
- *         otherwise `false`.
- */
-bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
-
-/**
- * @brief Determines whether a given folder is a subdirectory of a specified top-level folder.
- *
- * @param[in] folder The folder path to check, represented as a string.
- * @param[in] top_folder The top-level folder path to compare against, represented as a string.
- *
- * @return `true` if `folder` is a subdirectory of `top_folder` or the same directory,
- *         `false` otherwise.
- */
-bool IsSubdirectory(std::string folder, std::string top_folder);
 
 /**
  * @brief Resolves a file path based on a given root directory and relative subdirectory.
@@ -61,6 +39,16 @@ casacore::String GetResolvedFilename(
 inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& filename) {
     return casacore::ImageOpener::imageType(filename);
 }
+
+/**
+ * @brief Determines the image type of a directory.  Returns unknown for all files.
+ *
+ * @param[in] folder_path The folder path to check, represented as a string.
+ * @param[out] message Error message if an image but not a supported type
+ *
+ * @return The CARTA::FileType of the directory, unknown if not an image.
+ */
+CARTA::FileType FolderImageType(const std::string& folder_path, std::string& message);
 
 /**
  * @brief Determines the spectral coordinate preferences based on an image's native spectral type.
@@ -106,16 +94,12 @@ std::string FormatQuantity(const casacore::Quantity& quantity);
 void NormalizeUnit(casacore::String& unit);
 
 /**
- * @brief Parses an AIPS-style beam header to extract beam parameters with regular expression.
+ * @brief Check if input unit string is in the format used by the GILDAS CLASS software.
  *
- * @param[in] header A string reference to the history beam header string to be parsed.
- * @param[out] bmaj A string reference to the extracted major axis value with its unit.
- * @param[out] bmin A string reference to the extracted minor axis value with its unit.
- * @param[out] bpa A string reference to the extracted position angle value with its unit.
+ * @param[in] unit A unit string to check.
  *
- * @return `true` if the header was successfully parsed and values were extracted,
- *         otherwise `false`.
+ * @return `true` if a GILDAS unit.
  */
-bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa);
+bool IsGildasUnit(const casacore::String& unit);
 
 #endif // CARTA_SRC_UTIL_CASACORE_H_

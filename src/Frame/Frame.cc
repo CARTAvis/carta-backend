@@ -27,8 +27,6 @@
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 
-static const int HIGH_COMPRESSION_QUALITY(32);
-
 namespace carta {
 
 Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool load_image_cache)
@@ -531,42 +529,40 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
 
             Timer t;
 
-            // compress the data with the default precision
+            // compress the data
             std::vector<char> compression_buffer;
             size_t compressed_size;
-            int precision = lround(compression_quality);
-            Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
-            float compression_ratio = (float)tile_image_data_size / (float)compressed_size;
-            bool use_high_precision(false);
 
-            if (precision < HIGH_COMPRESSION_QUALITY && compression_ratio > 20) {
-                // re-compress the data with a higher precision
-                std::vector<char> compression_buffer_hq;
-                size_t compressed_size_hq;
-                Compress(*tile_data_ptr, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
-                float compression_ratio_hq = (float)tile_image_data_size / (float)compressed_size_hq;
+            // originally requested precision
+            int requested_precision(lround(compression_quality));
 
-                if (compression_ratio_hq > 10) {
-                    // set compression data with high precision
-                    raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
-                    tile_ptr->set_image_data(compression_buffer_hq.data(), compressed_size_hq);
+            auto find_precision = [&](const auto& self, int current, float previous_ratio) -> int {
+                Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, current);
+                float compression_ratio = (float)tile_image_data_size / compressed_size;
 
-                    spdlog::debug("Using high compression quality. Previous compression ratio: {:.3f}", compression_ratio);
-                    compression_ratio = compression_ratio_hq;
-                    use_high_precision = true;
+                // Very large ratio, probably caused by a NaN block: precision makes no difference
+                if (compression_ratio == previous_ratio) {
+                    return current;
                 }
+
+                // Acceptable ratio or no higher precisions to try
+                if (compression_ratio <= 20 || current == MAX_COMPRESSION_QUALITY) {
+                    return current;
+                }
+
+                // Otherwise try a higher precision
+                int next((current + MAX_COMPRESSION_QUALITY + 1) / 2);
+                return self(self, next, compression_ratio);
+            };
+
+            // attempt to select a precision which results in a compression ratio below an acceptable threshold
+            int precision(find_precision(find_precision, requested_precision, -1));
+            if (precision > requested_precision) {
+                spdlog::debug("Upgraded precision to {} (originally requested precision: {}).", precision, requested_precision);
             }
 
-            if (!use_high_precision) {
-                // set compression data with default precision
-                raster_tile_data.set_compression_quality(compression_quality);
-                tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
-            }
-
-            /*
-            spdlog::debug(
-                "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
-            */
+            raster_tile_data.set_compression_quality((float)precision);
+            tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
 
             // Measure duration for compress tile data
             auto dt = t.Elapsed();
@@ -2389,17 +2385,20 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
 
     auto stokes_type = Stokes::Get(stokes_string);
     if (stokes_type) {
-        if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
-            stokes_ok = true;
-        } else if (Stokes::IsComputed(stokes_type)) {
+        if (Stokes::IsComputed(stokes_type)) {
             stokes_index = stokes_type;
             stokes_ok = true;
         } else {
-            int assumed_stokes_index = (stokes_type - 1) % 4;
-            if (NumStokes() > assumed_stokes_index) {
-                stokes_index = assumed_stokes_index;
-                stokes_ok = true;
-                spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
+            if (!_loader->GetStokesIndices().empty()) {
+                // Stokes are defined in image
+                stokes_ok = _loader->GetStokesTypeIndex(stokes_type, stokes_index);
+            } else {
+                int assumed_stokes_index = (stokes_type - 1) % 4;
+                if (NumStokes() > assumed_stokes_index) {
+                    stokes_index = assumed_stokes_index;
+                    stokes_ok = true;
+                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
+                }
             }
         }
     }
@@ -2509,6 +2508,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     int mip = _vector_field.Mip();
     bool fractional = _vector_field.Fractional();
     float threshold = _vector_field.Threshold();
+    CARTA::PolarizationType threshold_option = _vector_field.ThresholdOption();
     bool calculate_pi = _vector_field.CalculatePi();
     bool calculate_pa = _vector_field.CalculatePa();
     bool current_stokes_as_pi = _vector_field.CurrStokesAsPi();
@@ -2518,19 +2518,15 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     std::vector<Tile> tiles;
     GetTiles(_dims.width, _dims.height, mip, tiles);
 
-    // Initialize stokes maps for their flags, indices and data
+    // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
     std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
 
     // Set stokes flags and get their indices
-    stokes_flag["I"] = (fractional || !std::isnan(threshold));
-    stokes_flag["Q"] = stokes_flag["U"] = (calculate_pi || calculate_pa);
-    for (auto one : stokes_flag) {
-        std::string stokes = one.first;
-        if (stokes_flag[stokes] && !GetStokesTypeIndex(stokes + "x", stokes_indices[stokes])) {
-            return false;
-        }
-    }
+    bool use_threshold_I = !std::isnan(threshold) && threshold_option == CARTA::PolarizationType::I;
+    stokes_flag["I"] = (fractional || use_threshold_I) && GetStokesTypeIndex("I", stokes_indices["I"]);
+    stokes_flag["Q"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("Q", stokes_indices["Q"]);
+    stokes_flag["U"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("U", stokes_indices["U"]);
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {

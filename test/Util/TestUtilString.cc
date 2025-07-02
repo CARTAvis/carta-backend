@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include "Util/Casacore.h"
 #include "Util/String.h"
 
 TEST(StringUtilTest, SplitString_Basic) {
