@@ -261,14 +261,19 @@ bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
     auto preferences_path = _config_folder / "preferences.json";
 
     try {
-        fs::create_directories(preferences_path.parent_path().string());
-        std::ofstream file(preferences_path.string());
         // Ensure correct schema and version values are written
         obj["$schema"] = Json::Schema("preferences")["$id"];
         obj["version"] = 2;
+
+        // Validate the preferences
         Json::Validator("preferences").validate(obj);
+
+        // Write out the preferences to file
         auto json_string = obj.dump(4);
+        fs::create_directories(preferences_path.parent_path().string());
+        std::ofstream file(preferences_path.string());
         file << json_string;
+
         return true;
     } catch (json::type_error e) {
         spdlog::warn(e.what());
@@ -624,8 +629,6 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
     auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
 
     try {
-        fs::create_directories(object_path.parent_path());
-        std::ofstream file(object_path.string());
         // Ensure correct schema value is written
         if (OBJECT_TYPES.count(object_type)) {
             obj["$schema"] = Json::Schema(object_type)["$id"];
@@ -634,10 +637,15 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
             return false;
         }
 
+        // Validate the object
         Json::Validator(object_type).validate(obj);
 
+        // Write out the object to file
         auto json_string = obj.dump(4);
+        fs::create_directories(object_path.parent_path());
+        std::ofstream file(object_path.string());
         file << json_string;
+
         return true;
     } catch (json::type_error e) {
         spdlog::warn(e.what());
