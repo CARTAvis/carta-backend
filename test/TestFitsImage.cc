@@ -24,7 +24,6 @@ public:
 class FitsImageTest : public ::testing::Test, public ImageGenerator {};
 
 TEST_F(FitsImageTest, BasicLoadingTest) {
-    // auto path_string = GeneratedFitsImagePath("10 10");
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     EXPECT_NE(loader.get(), nullptr);
@@ -34,7 +33,6 @@ TEST_F(FitsImageTest, BasicLoadingTest) {
 }
 
 TEST_F(FitsImageTest, ExampleFriendTest) {
-    // auto path_string = GeneratedFitsImagePath("10 10");
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
     // TestFrame used instead of Frame if access to protected values is required
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
@@ -44,7 +42,6 @@ TEST_F(FitsImageTest, ExampleFriendTest) {
 }
 
 TEST_F(FitsImageTest, CorrectShape2dImage) {
-    // auto path_string = GeneratedFitsImagePath("10 10");
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -59,7 +56,6 @@ TEST_F(FitsImageTest, CorrectShape2dImage) {
 }
 
 TEST_F(FitsImageTest, CorrectShape3dImage) {
-    // auto path_string = GeneratedFitsImagePath("10 10 10");
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_3d.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -76,7 +72,6 @@ TEST_F(FitsImageTest, CorrectShape3dImage) {
 }
 
 TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
-    // auto path_string = GeneratedFitsImagePath("10 10 10 1");
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_4d.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -93,7 +88,6 @@ TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    // path_string = GeneratedFitsImagePath("10 10 1 10");
     path_string = (TestRoot() / "data" / "images" / "fits" / "noise_4d_casa.fits");
     loader.reset(carta::FileLoader::GetLoader(path_string));
     frame.reset(new Frame(0, loader, "0"));
@@ -111,7 +105,6 @@ TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
 }
 
 TEST_F(FitsImageTest, CorrectShape4dImages) {
-    // auto path_string = GeneratedFitsImagePath("10 10 5 2");
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_4d.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -128,7 +121,6 @@ TEST_F(FitsImageTest, CorrectShape4dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    // path_string = GeneratedFitsImagePath("10 10 2 5");
     path_string = (TestRoot() / "data" / "images" / "fits" / "noise_4d_casa.fits");
     loader.reset(carta::FileLoader::GetLoader(path_string));
     frame.reset(new Frame(0, loader, "0"));

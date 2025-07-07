@@ -100,7 +100,6 @@ public:
 };
 
 TEST_F(CursorSpatialProfileTest, SmallFitsProfile) {
-    // auto path_string = GeneratedFitsImagePath("10 10", IMAGE_OPTS);
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -183,7 +182,6 @@ TEST_F(CursorSpatialProfileTest, SmallHdf5Profile) {
 }
 
 TEST_F(CursorSpatialProfileTest, LowResFitsProfile) {
-    // auto path_string = GeneratedFitsImagePath("130 100", IMAGE_OPTS);
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -328,7 +326,6 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
 }
 
 TEST_F(CursorSpatialProfileTest, FullResFitsStartEnd) {
-    // auto path_string = GeneratedFitsImagePath("400 300", IMAGE_OPTS);
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -399,7 +396,6 @@ TEST_F(CursorSpatialProfileTest, FullResHdf5StartEnd) {
 }
 
 TEST_F(CursorSpatialProfileTest, LowResFitsStartEnd) {
-    // auto path_string = GeneratedFitsImagePath("400 300", IMAGE_OPTS);
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -549,7 +545,6 @@ TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
 }
 
 TEST_F(CursorSpatialProfileTest, FitsChannelChange) {
-    // auto path_string = GeneratedFitsImagePath("10 10 2", IMAGE_OPTS);
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_3d.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -593,7 +588,6 @@ TEST_F(CursorSpatialProfileTest, FitsChannelChange) {
 }
 
 TEST_F(CursorSpatialProfileTest, FitsChannelStokesChange) {
-    // auto path_string = GeneratedFitsImagePath("10 10 2 2", IMAGE_OPTS);
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
