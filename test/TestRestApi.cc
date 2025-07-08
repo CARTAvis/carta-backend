@@ -24,7 +24,9 @@ class TestHttpServer : public carta::HttpServer {
 public:
     TestHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, std::string auth_token, bool read_only_mode)
         : carta::HttpServer(session_manager, root_folder, UserDirectory(), auth_token, read_only_mode) {}
+    FRIEND_TEST(RestApiTest, MissingStartingPrefs);
     FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
+    FRIEND_TEST(RestApiTest, MalformedStartingPrefs);
     FRIEND_TEST(RestApiTest, GetExistingPrefs);
     FRIEND_TEST(RestApiTest, UpdatePrefsEmpty);
     FRIEND_TEST(RestApiTest, UpdatePrefsNotJson);
@@ -183,6 +185,16 @@ public:
         std::ofstream(preferences_path.string()) << example_options.dump(4);
     }
 
+    void WriteEmptyPrefs() {
+        fs::create_directories(preferences_path.parent_path());
+        std::ofstream(preferences_path.string()) << "";
+    }
+
+    void WriteMalformedPrefs() {
+        fs::create_directories(preferences_path.parent_path());
+        std::ofstream(preferences_path.string()) << "this is not a json file!";
+    }
+
     void WriteDefaultLayouts() {
         fs::create_directories(layouts_path);
         std::ofstream((layouts_path / "test_layout.json").string()) << example_layout.dump(4);
@@ -221,9 +233,21 @@ private:
     fs::path working_directory;
 };
 
-TEST_F(RestApiTest, EmptyStartingPrefs) {
+TEST_F(RestApiTest, MissingStartingPrefs) {
     auto existing_preferences = _frontend_server->GetExistingPreferences();
-    EXPECT_EQ(existing_preferences, json({{"version", 1}}));
+    EXPECT_EQ(existing_preferences, json({{"version", 2}}));
+}
+
+TEST_F(RestApiTest, EmptyStartingPrefs) {
+    WriteEmptyPrefs();
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_EQ(existing_preferences, json({{"version", 2}}));
+}
+
+TEST_F(RestApiTest, MalformedStartingPrefs) {
+    WriteMalformedPrefs();
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_EQ(existing_preferences, json());
 }
 
 TEST_F(RestApiTest, GetExistingPrefs) {
