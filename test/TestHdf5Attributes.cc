@@ -19,7 +19,7 @@ class Hdf5AttributesTest : public ::testing::Test, public ImageGenerator {};
 TEST_F(Hdf5AttributesTest, TestAttributes) {
     auto padded = [](std::string s) { return fmt::format("{:<80}", s); };
 
-    auto path_string = GeneratedHdf5ImagePath(fmt::format("10 10 -H '{}'", padded("BSCALE  = 1.0")));
+    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_header.hdf5");
     Hdf5DataReader reader(path_string);
 
     casacore::Vector<casacore::String> attributes;

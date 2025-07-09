@@ -13,22 +13,22 @@
 
 class ContourTest : public ::testing::Test {
 public:
-    void GenerateContour 
-        (std::string filename, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {
+    void GenerateContour(std::string filename, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {
         std::string file_path;
-        
+
         if (file_type == CARTA::FileType::HDF5) {
             file_path = (TestRoot() / "data" / "images" / "hdf5" / filename);
         } else {
             file_path = (TestRoot() / "data" / "images" / "fits" / filename);
         }
-        
+
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        
+
         spdlog::info("The generated image contains random pixels values with mean = 0 and STD = 1.");
         std::vector<double> levels{0, -1, 1}; // Contour levels
-        auto set_contour_params = Message::SetContourParameters(0, 0, 0, frame->Width(), 0, frame->Height(), levels, smoothing_mode, 4, 4, 8, 100000);
+        auto set_contour_params =
+            Message::SetContourParameters(0, 0, 0, frame->Width(), 0, frame->Height(), levels, smoothing_mode, 4, 4, 8, 100000);
 
         EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
 
@@ -38,19 +38,19 @@ public:
         for (auto level : levels) {
             vertices_map[level] = {};
         }
-        
+
         auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
             std::unique_lock<std::mutex> ulock(_callback_mutex);
-            
+
             if (vertices_map.count(level)) {
                 vertices_map[level].insert(vertices_map[level].end(), vertices.begin(), vertices.end());
             }
             progresses[level] = progress;
             ulock.unlock();
         };
-        
+
         EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
-        
+
         // Check the number of resulting contour levels
         EXPECT_EQ(progresses.size(), levels.size());
 
