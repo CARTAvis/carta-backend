@@ -54,6 +54,10 @@ struct EventHeader {
     uint16_t type;
     uint16_t icd_version;
     uint32_t request_id;
+
+    CARTA::EventType GetType() const {
+        return static_cast<CARTA::EventType>(type);
+    }
 };
 struct HistogramConfig;
 } // namespace carta
@@ -100,7 +104,8 @@ public:
         CARTA::RenderMode render_mode, int32_t channel, int32_t stokes);
     static CARTA::ResumeSession ResumeSession(std::vector<CARTA::ImageProperties> images);
     static CARTA::SetSpectralRequirements_SpectralConfig SpectralConfig(const std::string& coordinate);
-    static CARTA::FileListRequest FileListRequest(const std::string& directory);
+    static CARTA::FileListRequest FileListRequest(
+        const std::string& directory, const CARTA::FileListFilterMode filter_mode = CARTA::FileListFilterMode::Content);
     static CARTA::FileInfoRequest FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu = "");
     static CARTA::SetContourParameters SetContourParameters(uint32_t file_id, uint32_t ref_file_id, int32_t x_min, int32_t x_max,
         int32_t y_min, int32_t y_max, const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int32_t smoothing_factor,
@@ -158,17 +163,30 @@ public:
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
 
     // Decode messages
-    static CARTA::EventType EventType(std::vector<char>& message);
+    static carta::EventHeader GetEventHeader(std::string_view message);
 
     /**
-     * @brief Decodes a message from a vector of bytes into a specific type.
+     * @brief Decodes a message from a buffer of characters into an object of type T and
+     * can be used to decode various types of messages.
      *
-     * @tparam T The type of the message to decode. It must have a `ParseFromArray` method.
-     * @param message A vector of characters containing the encoded message data.
-     * @return The decoded message of type `T`.
+     * @tparam T The type of the object to decode the message into. T must have a member function
+     *           `ParseFromArray(const void*, int)` to parse the data.
+     * @param sv_message The message to decode.
+     * @throws std::runtime_error If the message cannot be parsed.
+     * @return The decoded message of type T.
      */
     template <typename T>
-    static T DecodeMessage(std::vector<char>& message);
+    static T DecodeMessage(std::string_view sv_message);
+
+    /**
+     * @brief Encodes a protobuf message with a CARTA event header for transmission.
+     *
+     * @param event_type The CARTA event type to encode in the header.
+     * @param event_id The event or request ID to encode in the header.
+     * @param message The protobuf message to serialize and encode.
+     * @return A std::vector<char> containing the header followed by the serialized message.
+     */
+    static std::vector<char> EncodeMessage(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message);
 };
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
