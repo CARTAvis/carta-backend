@@ -83,23 +83,6 @@ TEST(TileEncodingTest, RoundTripFloatPrecisionEdgeCase) {
     EXPECT_EQ(encoded, -1) << "Expected Encode to return -1 for out-of-bounds y";
 }
 
-TEST(TileEncodingTest, BoundaryEncodingDecoding) {
-    for (int32_t layer = 0; layer <= 12; ++layer) {
-        int32_t width = 1 << layer;
-        std::vector<std::pair<int32_t, int32_t>> points = {{0, 0}, {width - 1, 0}, {0, width - 1}, {width - 1, width - 1}};
-
-        for (const auto& [x, y] : points) {
-            int32_t encoded = Tile::Encode(x, y, layer);
-            ASSERT_NE(encoded, -1) << "Failed to encode boundary point";
-
-            Tile decoded = Tile::Decode(encoded);
-            EXPECT_EQ(decoded.x, x);
-            EXPECT_EQ(decoded.y, y);
-            EXPECT_EQ(decoded.layer, layer);
-        }
-    }
-}
-
 TEST(TileEncodingTest, LayerToMipConversion) {
     int32_t img_width = 1024;
     int32_t img_height = 512;
@@ -161,69 +144,99 @@ TEST(TileEncodingTest, MipToLayerInvalidInput) {
     EXPECT_EQ(Tile::MipToLayer(1000, img_width, img_height, tile_width, tile_height), -1);
 }
 
-TEST(TileEncodingTest, LayerToMipFloatingPointEdges) {
-    int32_t tile_width = 256;
-    int32_t tile_height = 256;
-    int32_t layer = 0;
+TEST(TileEncodingTest, EdgeAndBoundaryCoordinates) {
+    // Test corners for all layers
+    for (int32_t layer = 0; layer <= 12; ++layer) {
+        int32_t width = 1 << layer;
+        std::vector<std::pair<int32_t, int32_t>> corners = {
+            {0, 0}, {width - 1, 0}, {0, width - 1}, {width - 1, width - 1}
+        };
+        for (const auto& [x, y] : corners) {
+            int32_t encoded = Tile::Encode(x, y, layer);
+            ASSERT_NE(encoded, -1) << "Failed to encode boundary point";
 
-    // 511px → 1.996 tiles → log2(1.996) ≈ 0.998
-    int32_t img_width = 511;
-    int32_t img_height = 256;
-    int32_t mip = Tile::LayerToMip(layer, img_width, img_height, tile_width, tile_height);
-    EXPECT_EQ(mip, 2) << "Mip should ceil to 2 even if tile count is barely under 2";
+            Tile decoded = Tile::Decode(encoded);
+            EXPECT_EQ(decoded.x, x);
+            EXPECT_EQ(decoded.y, y);
+            EXPECT_EQ(decoded.layer, layer);
+        }
+    }
 
-    // 513px → 2.003 tiles → log2(2.003) ≈ 1.0004
-    img_width = 513;
-    mip = Tile::LayerToMip(layer, img_width, img_height, tile_width, tile_height);
-    EXPECT_EQ(mip, 2) << "Mip should still be 2 just over tile boundary";
+    // Test additional edge coordinates for layers 0 and 12
+    std::vector<int32_t> edge_coords = {0, 2047, 2048, 4095};
+    std::vector<int32_t> layers = {0, 12};
+    for (int32_t layer : layers) {
+        int32_t layer_width = 1 << layer;
+        for (int32_t x : edge_coords) {
+            for (int32_t y : edge_coords) {
+                if (x >= layer_width || y >= layer_width) continue;
+                int32_t encoded = Tile::Encode(x, y, layer);
+                ASSERT_NE(encoded, -1) << "Encoding failed for x=" << x << ", y=" << y << ", layer=" << layer;
+
+                Tile tile = Tile::Decode(encoded);
+                EXPECT_EQ(tile.x, x) << "Mismatch at x=" << x << ", y=" << y << ", layer=" << layer;
+                EXPECT_EQ(tile.y, y) << "Mismatch at x=" << x << ", y=" << y << ", layer=" << layer;
+                EXPECT_EQ(tile.layer, layer) << "Mismatch at x=" << x << ", y=" << y << ", layer=" << layer;
+            }
+        }
+    }
 }
 
-TEST(TileEncodingTest, LayerToMipSweepLogging) {
+TEST(TileEncodingTest, LayerToMipEdgeCasesAndSweep) {
     int32_t tile_width = 256;
     int32_t tile_height = 256;
     int32_t layer = 0;
 
-    std::cout << "\n--- LayerToMip Sweep: image_width from 450 to 550 ---\n";
+    // Automated checks for specific edge cases
+    struct EdgeCase {
+        int32_t img_width;
+        int32_t expected_mip;
+    };
+    std::vector<EdgeCase> edge_cases = {
+        {511, 2}, // 511px → ceil(511/256)=2 tiles → log2(2)=1 → pow(2,1)=2
+        {513, 4}  // 513px → ceil(513/256)=3 tiles → log2(3)=1.58 → ceil=2 → pow(2,2)=4
+    };
+    int32_t img_height = 256;
+    for (const auto& ec : edge_cases) {
+        int32_t mip = Tile::LayerToMip(layer, ec.img_width, img_height, tile_width, tile_height);
+        EXPECT_EQ(mip, ec.expected_mip) << "Mip should be " << ec.expected_mip << " for " << ec.img_width << "px width";
+    }
 
+    // Sweep logging for manual inspection
     int last_mip = -1;
     for (int img_width = 450; img_width <= 550; ++img_width) {
-        int mip = Tile::LayerToMip(layer, img_width, 256, tile_width, tile_height);
+        int mip = Tile::LayerToMip(layer, img_width, img_height, tile_width, tile_height);
         if (mip != last_mip) {
-            std::cout << "image_width = " << img_width << " → mip = " << mip << "\n";
             last_mip = mip;
         }
     }
 }
 
-TEST(TileEncodingTest, MipToLayerFloatingPointEdges) {
+TEST(TileEncodingTest, MipToLayerEdgeCasesAndSweep) {
     int32_t tile_width = 256;
     int32_t tile_height = 256;
     int32_t mip = 2;
 
-    // Slightly under 512px (max tiles = 1.996)
-    int32_t img_width = 511;
+    // Automated checks for specific edge cases
+    struct EdgeCase {
+        int32_t img_width;
+        int32_t expected_layer;
+    };
+    std::vector<EdgeCase> edge_cases = {
+        {511, 0}, // Slightly under 512px (max tiles = 1.996)
+        {513, 1}  // Slightly over 512px (max tiles = 2.003)
+    };
     int32_t img_height = 256;
-    int32_t layer = Tile::MipToLayer(mip, img_width, img_height, tile_width, tile_height);
-    EXPECT_EQ(layer, 1) << "Should resolve to layer 1";
+    for (const auto& ec : edge_cases) {
+        int32_t layer = Tile::MipToLayer(mip, ec.img_width, img_height, tile_width, tile_height);
+        EXPECT_EQ(layer, ec.expected_layer) << "Should resolve to layer " << ec.expected_layer << " for " << ec.img_width << "px width";
+    }
 
-    // Slightly over 512px (max tiles = 2.003)
-    img_width = 513;
-    layer = Tile::MipToLayer(mip, img_width, img_height, tile_width, tile_height);
-    EXPECT_EQ(layer, 1) << "Should still resolve to layer 1";
-}
-
-TEST(TileEncodingTest, MipToLayerSweepLogging) {
-    int32_t tile_width = 256;
-    int32_t tile_height = 256;
-    int32_t mip = 2;
-
-    std::cout << "\n--- MipToLayer Sweep: image_width from 450 to 550 ---\n";
-
+    // Sweep logging for manual inspection
     int last_layer = -1;
     for (int img_width = 450; img_width <= 550; ++img_width) {
-        int layer = Tile::MipToLayer(mip, img_width, 256, tile_width, tile_height);
+        int layer = Tile::MipToLayer(mip, img_width, img_height, tile_width, tile_height);
         if (layer != last_layer) {
-            std::cout << "image_width = " << img_width << " → layer = " << layer << "\n";
             last_layer = layer;
         }
     }

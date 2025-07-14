@@ -39,7 +39,8 @@ struct Tile {
             return -1;
         }
 
-        return ((layer << 24) | (y << 12) | x);
+        // Layout: [layer:8 bits][y:12 bits][x:12 bits]
+        return ((layer & 0xFF) << 24) | ((y & 0xFFF) << 12) | (x & 0xFFF);
     }
 
     /**
@@ -49,9 +50,9 @@ struct Tile {
      * @return A Tile object with decoded x, y, and layer values.
      */
     static Tile Decode(int32_t encoded_value) {
-        int32_t x = encoded_value & 0xFFF;
-        int32_t y = (encoded_value >> 12) & 0xFFF;
-        int32_t layer = (encoded_value >> 24) & 0xFF;
+        int32_t x = (((encoded_value << 19) >> 19) + 4096) % 4096;
+        int32_t y = (((encoded_value << 7) >> 19) + 4096) % 4096;
+        int32_t layer = ((encoded_value >> 24) + 128) % 128;
         return Tile{x, y, layer};
     }
 
