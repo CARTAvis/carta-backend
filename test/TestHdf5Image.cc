@@ -89,7 +89,7 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_1_10_row_column.hdf5");
+    path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_1_10_row_column.hdf5");
     loader.reset(carta::FileLoader::GetLoader(path_string));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
