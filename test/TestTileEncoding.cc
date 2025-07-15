@@ -148,9 +148,7 @@ TEST(TileEncodingTest, EdgeAndBoundaryCoordinates) {
     // Test corners for all layers
     for (int32_t layer = 0; layer <= 12; ++layer) {
         int32_t width = 1 << layer;
-        std::vector<std::pair<int32_t, int32_t>> corners = {
-            {0, 0}, {width - 1, 0}, {0, width - 1}, {width - 1, width - 1}
-        };
+        std::vector<std::pair<int32_t, int32_t>> corners = {{0, 0}, {width - 1, 0}, {0, width - 1}, {width - 1, width - 1}};
         for (const auto& [x, y] : corners) {
             int32_t encoded = Tile::Encode(x, y, layer);
             ASSERT_NE(encoded, -1) << "Failed to encode boundary point";
@@ -169,7 +167,8 @@ TEST(TileEncodingTest, EdgeAndBoundaryCoordinates) {
         int32_t layer_width = 1 << layer;
         for (int32_t x : edge_coords) {
             for (int32_t y : edge_coords) {
-                if (x >= layer_width || y >= layer_width) continue;
+                if (x >= layer_width || y >= layer_width)
+                    continue;
                 int32_t encoded = Tile::Encode(x, y, layer);
                 ASSERT_NE(encoded, -1) << "Encoding failed for x=" << x << ", y=" << y << ", layer=" << layer;
 
