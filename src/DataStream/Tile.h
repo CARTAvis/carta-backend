@@ -85,16 +85,9 @@ struct Tile {
      * @return The corresponding layer index, or -1 if invalid.
      */
     static int32_t MipToLayer(int32_t mip, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height) {
-        if (mip <= 0)
-            return -1; // invalid mip
-
         double total_tiles_x = ceil((double)(image_width) / tile_width);
         double total_tiles_y = ceil((double)(image_height) / tile_height);
         double max_mip = std::max(total_tiles_x, total_tiles_y);
-
-        if (mip > max_mip)
-            return -1;
-
         return ceil(log2(max_mip / mip));
     }
 };

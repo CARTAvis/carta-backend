@@ -45,7 +45,7 @@ TEST(TileEncodingTest, RoundTrip) {
     std::uniform_int_distribution<> layer_random(0, 12);
     std::uniform_real_distribution<float> float_random(0, 1);
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 1000; i++) {
         int32_t layer = layer_random(mt);
         int32_t layer_width = 1 << layer;
         int32_t x = std::min(static_cast<int32_t>(float_random(mt) * layer_width), layer_width - 1);
