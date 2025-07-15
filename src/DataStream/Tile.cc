@@ -5,7 +5,7 @@
 */
 
 /**
- * @file tile.cc
+ * @file Tile.cc
  * @brief Provides the Tile struct for encoding and decoding spatial tile coordinates and mipmap layer logic.
  *
  * This file defines the Tile struct, which represents a tile in a multi-resolution tiling system.
