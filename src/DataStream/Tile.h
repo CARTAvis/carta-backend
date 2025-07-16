@@ -28,8 +28,8 @@ struct Tile {
     /**
      * @brief Encodes tile coordinates and layer into a 32-bit integer.
      *
-     * @param x The X coordinate (must be within bounds of the layer).
-     * @param y The Y coordinate (must be within bounds of the layer).
+     * @param x The X coordinate (must be greater than or equal to 0 and less than 2 to the power of the layer).
+     * @param y The Y coordinate (must be greater than or equal to 0 and less than 2 to the power of the layer).
      * @param layer The layer index (must be between 0 and 12).
      * @return Encoded 32-bit integer value, or -1 if input is invalid.
      */
@@ -40,7 +40,7 @@ struct Tile {
         }
 
         // Layout: [layer:8 bits][y:12 bits][x:12 bits]
-        return ((layer & 0xFF) << 24) | ((y & 0xFFF) << 12) | (x & 0xFFF);
+        return ((layer << 24) | (y << 12) | x);
     }
 
     /**
@@ -67,17 +67,26 @@ struct Tile {
      * @return The mip size corresponding to the given layer.
      */
     static int32_t LayerToMip(int32_t layer, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height) {
+        if (image_width <= 0 || image_height <= 0 || tile_width <= 0 || tile_height <= 0 || layer < 0) {
+        return -1; // Invalid input
+        }
         double total_tiles_x = ceil((double)(image_width) / tile_width);
         double total_tiles_y = ceil((double)(image_height) / tile_height);
         double max_mip = std::max(total_tiles_x, total_tiles_y);
+        if (max_mip < 1) {
+            return -1; // No tiles
+        }
         double total_layers = ceil(log2(max_mip));
-        return pow(2.0, total_layers - layer);
+        if (layer > total_layers) {
+            return -1; // Layer out of range
+        }
+        return (int32_t)pow(2.0, total_layers - layer);
     }
 
     /**
      * @brief Converts a mipmap size to the corresponding layer index.
      *
-     * @param mip The mipmap size to convert.
+     * @param mip The mipmap level.
      * @param image_width The width of the full-resolution image.
      * @param image_height The height of the full-resolution image.
      * @param tile_width The width of a tile in pixels.
@@ -85,11 +94,21 @@ struct Tile {
      * @return The corresponding layer index, or -1 if invalid.
      */
     static int32_t MipToLayer(int32_t mip, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height) {
+        if (image_width <= 0 || image_height <= 0 || tile_width <= 0 || tile_height <= 0 || mip <= 0) {
+            return -1; // Invalid input
+        }
         double total_tiles_x = ceil((double)(image_width) / tile_width);
         double total_tiles_y = ceil((double)(image_height) / tile_height);
         double max_mip = std::max(total_tiles_x, total_tiles_y);
-        return ceil(log2(max_mip / mip));
-    }
+        if (max_mip < 1 || mip > max_mip) {
+            return -1; // No tiles or mip out of range
+        }
+        double layer = ceil(log2(max_mip / mip));
+        if (layer < 0) {
+            return -1; // Layer out of range
+        }
+        return (int32_t)layer;
+        }
 };
 
 } // namespace carta
