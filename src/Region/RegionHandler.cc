@@ -2052,6 +2052,11 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         size_t compressed_size;
         // get data and transform to vector
         std::vector<float> image_data;
+
+        size_t rebin_width = std::ceil((float)width / (float)rebin_xy);
+        size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
+        size_t rebin_depth = std::ceil((float)depth / (float)rebin_z);
+
         auto diff = slices_range.to - slices_range.from + 1;
 
         if (rebin_xy == 1 && rebin_z == 1) {
@@ -2066,9 +2071,9 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         data_message.set_file_id(file_id);
         data_message.set_region_id(region_id);
         data_message.set_viewer_id(viewer_id);
-        data_message.set_width(std::ceil(width/rebin_xy));
-        data_message.set_height(std::ceil(height/rebin_xy));
-        data_message.set_depth(std::ceil(depth/rebin_z));
+        data_message.set_width(rebin_width);
+        data_message.set_height(rebin_height);
+        data_message.set_depth(rebin_depth);
         data_message.set_slice(num_slices/rebin_z);
         data_message.set_progress(progress);
 
@@ -2088,14 +2093,14 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
                 Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
             } else {
                 // check how many slices are left
-                if ( diff < num_slices ) {
-                    data_message.set_slice(diff);
-                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, std::ceil(width/rebin_xy), std::ceil(height/rebin_xy), std::ceil(diff/rebin_z));
-                    Compress3D(image_data, 0, compression_buffer, compressed_size, std::ceil(width/rebin_xy), std::ceil(width/rebin_xy), diff, compression_quality);
+                if ( diff < num_slices && rebin_xy == 1 && rebin_z == 1) {
+                    data_message.set_slice(diff/rebin_z);
+                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, diff);
+                    Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
                 } else {
                     // Check how to compress with NaN values. Give a number of NaN values.
-                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, std::ceil(width/rebin_xy), std::ceil(height/rebin_xy), std::ceil(num_slices/rebin_z));
-                    Compress3D(image_data, 0, compression_buffer, compressed_size, std::ceil(width/rebin_xy), std::ceil(height/rebin_xy), std::ceil(num_slices/rebin_z), compression_quality);
+                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, rebin_width, rebin_height, 4);
+                    Compress3D(image_data, 0, compression_buffer, compressed_size, rebin_width, rebin_height, 4, compression_quality);
                 }
             }
 
@@ -2131,7 +2136,7 @@ void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int he
 
     size_t rebin_width = std::ceil((float)width / (float)rebin_xy);
     size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
-    size_t rebin_nchan = std::ceil((float)num_slices / (float)rebin_z);
+    size_t rebin_nchan = 4; // std::ceil((float)num_slices / (float)rebin_z); the final size is always 4 for the z axis
 
     casacore::IPosition start(subimage_shape.size(), 0);
     casacore::IPosition length(subimage_shape);
@@ -2142,12 +2147,12 @@ void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int he
     // std::vector<float> rebinned_data(rebin_channel_size * rebin_nchan, 0.0);
     // rebinned_data = NAN; // Initialize with NaN
 
-    for (auto ichan = 0; ichan < num_slices; ichan += rebin_z) {
+    for (auto ichan = 0; ichan < rebin_nchan * rebin_z; ichan += rebin_z) {
 
         // Check if can average next rebin_z channels
-        if (ichan + rebin_z - 1 >= num_slices) {
-            break;
-        }
+        // if (ichan + rebin_z - 1 >= num_slices) {
+        //     break;
+        // }
 
         // Accumulate rebin_z channels
         std::vector<float> channel_sum(rebin_channel_size, 0.0);
