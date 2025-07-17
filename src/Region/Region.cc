@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # Region.cc: implementation of class for managing a region
+//# Region.cc: implementation of class for managing a region
 
 #include "Region.h"
 

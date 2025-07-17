@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # FileInfoLoader.cc: fill FileInfo for all supported file types
+//# FileInfoLoader.cc: fill FileInfo for all supported file types
 
 #include "FileInfoLoader.h"
 

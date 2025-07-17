@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # CartaHdf5Image.h : HDF5 Image class derived from casacore::ImageInterface
+//# CartaHdf5Image.h : HDF5 Image class derived from casacore::ImageInterface
 
 #ifndef CARTA_SRC_IMAGEDATA_CARTAHDF5IMAGE_H_
 #define CARTA_SRC_IMAGEDATA_CARTAHDF5IMAGE_H_

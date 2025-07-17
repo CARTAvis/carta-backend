@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # CartaFitsImage.cc : specialized casacore::ImageInterface implementation for FITS
+//# CartaFitsImage.cc : specialized casacore::ImageInterface implementation for FITS
 
 #include "CartaFitsImage.h"
 

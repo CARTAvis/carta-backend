@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # Ds9ImportExport.h: handle DS9 region file import and export
+//# Ds9ImportExport.h: handle DS9 region file import and export
 
 #ifndef CARTA_SRC_REGION_DS9IMPORTEXPORT_H_
 #define CARTA_SRC_REGION_DS9IMPORTEXPORT_H_

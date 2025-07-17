@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # FileInfoLoader.h: load FileInfo fields for given file
+//# FileInfoLoader.h: load FileInfo fields for given file
 
 #ifndef CARTA_SRC_FILELIST_FILEINFOLOADER_H_
 #define CARTA_SRC_FILELIST_FILEINFOLOADER_H_

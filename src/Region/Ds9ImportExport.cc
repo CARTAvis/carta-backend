@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # Ds9ImportExport.cc: import and export regions in DS9 format
+//# Ds9ImportExport.cc: import and export regions in DS9 format
 
 #include "Ds9ImportExport.h"
 

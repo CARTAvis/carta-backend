@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # OnMessageTask.h: dequeues messages and calls appropriate Session handlers
+//# OnMessageTask.h: dequeues messages and calls appropriate Session handlers
 
 #ifndef CARTA_SRC_SESSION_ONMESSAGETASK_H_
 #define CARTA_SRC_SESSION_ONMESSAGETASK_H_

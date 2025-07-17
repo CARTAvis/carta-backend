@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # RegionConverter.h: class for managing region conversion to matched image
+//# RegionConverter.h: class for managing region conversion to matched image
 
 #ifndef CARTA_SRC_REGION_REGIONCONVERTER_H_
 #define CARTA_SRC_REGION_REGIONCONVERTER_H_

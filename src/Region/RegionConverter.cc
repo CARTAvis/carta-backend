@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # RegionConverter.cc: implementation of class for converting a region
+//# RegionConverter.cc: implementation of class for converting a region
 
 #include "RegionConverter.h"
 

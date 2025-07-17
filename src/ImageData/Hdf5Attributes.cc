@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # Hdf5Attributes.cc: get HDF5 header attributes in casacore::Record
+//# Hdf5Attributes.cc: get HDF5 header attributes in casacore::Record
 #include "Hdf5Attributes.h"
 
 #include <cstring>
