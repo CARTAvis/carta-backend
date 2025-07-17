@@ -68,7 +68,7 @@ struct Tile {
      */
     static int32_t LayerToMip(int32_t layer, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height) {
         if (image_width <= 0 || image_height <= 0 || tile_width <= 0 || tile_height <= 0 || layer < 0) {
-        return -1; // Invalid input
+            return -1; // Invalid input
         }
         double total_tiles_x = ceil((double)(image_width) / tile_width);
         double total_tiles_y = ceil((double)(image_height) / tile_height);
@@ -108,7 +108,7 @@ struct Tile {
             return -1; // Layer out of range
         }
         return (int32_t)layer;
-        }
+    }
 };
 
 } // namespace carta
