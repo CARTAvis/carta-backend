@@ -255,6 +255,19 @@ bool HttpServer::ValidateObject(const std::string& object_type, nlohmann::json& 
     return valid;
 }
 
+void HttpServer::WritePreferencesBackup() {
+    auto preferences_path = _config_folder / "preferences.json";
+    auto backup_path = _config_folder / "preferences.json.bak";
+    std::error_code error_code;
+
+    fs::copy_file(preferences_path, backup_path, fs::copy_options::update_existing, error_code);
+    if (error_code) {
+        spdlog::warn("Could not back up preferences: {}", error_code.message());
+    } else {
+        spdlog::info("Backed up preferences to {}.", backup_path.string());
+    }
+}
+
 json HttpServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
     json obj = {};
@@ -269,7 +282,7 @@ json HttpServer::GetExistingPreferences() {
     try {
         obj = json::parse(json_string);
     } catch (json::parse_error e) {
-        spdlog::warn(e.what());
+        spdlog::warn("Existing preferences are malformed: {}", e.what());
         return {};
     }
 
@@ -352,6 +365,13 @@ std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buff
         }
 
         json existing_data = GetExistingPreferences();
+        bool write_backup(false);
+
+        // If returned object is completely empty, the prefs are malformed. Back up before writing.
+        if (existing_data.empty()) {
+            write_backup = true;
+        }
+
         // Apply here too to avoid counting these as changed prefs
         NormalisePreferences(existing_data);
 
@@ -365,6 +385,9 @@ std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buff
         }
 
         if (modified_key_count) {
+            if (write_backup) {
+                WritePreferencesBackup();
+            }
             if (WritePreferencesFile(existing_data)) {
                 spdlog::debug("Updated {} preferences", modified_key_count);
                 return HTTP_200;
@@ -601,7 +624,7 @@ nlohmann::json HttpServer::GetObjectFromPath(const fs::path& path, const std::st
     try {
         obj = json::parse(json_string);
     } catch (json::exception e) {
-        spdlog::warn(e.what());
+        spdlog::warn("Existing {} is malformed: {}", object_type, e.what());
         return obj;
     }
 
