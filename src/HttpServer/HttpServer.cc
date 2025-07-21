@@ -262,9 +262,9 @@ void HttpServer::WritePreferencesBackup() {
 
     fs::copy_file(preferences_path, backup_path, fs::copy_options::update_existing, error_code);
     if (error_code) {
-        spdlog::warn("Could not back up preferences: {}", error_code.message());
+        spdlog::warn("Could not back up preferences file: {}", error_code.message());
     } else {
-        spdlog::info("Backed up preferences to {}.", backup_path.string());
+        spdlog::info("Backed up preferences file to {}.", backup_path.string());
     }
 }
 
@@ -282,7 +282,7 @@ json HttpServer::GetExistingPreferences() {
     try {
         obj = json::parse(json_string);
     } catch (json::parse_error e) {
-        spdlog::warn("Existing preferences are malformed: {}", e.what());
+        spdlog::warn("Preferences file is malformed: {}", e.what());
         return {};
     }
 
@@ -365,12 +365,9 @@ std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buff
         }
 
         json existing_data = GetExistingPreferences();
-        bool write_backup(false);
 
         // If returned object is completely empty, the prefs are malformed. Back up before writing.
-        if (existing_data.empty()) {
-            write_backup = true;
-        }
+        bool malformed(existing_data.empty());
 
         // Apply here too to avoid counting these as changed prefs
         NormalisePreferences(existing_data);
@@ -385,7 +382,10 @@ std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buff
         }
 
         if (modified_key_count) {
-            if (write_backup) {
+            if (malformed) {
+                spdlog::warn(
+                    "Preferences file is malformed. All preferences will be reset to defaults before update. Attempting to back up "
+                    "preferences file.");
                 WritePreferencesBackup();
             }
             if (WritePreferencesFile(existing_data)) {
@@ -624,7 +624,9 @@ nlohmann::json HttpServer::GetObjectFromPath(const fs::path& path, const std::st
     try {
         obj = json::parse(json_string);
     } catch (json::exception e) {
-        spdlog::warn("Existing {} is malformed: {}", object_type, e.what());
+        std::string type_str(object_type);
+        type_str[0] = std::toupper(type_str[0]);
+        spdlog::warn("{} file {} is malformed: {}", type_str, path.string(), e.what());
         return obj;
     }
 
