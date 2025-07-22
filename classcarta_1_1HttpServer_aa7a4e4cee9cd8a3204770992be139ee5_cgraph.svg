@@ -46,9 +46,9 @@
   </g>
 </defs>
 <script type="application/ecmascript">
-var viewWidth = 759;
+var viewWidth = 912;
 var viewHeight = 172;
-var sectionId = 'dynsection-25';
+var sectionId = 'dynsection-24';
 </script>
 <script type="application/ecmascript" xlink:href="svg.min.js"/>
 <svg id="graph" class="graph">
@@ -102,38 +102,38 @@ var sectionId = 'dynsection-25';
 </a>
 </g>
 </g>
-<!-- Node8 -->
-<g id="Node000008" class="node">
-<title>Node8</title>
-<g id="a_Node000008"><a xlink:href="classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" target="_top" xlink:title=" ">
+<!-- Node9 -->
+<g id="Node000009" class="node">
+<title>Node9</title>
+<g id="a_Node000009"><a xlink:href="classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="254.5,-67.5 148.5,-67.5 148.5,-37.5 254.5,-37.5 254.5,-67.5"/>
 <text text-anchor="start" x="156.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::HttpServer::</text>
 <text text-anchor="middle" x="201.5" y="-44.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsAuthenticated</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node8 -->
-<g id="edge7_Node000001_Node000008" class="edge">
-<title>Node1&#45;&gt;Node8</title>
-<g id="a_edge7_Node000001_Node000008"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node9 -->
+<g id="edge8_Node000001_Node000009" class="edge">
+<title>Node1&#45;&gt;Node9</title>
+<g id="a_edge8_Node000001_Node000009"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M106.06,-67.97C116.41,-66.28 127.37,-64.48 138.02,-62.74"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="138.81,-66.15 148.11,-61.08 137.68,-59.25 138.81,-66.15"/>
 </a>
 </g>
 </g>
-<!-- Node11 -->
-<g id="Node000011" class="node">
-<title>Node11</title>
-<g id="a_Node000011"><a xlink:href="String_8cc.html#a072e2624b237bdf8f61e2014ce26eecf" target="_top" xlink:title="Decodes a percent&#45;encoded (URL&#45;encoded) string.">
+<!-- Node12 -->
+<g id="Node000012" class="node">
+<title>Node12</title>
+<g id="a_Node000012"><a xlink:href="String_8cc.html#a072e2624b237bdf8f61e2014ce26eecf" target="_top" xlink:title="Decodes a percent&#45;encoded (URL&#45;encoded) string.">
 <polygon fill="white" stroke="#666666" points="259,-19 144,-19 144,0 259,0 259,-19"/>
 <text text-anchor="middle" x="201.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">SafeStringUnescape</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node11 -->
-<g id="edge10_Node000001_Node000011" class="edge">
-<title>Node1&#45;&gt;Node11</title>
-<g id="a_edge10_Node000001_Node000011"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node12 -->
+<g id="edge11_Node000001_Node000012" class="edge">
+<title>Node1&#45;&gt;Node12</title>
+<g id="a_edge11_Node000001_Node000012"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M78.8,-61.36C96.09,-51.21 119.94,-38 142,-28.5 147.03,-26.34 152.38,-24.28 157.74,-22.37"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="158.97,-25.64 167.31,-19.1 156.71,-19.02 158.97,-25.64"/>
 </a>
@@ -180,9 +180,10 @@ var sectionId = 'dynsection-25';
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="classcarta_1_1Json.html#abcea36607c8f081e7d1619f2578ee005" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="581.5,-110 464.5,-110 464.5,-91 581.5,-91 581.5,-110"/>
-<text text-anchor="middle" x="523" y="-98" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Json::Validator</text>
+<g id="a_Node000006"><a xlink:href="classcarta_1_1HttpServer.html#a91d3132f695f6b6b7797690d7404cd3b" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="576,-115.5 470,-115.5 470,-85.5 576,-85.5 576,-115.5"/>
+<text text-anchor="start" x="478" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::HttpServer::</text>
+<text text-anchor="middle" x="523" y="-92.5" font-family="Helvetica,sans-Serif" font-size="10.00">ValidateObject</text>
 </a>
 </g>
 </g>
@@ -190,17 +191,17 @@ var sectionId = 'dynsection-25';
 <g id="edge5_Node000005_Node000006" class="edge">
 <title>Node5&#45;&gt;Node6</title>
 <g id="a_edge5_Node000005_Node000006"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M408.21,-100.5C422.81,-100.5 438.76,-100.5 453.98,-100.5"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="454.38,-104 464.38,-100.5 454.38,-97 454.38,-104"/>
+<path fill="none" stroke="#63b8ff" d="M408.21,-100.5C424.6,-100.5 442.7,-100.5 459.55,-100.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="459.86,-104 469.86,-100.5 459.86,-97 459.86,-104"/>
 </a>
 </g>
 </g>
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="classcarta_1_1Json.html#a610b7e17d774c7deb762d25dbd3dc86c" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="751,-110 638,-110 638,-91 751,-91 751,-110"/>
-<text text-anchor="middle" x="694.5" y="-98" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Json::Schema</text>
+<g id="a_Node000007"><a xlink:href="classcarta_1_1Json.html#abcea36607c8f081e7d1619f2578ee005" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="755,-110 638,-110 638,-91 755,-91 755,-110"/>
+<text text-anchor="middle" x="696.5" y="-98" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Json::Validator</text>
 </a>
 </g>
 </g>
@@ -208,35 +209,35 @@ var sectionId = 'dynsection-25';
 <g id="edge6_Node000006_Node000007" class="edge">
 <title>Node6&#45;&gt;Node7</title>
 <g id="a_edge6_Node000006_Node000007"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M581.86,-100.5C596.59,-100.5 612.52,-100.5 627.62,-100.5"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="627.91,-104 637.91,-100.5 627.91,-97 627.91,-104"/>
+<path fill="none" stroke="#63b8ff" d="M576.39,-100.5C592.46,-100.5 610.38,-100.5 627.34,-100.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="627.76,-104 637.76,-100.5 627.76,-97 627.76,-104"/>
 </a>
 </g>
 </g>
-<!-- Node9 -->
-<g id="Node000009" class="node">
-<title>Node9</title>
-<g id="a_Node000009"><a xlink:href="Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" target="_top" xlink:title="Validate an HTTP request.">
-<polygon fill="white" stroke="#666666" points="406,-62 299,-62 299,-43 406,-43 406,-62"/>
-<text text-anchor="middle" x="352.5" y="-50" font-family="Helvetica,sans-Serif" font-size="10.00">ValidateAuthToken</text>
+<!-- Node8 -->
+<g id="Node000008" class="node">
+<title>Node8</title>
+<g id="a_Node000008"><a xlink:href="classcarta_1_1Json.html#a610b7e17d774c7deb762d25dbd3dc86c" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="904,-110 791,-110 791,-91 904,-91 904,-110"/>
+<text text-anchor="middle" x="847.5" y="-98" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Json::Schema</text>
 </a>
 </g>
 </g>
-<!-- Node8&#45;&gt;Node9 -->
-<g id="edge8_Node000008_Node000009" class="edge">
-<title>Node8&#45;&gt;Node9</title>
-<g id="a_edge8_Node000008_Node000009"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M254.61,-52.5C265.6,-52.5 277.3,-52.5 288.64,-52.5"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="288.91,-56 298.91,-52.5 288.91,-49 288.91,-56"/>
+<!-- Node7&#45;&gt;Node8 -->
+<g id="edge7_Node000007_Node000008" class="edge">
+<title>Node7&#45;&gt;Node8</title>
+<g id="a_edge7_Node000007_Node000008"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M755.11,-100.5C763.37,-100.5 771.93,-100.5 780.35,-100.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="780.52,-104 790.52,-100.5 780.52,-97 780.52,-104"/>
 </a>
 </g>
 </g>
 <!-- Node10 -->
 <g id="Node000010" class="node">
 <title>Node10</title>
-<g id="a_Node000010"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title="Performs a constant&#45;time comparison of two strings.">
-<polygon fill="white" stroke="#666666" points="602,-62 444,-62 444,-43 602,-43 602,-62"/>
-<text text-anchor="middle" x="523" y="-50" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
+<g id="a_Node000010"><a xlink:href="Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" target="_top" xlink:title="Validate an HTTP request.">
+<polygon fill="white" stroke="#666666" points="406,-62 299,-62 299,-43 406,-43 406,-62"/>
+<text text-anchor="middle" x="352.5" y="-50" font-family="Helvetica,sans-Serif" font-size="10.00">ValidateAuthToken</text>
 </a>
 </g>
 </g>
@@ -244,6 +245,24 @@ var sectionId = 'dynsection-25';
 <g id="edge9_Node000009_Node000010" class="edge">
 <title>Node9&#45;&gt;Node10</title>
 <g id="a_edge9_Node000009_Node000010"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M254.61,-52.5C265.6,-52.5 277.3,-52.5 288.64,-52.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="288.91,-56 298.91,-52.5 288.91,-49 288.91,-56"/>
+</a>
+</g>
+</g>
+<!-- Node11 -->
+<g id="Node000011" class="node">
+<title>Node11</title>
+<g id="a_Node000011"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title="Performs a constant&#45;time comparison of two strings.">
+<polygon fill="white" stroke="#666666" points="602,-62 444,-62 444,-43 602,-43 602,-62"/>
+<text text-anchor="middle" x="523" y="-50" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
+</a>
+</g>
+</g>
+<!-- Node10&#45;&gt;Node11 -->
+<g id="edge10_Node000010_Node000011" class="edge">
+<title>Node10&#45;&gt;Node11</title>
+<g id="a_edge10_Node000010_Node000011"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M406.35,-52.5C415.07,-52.5 424.31,-52.5 433.62,-52.5"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="433.73,-56 443.73,-52.5 433.73,-49 433.73,-56"/>
 </a>

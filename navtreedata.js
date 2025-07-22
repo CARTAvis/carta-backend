@@ -87,19 +87,19 @@ var NAVTREEINDEX =
 "classcarta_1_1FileExtInfoLoader.html#a5ec18ae95dc807af08f85854d8d7d240",
 "classcarta_1_1FileLoader.html#afad62acd2ff74fdef47e6a31500fe070",
 "classcarta_1_1Frame.html#ac44837d3d10e104fa0939b149b9dd57c",
-"classcarta_1_1HttpServer.html#aa7a4e4cee9cd8a3204770992be139ee5",
-"classcarta_1_1InitialValueCalculator.html#ad6df615a12480b6825a5708104368106",
-"classcarta_1_1PvGenerator.html#a27ddd8981d12949f293d2ca97b6a1ca3a4139ce9906c386c75dbb2b97418c9ef3",
-"classcarta_1_1RegionConverter.html#ad9c0a82a77f9ab97374620d7ff94b14b",
-"classcarta_1_1RegionImportExport.html#abbcc4e30043a2291d516dedc87a0218f",
-"classcarta_1_1Session.html#abfff7abff7277b9cec70d5d2e4c409a7",
-"classcarta_1_1SpectralProfileTask.html#a03118cd82cd7db7c5e845c08f13adad1",
-"classcarta_1_1TileCache.html#a4eda64cc5324f96a16c6b877ab4ce7cc",
-"functions_func_e.html",
-"structcarta_1_1BasicStats.html#a905cc84cff0d027b70dc3816058d771b",
-"structcarta_1_1GaussianParams.html#ae6b8fcaaaf3910c1b3f12c74134b2279",
-"structcarta_1_1RegionState.html#a7139199adedd4b7c475aaa66cab8b541",
-"structcarta_1_1VectorField_1_1Valid.html"
+"classcarta_1_1HttpServer.html#a9dfa92f1166c9c48597fb07ae91db182",
+"classcarta_1_1InitialValueCalculator.html#a8685c4a10d0baf73ff624dc30a00180e",
+"classcarta_1_1PolarizationCalculator.html#afc9d48a46c208f167c451d9f640ddee1a69e0dfa29299225ce9736f1adc126e88",
+"classcarta_1_1RegionConverter.html#ac6b5e849111b0211fe52724f9a8792e2",
+"classcarta_1_1RegionImportExport.html#aa868a606098bd3c29ae885cdf2771263",
+"classcarta_1_1Session.html#abc6ce12cd4d4847acdca333a010a7f0e",
+"classcarta_1_1SetImageChannelsTask.html#a3d1057838d8bf6f28fd11a449a514475",
+"classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5",
+"functions_eval.html",
+"structcarta_1_1BasicStats.html#a036993a9354d96569f6a3a50e3b10d01",
+"structcarta_1_1GaussianParams.html#a358c0d24c721730e1acfdfc18d6e1f32",
+"structcarta_1_1RegionState.html#a1c8ce44805c320b1f908d35a7f431bd5",
+"structcarta_1_1VectorField_1_1ThresholdCut.html#a213a565a5a3a30e410a9ba1bd082b20c"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

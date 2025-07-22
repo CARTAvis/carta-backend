@@ -9,7 +9,8 @@ var searchData=
   ['worldpointtoimagepixels_6',['WorldPointToImagePixels',['../classcarta_1_1RegionConverter.html#ac39257df92defdcc7bbd460d724da66e',1,'carta::RegionConverter']]],
   ['worldtopixellength_7',['WorldToPixelLength',['../classcarta_1_1RegionImportExport.html#a316dd4dbbc4907464ac3ed89c6b41cf5',1,'carta::RegionImportExport']]],
   ['writeobjectfile_8',['WriteObjectFile',['../classcarta_1_1HttpServer.html#a44362263707890daf7c642f9c8400877',1,'carta::HttpServer']]],
-  ['writepreferencesfile_9',['WritePreferencesFile',['../classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de',1,'carta::HttpServer']]],
-  ['writer_5fenter_10',['writer_enter',['../classcarta_1_1queuing__rw__mutex.html#a214fb47b8f06320ef0a5f182a40ece6d',1,'carta::queuing_rw_mutex']]],
-  ['writer_5fleave_11',['writer_leave',['../classcarta_1_1queuing__rw__mutex.html#ae90899b9fc49562d1c53fac3b786b12d',1,'carta::queuing_rw_mutex']]]
+  ['writepreferencesbackup_9',['WritePreferencesBackup',['../classcarta_1_1HttpServer.html#add455810cf9d5ac9d440d686285d8db2',1,'carta::HttpServer']]],
+  ['writepreferencesfile_10',['WritePreferencesFile',['../classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de',1,'carta::HttpServer']]],
+  ['writer_5fenter_11',['writer_enter',['../classcarta_1_1queuing__rw__mutex.html#a214fb47b8f06320ef0a5f182a40ece6d',1,'carta::queuing_rw_mutex']]],
+  ['writer_5fleave_12',['writer_leave',['../classcarta_1_1queuing__rw__mutex.html#ae90899b9fc49562d1c53fac3b786b12d',1,'carta::queuing_rw_mutex']]]
 ];

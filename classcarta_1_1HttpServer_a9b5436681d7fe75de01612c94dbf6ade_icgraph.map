@@ -1,0 +1,14 @@
+<map id="carta::HttpServer::NormalisePreferences" name="carta::HttpServer::NormalisePreferences">
+<area shape="rect" id="Node000001" title=" " alt="" coords="687,37,853,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1HttpServer.html#a8387ce0b6ef632f5287b9c6a9f90d338" title=" " alt="" coords="428,5,632,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="673,47,632,42,633,36,673,42"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1HttpServer.html#a18e362a5de3bde7f163d2c0382a9b848" title=" " alt="" coords="421,69,639,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="673,73,639,77,639,72,673,68"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1HttpServer.html#a45673f54c55bb8e02fbacf5fb3340f93" title=" " alt="" coords="195,5,373,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="414,28,374,28,374,23,414,23"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1HttpServer.html#a63128482ebdede9e4da3e24fd4bf0c7e" title=" " alt="" coords="5,37,147,77"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="181,44,147,49,147,44,181,39"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1HttpServer.html#ac68951fe0785a7f62d39420c8f628533" title=" " alt="" coords="201,69,367,109"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="408,92,367,92,367,87,408,87"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="187,77,147,71,148,66,187,72"/>
+</map>

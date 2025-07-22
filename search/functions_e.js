@@ -4,13 +4,14 @@ var searchData=
   ['nativetype_1',['NativeType',['../classcarta_1_1CartaMiriadImage.html#abd3dc522a82db77196b31eaba8fb0970',1,'carta::CartaMiriadImage']]],
   ['nearestneighbor_2',['NearestNeighbor',['../namespacecarta.html#a724d5f79d7c1320592c011bd3bb57e98',1,'carta']]],
   ['newauthtoken_3',['newauthtoken',['../Token_8h.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc'],['../Token_8cc.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc']]],
-  ['normalizeunit_4',['normalizeunit',['../Casacore_8h.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc'],['../Casacore_8cc.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc']]],
-  ['normpdf_5',['NormPdf',['../namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e',1,'carta']]],
-  ['notimplemented_6',['NotImplemented',['../classcarta_1_1HttpServer.html#a47a6ce88bed3ea5dcc9630b6439b86c6',1,'carta::HttpServer']]],
-  ['numberofsessions_7',['NumberOfSessions',['../classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d',1,'carta::Session']]],
-  ['numcolumns_8',['NumColumns',['../classcarta_1_1Table.html#a82123011be41e2f34f3840099e3790b6',1,'carta::Table']]],
-  ['numentries_9',['numentries',['../classcarta_1_1DataColumn.html#a9a38514c2abb47f8081e95754eeb974d',1,'carta::DataColumn::NumEntries()'],['../classcarta_1_1Column.html#a67245941f2ccebabd2e37de41acc55ec',1,'carta::Column::NumEntries()']]],
-  ['numericfilter_10',['NumericFilter',['../classcarta_1_1TableView.html#a0e5b9336c7ab649c04e138c3e1b35608',1,'carta::TableView']]],
-  ['numrows_11',['numrows',['../classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b',1,'carta::Table::NumRows()'],['../classcarta_1_1TableView.html#ad085ef6d1fb7b1918ed7a82650850ab2',1,'carta::TableView::NumRows()']]],
-  ['numstokes_12',['NumStokes',['../classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9',1,'carta::Frame']]]
+  ['normalisepreferences_4',['NormalisePreferences',['../classcarta_1_1HttpServer.html#a9b5436681d7fe75de01612c94dbf6ade',1,'carta::HttpServer']]],
+  ['normalizeunit_5',['normalizeunit',['../Casacore_8h.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc'],['../Casacore_8cc.html#a8733accb41db0f83703779c667ae852e',1,'NormalizeUnit(casacore::String &amp;unit):&#160;Casacore.cc']]],
+  ['normpdf_6',['NormPdf',['../namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e',1,'carta']]],
+  ['notimplemented_7',['NotImplemented',['../classcarta_1_1HttpServer.html#a47a6ce88bed3ea5dcc9630b6439b86c6',1,'carta::HttpServer']]],
+  ['numberofsessions_8',['NumberOfSessions',['../classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d',1,'carta::Session']]],
+  ['numcolumns_9',['NumColumns',['../classcarta_1_1Table.html#a82123011be41e2f34f3840099e3790b6',1,'carta::Table']]],
+  ['numentries_10',['numentries',['../classcarta_1_1DataColumn.html#a9a38514c2abb47f8081e95754eeb974d',1,'carta::DataColumn::NumEntries()'],['../classcarta_1_1Column.html#a67245941f2ccebabd2e37de41acc55ec',1,'carta::Column::NumEntries()']]],
+  ['numericfilter_11',['NumericFilter',['../classcarta_1_1TableView.html#a0e5b9336c7ab649c04e138c3e1b35608',1,'carta::TableView']]],
+  ['numrows_12',['numrows',['../classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b',1,'carta::Table::NumRows()'],['../classcarta_1_1TableView.html#ad085ef6d1fb7b1918ed7a82650850ab2',1,'carta::TableView::NumRows()']]],
+  ['numstokes_13',['NumStokes',['../classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9',1,'carta::Frame']]]
 ];

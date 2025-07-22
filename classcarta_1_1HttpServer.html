@@ -163,8 +163,16 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a9f22cc64ac844efa362e5cae7e227b18"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d73c3c23b0a75f2db9496c6a027d0e9" id="r_a3d73c3c23b0a75f2db9496c6a027d0e9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a3d73c3c23b0a75f2db9496c6a027d0e9">AddCorsHeaders</a> (<a class="el" href="namespacecarta.html#a9a9fe0f86f7e331bd55b6875dd3ce036">Res</a> *res)</td></tr>
 <tr class="separator:a3d73c3c23b0a75f2db9496c6a027d0e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b5436681d7fe75de01612c94dbf6ade" id="r_a9b5436681d7fe75de01612c94dbf6ade"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a9b5436681d7fe75de01612c94dbf6ade">NormalisePreferences</a> (nlohmann::json &amp;obj)</td></tr>
+<tr class="separator:a9b5436681d7fe75de01612c94dbf6ade"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dae5ccfb720161ad96af6b92d0a9723" id="r_a5dae5ccfb720161ad96af6b92d0a9723"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a5dae5ccfb720161ad96af6b92d0a9723">ValidatePreferences</a> (nlohmann::json &amp;obj)</td></tr>
+<tr class="separator:a5dae5ccfb720161ad96af6b92d0a9723"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91d3132f695f6b6b7797690d7404cd3b" id="r_a91d3132f695f6b6b7797690d7404cd3b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a91d3132f695f6b6b7797690d7404cd3b">ValidateObject</a> (const std::string &amp;object_type, nlohmann::json &amp;obj)</td></tr>
+<tr class="separator:a91d3132f695f6b6b7797690d7404cd3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a29a4c8cf88375801afae89c5fc1a56de" id="r_a29a4c8cf88375801afae89c5fc1a56de"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de">WritePreferencesFile</a> (nlohmann::json &amp;obj)</td></tr>
 <tr class="separator:a29a4c8cf88375801afae89c5fc1a56de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add455810cf9d5ac9d440d686285d8db2" id="r_add455810cf9d5ac9d440d686285d8db2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#add455810cf9d5ac9d440d686285d8db2">WritePreferencesBackup</a> ()</td></tr>
+<tr class="separator:add455810cf9d5ac9d440d686285d8db2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44362263707890daf7c642f9c8400877" id="r_a44362263707890daf7c642f9c8400877"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#a44362263707890daf7c642f9c8400877">WriteObjectFile</a> (const std::string &amp;object_type, const std::string &amp;object_name, nlohmann::json &amp;obj)</td></tr>
 <tr class="separator:a44362263707890daf7c642f9c8400877"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adbfb962d9f1dd478618ca66b867728af" id="r_adbfb962d9f1dd478618ca66b867728af"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af">WaitForData</a> (<a class="el" href="namespacecarta.html#a9a9fe0f86f7e331bd55b6875dd3ce036">Res</a> *res, <a class="el" href="namespacecarta.html#a734df587cce5cbf3b5b11348f2b1ff08">Req</a> *req, const std::function&lt; void(const std::string &amp;)&gt; &amp;callback)</td></tr>
@@ -473,7 +481,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a8387ce0b6ef632f5287b9c6a9f90d338_cgraph.svg" width="100%" height="386"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a8387ce0b6ef632f5287b9c6a9f90d338_cgraph.svg" width="636" height="179"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -660,11 +668,6 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_ac8c4bdb5a8fb3df895f096fde3b6e9b9_cgraph.svg" width="588" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_ac8c4bdb5a8fb3df895f096fde3b6e9b9_icgraph.svg" width="100%" height="434"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
@@ -744,7 +747,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_aaab6a34328959ceedbb8ebf63b1479dd_cgraph.svg" width="562" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_aaab6a34328959ceedbb8ebf63b1479dd_cgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -842,7 +845,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a45673f54c55bb8e02fbacf5fb3340f93_cgraph.svg" width="100%" height="514"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a45673f54c55bb8e02fbacf5fb3340f93_cgraph.svg" width="100%" height="530"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -1085,7 +1088,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a1e384962e1f326c9226477361c9c6e90_cgraph.svg" width="100%" height="434"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a1e384962e1f326c9226477361c9c6e90_cgraph.svg" width="100%" height="482"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -1229,7 +1232,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_ac68951fe0785a7f62d39420c8f628533_cgraph.svg" width="100%" height="482"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_ac68951fe0785a7f62d39420c8f628533_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -1343,6 +1346,42 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_adb8ce1dc188f8d754ef9d614b2ef1ca1_icgraph.svg" width="363" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a9b5436681d7fe75de01612c94dbf6ade" name="a9b5436681d7fe75de01612c94dbf6ade"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b5436681d7fe75de01612c94dbf6ade">&#9670;&#160;</a></span>NormalisePreferences()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::HttpServer::NormalisePreferences </td>
+          <td>(</td>
+          <td class="paramtype">nlohmann::json &amp;&#160;</td>
+          <td class="paramname"><em>obj</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a9b5436681d7fe75de01612c94dbf6ade_cgraph.svg" width="376" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a9b5436681d7fe75de01612c94dbf6ade_icgraph.svg" width="100%" height="386"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1635,12 +1674,94 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a18e362a5de3bde7f163d2c0382a9b848_cgraph.svg" width="100%" height="386"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a18e362a5de3bde7f163d2c0382a9b848_cgraph.svg" width="100%" height="520"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a18e362a5de3bde7f163d2c0382a9b848_icgraph.svg" width="632" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a91d3132f695f6b6b7797690d7404cd3b" name="a91d3132f695f6b6b7797690d7404cd3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a91d3132f695f6b6b7797690d7404cd3b">&#9670;&#160;</a></span>ValidateObject()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::HttpServer::ValidateObject </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>object_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">nlohmann::json &amp;&#160;</td>
+          <td class="paramname"><em>obj</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a91d3132f695f6b6b7797690d7404cd3b_cgraph.svg" width="555" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a91d3132f695f6b6b7797690d7404cd3b_icgraph.svg" width="100%" height="434"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a5dae5ccfb720161ad96af6b92d0a9723" name="a5dae5ccfb720161ad96af6b92d0a9723"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5dae5ccfb720161ad96af6b92d0a9723">&#9670;&#160;</a></span>ValidatePreferences()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::HttpServer::ValidatePreferences </td>
+          <td>(</td>
+          <td class="paramtype">nlohmann::json &amp;&#160;</td>
+          <td class="paramname"><em>obj</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a5dae5ccfb720161ad96af6b92d0a9723_cgraph.svg" width="566" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a5dae5ccfb720161ad96af6b92d0a9723_icgraph.svg" width="100%" height="386"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1734,12 +1855,42 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a44362263707890daf7c642f9c8400877_cgraph.svg" width="555" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a44362263707890daf7c642f9c8400877_cgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a44362263707890daf7c642f9c8400877_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="add455810cf9d5ac9d440d686285d8db2" name="add455810cf9d5ac9d440d686285d8db2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add455810cf9d5ac9d440d686285d8db2">&#9670;&#160;</a></span>WritePreferencesBackup()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::HttpServer::WritePreferencesBackup </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_add455810cf9d5ac9d440d686285d8db2_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1767,11 +1918,6 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1HttpServer_a29a4c8cf88375801afae89c5fc1a56de_cgraph.svg" width="571" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
