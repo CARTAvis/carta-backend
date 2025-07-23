@@ -66,7 +66,8 @@ struct Tile {
      * @param tile_height The height of a tile in pixels.
      * @return The mip size corresponding to the given layer.
      */
-    static int32_t LayerToMip(int32_t layer, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height, bool error = false) {
+    static int32_t LayerToMip(
+        int32_t layer, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height, bool error = false) {
         if (image_width <= 0 || image_height <= 0 || tile_width <= 0 || tile_height <= 0 || layer < 0) {
             error = true; // Invalid input
         }
