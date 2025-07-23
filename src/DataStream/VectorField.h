@@ -136,7 +136,7 @@ protected:
     bool _current_stokes_as_pa;
 };
 
-void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
+bool GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 

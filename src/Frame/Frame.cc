@@ -581,7 +581,12 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
 }
 
 bool Frame::GetRasterTileData(int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height) {
-    int mip = Tile::LayerToMip(tile.layer, _dims.width, _dims.height, TILE_SIZE, TILE_SIZE);
+    bool error = false;
+    int mip = Tile::LayerToMip(tile.layer, _dims.width, _dims.height, TILE_SIZE, TILE_SIZE, error);
+    if(error) {
+        spdlog::error("Invalid tile layer {} for image size {}x{}.", tile.layer, _dims.width, _dims.height);
+        return false;
+    }
     int tile_size_original = TILE_SIZE * mip;
 
     // crop to image size
@@ -2517,7 +2522,12 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 
     // Get tiles
     std::vector<Tile> tiles;
-    GetTiles(_dims.width, _dims.height, mip, tiles);
+    bool get_tile_success = GetTiles(_dims.width, _dims.height, mip, tiles);
+
+    if( !get_tile_success) {
+        spdlog::error("Failed to get tiles for vector field calculation.");
+        return false;
+    }
 
     // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
