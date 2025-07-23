@@ -64,6 +64,7 @@ struct Tile {
      * @param image_height The height of the full-resolution image.
      * @param tile_width The width of a tile in pixels.
      * @param tile_height The height of a tile in pixels.
+     * @param error A reference to a boolean that will be set to true if an error occurs.
      * @return The mip size corresponding to the given layer.
      */
     static int32_t LayerToMip(
