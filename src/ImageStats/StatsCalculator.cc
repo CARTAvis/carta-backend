@@ -256,8 +256,8 @@ bool ComputeFluxDensity(
     return true;
 }
 
-bool GetBeamArea(const casacore::ImageInterface<float>& image, int z, const casacore::String unit, double& beam_area) {
-    // Return restoring beam area in solid angle unit `unit` in `angle`.
+bool GetBeamArea(const casacore::ImageInterface<float>& image, int channel, const casacore::String unit, double& beam_area) {
+    // Return beam area in solid angle unit `unit` in `angle` for requested channel.
     // Returns false if image has no restoring beam  or unit is not a solid angle unit.
     if (!image.imageInfo().hasBeam()) {
         spdlog::warn("Image has no beam for flux density");
