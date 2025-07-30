@@ -189,16 +189,12 @@ bool ComputeFluxDensity(
     if (!image_stats.getStatistic(stats_result, casacore::LatticeStatsBase::NPTS)) {
         return false;
     }
-    double npixels = stats_result(casacore::IPosition(1, 0));
-    if (npixels == 0.0) {
-        return false;
-    }
-
-    stats_result.resize();
+    auto npts = stats_result.tovector();
+    stats_result.resize(); 
     if (!image_stats.getStatistic(stats_result, casacore::LatticeStatsBase::SUM)) {
         return false;
     }
-    double sum = stats_result(casacore::IPosition(1, 0));
+    auto sums = stats_result.tovector();
 
     // Separate unit parts
     casacore::String flux_unit(bunit);
@@ -213,43 +209,55 @@ bool ComputeFluxDensity(
         return false;
     }
 
-    double flux_density;
-    try {
-        // Casacore supports "unit-1" and "/unit" syntax so check for both
-        if (flux_unit.contains("pixel-1") || (per_unit == "pixel") || (flux_unit.contains("Jy") && per_unit.empty())) {
-            flux_density = sum;
-        } else {
-            // Get area for one pixel
-            auto increments = image.coordinates().increment();
-            auto units = image.coordinates().worldAxisUnits();
-            casacore::Quantity area_unit = casacore::Quantity(1.0, units[0]) * casacore::Quantity(1.0, units[1]);
-            casacore::Quantity pixel_area(std::fabs(increments[0] * increments[1]), area_unit.getUnit());
 
-            // Convert pixel area to per_unit
-            if (flux_unit.contains("beam-1") || per_unit.contains("beam")) {
-                double pixel_area_sr = pixel_area.get("sr").getValue();
-                double beam_area_sr;
-                if (!GetBeamArea(image, "sr", beam_area_sr)) {
-                    return false;
-                }
-                flux_density = sum * pixel_area_sr / beam_area_sr;
-            } else if (flux_unit.contains("sr-1") || per_unit == "sr") {
-                double pixel_area_sr = pixel_area.get("sr").getValue();
-                flux_density = sum * pixel_area_sr;
-            } else if (flux_unit.contains("arcsec-2") || per_unit == "arcsec2" || (flux_unit == "K" && per_unit.empty())) {
-                double pixel_area_arcsec2 = pixel_area.get("arcsec2").getValue();
-                flux_density = sum * pixel_area_arcsec2;
-            }
-        }
-    } catch (const casacore::AipsError& err) {
-        return false;
+    // Casacore supports "unit-1" and "/unit" syntax so check for both
+    bool per_pixel = flux_unit.contains("pixel-1") || (per_unit == "pixel") || (flux_unit.contains("Jy") && per_unit.empty());
+
+    // Get area for one pixel
+    casacore::Quantity area_unit, pixel_area;
+    if (!per_pixel) {
+        auto increments = image.coordinates().increment();
+        auto units = image.coordinates().worldAxisUnits();
+        area_unit = casacore::Quantity(1.0, units[0]) * casacore::Quantity(1.0, units[1]);
+        pixel_area = casacore::Quantity(std::fabs(increments[0] * increments[1]), area_unit.getUnit());
     }
 
-    result.push_back(flux_density);
+    for (size_t i = 0; i < npts.size(); ++i) {
+        if (npts[i] == 0) {
+            result.push_back(nan(""));
+        } else {
+            double sum = sums[i];
+
+            try {
+                if (per_pixel) {
+                    result.push_back(sum);
+                } else {
+                    // Convert pixel area to per_unit
+                    if (flux_unit.contains("beam-1") || per_unit.contains("beam")) {
+                        double pixel_area_sr = pixel_area.get("sr").getValue();
+                        double beam_area_sr;
+                        if (!GetBeamArea(image, i, "sr", beam_area_sr)) {
+                            return false;
+                        }
+                        result.push_back(sum * pixel_area_sr / beam_area_sr);
+                    } else if (flux_unit.contains("sr-1") || per_unit == "sr") {
+                        double pixel_area_sr = pixel_area.get("sr").getValue();
+                        result.push_back(sum * pixel_area_sr);
+                    } else if (flux_unit.contains("arcsec-2") || per_unit == "arcsec2" || (flux_unit == "K" && per_unit.empty())) {
+                        double pixel_area_arcsec2 = pixel_area.get("arcsec2").getValue();
+                        result.push_back(sum * pixel_area_arcsec2);
+                    }
+                }
+            } catch (const casacore::AipsError& err) {
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 
-bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::String unit, double& beam_area) {
+bool GetBeamArea(const casacore::ImageInterface<float>& image, int z, const casacore::String unit, double& beam_area) {
     // Return restoring beam area in solid angle unit `unit` in `angle`.
     // Returns false if image has no restoring beam  or unit is not a solid angle unit.
     if (!image.imageInfo().hasBeam()) {
@@ -257,7 +265,7 @@ bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::S
         return false;
     }
 
-    beam_area = image.imageInfo().restoringBeam().getArea(unit);
+    beam_area = image.imageInfo().restoringBeam(z).getArea(unit);
     return true;
 }
 

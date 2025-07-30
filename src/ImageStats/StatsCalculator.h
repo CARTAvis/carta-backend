@@ -97,7 +97,7 @@ bool ComputeFluxDensity(
  *  casacore::ImageInfo is used to get the area of the beam.
  *  @see ComputeFluxDensity
  */
-bool GetBeamArea(const casacore::ImageInterface<float>& image, const casacore::String unit, double& beam_area);
+bool GetBeamArea(const casacore::ImageInterface<float>& image, int z, const casacore::String unit, double& beam_area);
 
 } // namespace carta
 
