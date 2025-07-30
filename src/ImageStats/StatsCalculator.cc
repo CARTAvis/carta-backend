@@ -190,7 +190,7 @@ bool ComputeFluxDensity(
         return false;
     }
     auto npts = stats_result.tovector();
-    stats_result.resize(); 
+    stats_result.resize();
     if (!image_stats.getStatistic(stats_result, casacore::LatticeStatsBase::SUM)) {
         return false;
     }
@@ -208,7 +208,6 @@ bool ComputeFluxDensity(
         spdlog::warn("Cannot compute flux density for image unit not in Jy or K.");
         return false;
     }
-
 
     // Casacore supports "unit-1" and "/unit" syntax so check for both
     bool per_pixel = flux_unit.contains("pixel-1") || (per_unit == "pixel") || (flux_unit.contains("Jy") && per_unit.empty());
