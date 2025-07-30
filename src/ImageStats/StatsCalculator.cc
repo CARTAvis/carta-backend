@@ -264,7 +264,7 @@ bool GetBeamArea(const casacore::ImageInterface<float>& image, int channel, cons
         return false;
     }
 
-    beam_area = image.imageInfo().restoringBeam(z).getArea(unit);
+    beam_area = image.imageInfo().restoringBeam(channel).getArea(unit);
     return true;
 }
 
