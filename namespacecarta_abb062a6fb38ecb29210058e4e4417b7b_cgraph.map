@@ -1,5 +1,5 @@
 <map id="carta::ComputeFluxDensity" name="carta::ComputeFluxDensity">
 <area shape="rect" id="Node000001" title="Calculate flux density statistics for an image or a region applied to an image." alt="" coords="5,5,205,31"/>
-<area shape="rect" id="Node000002" href="$namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8" title="Get the area of the beam in the given unit for an image or a region applied to an image." alt="" coords="253,5,408,31"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#afbe104284c8edb9ca1a642e22e573707" title="Get the area of the beam in the given unit for an image or a region applied to an image." alt="" coords="253,5,408,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="206,15,240,15,240,21,206,21"/>
 </map>

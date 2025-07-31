@@ -30,7 +30,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8" target="_top" xlink:title="Get the area of the beam in the given unit for an image or a region applied to an image.">
+<g id="a_Node000002"><a xlink:href="namespacecarta.html#afbe104284c8edb9ca1a642e22e573707" target="_top" xlink:title="Get the area of the beam in the given unit for an image or a region applied to an image.">
 <polygon fill="white" stroke="#666666" points="302,-19 186,-19 186,0 302,0 302,-19"/>
 <text text-anchor="middle" x="244" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">carta::GetBeamArea</text>
 </a>

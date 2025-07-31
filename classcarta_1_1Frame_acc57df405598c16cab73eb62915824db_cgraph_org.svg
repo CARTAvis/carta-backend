@@ -93,7 +93,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8" target="_top" xlink:title="Get the area of the beam in the given unit for an image or a region applied to an image.">
+<g id="a_Node000004"><a xlink:href="namespacecarta.html#afbe104284c8edb9ca1a642e22e573707" target="_top" xlink:title="Get the area of the beam in the given unit for an image or a region applied to an image.">
 <polygon fill="white" stroke="#666666" points="687,-85.5 571,-85.5 571,-66.5 687,-66.5 687,-85.5"/>
 <text text-anchor="middle" x="629" y="-73.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::GetBeamArea</text>
 </a>

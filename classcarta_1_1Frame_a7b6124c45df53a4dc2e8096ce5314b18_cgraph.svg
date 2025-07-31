@@ -312,7 +312,7 @@ var sectionId = 'dynsection-31';
 <!-- Node10 -->
 <g id="Node000010" class="node">
 <title>Node10</title>
-<g id="a_Node000010"><a xlink:href="namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8" target="_top" xlink:title="Get the area of the beam in the given unit for an image or a region applied to an image.">
+<g id="a_Node000010"><a xlink:href="namespacecarta.html#afbe104284c8edb9ca1a642e22e573707" target="_top" xlink:title="Get the area of the beam in the given unit for an image or a region applied to an image.">
 <polygon fill="white" stroke="#666666" points="853,-234 737,-234 737,-215 853,-215 853,-234"/>
 <text text-anchor="middle" x="795" y="-222" font-family="Helvetica,sans-Serif" font-size="10.00">carta::GetBeamArea</text>
 </a>

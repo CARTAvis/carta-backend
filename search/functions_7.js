@@ -21,7 +21,7 @@ var searchData=
   ['getapproximatepolygonpoints_18',['GetApproximatePolygonPoints',['../classcarta_1_1RegionConverter.html#af3d0a6f1d47f24076c440c45e0492d7f',1,'carta::RegionConverter']]],
   ['getaxes_19',['GetAxes',['../classcarta_1_1FileLoader.html#a3473538a60fd3c5e61db9885bd367992',1,'carta::FileLoader']]],
   ['getbasicstats_20',['getbasicstats',['../classcarta_1_1Frame.html#a1bd6cad34fcc337311218150f6771850',1,'carta::Frame::GetBasicStats()'],['../structcarta_1_1HistogramCache.html#a1787c315a603130e2570e709acebe2ab',1,'carta::HistogramCache::GetBasicStats()']]],
-  ['getbeamarea_21',['GetBeamArea',['../namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8',1,'carta']]],
+  ['getbeamarea_21',['GetBeamArea',['../namespacecarta.html#afbe104284c8edb9ca1a642e22e573707',1,'carta']]],
   ['getbeams_22',['getbeams',['../classcarta_1_1FileLoader.html#a2a3ed90a3e52af565ba3f80f3b5b66b5',1,'carta::FileLoader::GetBeams()'],['../classcarta_1_1Frame.html#a928cc182c4722132943f7a4f6dbedabc',1,'carta::Frame::GetBeams()']]],
   ['getbeamset_23',['GetBeamSet',['../classcarta_1_1CompressedFits.html#a3c6fd7a3a5321b32240beb9e1844950c',1,'carta::CompressedFits']]],
   ['getbincenter_24',['GetBinCenter',['../classcarta_1_1Histogram.html#aee8343f06560ffa74f4a21bff1f42d7f',1,'carta::Histogram']]],

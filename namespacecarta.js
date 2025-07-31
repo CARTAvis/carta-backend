@@ -152,7 +152,7 @@ var namespacecarta =
     [ "Decompress", "namespacecarta.html#a749005ecb48d6c06c1214277a719ae7f", null ],
     [ "EncodeIntegers", "namespacecarta.html#ae0d37b236270de77bb23613108e10258", null ],
     [ "GaussianSmooth", "namespacecarta.html#a3ae47208421b1d4f81037729f3c08fc7", null ],
-    [ "GetBeamArea", "namespacecarta.html#a68704e5ff32840645f473a1f5fb801a8", null ],
+    [ "GetBeamArea", "namespacecarta.html#afbe104284c8edb9ca1a642e22e573707", null ],
     [ "GetImageBounds", "namespacecarta.html#a95828b5aa32c7a2363d7679a2cb91b77", null ],
     [ "GetNanEncodingsBlock", "namespacecarta.html#a6f90f0f5fadc7ab7bfad3fdc20058cef", null ],
     [ "GetNanEncodingsSimple", "namespacecarta.html#ac6eddf9c2268eb8aa3bbac4f45c6f16d", null ],
