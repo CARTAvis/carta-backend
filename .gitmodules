@@ -44,3 +44,6 @@
 	path = third-party/uSockets
 	url = https://github.com/uNetworking/uSockets.git
 	shallow = true
+[submodule "carta-backend-test-data"]
+	path = carta-backend-test-data
+	url = https://github.com/CARTAvis/carta-backend-test-data
