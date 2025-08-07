@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+* Fixed linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
+
 ## [5.0.2]
 
 ### Fixed
@@ -13,9 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Fixed bugs in database validation error handling which caused preferences to be wiped, and corrected preferences schema ([#1485](https://github.com/CARTAvis/carta-backend/issues/1485)).
-
-### Fixed
-* Fix linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
 
 ## [5.0.0]
 
