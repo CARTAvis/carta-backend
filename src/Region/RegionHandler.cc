@@ -2166,7 +2166,7 @@ void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int he
 
             if (rebin_xy > 1) {
                 // Rebin channel data in xy
-                std::vector<float> rebinned_data(rebin_channel_size, 0.0);
+                std::vector<float> rebinned_data(rebin_channel_size, std::numeric_limits<double>::quiet_NaN()); // Initialize with NaNs
                 BlockSmooth(channel_data.data(), rebinned_data.data(), width, height, rebin_width, rebin_height, 0, 0, rebin_xy);
 
                 // Accumulate rebinned channel data
