@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <tuple>
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
@@ -125,26 +126,39 @@ private:
     std::mutex _callback_mutex;
 };
 
-TEST_F(ContourTest, NoSmoothingFitsFile) {
-    GenerateContour("500_500_image_opts.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::NoSmoothing);
+class ContourTestParameterized
+    : public ContourTest,
+    public ::testing::WithParamInterface<std::tuple<std::string, CARTA::SmoothingMode>> {
+};
+
+TEST_P(ContourTestParameterized, Generate) {
+    auto [filename, smoothing_mode] = GetParam();
+    GenerateContour(filename, CARTA::FileType::FITS, smoothing_mode);
 }
 
-TEST_F(ContourTest, NoSmoothingFitsFileNaN) {
-    GenerateContour("500_500_image_opts_nan.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::NoSmoothing);
-}
-
-TEST_F(ContourTest, GaussianBlurFitsFile) {
-    GenerateContour("500_500_image_opts.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::GaussianBlur);
-}
-
-TEST_F(ContourTest, GaussianBlurFitsFileNaN) {
-    GenerateContour("500_500_image_opts_nan.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::GaussianBlur);
-}
-
-TEST_F(ContourTest, BlockAverageFitsFile) {
-    GenerateContour("500_500_image_opts.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
-}
-
-TEST_F(ContourTest, BlockAverageFitsFileNaN) {
-    GenerateContour("500_500_image_opts_nan.fits", CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
-}
+/*
+    The parameterised contour tests verify that GenerateContour correctly produces contour
+    vertices for a given FITS image file and smoothing mode. 
+    
+    For each (filename, smoothing_mode) pair, the test checks that all requested contour
+    levels are generated, that contour progress reaches 100%, and (when no smoothing is
+    applied) that each vertex lies on a real contour in the original image data.
+*/ 
+INSTANTIATE_TEST_SUITE_P(
+    FitsFiles,
+    ContourTestParameterized,
+    ::testing::Values(
+        // Contours at all requested levels are generated; progress for each level reaches 100%; all vertices match actual contour positions in raw image data
+        std::make_tuple("500_500_image_opts.fits", CARTA::SmoothingMode::NoSmoothing),
+        // Same as above, but with NaN pixel values present; NaNs are ignored and do not break contour generation
+        std::make_tuple("500_500_image_opts_nan.fits", CARTA::SmoothingMode::NoSmoothing),
+        // Contours are generated and complete; vertex correctness check is skipped for smoothed data
+        std::make_tuple("500_500_image_opts.fits", CARTA::SmoothingMode::GaussianBlur),
+        // Same as above, but with NaNs present; contour generation remains correct and complete
+        std::make_tuple("500_500_image_opts_nan.fits", CARTA::SmoothingMode::GaussianBlur),
+        // Contours are generated and complete; vertex correctness check is skipped for smoothed data
+        std::make_tuple("500_500_image_opts.fits", CARTA::SmoothingMode::BlockAverage),
+        // Same as above, but with NaNs present; contour generation remains correct and complete
+        std::make_tuple("500_500_image_opts_nan.fits", CARTA::SmoothingMode::BlockAverage)
+    )
+);
