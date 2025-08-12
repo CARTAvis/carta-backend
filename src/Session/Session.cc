@@ -28,7 +28,7 @@
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 #include "Timer/Timer.h"
 #include "Util/App.h"
 #include "Util/File.h"

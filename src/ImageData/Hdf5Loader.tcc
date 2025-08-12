@@ -7,8 +7,6 @@
 #ifndef CARTA_SRC_IMAGEDATA_HDF5LOADER_TCC_
 #define CARTA_SRC_IMAGEDATA_HDF5LOADER_TCC_
 
-#include "Hdf5Loader.h"
-
 #include "Util/Image.h"
 
 namespace carta {

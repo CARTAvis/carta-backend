@@ -7,8 +7,6 @@
 #ifndef CARTA_SRC_UTIL_MESSAGE_TCC_
 #define CARTA_SRC_UTIL_MESSAGE_TCC_
 
-#include "Message.h"
-
 struct message_parsing_exception : std::runtime_error {
     using std::runtime_error::runtime_error;
 };

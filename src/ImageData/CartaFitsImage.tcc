@@ -7,8 +7,6 @@
 #ifndef CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_TCC_
 #define CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_TCC_
 
-#include "CartaFitsImage.h"
-
 #include <casacore/casa/Arrays/ArrayMath.h>
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>

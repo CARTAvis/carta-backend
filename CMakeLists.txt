@@ -244,14 +244,16 @@ set(SOURCE_FILES
         src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
+        src/ImageFitting/ImageFitter.cc
+        src/ImageFitting/InitialValueCalculator.cc
         src/ImageGenerators/MomentGenerator.cc
         src/ImageGenerators/PvGenerator.cc
         src/ImageGenerators/PvPreviewCube.cc
         src/ImageGenerators/PvPreviewCut.cc
         src/ImageStats/Histogram.cc
         src/ImageStats/StatsCalculator.cc
-        src/Logger/Logger.cc
         src/Logger/CartaLogSink.cc
+        src/Logger/Logger.cc
         src/Main/Main.cc
         src/Main/ProgramSettings.cc
         src/Main/WebBrowser.cc
@@ -267,11 +269,11 @@ set(SOURCE_FILES
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
         src/Session/SessionManager.cc
-        src/Table/Columns.cc
+        src/Table/Column.cc
         src/Table/Table.cc
         src/Table/TableController.cc
         src/Table/TableView.cc
-        src/ThreadingManager/ThreadingManager.cc
+        src/ThreadManager/ThreadManager.cc
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/Util/App.cc
@@ -279,13 +281,10 @@ set(SOURCE_FILES
         src/Util/File.cc
         src/Util/Json.cc
         src/Util/Message.cc
+        src/Util/RemoteFiles.cc
         src/Util/Stokes.cc
         src/Util/String.cc
-        src/Util/Token.cc
-        src/ImageFitting/ImageFitter.cc
-        src/ImageFitting/InitialValueCalculator.cc
-        src/Util/RemoteFiles.cc
-        src/Util/RemoteFiles.h)
+        src/Util/Token.cc)
 
 add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
 add_executable(carta_backend ${SOURCE_FILES})

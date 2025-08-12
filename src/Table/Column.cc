@@ -4,19 +4,16 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "Columns.h"
+#include "Column.h"
 
 #include <memory>
 
 #include <fitsio.h>
 #include <spdlog/fmt/fmt.h>
 
-#include "DataColumn.tcc"
-#include "ThreadingManager/ThreadingManager.h"
-
 namespace carta {
 
-Column::Column(const string& name_chr) {
+Column::Column(const std::string& name_chr) {
     name = name_chr;
     data_type = CARTA::UnsupportedType;
     data_type_size = 0;
@@ -25,33 +22,33 @@ Column::Column(const string& name_chr) {
 
 std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
     auto data_type = field.attribute("datatype");
-    string name = field.attribute("name").as_string();
-    string array_size_string = field.attribute("arraysize").as_string();
-    string type_string = data_type.as_string();
+    std::string name = field.attribute("name").as_string();
+    std::string array_size_string = field.attribute("arraysize").as_string();
+    std::string type_string = data_type.as_string();
 
-    unique_ptr<Column> column;
+    std::unique_ptr<Column> column;
 
     if (type_string == "char" || type_string == "unicodeChar") {
-        column = make_unique<DataColumn<string>>(name);
+        column = std::make_unique<DataColumn<std::string>>(name);
     } else if (!array_size_string.empty()) {
         // Can't support array-based column types other than char
-        column = make_unique<Column>(name);
+        column = std::make_unique<Column>(name);
     } else if (type_string == "int") {
-        column = make_unique<DataColumn<int32_t>>(name);
+        column = std::make_unique<DataColumn<int32_t>>(name);
     } else if (type_string == "short") {
-        column = make_unique<DataColumn<int16_t>>(name);
+        column = std::make_unique<DataColumn<int16_t>>(name);
     } else if (type_string == "unsignedByte") {
-        column = make_unique<DataColumn<uint8_t>>(name);
+        column = std::make_unique<DataColumn<uint8_t>>(name);
     } else if (type_string == "long") {
-        column = make_unique<DataColumn<int64_t>>(name);
+        column = std::make_unique<DataColumn<int64_t>>(name);
     } else if (type_string == "float") {
-        column = make_unique<DataColumn<float>>(name);
+        column = std::make_unique<DataColumn<float>>(name);
     } else if (type_string == "double") {
-        column = make_unique<DataColumn<double>>(name);
+        column = std::make_unique<DataColumn<double>>(name);
     } else if (type_string == "boolean") {
-        column = make_unique<DataColumn<uint8_t>>(name, true);
+        column = std::make_unique<DataColumn<uint8_t>>(name, true);
     } else {
-        column = make_unique<Column>(name);
+        column = std::make_unique<Column>(name);
     }
 
     column->id = field.attribute("ID").as_string();
@@ -66,8 +63,8 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
     return column;
 }
 
-std::unique_ptr<Column> Column::FromValues(const std::vector<string>& values, string name) {
-    auto data_column_ptr = make_unique<DataColumn<string>>(name);
+std::unique_ptr<Column> Column::FromValues(const std::vector<std::string>& values, std::string name) {
+    auto data_column_ptr = std::make_unique<DataColumn<std::string>>(name);
     data_column_ptr->Resize(values.size());
     if (data_column_ptr != nullptr) {
         for (auto row_index = 0; row_index < values.size(); row_index++) {
@@ -82,43 +79,43 @@ std::unique_ptr<Column> Column::FromValues(const std::vector<string>& values, st
     return data_column_ptr;
 }
 
-void TrimSpaces(string& str) {
+void TrimSpaces(std::string& str) {
     str.erase(str.find_last_not_of(' ') + 1);
 }
 
 // Create a column based on the FITS column data type
-std::unique_ptr<Column> ColumnFromFitsType(int type, const string& col_name) {
+std::unique_ptr<Column> ColumnFromFitsType(int type, const std::string& col_name) {
     switch (type) {
         case TBYTE:
-            return make_unique<DataColumn<uint8_t>>(col_name);
+            return std::make_unique<DataColumn<uint8_t>>(col_name);
         case TSBYTE:
-            return make_unique<DataColumn<int8_t>>(col_name);
+            return std::make_unique<DataColumn<int8_t>>(col_name);
         case TUSHORT:
-            return make_unique<DataColumn<uint16_t>>(col_name);
+            return std::make_unique<DataColumn<uint16_t>>(col_name);
         case TSHORT:
-            return make_unique<DataColumn<int16_t>>(col_name);
+            return std::make_unique<DataColumn<int16_t>>(col_name);
             // TODO: What are the appropriate widths for TINT and TUINT?
         case TULONG:
-            return make_unique<DataColumn<uint32_t>>(col_name);
+            return std::make_unique<DataColumn<uint32_t>>(col_name);
         case TLONG:
-            return make_unique<DataColumn<int32_t>>(col_name);
+            return std::make_unique<DataColumn<int32_t>>(col_name);
         case TFLOAT:
-            return make_unique<DataColumn<float>>(col_name);
+            return std::make_unique<DataColumn<float>>(col_name);
 #ifdef TULONGLONG
         case TULONGLONG:
-            return make_unique<DataColumn<uint64_t>>(col_name);
+            return std::make_unique<DataColumn<uint64_t>>(col_name);
 #endif
         case TLONGLONG:
-            return make_unique<DataColumn<int64_t>>(col_name);
+            return std::make_unique<DataColumn<int64_t>>(col_name);
         case TDOUBLE:
-            return make_unique<DataColumn<double>>(col_name);
+            return std::make_unique<DataColumn<double>>(col_name);
         case TLOGICAL:
-            return make_unique<DataColumn<u_int8_t>>(col_name, true);
+            return std::make_unique<DataColumn<u_int8_t>>(col_name, true);
             // TODO: Consider supporting complex numbers through std::complex
         case TCOMPLEX:
         case TDBLCOMPLEX:
         default:
-            return make_unique<Column>(col_name);
+            return std::make_unique<Column>(col_name);
     }
 }
 
@@ -136,23 +133,23 @@ std::unique_ptr<Column> Column::FromFitsPtr(fitsfile* fits_ptr, int column_index
     // For non-string fields, the total width of the column is simply the size of one element (width) multiplied by the repeat count
     auto total_column_width = col_repeat * col_width;
 
-    unique_ptr<Column> column;
+    std::unique_ptr<Column> column;
 
     if (col_type == TSTRING) {
         if (col_width == col_repeat) {
             // Only support single string columns (i.e. width is same size as repeat size)
-            column = make_unique<DataColumn<string>>(col_name);
+            column = std::make_unique<DataColumn<std::string>>(col_name);
             column->data_type_size = col_repeat;
         } else {
             column = ColumnFromFitsType(col_type, col_name);
-            make_unique<Column>(col_name);
+            std::make_unique<Column>(col_name);
         }
         // Special case: for string fields, the total width is simply the repeat, and the width field indicates how many characters per
         // sub-string
         total_column_width = col_repeat;
     } else if (col_repeat > 1) {
         // Can't support array-based column types
-        column = make_unique<Column>(col_name);
+        column = std::make_unique<Column>(col_name);
     } else {
         column = ColumnFromFitsType(col_type, col_name);
     }
@@ -178,7 +175,7 @@ std::unique_ptr<Column> Column::FromFitsPtr(fitsfile* fits_ptr, int column_index
 
 // Specialisation for string type, in order to trim whitespace at the end of the entry
 template <>
-void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {
+void DataColumn<std::string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {
     // Shifts by the column's offset
     ptr += data_offset;
 
@@ -208,7 +205,7 @@ void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t
 
 // Specialisation for strings because they don't support std::isnan
 template <>
-void DataColumn<string>::SortIndices(IndexList& indices, bool ascending) const {
+void DataColumn<std::string>::SortIndices(IndexList& indices, bool ascending) const {
     if (indices.empty() || entries.empty()) {
         return;
     }
