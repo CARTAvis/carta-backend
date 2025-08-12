@@ -67,7 +67,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="namespacecarta.html#a7e1f615d908d735552aa446444b3fc72" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="namespacecarta.html#aaae2c5eb4387c657d0d7e4edea59e63c" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="263.5,-56 164.5,-56 164.5,-37 263.5,-37 263.5,-56"/>
 <text text-anchor="middle" x="214" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">carta::TraceLevel</text>
 </a>
@@ -103,7 +103,7 @@
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="namespacecarta.html#af7359c825e152777546c5e50b44b6e20" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="namespacecarta.html#af0c260fb7b748c2ba281b5fd160f22cd" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="428,-56 312,-56 312,-37 428,-37 428,-56"/>
 <text text-anchor="middle" x="370" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">carta::TraceSegment</text>
 </a>

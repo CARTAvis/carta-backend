@@ -1,6 +1,6 @@
 <map id="carta::Session::SendSpectralProfileData" name="carta::Session::SendSpectralProfileData">
 <area shape="rect" id="Node000001" title=" " alt="" coords="1133,115,1340,155"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1SpectralProfileTask.html#a798e4a9edcd28210edd2e8193ad1c160" title=" " alt="" coords="870,24,1057,64"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1SpectralProfileTask.html#a92b650825951ebca6dd528d316c92d9f" title=" " alt="" coords="870,24,1057,64"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1175,112,1084,79,1045,67,1046,62,1086,73,1177,107"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#aa076ddc044321ae415f7d1d29df176da" title=" " alt="" coords="862,89,1065,114"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1119,123,1065,116,1065,111,1120,118"/>
@@ -12,7 +12,7 @@
 <area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="883,88,841,79,740,51,741,45,842,73,884,83"/>
 <area shape="rect" id="Node000006" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="291,69,483,109"/>
 <area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="848,102,483,94,483,89,848,96"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1SetCursorTask.html#a4ae7952b66399be7c43433ef94d4ae39" title=" " alt="" coords="310,5,465,45"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1SetCursorTask.html#a4b1f94b24998f17f4c867d7ce5a8dde4" title=" " alt="" coords="310,5,465,45"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="581,30,465,29,465,23,581,24"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1SessionManager.html#a53c673a177a1b9892d9d27f86598c0dc" title=" " alt="" coords="21,69,205,109"/>
 <area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="278,92,205,92,205,87,278,87"/>
@@ -24,14 +24,14 @@
 <area shape="poly" id="edge15_Node000008_Node000015" title=" " alt="" coords="870,178,843,192,828,205,820,219,811,234,795,249,772,261,769,256,792,244,807,231,815,217,824,202,840,187,867,174"/>
 <area shape="rect" id="Node000010" href="$classcarta_1_1Session.html#aa7cbd24871105659a8520975e92d4eab" title=" " alt="" coords="268,197,507,237"/>
 <area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="541,219,507,219,507,214,541,213"/>
-<area shape="rect" id="Node000011" href="$classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" title=" " alt="" coords="33,197,192,237"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1AnimationTask.html#a7196ee6f67508506515bf8ffe5571033" title=" " alt="" coords="33,197,192,237"/>
 <area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="254,220,192,220,192,215,254,215"/>
 <area shape="poly" id="edge14_Node000012_Node000006" title=" " alt="" coords="566,130,481,112,482,107,567,125"/>
 <area shape="rect" id="Node000013" href="$classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4" title=" " alt="" coords="291,133,484,173"/>
 <area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="559,154,484,155,484,150,559,149"/>
-<area shape="rect" id="Node000014" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="5,133,220,173"/>
+<area shape="rect" id="Node000014" href="$classcarta_1_1SetImageChannelsTask.html#a6e2ba80dd6c38896899985d023a2dfb1" title=" " alt="" coords="5,133,220,173"/>
 <area shape="poly" id="edge13_Node000013_Node000014" title=" " alt="" coords="277,156,220,156,220,151,277,151"/>
-<area shape="rect" id="Node000016" href="$classcarta_1_1RegionDataStreamsTask.html#a38cdf00f163c90d07819252c648c47c4" title=" " alt="" coords="291,261,484,301"/>
+<area shape="rect" id="Node000016" href="$classcarta_1_1RegionDataStreamsTask.html#ae80ce0a5ea1d15daf31d6ecf7957d4ba" title=" " alt="" coords="291,261,484,301"/>
 <area shape="poly" id="edge16_Node000015_Node000016" title=" " alt="" coords="562,282,484,283,484,278,562,277"/>
 <area shape="poly" id="edge18_Node000017_Node000009" title=" " alt="" coords="828,217,794,217,794,212,828,212"/>
 <area shape="poly" id="edge20_Node000017_Node000012" title=" " alt="" coords="891,202,764,173,766,168,892,196"/>

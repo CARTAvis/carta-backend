@@ -6,5 +6,5 @@ var searchData=
   ['max_5fplatform_5fline_5flength_3',['MAX_PLATFORM_LINE_LENGTH',['../App_8cc.html#a37ee214ce672f7300cc1cc0e1512884c',1,'App.cc']]],
   ['max_5fsocket_5fport_5ftrials_4',['MAX_SOCKET_PORT_TRIALS',['../SessionManager_8h.html#a928d4112dd2a8be0a0d1882bf7331be7',1,'SessionManager.h']]],
   ['max_5ftile_5fcache_5fcapacity_5',['MAX_TILE_CACHE_CAPACITY',['../TileCache_8h.html#a5ad3e1a93bf2766a70f53017a13b001e',1,'TileCache.h']]],
-  ['max_5ftiling_5ftasks_6',['MAX_TILING_TASKS',['../ThreadingManager_8h.html#abaa693acdefb86b415c4444bd0f55bd8',1,'ThreadingManager.h']]]
+  ['max_5ftiling_5ftasks_6',['MAX_TILING_TASKS',['../ThreadManager_8h.html#abaa693acdefb86b415c4444bd0f55bd8',1,'ThreadManager.h']]]
 ];

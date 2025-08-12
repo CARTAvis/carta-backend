@@ -461,7 +461,7 @@
 <!-- Node10 -->
 <g id="Node000010" class="node">
 <title>Node10</title>
-<g id="a_Node000010"><a xlink:href="classcarta_1_1GeneralMessageTask.html#ae6144bb7288b7da35f513bb6a37e3de2" target="_top" xlink:title=" ">
+<g id="a_Node000010"><a xlink:href="classcarta_1_1GeneralMessageTask.html#a2b330608ca3ee635977a75325a97691a" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="362,-376.59 211,-376.59 211,-346.59 362,-346.59 362,-376.59"/>
 <text text-anchor="start" x="219" y="-364.59" font-family="Helvetica,sans-Serif" font-size="10.00">carta::GeneralMessageTask</text>
 <text text-anchor="middle" x="286.5" y="-353.59" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -602,7 +602,7 @@
 <!-- Node20 -->
 <g id="Node000020" class="node">
 <title>Node20</title>
-<g id="a_Node000020"><a xlink:href="classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" target="_top" xlink:title=" ">
+<g id="a_Node000020"><a xlink:href="classcarta_1_1AnimationTask.html#a7196ee6f67508506515bf8ffe5571033" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="140,-199.59 21,-199.59 21,-169.59 140,-169.59 140,-199.59"/>
 <text text-anchor="start" x="29" y="-187.59" font-family="Helvetica,sans-Serif" font-size="10.00">carta::AnimationTask</text>
 <text text-anchor="middle" x="80.5" y="-176.59" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -649,7 +649,7 @@
 <!-- Node23 -->
 <g id="Node000023" class="node">
 <title>Node23</title>
-<g id="a_Node000023"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" target="_top" xlink:title=" ">
+<g id="a_Node000023"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a6e2ba80dd6c38896899985d023a2dfb1" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="161,-247.59 0,-247.59 0,-217.59 161,-217.59 161,-247.59"/>
 <text text-anchor="start" x="8" y="-235.59" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SetImageChannelsTask</text>
 <text text-anchor="middle" x="80.5" y="-224.59" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -668,7 +668,7 @@
 <!-- Node25 -->
 <g id="Node000025" class="node">
 <title>Node25</title>
-<g id="a_Node000025"><a xlink:href="classcarta_1_1RegionDataStreamsTask.html#a38cdf00f163c90d07819252c648c47c4" target="_top" xlink:title=" ">
+<g id="a_Node000025"><a xlink:href="classcarta_1_1RegionDataStreamsTask.html#ae80ce0a5ea1d15daf31d6ecf7957d4ba" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="359,-113.59 214,-113.59 214,-83.59 359,-83.59 359,-113.59"/>
 <text text-anchor="start" x="222" y="-101.59" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionDataStreams</text>
 <text text-anchor="middle" x="286.5" y="-90.59" font-family="Helvetica,sans-Serif" font-size="10.00">Task::execute</text>
@@ -1001,7 +1001,7 @@
 <!-- Node40 -->
 <g id="Node000040" class="node">
 <title>Node40</title>
-<g id="a_Node000040"><a xlink:href="classcarta_1_1SetCursorTask.html#a4ae7952b66399be7c43433ef94d4ae39" target="_top" xlink:title=" ">
+<g id="a_Node000040"><a xlink:href="classcarta_1_1SetCursorTask.html#a4b1f94b24998f17f4c867d7ce5a8dde4" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="559.5,-821.59 443.5,-821.59 443.5,-791.59 559.5,-791.59 559.5,-821.59"/>
 <text text-anchor="start" x="451.5" y="-809.59" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SetCursorTask</text>
 <text text-anchor="middle" x="501.5" y="-798.59" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>

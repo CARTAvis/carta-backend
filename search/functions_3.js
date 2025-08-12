@@ -81,7 +81,7 @@ var searchData=
   ['closepvpreview_78',['ClosePvPreview',['../classcarta_1_1RegionHandler.html#a5266dcd3a9f0bb01ea1a2ee2feb53ab4',1,'carta::RegionHandler']]],
   ['closepvpreviewhandler_79',['ClosePvPreviewHandler',['../classcarta_1_1SessionManager.html#a35863277ba1acc728c3034d30188daca',1,'carta::SessionManager']]],
   ['column_80',['Column',['../classcarta_1_1Column.html#aea7e3a2008ce54f52b67c1885d99c597',1,'carta::Column']]],
-  ['columnfromfitstype_81',['ColumnFromFitsType',['../namespacecarta.html#ab91d60c075ef6cca17b213b9cde59d66',1,'carta']]],
+  ['columnfromfitstype_81',['ColumnFromFitsType',['../namespacecarta.html#a11ed15851bcfe3fd2f2e01dd9a1c812b',1,'carta']]],
   ['columns_5fdefined_82',['columns_defined',['../structcarta_1_1BeamTableInfo.html#a62d9978cecb2eaec4cc9f0ce65ba6917',1,'carta::BeamTableInfo']]],
   ['combine_83',['Combine',['../classcarta_1_1TableView.html#addd9c7cf7a1c17bb91788ba85f34769e',1,'carta::TableView']]],
   ['combinestokes_84',['combinestokes',['../classcarta_1_1RegionHandler.html#a63047c5d563b8fb75ec430d47833ec11',1,'carta::RegionHandler::CombineStokes(ProfilesMap &amp;profiles_out, const ProfilesMap &amp;profiles_q, const ProfilesMap &amp;profiles_u, const std::function&lt; double(double, double)&gt; &amp;func)'],['../classcarta_1_1RegionHandler.html#ae0a961eac00f2fa71ffe76a7c4c19488',1,'carta::RegionHandler::CombineStokes(ProfilesMap &amp;profiles_out, const ProfilesMap &amp;profiles_other, const std::function&lt; double(double, double)&gt; &amp;func)']]],

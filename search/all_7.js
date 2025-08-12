@@ -81,7 +81,7 @@ var searchData=
   ['gethdf5file_78',['GetHdf5File',['../classcarta_1_1CartaHdf5Image.html#a2f14df286bd8afbbac8ce80b1c56ef51',1,'carta::CartaHdf5Image']]],
   ['gethdf5hdulist_79',['GetHdf5HduList',['../classcarta_1_1FileInfoLoader.html#a3395971925347571f4724f7ee714a85a',1,'carta::FileInfoLoader']]],
   ['gethdulist_80',['GetHduList',['../classcarta_1_1FitsHduList.html#aae758ae3882416bb039c090209fcf5ad',1,'carta::FitsHduList']]],
-  ['getheader_81',['GetHeader',['../classcarta_1_1Table.html#adcb561fb03381967edc513420f7fc278',1,'carta::Table']]],
+  ['getheader_81',['GetHeader',['../classcarta_1_1Table.html#a1fffed67afed4b45d60c723be232f465',1,'carta::Table']]],
   ['gethistogram_82',['GetHistogram',['../structcarta_1_1HistogramCache.html#a208a72597f72b2c067608f6ef36c7f1a',1,'carta::HistogramCache']]],
   ['gethistogrambins_83',['GetHistogramBins',['../classcarta_1_1Histogram.html#a936adf02e45fce7f353783ba6699493a',1,'carta::Histogram']]],
   ['getid_84',['GetId',['../classcarta_1_1Session.html#af5809caae2e483a5506e9cf98132dc27',1,'carta::Session']]],

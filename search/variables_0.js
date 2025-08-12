@@ -352,7 +352,7 @@ var searchData=
   ['_5ftable_5fcontroller_349',['_table_controller',['../classcarta_1_1Session.html#aeb78096afd300df488c69b5561d5cad9',1,'carta::Session']]],
   ['_5ftables_350',['_tables',['../classcarta_1_1TableController.html#a0247e026291c116084057fab005453ed',1,'carta::TableController']]],
   ['_5ftargetres_351',['_targetres',['../classcarta_1_1Image2DConvolver.html#a874ee5d6f7b851df7ed520100ccf1eaa',1,'carta::Image2DConvolver']]],
-  ['_5ftask_5fqueue_352',['_task_queue',['../classcarta_1_1ThreadManager.html#ad651ccfa143c19590b50e803e0aef265',1,'carta::ThreadManager']]],
+  ['_5ftask_5fqueue_352',['_task_queue',['../classcarta_1_1ThreadManager.html#aa9323494754b4e3d7e3ab2d81c83c3d6',1,'carta::ThreadManager']]],
   ['_5ftask_5fqueue_5fcv_353',['_task_queue_cv',['../classcarta_1_1ThreadManager.html#a8ac96add5b842961dfe2a35ec9313bc1',1,'carta::ThreadManager']]],
   ['_5ftask_5fqueue_5fmtx_354',['_task_queue_mtx',['../classcarta_1_1ThreadManager.html#ad828ab82db6fc1c9934f0be9c2263d95',1,'carta::ThreadManager']]],
   ['_5ftext_5fpositions_355',['_text_positions',['../classcarta_1_1RegionImportExport.html#af36cfea1baa4c6010053ff15874ea988',1,'carta::RegionImportExport']]],

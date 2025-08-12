@@ -104,7 +104,7 @@ $(document).ready(function(){initNavTree('classcarta_1_1DataColumn.html',''); in
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;Columns.h&gt;</code></p>
+<p><code>#include &lt;Column.h&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for carta::DataColumn&lt; T &gt;:</div>
 <div class="dyncontent">
@@ -142,10 +142,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a52c882c62904df66f1c9e0948342df1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa212cb97743dcb0a915559796be1feb" id="r_afa212cb97743dcb0a915559796be1feb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1DataColumn.html#afa212cb97743dcb0a915559796be1feb">FillColumnData</a> (CARTA::ColumnData &amp;column_data, bool fill_subset, const <a class="el" href="namespacecarta.html#a4f6247fd8c7932db3c7807a3a8f6a7af">IndexList</a> &amp;indices, int64_t start, int64_t end) const override</td></tr>
 <tr class="separator:afa212cb97743dcb0a915559796be1feb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adc8742b0bfefee814c532cc9b17bc28f" id="r_adc8742b0bfefee814c532cc9b17bc28f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1DataColumn.html#adc8742b0bfefee814c532cc9b17bc28f">FillFromBuffer</a> (const uint8_t *ptr, int num_rows, size_t stride)</td></tr>
-<tr class="separator:adc8742b0bfefee814c532cc9b17bc28f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1bb047f77eb35a22d20f3a947fb5969" id="r_ad1bb047f77eb35a22d20f3a947fb5969"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1DataColumn.html#ad1bb047f77eb35a22d20f3a947fb5969">SortIndices</a> (<a class="el" href="namespacecarta.html#a4f6247fd8c7932db3c7807a3a8f6a7af">IndexList</a> &amp;indices, bool ascending) const</td></tr>
-<tr class="separator:ad1bb047f77eb35a22d20f3a947fb5969"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4e2bbfaf5a9d363eef1f01af069521a" id="r_af4e2bbfaf5a9d363eef1f01af069521a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1DataColumn.html#af4e2bbfaf5a9d363eef1f01af069521a">FillFromBuffer</a> (const uint8_t *ptr, int num_rows, size_t stride)</td></tr>
+<tr class="separator:af4e2bbfaf5a9d363eef1f01af069521a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88dbed61d68f082f172574389132f93a" id="r_a88dbed61d68f082f172574389132f93a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1DataColumn.html#a88dbed61d68f082f172574389132f93a">SortIndices</a> (<a class="el" href="namespacecarta.html#a4f6247fd8c7932db3c7807a3a8f6a7af">IndexList</a> &amp;indices, bool ascending) const</td></tr>
+<tr class="separator:a88dbed61d68f082f172574389132f93a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fcb350b3ac9bb8cab9731657d67ffb1" id="r_a2fcb350b3ac9bb8cab9731657d67ffb1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1DataColumn.html#a2fcb350b3ac9bb8cab9731657d67ffb1">FillFromBuffer</a> (const uint8_t *ptr, int num_rows, size_t stride)</td></tr>
 <tr class="separator:a2fcb350b3ac9bb8cab9731657d67ffb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2973f30d1e5861827dd1c1c5e51e071d" id="r_a2973f30d1e5861827dd1c1c5e51e071d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1DataColumn.html#a2973f30d1e5861827dd1c1c5e51e071d">FillColumnData</a> (CARTA::ColumnData &amp;column_data, bool fill_subset, const <a class="el" href="namespacecarta.html#a4f6247fd8c7932db3c7807a3a8f6a7af">IndexList</a> &amp;indices, int64_t start, int64_t end) const</td></tr>
@@ -211,7 +211,7 @@ Additional Inherited Members</h2></td></tr>
 template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcarta_1_1DataColumn.html">carta::DataColumn</a>&lt; T &gt;<a class="el" href="classcarta_1_1DataColumn.html">::DataColumn</a> </td>
+          <td class="memname"><a class="el" href="classcarta_1_1DataColumn.html">carta::DataColumn</a>&lt; T &gt;::DataColumn </td>
           <td>(</td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>name_chr</em>, </td>
@@ -374,8 +374,8 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
-<a id="adc8742b0bfefee814c532cc9b17bc28f" name="adc8742b0bfefee814c532cc9b17bc28f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adc8742b0bfefee814c532cc9b17bc28f">&#9670;&#160;</a></span>FillFromBuffer() <span class="overload">[1/3]</span></h2>
+<a id="af4e2bbfaf5a9d363eef1f01af069521a" name="af4e2bbfaf5a9d363eef1f01af069521a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4e2bbfaf5a9d363eef1f01af069521a">&#9670;&#160;</a></span>FillFromBuffer() <span class="overload">[1/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -384,7 +384,7 @@ template&lt;class T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classcarta_1_1DataColumn.html">carta::DataColumn</a>&lt; string &gt;::FillFromBuffer </td>
+          <td class="memname">void <a class="el" href="classcarta_1_1DataColumn.html">carta::DataColumn</a>&lt; std::string &gt;::FillFromBuffer </td>
           <td>(</td>
           <td class="paramtype">const uint8_t *&#160;</td>
           <td class="paramname"><em>ptr</em>, </td>
@@ -800,8 +800,8 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
-<a id="ad1bb047f77eb35a22d20f3a947fb5969" name="ad1bb047f77eb35a22d20f3a947fb5969"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1bb047f77eb35a22d20f3a947fb5969">&#9670;&#160;</a></span>SortIndices() <span class="overload">[1/2]</span></h2>
+<a id="a88dbed61d68f082f172574389132f93a" name="a88dbed61d68f082f172574389132f93a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a88dbed61d68f082f172574389132f93a">&#9670;&#160;</a></span>SortIndices() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -810,7 +810,7 @@ template&lt;class T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classcarta_1_1DataColumn.html">carta::DataColumn</a>&lt; string &gt;::SortIndices </td>
+          <td class="memname">void <a class="el" href="classcarta_1_1DataColumn.html">carta::DataColumn</a>&lt; std::string &gt;::SortIndices </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="namespacecarta.html#a4f6247fd8c7932db3c7807a3a8f6a7af">IndexList</a> &amp;&#160;</td>
           <td class="paramname"><em>indices</em>, </td>
@@ -929,7 +929,7 @@ template&lt;class T &gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li><a class="el" href="Columns_8h.html">Columns.h</a></li>
+<li><a class="el" href="Column_8h.html">Column.h</a></li>
 <li><a class="el" href="DataColumn_8tcc.html">DataColumn.tcc</a></li>
 </ul>
 </div><!-- contents -->

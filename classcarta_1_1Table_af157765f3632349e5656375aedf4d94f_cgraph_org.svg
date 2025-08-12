@@ -111,7 +111,7 @@
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="namespacecarta.html#ab91d60c075ef6cca17b213b9cde59d66" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="namespacecarta.html#a11ed15851bcfe3fd2f2e01dd9a1c812b" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="690,-261 541,-261 541,-242 690,-242 690,-261"/>
 <text text-anchor="middle" x="615.5" y="-249" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ColumnFromFitsType</text>
 </a>
@@ -129,7 +129,7 @@
 <!-- Node6 -->
 <g id="Node000006" class="node">
 <title>Node6</title>
-<g id="a_Node000006"><a xlink:href="namespacecarta.html#a928af6c5078150f8c0cafc2a32a6b05c" target="_top" xlink:title=" ">
+<g id="a_Node000006"><a xlink:href="namespacecarta.html#afc4c4afd1d282ad51a05d830059a55df" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="667,-224 564,-224 564,-205 667,-205 667,-224"/>
 <text text-anchor="middle" x="615.5" y="-212" font-family="Helvetica,sans-Serif" font-size="10.00">carta::TrimSpaces</text>
 </a>
@@ -147,7 +147,7 @@
 <!-- Node8 -->
 <g id="Node000008" class="node">
 <title>Node8</title>
-<g id="a_Node000008"><a xlink:href="classcarta_1_1Table.html#adcb561fb03381967edc513420f7fc278" target="_top" xlink:title=" ">
+<g id="a_Node000008"><a xlink:href="classcarta_1_1Table.html#a1fffed67afed4b45d60c723be232f465" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="491.5,-93 360.5,-93 360.5,-74 491.5,-74 491.5,-93"/>
 <text text-anchor="middle" x="426" y="-81" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Table::GetHeader</text>
 </a>

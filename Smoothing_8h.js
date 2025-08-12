@@ -9,5 +9,5 @@ var Smoothing_8h =
     [ "IsInfinity", "Smoothing_8h.html#a64f1569d1c90db30af9f2d719f9ffe59", null ],
     [ "MakeKernel", "Smoothing_8h.html#a41bb4d4534de964f83271afdf638dfcb", null ],
     [ "NearestNeighbor", "Smoothing_8h.html#a724d5f79d7c1320592c011bd3bb57e98", null ],
-    [ "RunKernel", "Smoothing_8h.html#a9357dcf90b947224b971067e616c8a9d", null ]
+    [ "RunKernel", "Smoothing_8h.html#a485f08e6c95ab33a0567541aa0bb0ea0", null ]
 ];

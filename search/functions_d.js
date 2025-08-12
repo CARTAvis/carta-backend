@@ -2,7 +2,7 @@ var searchData=
 [
   ['main_0',['main',['../Main_8cc.html#a0ddf1224851353fc92bfbff6f499fa97',1,'Main.cc']]],
   ['makeanglestring_1',['MakeAngleString',['../classcarta_1_1FileExtInfoLoader.html#afa0abc9c6dd40164f472c7554adc32b6',1,'carta::FileExtInfoLoader']]],
-  ['makekernel_2',['makekernel',['../namespacecarta.html#a41bb4d4534de964f83271afdf638dfcb',1,'carta::MakeKernel(std::vector&lt; float &gt; &amp;kernel, double sigma)'],['../namespacecarta.html#a497f02167a001abee3a4c3aadaa3c837',1,'carta::MakeKernel(vector&lt; float &gt; &amp;kernel, double sigma)']]],
+  ['makekernel_2',['MakeKernel',['../namespacecarta.html#a41bb4d4534de964f83271afdf638dfcb',1,'carta']]],
   ['makepolarizedintensitynode_3',['MakePolarizedIntensityNode',['../classcarta_1_1PolarizationCalculator.html#af800918471188ab3eb863931a4f89dfe',1,'carta::PolarizationCalculator']]],
   ['makesubimage_4',['MakeSubImage',['../classcarta_1_1PolarizationCalculator.html#a543764de6de30d386feb479601073b71',1,'carta::PolarizationCalculator']]],
   ['maketotalpolarizedintensitynode_5',['MakeTotalPolarizedIntensityNode',['../classcarta_1_1PolarizationCalculator.html#a43f010357e88c2e9676ad43032e88f51',1,'carta::PolarizationCalculator']]],

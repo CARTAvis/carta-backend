@@ -109,6 +109,7 @@ var annotated_dup =
       [ "TableParam", "structcarta_1_1TableParam.html", "structcarta_1_1TableParam" ],
       [ "TableView", "classcarta_1_1TableView.html", "classcarta_1_1TableView" ],
       [ "TableViewCache", "structcarta_1_1TableViewCache.html", "structcarta_1_1TableViewCache" ],
+      [ "Task", "classcarta_1_1Task.html", "classcarta_1_1Task" ],
       [ "ThreadManager", "classcarta_1_1ThreadManager.html", "classcarta_1_1ThreadManager" ],
       [ "Tile", "structcarta_1_1Tile.html", "structcarta_1_1Tile" ],
       [ "TileCache", "classcarta_1_1TileCache.html", "classcarta_1_1TileCache" ],

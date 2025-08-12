@@ -10,9 +10,9 @@
 <area shape="poly" id="edge9_Node000002_Node000010" title=" " alt="" coords="888,108,764,136,763,131,887,102"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1Session.html#aa7cbd24871105659a8520975e92d4eab" title=" " alt="" coords="268,5,507,45"/>
 <area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="541,28,507,28,507,23,541,23"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" title=" " alt="" coords="33,5,192,45"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1AnimationTask.html#a7196ee6f67508506515bf8ffe5571033" title=" " alt="" coords="33,5,192,45"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="254,28,192,28,192,23,254,23"/>
-<area shape="rect" id="Node000007" href="$classcarta_1_1GeneralMessageTask.html#ae6144bb7288b7da35f513bb6a37e3de2" title=" " alt="" coords="287,69,488,109"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1GeneralMessageTask.html#a2b330608ca3ee635977a75325a97691a" title=" " alt="" coords="287,69,488,109"/>
 <area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="555,92,488,92,488,87,555,87"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="291,133,483,173"/>
 <area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="571,115,478,136,477,131,570,110"/>
@@ -21,6 +21,6 @@
 <area shape="poly" id="edge12_Node000010_Node000008" title=" " alt="" coords="559,156,483,156,483,151,559,151"/>
 <area shape="rect" id="Node000011" href="$classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4" title=" " alt="" coords="291,197,484,237"/>
 <area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="571,179,478,200,477,195,570,174"/>
-<area shape="rect" id="Node000012" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="5,197,220,237"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1SetImageChannelsTask.html#a6e2ba80dd6c38896899985d023a2dfb1" title=" " alt="" coords="5,197,220,237"/>
 <area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="277,220,220,220,220,215,277,215"/>
 </map>

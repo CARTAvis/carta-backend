@@ -1,7 +1,7 @@
 var dir_92787ec37697b40a025a32b1ed11836f =
 [
-    [ "Columns.cc", "Columns_8cc.html", "Columns_8cc" ],
-    [ "Columns.h", "Columns_8h.html", "Columns_8h" ],
+    [ "Column.cc", "Column_8cc.html", "Column_8cc" ],
+    [ "Column.h", "Column_8h.html", "Column_8h" ],
     [ "DataColumn.tcc", "DataColumn_8tcc.html", "DataColumn_8tcc" ],
     [ "Table.cc", "Table_8cc.html", null ],
     [ "Table.h", "Table_8h.html", "Table_8h" ],

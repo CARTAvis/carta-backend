@@ -20,7 +20,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a6e2ba80dd6c38896899985d023a2dfb1" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="161,-78 0,-78 0,-48 161,-48 161,-78"/>
 <text text-anchor="start" x="8" y="-66" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SetImageChannelsTask</text>
 <text text-anchor="middle" x="80.5" y="-55" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>

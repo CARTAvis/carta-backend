@@ -142,7 +142,7 @@ var sectionId = 'dynsection-162';
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="classcarta_1_1AnimationTask.html#a7196ee6f67508506515bf8ffe5571033" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="140,-174 21,-174 21,-144 140,-144 140,-174"/>
 <text text-anchor="start" x="29" y="-162" font-family="Helvetica,sans-Serif" font-size="10.00">carta::AnimationTask</text>
 <text text-anchor="middle" x="80.5" y="-151" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -199,7 +199,7 @@ var sectionId = 'dynsection-162';
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" target="_top" xlink:title=" ">
+<g id="a_Node000007"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a6e2ba80dd6c38896899985d023a2dfb1" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="161,-126 0,-126 0,-96 161,-96 161,-126"/>
 <text text-anchor="start" x="8" y="-114" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SetImageChannelsTask</text>
 <text text-anchor="middle" x="80.5" y="-103" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -237,7 +237,7 @@ var sectionId = 'dynsection-162';
 <!-- Node11 -->
 <g id="Node000011" class="node">
 <title>Node11</title>
-<g id="a_Node000011"><a xlink:href="classcarta_1_1RegionDataStreamsTask.html#a38cdf00f163c90d07819252c648c47c4" target="_top" xlink:title=" ">
+<g id="a_Node000011"><a xlink:href="classcarta_1_1RegionDataStreamsTask.html#ae80ce0a5ea1d15daf31d6ecf7957d4ba" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="359,-30 214,-30 214,0 359,0 359,-30"/>
 <text text-anchor="start" x="222" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionDataStreams</text>
 <text text-anchor="middle" x="286.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">Task::execute</text>

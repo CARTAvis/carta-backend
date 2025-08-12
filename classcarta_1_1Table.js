@@ -8,7 +8,7 @@ var classcarta_1_1Table =
     [ "Description", "classcarta_1_1Table.html#a06cf1ddd0f75f66b71a0903d3aa45f77", null ],
     [ "GetColumnById", "classcarta_1_1Table.html#a20470fcd206cfceddda8025e5e683d75", null ],
     [ "GetColumnByName", "classcarta_1_1Table.html#acfac5965e0802c89ad0ab9507add38ba", null ],
-    [ "GetHeader", "classcarta_1_1Table.html#adcb561fb03381967edc513420f7fc278", null ],
+    [ "GetHeader", "classcarta_1_1Table.html#a1fffed67afed4b45d60c723be232f465", null ],
     [ "IsValid", "classcarta_1_1Table.html#a0f4ae1773d077ea3827df217cb6e8360", null ],
     [ "NumColumns", "classcarta_1_1Table.html#a82123011be41e2f34f3840099e3790b6", null ],
     [ "NumRows", "classcarta_1_1Table.html#a2d4fbfde377fd9c53c4bedf95035686b", null ],

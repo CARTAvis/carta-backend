@@ -36,7 +36,7 @@
 <area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="569,381,484,397,483,392,568,375"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1SessionManager.html#a53c673a177a1b9892d9d27f86598c0dc" title=" " alt="" coords="21,393,205,433"/>
 <area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="278,416,205,416,205,411,278,411"/>
-<area shape="rect" id="Node000010" href="$classcarta_1_1GeneralMessageTask.html#ae6144bb7288b7da35f513bb6a37e3de2" title=" " alt="" coords="287,63,488,103"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1GeneralMessageTask.html#a2b330608ca3ee635977a75325a97691a" title=" " alt="" coords="287,63,488,103"/>
 <area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="571,65,488,74,488,69,570,60"/>
 <area shape="poly" id="edge11_Node000011_Node000010" title=" " alt="" coords="564,105,488,97,488,91,564,100"/>
 <area shape="poly" id="edge14_Node000012_Node000010" title=" " alt="" coords="591,159,554,149,434,105,436,100,555,144,592,154"/>
@@ -51,14 +51,14 @@
 <area shape="poly" id="edge29_Node000017_Node000024" title=" " alt="" coords="874,502,843,517,828,530,820,544,811,559,795,573,771,585,769,580,792,569,807,555,815,541,824,527,840,513,872,497"/>
 <area shape="rect" id="Node000019" href="$classcarta_1_1Session.html#aa7cbd24871105659a8520975e92d4eab" title=" " alt="" coords="268,521,507,561"/>
 <area shape="poly" id="edge23_Node000018_Node000019" title=" " alt="" coords="541,543,507,543,507,538,541,537"/>
-<area shape="rect" id="Node000020" href="$classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" title=" " alt="" coords="33,521,192,561"/>
+<area shape="rect" id="Node000020" href="$classcarta_1_1AnimationTask.html#a7196ee6f67508506515bf8ffe5571033" title=" " alt="" coords="33,521,192,561"/>
 <area shape="poly" id="edge24_Node000019_Node000020" title=" " alt="" coords="254,544,192,544,192,539,254,539"/>
 <area shape="poly" id="edge28_Node000021_Node000007" title=" " alt="" coords="566,454,481,436,482,431,567,449"/>
 <area shape="rect" id="Node000022" href="$classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4" title=" " alt="" coords="291,457,484,497"/>
 <area shape="poly" id="edge26_Node000021_Node000022" title=" " alt="" coords="559,478,484,479,484,474,559,473"/>
-<area shape="rect" id="Node000023" href="$classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" title=" " alt="" coords="5,457,220,497"/>
+<area shape="rect" id="Node000023" href="$classcarta_1_1SetImageChannelsTask.html#a6e2ba80dd6c38896899985d023a2dfb1" title=" " alt="" coords="5,457,220,497"/>
 <area shape="poly" id="edge27_Node000022_Node000023" title=" " alt="" coords="277,480,220,480,220,475,277,475"/>
-<area shape="rect" id="Node000025" href="$classcarta_1_1RegionDataStreamsTask.html#a38cdf00f163c90d07819252c648c47c4" title=" " alt="" coords="291,585,484,625"/>
+<area shape="rect" id="Node000025" href="$classcarta_1_1RegionDataStreamsTask.html#ae80ce0a5ea1d15daf31d6ecf7957d4ba" title=" " alt="" coords="291,585,484,625"/>
 <area shape="poly" id="edge30_Node000024_Node000025" title=" " alt="" coords="562,606,484,607,484,602,562,601"/>
 <area shape="poly" id="edge32_Node000026_Node000018" title=" " alt="" coords="828,541,794,541,794,536,828,536"/>
 <area shape="poly" id="edge34_Node000026_Node000021" title=" " alt="" coords="891,526,764,497,766,492,892,521"/>

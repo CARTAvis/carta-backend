@@ -102,11 +102,11 @@ $(document).ready(function(){initNavTree('classcarta_1_1ThreadManager.html','');
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;ThreadingManager.h&gt;</code></p>
+<p><code>#include &lt;ThreadManager.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for carta::ThreadManager:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ThreadManager__coll__graph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ThreadManager__coll__graph.svg" width="100%" height="512"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
@@ -117,8 +117,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:ad7de732e26f781a6bea5c74a2ec99ca5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abaa6fec6579e667f76e31cdb3ead2d3c" id="r_abaa6fec6579e667f76e31cdb3ead2d3c"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#abaa6fec6579e667f76e31cdb3ead2d3c">StartEventHandlingThreads</a> (int num_threads)</td></tr>
 <tr class="separator:abaa6fec6579e667f76e31cdb3ead2d3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a2489e2d7dfb13701cda9077f3c1db7" id="r_a5a2489e2d7dfb13701cda9077f3c1db7"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#a5a2489e2d7dfb13701cda9077f3c1db7">QueueTask</a> (<a class="el" href="classcarta_1_1OnMessageTask.html">OnMessageTask</a> *)</td></tr>
-<tr class="separator:a5a2489e2d7dfb13701cda9077f3c1db7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af82ce2e6799b3efd3cef9fbadb962328" id="r_af82ce2e6799b3efd3cef9fbadb962328"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#af82ce2e6799b3efd3cef9fbadb962328">QueueTask</a> (<a class="el" href="classcarta_1_1Task.html">Task</a> *)</td></tr>
+<tr class="separator:af82ce2e6799b3efd3cef9fbadb962328"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7e1be2779e8ca2a4f4b34841b799715a" id="r_a7e1be2779e8ca2a4f4b34841b799715a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#a7e1be2779e8ca2a4f4b34841b799715a">ExitEventHandlingThreads</a> ()</td></tr>
 <tr class="separator:a7e1be2779e8ca2a4f4b34841b799715a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -126,8 +126,8 @@ Static Public Member Functions</h2></td></tr>
 Static Private Attributes</h2></td></tr>
 <tr class="memitem:a05009f095c2b9b20bbdca124e2a94d3e" id="r_a05009f095c2b9b20bbdca124e2a94d3e"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#a05009f095c2b9b20bbdca124e2a94d3e">_omp_thread_count</a> = 0</td></tr>
 <tr class="separator:a05009f095c2b9b20bbdca124e2a94d3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad651ccfa143c19590b50e803e0aef265" id="r_ad651ccfa143c19590b50e803e0aef265"><td class="memItemLeft" align="right" valign="top">static std::list&lt; <a class="el" href="classcarta_1_1OnMessageTask.html">OnMessageTask</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#ad651ccfa143c19590b50e803e0aef265">_task_queue</a></td></tr>
-<tr class="separator:ad651ccfa143c19590b50e803e0aef265"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9323494754b4e3d7e3ab2d81c83c3d6" id="r_aa9323494754b4e3d7e3ab2d81c83c3d6"><td class="memItemLeft" align="right" valign="top">static std::list&lt; <a class="el" href="classcarta_1_1Task.html">Task</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#aa9323494754b4e3d7e3ab2d81c83c3d6">_task_queue</a></td></tr>
+<tr class="separator:aa9323494754b4e3d7e3ab2d81c83c3d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad828ab82db6fc1c9934f0be9c2263d95" id="r_ad828ab82db6fc1c9934f0be9c2263d95"><td class="memItemLeft" align="right" valign="top">static std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#ad828ab82db6fc1c9934f0be9c2263d95">_task_queue_mtx</a></td></tr>
 <tr class="separator:ad828ab82db6fc1c9934f0be9c2263d95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8ac96add5b842961dfe2a35ec9313bc1" id="r_a8ac96add5b842961dfe2a35ec9313bc1"><td class="memItemLeft" align="right" valign="top">static std::condition_variable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html#a8ac96add5b842961dfe2a35ec9313bc1">_task_queue_cv</a></td></tr>
@@ -198,8 +198,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a5a2489e2d7dfb13701cda9077f3c1db7" name="a5a2489e2d7dfb13701cda9077f3c1db7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5a2489e2d7dfb13701cda9077f3c1db7">&#9670;&#160;</a></span>QueueTask()</h2>
+<a id="af82ce2e6799b3efd3cef9fbadb962328" name="af82ce2e6799b3efd3cef9fbadb962328"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af82ce2e6799b3efd3cef9fbadb962328">&#9670;&#160;</a></span>QueueTask()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -210,7 +210,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">void carta::ThreadManager::QueueTask </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcarta_1_1OnMessageTask.html">OnMessageTask</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classcarta_1_1Task.html">Task</a> *&#160;</td>
           <td class="paramname"><em>tsk</em></td><td>)</td>
           <td></td>
         </tr>
@@ -224,7 +224,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ThreadManager_a5a2489e2d7dfb13701cda9077f3c1db7_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ThreadManager_af82ce2e6799b3efd3cef9fbadb962328_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -291,7 +291,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ThreadManager_abaa6fec6579e667f76e31cdb3ead2d3c_cgraph.svg" width="435" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ThreadManager_abaa6fec6579e667f76e31cdb3ead2d3c_cgraph.svg" width="418" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -346,8 +346,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="ad651ccfa143c19590b50e803e0aef265" name="ad651ccfa143c19590b50e803e0aef265"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad651ccfa143c19590b50e803e0aef265">&#9670;&#160;</a></span>_task_queue</h2>
+<a id="aa9323494754b4e3d7e3ab2d81c83c3d6" name="aa9323494754b4e3d7e3ab2d81c83c3d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa9323494754b4e3d7e3ab2d81c83c3d6">&#9670;&#160;</a></span>_task_queue</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -356,7 +356,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::list&lt; <a class="el" href="classcarta_1_1OnMessageTask.html">OnMessageTask</a> * &gt; carta::ThreadManager::_task_queue</td>
+          <td class="memname">std::list&lt; <a class="el" href="classcarta_1_1Task.html">Task</a> * &gt; carta::ThreadManager::_task_queue</td>
         </tr>
       </table>
   </td>
@@ -435,8 +435,8 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li><a class="el" href="ThreadingManager_8h.html">ThreadingManager.h</a></li>
-<li><a class="el" href="ThreadingManager_8cc.html">ThreadingManager.cc</a></li>
+<li><a class="el" href="ThreadManager_8h.html">ThreadManager.h</a></li>
+<li><a class="el" href="ThreadManager_8cc.html">ThreadManager.cc</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -81,13 +81,13 @@ var searchData=
   ['requiredtiles_78',['requiredtiles',['../structcarta_1_1RequiredTiles.html',1,'carta::RequiredTiles'],['../structcarta_1_1RequiredTiles.html#a9cb1ebcf5dd6c3191feeb630aa9787e1',1,'carta::RequiredTiles::RequiredTiles()'],['../structcarta_1_1RequiredTiles.html#a639d5caac3800834335b129f937f0161',1,'carta::RequiredTiles::RequiredTiles(const CARTA::AddRequiredTiles &amp;required_tiles)']]],
   ['requirementscache_2eh_79',['RequirementsCache.h',['../RequirementsCache_8h.html',1,'']]],
   ['res_80',['Res',['../namespacecarta.html#a9a9fe0f86f7e331bd55b6875dd3ce036',1,'carta']]],
-  ['reset_81',['reset',['../classcarta_1_1SessionContext.html#ad80d2c2c9b72b9e388f71092f526d292',1,'carta::SessionContext::reset()'],['../classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5',1,'carta::TileCache::Reset()'],['../classcarta_1_1TableView.html#a53abb93ed7bc2b5a0383874366fa456a',1,'carta::TableView::Reset()']]],
+  ['reset_81',['reset',['../classcarta_1_1TableView.html#a53abb93ed7bc2b5a0383874366fa456a',1,'carta::TableView::Reset()'],['../classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5',1,'carta::TileCache::Reset()'],['../classcarta_1_1SessionContext.html#ad80d2c2c9b72b9e388f71092f526d292',1,'carta::SessionContext::reset()']]],
   ['resetcontext_82',['ResetContext',['../classcarta_1_1AnimationObject.html#a9a0b4e3e6a71780288fefd962624034a',1,'carta::AnimationObject']]],
   ['resethistcontext_83',['ResetHistContext',['../classcarta_1_1Session.html#af04404d4795dc3973358399dc3ceb6d7',1,'carta::Session']]],
   ['resetimagebeam_84',['ResetImageBeam',['../classcarta_1_1FitsLoader.html#a6daba3f63c8e10c36a94779abba69a0f',1,'carta::FitsLoader']]],
   ['resetimagemoments_85',['ResetImageMoments',['../classcarta_1_1MomentGenerator.html#acaf7fc08b7ea9611c6524d8fdac4c8a9',1,'carta::MomentGenerator']]],
   ['resetregioncache_86',['ResetRegionCache',['../classcarta_1_1Region.html#a4035873b03a85d741404d08203d94fa1',1,'carta::Region']]],
-  ['resize_87',['resize',['../classcarta_1_1Column.html#a52eb2e759904fe4ce28392d9f3e10845',1,'carta::Column::Resize()'],['../classcarta_1_1CartaFitsImage.html#a222f5fde745e006cbbcfdef82edeb9b7',1,'carta::CartaFitsImage::resize()'],['../classcarta_1_1CartaHdf5Image.html#a244202bc52a2c614595faf0363f63f8e',1,'carta::CartaHdf5Image::resize()'],['../classcarta_1_1DataColumn.html#ab5b3fcb983a7f56c40cba3acd265ff60',1,'carta::DataColumn::Resize()']]],
+  ['resize_87',['resize',['../classcarta_1_1CartaHdf5Image.html#a244202bc52a2c614595faf0363f63f8e',1,'carta::CartaHdf5Image::resize()'],['../classcarta_1_1CartaFitsImage.html#a222f5fde745e006cbbcfdef82edeb9b7',1,'carta::CartaFitsImage::resize()'],['../classcarta_1_1DataColumn.html#ab5b3fcb983a7f56c40cba3acd265ff60',1,'carta::DataColumn::Resize()'],['../classcarta_1_1Column.html#a52eb2e759904fe4ce28392d9f3e10845',1,'carta::Column::Resize()']]],
   ['resultmsg_88',['ResultMsg',['../structcarta_1_1FileListHandler_1_1ResultMsg.html',1,'carta::FileListHandler']]],
   ['resumesession_89',['ResumeSession',['../classMessage.html#a6f84abf791a095ae8fc37e17d4e204c9',1,'Message']]],
   ['resumesessionhandler_90',['ResumeSessionHandler',['../classcarta_1_1SessionManager.html#a53c673a177a1b9892d9d27f86598c0dc',1,'carta::SessionManager']]],
@@ -98,6 +98,6 @@ var searchData=
   ['rotation_95',['rotation',['../structcarta_1_1RegionState.html#a80168adbc562979deb5a97b978ac02f7',1,'carta::RegionState']]],
   ['roundandencodevertices_96',['RoundAndEncodeVertices',['../namespacecarta.html#a075ee64ae108d46c43cdb9a37b54d442',1,'carta']]],
   ['runapp_97',['RunApp',['../classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6',1,'carta::SessionManager']]],
-  ['runkernel_98',['runkernel',['../namespacecarta.html#a9357dcf90b947224b971067e616c8a9d',1,'carta::RunKernel(const std::vector&lt; float &gt; &amp;kernel, const float *src_data, float *dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height, bool vertical)'],['../namespacecarta.html#a14ef4865d709f274065adb74f068320e',1,'carta::RunKernel(const vector&lt; float &gt; &amp;kernel, const float *src_data, float *dest_data, const int64_t src_width, const int64_t src_height, const int64_t dest_width, const int64_t dest_height, const bool vertical)']]],
+  ['runkernel_98',['RunKernel',['../namespacecarta.html#a485f08e6c95ab33a0567541aa0bb0ea0',1,'carta']]],
   ['running_20unit_20tests_99',['Building and running unit tests',['../md_docs_2static_2faq.html#autotoc_md0',1,'']]]
 ];

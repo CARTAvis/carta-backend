@@ -1,6 +1,6 @@
 var Contouring_8cc =
 [
     [ "TraceContours", "Contouring_8cc.html#a02080ed8c4cdb8dbc46af133e17ccd1e", null ],
-    [ "TraceLevel", "Contouring_8cc.html#a7e1f615d908d735552aa446444b3fc72", null ],
-    [ "TraceSegment", "Contouring_8cc.html#af7359c825e152777546c5e50b44b6e20", null ]
+    [ "TraceLevel", "Contouring_8cc.html#aaae2c5eb4387c657d0d7e4edea59e63c", null ],
+    [ "TraceSegment", "Contouring_8cc.html#af0c260fb7b748c2ba281b5fd160f22cd", null ]
 ];

@@ -48,7 +48,7 @@
 <script type="application/ecmascript">
 var viewWidth = 1018;
 var viewHeight = 182;
-var sectionId = 'dynsection-37';
+var sectionId = 'dynsection-35';
 </script>
 <script type="application/ecmascript" xlink:href="svg.min.js"/>
 <svg id="graph" class="graph">
@@ -160,7 +160,7 @@ var sectionId = 'dynsection-37';
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="classcarta_1_1AnimationTask.html#a7196ee6f67508506515bf8ffe5571033" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="140,-174 21,-174 21,-144 140,-144 140,-174"/>
 <text text-anchor="start" x="29" y="-162" font-family="Helvetica,sans-Serif" font-size="10.00">carta::AnimationTask</text>
 <text text-anchor="middle" x="80.5" y="-151" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -179,7 +179,7 @@ var sectionId = 'dynsection-37';
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="classcarta_1_1GeneralMessageTask.html#ae6144bb7288b7da35f513bb6a37e3de2" target="_top" xlink:title=" ">
+<g id="a_Node000007"><a xlink:href="classcarta_1_1GeneralMessageTask.html#a2b330608ca3ee635977a75325a97691a" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="362,-126 211,-126 211,-96 362,-96 362,-126"/>
 <text text-anchor="start" x="219" y="-114" font-family="Helvetica,sans-Serif" font-size="10.00">carta::GeneralMessageTask</text>
 <text text-anchor="middle" x="286.5" y="-103" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -264,7 +264,7 @@ var sectionId = 'dynsection-37';
 <!-- Node12 -->
 <g id="Node000012" class="node">
 <title>Node12</title>
-<g id="a_Node000012"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" target="_top" xlink:title=" ">
+<g id="a_Node000012"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a6e2ba80dd6c38896899985d023a2dfb1" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="161,-30 0,-30 0,0 161,0 161,-30"/>
 <text text-anchor="start" x="8" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SetImageChannelsTask</text>
 <text text-anchor="middle" x="80.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>

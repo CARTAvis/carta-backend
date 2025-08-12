@@ -1,10 +1,7 @@
 <map id="Hdf5Loader.h" name="Hdf5Loader.h">
-<area shape="rect" id="Node000001" title=" " alt="" coords="210,5,318,31"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="71,5,179,31"/>
 <area shape="rect" id="Node000002" href="$FileLoader_8cc.html" title=" " alt="" coords="5,79,112,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,38,93,81,91,76,217,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,43,71,80,68,77,103,39"/>
 <area shape="rect" id="Node000003" href="$Hdf5Loader_8cc.html" title=" " alt="" coords="136,79,251,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="245,43,207,80,203,77,241,39"/>
-<area shape="rect" id="Node000004" href="$Hdf5Loader_8tcc.html" title=" " alt="" coords="275,79,394,104"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="279,39,318,77,315,80,276,43"/>
-<area shape="poly" id="edge4_Node000004_Node000001" title=" " alt="" coords="319,70,280,33,284,29,323,66"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,39,184,77,180,80,144,42"/>
 </map>

@@ -20,7 +20,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="namespacecarta.html#ab91d60c075ef6cca17b213b9cde59d66" target="_top" xlink:title=" ">
+<g id="a_Node000002"><a xlink:href="namespacecarta.html#a11ed15851bcfe3fd2f2e01dd9a1c812b" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="331,-56 182,-56 182,-37 331,-37 331,-56"/>
 <text text-anchor="middle" x="256.5" y="-44" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ColumnFromFitsType</text>
 </a>
@@ -38,7 +38,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="namespacecarta.html#a928af6c5078150f8c0cafc2a32a6b05c" target="_top" xlink:title=" ">
+<g id="a_Node000003"><a xlink:href="namespacecarta.html#afc4c4afd1d282ad51a05d830059a55df" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="308,-19 205,-19 205,0 308,0 308,-19"/>
 <text text-anchor="middle" x="256.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">carta::TrimSpaces</text>
 </a>

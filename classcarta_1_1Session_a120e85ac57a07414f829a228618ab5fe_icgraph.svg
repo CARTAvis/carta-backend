@@ -180,7 +180,7 @@ var sectionId = 'dynsection-143';
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="classcarta_1_1SetCursorTask.html#a4ae7952b66399be7c43433ef94d4ae39" target="_top" xlink:title=" ">
+<g id="a_Node000004"><a xlink:href="classcarta_1_1SetCursorTask.html#a4b1f94b24998f17f4c867d7ce5a8dde4" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="559.5,-211.5 443.5,-211.5 443.5,-181.5 559.5,-181.5 559.5,-211.5"/>
 <text text-anchor="start" x="451.5" y="-199.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SetCursorTask</text>
 <text text-anchor="middle" x="501.5" y="-188.5" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -218,7 +218,7 @@ var sectionId = 'dynsection-143';
 <!-- Node8 -->
 <g id="Node000008" class="node">
 <title>Node8</title>
-<g id="a_Node000008"><a xlink:href="classcarta_1_1GeneralMessageTask.html#ae6144bb7288b7da35f513bb6a37e3de2" target="_top" xlink:title=" ">
+<g id="a_Node000008"><a xlink:href="classcarta_1_1GeneralMessageTask.html#a2b330608ca3ee635977a75325a97691a" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="794,-45.5 643,-45.5 643,-15.5 794,-15.5 794,-45.5"/>
 <text text-anchor="start" x="651" y="-33.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::GeneralMessageTask</text>
 <text text-anchor="middle" x="718.5" y="-22.5" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -331,7 +331,7 @@ var sectionId = 'dynsection-143';
 <!-- Node13 -->
 <g id="Node000013" class="node">
 <title>Node13</title>
-<g id="a_Node000013"><a xlink:href="classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271" target="_top" xlink:title=" ">
+<g id="a_Node000013"><a xlink:href="classcarta_1_1AnimationTask.html#a7196ee6f67508506515bf8ffe5571033" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="140,-115.5 21,-115.5 21,-85.5 140,-85.5 140,-115.5"/>
 <text text-anchor="start" x="29" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::AnimationTask</text>
 <text text-anchor="middle" x="80.5" y="-92.5" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -378,7 +378,7 @@ var sectionId = 'dynsection-143';
 <!-- Node16 -->
 <g id="Node000016" class="node">
 <title>Node16</title>
-<g id="a_Node000016"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a060a6a6a22fa9d26231e36e640534527" target="_top" xlink:title=" ">
+<g id="a_Node000016"><a xlink:href="classcarta_1_1SetImageChannelsTask.html#a6e2ba80dd6c38896899985d023a2dfb1" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="161,-163.5 0,-163.5 0,-133.5 161,-133.5 161,-163.5"/>
 <text text-anchor="start" x="8" y="-151.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SetImageChannelsTask</text>
 <text text-anchor="middle" x="80.5" y="-140.5" font-family="Helvetica,sans-Serif" font-size="10.00">::execute</text>
@@ -397,7 +397,7 @@ var sectionId = 'dynsection-143';
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="classcarta_1_1RegionDataStreamsTask.html#a38cdf00f163c90d07819252c648c47c4" target="_top" xlink:title=" ">
+<g id="a_Node000018"><a xlink:href="classcarta_1_1RegionDataStreamsTask.html#ae80ce0a5ea1d15daf31d6ecf7957d4ba" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="359,-67.5 214,-67.5 214,-37.5 359,-37.5 359,-67.5"/>
 <text text-anchor="start" x="222" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionDataStreams</text>
 <text text-anchor="middle" x="286.5" y="-44.5" font-family="Helvetica,sans-Serif" font-size="10.00">Task::execute</text>

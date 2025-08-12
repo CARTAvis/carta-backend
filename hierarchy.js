@@ -99,16 +99,6 @@ var hierarchy =
       [ "carta::ImageMoments< casacore::Float >", "classcarta_1_1ImageMoments.html", null ],
       [ "carta::ImageMoments< T >", "classcarta_1_1ImageMoments.html", null ]
     ] ],
-    [ "carta::OnMessageTask", "classcarta_1_1OnMessageTask.html", [
-      [ "carta::AnimationTask", "classcarta_1_1AnimationTask.html", null ],
-      [ "carta::GeneralMessageTask< T >", "classcarta_1_1GeneralMessageTask.html", null ],
-      [ "carta::PvPreviewUpdateTask", "classcarta_1_1PvPreviewUpdateTask.html", null ],
-      [ "carta::RegionDataStreamsTask", "classcarta_1_1RegionDataStreamsTask.html", null ],
-      [ "carta::SetCursorTask", "classcarta_1_1SetCursorTask.html", null ],
-      [ "carta::SetImageChannelsTask", "classcarta_1_1SetImageChannelsTask.html", null ],
-      [ "carta::SpectralProfileTask", "classcarta_1_1SpectralProfileTask.html", null ],
-      [ "carta::StartAnimationTask", "classcarta_1_1StartAnimationTask.html", null ]
-    ] ],
     [ "carta::PerSocketData", "structcarta_1_1PerSocketData.html", null ],
     [ "PointXy", "structPointXy.html", null ],
     [ "carta::PolarizationCalculator", "classcarta_1_1PolarizationCalculator.html", null ],
@@ -152,6 +142,18 @@ var hierarchy =
     [ "carta::TableParam", "structcarta_1_1TableParam.html", null ],
     [ "carta::TableView", "classcarta_1_1TableView.html", null ],
     [ "carta::TableViewCache", "structcarta_1_1TableViewCache.html", null ],
+    [ "carta::Task", "classcarta_1_1Task.html", [
+      [ "carta::OnMessageTask", "classcarta_1_1OnMessageTask.html", [
+        [ "carta::AnimationTask", "classcarta_1_1AnimationTask.html", null ],
+        [ "carta::GeneralMessageTask< T >", "classcarta_1_1GeneralMessageTask.html", null ],
+        [ "carta::PvPreviewUpdateTask", "classcarta_1_1PvPreviewUpdateTask.html", null ],
+        [ "carta::RegionDataStreamsTask", "classcarta_1_1RegionDataStreamsTask.html", null ],
+        [ "carta::SetCursorTask", "classcarta_1_1SetCursorTask.html", null ],
+        [ "carta::SetImageChannelsTask", "classcarta_1_1SetImageChannelsTask.html", null ],
+        [ "carta::SpectralProfileTask", "classcarta_1_1SpectralProfileTask.html", null ],
+        [ "carta::StartAnimationTask", "classcarta_1_1StartAnimationTask.html", null ]
+      ] ]
+    ] ],
     [ "carta::ThreadManager", "classcarta_1_1ThreadManager.html", null ],
     [ "carta::VectorField::ThresholdCut", "structcarta_1_1VectorField_1_1ThresholdCut.html", null ],
     [ "carta::Tile", "structcarta_1_1Tile.html", null ],

@@ -137,7 +137,7 @@ var searchData=
   ['sort_5fcolumn_134',['sort_column',['../structcarta_1_1TableViewCache.html#a70632b90c87aaab413ceeed5851ad22c',1,'carta::TableViewCache']]],
   ['sortbycolumn_135',['SortByColumn',['../classcarta_1_1TableView.html#ad4d7f9a4791b2151ddff48755353ec24',1,'carta::TableView']]],
   ['sortbyindex_136',['SortByIndex',['../classcarta_1_1TableView.html#a3436328fcde6644d06250b52f9845771',1,'carta::TableView']]],
-  ['sortindices_137',['sortindices',['../classcarta_1_1Column.html#a98290f4faaf24784702aa9062d0c0ff5',1,'carta::Column::SortIndices()'],['../classcarta_1_1DataColumn.html#adc5a3e9aa02735a42da33a2a16bb8a2f',1,'carta::DataColumn::SortIndices(IndexList &amp;indices, bool ascending) const override'],['../classcarta_1_1DataColumn.html#ad1bb047f77eb35a22d20f3a947fb5969',1,'carta::DataColumn::SortIndices(IndexList &amp;indices, bool ascending) const']]],
+  ['sortindices_137',['sortindices',['../classcarta_1_1Column.html#a98290f4faaf24784702aa9062d0c0ff5',1,'carta::Column::SortIndices()'],['../classcarta_1_1DataColumn.html#adc5a3e9aa02735a42da33a2a16bb8a2f',1,'carta::DataColumn::SortIndices(IndexList &amp;indices, bool ascending) const override'],['../classcarta_1_1DataColumn.html#a88dbed61d68f082f172574389132f93a',1,'carta::DataColumn::SortIndices(IndexList &amp;indices, bool ascending) const']]],
   ['sorting_5ftype_138',['sorting_type',['../structcarta_1_1TableViewCache.html#ae198915a3c5763671b3939b681eb63a2',1,'carta::TableViewCache']]],
   ['spatial_139',['Spatial',['../structAxesInfo.html#a238f0f3e3b917094c75468c9c316e091',1,'AxesInfo']]],
   ['spatial_5fx_140',['spatial_x',['../structAxesInfo.html#ae5f5be72ebe48e7358376eab3981281b',1,'AxesInfo']]],

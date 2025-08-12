@@ -326,6 +326,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1TableViewCache.html">TableViewCache</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Task.html">Task</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ThreadManager.html">ThreadManager</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1Tile.html">Tile</a></td></tr>
@@ -398,20 +400,20 @@ Functions</h2></td></tr>
 <tr class="separator:ae0d37b236270de77bb23613108e10258"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab893c6b5f03810d00b2d92e29bb9b545" id="r_ab893c6b5f03810d00b2d92e29bb9b545"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ab893c6b5f03810d00b2d92e29bb9b545">Compress</a> (std::vector&lt; float &gt; &amp;array, size_t offset, std::vector&lt; char &gt; &amp;compression_buffer, std::size_t &amp;compressed_size, uint32_t nx, uint32_t ny, uint32_t precision)</td></tr>
 <tr class="separator:ab893c6b5f03810d00b2d92e29bb9b545"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af7359c825e152777546c5e50b44b6e20" id="r_af7359c825e152777546c5e50b44b6e20"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#af7359c825e152777546c5e50b44b6e20">TraceSegment</a> (const float *image, std::vector&lt; bool &gt; &amp;visited, int64_t width, int64_t height, double scale, double offset, double level, int x_cell, int y_cell, int side, vector&lt; float &gt; &amp;vertices)</td></tr>
-<tr class="separator:af7359c825e152777546c5e50b44b6e20"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e1f615d908d735552aa446444b3fc72" id="r_a7e1f615d908d735552aa446444b3fc72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a7e1f615d908d735552aa446444b3fc72">TraceLevel</a> (const float *image, int64_t width, int64_t height, double scale, double offset, double level, vector&lt; float &gt; &amp;vertices, vector&lt; int32_t &gt; &amp;indices, int chunk_size, <a class="el" href="namespacecarta.html#a2e349f6da0c1715066c9ebb1173d1f29">ContourCallback</a> &amp;partial_callback)</td></tr>
-<tr class="separator:a7e1f615d908d735552aa446444b3fc72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0c260fb7b748c2ba281b5fd160f22cd" id="r_af0c260fb7b748c2ba281b5fd160f22cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#af0c260fb7b748c2ba281b5fd160f22cd">TraceSegment</a> (const float *image, std::vector&lt; bool &gt; &amp;visited, int64_t width, int64_t height, double scale, double offset, double level, int x_cell, int y_cell, int side, std::vector&lt; float &gt; &amp;vertices)</td></tr>
+<tr class="separator:af0c260fb7b748c2ba281b5fd160f22cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaae2c5eb4387c657d0d7e4edea59e63c" id="r_aaae2c5eb4387c657d0d7e4edea59e63c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aaae2c5eb4387c657d0d7e4edea59e63c">TraceLevel</a> (const float *image, int64_t width, int64_t height, double scale, double offset, double level, std::vector&lt; float &gt; &amp;vertices, std::vector&lt; int32_t &gt; &amp;indices, int chunk_size, <a class="el" href="namespacecarta.html#a2e349f6da0c1715066c9ebb1173d1f29">ContourCallback</a> &amp;partial_callback)</td></tr>
+<tr class="separator:aaae2c5eb4387c657d0d7e4edea59e63c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a02080ed8c4cdb8dbc46af133e17ccd1e" id="r_a02080ed8c4cdb8dbc46af133e17ccd1e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a02080ed8c4cdb8dbc46af133e17ccd1e">TraceContours</a> (float *image, int64_t width, int64_t height, double scale, double offset, const std::vector&lt; double &gt; &amp;levels, std::vector&lt; std::vector&lt; float &gt; &gt; &amp;vertex_data, std::vector&lt; std::vector&lt; int32_t &gt; &gt; &amp;index_data, int chunk_size, <a class="el" href="namespacecarta.html#a2e349f6da0c1715066c9ebb1173d1f29">ContourCallback</a> &amp;partial_callback)</td></tr>
 <tr class="separator:a02080ed8c4cdb8dbc46af133e17ccd1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab5f1891c4cb08c9253fbe5d1bb4b2dbe" id="r_ab5f1891c4cb08c9253fbe5d1bb4b2dbe"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ab5f1891c4cb08c9253fbe5d1bb4b2dbe">TraceContourLevel</a> (float *image, int64_t width, int64_t height, double scale, double offset, double level, std::vector&lt; double &gt; &amp;vertex_data, std::vector&lt; int32_t &gt; &amp;indices)</td></tr>
 <tr class="separator:ab5f1891c4cb08c9253fbe5d1bb4b2dbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae89ff7b7585126d14f73afe321bdc72e" id="r_ae89ff7b7585126d14f73afe321bdc72e"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ae89ff7b7585126d14f73afe321bdc72e">NormPdf</a> (double x, double sigma)</td></tr>
 <tr class="separator:ae89ff7b7585126d14f73afe321bdc72e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a497f02167a001abee3a4c3aadaa3c837" id="r_a497f02167a001abee3a4c3aadaa3c837"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a497f02167a001abee3a4c3aadaa3c837">MakeKernel</a> (vector&lt; float &gt; &amp;kernel, double sigma)</td></tr>
-<tr class="separator:a497f02167a001abee3a4c3aadaa3c837"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14ef4865d709f274065adb74f068320e" id="r_a14ef4865d709f274065adb74f068320e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a14ef4865d709f274065adb74f068320e">RunKernel</a> (const vector&lt; float &gt; &amp;kernel, const float *src_data, float *dest_data, const int64_t src_width, const int64_t src_height, const int64_t dest_width, const int64_t dest_height, const bool vertical)</td></tr>
-<tr class="separator:a14ef4865d709f274065adb74f068320e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41bb4d4534de964f83271afdf638dfcb" id="r_a41bb4d4534de964f83271afdf638dfcb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a41bb4d4534de964f83271afdf638dfcb">MakeKernel</a> (std::vector&lt; float &gt; &amp;kernel, double sigma)</td></tr>
+<tr class="separator:a41bb4d4534de964f83271afdf638dfcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a485f08e6c95ab33a0567541aa0bb0ea0" id="r_a485f08e6c95ab33a0567541aa0bb0ea0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a485f08e6c95ab33a0567541aa0bb0ea0">RunKernel</a> (const std::vector&lt; float &gt; &amp;kernel, const float *src_data, float *dest_data, const int64_t src_width, const int64_t src_height, const int64_t dest_width, const int64_t dest_height, const bool vertical)</td></tr>
+<tr class="separator:a485f08e6c95ab33a0567541aa0bb0ea0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3ae47208421b1d4f81037729f3c08fc7" id="r_a3ae47208421b1d4f81037729f3c08fc7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a3ae47208421b1d4f81037729f3c08fc7">GaussianSmooth</a> (const float *src_data, float *dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height, int smoothing_factor)</td></tr>
 <tr class="separator:a3ae47208421b1d4f81037729f3c08fc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5e8e9ea12c8402698a665a81e97cf13f" id="r_a5e8e9ea12c8402698a665a81e97cf13f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a5e8e9ea12c8402698a665a81e97cf13f">BlockSmooth</a> (const float *src_data, float *dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height, int64_t x_offset, int64_t y_offset, int smoothing_factor)</td></tr>
@@ -424,10 +426,6 @@ Functions</h2></td></tr>
 <tr class="separator:a724d5f79d7c1320592c011bd3bb57e98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a64f1569d1c90db30af9f2d719f9ffe59" id="r_a64f1569d1c90db30af9f2d719f9ffe59"><td class="memItemLeft" align="right" valign="top">static __m128&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a64f1569d1c90db30af9f2d719f9ffe59">IsInfinity</a> (__m128 x)</td></tr>
 <tr class="separator:a64f1569d1c90db30af9f2d719f9ffe59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a41bb4d4534de964f83271afdf638dfcb" id="r_a41bb4d4534de964f83271afdf638dfcb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a41bb4d4534de964f83271afdf638dfcb">MakeKernel</a> (std::vector&lt; float &gt; &amp;kernel, double sigma)</td></tr>
-<tr class="separator:a41bb4d4534de964f83271afdf638dfcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9357dcf90b947224b971067e616c8a9d" id="r_a9357dcf90b947224b971067e616c8a9d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a9357dcf90b947224b971067e616c8a9d">RunKernel</a> (const std::vector&lt; float &gt; &amp;kernel, const float *src_data, float *dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height, bool vertical)</td></tr>
-<tr class="separator:a9357dcf90b947224b971067e616c8a9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a564d69915ebb8e5d130798efdf5fc32a" id="r_a564d69915ebb8e5d130798efdf5fc32a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a564d69915ebb8e5d130798efdf5fc32a">GetTiles</a> (int image_width, int image_height, int mip, std::vector&lt; <a class="el" href="structcarta_1_1Tile.html">Tile</a> &gt; &amp;tiles)</td></tr>
 <tr class="separator:a564d69915ebb8e5d130798efdf5fc32a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95828b5aa32c7a2363d7679a2cb91b77" id="r_a95828b5aa32c7a2363d7679a2cb91b77"><td class="memItemLeft" align="right" valign="top">CARTA::ImageBounds&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a95828b5aa32c7a2363d7679a2cb91b77">GetImageBounds</a> (const <a class="el" href="structcarta_1_1Tile.html">Tile</a> &amp;tile, int image_width, int image_height, int mip)</td></tr>
@@ -455,10 +453,10 @@ Functions</h2></td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192" id="r_aa3581dda6f86c582d960a381773a4192"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aa3581dda6f86c582d960a381773a4192">applyOptionalArgument</a> (T &amp;val, const string &amp;argument_name, const cxxopts::ParseResult &amp;results)</td></tr>
 <tr class="separator:aa3581dda6f86c582d960a381773a4192"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a928af6c5078150f8c0cafc2a32a6b05c" id="r_a928af6c5078150f8c0cafc2a32a6b05c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a928af6c5078150f8c0cafc2a32a6b05c">TrimSpaces</a> (string &amp;str)</td></tr>
-<tr class="separator:a928af6c5078150f8c0cafc2a32a6b05c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab91d60c075ef6cca17b213b9cde59d66" id="r_ab91d60c075ef6cca17b213b9cde59d66"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1Column.html">Column</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ab91d60c075ef6cca17b213b9cde59d66">ColumnFromFitsType</a> (int type, const string &amp;col_name)</td></tr>
-<tr class="separator:ab91d60c075ef6cca17b213b9cde59d66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc4c4afd1d282ad51a05d830059a55df" id="r_afc4c4afd1d282ad51a05d830059a55df"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#afc4c4afd1d282ad51a05d830059a55df">TrimSpaces</a> (std::string &amp;str)</td></tr>
+<tr class="separator:afc4c4afd1d282ad51a05d830059a55df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11ed15851bcfe3fd2f2e01dd9a1c812b" id="r_a11ed15851bcfe3fd2f2e01dd9a1c812b"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1Column.html">Column</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a11ed15851bcfe3fd2f2e01dd9a1c812b">ColumnFromFitsType</a> (int type, const std::string &amp;col_name)</td></tr>
+<tr class="separator:a11ed15851bcfe3fd2f2e01dd9a1c812b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89ce55ad3ee994c42310eee6787f1a14" id="r_a89ce55ad3ee994c42310eee6787f1a14"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:a89ce55ad3ee994c42310eee6787f1a14"><td class="memTemplItemLeft" align="right" valign="top">T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a89ce55ad3ee994c42310eee6787f1a14">clamp</a> (T val, const T &amp;min_val, const T &amp;max_val)</td></tr>
 <tr class="separator:a89ce55ad3ee994c42310eee6787f1a14"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1163,8 +1161,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="ab91d60c075ef6cca17b213b9cde59d66" name="ab91d60c075ef6cca17b213b9cde59d66"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab91d60c075ef6cca17b213b9cde59d66">&#9670;&#160;</a></span>ColumnFromFitsType()</h2>
+<a id="a11ed15851bcfe3fd2f2e01dd9a1c812b" name="a11ed15851bcfe3fd2f2e01dd9a1c812b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11ed15851bcfe3fd2f2e01dd9a1c812b">&#9670;&#160;</a></span>ColumnFromFitsType()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1178,7 +1176,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const string &amp;&#160;</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>col_name</em>&#160;</td>
         </tr>
         <tr>
@@ -1191,7 +1189,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_ab91d60c075ef6cca17b213b9cde59d66_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a11ed15851bcfe3fd2f2e01dd9a1c812b_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1843,7 +1841,7 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <a id="a41bb4d4534de964f83271afdf638dfcb" name="a41bb4d4534de964f83271afdf638dfcb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a41bb4d4534de964f83271afdf638dfcb">&#9670;&#160;</a></span>MakeKernel() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a41bb4d4534de964f83271afdf638dfcb">&#9670;&#160;</a></span>MakeKernel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1876,44 +1874,6 @@ Here is the call graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a41bb4d4534de964f83271afdf638dfcb_icgraph.svg" width="623" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-
-</div>
-</div>
-<a id="a497f02167a001abee3a4c3aadaa3c837" name="a497f02167a001abee3a4c3aadaa3c837"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a497f02167a001abee3a4c3aadaa3c837">&#9670;&#160;</a></span>MakeKernel() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void carta::MakeKernel </td>
-          <td>(</td>
-          <td class="paramtype">vector&lt; float &gt; &amp;&#160;</td>
-          <td class="paramname"><em>kernel</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>sigma</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a497f02167a001abee3a4c3aadaa3c837_cgraph.svg" width="318" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a497f02167a001abee3a4c3aadaa3c837_icgraph.svg" width="623" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -2069,8 +2029,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a9357dcf90b947224b971067e616c8a9d" name="a9357dcf90b947224b971067e616c8a9d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9357dcf90b947224b971067e616c8a9d">&#9670;&#160;</a></span>RunKernel() <span class="overload">[1/2]</span></h2>
+<a id="a485f08e6c95ab33a0567541aa0bb0ea0" name="a485f08e6c95ab33a0567541aa0bb0ea0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a485f08e6c95ab33a0567541aa0bb0ea0">&#9670;&#160;</a></span>RunKernel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2079,80 +2039,6 @@ Here is the caller graph for this function:</div>
           <td class="memname">bool carta::RunKernel </td>
           <td>(</td>
           <td class="paramtype">const std::vector&lt; float &gt; &amp;&#160;</td>
-          <td class="paramname"><em>kernel</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const float *&#160;</td>
-          <td class="paramname"><em>src_data</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>dest_data</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t&#160;</td>
-          <td class="paramname"><em>src_width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t&#160;</td>
-          <td class="paramname"><em>src_height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t&#160;</td>
-          <td class="paramname"><em>dest_width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t&#160;</td>
-          <td class="paramname"><em>dest_height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>vertical</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a9357dcf90b947224b971067e616c8a9d_cgraph.svg" width="354" height="102"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a9357dcf90b947224b971067e616c8a9d_icgraph.svg" width="614" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-
-</div>
-</div>
-<a id="a14ef4865d709f274065adb74f068320e" name="a14ef4865d709f274065adb74f068320e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a14ef4865d709f274065adb74f068320e">&#9670;&#160;</a></span>RunKernel() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool carta::RunKernel </td>
-          <td>(</td>
-          <td class="paramtype">const vector&lt; float &gt; &amp;&#160;</td>
           <td class="paramname"><em>kernel</em>, </td>
         </tr>
         <tr>
@@ -2207,12 +2093,12 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a14ef4865d709f274065adb74f068320e_cgraph.svg" width="354" height="102"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a485f08e6c95ab33a0567541aa0bb0ea0_cgraph.svg" width="354" height="102"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a14ef4865d709f274065adb74f068320e_icgraph.svg" width="614" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a485f08e6c95ab33a0567541aa0bb0ea0_icgraph.svg" width="614" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -2367,8 +2253,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a7e1f615d908d735552aa446444b3fc72" name="a7e1f615d908d735552aa446444b3fc72"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e1f615d908d735552aa446444b3fc72">&#9670;&#160;</a></span>TraceLevel()</h2>
+<a id="aaae2c5eb4387c657d0d7e4edea59e63c" name="aaae2c5eb4387c657d0d7e4edea59e63c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaae2c5eb4387c657d0d7e4edea59e63c">&#9670;&#160;</a></span>TraceLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2412,13 +2298,13 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">vector&lt; float &gt; &amp;&#160;</td>
+          <td class="paramtype">std::vector&lt; float &gt; &amp;&#160;</td>
           <td class="paramname"><em>vertices</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">vector&lt; int32_t &gt; &amp;&#160;</td>
+          <td class="paramtype">std::vector&lt; int32_t &gt; &amp;&#160;</td>
           <td class="paramname"><em>indices</em>, </td>
         </tr>
         <tr>
@@ -2443,18 +2329,18 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a7e1f615d908d735552aa446444b3fc72_cgraph.svg" width="346" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_aaae2c5eb4387c657d0d7e4edea59e63c_cgraph.svg" width="346" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a7e1f615d908d735552aa446444b3fc72_icgraph.svg" width="598" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_aaae2c5eb4387c657d0d7e4edea59e63c_icgraph.svg" width="598" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
 </div>
-<a id="af7359c825e152777546c5e50b44b6e20" name="af7359c825e152777546c5e50b44b6e20"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af7359c825e152777546c5e50b44b6e20">&#9670;&#160;</a></span>TraceSegment()</h2>
+<a id="af0c260fb7b748c2ba281b5fd160f22cd" name="af0c260fb7b748c2ba281b5fd160f22cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0c260fb7b748c2ba281b5fd160f22cd">&#9670;&#160;</a></span>TraceSegment()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2522,7 +2408,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">vector&lt; float &gt; &amp;&#160;</td>
+          <td class="paramtype">std::vector&lt; float &gt; &amp;&#160;</td>
           <td class="paramname"><em>vertices</em>&#160;</td>
         </tr>
         <tr>
@@ -2535,13 +2421,13 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_af7359c825e152777546c5e50b44b6e20_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_af0c260fb7b748c2ba281b5fd160f22cd_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
 </div>
-<a id="a928af6c5078150f8c0cafc2a32a6b05c" name="a928af6c5078150f8c0cafc2a32a6b05c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a928af6c5078150f8c0cafc2a32a6b05c">&#9670;&#160;</a></span>TrimSpaces()</h2>
+<a id="afc4c4afd1d282ad51a05d830059a55df" name="afc4c4afd1d282ad51a05d830059a55df"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc4c4afd1d282ad51a05d830059a55df">&#9670;&#160;</a></span>TrimSpaces()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2549,7 +2435,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">void carta::TrimSpaces </td>
           <td>(</td>
-          <td class="paramtype">string &amp;&#160;</td>
+          <td class="paramtype">std::string &amp;&#160;</td>
           <td class="paramname"><em>str</em></td><td>)</td>
           <td></td>
         </tr>
@@ -2558,7 +2444,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a928af6c5078150f8c0cafc2a32a6b05c_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_afc4c4afd1d282ad51a05d830059a55df_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>

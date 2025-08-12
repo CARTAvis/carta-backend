@@ -17,9 +17,9 @@ var searchData=
   ['touch_14',['Touch',['../classcarta_1_1TileCache.html#a75bc5452ceb7180fabcc601bb5a2533e',1,'carta::TileCache']]],
   ['tracecontourlevel_15',['TraceContourLevel',['../namespacecarta.html#ab5f1891c4cb08c9253fbe5d1bb4b2dbe',1,'carta']]],
   ['tracecontours_16',['TraceContours',['../namespacecarta.html#a02080ed8c4cdb8dbc46af133e17ccd1e',1,'carta']]],
-  ['tracelevel_17',['TraceLevel',['../namespacecarta.html#a7e1f615d908d735552aa446444b3fc72',1,'carta']]],
-  ['tracesegment_18',['TraceSegment',['../namespacecarta.html#af7359c825e152777546c5e50b44b6e20',1,'carta']]],
-  ['trimspaces_19',['TrimSpaces',['../namespacecarta.html#a928af6c5078150f8c0cafc2a32a6b05c',1,'carta']]],
+  ['tracelevel_17',['TraceLevel',['../namespacecarta.html#aaae2c5eb4387c657d0d7e4edea59e63c',1,'carta']]],
+  ['tracesegment_18',['TraceSegment',['../namespacecarta.html#af0c260fb7b748c2ba281b5fd160f22cd',1,'carta']]],
+  ['trimspaces_19',['TrimSpaces',['../namespacecarta.html#afc4c4afd1d282ad51a05d830059a55df',1,'carta']]],
   ['try_5fpop_20',['try_pop',['../classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d',1,'carta::concurrent_queue']]],
   ['trycast_21',['TryCast',['../classcarta_1_1DataColumn.html#a9ee54f3fb58e28a423fb84418a0c178d',1,'carta::DataColumn']]],
   ['type_22',['Type',['../classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001',1,'carta::Table']]]
