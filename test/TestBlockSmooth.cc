@@ -4,10 +4,10 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <random>
-#include <vector>
-#include <tuple>
 #include <functional>
+#include <random>
+#include <tuple>
+#include <vector>
 
 #include <casa/Arrays/ArrayMath.h>
 #include <casa/Arrays/Matrix.h>
@@ -149,8 +149,8 @@ public:
 };
 
 // TODO
-// Checks that scalar and SSE downsampling give results with identical NaN 
-// placement and non-negative absolute differences across multiple NaN fractions 
+// Checks that scalar and SSE downsampling give results with identical NaN
+// placement and non-negative absolute differences across multiple NaN fractions
 // and downsample factors
 // Expected: NaN masks match exactly; sum and max errors are ≥ 0 if finite
 TEST_F(BlockSmoothingTest, TestControl) {
@@ -181,8 +181,8 @@ struct DownsampleTestParams {
 class DownsampleSSEAccuracyTest : public BlockSmoothingTest, public ::testing::WithParamInterface<DownsampleTestParams> {};
 
 // TODO
-// Verifies that SSE downsampling matches scalar output within small numerical 
-// tolerances (≤ 1e-1 sum error, ≤ 1e-3 max error) for various NaN fractions 
+// Verifies that SSE downsampling matches scalar output within small numerical
+// tolerances (≤ 1e-1 sum error, ≤ 1e-3 max error) for various NaN fractions
 // and downsample factors
 // Expected: NaN masks match exactly; both error metrics stay within limits
 TEST_P(DownsampleSSEAccuracyTest, SSEvsScalar) {
@@ -202,22 +202,11 @@ TEST_P(DownsampleSSEAccuracyTest, SSEvsScalar) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    SSEAccuracy,
-    DownsampleSSEAccuracyTest,
-    ::testing::Values(
-        DownsampleTestParams{0.0f, 4},
-        DownsampleTestParams{0.05f, 4},
-        DownsampleTestParams{0.1f, 4},
-        DownsampleTestParams{0.5f, 4},
-        DownsampleTestParams{0.95f, 4},
-        DownsampleTestParams{1.0f, 4},
-        DownsampleTestParams{0.0f, 8},
-        DownsampleTestParams{0.05f, 8},
-        DownsampleTestParams{0.1f, 8}
-        // Add more combinations as needed
-    )
-);
+INSTANTIATE_TEST_SUITE_P(SSEAccuracy, DownsampleSSEAccuracyTest,
+    ::testing::Values(DownsampleTestParams{0.0f, 4}, DownsampleTestParams{0.05f, 4}, DownsampleTestParams{0.1f, 4},
+        DownsampleTestParams{0.5f, 4}, DownsampleTestParams{0.95f, 4}, DownsampleTestParams{1.0f, 4}, DownsampleTestParams{0.0f, 8},
+        DownsampleTestParams{0.05f, 8}, DownsampleTestParams{0.1f, 8} // Add more combinations as needed
+        ));
 
 #ifdef COMPILE_PERFORMANCE_TESTS
 // Parameterized performance test for SSE
@@ -227,9 +216,8 @@ struct DownsamplePerfParams {
 
 class DownsampleSSEPerfTest : public BlockSmoothingTest, public ::testing::WithParamInterface<DownsamplePerfParams> {};
 
-
 // TODO
-// Measures runtime of SSE vs scalar downsampling and confirms that SSE is at 
+// Measures runtime of SSE vs scalar downsampling and confirms that SSE is at
 // least 10% faster for different downsample factors
 // Expected: Speedup ratio (scalar_time / sse_time) ≥ 1.1
 TEST_P(DownsampleSSEPerfTest, SSEvsScalarSpeedup) {
@@ -250,17 +238,10 @@ TEST_P(DownsampleSSEPerfTest, SSEvsScalarSpeedup) {
     EXPECT_GE(speedup, MINIMUM_SPEEDUP);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    SSEPerf,
-    DownsampleSSEPerfTest,
+INSTANTIATE_TEST_SUITE_P(SSEPerf, DownsampleSSEPerfTest,
     ::testing::Values(
-        DownsamplePerfParams{4},
-        DownsamplePerfParams{8},
-        DownsamplePerfParams{16},
-        DownsamplePerfParams{32}
-        // Add more factors as needed
-    )
-);
+        DownsamplePerfParams{4}, DownsamplePerfParams{8}, DownsamplePerfParams{16}, DownsamplePerfParams{32} // Add more factors as needed
+        ));
 #endif // COMPILE_PERFORMANCE_TESTS
 
 #ifdef __AVX__
@@ -268,7 +249,7 @@ INSTANTIATE_TEST_SUITE_P(
 class DownsampleAVXAccuracyTest : public BlockSmoothingTest, public ::testing::WithParamInterface<DownsampleTestParams> {};
 
 // TODO
-// Ensures AVX downsampling matches scalar output within the same error 
+// Ensures AVX downsampling matches scalar output within the same error
 // tolerances as SSE accuracy tests
 // Expected: NaN masks match exactly; sum and max errors stay within limits
 TEST_P(DownsampleAVXAccuracyTest, AVXvsScalar) {
@@ -288,21 +269,11 @@ TEST_P(DownsampleAVXAccuracyTest, AVXvsScalar) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    AVXAccuracy,
-    DownsampleAVXAccuracyTest,
-    ::testing::Values(
-        DownsampleTestParams{0.0f, 8},
-        DownsampleTestParams{0.05f, 8},
-        DownsampleTestParams{0.1f, 8},
-        DownsampleTestParams{0.5f, 8},
-        DownsampleTestParams{0.95f, 8},
-        DownsampleTestParams{1.0f, 8},
-        DownsampleTestParams{0.0f, 16},
-        DownsampleTestParams{0.05f, 16}
-        // Add more combinations as needed
-    )
-);
+INSTANTIATE_TEST_SUITE_P(AVXAccuracy, DownsampleAVXAccuracyTest,
+    ::testing::Values(DownsampleTestParams{0.0f, 8}, DownsampleTestParams{0.05f, 8}, DownsampleTestParams{0.1f, 8},
+        DownsampleTestParams{0.5f, 8}, DownsampleTestParams{0.95f, 8}, DownsampleTestParams{1.0f, 8}, DownsampleTestParams{0.0f, 16},
+        DownsampleTestParams{0.05f, 16} // Add more combinations as needed
+        ));
 #endif // __AVX__
 
 #ifdef COMPILE_PERFORMANCE_TESTS
@@ -310,7 +281,7 @@ INSTANTIATE_TEST_SUITE_P(
 class DownsampleAVXPerfTest : public BlockSmoothingTest, public ::testing::WithParamInterface<DownsamplePerfParams> {};
 
 // TODO
-// Compares AVX vs SSE runtime and confirms that AVX is at least 10% faster 
+// Compares AVX vs SSE runtime and confirms that AVX is at least 10% faster
 // for various downsample factors
 // Expected: Speedup ratio (sse_time / avx_time) ≥ 1.1
 TEST_P(DownsampleAVXPerfTest, AVXvsSSESpeedup) {
@@ -331,15 +302,8 @@ TEST_P(DownsampleAVXPerfTest, AVXvsSSESpeedup) {
     EXPECT_GE(speedup, MINIMUM_SPEEDUP);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    AVXPerf,
-    DownsampleAVXPerfTest,
+INSTANTIATE_TEST_SUITE_P(AVXPerf, DownsampleAVXPerfTest,
     ::testing::Values(
-        DownsamplePerfParams{8},
-        DownsamplePerfParams{16},
-        DownsamplePerfParams{32},
-        DownsamplePerfParams{64}
-        // Add more factors as needed
-    )
-);
+        DownsamplePerfParams{8}, DownsamplePerfParams{16}, DownsamplePerfParams{32}, DownsamplePerfParams{64} // Add more factors as needed
+        ));
 #endif // COMPILE_PERFORMANCE_TESTS
