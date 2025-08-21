@@ -14,6 +14,18 @@
 
 class ContourTest : public ::testing::Test {
 public:
+    // This test verifies the correctness of contour generation in CARTA for both
+    // FITS and HDF5 image files. It loads the target image into a Frame, applies
+    // contour parameters (multiple levels and a specified smoothing mode), and
+    // generates contours over the full image extent. The test asserts that:
+    //
+    //  1. Contours are generated for all requested levels.
+    //  2. Each contour level reports progress reaching 100%.
+    //  3. When no smoothing is applied, the generated contour vertices correspond
+    //     to valid pixel-derived values in the underlying dataset.
+    // 
+    // The test also logs the number of vertices produced per contour level to
+    // confirm completeness of the contouring process.
     void GenerateContour(std::string filename, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {
         std::string file_path;
 
@@ -89,6 +101,19 @@ public:
         }
     }
 
+    // This helper function checks whether a given (x, y) coordinate corresponds
+    // to a valid contour vertex at a specified contour level. It does so by:
+    //
+    //  1. Converting the floating-point coordinates into pixel indices.
+    //  2. Verifying that the central pixel lies within the image bounds.
+    //  3. Reading the pixel value at the central location and treating NaN values
+    //     as a large negative sentinel.
+    //  4. Comparing the central pixel value against each of its 8 neighboring
+    //     pixels to determine if the specified contour level lies between them.
+    //
+    // The function returns true if the contour level crosses between the central
+    // pixel value and any of its neighbors, meaning the coordinate is part of a
+    // valid contour line. Otherwise, it returns false.
     bool IsVertex(const std::shared_ptr<DataReader>& reader, double x, double y, double level, int width, int height) {
         // Shift to pixel coordinate
         x -= 0.5;

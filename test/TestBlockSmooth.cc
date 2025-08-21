@@ -42,6 +42,16 @@ public:
     std::uniform_real_distribution<float> float_random;
     std::uniform_int_distribution<int> size_random;
 
+    // Test fixture constructor for BlockSmoothingTest.
+    // Initializes random number generators for use in smoothing tests:
+    // 
+    //  1. `mt`: a Mersenne Twister RNG seeded with a random device.
+    //  2. `float_random`: generates pixel values uniformly in the range [0, 1.0].
+    //  3. `size_random`: generates random image dimensions uniformly in the range [512, 1024].
+    //
+    // These randomized values allow BlockSmoothing tests to simulate different
+    // image sizes and pixel distributions, ensuring robustness of the smoothing
+    // algorithm across varied input conditions.
     BlockSmoothingTest() {
         mt = std::mt19937(rd());
         float_random = std::uniform_real_distribution<float>(0, 1.0f);
@@ -49,6 +59,22 @@ public:
         size_random = std::uniform_int_distribution<int>(512, 1024);
     }
 
+    // Helper function for generating randomized test matrices with controlled
+    // fractions of invalid values.
+    //
+    // Arguments:
+    //   - rows, columns: matrix dimensions.
+    //   - nan_fraction: probability of assigning NaN or Infinity to a given cell.
+    //
+    // Behavior:
+    //   * Each element of the matrix is randomly assigned as follows:
+    //       - With probability `nan_fraction`: NaN
+    //       - Else with probability `nan_fraction`: +Infinity
+    //       - Otherwise: a random float in the range [-0.5, 0.5).
+    //
+    // The resulting matrix simulates realistic test data containing both valid and
+    // invalid floating-point values, useful for verifying algorithm robustness
+    // under noisy or corrupted input conditions.
     Matrix2F RandomMatrix(size_t rows, size_t columns, float nan_fraction) {
         Matrix2F m(rows, columns);
 
@@ -66,6 +92,17 @@ public:
         return std::move(m);
     }
 
+    // Utility function that checks whether a matrix contains only non-finite values.
+    // 
+    // Behavior:
+    //   * Iterates through all elements of the given Matrix2F.
+    //   * If any element is finite (i.e., not NaN and not ±Infinity),
+    //     the function returns false.
+    //   * If all elements are non-finite, the function returns true.
+    //
+    // This function is useful in tests to quickly verify whether an operation
+    // produced a completely invalid matrix (e.g., filled with NaNs/Infinities)
+    // as opposed to one containing valid numeric results.
     bool IsNAN(const Matrix2F& m) {
         for (auto i = 0; i < m.nrow(); i++) {
             for (auto j = 0; j < m.ncolumn(); j++) {
@@ -77,6 +114,20 @@ public:
         return true;
     }
 
+    // Utility function that compares two matrices for matching validity patterns.
+    // 
+    // Behavior:
+    //   * Iterates through each element of the given matrices (assumed to have the
+    //     same dimensions).
+    //   * At each position, checks whether both values are finite or both are
+    //     non-finite (NaN/±Infinity).
+    //   * If any mismatch is found (e.g., one finite and one non-finite), the
+    //     function returns false.
+    //   * Returns true only if both matrices share the same finite/non-finite
+    //     pattern across all elements.
+    //
+    // This helper is useful in tests to confirm that two results handle invalid
+    // values consistently, even if the actual numeric contents differ.
     bool MatchingNANs(const Matrix2F& m1, const Matrix2F& m2) {
         for (auto i = 0; i < m1.nrow(); i++) {
             for (auto j = 0; j < m1.ncolumn(); j++) {
@@ -88,6 +139,18 @@ public:
         return true;
     }
 
+    // Utility function that computes the sum of all finite values in a matrix,
+    // ignoring NaNs and ±Infinity.
+    //
+    // Behavior:
+    //   * Iterates through each element of the given Matrix2F.
+    //   * If a value is finite, it is added to the running sum.
+    //   * If no finite values are found, the function returns NaN.
+    //   * Otherwise, it returns the sum of all finite elements.
+    //
+    // This helper is useful in tests to validate algorithms that must tolerate
+    // NaN/Infinity values, allowing the sum of "real" values to be computed while
+    // disregarding invalid data.
     float nansum(const Matrix2F& m) {
         float sum = 0;
         bool has_vals = false;
@@ -103,6 +166,18 @@ public:
         return has_vals ? sum : NAN;
     }
 
+    // Utility function that computes the maximum finite value in a matrix,
+    // ignoring NaNs and ±Infinity.
+    //
+    // Behavior:
+    //   * Iterates through all elements of the given Matrix2F.
+    //   * Tracks the maximum among finite values.
+    //   * If no finite values are found, the function returns NaN.
+    //   * Otherwise, it returns the maximum finite element.
+    //
+    // This helper is useful in tests for validating algorithms that must handle
+    // datasets with invalid values, ensuring that maximum calculations are robust
+    // against NaNs and Infinities.
     float nanmax(const Matrix2F& m) {
         float max_val = std::numeric_limits<float>::lowest();
         bool has_vals = false;
@@ -118,6 +193,22 @@ public:
         return has_vals ? max_val : NAN;
     }
 
+    // Helper function to downsample a matrix using scalar block smoothing.
+    //
+    // Arguments:
+    //   - m: the input matrix to downsample.
+    //   - downsample_factor: the factor by which to reduce the resolution.
+    //
+    // Behavior:
+    //   * Computes the size of the downsampled matrix based on the input dimensions
+    //     and the downsample factor.
+    //   * Allocates a new Matrix2F for the downsampled result.
+    //   * Calls BlockSmoothScalar to fill the downsampled matrix by averaging
+    //     blocks of the original matrix.
+    //   * Returns the downsampled matrix.
+    //
+    // This function is useful for testing image-processing or smoothing algorithms
+    // on reduced-resolution data while preserving the overall intensity patterns.
     Matrix2F DownsampleTileScalar(const Matrix2F& m, int downsample_factor) {
         int result_rows = ceil(m.nrow() / (float)(downsample_factor));
         int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
@@ -127,6 +218,23 @@ public:
         return std::move(scalar_result);
     }
 
+    // Helper function to downsample a matrix using SSE-optimized block smoothing.
+    //
+    // Arguments:
+    //   - m: the input matrix to downsample.
+    //   - downsample_factor: the factor by which to reduce resolution.
+    //
+    // Behavior:
+    //   * Computes the size of the downsampled matrix based on the input dimensions
+    //     and the downsample factor.
+    //   * Allocates a new Matrix2F for the downsampled result.
+    //   * Calls BlockSmoothSSE to fill the downsampled matrix by averaging blocks
+    //     of the original matrix using SIMD instructions (SSE).
+    //   * Returns the downsampled matrix.
+    //
+    // This function is useful for testing or benchmarking downsampling operations
+    // on matrices with high performance requirements, ensuring correctness while
+    // leveraging SIMD acceleration.
     Matrix2F DownsampleTileSSE(const Matrix2F& m, int downsample_factor) {
         int result_rows = ceil(m.nrow() / (float)(downsample_factor));
         int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
@@ -137,6 +245,23 @@ public:
     }
 
 #ifdef __AVX__
+    // Helper function to downsample a matrix using AVX-optimized block smoothing.
+    //
+    // Arguments:
+    //   - m: the input matrix to downsample.
+    //   - downsample_factor: the factor by which to reduce resolution.
+    //
+    // Behavior:
+    //   * Computes the size of the downsampled matrix based on the input dimensions
+    //     and the downsample factor.
+    //   * Allocates a new Matrix2F for the downsampled result.
+    //   * Calls BlockSmoothAVX to fill the downsampled matrix by averaging blocks
+    //     of the original matrix using SIMD instructions (AVX).
+    //   * Returns the downsampled matrix.
+    //
+    // This function is useful for testing or benchmarking downsampling operations
+    // on large matrices with high performance requirements, ensuring correctness
+    // while leveraging AVX acceleration.
     Matrix2F DownsampleTileAVX(const Matrix2F& m, int downsample_factor) {
         int result_rows = ceil(m.nrow() / (float)(downsample_factor));
         int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
@@ -148,7 +273,6 @@ public:
 #endif
 };
 
-// TODO
 // Checks that scalar and SSE downsampling give results with identical NaN
 // placement and non-negative absolute differences across multiple NaN fractions
 // and downsample factors
@@ -180,7 +304,6 @@ struct DownsampleTestParams {
 
 class DownsampleSSEAccuracyTest : public BlockSmoothingTest, public ::testing::WithParamInterface<DownsampleTestParams> {};
 
-// TODO
 // Verifies that SSE downsampling matches scalar output within small numerical
 // tolerances (≤ 1e-1 sum error, ≤ 1e-3 max error) for various NaN fractions
 // and downsample factors
@@ -216,7 +339,6 @@ struct DownsamplePerfParams {
 
 class DownsampleSSEPerfTest : public BlockSmoothingTest, public ::testing::WithParamInterface<DownsamplePerfParams> {};
 
-// TODO
 // Measures runtime of SSE vs scalar downsampling and confirms that SSE is at
 // least 10% faster for different downsample factors
 // Expected: Speedup ratio (scalar_time / sse_time) ≥ 1.1
@@ -248,7 +370,6 @@ INSTANTIATE_TEST_SUITE_P(SSEPerf, DownsampleSSEPerfTest,
 
 class DownsampleAVXAccuracyTest : public BlockSmoothingTest, public ::testing::WithParamInterface<DownsampleTestParams> {};
 
-// TODO
 // Ensures AVX downsampling matches scalar output within the same error
 // tolerances as SSE accuracy tests
 // Expected: NaN masks match exactly; sum and max errors stay within limits
@@ -280,7 +401,6 @@ INSTANTIATE_TEST_SUITE_P(AVXAccuracy, DownsampleAVXAccuracyTest,
 
 class DownsampleAVXPerfTest : public BlockSmoothingTest, public ::testing::WithParamInterface<DownsamplePerfParams> {};
 
-// TODO
 // Compares AVX vs SSE runtime and confirms that AVX is at least 10% faster
 // for various downsample factors
 // Expected: Speedup ratio (sse_time / avx_time) ≥ 1.1

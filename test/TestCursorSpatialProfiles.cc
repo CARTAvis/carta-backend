@@ -21,6 +21,17 @@ static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";
 
 class CursorSpatialProfileTest : public ::testing::Test, public ImageGenerator {
 public:
+    // Helper function to extract and order X/Y spatial profiles from a SpatialProfileData object.
+    //
+    // Behavior:
+    //   * Takes a CARTA::SpatialProfileData containing two profiles.
+    //   * Checks the last character of the coordinate string of the first profile.
+    //   * If the coordinate ends with 'x', returns the profiles in the original order (X, Y).
+    //   * Otherwise, returns them swapped (Y, X).
+    //
+    // This function ensures consistent ordering of spatial profiles for downstream
+    // analysis, so that the X-axis profile is always returned first and the
+    // Y-axis profile second, regardless of how the data is originally structured.
     static std::tuple<CARTA::SpatialProfile, CARTA::SpatialProfile> GetProfiles(CARTA::SpatialProfileData& data) {
         if (data.profiles(0).coordinate().back() == 'x') {
             return {data.profiles(0), data.profiles(1)};
@@ -29,6 +40,17 @@ public:
         }
     }
 
+    // Helper function to extract numerical values from a CARTA::SpatialProfile.
+    //
+    // Behavior:
+    //   * Retrieves the raw 32-bit floating-point buffer from the profile.
+    //   * Allocates a vector of floats large enough to hold all values.
+    //   * Copies the raw bytes into the float vector using memcpy.
+    //   * Returns a std::vector<float> containing all profile values.
+    //
+    // This function is useful for tests or analysis that need to operate on
+    // the actual numeric data from a SpatialProfile, rather than the serialized
+    // string representation.
     static std::vector<float> ProfileValues(CARTA::SpatialProfile& profile) {
         std::string buffer = profile.raw_values_fp32();
         std::vector<float> values(buffer.size() / sizeof(float));
@@ -36,6 +58,24 @@ public:
         return values;
     }
 
+    // Helper function to decimate a 1D float profile for multiresolution analysis.
+    //
+    // Arguments:
+    //   - full_resolution: the original full-resolution profile.
+    //   - mip: the decimation factor.
+    //
+    // Behavior:
+    //   * Divides the input profile into contiguous segments of size (mip * 2).
+    //   * For each segment:
+    //       - Removes NaN values.
+    //       - If non-empty, stores the first occurrence of the minimum and the
+    //         last occurrence of the maximum in the output vector.
+    //       - If empty, stores NaN for both positions.
+    //   * Returns a decimated vector of size num_segments * 2.
+    //
+    // This function preserves the min/max structure of the profile while reducing
+    // its resolution, which is useful for efficient display or analysis of
+    // large spatial profiles.
     static std::vector<float> Decimated(std::vector<float> full_resolution, int mip) {
         // Decimate profile in 1D
         size_t num_decimated_pairs = std::ceil((float)full_resolution.size() / (mip * 2));
@@ -61,6 +101,25 @@ public:
         return result;
     }
 
+    // Helper function to downsample a 2D set of profile vectors into a single 1D profile.
+    //
+    // Arguments:
+    //   - profiles: a vector of profile vectors (2D float array), where each inner
+    //     vector represents an adjacent segment of the profile.
+    //
+    // Behavior:
+    //   * Determines the downsampling factor (mip) automatically as the number of
+    //     adjacent profiles provided.
+    //   * Computes the number of downsampled bins along the width of the profile.
+    //   * Iterates over each bin, summing finite values across both the width and
+    //     the adjacent profiles, and counts the number of valid contributions.
+    //   * Averages the sum for each bin if at least one valid value exists; otherwise,
+    //     assigns NaN.
+    //   * Returns the downsampled 1D profile vector.
+    //
+    // This function is useful for generating lower-resolution representations of
+    // multiple adjacent profiles while preserving the average structure and
+    // handling NaN values gracefully.
     static std::vector<float> Downsampled(std::vector<std::vector<float>> profiles) {
         // Downsample profile in 2D; autodetect mip from number of adjacent profiles provided
         int mip = profiles.size();
@@ -88,6 +147,20 @@ public:
         return result;
     }
 
+    // Helper function to extract a contiguous segment from a 1D profile.
+    //
+    // Arguments:
+    //   - profile: the full-resolution 1D profile vector.
+    //   - start: the starting index (inclusive) of the segment.
+    //   - end: the ending index (exclusive) of the segment.
+    //
+    // Behavior:
+    //   * Copies elements from profile[start] up to, but not including, profile[end]
+    //     into a new std::vector<float>.
+    //   * Returns the resulting sub-segment vector.
+    //
+    // This function is useful for slicing portions of a profile for analysis or
+    // testing purposes, without modifying the original profile.
     static std::vector<float> Segment(std::vector<float> profile, size_t start, size_t end) {
         std::vector<float> result;
         std::copy(profile.begin() + start, profile.begin() + end, std::back_inserter(result));
@@ -99,152 +172,84 @@ public:
     }
 };
 
-struct BlockSmoothingParams {
-    int blockSize;
-    std::string inputFile;
-    std::string expectedFile;
+struct CursorSpatialProfileParams {
+    std::string imageFile;
+    std:vector<int> cursorDims;
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles;
+    std::vector<double> expectedProfile;
 };
 
-class BlockSmoothingTest : public ::testing::TestWithParam<BlockSmoothingParams> {};
+class CursorSpatialProfileTest :
+    public ::testing::TestWithParam<CursorSpatialProfileParams> {};
 
-TEST_P(BlockSmoothingTest, ProducesExpectedOutput) {
+
+TEST_P(CursorSpatialProfileTest, GeneratesCorrectProfile1) {
     auto params = GetParam();
+    auto image = LoadImage(params.imageFile);
+    auto profile = ComputeCursorSpatialProfile(image, params.smoothingMode);
 
-    // Arrange
-    auto input =
-
-        // Act
-        auto output = ApplyBlockSmoothing(input, params.blockSize);
-
-    // Assert
-    EXPECT_EQ(output, LoadImage(params.expectedFile));
-
-    auto path_string = (TestRoot() / "data" / "images" / "fits" / params.inputFile);
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(params.imageFile));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
-    frame->SetSpatialRequirements(profiles);
-    frame->SetCursor(5, 5);
+    frame->SetSpatialRequirements(params.profiles);
+    frame->SetCursor(params.cursorDims[0], params.cursorDims[1]);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
-        EXPECT_EQ(data.file_id(), 0);
+        EXPECT_EQ(data.file_id(), params.expectedProfile[0]);
         EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
-        EXPECT_EQ(data.x(), 5);
-        EXPECT_EQ(data.y(), 5);
-        EXPECT_EQ(data.channel(), 0);
-        EXPECT_EQ(data.stokes(), 0);
-        CmpValues(data.value(), reader.ReadPointXY(5, 5));
-        EXPECT_EQ(data.profiles_size(), 2);
+        EXPECT_EQ(data.x(), params.expectedProfile[1]);
+        EXPECT_EQ(data.y(), params.expectedProfile[2]);
+        EXPECT_EQ(data.channel(), params.expectedProfile[3]);
+        EXPECT_EQ(data.stokes(), params.expectedProfile[4]);
+        CmpValues(data.value(), reader.ReadPointXY(params.expectedProfile[5], params.expectedProfile[6]));
+        EXPECT_EQ(data.profiles_size(), params.expectedProfile[7]);
 
         auto [x_profile, y_profile] = GetProfiles(data);
 
-        EXPECT_EQ(x_profile.start(), 0);
-        EXPECT_EQ(x_profile.end(), 10);
-        EXPECT_EQ(x_profile.mip(), 0);
+        EXPECT_EQ(x_profile.start(), params.expectedProfile[8]);
+        EXPECT_EQ(x_profile.end(), params.expectedProfile[9]);
+        EXPECT_EQ(x_profile.mip(), params.expectedProfile[10]);
         auto x_vals = ProfileValues(x_profile);
-        EXPECT_EQ(x_vals.size(), 10);
-        CmpVectors<float>(x_vals, reader.ReadProfileX(5));
+        EXPECT_EQ(x_vals.size(), params.expectedProfile[11]);
+        CmpVectors<float>(x_vals, reader.ReadProfileX(params.expectedProfile[12]));
 
-        EXPECT_EQ(y_profile.start(), 0);
-        EXPECT_EQ(y_profile.end(), 10);
-        EXPECT_EQ(y_profile.mip(), 0);
+        EXPECT_EQ(y_profile.start(), params.expectedProfile[13]);
+        EXPECT_EQ(y_profile.end(), params.expectedProfile[14]);
+        EXPECT_EQ(y_profile.mip(), params.expectedProfile[15]);
         auto y_vals = ProfileValues(y_profile);
-        EXPECT_EQ(y_vals.size(), 10);
-        CmpVectors<float>(y_vals, reader.ReadProfileY(5));
+        EXPECT_EQ(y_vals.size(), params.expectedProfile[16]);
+        CmpVectors<float>(y_vals, reader.ReadProfileY(params.expectedProfile[17]));
     }
+}
 
-    TEST_F(CursorSpatialProfileTest, SmallFitsProfile) {
-        auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        FitsDataReader reader(path_string);
-
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(5, 5);
-
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
-
-        for (auto& data : data_vec) {
-            EXPECT_EQ(data.file_id(), 0);
-            EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
-            EXPECT_EQ(data.x(), 5);
-            EXPECT_EQ(data.y(), 5);
-            EXPECT_EQ(data.channel(), 0);
-            EXPECT_EQ(data.stokes(), 0);
-            CmpValues(data.value(), reader.ReadPointXY(5, 5));
-            EXPECT_EQ(data.profiles_size(), 2);
-
-            auto [x_profile, y_profile] = GetProfiles(data);
-
-            EXPECT_EQ(x_profile.start(), 0);
-            EXPECT_EQ(x_profile.end(), 10);
-            EXPECT_EQ(x_profile.mip(), 0);
-            auto x_vals = ProfileValues(x_profile);
-            EXPECT_EQ(x_vals.size(), 10);
-            CmpVectors<float>(x_vals, reader.ReadProfileX(5));
-
-            EXPECT_EQ(y_profile.start(), 0);
-            EXPECT_EQ(y_profile.end(), 10);
-            EXPECT_EQ(y_profile.mip(), 0);
-            auto y_vals = ProfileValues(y_profile);
-            EXPECT_EQ(y_vals.size(), 10);
-            CmpVectors<float>(y_vals, reader.ReadProfileY(5));
-        }
-    }
-
-    TEST_F(CursorSpatialProfileTest, SmallHdf5Profile) {
-        auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        Hdf5DataReader reader(path_string);
-
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(5, 5);
-
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
-
-        for (auto& data : data_vec) {
-            EXPECT_EQ(data.file_id(), 0);
-            EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
-            EXPECT_EQ(data.x(), 5);
-            EXPECT_EQ(data.y(), 5);
-            EXPECT_EQ(data.channel(), 0);
-            EXPECT_EQ(data.stokes(), 0);
-            CmpValues(data.value(), reader.ReadPointXY(5, 5));
-            EXPECT_EQ(data.profiles_size(), 2);
-
-            auto [x_profile, y_profile] = GetProfiles(data);
-
-            EXPECT_EQ(x_profile.start(), 0);
-            EXPECT_EQ(x_profile.end(), 10);
-            EXPECT_EQ(x_profile.mip(), 0);
-            auto x_vals = ProfileValues(x_profile);
-            EXPECT_EQ(x_vals.size(), 10);
-            CmpVectors<float>(x_vals, reader.ReadProfileX(5));
-
-            EXPECT_EQ(y_profile.start(), 0);
-            EXPECT_EQ(y_profile.end(), 10);
-            EXPECT_EQ(y_profile.mip(), 0);
-            auto y_vals = ProfileValues(y_profile);
-            EXPECT_EQ(y_vals.size(), 10);
-            CmpVectors<float>(y_vals, reader.ReadProfileY(5));
-        }
-    }
+INSTANTIATE_TEST_SUITE_P(
+    VariousProfiles,
+    CursorSpatialProfileTest,
+    ::testing::Values(
+        CursorSpatialProfileParams{ // small fits profile
+            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
+            {5, 5},
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, {0, 5, 5, 0, 0, 5, 5, 2, 0, 10, 0, 10, 5, 0, 10, 0, 10, 5}}, 
+        CursorSpatialProfileParams{ // small hdf5 profile
+            TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5",
+            {5, 5},
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, {0, 5, 5, 0, 0, 5, 5, 2, 0, 10, 0, 10, 5, 0, 10, 0, 10, 5}}, 
+        CursorSpatialProfileParams{ // low resolution fits profile
+            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
+            {50, 50},
+            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, {0, 5, 5, 0, 0, 5, 5, 2, 0, 10, 0, 10, 5, 0, 10, 0, 10, 5}} 
+    )
+);
 
     TEST_F(CursorSpatialProfileTest, LowResFitsProfile) {
         auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        FitsDataReader reader(path_string);
+        Hdf5DataReader reader(path_string);
 
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)};
@@ -271,7 +276,7 @@ TEST_P(BlockSmoothingTest, ProducesExpectedOutput) {
             EXPECT_EQ(y_profile.mip(), 2);
             auto y_vals = ProfileValues(y_profile);
             EXPECT_EQ(y_vals.size(), 50);
-            CmpVectors<float>(y_vals, Decimated(reader.ReadProfileY(50), 2));
+            CmpVectors<float>(y_vals, Decimated(reader.ReadProfileX(50), 2));
         }
     }
 
