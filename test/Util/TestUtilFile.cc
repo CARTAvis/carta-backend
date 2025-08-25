@@ -25,13 +25,13 @@ private:
 
 TEST_F(FileUtilTest, ItemCountValidFolder) {
     auto pwd = TestRoot();
-    EXPECT_EQ(GetNumItems((pwd / "data/tables").string()), 2);
-    EXPECT_EQ(GetNumItems((pwd / "data/tables/xml").string()), 6);
+    EXPECT_EQ(GetNumItems((pwd / "carta-backend-test-data/tables").string()), 2);
+    EXPECT_EQ(GetNumItems((pwd / "carta-backend-test-data/tables/xml").string()), 6);
 }
 
 TEST_F(FileUtilTest, ItemCountMissingFolder) {
     auto pwd = TestRoot();
-    EXPECT_EQ(GetNumItems((pwd / "data/missing_folder").string()), -1);
+    EXPECT_EQ(GetNumItems((pwd / "carta-backend-test-data/missing_folder").string()), -1);
 }
 
 TEST(IsSubdirectoryTest, ValidSubdirectory) {
@@ -40,8 +40,8 @@ TEST(IsSubdirectoryTest, ValidSubdirectory) {
     EXPECT_TRUE(IsSubdirectory("/usr/local/bin", "/usr/local"));
 
     auto pwd = TestRoot();
-    std::string top_level = (pwd / "data").string();
-    std::string starting = (pwd / "data" / "test").string();
+    std::string top_level = (pwd / "carta-backend-test-data").string();
+    std::string starting = (pwd / "carta-backend-test-data" / "test").string();
 
     fs::create_directories(starting);
 
@@ -67,26 +67,26 @@ TEST(IsSubdirectoryTest, InvalidPaths) {
 
 TEST(IsSubdirectoryTest, SubdirectoryAbs) {
     auto pwd = TestRoot();
-    EXPECT_TRUE(IsSubdirectory((pwd / "data").string(), pwd.string()));
-    EXPECT_FALSE(IsSubdirectory(pwd.string(), (pwd / "data").string()));
-    EXPECT_TRUE(IsSubdirectory((pwd / "data/images").string(), pwd.string()));
-    EXPECT_FALSE(IsSubdirectory(pwd.string(), (pwd / "data/images").string()));
-    EXPECT_TRUE(IsSubdirectory((pwd / "data/images").string(), (pwd / "data").string()));
-    EXPECT_FALSE(IsSubdirectory((pwd / "data").string(), (pwd / "data/images").string()));
-    EXPECT_TRUE(IsSubdirectory((pwd / "data/images/fits").string(), (pwd / "data/images").string()));
-    EXPECT_FALSE(IsSubdirectory((pwd / "data/images/fits").string(), (pwd / "data/images/hdf5").string()));
+    EXPECT_TRUE(IsSubdirectory((pwd / "carta-backend-test-data").string(), pwd.string()));
+    EXPECT_FALSE(IsSubdirectory(pwd.string(), (pwd / "carta-backend-test-data").string()));
+    EXPECT_TRUE(IsSubdirectory((pwd / "carta-backend-test-data/images").string(), pwd.string()));
+    EXPECT_FALSE(IsSubdirectory(pwd.string(), (pwd / "carta-backend-test-data/images").string()));
+    EXPECT_TRUE(IsSubdirectory((pwd / "carta-backend-test-data/images").string(), (pwd / "carta-backend-test-data").string()));
+    EXPECT_FALSE(IsSubdirectory((pwd / "carta-backend-test-data").string(), (pwd / "carta-backend-test-data/images").string()));
+    EXPECT_TRUE(IsSubdirectory((pwd / "carta-backend-test-data/images/fits").string(), (pwd / "carta-backend-test-data/images").string()));
+    EXPECT_FALSE(IsSubdirectory((pwd / "carta-backend-test-data/images/fits").string(), (pwd / "carta-backend-test-data/images/hdf5").string()));
 }
 
 TEST(IsSubdirectoryTest, SubdirectoryRel) {
     fs::current_path(TestRoot());
-    EXPECT_TRUE(IsSubdirectory("./data", "./"));
-    EXPECT_FALSE(IsSubdirectory("./", "./data"));
-    EXPECT_TRUE(IsSubdirectory("./data/images", "./"));
-    EXPECT_FALSE(IsSubdirectory("./", "./data/images"));
-    EXPECT_TRUE(IsSubdirectory("./data/images", "./data"));
-    EXPECT_FALSE(IsSubdirectory("./data", "./data/images"));
-    EXPECT_TRUE(IsSubdirectory("./data/images/fits", "./data/images"));
-    EXPECT_FALSE(IsSubdirectory("./data/images/fits", "./data/images/hdf5"));
+    EXPECT_TRUE(IsSubdirectory("./carta-backend-test-data", "./"));
+    EXPECT_FALSE(IsSubdirectory("./", "./carta-backend-test-data"));
+    EXPECT_TRUE(IsSubdirectory("./carta-backend-test-data/images", "./"));
+    EXPECT_FALSE(IsSubdirectory("./", "./carta-backend-test-data/images"));
+    EXPECT_TRUE(IsSubdirectory("./carta-backend-test-data/images", "./carta-backend-test-data"));
+    EXPECT_FALSE(IsSubdirectory("./carta-backend-test-data", "./data/carta-backend-test-data"));
+    EXPECT_TRUE(IsSubdirectory("./carta-backend-test-data/images/fits", "./carta-backend-test-data/images"));
+    EXPECT_FALSE(IsSubdirectory("./carta-backend-test-data/images/fits", "./carta-backend-test-data/images/hdf5"));
 }
 
 TEST(IsSubdirectoryTest, SubdirectorySelf) {
@@ -112,15 +112,15 @@ TEST(IsSubdirectoryTest, TopIsRoot) {
 }
 
 TEST(IsSubdirectoryTest, SubdirectoryCheck) {
-    EXPECT_TRUE(IsSubdirectory("/data/test", "/data"));
+    EXPECT_TRUE(IsSubdirectory("/carta-backend-test-data/test", "/carta-backend-test-data"));
     EXPECT_FALSE(IsSubdirectory("/etc", "/top"));
-    EXPECT_TRUE(IsSubdirectory("/data/test/sub", "/data/test"));
+    EXPECT_TRUE(IsSubdirectory("/carta-backend-test-data/test/sub", "/carta-backend-test-data/test"));
 }
 
 TEST(CheckFolderPathsTest, ValidPaths) {
     auto pwd = TestRoot();
-    std::string top_level = (pwd / "data").string();
-    std::string starting = (pwd / "data" / "test").string();
+    std::string top_level = (pwd / "carta-backend-test-data").string();
+    std::string starting = (pwd / "carta-backend-test-data" / "test").string();
 
     fs::create_directories(starting);
 
@@ -131,16 +131,16 @@ TEST(CheckFolderPathsTest, ValidPaths) {
 
 TEST(CheckFolderPathsTest, NonExistentStartingDirectory) {
     auto pwd = TestRoot();
-    std::string top_level = (pwd / "data").string();
-    std::string starting = (pwd / "data" / "test").string();
+    std::string top_level = (pwd / "carta-backend-test-data").string();
+    std::string starting = (pwd / "carta-backend-test-data" / "test").string();
 
     EXPECT_TRUE(CheckFolderPaths(top_level, starting));
 }
 
 TEST(CheckFolderPathsTest, InvalidTopLevelDirectory) {
-    std::string top_level = "/data/nonexistent";
+    std::string top_level = "/carta-backend-test-data/nonexistent";
     auto pwd = TestRoot();
-    std::string starting = (pwd / "data" / "test").string();
+    std::string starting = (pwd / "carta-backend-test-data" / "test").string();
 
     fs::create_directories(starting);
 
@@ -152,7 +152,7 @@ TEST(CheckFolderPathsTest, InvalidTopLevelDirectory) {
 TEST(CheckFolderPathsTest, TopLevelBase) {
     std::string top_level = "base";
     auto pwd = TestRoot();
-    std::string starting = (pwd / "data" / "test").string();
+    std::string starting = (pwd / "carta-backend-test-data" / "test").string();
 
     fs::create_directories(starting);
 
@@ -173,8 +173,8 @@ TEST(CheckFolderPathsTest, StartingRoot) {
 
 TEST(CheckFolderPathsTest, StartingNotSubdirectory) {
     auto pwd = TestRoot();
-    std::string top_level = (pwd / "data" / "parent").string();
-    std::string starting = (pwd / "data" / "another").string();
+    std::string top_level = (pwd / "carta-backend-test-data" / "parent").string();
+    std::string starting = (pwd / "carta-backend-test-data" / "another").string();
 
     fs::create_directories(top_level);
     fs::create_directories(starting);
@@ -187,8 +187,8 @@ TEST(CheckFolderPathsTest, StartingNotSubdirectory) {
 
 TEST(CheckFolderPathsTest, SamePath) {
     auto pwd = TestRoot();
-    std::string top_level = (pwd / "data" / "test_same").string();
-    std::string starting = (pwd / "data" / "test_same").string();
+    std::string top_level = (pwd / "carta-backend-test-data" / "test_same").string();
+    std::string starting = (pwd / "carta-backend-test-data" / "test_same").string();
 
     fs::create_directories(top_level);
 

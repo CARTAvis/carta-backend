@@ -84,7 +84,7 @@ public:
     }
 
     void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
-        auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
+        auto file_path = (TestRoot() / "carta-backend-test-data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -205,7 +205,7 @@ private:
 };
 
 TEST_F(ImageFittingTest, OneComponentFitting) {
-    auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
+    auto file_path = (TestRoot() / "carta-backend-test-data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params(6, false);
     fixed_params.push_back(true);
@@ -219,7 +219,7 @@ TEST_F(ImageFittingTest, OneComponentFitting) {
 }
 
 TEST_F(ImageFittingTest, ThreeComponentFitting) {
-    auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_three_components.fits");
+    auto file_path = (TestRoot() / "carta-backend-test-data" / "images" / "fits" / "128_128_gaussian_model_three_components.fits");
     std::vector<float> gaussian_model = {3, 64, 64, 20, 20, 10, 210, 32, 32, 20, 20, 10, 210, 96, 96, 20, 20, 10, 210};
     std::vector<bool> fixed_params(18, false);
     fixed_params.push_back(true);
@@ -233,7 +233,7 @@ TEST_F(ImageFittingTest, ThreeComponentFitting) {
 }
 
 TEST_F(ImageFittingTest, CenterFixedFitting) {
-    auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
+    auto file_path = (TestRoot() / "carta-backend-test-data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params = {true, true, false, false, false, false, true};
     SetInitialValues(gaussian_model);
@@ -242,7 +242,7 @@ TEST_F(ImageFittingTest, CenterFixedFitting) {
 }
 
 TEST_F(ImageFittingTest, BackgroundUnfixedFitting) {
-    auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
+    auto file_path = (TestRoot() / "carta-backend-test-data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params = {false, false, false, false, false, false, false};
     SetInitialValues(gaussian_model);

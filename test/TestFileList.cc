@@ -117,7 +117,7 @@ public:
 };
 
 TEST_F(FileListTest, SetTopLevelFolder) {
-    std::string abs_path = (TestRoot() / "data" / "images" / "mix").string();
+    std::string abs_path = (TestRoot() / "carta-backend-test-data" / "images" / "mix").string();
 
     auto request1 = Message::FileListRequest(abs_path);
     TestFileList("/", "", request1);
@@ -139,20 +139,20 @@ TEST_F(FileListTest, SetTopLevelFolder) {
 }
 
 TEST_F(FileListTest, SetStartingFolder) {
-    std::string abs_path = (TestRoot() / "data" / "images" / "mix").string();
+    std::string abs_path = (TestRoot() / "carta-backend-test-data" / "images" / "mix").string();
 
-    auto request1 = Message::FileListRequest("$BASE/data/images/mix");
+    auto request1 = Message::FileListRequest("$BASE/carta-backend-test-data/images/mix");
     TestFileList("/", TestRoot().string(), request1);
 
     auto request2 = Message::FileListRequest("$BASE");
-    TestFileList(TestRoot().string(), "data/images/mix", request2);
+    TestFileList(TestRoot().string(), "carta-backend-test-data/images/mix", request2);
     TestFileList("/", abs_path, request2);
     TestFileList("", abs_path, request2, false);
 }
 
 TEST_F(FileListTest, AccessFalseFolder) {
     auto request = Message::FileListRequest("$BASE/folder_not_existed");
-    TestFileList(TestRoot().string(), "data/images/mix", request, false);
+    TestFileList(TestRoot().string(), "carta-backend-test-data/images/mix", request, false);
 }
 
 TEST_F(FileListTest, AccessForbiddenFolder) {
@@ -174,24 +174,24 @@ TEST_F(FileListTest, TestFilterModes) {
 
     // Filter mode Content
     // Empty dirs are dirs, ignores empty files and txt file.
-    auto request1 = Message::FileListRequest("data/images/mix");
+    auto request1 = Message::FileListRequest("carta-backend-test-data/images/mix");
     auto response = RequestFileList(TestRoot().string(), "", request1);
     TestFileListResponse(response, 4, 5);
 
     // Filter mode Extension
     // Empty fits/hdf5 files are images, empty dirs are dirs, ignores other empty files and txt.
-    auto request2 = Message::FileListRequest("data/images/mix", CARTA::FileListFilterMode::Extension);
+    auto request2 = Message::FileListRequest("carta-backend-test-data/images/mix", CARTA::FileListFilterMode::Extension);
     response = RequestFileList(TestRoot().string(), "", request2);
     TestFileListResponse(response, 6, 5);
 
     // Filter mode AllFiles
     // All are files or dirs
-    auto request3 = Message::FileListRequest("data/images/mix", CARTA::FileListFilterMode::AllFiles);
+    auto request3 = Message::FileListRequest("carta-backend-test-data/images/mix", CARTA::FileListFilterMode::AllFiles);
     response = RequestFileList(TestRoot().string(), "", request3);
     TestFileListResponse(response, 7, 7, false);
 
     // Filter mode AllFiles with image as directory should have one FileInfo for the image
-    auto request4 = Message::FileListRequest("data/images/mix/M17_SWex_unit.image", CARTA::FileListFilterMode::AllFiles);
-    response = RequestFileList(TestRoot().string(), "", request4);
+    auto request4 = Message::FileListRequest("carta-backend-test-data/images/mix/M17_SWex_unit.image", CARTA::FileListFilterMode::AllFiles);
+    response = RequestFileList(().string(), "", request4);
     TestFileListResponse(response, 1, 0);
 }

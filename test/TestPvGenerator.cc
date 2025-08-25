@@ -301,7 +301,7 @@ TEST_F(PvGeneratorTest, FitsPvImageVerticalCut) {
 }
 
 TEST_F(PvGeneratorTest, TestNoSpectralAxis) {
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_10_row_column.hdf5");
+    auto path_string = (TestRoot() / "carta-backend-test-data" / "images" / "hdf5" / "10_10_10_row_column.hdf5");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 

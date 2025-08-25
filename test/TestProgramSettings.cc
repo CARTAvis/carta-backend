@@ -181,20 +181,20 @@ TEST_F(ProgramSettingsTest, OverrideDeprecatedRoot) {
 TEST_F(ProgramSettingsTest, OverrideDeprecatedBase) {
     auto settings = SettingsFromVector({"carta_backend", "--base", "/tmp2", "/tmp"});
     EXPECT_EQ(settings.starting_folder, "/tmp");
-    auto image_dir = TestRoot() / "data/images";
+    auto image_dir = TestRoot() / "carta-backend-test-data/images";
     settings = SettingsFromVector({"carta_backend", "--base", "/tmp2", image_dir.string()});
     EXPECT_EQ(settings.starting_folder, image_dir.string());
 }
 
 TEST_F(ProgramSettingsTest, StartingFolderFromPositional) {
-    auto image_dir = TestRoot() / "data/images";
+    auto image_dir = TestRoot() / "carta-backend-test-data/images";
     auto settings = SettingsFromVector({"carta_backend", image_dir.string()});
     EXPECT_EQ(settings.starting_folder, image_dir.string());
     EXPECT_TRUE(settings.files.empty());
 }
 
 TEST_F(ProgramSettingsTest, IgnoreInvalidFolder) {
-    auto image_dir = TestRoot() / "data/images_invalid";
+    auto image_dir = TestRoot() / "carta-backend-test-data/images_invalid";
     auto settings = SettingsFromVector({"carta_backend", image_dir.string()});
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     EXPECT_TRUE(settings.files.empty());
@@ -219,7 +219,7 @@ TEST_F(ProgramSettingsTest, FileImageFromPositional) {
 TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
     auto absolute_image_path = FitsImagePath("noise_10px_10px.fits");
     fs::current_path(TestRoot());
-    std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
+    std::string relative_image_path = "carta-backend-test-data/images/fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], absolute_image_path.substr(1));
@@ -228,27 +228,27 @@ TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
 TEST_F(ProgramSettingsTest, TrimExtraFolders) {
     auto absolute_image_path = FitsImagePath("noise_10px_10px.fits");
     fs::current_path(TestRoot());
-    std::string relative_image_path = "./data/images/fits/noise_10px_10px.fits";
+    std::string relative_image_path = "./carta-backend-test-data/images/fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], absolute_image_path.substr(1));
 }
 
 TEST_F(ProgramSettingsTest, FileImageRelativeToTopLevel) {
-    auto top_level_path = (TestRoot() / "data/images").string();
+    auto top_level_path = (TestRoot() / "carta-backend-test-data/images").string();
     fs::current_path(TestRoot());
 
-    std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
+    std::string relative_image_path = "carta-backend-test-data/images/fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
 
-    relative_image_path = "./data/images/fits/noise_10px_10px.fits";
+    relative_image_path = "./carta-backend-test-data/images/fits/noise_10px_10px.fits";
     settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
 
-    relative_image_path = "../test/data/images/fits/noise_10px_10px.fits";
+    relative_image_path = "../test/carta-backend-test-data/images/fits/noise_10px_10px.fits";
     settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
@@ -392,7 +392,7 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringEmptyFiles) {
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringSingleFile) {
-    auto image_root = TestRoot() / "data" / "images";
+    auto image_root = TestRoot() / "carta-backend-test-data" / "images";
     std::vector<std::string> files;
     files.push_back(image_root / "fits" / "noise_3d.fits");
     auto url_string = carta::HttpServer::GetFileUrlString(files);
@@ -400,7 +400,7 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringSingleFile) {
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
-    auto image_root = TestRoot() / "data" / "images";
+    auto image_root = TestRoot() / "carta-backend-test-data" / "images";
     std::vector<std::string> files;
     files.push_back(image_root / "fits" / "noise_3d.fits");
     files.push_back(image_root / "fits" / "noise_4d.fits");
@@ -411,7 +411,7 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
-    auto image_root = TestRoot() / "data" / "images";
+    auto image_root = TestRoot() / "carta-backend-test-data" / "images";
     std::vector<std::string> files;
     files.push_back(image_root / "fits" / "noise_3d.fits");
     files.push_back(image_root / "hdf5" / "noise_10px_10px.hdf5");
