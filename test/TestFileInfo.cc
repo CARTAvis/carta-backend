@@ -14,7 +14,7 @@
 
 using namespace carta;
 
-static const std::string SAMPLE_FILES_PATH = (TestRoot() / "carta-backend-test-data" / "images" / "mix").string();
+static const std::string SAMPLE_FILES_PATH = (TestRoot() / "data" / "images" / "mix").string();
 
 class FileInfoLoaderTest : public ::testing::Test {
 public:
@@ -246,7 +246,7 @@ TEST_F(FileExtInfoLoaderTest, FitsHistoryEntries) {
     CARTA::FileInfoExtended extended_info;
     CARTA::FileInfo file_info;
     bool support_aips_beam(false);
-    bool success = t_session.FillExtendedFileInfo(extended_info, file_info, TestRoot() / "carta-backend-test-data" / "images" / "fits", "noise_10px_10px.fits",
+    bool success = t_session.FillExtendedFileInfo(extended_info, file_info, TestRoot() / "data" / "images" / "fits", "noise_10px_10px.fits",
         hdu, support_aips_beam, message, full_name);
     EXPECT_EQ(success, true);
 

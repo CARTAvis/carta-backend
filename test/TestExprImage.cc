@@ -134,7 +134,7 @@ TEST_F(ImageExprTest, ImageExprFails) {
 
 TEST_F(ImageExprTest, ImageExprTwoDirs) {
     // Add images in different directories
-    auto image_path = TestRoot() / "carta-backend-test-data/images/fits";
+    auto image_path = TestRoot() / "data/images/fits";
     std::string directory = image_path.string();
     std::string expr = "noise_10px_10px.fits + '../casa/noise_10px_10px.im'";
 

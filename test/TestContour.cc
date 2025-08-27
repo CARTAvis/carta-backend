@@ -30,9 +30,9 @@ public:
         std::string file_path;
 
         if (file_type == CARTA::FileType::HDF5) {
-            file_path = (TestRoot() / "carta-backend-test-data" / "images" / "hdf5" / filename);
+            file_path = (TestRoot() / "data" / "images" / "hdf5" / filename);
         } else {
-            file_path = (TestRoot() / "carta-backend-test-data" / "images" / "fits" / filename);
+            file_path = (TestRoot() / "data" / "images" / "fits" / filename);
         }
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));

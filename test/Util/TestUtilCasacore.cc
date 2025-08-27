@@ -52,7 +52,7 @@ TEST_F(GetResolvedFilenameTest, SymlinkToNonExistentFile) {
 TEST_F(GetResolvedFilenameTest, FileExists) {
     auto pwd = TestRoot();
     std::string message;
-    std::string resolved = GetResolvedFilename(pwd.string(), "carta-backend-test-data/images/fits", "noise_4d.fits", message);
+    std::string resolved = GetResolvedFilename(pwd.string(), "data/images/fits", "noise_4d.fits", message);
 
     EXPECT_FALSE(resolved.empty());
     EXPECT_TRUE(message.empty());
@@ -143,7 +143,7 @@ TEST(UtilTest, CheckGildasUnit) {
 }
 
 TEST(UtilTest, FolderImageType) {
-    auto pwd = TestRoot() / "carta-backend-test-data/images";
+    auto pwd = TestRoot() / "data/images";
     std::string message;
     // Image files are unknown folder image types
     EXPECT_EQ(FolderImageType((pwd / "mix/M17_SWex_unit.fits").string(), message), CARTA::FileType::UNKNOWN);
