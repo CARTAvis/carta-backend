@@ -167,98 +167,162 @@ public:
         return result;
     }
 
+    std::vector<CARTA::SpatialProfileData> LoadProfiles(
+        const std::string& path, 
+        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& profiles,
+        int x, int y
+    ) {
+        std::shared_ptr<carta::FileLoader> loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(path));
+        std::unique_ptr<Frame> frame = std::make_unique<Frame>(0, loader, "0");
+        frame->SetSpatialRequirements(profiles);
+        frame->SetCursor(x, y);
+        std::vector<CARTA::SpatialProfileData> data_vec;
+        frame->FillSpatialProfileData(data_vec);
+        return data_vec;
+    }
+
     void SetUp() {
         setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0);
     }
 };
 
-struct CursorSpatialProfileParams {
-    std::string imageFile;
-    std:vector<int> cursorDims;
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles;
-    std::vector<double> expectedProfile;
+struct ExpectedProfile {
+    int file_id;
+    int x;
+    int y;
+    int channel;
+    int stokes;
+    int profiles_size;
+    std::pair<int,int> x_range;
+    int x_mip;
+    size_t x_size;
+    std::pair<int,int> y_range;
+    int y_mip;
+    size_t y_size;
 };
 
-class CursorSpatialProfileTest :
-    public ::testing::TestWithParam<CursorSpatialProfileParams> {};
+enum class ReaderType { Fits, Hdf5 };
+
+struct CorrectProfileTestParams {
+    std::string imageFile;
+    std::vector<int> cursorDims;
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles;
+    std::pair<int,int> cmpValues; // first: x, second: y
+    ExpectedProfile expected;
+    ReaderType readerType;
+};
+
+class CorrectProfileTest :
+    public CursorSpatialProfileTest, public ::testing::TestWithParam<CorrectProfileTestParams> {};
 
 
-TEST_P(CursorSpatialProfileTest, GeneratesCorrectProfile1) {
+TEST_P(CorrectProfileTest, GeneratesCorrectProfile) {
     auto params = GetParam();
-    auto image = LoadImage(params.imageFile);
-    auto profile = ComputeCursorSpatialProfile(image, params.smoothingMode);
-
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(params.imageFile));
-    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-    FitsDataReader reader(path_string);
-
-    frame->SetSpatialRequirements(params.profiles);
-    frame->SetCursor(params.cursorDims[0], params.cursorDims[1]);
-
-    std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(data_vec);
+    std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(params.imageFile, params.profiles, params.cursorDims[0], params.cursorDims[1]);
+    
+    std::unique_ptr<DataReader> reader;
+    if (params.readerType == ReaderType::Fits) {
+        reader = std::make_unique<FitsDataReader>(params.imageFile);
+    } else {
+        reader = std::make_unique<Hdf5DataReader>(params.imageFile);
+    }
 
     for (auto& data : data_vec) {
-        EXPECT_EQ(data.file_id(), params.expectedProfile[0]);
+        EXPECT_EQ(data.file_id(), params.expected.file_id);
         EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
-        EXPECT_EQ(data.x(), params.expectedProfile[1]);
-        EXPECT_EQ(data.y(), params.expectedProfile[2]);
-        EXPECT_EQ(data.channel(), params.expectedProfile[3]);
-        EXPECT_EQ(data.stokes(), params.expectedProfile[4]);
-        CmpValues(data.value(), reader.ReadPointXY(params.expectedProfile[5], params.expectedProfile[6]));
-        EXPECT_EQ(data.profiles_size(), params.expectedProfile[7]);
+        EXPECT_EQ(data.x(), params.expected.x);
+        EXPECT_EQ(data.y(), params.expected.y);
+        EXPECT_EQ(data.channel(), params.expected.channel);
+        EXPECT_EQ(data.stokes(), params.expected.stokes);
+        CmpValues(data.value(), reader->ReadPointXY(params.cmpValues.first, params.cmpValues.second));
+        ASSERT_EQ(data.profiles_size(), params.expected.profiles_size);
+        EXPECT_EQ(data.profiles_size(), params.expected.profiles_size);
 
         auto [x_profile, y_profile] = GetProfiles(data);
 
-        EXPECT_EQ(x_profile.start(), params.expectedProfile[8]);
-        EXPECT_EQ(x_profile.end(), params.expectedProfile[9]);
-        EXPECT_EQ(x_profile.mip(), params.expectedProfile[10]);
+        EXPECT_EQ(x_profile.start(), params.expected.x_range.first);
+        EXPECT_EQ(x_profile.end(), params.expected.x_range.second);
+        EXPECT_EQ(x_profile.mip(), params.expected.x_mip);
         auto x_vals = ProfileValues(x_profile);
-        EXPECT_EQ(x_vals.size(), params.expectedProfile[11]);
-        CmpVectors<float>(x_vals, reader.ReadProfileX(params.expectedProfile[12]));
+        EXPECT_EQ(x_vals.size(), params.expected.x_size);
+        CmpVectors<float>(x_vals, reader->ReadProfileX(params.cmpValues.first));
 
-        EXPECT_EQ(y_profile.start(), params.expectedProfile[13]);
-        EXPECT_EQ(y_profile.end(), params.expectedProfile[14]);
-        EXPECT_EQ(y_profile.mip(), params.expectedProfile[15]);
+        EXPECT_EQ(y_profile.start(), params.expected.y_range.first);
+        EXPECT_EQ(y_profile.end(), params.expected.y_range.second);
+        EXPECT_EQ(y_profile.mip(), params.expected);
         auto y_vals = ProfileValues(y_profile);
-        EXPECT_EQ(y_vals.size(), params.expectedProfile[16]);
-        CmpVectors<float>(y_vals, reader.ReadProfileY(params.expectedProfile[17]));
+        EXPECT_EQ(y_vals.size(), params.expected.y_size);
+        CmpVectors<float>(y_vals, reader->ReadProfileY(params.cmpValues.second));
     }
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    VariousProfiles,
-    CursorSpatialProfileTest,
+    CorrectProfiles,
+    CorrectProfileTest,
     ::testing::Values(
-        CursorSpatialProfileParams{ // small fits profile
+        CorrectProfileTestParams{ // small fits profile
             TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
             {5, 5},
-            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, {0, 5, 5, 0, 0, 5, 5, 2, 0, 10, 0, 10, 5, 0, 10, 0, 10, 5}}, 
-        CursorSpatialProfileParams{ // small hdf5 profile
-            TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5",
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, 
             {5, 5},
-            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, {0, 5, 5, 0, 0, 5, 5, 2, 0, 10, 0, 10, 5, 0, 10, 0, 10, 5}}, 
-        CursorSpatialProfileParams{ // low resolution fits profile
+            {.file_id = 0, .x = 5, .y = 5, .channel = 0, .stokes = 0, .profiles_size = 2,  .x_range = {0, 10}, .x_mip = 0, .x_size = 10, .y_range = {0, 10}, .y_mip = 0, .y_size = 10},
+            ReaderType::Fits
+        },
+        CorrectProfileTestParams{ // low resolution fits profile
             TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
             {50, 50},
-            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, {0, 5, 5, 0, 0, 5, 5, 2, 0, 10, 0, 10, 5, 0, 10, 0, 10, 5}} 
+            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)},
+            {5, 5},
+            {.file_id = 0, .x = 5, .y = 5, .channel = 0, .stokes = 0, .profiles_size = 2,  .x_range = {0, 10}, .x_mip = 0, .x_size = 10, .y_range = {0, 10}, .y_mip = 0, .y_size = 10},
+            ReaderType::Fits
+        },
+        CorrectProfileTestParams{ // small hdf5 profile
+            TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5",
+            {5, 5},
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")},
+            {5, 5},
+            {.file_id = 0, .x = 5, .y = 5, .channel = 0, .stokes = 0, .profiles_size = 2,  .x_range = {0, 10}, .x_mip = 0, .x_size = 10, .y_range = {0, 10}, .y_mip = 0, .y_size = 10},
+            ReaderType::Hdf5
+        }
     )
 );
 
+TEST_P(LowResTest, GeneratesCorrectProfile) {
+    auto params = GetParam();
+    auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
+    Hdf5DataReader reader(path_string);
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)};
+    std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(params.imageFile, params.profiles, params.cursorDims[0], params.cursorDims[1]);
+    
+    for (auto& data : data_vec) {
+        EXPECT_EQ(data.profiles_size(), params.expected.profiles_size);
+
+        auto [x_profile, y_profile] = GetProfiles(data);
+
+        EXPECT_EQ(x_profile.start(), params.expected.x_range.first);
+        EXPECT_EQ(x_profile.end(), params.expected.x_range.second);
+        EXPECT_EQ(x_profile.mip(), params.expected.x_mip);
+        auto x_vals = ProfileValues(x_profile);
+        EXPECT_EQ(x_vals.size(), params.expected.x_size);
+        CmpVectors<float>(x_vals, Decimated(reader.ReadProfileX(params.cmpValues.first), params.cmpValues.second));
+
+        EXPECT_EQ(y_profile.start(), 0);
+        EXPECT_EQ(y_profile.end(), 100);
+        EXPECT_EQ(y_profile.mip(), 2);
+        auto y_vals = ProfileValues(y_profile);
+        EXPECT_EQ(y_vals.size(), 50);
+        CmpVectors<float>(y_vals, Decimated(reader.ReadProfileX(50), 2));
+    }
+}
+
     TEST_F(CursorSpatialProfileTest, LowResFitsProfile) {
         auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
         Hdf5DataReader reader(path_string);
-
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(50, 50);
-
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
-
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 50, 50);
+        
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
 
@@ -282,17 +346,10 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "130_100_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
         Hdf5DataReader reader(path_string);
-
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(50, 50);
-
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 50, 50);
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -317,18 +374,11 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "130_100_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
         Hdf5DataReader reader(path_string);
-
         // mip 4 is requested, but the file only has a dataset for mip 2
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 0, 0, 4), Message::SpatialConfig("y", 0, 0, 4)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(50, 50);
-
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 50, 50);
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -354,18 +404,12 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "120_100_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        Hdf5DataReader reader(path_string);
-
         // mip 2 is requested, but this file is too small to have mipmaps
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(50, 50);
+        Hdf5DataReader reader(path_string);
 
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 50, 50);
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -391,17 +435,11 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, FullResFitsStartEnd) {
         auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        FitsDataReader reader(path_string);
-
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 100, 200, 0), Message::SpatialConfig("y", 100, 200, 0)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(150, 150);
+        FitsDataReader reader(path_string);
 
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 150, 150);
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -426,17 +464,11 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, FullResHdf5StartEnd) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "400_300_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        Hdf5DataReader reader(path_string);
-
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 100, 200, 0), Message::SpatialConfig("y", 100, 200, 0)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(150, 150);
+        Hdf5DataReader reader(path_string);
 
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 150, 150);
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -461,17 +493,11 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, LowResFitsStartEnd) {
         auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        FitsDataReader reader(path_string);
-
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 100, 200, 4), Message::SpatialConfig("y", 100, 200, 4)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(150, 150);
+        FitsDataReader reader(path_string);
 
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 150, 150);
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -498,17 +524,11 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, LowResHdf5StartEnd) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "400_300_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        Hdf5DataReader reader(path_string);
-
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 100, 200, 4), Message::SpatialConfig("y", 100, 200, 4)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(150, 150);
+        Hdf5DataReader reader(path_string);
 
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 150, 150);    
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -543,16 +563,10 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullRes) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "3000_2000_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
         Hdf5DataReader reader(path_string);
 
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(150, 150);
-
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 150, 150);
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -577,17 +591,11 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "3000_2000_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        Hdf5DataReader reader(path_string);
-
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             Message::SpatialConfig("x", 1000, 1500), Message::SpatialConfig("y", 1000, 1500)};
-        frame->SetSpatialRequirements(profiles);
-        frame->SetCursor(1250, 1250);
+        Hdf5DataReader reader(path_string);
 
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(path_string, profiles, 1250, 1250);
 
         for (auto& data : data_vec) {
             EXPECT_EQ(data.profiles_size(), 2);
@@ -612,11 +620,12 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, FitsChannelChange) {
         auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_3d.fits");
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
+        FitsDataReader reader(path_string);
+        
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-        FitsDataReader reader(path_string);
-
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
+        
         frame->SetSpatialRequirements(profiles);
         frame->SetCursor(5, 5);
         std::string msg;
@@ -655,17 +664,18 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, FitsChannelStokesChange) {
         auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("Qx"), Message::SpatialConfig("Qy")};
         FitsDataReader reader(path_string);
 
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+        
         int x(5);
         int y(5);
         int channel(1);
         int stokes(0);                // set stokes channel as "I"
         int spatial_config_stokes(1); // set spatial config coordinate = {"Qx", "Qy"}
 
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("Qx"), Message::SpatialConfig("Qy")};
         frame->SetSpatialRequirements(profiles);
         frame->SetCursor(x, y);
         std::string msg;
@@ -704,11 +714,12 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, ContiguousHDF5ChannelChange) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_2_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
         Hdf5DataReader reader(path_string);
 
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+        
         frame->SetSpatialRequirements(profiles);
         frame->SetCursor(5, 5);
         std::string msg;
@@ -747,11 +758,12 @@ INSTANTIATE_TEST_SUITE_P(
 
     TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelChange) {
         auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "1000_1000_2_row_column.hdf5");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
         Hdf5DataReader reader(path_string);
 
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+
         frame->SetSpatialRequirements(profiles);
         frame->SetCursor(5, 5);
         std::string msg;

@@ -86,21 +86,21 @@ std::string FileFinder::XmlTablePath(const std::string& filename) {
     return (TestRoot() / "data" / "tables" / "xml" / filename).string();
 }
 
-float DataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {
-    return ReadRegion({x, y, channel, stokes}, {x + 1, y + 1, channel + 1, stokes + 1})[0];
-}
+// float DataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {
+//     return ReadRegion({x, y, channel, stokes}, {x + 1, y + 1, channel + 1, stokes + 1})[0];
+// }
 
-std::vector<float> DataReader::ReadProfileX(hsize_t y, hsize_t channel, hsize_t stokes) {
-    return ReadRegion({0, y, channel, stokes}, {_width, y + 1, channel + 1, stokes + 1});
-}
+// std::vector<float> DataReader::ReadProfileX(hsize_t y, hsize_t channel, hsize_t stokes) {
+//     return ReadRegion({0, y, channel, stokes}, {_width, y + 1, channel + 1, stokes + 1});
+// }
 
-std::vector<float> DataReader::ReadProfileY(hsize_t x, hsize_t channel, hsize_t stokes) {
-    return ReadRegion({x, 0, channel, stokes}, {x + 1, _height, channel + 1, stokes + 1});
-}
+// std::vector<float> DataReader::ReadProfileY(hsize_t x, hsize_t channel, hsize_t stokes) {
+//     return ReadRegion({x, 0, channel, stokes}, {x + 1, _height, channel + 1, stokes + 1});
+// }
 
-std::vector<float> DataReader::ReadXY(hsize_t channel, hsize_t stokes) {
-    return ReadRegion({0, 0, channel, stokes}, {_width, _height, channel + 1, stokes + 1});
-}
+// std::vector<float> DataReader::ReadXY(hsize_t channel, hsize_t stokes) {
+//     return ReadRegion({0, 0, channel, stokes}, {_width, _height, channel + 1, stokes + 1});
+// }
 
 hsize_t DataReader::Width() {
     return _width;
@@ -198,6 +198,7 @@ std::vector<float> FitsDataReader::ReadRegion(std::vector<hsize_t> start, std::v
     return result;
 }
 
+
 Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
     _imgfile = H5::H5File(imgpath, H5F_ACC_RDONLY);
     _group = _imgfile.openGroup("0");
@@ -236,6 +237,22 @@ std::vector<float> Hdf5DataReader::ReadRegion(std::vector<hsize_t> start, std::v
     _dataset.read(result.data(), H5::PredType::NATIVE_FLOAT, mem_space, file_space);
 
     return result;
+}
+
+float Hdf5DataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({x, y, channel, stokes}, {x + 1, y + 1, channel + 1, stokes + 1})[0];
+}
+
+std::vector<float> Hdf5DataReader::ReadProfileX(hsize_t y, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({0, y, channel, stokes}, {_width, y + 1, channel + 1, stokes + 1});
+}
+
+std::vector<float> Hdf5DataReader::ReadProfileY(hsize_t x, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({x, 0, channel, stokes}, {x + 1, _height, channel + 1, stokes + 1});
+}
+
+std::vector<float> Hdf5DataReader::ReadXY(hsize_t channel, hsize_t stokes) {
+    return ReadRegion({0, 0, channel, stokes}, {_width, _height, channel + 1, stokes + 1});
 }
 
 hid_t Hdf5DataReader::GroupId() {

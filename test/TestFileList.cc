@@ -192,6 +192,6 @@ TEST_F(FileListTest, TestFilterModes) {
 
     // Filter mode AllFiles with image as directory should have one FileInfo for the image
     auto request4 = Message::FileListRequest("data/images/mix/M17_SWex_unit.image", CARTA::FileListFilterMode::AllFiles);
-    response = RequestFileList(().string(), "", request4);
+    response = RequestFileList(TestRoot().string(), "", request4);
     TestFileListResponse(response, 1, 0);
 }

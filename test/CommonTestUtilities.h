@@ -42,11 +42,13 @@ public:
 
 class DataReader {
 public:
+    virtual ~DataReader() = default;
+
     virtual std::vector<float> ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) = 0;
-    float ReadPointXY(hsize_t x, hsize_t y, hsize_t channel = 0, hsize_t stokes = 0);
+    virtual float ReadPointXY(hsize_t x, hsize_t y, hsize_t channel = 0, hsize_t stokes = 0) = 0;
     std::vector<float> ReadProfileX(hsize_t y, hsize_t channel = 0, hsize_t stokes = 0);
-    std::vector<float> ReadProfileY(hsize_t x, hsize_t channel = 0, hsize_t stokes = 0);
-    std::vector<float> ReadXY(hsize_t channel = 0, hsize_t stokes = 0);
+    virtual std::vector<float> ReadProfileY(hsize_t x, hsize_t channel = 0, hsize_t stokes = 0) = 0;
+    virtual std::vector<float> ReadXY(hsize_t channel = 0, hsize_t stokes = 0) = 0;
     hsize_t Width();
     hsize_t Height();
 
@@ -61,6 +63,10 @@ public:
     FitsDataReader(const std::string& imgpath);
     ~FitsDataReader();
     std::vector<float> ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) override;
+    float ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) override;
+    std::vector<float> ReadProfileX(hsize_t y, hsize_t channel, hsize_t stokes) override;
+    std::vector<float> ReadProfileY(hsize_t x, hsize_t channel, hsize_t stokes) override;
+    std::vector<float> ReadXY(hsize_t channel, hsize_t stokes) override;
 
 private:
     fitsfile* _imgfile;
@@ -71,6 +77,10 @@ public:
     Hdf5DataReader(const std::string& imgpath);
     ~Hdf5DataReader() = default;
     std::vector<float> ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) override;
+    float ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) override;
+    std::vector<float> ReadProfileX(hsize_t y, hsize_t channel, hsize_t stokes) override;
+    std::vector<float> ReadProfileY(hsize_t x, hsize_t channel, hsize_t stokes) override;
+    std::vector<float> ReadXY(hsize_t channel, hsize_t stokes) override;
     hid_t GroupId();
 
 private:
