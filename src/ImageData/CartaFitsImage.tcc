@@ -63,12 +63,12 @@ bool CartaFitsImage::GetDataSubset(int datatype, const casacore::Slicer& section
             break;
         }
         case -32: {
-            float* fnull_val(nullptr);
-            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), fnull_val, tmp_buffer.data(), &anynul, &status);
+            float fnull_val(std::numeric_limits<float>::quiet_NaN());
+            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), &fnull_val, tmp_buffer.data(), &anynul, &status);
             break;
         }
         case -64: {
-            double dnull_val(NAN);
+            double dnull_val(std::numeric_limits<double>::quiet_NaN());
             fits_read_subset(fptr, TDOUBLE, start.data(), end.data(), inc.data(), &dnull_val, tmp_buffer.data(), &anynul, &status);
             break;
         }
@@ -130,6 +130,7 @@ bool CartaFitsImage::GetPixelMask(int datatype, const casacore::IPosition& shape
     }
 
     fits_read_pixnull(fptr, dtype, start.data(), mask_size, data_buffer.data(), mask_buffer.data(), &anynul, &status);
+    std::cerr << "***** GetPixelMask fits_read_pixnull anynul=" << anynul << std::endl;
     ulock.unlock();
 
     if (status > 0) {
