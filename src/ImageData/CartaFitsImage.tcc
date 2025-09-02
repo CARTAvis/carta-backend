@@ -130,7 +130,6 @@ bool CartaFitsImage::GetPixelMask(int datatype, const casacore::IPosition& shape
     }
 
     fits_read_pixnull(fptr, dtype, start.data(), mask_size, data_buffer.data(), mask_buffer.data(), &anynul, &status);
-    std::cerr << "***** GetPixelMask fits_read_pixnull anynul=" << anynul << std::endl;
     ulock.unlock();
 
     if (status > 0) {
