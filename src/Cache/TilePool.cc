@@ -6,6 +6,7 @@
 
 #include "Cache/TilePool.h"
 #include "Util/Image.h"
+#include "Util/Nan.h"
 
 using namespace carta;
 
@@ -41,7 +42,7 @@ bool TilePool::Full() {
 }
 
 TilePtr TilePool::Create() {
-    auto unique_tile = std::make_unique<std::vector<float>>(TILE_SIZE * TILE_SIZE, NAN);
+    auto unique_tile = std::make_unique<std::vector<float>>(TILE_SIZE * TILE_SIZE, FLOAT_NAN);
     TilePtr tile(unique_tile.release(), TilePool::TilePtrDeleter());
     return tile;
 }
