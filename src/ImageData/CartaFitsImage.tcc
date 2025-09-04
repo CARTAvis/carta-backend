@@ -63,12 +63,12 @@ bool CartaFitsImage::GetDataSubset(int datatype, const casacore::Slicer& section
             break;
         }
         case -32: {
-            float* fnull_val(nullptr);
-            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), fnull_val, tmp_buffer.data(), &anynul, &status);
+            float fnull_val(std::numeric_limits<float>::quiet_NaN());
+            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), &fnull_val, tmp_buffer.data(), &anynul, &status);
             break;
         }
         case -64: {
-            double dnull_val(NAN);
+            double dnull_val(std::numeric_limits<double>::quiet_NaN());
             fits_read_subset(fptr, TDOUBLE, start.data(), end.data(), inc.data(), &dnull_val, tmp_buffer.data(), &anynul, &status);
             break;
         }

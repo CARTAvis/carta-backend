@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Fixed linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
+* Fixed NaN values in FITS image with BLANK header keyword ([#1492](https://github.com/CARTAvis/carta-backend/issues/1492)).
 
 ## [5.0.2]
 
