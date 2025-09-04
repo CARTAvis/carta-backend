@@ -1,16 +1,13 @@
 var searchData=
 [
-  ['region_2ecc_0',['Region.cc',['../Region_8cc.html',1,'']]],
-  ['region_2eh_1',['Region.h',['../Region_8h.html',1,'']]],
-  ['regionconverter_2ecc_2',['RegionConverter.cc',['../RegionConverter_8cc.html',1,'']]],
-  ['regionconverter_2eh_3',['RegionConverter.h',['../RegionConverter_8h.html',1,'']]],
-  ['regionhandler_2ecc_4',['RegionHandler.cc',['../RegionHandler_8cc.html',1,'']]],
-  ['regionhandler_2eh_5',['RegionHandler.h',['../RegionHandler_8h.html',1,'']]],
-  ['regionimportexport_2ecc_6',['RegionImportExport.cc',['../RegionImportExport_8cc.html',1,'']]],
-  ['regionimportexport_2eh_7',['RegionImportExport.h',['../RegionImportExport_8h.html',1,'']]],
-  ['regionstate_2eh_8',['RegionState.h',['../RegionState_8h.html',1,'']]],
-  ['release_2emd_9',['release.md',['../release_8md.html',1,'']]],
-  ['remotefiles_2ecc_10',['RemoteFiles.cc',['../RemoteFiles_8cc.html',1,'']]],
-  ['remotefiles_2eh_11',['RemoteFiles.h',['../RemoteFiles_8h.html',1,'']]],
-  ['requirementscache_2eh_12',['RequirementsCache.h',['../RequirementsCache_8h.html',1,'']]]
+  ['polarizationcalculator_2ecc_0',['PolarizationCalculator.cc',['../PolarizationCalculator_8cc.html',1,'']]],
+  ['polarizationcalculator_2eh_1',['PolarizationCalculator.h',['../PolarizationCalculator_8h.html',1,'']]],
+  ['programsettings_2ecc_2',['ProgramSettings.cc',['../ProgramSettings_8cc.html',1,'']]],
+  ['programsettings_2eh_3',['ProgramSettings.h',['../ProgramSettings_8h.html',1,'']]],
+  ['pvgenerator_2ecc_4',['PvGenerator.cc',['../PvGenerator_8cc.html',1,'']]],
+  ['pvgenerator_2eh_5',['PvGenerator.h',['../PvGenerator_8h.html',1,'']]],
+  ['pvpreviewcube_2ecc_6',['PvPreviewCube.cc',['../PvPreviewCube_8cc.html',1,'']]],
+  ['pvpreviewcube_2eh_7',['PvPreviewCube.h',['../PvPreviewCube_8h.html',1,'']]],
+  ['pvpreviewcut_2ecc_8',['PvPreviewCut.cc',['../PvPreviewCut_8cc.html',1,'']]],
+  ['pvpreviewcut_2eh_9',['PvPreviewCut.h',['../PvPreviewCut_8h.html',1,'']]]
 ];

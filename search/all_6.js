@@ -86,7 +86,7 @@ var searchData=
   ['fixed_5fnum_5fbins_83',['fixed_num_bins',['../structcarta_1_1HistogramConfig.html#af5ace17c70be9743efac1cb4f2da8812',1,'carta::HistogramConfig']]],
   ['fixing_20code_20format_84',['Checking and fixing code format',['../md_docs_2static_2faq.html#autotoc_md2',1,'']]],
   ['flags_85',['Building with ASAN flags',['../md_docs_2static_2faq.html#autotoc_md1',1,'']]],
-  ['float_5fnan_86',['FLOAT_NAN',['../VectorField_8h.html#a5d44c195a8722bab20bb0953a1114e3d',1,'VectorField.h']]],
+  ['float_5fnan_86',['FLOAT_NAN',['../Nan_8h.html#a5d44c195a8722bab20bb0953a1114e3d',1,'Nan.h']]],
   ['floatbounds_87',['FloatBounds',['../classMessage.html#ae4c7fdc05c8b782e3ebfe8a76770d646',1,'Message']]],
   ['flush_88',['flush',['../classspdlog_1_1sinks_1_1carta__sink.html#aa5125d4ef050591f5abd053712085a7c',1,'spdlog::sinks::carta_sink']]],
   ['flushlogfile_89',['FlushLogFile',['../namespacecarta_1_1logger.html#a7b334512783c98ccfdac74bd38aa2f9f',1,'carta::logger']]],

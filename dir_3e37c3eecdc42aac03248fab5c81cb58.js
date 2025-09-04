@@ -14,6 +14,7 @@ var dir_3e37c3eecdc42aac03248fab5c81cb58 =
     [ "Message.cc", "Message_8cc.html", "Message_8cc" ],
     [ "Message.h", "Message_8h.html", "Message_8h" ],
     [ "Message.tcc", "Message_8tcc.html", "Message_8tcc" ],
+    [ "Nan.h", "Nan_8h.html", "Nan_8h" ],
     [ "RemoteFiles.cc", "RemoteFiles_8cc.html", "RemoteFiles_8cc" ],
     [ "RemoteFiles.h", "RemoteFiles_8h.html", "RemoteFiles_8h" ],
     [ "Stokes.cc", "Stokes_8cc.html", null ],

@@ -1,9 +1,11 @@
 <map id="TilePool.cc" name="TilePool.cc">
-<area shape="rect" id="Node000001" title=" " alt="" coords="415,5,507,31"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="758,5,850,31"/>
 <area shape="rect" id="Node000002" href="$TilePool_8h.html" title=" " alt="" coords="159,79,289,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="424,33,276,77,275,72,422,28"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="758,28,303,83,302,78,757,22"/>
 <area shape="rect" id="Node000007" href="$Image_8h.html" title=" " alt="" coords="753,79,855,104"/>
-<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="508,26,739,74,738,79,507,31"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="807,31,807,65,801,65,801,31"/>
+<area shape="rect" id="Node000019" href="$Nan_8h.html" title=" " alt="" coords="879,79,966,104"/>
+<area shape="poly" id="edge19_Node000001_Node000019" title=" " alt="" coords="824,28,893,69,890,74,822,33"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="5,159,83,185"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="199,106,84,156,82,151,197,102"/>
 <area shape="rect" id="Node000004" title=" " alt="" coords="107,159,171,185"/>
@@ -25,11 +27,11 @@
 <area shape="rect" id="Node000013" title=" " alt="" coords="1031,152,1191,192"/>
 <area shape="poly" id="edge12_Node000007_Node000013" title=" " alt="" coords="849,101,1025,146,1023,151,848,107"/>
 <area shape="rect" id="Node000014" title=" " alt="" coords="1215,152,1375,192"/>
-<area shape="poly" id="edge13_Node000007_Node000014" title=" " alt="" coords="856,97,1007,118,1202,149,1201,154,1006,123,855,102"/>
+<area shape="poly" id="edge13_Node000007_Node000014" title=" " alt="" coords="856,100,867,101,1033,125,1201,149,1201,154,1032,130,866,107,855,105"/>
 <area shape="rect" id="Node000015" title=" " alt="" coords="1399,152,1588,192"/>
-<area shape="poly" id="edge14_Node000007_Node000015" title=" " alt="" coords="856,94,1082,114,1385,149,1385,155,1081,120,855,99"/>
+<area shape="poly" id="edge14_Node000007_Node000015" title=" " alt="" coords="856,100,867,101,1011,118,1124,126,1239,133,1386,149,1385,155,1238,139,1124,131,1010,123,866,107,855,105"/>
 <area shape="rect" id="Node000016" href="$Tile_8h.html" title=" " alt="" coords="1613,159,1753,185"/>
-<area shape="poly" id="edge15_Node000007_Node000016" title=" " alt="" coords="856,91,1171,106,1384,123,1600,149,1625,154,1624,159,1600,155,1384,128,1171,111,855,97"/>
+<area shape="poly" id="edge15_Node000007_Node000016" title=" " alt="" coords="856,100,867,101,978,113,1073,119,1234,123,1395,128,1489,135,1600,149,1625,154,1624,159,1600,155,1489,141,1394,133,1234,128,1072,124,978,118,866,107,855,105"/>
 <area shape="poly" id="edge16_Node000016_Node000008" title=" " alt="" coords="1637,187,1600,195,1436,217,1274,234,1030,252,1030,246,1274,228,1436,212,1600,189,1636,182"/>
 <area shape="rect" id="Node000017" title=" " alt="" coords="1600,240,1667,265"/>
 <area shape="poly" id="edge17_Node000016_Node000017" title=" " alt="" coords="1678,186,1650,230,1646,227,1673,183"/>

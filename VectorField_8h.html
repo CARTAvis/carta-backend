@@ -97,7 +97,6 @@ $(document).ready(function(){initNavTree('VectorField_8h.html',''); initResizabl
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">VectorField.h File Reference</div></div>
 </div><!--header-->
@@ -108,6 +107,7 @@ $(document).ready(function(){initNavTree('VectorField_8h.html',''); initResizabl
 <code>#include &quot;<a class="el" href="Compression_8h.html">DataStream/Compression.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Tile_8h.html">DataStream/Tile.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Image_8h.html">Util/Image.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Nan_8h.html">Util/Nan.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for VectorField.h:</div>
 <div class="dyncontent">
@@ -139,11 +139,6 @@ Namespaces</h2></td></tr>
 <tr class="memitem:namespacecarta" id="r_namespacecarta"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html">carta</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:a5d44c195a8722bab20bb0953a1114e3d" id="r_a5d44c195a8722bab20bb0953a1114e3d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="VectorField_8h.html#a5d44c195a8722bab20bb0953a1114e3d">FLOAT_NAN</a>&#160;&#160;&#160;std::numeric_limits&lt;float&gt;::quiet_NaN()</td></tr>
-<tr class="separator:a5d44c195a8722bab20bb0953a1114e3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a564d69915ebb8e5d130798efdf5fc32a" id="r_a564d69915ebb8e5d130798efdf5fc32a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a564d69915ebb8e5d130798efdf5fc32a">carta::GetTiles</a> (int image_width, int image_height, int mip, std::vector&lt; <a class="el" href="structcarta_1_1Tile.html">Tile</a> &gt; &amp;tiles)</td></tr>
@@ -151,21 +146,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a95828b5aa32c7a2363d7679a2cb91b77" id="r_a95828b5aa32c7a2363d7679a2cb91b77"><td class="memItemLeft" align="right" valign="top">CARTA::ImageBounds&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a95828b5aa32c7a2363d7679a2cb91b77">carta::GetImageBounds</a> (const <a class="el" href="structcarta_1_1Tile.html">Tile</a> &amp;tile, int image_width, int image_height, int mip)</td></tr>
 <tr class="separator:a95828b5aa32c7a2363d7679a2cb91b77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a5d44c195a8722bab20bb0953a1114e3d" name="a5d44c195a8722bab20bb0953a1114e3d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5d44c195a8722bab20bb0953a1114e3d">&#9670;&#160;</a></span>FLOAT_NAN</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define FLOAT_NAN&#160;&#160;&#160;std::numeric_limits&lt;float&gt;::quiet_NaN()</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

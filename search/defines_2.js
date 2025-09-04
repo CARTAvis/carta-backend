@@ -4,5 +4,6 @@ var searchData=
   ['default_5fstokes_1',['DEFAULT_STOKES',['../Image_8h.html#a57c33c6fd31b08c629541c753d0a4d47',1,'Image.h']]],
   ['default_5fvertex_5fcount_2',['DEFAULT_VERTEX_COUNT',['../RegionConverter_8h.html#a3b1f80bd532bb0bc4929c7c352ffa358',1,'RegionConverter.h']]],
   ['default_5fz_3',['DEFAULT_Z',['../Image_8h.html#a6900e13c0a7c0e8c463e37c31adac3cb',1,'Image.h']]],
-  ['deg_5fto_5frad_4',['DEG_TO_RAD',['../ImageFitter_8cc.html#a212460e743fecb084d717bb2180c5a56',1,'ImageFitter.cc']]]
+  ['deg_5fto_5frad_4',['DEG_TO_RAD',['../ImageFitter_8cc.html#a212460e743fecb084d717bb2180c5a56',1,'ImageFitter.cc']]],
+  ['double_5fnan_5',['DOUBLE_NAN',['../Nan_8h.html#a05c4e15b9701b28975effde191bc9bf6',1,'Nan.h']]]
 ];

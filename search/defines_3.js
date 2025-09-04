@@ -6,5 +6,5 @@ var searchData=
   ['fits_5fblock_5fsize_3',['FITS_BLOCK_SIZE',['../CompressedFits_8cc.html#ac125833ca17a8da1f1167ef0ad9b5e08',1,'CompressedFits.cc']]],
   ['fits_5fcard_5fsize_4',['FITS_CARD_SIZE',['../CompressedFits_8cc.html#a666d42812e7e4efe3370ded9f3d21534',1,'CompressedFits.cc']]],
   ['fits_5fmagic_5fnumber_5',['FITS_MAGIC_NUMBER',['../File_8h.html#a0a4c1a3f4f7ba5fa1f3d5fd8ae8f24aa',1,'File.h']]],
-  ['float_5fnan_6',['FLOAT_NAN',['../VectorField_8h.html#a5d44c195a8722bab20bb0953a1114e3d',1,'VectorField.h']]]
+  ['float_5fnan_6',['FLOAT_NAN',['../Nan_8h.html#a5d44c195a8722bab20bb0953a1114e3d',1,'Nan.h']]]
 ];

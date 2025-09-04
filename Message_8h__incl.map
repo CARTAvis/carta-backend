@@ -72,10 +72,10 @@
 <area shape="poly" id="edge35_Node000001_Node000036" title=" " alt="" coords="3556,17,4066,21,4866,30,5267,38,5611,48,5856,61,5928,68,5960,76,5967,87,5969,98,5960,120,5948,136,5933,148,5899,166,5896,162,5930,144,5944,132,5956,117,5963,97,5962,89,5956,81,5927,73,5856,66,5611,54,5267,43,4866,36,4066,26,3556,22"/>
 <area shape="rect" id="Node000046" href="$BasicStatsCalculator_8h.html" title=" " alt="" coords="6261,167,6506,192"/>
 <area shape="poly" id="edge46_Node000001_Node000046" title=" " alt="" coords="3556,17,4104,21,4980,31,5815,49,6103,61,6194,68,6243,76,6358,157,6355,161,6241,81,6193,73,6103,66,5815,54,4980,36,4104,26,3556,22"/>
-<area shape="rect" id="Node000057" href="$Histogram_8h.html" title=" " alt="" coords="6312,86,6492,111"/>
-<area shape="poly" id="edge52_Node000001_Node000057" title=" " alt="" coords="3556,17,4038,19,4832,26,5672,44,6027,58,6293,76,6332,81,6331,86,6292,81,6026,63,5672,49,4832,32,4038,24,3556,22"/>
-<area shape="rect" id="Node000060" href="$Message_8tcc.html" title=" " alt="" coords="6516,86,6619,111"/>
-<area shape="poly" id="edge56_Node000001_Node000060" title=" " alt="" coords="3556,17,4125,20,5050,29,5966,47,6306,60,6426,68,6505,76,6523,80,6521,85,6504,81,6425,73,6305,65,5966,52,5050,35,4125,25,3556,22"/>
+<area shape="rect" id="Node000058" href="$Histogram_8h.html" title=" " alt="" coords="6312,86,6492,111"/>
+<area shape="poly" id="edge52_Node000001_Node000058" title=" " alt="" coords="3556,17,4038,19,4832,26,5672,44,6027,58,6293,76,6332,81,6331,86,6292,81,6026,63,5672,49,4832,32,4038,24,3556,22"/>
+<area shape="rect" id="Node000061" href="$Message_8tcc.html" title=" " alt="" coords="6516,86,6619,111"/>
+<area shape="poly" id="edge56_Node000001_Node000061" title=" " alt="" coords="3556,17,4125,20,5050,29,5966,47,6306,60,6426,68,6505,76,6523,80,6521,85,6504,81,6425,73,6305,65,5966,52,5050,35,4125,25,3556,22"/>
 <area shape="poly" id="edge39_Node000036_Node000006" title=" " alt="" coords="5885,186,6156,242,6155,247,5884,191"/>
 <area shape="poly" id="edge41_Node000036_Node000034" title=" " alt="" coords="5810,184,3009,259,3009,254,5810,179"/>
 <area shape="rect" id="Node000037" title=" " alt="" coords="6095,328,6157,353"/>
@@ -100,9 +100,9 @@
 <area shape="rect" id="Node000048" href="$BasicStatsCalculator_8tcc.html" title=" " alt="" coords="6497,247,6675,273"/>
 <area shape="poly" id="edge50_Node000046_Node000048" title=" " alt="" coords="6414,190,6545,240,6543,245,6412,194"/>
 <area shape="poly" id="edge51_Node000048_Node000037" title=" " alt="" coords="6526,275,6485,283,6172,335,6171,329,6484,277,6525,270"/>
-<area shape="poly" id="edge53_Node000057_Node000046" title=" " alt="" coords="6402,112,6392,154,6387,153,6397,111"/>
-<area shape="rect" id="Node000058" title=" " alt="" coords="6531,167,6601,192"/>
-<area shape="poly" id="edge54_Node000057_Node000058" title=" " alt="" coords="6427,109,6531,158,6529,163,6425,114"/>
-<area shape="rect" id="Node000059" title=" " alt="" coords="6625,167,6688,192"/>
-<area shape="poly" id="edge55_Node000057_Node000059" title=" " alt="" coords="6440,109,6613,162,6611,167,6438,114"/>
+<area shape="poly" id="edge53_Node000058_Node000046" title=" " alt="" coords="6402,112,6392,154,6387,153,6397,111"/>
+<area shape="rect" id="Node000059" title=" " alt="" coords="6531,167,6601,192"/>
+<area shape="poly" id="edge54_Node000058_Node000059" title=" " alt="" coords="6427,109,6531,158,6529,163,6425,114"/>
+<area shape="rect" id="Node000060" title=" " alt="" coords="6625,167,6688,192"/>
+<area shape="poly" id="edge55_Node000058_Node000060" title=" " alt="" coords="6440,109,6613,162,6611,167,6438,114"/>
 </map>
