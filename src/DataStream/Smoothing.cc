@@ -14,6 +14,7 @@
 #include "../Logger/Logger.h"
 #include "ThreadManager/ThreadManager.h"
 #include "Timer/Timer.h"
+#include "Util/Nan.h"
 
 namespace carta {
 
@@ -104,7 +105,7 @@ bool RunKernel(const std::vector<float>& kernel, const float* src_data, float* d
             if (weight > 0.0) {
                 sum /= weight;
             } else {
-                sum = NAN;
+                sum = FLOAT_NAN;
             }
             dest_data[dest_index] = sum;
         }
@@ -166,7 +167,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
             auto src_index = (j + apron_height) * src_width + (i + apron_height);
             auto origVal = src_data[src_index];
             if (std::isnan(origVal)) {
-                dest_data[j * dest_width + i] = NAN;
+                dest_data[j * dest_width + i] = FLOAT_NAN;
             }
         }
     }
@@ -247,7 +248,7 @@ bool BlockSmoothSSE(const float* src_data, float* dest_data, int64_t src_width, 
                 }
             }
 
-            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : FLOAT_NAN;
         }
     }
     return true;
@@ -302,7 +303,7 @@ bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, 
                     }
                 }
             }
-            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : FLOAT_NAN;
         }
     }
     return true;
@@ -333,7 +334,7 @@ bool BlockSmoothScalar(const float* src_data, float* dest_data, int64_t src_widt
                 }
                 image_row++;
             }
-            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : FLOAT_NAN;
         }
     }
     return true;

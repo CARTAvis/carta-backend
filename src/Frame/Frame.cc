@@ -26,6 +26,7 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
+#include "Util/Nan.h"
 
 namespace carta {
 
@@ -1509,7 +1510,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 size_t dt_slice_target = TARGET_DELTA_TIME;            // target time elapse for each slice, in milliseconds
                 size_t dt_partial_update = TARGET_PARTIAL_CURSOR_TIME; // time increment to send an update
                 size_t profile_size = Depth();                         // profile vector size
-                spectral_data.resize(profile_size, NAN);
+                spectral_data.resize(profile_size, FLOAT_NAN);
                 float progress(0.0);
 
                 auto t_start_profile = std::chrono::high_resolution_clock::now();
@@ -1718,7 +1719,7 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
     // Apply mask to data
     for (size_t i = 0; i < data.size(); ++i) {
         if (!region_mask[i]) {
-            data[i] = NAN;
+            data[i] = FLOAT_NAN;
         }
     }
 
