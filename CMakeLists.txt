@@ -257,13 +257,17 @@ set(SOURCE_FILES
         src/Main/Main.cc
         src/Main/ProgramSettings.cc
         src/Main/WebBrowser.cc
-        src/Region/CrtfImportExport.cc
-        src/Region/Ds9ImportExport.cc
         src/Region/LineBoxRegions.cc
         src/Region/Region.cc
         src/Region/RegionConverter.cc
         src/Region/RegionHandler.cc
-        src/Region/RegionImportExport.cc
+        src/Region/RegionImportExport/CrtfExport.cc
+        src/Region/RegionImportExport/CrtfImport.cc
+        src/Region/RegionImportExport/Ds9Export.cc
+        src/Region/RegionImportExport/Ds9Import.cc
+        src/Region/RegionImportExport/RegionExport.cc
+        src/Region/RegionImportExport/RegionImport.cc
+        src/Region/RegionImportExport/RegionImportExportUtil.cc
         src/Session/ChannelMapSettings.cc
         src/Session/CursorSettings.cc
         src/Session/OnMessageTask.cc

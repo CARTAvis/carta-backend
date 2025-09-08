@@ -9,6 +9,9 @@
 #ifndef CARTA_SRC_REGION_REGIONSTATE_H_
 #define CARTA_SRC_REGION_REGIONSTATE_H_
 
+#include <casacore/casa/Arrays/Vector.h>
+#include <casacore/casa/aipstype.h>
+
 #include <carta-protobuf/defs.pb.h>
 
 namespace carta {
