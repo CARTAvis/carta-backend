@@ -11,6 +11,7 @@
 #include <cmath>
 #include <fstream>
 #include <thread>
+#include <sys/mman.h>
 
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/WCBox.h>
@@ -388,6 +389,11 @@ bool Frame::FillImageCache() {
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
     _image_cache_size = stokes_slicer.slicer.length().product();
     _image_cache = std::make_unique<float[]>(_image_cache_size);
+
+    if (madvise(_image_cache.get(), _image_cache_size * sizeof(float), MADV_DONTDUMP)) {
+        spdlog::error("Session {}: {}", _session_id, "Failed to exclude image cache from core dump.");
+    }
+
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
