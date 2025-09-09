@@ -61,7 +61,7 @@ public:
 protected:
     /**
      * @brief Export region to file line in _export_regions from casacore Record, for world coordinates or matched image.
-     * @param RegionState struct defining region parameters
+     * @param region_state RegionState struct defining region parameters
      * @param region_style CARTA RegionStyle submessage defining region style
      * @param region_record casacore Record created from LCRegion for region in matched image
      * @param pixel_coord Whether to export region in pixel or world coordinates
@@ -131,7 +131,7 @@ private:
      * @param[in] region_record casacore Record created from casacore LCRegion
      * @param[in] pixel_coord Whether to set control points in pixel or world coordinates
      * @param [out] control_points Region control points as casacore Quantities
-     * @return Whether the conversionis successful
+     * @return Whether the conversion is successful
      */
     bool ConvertRecordToPoint(
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
@@ -141,17 +141,19 @@ private:
      * @param[in] region_record casacore Record created from casacore LCRegion
      * @param[in] pixel_coord Whether to set control points in pixel or world coordinates
      * @param [out] control_points Region control points as casacore Quantities
-     * @return Whether the conversionis successful
+     * @return Whether the conversion is successful
      */
     bool ConvertRecordToRectangle(
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
 
     /**
      * @brief Convert casacore Record to ellipse/circle region control points.
+     * @param[in] region_state RegionState struct defining region parameters
      * @param[in] region_record casacore Record created from casacore LCRegion
      * @param[in] pixel_coord Whether to set control points in pixel or world coordinates
-     * @param [out] control_points Region control points as casacore Quantities
-     * @return Whether the conversionis successful
+     * @param[out] control_points Region control points as casacore Quantities
+     * @param[out] qrotation Region rotation as casacore Quantity
+     * @return Whether the conversion is successful
      */
     bool ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
         std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
@@ -161,7 +163,7 @@ private:
      * @param[in] region_record casacore Record created from casacore LCRegion
      * @param[in] pixel_coord Whether to set control points in pixel or world coordinates
      * @param [out] control_points Region control points as casacore Quantities
-     * @return Whether the conversionis successful
+     * @return Whether the conversion is successful
      */
     bool ConvertRecordToPolygonLine(
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);

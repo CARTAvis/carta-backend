@@ -42,7 +42,7 @@ protected:
      * @return Whether the region export is successful
      */
     bool AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
-        const casacore::Quantity& rotation, const CARTA::RegionStyle& style) override;
+        const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) override;
 
     /**
      * @brief Export region file lines in _export_regions to file.

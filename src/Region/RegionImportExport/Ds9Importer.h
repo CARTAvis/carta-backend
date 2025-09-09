@@ -118,7 +118,7 @@ private:
      * @brief Set RegionState and RegionStyle for ruler region from parsed region parameters and properties.
      * @param[in] parameters Strings parsed from file line describing region
      * @param[in] properties Map of values in file line describing style
-     * @param[out] CARTA RegionStyle submessage defining region style
+     * @param[out] region_style CARTA RegionStyle submessage defining region style
      * @return RegionState struct
      */
     RegionState ImportRulerRegion(
@@ -128,7 +128,7 @@ private:
      * @brief Set RegionState and RegionStyle for compass region from parsed region parameters and properties.
      * @param[in] parameters Strings parsed from file line describing region
      * @param[in] properties Map of values in file line describing style
-     * @param[out] CARTA RegionStyle submessage defining region style
+     * @param[out] region_style CARTA RegionStyle submessage defining region style
      * @return RegionState struct
      */
     RegionState ImportCompassRegion(
@@ -177,7 +177,7 @@ private:
 
     /**
      * @brief Convert parameter in sexagesimal format to angle format for casacore readQuantity
-     * @param[in, out] param Region parameter string parsed from file line
+     * @param[in, out] parameter Region parameter string parsed from file line
      */
     void ConvertTimeFormatToAngle(std::string& parameter);
 
