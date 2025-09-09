@@ -4,9 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Ds9Export.cc: export regions in DS9 format
+//# Ds9Exporter.cc: export regions in DS9 format
 
-#include "Ds9Export.h"
+#include "Ds9Exporter.h"
 
 #include <spdlog/fmt/fmt.h>
 
@@ -19,8 +19,9 @@
 
 using namespace carta;
 
-Ds9Export::Ds9Export(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coords)
-    : RegionExport(image_coord_sys, image_shape), _pixel_coords(pixel_coords) {
+Ds9Exporter::Ds9Exporter(
+    std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coords)
+    : RegionExporter(image_coord_sys, image_shape), _pixel_coords(pixel_coords) {
     // Export regions to DS9 format
     // Set properties for file header
     InitGlobalProperties();
@@ -43,7 +44,7 @@ Ds9Export::Ds9Export(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys
     AddHeader();
 }
 
-void Ds9Export::InitGlobalProperties() {
+void Ds9Exporter::InitGlobalProperties() {
     // Set global properties to defaults
     _global_properties["color"] = "green";
     _global_properties["dashlist"] = "8 3";
@@ -62,7 +63,7 @@ void Ds9Export::InitGlobalProperties() {
 
 // Public: for exporting regions
 
-bool Ds9Export::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
+bool Ds9Exporter::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
     // Add pixel-coord region using RegionState
     auto region_type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
@@ -167,7 +168,7 @@ bool Ds9Export::AddExportRegion(const RegionState& region_state, const CARTA::Re
     return false;
 }
 
-bool Ds9Export::AddExportRegion(const CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+bool Ds9Exporter::AddExportRegion(const CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
     const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) {
     // Add region using Quantities
     float angle = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
@@ -191,7 +192,7 @@ bool Ds9Export::AddExportRegion(const CARTA::RegionType region_type, const std::
     return false;
 }
 
-bool Ds9Export::ExportRegions(const std::string& filename, std::string& error) {
+bool Ds9Exporter::ExportRegions(const std::string& filename, std::string& error) {
     // Print regions to DS9 file
     if (_export_regions.empty()) {
         error = "Export region failed: no regions to export.";
@@ -206,7 +207,7 @@ bool Ds9Export::ExportRegions(const std::string& filename, std::string& error) {
     return true;
 }
 
-bool Ds9Export::ExportRegions(std::vector<std::string>& contents, std::string& error) {
+bool Ds9Exporter::ExportRegions(std::vector<std::string>& contents, std::string& error) {
     // Print regions to DS9 file lines in vector
     if (_export_regions.empty()) {
         error = "Export region failed: no regions to export.";
@@ -217,7 +218,7 @@ bool Ds9Export::ExportRegions(std::vector<std::string>& contents, std::string& e
     return true;
 }
 
-void Ds9Export::SetImageReferenceFrame() {
+void Ds9Exporter::SetImageReferenceFrame() {
     // Set image coord sys direction frame
     if (!_coord_sys) {
         return;
@@ -233,7 +234,7 @@ void Ds9Export::SetImageReferenceFrame() {
     }
 }
 
-void Ds9Export::AddHeader() {
+void Ds9Exporter::AddHeader() {
     // print file format, globals, and coord sys
     std::ostringstream os;
     os << "# Region file format: DS9 CARTA " << VERSION_ID << std::endl;
@@ -259,7 +260,7 @@ void Ds9Export::AddHeader() {
     _export_regions.push_back(os.str());
 }
 
-std::string Ds9Export::AddExportRegionPixel(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+std::string Ds9Exporter::AddExportRegionPixel(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
     float angle, const CARTA::RegionStyle& region_style) {
     // Add region using pixel Quantities.  RegionStyle needed for 2-line text region.
     std::string region_line;
@@ -352,7 +353,7 @@ std::string Ds9Export::AddExportRegionPixel(CARTA::RegionType region_type, const
     return region_line;
 }
 
-std::string Ds9Export::AddExportRegionWorld(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+std::string Ds9Exporter::AddExportRegionWorld(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
     float angle, const CARTA::RegionStyle& region_style) {
     // Add region using world Quantities.  RegionStyle needed for 2-line text region.
     std::string region_line;
@@ -455,7 +456,7 @@ std::string Ds9Export::AddExportRegionWorld(CARTA::RegionType region_type, const
     return region_line;
 }
 
-void Ds9Export::ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
+void Ds9Exporter::ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
     // Add common region style properties from RegionStyle to line string
     if (region_line[0] != '#') {
         region_line.append(" #");
@@ -481,7 +482,7 @@ void Ds9Export::ExportStyleParameters(const CARTA::RegionStyle& region_style, st
     }
 }
 
-void Ds9Export::ExportTextboxStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
+void Ds9Exporter::ExportTextboxStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
     // Add region name and alignment
     if (!region_style.name().empty()) {
         region_line += fmt::format(" text={{{}}}", region_style.name());
@@ -489,7 +490,7 @@ void Ds9Export::ExportTextboxStyleParameters(const CARTA::RegionStyle& region_st
     region_line += fmt::format(" align={}\n", text_positions[region_style.annotation_style().text_position()]);
 }
 
-void Ds9Export::ExportFontParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
+void Ds9Exporter::ExportFontParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
     if (!region_style.has_annotation_style()) {
         return;
     }
@@ -518,7 +519,7 @@ void Ds9Export::ExportFontParameters(const CARTA::RegionStyle& region_style, std
     region_line += fmt::format(" font=\"{} {} {}\"", font, font_size, font_style);
 }
 
-void Ds9Export::ExportAnnotationStyleParameters(
+void Ds9Exporter::ExportAnnotationStyleParameters(
     CARTA::RegionType region_type, const CARTA::RegionStyle& region_style, std::string& region_line) {
     if (!region_style.has_annotation_style()) {
         return;
@@ -557,7 +558,7 @@ void Ds9Export::ExportAnnotationStyleParameters(
     }
 }
 
-void Ds9Export::ExportAnnPointParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
+void Ds9Exporter::ExportAnnPointParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
     std::string point_shape("circle");
     bool fill(true);
 

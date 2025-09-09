@@ -9,34 +9,52 @@
 #ifndef CARTA_SRC_REGION_REGIONIMPORTEXPORT_REGIONIMPORTEXPORT_H_
 #define CARTA_SRC_REGION_REGIONIMPORTEXPORT_REGIONIMPORTEXPORT_H_
 
-#include "CrtfExport.h"
-#include "CrtfImport.h"
-#include "Ds9Export.h"
-#include "Ds9Import.h"
+#include "CrtfExporter.h"
+#include "CrtfImporter.h"
+#include "Ds9Exporter.h"
+#include "Ds9Importer.h"
 
 namespace carta {
 
-std::unique_ptr<RegionImport> GetRegionImporter(CARTA::FileType region_file_type,
+/**
+ * @brief Create and return importer according to region file type.
+ * @param region_file_type CARTA FileType enum designating CRTF or DS9 region file
+ * @param image_coord_sys casacore::CoordinateSystem of image to which region is imported
+ * @param file_id File id of reference image to which regions will be imported
+ * @param region_file File name or contents to import
+ * @param file_is_filename Indicates whether file parameter contains name or contents.
+ * @return region file importer, either CrtfImporter or Ds9Importer
+ */
+std::unique_ptr<RegionImporter> GetRegionImporter(CARTA::FileType region_file_type,
     std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, int file_id, const std::string& region_file, bool file_is_filename) {
     // Return importer specific to the region file type
-    std::unique_ptr<RegionImport> importer;
+    std::unique_ptr<RegionImporter> importer;
     if (region_file_type == CARTA::CRTF) {
-        importer.reset(new CrtfImport(image_coord_sys, file_id, region_file, file_is_filename));
+        importer.reset(new CrtfImporter(image_coord_sys, file_id, region_file, file_is_filename));
     } else if (region_file_type == CARTA::DS9_REG) {
-        importer.reset(new Ds9Import(image_coord_sys, file_id, region_file, file_is_filename));
+        importer.reset(new Ds9Importer(image_coord_sys, file_id, region_file, file_is_filename));
     }
     return importer;
 }
 
-std::unique_ptr<RegionExport> GetRegionExporter(CARTA::FileType region_file_type,
+/**
+ * @brief Create and return exporter according to region file type.
+ * @param region_file_type CARTA FileType enum designating CRTF or DS9 region file
+ * @param image_coord_sys casacore::CoordinateSystem of image from which region is exported
+ * @param image_shape casacore::IPosition describing shape of image from which region is exported
+ * @param stokes_axis Current stokes axis index in image from which region is exported
+ * @param export_pixel_coords Whether to export in pixel or world coordinates.
+ * @return region exporter, either CrtfExporter or Ds9Exporter
+ */
+std::unique_ptr<RegionExporter> GetRegionExporter(CARTA::FileType region_file_type,
     std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis,
     bool export_pixel_coords) {
     // Return exporter specific to the region file type
-    std::unique_ptr<RegionExport> exporter;
+    std::unique_ptr<RegionExporter> exporter;
     if (region_file_type == CARTA::CRTF) {
-        exporter.reset(new CrtfExport(image_coord_sys, image_shape, stokes_axis));
+        exporter.reset(new CrtfExporter(image_coord_sys, image_shape, stokes_axis));
     } else if (region_file_type == CARTA::DS9_REG) {
-        exporter.reset(new Ds9Export(image_coord_sys, image_shape, export_pixel_coords));
+        exporter.reset(new Ds9Exporter(image_coord_sys, image_shape, export_pixel_coords));
     }
     return exporter;
 }

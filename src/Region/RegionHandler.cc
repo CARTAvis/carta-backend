@@ -150,7 +150,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
     // Set regions from region file
     auto csys = frame->CoordinateSystem();
-    std::unique_ptr<RegionImport> importer(nullptr);
+    std::unique_ptr<RegionImporter> importer(nullptr);
 
     try {
         importer = GetRegionImporter(region_file_type, csys, file_id, region_file, file_is_filename);

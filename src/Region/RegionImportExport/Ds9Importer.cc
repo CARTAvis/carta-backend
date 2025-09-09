@@ -4,9 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Ds9Import.cc: import regions in DS9 format
+//# Ds9Importer.cc: import regions in DS9 format
 
-#include "Ds9Import.h"
+#include "Ds9Importer.h"
 
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
@@ -15,9 +15,9 @@
 
 using namespace carta;
 
-Ds9Import::Ds9Import(
+Ds9Importer::Ds9Importer(
     std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, int file_id, const std::string& file, bool file_is_filename)
-    : RegionImport(image_coord_sys, file_id), _file_ref_frame("image"), _pixel_coord(true) {
+    : RegionImporter(image_coord_sys, file_id), _file_ref_frame("image"), _pixel_coord(true) {
     // Import regions in DS9 format
     SetParserDelim(" ,()#");
     _region_names = GetRegionTypeNames(CARTA::FileType::DS9_REG);
@@ -25,7 +25,7 @@ Ds9Import::Ds9Import(
     ProcessFileLines(lines);
 }
 
-void Ds9Import::ProcessFileLines(std::vector<std::string>& lines) {
+void Ds9Importer::ProcessFileLines(std::vector<std::string>& lines) {
     // Process or ignore each file line
     if (lines.empty()) {
         return;
@@ -86,7 +86,7 @@ void Ds9Import::ProcessFileLines(std::vector<std::string>& lines) {
 
 // Coordinate system handlers
 
-void Ds9Import::InitDs9CoordMap() {
+void Ds9Importer::InitDs9CoordMap() {
     // for converting coordinate system from DS9 to casacore
     _coord_map["physical"] = "";
     _coord_map["image"] = "";
@@ -102,14 +102,14 @@ void Ds9Import::InitDs9CoordMap() {
     _coord_map["linear"] = "UNSUPPORTED";
 }
 
-bool Ds9Import::IsDs9CoordSysKeyword(std::string& input_line) {
+bool Ds9Importer::IsDs9CoordSysKeyword(std::string& input_line) {
     // Check if region file line is coordinate in map
     std::string input_lower(input_line);
     std::transform(input_line.begin(), input_line.end(), input_lower.begin(), ::tolower); // convert to lowercase
     return (_coord_map.find(input_lower) != _coord_map.end());
 }
 
-bool Ds9Import::SetFileReferenceFrame(std::string& ds9_coord) {
+bool Ds9Importer::SetFileReferenceFrame(std::string& ds9_coord) {
     // Convert DS9 coord string in region file to CASA reference frame.
     // Returns whether conversion was successful or undefined/not supported.
     // Convert in-place to lowercase for map
@@ -136,7 +136,7 @@ bool Ds9Import::SetFileReferenceFrame(std::string& ds9_coord) {
     return true;
 }
 
-void Ds9Import::SetImageReferenceFrame() {
+void Ds9Importer::SetImageReferenceFrame() {
     // Set image coord sys direction frame
     if (!_coord_sys) {
         return;
@@ -152,7 +152,7 @@ void Ds9Import::SetImageReferenceFrame() {
     }
 }
 
-void Ds9Import::SetGlobals(std::string& global_line) {
+void Ds9Importer::SetGlobals(std::string& global_line) {
     // Set global properties using file line parser
     std::vector<std::string> parameters;
     std::unordered_map<std::string, std::string> properties;
@@ -160,7 +160,7 @@ void Ds9Import::SetGlobals(std::string& global_line) {
     _global_properties = properties;
 }
 
-RegionProperties Ds9Import::SetRegion(std::string& region_definition) {
+RegionProperties Ds9Importer::SetRegion(std::string& region_definition) {
     // Convert ds9 region definition into RegionProperties (RegionState, RegionStyle)
     // Parse region definition into parameters and properties
     RegionProperties region_properties;
@@ -233,7 +233,7 @@ RegionProperties Ds9Import::SetRegion(std::string& region_definition) {
     return region_properties;
 }
 
-RegionState Ds9Import::ImportPointRegion(std::vector<std::string>& parameters, bool is_annotation) {
+RegionState Ds9Importer::ImportPointRegion(std::vector<std::string>& parameters, bool is_annotation) {
     // Import DS9 point into RegionState
     // point x y, <shape> point x y, or text x y
     RegionState region_state;
@@ -293,7 +293,7 @@ RegionState Ds9Import::ImportPointRegion(std::vector<std::string>& parameters, b
     return RegionState(_file_id, type, control_points, rotation);
 }
 
-RegionState Ds9Import::ImportCircleRegion(std::vector<std::string>& parameters, bool is_annotation) {
+RegionState Ds9Importer::ImportCircleRegion(std::vector<std::string>& parameters, bool is_annotation) {
     // Import DS9 circle and compass into RegionState
     // circle x y radius or compass x1 y1 length
     // Convert params to ellipse region (CARTA only has ellipse region) with no angle
@@ -313,7 +313,7 @@ RegionState Ds9Import::ImportCircleRegion(std::vector<std::string>& parameters, 
     return region_state;
 }
 
-RegionState Ds9Import::ImportEllipseRegion(std::vector<std::string>& parameters, bool is_annotation) {
+RegionState Ds9Importer::ImportEllipseRegion(std::vector<std::string>& parameters, bool is_annotation) {
     // Import DS9 ellipse into RegionState
     // ellipse x y radius radius [angle], circle x y radius radius, compass x1 y1 length length
     RegionState region_state;
@@ -385,7 +385,7 @@ RegionState Ds9Import::ImportEllipseRegion(std::vector<std::string>& parameters,
     return region_state;
 }
 
-RegionState Ds9Import::ImportRectangleRegion(std::vector<std::string>& parameters, bool is_annotation) {
+RegionState Ds9Importer::ImportRectangleRegion(std::vector<std::string>& parameters, bool is_annotation) {
     // Import DS9 box into RegionState
     // box x y width height [angle]
     RegionState region_state;
@@ -451,7 +451,7 @@ RegionState Ds9Import::ImportRectangleRegion(std::vector<std::string>& parameter
     return region_state;
 }
 
-RegionState Ds9Import::ImportPolygonLineRegion(std::vector<std::string>& parameters, bool is_annotation) {
+RegionState Ds9Importer::ImportPolygonLineRegion(std::vector<std::string>& parameters, bool is_annotation) {
     // Import DS9 polygon/line-type region into RegionState.
     // Regions defined by at least two points x1 y1 x2 y2 [x3 y3 ...]
     // polygon, line, polyline, and ruler
@@ -520,7 +520,7 @@ RegionState Ds9Import::ImportPolygonLineRegion(std::vector<std::string>& paramet
     return region_state;
 }
 
-RegionState Ds9Import::ImportVectorRegion(std::vector<std::string>& parameters) {
+RegionState Ds9Importer::ImportVectorRegion(std::vector<std::string>& parameters) {
     // Import DS9 vector into RegionState.
     // vector x1 y1 length angle
     RegionState region_state;
@@ -596,7 +596,7 @@ RegionState Ds9Import::ImportVectorRegion(std::vector<std::string>& parameters) 
     return region_state;
 }
 
-RegionState Ds9Import::ImportRulerRegion(
+RegionState Ds9Importer::ImportRulerRegion(
     std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, CARTA::RegionStyle& region_style) {
     // Import ruler using parameters and properties.
     // Start with properties to get coordinate system
@@ -623,7 +623,7 @@ RegionState Ds9Import::ImportRulerRegion(
     return region_state;
 }
 
-RegionState Ds9Import::ImportCompassRegion(
+RegionState Ds9Importer::ImportCompassRegion(
     std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, CARTA::RegionStyle& region_style) {
     // Import compass using parameters and properties.
     // Start with properties to get coordinate system
@@ -650,7 +650,7 @@ RegionState Ds9Import::ImportCompassRegion(
     return region_state;
 }
 
-CARTA::RegionStyle Ds9Import::ImportStyleParameters(
+CARTA::RegionStyle Ds9Importer::ImportStyleParameters(
     CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties) {
     // Get style params from properties
     CARTA::RegionStyle region_style;
@@ -719,7 +719,7 @@ CARTA::RegionStyle Ds9Import::ImportStyleParameters(
     return region_style;
 }
 
-void Ds9Import::ImportPointStyleParameters(
+void Ds9Importer::ImportPointStyleParameters(
     std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
     // DS9 combines parameters in one string
     auto point = GetProperty("point", properties);
@@ -756,7 +756,7 @@ void Ds9Import::ImportPointStyleParameters(
     }
 }
 
-void Ds9Import::ImportFontStyleParameters(
+void Ds9Importer::ImportFontStyleParameters(
     std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
     // DS9 combines parameters in one string
     std::string font = GetProperty("font", properties, true);
@@ -792,8 +792,9 @@ void Ds9Import::ImportFontStyleParameters(
     }
 }
 
-bool Ds9Import::ParamToQuantity(
+bool Ds9Importer::ParamToQuantity(
     std::string& param, bool is_angle, bool is_xy, std::string& region_name, casacore::Quantity& param_quantity) {
+    // Convert param string to casacore Quantity
     if (Ds9ToCasacoreUnit(param, region_name)) {
         if (is_angle) {
             ConvertTimeFormatToAngle(param);
@@ -821,28 +822,28 @@ bool Ds9Import::ParamToQuantity(
     return false;
 }
 
-bool Ds9Import::Ds9ToCasacoreUnit(std::string& parameter, const std::string& region_type) {
+bool Ds9Importer::Ds9ToCasacoreUnit(std::string& param, const std::string& region_name) {
     // Replace DS9 unit with casacore::Quantity unit in parameter string for readQuantity
     // Returns whether valid ds9 parameter
     bool valid(false);
-    std::string error_prefix(region_type + " invalid parameter ");
+    std::string error_prefix(region_name + " invalid parameter ");
 
     // use stod to find index of unit in string (after numeric value)
     size_t idx;
     try {
-        double val = stod(parameter, &idx); // string to double
+        double val = stod(param, &idx); // string to double
     } catch (std::invalid_argument& err) {
-        std::string invalid_arg(error_prefix + parameter + ", not a numeric value.\n");
+        std::string invalid_arg(error_prefix + param + ", not a numeric value.\n");
         _import_errors.append(invalid_arg);
         return valid;
     }
 
-    size_t param_length(parameter.length());
+    size_t param_length(param.length());
     valid = (param_length == idx); // no unit is valid
     if (!valid) {                  // check unit/format
         if (param_length == (idx + 1)) {
             // DS9 units are a single character
-            const char unit = parameter.back();
+            const char unit = param.back();
             std::string casacore_unit;
             if (unit == 'd') {
                 casacore_unit = "deg";
@@ -860,25 +861,25 @@ bool Ds9Import::Ds9ToCasacoreUnit(std::string& parameter, const std::string& reg
                 // casacore unit for min, sec is the same
                 valid = true;
             } else {
-                std::string invalid_unit(error_prefix + "unit: " + parameter + ".\n");
+                std::string invalid_unit(error_prefix + "unit: " + param + ".\n");
                 _import_errors.append(invalid_unit);
                 valid = false;
             }
 
             if (!casacore_unit.empty()) {
                 // replace DS9 unit with casacore unit
-                parameter.pop_back();
-                parameter.append(casacore_unit);
+                param.pop_back();
+                param.append(casacore_unit);
             }
         } else {
             // check for hms, dms formats
-            const char* param_carray = parameter.c_str();
+            const char* param_carray = param.c_str();
             float h, m, s;
             valid = ((sscanf(param_carray, "%f:%f:%f", &h, &m, &s) == 3) || (sscanf(param_carray, "%fh%fm%fs", &h, &m, &s) == 3) ||
                      (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3));
             if (!valid) {
                 // Unit not a single character or time/angle format
-                std::string invalid_unit(error_prefix + "unit: " + parameter + ".\n");
+                std::string invalid_unit(error_prefix + "unit: " + param + ".\n");
                 _import_errors.append(invalid_unit);
             }
         }
@@ -886,7 +887,7 @@ bool Ds9Import::Ds9ToCasacoreUnit(std::string& parameter, const std::string& reg
     return valid;
 }
 
-void Ds9Import::ConvertTimeFormatToAngle(std::string& parameter) {
+void Ds9Importer::ConvertTimeFormatToAngle(std::string& parameter) {
     // If parameter is in sexagesimal format dd:mm::ss.ssss, convert to angle format dd.mm.ss.ssss for readQuantity
     for (std::string::iterator it = parameter.begin(); it != parameter.end(); ++it) {
         if (*it == ':') {

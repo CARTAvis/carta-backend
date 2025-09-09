@@ -4,14 +4,14 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "RegionImport.h"
+#include "RegionImporter.h"
 
 using namespace carta;
 
-RegionImport::RegionImport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, int file_id)
+RegionImporter::RegionImporter(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, int file_id)
     : _coord_sys(image_coord_sys), _file_id(file_id) {}
 
-std::vector<RegionProperties> RegionImport::GetImportedRegions(std::string& error) {
+std::vector<RegionProperties> RegionImporter::GetImportedRegions(std::string& error) {
     // Parse the file in the constructor to create RegionProperties vector; return any errors in error
     error = _import_errors;
     if (_import_regions.size() == 0) {
@@ -22,7 +22,7 @@ std::vector<RegionProperties> RegionImport::GetImportedRegions(std::string& erro
     return _import_regions;
 }
 
-std::vector<std::string> RegionImport::ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim) {
+std::vector<std::string> RegionImporter::ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim) {
     // Return file lines as string vector
     std::vector<std::string> file_lines;
     if (file_is_filename) {
@@ -61,7 +61,7 @@ std::vector<std::string> RegionImport::ReadRegionFile(const std::string& file, b
     return split_lines;
 }
 
-bool RegionImport::IsCommentLine(const std::string& line) {
+bool RegionImporter::IsCommentLine(const std::string& line) {
     // Determine if line starts with "# " + a region name.
     if (line[0] != '#') {
         return false;
@@ -80,7 +80,7 @@ bool RegionImport::IsCommentLine(const std::string& line) {
     return true;
 }
 
-void RegionImport::ParseRegionParameters(
+void RegionImporter::ParseRegionParameters(
     std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
     // Parse the input string by space, comma, parentheses to get region parameters and properties (keyword=value)
     // Some annotation regions have comment syntax; remove leading #
@@ -163,7 +163,7 @@ void RegionImport::ParseRegionParameters(
     }
 }
 
-std::string RegionImport::GetProperty(
+std::string RegionImporter::GetProperty(
     const std::string& name, const std::unordered_map<std::string, std::string>& properties, bool check_global) {
     // Find property name in properties else global properties else return empty string
     if (properties.find(name) != properties.end()) {
@@ -174,7 +174,7 @@ std::string RegionImport::GetProperty(
     return "";
 }
 
-CARTA::TextAnnotationPosition RegionImport::GetTextPosition(const std::string& position) {
+CARTA::TextAnnotationPosition RegionImporter::GetTextPosition(const std::string& position) {
     // Return position enum for string, or default CENTER
     CARTA::TextAnnotationPosition anno_position(CARTA::TextAnnotationPosition::CENTER);
     if (!position.empty()) {
@@ -188,7 +188,7 @@ CARTA::TextAnnotationPosition RegionImport::GetTextPosition(const std::string& p
     return anno_position;
 }
 
-void RegionImport::AddTextStyleToProperties(const CARTA::RegionStyle& text_style, RegionProperties& textbox_properties) {
+void RegionImporter::AddTextStyleToProperties(const CARTA::RegionStyle& text_style, RegionProperties& textbox_properties) {
     // Add imported text style to existing textbox region properties.
     // Textbox defines state and style: name, text_position
     // Text defines style: color, text label, font
@@ -200,7 +200,7 @@ void RegionImport::AddTextStyleToProperties(const CARTA::RegionStyle& text_style
     annotation_style->set_font_size(text_style.annotation_style().font_size());
 }
 
-double RegionImport::WorldToPixelLength(casacore::Quantity input, unsigned int pixel_axis) {
+double RegionImporter::WorldToPixelLength(casacore::Quantity input, unsigned int pixel_axis) {
     // world->pixel conversion of ellipse/circle radius, box width/height, or compass length.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
     if (input.getUnit() == "pix") {
@@ -216,7 +216,7 @@ double RegionImport::WorldToPixelLength(casacore::Quantity input, unsigned int p
     return fabs(input.getValue() / increments[pixel_axis]);
 }
 
-void RegionImport::ImportCompassStyle(
+void RegionImporter::ImportCompassStyle(
     std::string& compass_properties, std::string& coordinate_system, CARTA::AnnotationStyle* annotation_style) {
     // Parse compass properties into AnnotationStyle fields
     std::vector<std::string> params;
@@ -242,7 +242,7 @@ void RegionImport::ImportCompassStyle(
     }
 }
 
-void RegionImport::ImportRulerStyle(std::string& ruler_properties, std::string& coordinate_system) {
+void RegionImporter::ImportRulerStyle(std::string& ruler_properties, std::string& coordinate_system) {
     // Parse ruler properties for coordinate system; unit unused in carta (frontend sets dynamically)
     std::vector<std::string> params;
     SplitString(ruler_properties, ' ', params);

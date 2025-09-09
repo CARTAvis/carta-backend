@@ -4,9 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CrtfImport.cc: import regions from CRTF file or contents string
+//# CrtfImporter.cc: import regions from CRTF file or contents string
 
-#include "CrtfImport.h"
+#include "CrtfImporter.h"
 
 #include <imageanalysis/Annotations/AnnotationBase.h>
 
@@ -14,9 +14,9 @@
 
 using namespace carta;
 
-CrtfImport::CrtfImport(
+CrtfImporter::CrtfImporter(
     std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, int file_id, const std::string& file, bool file_is_filename)
-    : RegionImport(image_coord_sys, file_id) {
+    : RegionImporter(image_coord_sys, file_id) {
     // Import regions from CRTF region file
     // Set delimiters for parsing file lines
     SetParserDelim(" ,[]");
@@ -33,7 +33,7 @@ CrtfImport::CrtfImport(
     }
 }
 
-void CrtfImport::ProcessFileLines(std::vector<std::string>& lines) {
+void CrtfImporter::ProcessFileLines(std::vector<std::string>& lines) {
     // Import regions defined on each line of file
     casa::AnnotationBase::unitInit(); // enable "pix" unit
     bool is_combo_region(false);      // true for textbox + text
@@ -143,7 +143,7 @@ void CrtfImport::ProcessFileLines(std::vector<std::string>& lines) {
     }
 }
 
-std::string CrtfImport::GetRegionDirectionFrame(const std::unordered_map<std::string, std::string>& properties) {
+std::string CrtfImporter::GetRegionDirectionFrame(const std::unordered_map<std::string, std::string>& properties) {
     // Get direction frame coordinate in region file properties, else use frame in coord sys
     std::string dir_frame = GetProperty("coord", properties, true);
     if (dir_frame.empty()) {
@@ -152,7 +152,7 @@ std::string CrtfImport::GetRegionDirectionFrame(const std::unordered_map<std::st
     return dir_frame;
 }
 
-RegionState CrtfImport::ImportAnnSymbolText(std::vector<std::string>& parameters, std::string& coord_frame) {
+RegionState CrtfImporter::ImportAnnSymbolText(std::vector<std::string>& parameters, std::string& coord_frame) {
     // Import AnnSymbol to RegionState
     RegionState region_state;
     bool is_annotation = parameters[0] == "ann";
@@ -212,7 +212,7 @@ RegionState CrtfImport::ImportAnnSymbolText(std::vector<std::string>& parameters
     return region_state;
 }
 
-RegionState CrtfImport::ImportAnnBox(std::vector<std::string>& parameters, std::string& coord_frame) {
+RegionState CrtfImporter::ImportAnnBox(std::vector<std::string>& parameters, std::string& coord_frame) {
     // Import Annotation box in pixel coordinates to RegionState
     RegionState region_state;
 
@@ -245,7 +245,7 @@ RegionState CrtfImport::ImportAnnBox(std::vector<std::string>& parameters, std::
     return region_state;
 }
 
-RegionState CrtfImport::ImportAnnEllipse(std::vector<std::string>& parameters, std::string& coord_frame) {
+RegionState CrtfImporter::ImportAnnEllipse(std::vector<std::string>& parameters, std::string& coord_frame) {
     // Import AnnEllipse in pixel coordinates to RegionState
     RegionState region_state;
     bool is_annotation = parameters[0] == "ann";
@@ -315,7 +315,7 @@ RegionState CrtfImport::ImportAnnEllipse(std::vector<std::string>& parameters, s
     return region_state;
 }
 
-RegionState CrtfImport::ImportAnnPoly(std::vector<std::string>& parameters, std::string& coord_frame) {
+RegionState CrtfImporter::ImportAnnPoly(std::vector<std::string>& parameters, std::string& coord_frame) {
     // Import polygon, polyline, or line-like regions (line, vector, ruler) in pixel coordinates to RegionState
     RegionState region_state;
     bool is_annotation = parameters[0] == "ann";
@@ -396,7 +396,7 @@ RegionState CrtfImport::ImportAnnPoly(std::vector<std::string>& parameters, std:
     return region_state;
 }
 
-CARTA::RegionStyle CrtfImport::ImportStyleParameters(
+CARTA::RegionStyle CrtfImporter::ImportStyleParameters(
     CARTA::RegionType region_type, const std::unordered_map<std::string, std::string>& properties) {
     // Import parameters common to all regions
     // Get CARTA::RegionStyle parameters from properties map
@@ -451,7 +451,7 @@ CARTA::RegionStyle CrtfImport::ImportStyleParameters(
     return region_style;
 }
 
-void CrtfImport::ImportFontStyleParameters(
+void CrtfImporter::ImportFontStyleParameters(
     const std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
     // Set font, fontsize, and fontstyle from properties
     auto font = GetProperty("font", properties);
@@ -476,8 +476,8 @@ void CrtfImport::ImportFontStyleParameters(
     }
 }
 
-void CrtfImport::ImportPointStyleParameters(const std::string& symbol_char, const std::unordered_map<std::string, std::string>& properties,
-    CARTA::AnnotationStyle* annotation_style) {
+void CrtfImporter::ImportPointStyleParameters(const std::string& symbol_char,
+    const std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
     // Set point shape and size from region parameters.
     CARTA::PointAnnotationShape point_shape(CARTA::PointAnnotationShape::SQUARE);
     bool symthick(true);
@@ -508,17 +508,8 @@ void CrtfImport::ImportPointStyleParameters(const std::string& symbol_char, cons
     annotation_style->set_point_width(symsize);
 }
 
-bool CrtfImport::GetBoxControlPoints(std::string& box_definition, std::vector<CARTA::Point>& control_points, float& rotation) {
-    // Parse box definition to get parameters, then get CARTA rectangle control points
-    std::vector<std::string> parameters;
-    std::unordered_map<std::string, std::string> properties;
-    ParseRegionParameters(box_definition, parameters, properties);
-    auto coord_frame = GetRegionDirectionFrame(properties);
-    return GetBoxControlPoints(parameters, coord_frame, control_points, rotation);
-}
-
-bool CrtfImport::GetBoxControlPoints(
-    std::vector<std::string>& parameters, std::string& region_frame, std::vector<CARTA::Point>& control_points, float& rotation) {
+bool CrtfImporter::GetBoxControlPoints(
+    std::vector<std::string>& parameters, std::string& coord_frame, std::vector<CARTA::Point>& control_points, float& rotation) {
     // Use box parameters to determine CARTA control points (center and size) and rotation.
     // Used for:
     // - import rotbox (always a polygon)
@@ -552,17 +543,17 @@ bool CrtfImport::GetBoxControlPoints(
 
     if (region == "rotbox" || region == "centerbox" || region == "textbox") {
         // cx, cy, width, height
-        return GetCenterBoxPoints(region, p1, p2, p3, p4, region_frame, control_points);
+        return GetCenterBoxPoints(region, p1, p2, p3, p4, coord_frame, control_points);
     } else {
         // blc_x, blc_y, trc_x, trc_y
-        return GetRectBoxPoints(p1, p2, p3, p4, region_frame, control_points);
+        return GetRectBoxPoints(p1, p2, p3, p4, coord_frame, control_points);
     }
 
     return false;
 }
 
-bool CrtfImport::GetCenterBoxPoints(const std::string& region, casacore::Quantity& cx, casacore::Quantity& cy, casacore::Quantity& width,
-    casacore::Quantity& height, std::string& region_frame, std::vector<CARTA::Point>& control_points) {
+bool CrtfImporter::GetCenterBoxPoints(const std::string& region, casacore::Quantity& cx, casacore::Quantity& cy, casacore::Quantity& width,
+    casacore::Quantity& height, std::string& coord_frame, std::vector<CARTA::Point>& control_points) {
     // Convert coordinates to pixel, return CARTA::Rectangle control points
     try {
         // Convert center point cx, cy to pixel
@@ -570,7 +561,7 @@ bool CrtfImport::GetCenterBoxPoints(const std::string& region, casacore::Quantit
         centerpoint.push_back(cx);
         centerpoint.push_back(cy);
         casacore::Vector<casacore::Double> pixel_coords;
-        if (ConvertPointToPixels(_coord_sys, region_frame, centerpoint, pixel_coords)) {
+        if (ConvertPointToPixels(_coord_sys, coord_frame, centerpoint, pixel_coords)) {
             // Set control points
             control_points.push_back(Message::Point(pixel_coords));
             control_points.push_back(Message::Point(WorldToPixelLength(width, 0), WorldToPixelLength(height, 1)));
@@ -585,8 +576,8 @@ bool CrtfImport::GetCenterBoxPoints(const std::string& region, casacore::Quantit
     return false;
 }
 
-bool CrtfImport::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quantity& blcy, casacore::Quantity& trcx, casacore::Quantity& trcy,
-    std::string& region_frame, std::vector<CARTA::Point>& control_points) {
+bool CrtfImporter::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quantity& blcy, casacore::Quantity& trcx, casacore::Quantity& trcy,
+    std::string& coord_frame, std::vector<CARTA::Point>& control_points) {
     // Use corners to calculate centerbox parameters
     bool converted(false);
     try {
@@ -595,7 +586,7 @@ bool CrtfImport::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quantity& 
         casacore::Quantity cy = (blcy + trcy) / 2.0;
         casacore::Quantity width = (trcx - blcx);
         casacore::Quantity height = (trcy - blcy);
-        converted = GetCenterBoxPoints("box", cx, cy, width, height, region_frame, control_points);
+        converted = GetCenterBoxPoints("box", cx, cy, width, height, coord_frame, control_points);
     } catch (const casacore::AipsError& err) {
         spdlog::error("box import Quantity error: {}", err.getMesg());
     }

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Fixed linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
 
+### Changed
+* Moved the region import/export code to separate files in new subdirectory ([#1505](https://github.com/CARTAvis/carta-backend/issues/1505)).
+
 ## [5.0.2]
 
 ### Fixed
