@@ -80,11 +80,17 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     _use_tile_cache = _loader->UseTileCache();
 
-    // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2)) && !FillImageCache()) {
-        _open_image_error = fmt::format("Cannot load image data. Check log.");
-        _valid = false;
-        return;
+    // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
+    if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2))) {
+        // allocate memory for full image cache
+        _image_cache_size = _dims.width * _dims.height;
+        _image_cache = std::make_unique<float[]>(_image_cache_size);
+
+        if (!FillImageCache()) {
+            _open_image_error = fmt::format("Cannot load image data. Check log.");
+            _valid = false;
+            return;
+        }
     }
 
     // set the tile pool capacity
@@ -386,9 +392,8 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
+
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    _image_cache_size = stokes_slicer.slicer.length().product();
-    _image_cache = std::make_unique<float[]>(_image_cache_size);
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
@@ -889,7 +894,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
 
         if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
             // calculate histogram from image cache
-            if ((_image_cache_size == 0) && !FillImageCache()) {
+            if ((_image_cache == nullptr) && !FillImageCache()) {
                 // cannot calculate
                 return false;
             }
@@ -957,7 +962,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
 
     if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
         // calculate histogram from current image cache
-        if ((_image_cache_size == 0) && !FillImageCache()) {
+        if ((_image_cache == nullptr) && !FillImageCache()) {
             return false;
         }
         bool write_lock(false);
