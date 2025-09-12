@@ -62,7 +62,7 @@ protected:
 
     /**
      * @brief Determine whether file line starting with comment marker is a comment and not an annotation region.
-     * @param line File line to evaluate
+     * @param file_line File line to evaluate
      * @return Whether line is comment
      */
     virtual bool IsCommentLine(const std::string& file_line);
@@ -110,7 +110,7 @@ protected:
 
     /**
      * @brief Convert length region parameter to pixels if in world coordinates.
-     * @param world_length Length quantity
+     * @param length Length quantity
      * @param pixel_axis Index of axis for conversion
      * @return length in pixels
      */

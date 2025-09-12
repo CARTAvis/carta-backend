@@ -84,7 +84,7 @@ private:
     /**
      * @brief Set annotation style font parameters.
      * @param[in] properties Map of style parameters
-     * @param[out] Annotation style parameters
+     * @param[out] annotation_style Annotation style parameters
      */
     void ImportFontStyle(std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
 
@@ -92,7 +92,7 @@ private:
      * @brief Set annotation style point parameters.
      * @param[in] symbol_char character describing a casa Symbol shape
      * @param[in] properties Map of style parameters
-     * @param[out] Annotation style parameters
+     * @param[out] annotation_style Annotation style parameters
      */
     void ImportPointStyle(
         const std::string& symbol_char, std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
