@@ -121,11 +121,11 @@ private:
     char GetAnnSymbolCharacter(CARTA::PointAnnotationShape point_shape);
 
     /**
-     * @brief Format region style color in CRTF format
-     * @param region_style Region style parameters
+     * @brief Format color for file line
+     * @param color Region color
      * @return Formatted color string
      */
-    std::string GetStyleColor(const CARTA::RegionStyle& region_style);
+    std::string FormatColor(const std::string& color);
 
     /**
      * @brief Convert dash list to CASA line style else set default.

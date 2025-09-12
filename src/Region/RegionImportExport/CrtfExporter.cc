@@ -451,13 +451,13 @@ char CrtfExporter::GetAnnSymbolCharacter(CARTA::PointAnnotationShape point_shape
     }
 }
 
-std::string CrtfExporter::GetStyleColor(const CARTA::RegionStyle& region_style) {
-    std::string region_color = region_style.color();
-    if (region_color[0] == '#') {
-        region_color = region_color.substr(1);
+std::string CrtfExporter::FormatColor(const std::string& color) {
+    std::string export_color = color;
+    if (export_color[0] == '#') {
+        export_color = export_color.substr(1);
     }
-    std::transform(region_color.begin(), region_color.end(), region_color.begin(), ::tolower);
-    return region_color;
+    std::transform(export_color.begin(), export_color.end(), export_color.begin(), ::tolower);
+    return export_color;
 }
 
 casa::AnnotationBase::LineStyle CrtfExporter::GetLineStyle(const CARTA::RegionStyle& region_style) {
@@ -524,13 +524,13 @@ void CrtfExporter::AddStyle(const CARTA::RegionStyle& region_style, std::string&
 
     oss << ", linewidth=" << region_style.line_width();
     oss << ", linestyle=" << casa::AnnotationBase::lineStyleToString(GetLineStyle(region_style));
-    auto region_color = GetStyleColor(region_style);
-    oss << ", color=" << region_color;
+    auto color = FormatColor(region_style.color());
+    oss << ", color=" << color;
 
     // label
     if (!region_style.name().empty()) {
         oss << ", label=\"" << region_style.name() << "\"";
-        oss << ", labelcolor=" << region_color;
+        oss << ", labelcolor=" << color;
         oss << ", labelpos=" << casa::AnnotationBase::DEFAULT_LABELPOS;
     }
 
@@ -566,13 +566,13 @@ void CrtfExporter::AddStyle(const CARTA::RegionStyle& region_style, std::string&
 void CrtfExporter::SetAnnotationRegionStyle(const CARTA::RegionStyle& region_style, casa::AnnotationBase* region) {
     region->setLineWidth(region_style.line_width());
     region->setLineStyle(GetLineStyle(region_style));
-    auto region_color = GetStyleColor(region_style);
-    region->setColor(region_color);
+    auto color = FormatColor(region_style.color());
+    region->setColor(color);
 
     // label
     if (!region_style.name().empty()) {
         region->setLabel(region_style.name());
-        region->setLabelColor(region_color);
+        region->setLabelColor(color);
         region->setLabelPosition(casa::AnnotationBase::DEFAULT_LABELPOS);
     }
 
