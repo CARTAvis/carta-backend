@@ -12,11 +12,13 @@
 
 using namespace carta;
 
-RegionExporter::RegionExporter(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape)
-    : _coord_sys(image_coord_sys), _image_shape(image_shape) {}
+RegionExporter::RegionExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& shape)
+    : _coord_sys(coord_sys), _image_shape(shape) {
+    _image_coord_frame = GetImageDirectionFrame(coord_sys);
+}
 
 bool RegionExporter::CanExportToFile(const std::string& filename, bool overwrite, CARTA::ExportRegionAck& export_ack) {
-    // Check ability to create export file if filename given.
+    // Check ability to create or overwrite region file if filename given.
     std::string error;
     bool need_overwrite_confirmation(false);
 
@@ -46,30 +48,28 @@ bool RegionExporter::CanExportToFile(const std::string& filename, bool overwrite
     return true;
 }
 
-bool RegionExporter::AddExportRegion(
-    int file_id, std::shared_ptr<Region> region, const CARTA::RegionStyle& region_style, bool export_pixel_coords) {
-    // Export region using RegionState for pixel coords in reference image else from region Record
+bool RegionExporter::AddRegion(int file_id, std::shared_ptr<Region> region, const CARTA::RegionStyle& region_style, bool export_pixels) {
+    // Add file line for region using RegionState for pixel coords if reference image, else use region Record
     auto region_state = region->GetRegionState();
-    bool region_exported(false);
+    bool region_added(false);
 
-    if ((region_state.reference_file_id == file_id) && export_pixel_coords) {
-        // Use RegionState control points with reference file id for pixel export
-        region_exported = AddExportRegion(region_state, region_style); // CRTF or DS9 export
+    if ((region_state.reference_file_id == file_id) && export_pixels) {
+        region_added = AddRegion(region_state, region_style); // CRTF or DS9 exporter
     } else {
-        // Convert region to another image, to world coordinates, or both
         try {
-            // Use Record containing pixel coords of region converted to output image
+            // Convert region to another image, to world coordinates, or both
+            // Get Record containing pixel coords of region in image with file_id
             casacore::TableRecord region_record = region->GetImageRegionRecord(file_id, _coord_sys, _image_shape);
-            region_exported = AddExportRegion(region_state, region_style, region_record, export_pixel_coords);
+            region_added = AddRegion(region_state, region_style, region_record, export_pixels);
         } catch (const casacore::AipsError& err) {
-            spdlog::error("Export region failed: {}", err.getMesg());
+            spdlog::error("Add region failed: {}", err.getMesg());
         }
     }
-    return region_exported;
+    return region_added;
 }
 
 void RegionExporter::ExportRegions(const std::string& filename, std::string& message, CARTA::ExportRegionAck& export_ack) {
-    // Export regions to file or to contents.  Complete ack message.
+    // Export regions to file if filename is given, or to contents in ack message.  Complete message with success and message.
     bool success(false);
     if (filename.empty()) {
         // Add contents to ack
@@ -86,33 +86,32 @@ void RegionExporter::ExportRegions(const std::string& filename, std::string& mes
     export_ack.set_message(message);
 }
 
-bool RegionExporter::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,
-    const casacore::RecordInterface& region_record, bool pixel_coord) {
-    // Convert Record to Quantities for region type then set region
-    // Record is in pixel coords; convert to world coords if needed
-    if (pixel_coord) {
+bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,
+    const casacore::RecordInterface& region_record, bool export_pixels) {
+    // Convert casacore Record to pixel or world control points for region type, then add region file line.
+    if (export_pixels) {
         casa::AnnotationBase::unitInit(); // enable "pix" unit
     }
 
     std::vector<casacore::Quantity> control_points;
     casacore::Quantity rotation(region_state.rotation, "deg");
 
-    // Convert control points and rotation to Quantity; rotation updated for ellipse only
+    // Convert Record in pixel coordinates to control points; rotation updated for ellipse only
     bool converted(false);
     switch (region_state.type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT:
-            converted = ConvertRecordToPoint(region_record, pixel_coord, control_points);
+            converted = ConvertRecordToPoint(region_record, export_pixels, control_points);
             break;
         case CARTA::RegionType::RECTANGLE:
         case CARTA::RegionType::ANNRECTANGLE:
         case CARTA::RegionType::ANNTEXT:
-            converted = ConvertRecordToRectangle(region_record, pixel_coord, control_points);
+            converted = ConvertRecordToRectangle(region_record, export_pixels, control_points);
             break;
         case CARTA::RegionType::ELLIPSE:
         case CARTA::RegionType::ANNELLIPSE:
         case CARTA::RegionType::ANNCOMPASS:
-            converted = ConvertRecordToEllipse(region_state, region_record, pixel_coord, control_points, rotation);
+            converted = ConvertRecordToEllipse(region_state, region_record, export_pixels, control_points, rotation);
             break;
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
@@ -122,22 +121,22 @@ bool RegionExporter::AddExportRegion(const RegionState& region_state, const CART
         case CARTA::RegionType::ANNPOLYGON:
         case CARTA::RegionType::ANNVECTOR:
         case CARTA::RegionType::ANNRULER:
-            converted = ConvertRecordToPolygonLine(region_record, pixel_coord, control_points);
+            converted = ConvertRecordToPolygonLine(region_record, export_pixels, control_points);
             break;
         default:
             break;
     }
 
     if (converted) {
-        return AddExportRegion(region_state.type, control_points, rotation, region_style); // CRTF or DS9 export
+        // Add file line for region file type
+        return AddRegion(region_state.type, control_points, rotation, region_style); // CRTF or DS9 exporter
     }
     return converted;
 }
 
 bool RegionExporter::ConvertRecordToPoint(
-    const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points) {
-    // Convert casacore Record to point Quantity control points
-    // Point is an LCBox with blc, trc arrays in pixel coordinates (blc = trc)
+    const casacore::RecordInterface& region_record, bool export_pixels, std::vector<casacore::Quantity>& control_points) {
+    // Point Record is a casacore LCBox with blc, trc arrays in pixel coordinates (blc = trc)
     casacore::Vector<casacore::Float> blc = region_record.asArrayFloat("blc");
 
     // Make zero-based
@@ -145,7 +144,7 @@ bool RegionExporter::ConvertRecordToPoint(
         blc -= (float)1.0;
     }
 
-    if (pixel_coord) {
+    if (export_pixels) {
         // Convert pixel value to Quantity in control points
         control_points.push_back(casacore::Quantity(blc(0), "pix"));
         control_points.push_back(casacore::Quantity(blc(1), "pix"));
@@ -174,25 +173,17 @@ bool RegionExporter::ConvertRecordToPoint(
 }
 
 bool RegionExporter::ConvertRecordToRectangle(
-    const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points) {
-    // Convert casacore Record to box Quantity control points.
-    // Rectangles are exported to Record as LCPolygon with 4 points: blc, brc, trc, tlc.
-    // The input Record for a rotbox must be the corners of an unrotated box (rotation in the region state)
+    const casacore::RecordInterface& region_record, bool export_pixels, std::vector<casacore::Quantity>& control_points) {
+    // Rectangle Record is a casacore LCPolygon in pixel coordinates with blc, brc, trc, tlc in x and y arrays.
+    // A rotated rectangle Record is for the unrotated box.
     casacore::Vector<casacore::Double> x, y;
 
     if (region_record.dataType("x") == casacore::TpArrayFloat) {
-        casacore::Vector<casacore::Float> xf, yf;
-        xf = region_record.asArrayFloat("x");
-        yf = region_record.asArrayFloat("y");
-
-        // Convert to Double
-        auto xf_size(xf.size());
-        x.resize(xf_size);
-        y.resize(xf_size);
-        for (auto i = 0; i < xf_size; ++i) {
-            x(i) = xf(i);
-            y(i) = yf(i);
-        }
+        // Convert Float to Double
+        casacore::Vector<casacore::Float> xf = region_record.asArrayFloat("x");
+        casacore::Vector<casacore::Float> yf = region_record.asArrayFloat("y");
+        x = FloatVectorToDouble(xf);
+        y = FloatVectorToDouble(yf);
     } else {
         x = region_record.asArrayDouble("x");
         y = region_record.asArrayDouble("y");
@@ -220,7 +211,7 @@ bool RegionExporter::ConvertRecordToRectangle(
     width = sqrt(pow((brc_x - blc_x), 2) + pow((brc_y - blc_y), 2));
     height = sqrt(pow((tlc_x - blc_x), 2) + pow((tlc_y - blc_y), 2));
 
-    if (pixel_coord) {
+    if (export_pixels) {
         // Convert pixel value to Quantity in control points
         control_points.push_back(casacore::Quantity(cx, "pix"));
         control_points.push_back(casacore::Quantity(cy, "pix"));
@@ -255,9 +246,9 @@ bool RegionExporter::ConvertRecordToRectangle(
 }
 
 bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record,
-    bool pixel_coord, std::vector<casacore::Quantity>& control_points, casacore::Quantity& rotation) {
-    // Convert casacore Record to ellipse Quantity control points
-    // RegionState needed to check if bmaj/bmin swapped for LCEllipsoid
+    bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& rotation) {
+    // Ellipse Record is a casacore LCEllipsoid with center and radii in pixel coordinates, and theta for angle.
+    // Use RegionState to check if bmaj/bmin swapped so bmaj > bmin.
     casacore::Vector<casacore::Float> center = region_record.asArrayFloat("center");
     casacore::Vector<casacore::Float> radii = region_record.asArrayFloat("radii");
     casacore::Double theta = region_record.asDouble("theta"); // radians
@@ -273,18 +264,24 @@ bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, con
         center -= (float)1.0;
     }
 
-    if (pixel_coord) {
+    if (reversed) {
+        // Theta is the angle from the x-axis (east) to the major axis of the ellipse.
+        // Carta rotation is from north.
+        rotation += 90.0;
+        if (rotation.getValue() > 360.0) {
+            rotation -= 360.0;
+        }
+    }
+
+    if (export_pixels) {
         // Convert pixel value to Quantity in control points
         control_points.push_back(casacore::Quantity(center(0), "pix"));
         control_points.push_back(casacore::Quantity(center(1), "pix"));
-        // Restore original axes order; oddly, rotation angle was not changed
+
+        // Restore original axes order
         if (reversed) {
             control_points.push_back(casacore::Quantity(radii(1), "pix"));
             control_points.push_back(casacore::Quantity(radii(0), "pix"));
-            rotation += 90.0;
-            if (rotation.getValue() > 360.0) {
-                rotation -= 360.0;
-            }
         } else {
             control_points.push_back(casacore::Quantity(radii(0), "pix"));
             control_points.push_back(casacore::Quantity(radii(1), "pix"));
@@ -311,10 +308,6 @@ bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, con
         if (reversed) {
             control_points.push_back(bmin);
             control_points.push_back(bmaj);
-            rotation += 90.0;
-            if (rotation.getValue() > 360.0) {
-                rotation -= 360.0;
-            }
         } else {
             control_points.push_back(bmaj);
             control_points.push_back(bmin);
@@ -328,25 +321,17 @@ bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, con
 }
 
 bool RegionExporter::ConvertRecordToPolygonLine(
-    const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points) {
-    // Convert casacore Record to polygon Quantity control points
-    // Polygon is an LCPolygon with x, y arrays in pixel coordinates
+    const casacore::RecordInterface& region_record, bool export_pixels, std::vector<casacore::Quantity>& control_points) {
+    // Polygon Record is a casacore LCPolygon in pixel coordinates with points in x, y arrays.
     casacore::String region_name = region_record.asString("name");
     casacore::Vector<casacore::Double> x, y;
 
     if (region_record.dataType("x") == casacore::TpArrayFloat) {
-        casacore::Vector<casacore::Float> xf, yf;
-        xf = region_record.asArrayFloat("x");
-        yf = region_record.asArrayFloat("y");
-
-        // Convert to Double
-        auto xf_size(xf.size());
-        x.resize(xf_size);
-        y.resize(xf_size);
-        for (auto i = 0; i < xf_size; ++i) {
-            x(i) = xf(i);
-            y(i) = yf(i);
-        }
+        // Convert Float to Double
+        casacore::Vector<casacore::Float> xf = region_record.asArrayFloat("x");
+        casacore::Vector<casacore::Float> yf = region_record.asArrayFloat("y");
+        x = FloatVectorToDouble(xf);
+        y = FloatVectorToDouble(yf);
     } else {
         x = region_record.asArrayDouble("x");
         y = region_record.asArrayDouble("y");
@@ -364,7 +349,7 @@ bool RegionExporter::ConvertRecordToPolygonLine(
         y -= 1.0;
     }
 
-    if (pixel_coord) {
+    if (export_pixels) {
         // Convert pixel value to Quantity in control points
         for (auto i = 0; i < npoints; ++i) {
             control_points.push_back(casacore::Quantity(x(i), "pix"));
@@ -404,23 +389,32 @@ bool RegionExporter::ConvertRecordToPolygonLine(
     }
 }
 
-void RegionExporter::ExportAnnCompassStyle(
-    const CARTA::RegionStyle& region_style, const std::string& ann_coord_sys, std::string& region_line) {
-    // Append compass labels and arrows to region line
+casacore::Vector<casacore::Double> RegionExporter::FloatVectorToDouble(const casacore::Vector<casacore::Float>& float_vector) {
+    casacore::Vector<casacore::Double> double_vector;
+    auto float_size(float_vector.size());
+    double_vector.resize(float_size);
+    for (size_t i = 0; i < float_size; ++i) {
+        double_vector(i) = float_vector(i);
+    }
+    return double_vector;
+}
+
+void RegionExporter::AddCompassStyle(const CARTA::RegionStyle& region_style, const std::string& coord_frame, std::string& file_line) {
+    // Append compass coordinate, labels and arrows to region line
     auto north_label = region_style.annotation_style().text_label0();
     auto east_label = region_style.annotation_style().text_label1();
     auto north_arrow = (region_style.annotation_style().is_north_arrow() ? "1" : "0");
     auto east_arrow = (region_style.annotation_style().is_east_arrow() ? "1" : "0");
 
-    region_line += " compass=";
-    if (!ann_coord_sys.empty()) {
-        region_line += ann_coord_sys;
+    file_line += " compass=";
+    if (!coord_frame.empty()) {
+        file_line += coord_frame;
     }
     if (!north_label.empty()) {
-        region_line += fmt::format(" {{{}}}", north_label);
+        file_line += fmt::format(" {{{}}}", north_label);
     }
     if (!east_label.empty()) {
-        region_line += fmt::format(" {{{}}}", east_label);
+        file_line += fmt::format(" {{{}}}", east_label);
     }
-    region_line += fmt::format(" {} {}", north_arrow, east_arrow);
+    file_line += fmt::format(" {} {}", north_arrow, east_arrow);
 }

@@ -29,106 +29,105 @@ public:
 
 private:
     /**
-     * @brief Parse each line of file to add regions to _import_regions.
-     * @param lines Lines read from region file
+     * @brief Parse each line of file to import regions
+     * @param file_lines Lines read from region file
      */
-    void ProcessFileLines(std::vector<std::string>& lines);
+    void SetFileLineRegions(std::vector<std::string>& file_lines);
 
     /**
-     * @brief Get direction frame coord value in region file properties, else use frame in coord sys.
-     * @param properties Map of values in file line after region definition
-     * @return name of direction frame
+     * @brief Get direction frame coord value in region properties
+     * @param properties Map of style parameters
+     * @return Region direction frame
      */
     std::string GetRegionDirectionFrame(const std::unordered_map<std::string, std::string>& properties);
 
     /**
-     * @brief Import point (possibly annotation) or text from region parameters.
-     * @param parameters Strings parsed from file line describing region
-     * @param coord_frame Direction frame used to define parameter points
-     * @return region_state RegionState struct defining region parameters
+     * @brief Import point or text region.
+     * @param parameters Region definition parameters
+     * @param coord_frame Direction frame used to define parameters
+     * @return region state struct
      */
     RegionState ImportAnnSymbolText(std::vector<std::string>& parameters, std::string& coord_frame);
 
     /**
-     * @brief Import box region (possibly annotation) from region parameters.
-     * @param parameters Strings parsed from file line describing region
-     * @param coord_frame Direction frame used to define parameter points
-     * @return region_state RegionState struct defining region parameters
+     * @brief Import rectangle region.
+     * @param parameters Region definition parameters
+     * @param coord_frame Direction frame used to define parameters
+     * @return region state struct
      */
     RegionState ImportAnnBox(std::vector<std::string>& parameters, std::string& coord_frame);
 
     /**
-     * @brief Import ellipse region (possibly annotation) from region parameters.
-     * @param parameters Strings parsed from file line describing region
-     * @param coord_frame Direction frame used to define parameter points
-     * @return region_state RegionState struct defining region parameters
+     * @brief Import ellipse region.
+     * @param parameters Region definition parameters
+     * @param coord_frame Direction frame used to define parameters
+     * @return region state struct
      */
     RegionState ImportAnnEllipse(std::vector<std::string>& parameters, std::string& coord_frame);
 
     /**
-     * @brief Import polygon or polyline region (possibly annotation) from region parameters.
-     * @param parameters Strings parsed from file line describing region
-     * @param coord_frame Direction frame used to define parameter points
-     * @return region_state RegionState struct defining region parameters
+     * @brief Import polygon or line-based region.
+     * @param parameters Region definition parameters
+     * @param coord_frame Direction frame used to define parameters
+     * @return region state struct
      */
     RegionState ImportAnnPoly(std::vector<std::string>& parameters, std::string& coord_frame);
 
     /**
-     * @brief Import CARTA RegionStyle parameters for region type from properties.
-     * @param region_type CARTA RegionType enum defining type of region
-     * @param properties Map of values in file line after region definition
-     * @return CARTA RegionStyle submessage defining region style
+     * @brief Import region style parameters for region type.
+     * @param region_type Region type
+     * @param properties Map of style parameters
+     * @return Region style parameters
      */
-    CARTA::RegionStyle ImportStyleParameters(CARTA::RegionType region_type, const std::unordered_map<std::string, std::string>& properties);
+    CARTA::RegionStyle ImportStyle(CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties);
 
     /**
-     * @brief Set CARTA AnnotationStyle font parameters from properties.
-     * @param[in] properties Map of values in file line after region definition
-     * @param[out] annotation_style CARTA AnnotationStyle submessage
+     * @brief Set annotation style font parameters.
+     * @param[in] properties Map of style parameters
+     * @param[out] Annotation style parameters
      */
-    void ImportFontStyleParameters(
-        const std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
+    void ImportFontStyle(std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
 
     /**
-     * @brief Set CARTA AnnotationStyle parameters for point region.
+     * @brief Set annotation style point parameters.
      * @param[in] symbol_char character describing a casa Symbol shape
-     * @param[in] properties Map of values in file line after region definition
-     * @param[out] annotation_style CARTA AnnotationStyle submessage
+     * @param[in] properties Map of style parameters
+     * @param[out] Annotation style parameters
      */
-    void ImportPointStyleParameters(const std::string& symbol_char, const std::unordered_map<std::string, std::string>& properties,
-        CARTA::AnnotationStyle* annotation_style);
+    void ImportPointStyle(
+        const std::string& symbol_char, std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
 
     /**
-     * @brief Parse box definition to get RegionState parameters.
-     * @param[in] parameters Vector of strings parsed from file line describing region
+     * @brief Convert box definition with all corner points to control points.
+     * @param[in] parameters Region definition parameters
      * @param[in] coord_frame Direction frame used to define parameter points
-     * @param[out] control_points Vector of CARTA::Points in pixel coordinates converted from parameters
-     * @param[out] rotation Box rotation in degrees from parameters
+     * @param[out] control_points Points in pixel coordinates
+     * @param[out] rotation Box rotation in degrees
      */
     bool GetBoxControlPoints(
         std::vector<std::string>& parameters, std::string& coord_frame, std::vector<CARTA::Point>& control_points, float& rotation);
 
     /**
-     * @brief Convert casacore Quantities for casa centerbox, rotbox, or textbox to CARTA Rectangle control points.
+     * @brief Convert box definition with center and width/height to control points.
      * @param[in] region Name of region
-     * @param[in] cx Value of center x as a casacore Quantity
-     * @param[in] cy Value of center y as a casacore Quantity
-     * @param[in] width Value of rectangle width as a casacore Quantity
-     * @param[in] height Value of rectangle height as a casacore Quantity
+     * @param[in] cx Center x
+     * @param[in] cy Center y
+     * @param[in] width Rectangle width
+     * @param[in] height Rectangle height
      * @param[in] coord_frame Direction frame used to define casacore Quantities
-     * @param[out] control_points Vector of CARTA::Points in pixel coordinates defining CARTA Rectangle (center, width, height).
+     * @param[out] control_points Rectangle control points
      */
     bool GetCenterBoxPoints(const std::string& region, casacore::Quantity& cx, casacore::Quantity& cy, casacore::Quantity& width,
         casacore::Quantity& height, std::string& coord_frame, std::vector<CARTA::Point>& control_points);
 
     /**
-     * @brief Convert casacore Quantities for casa box corners to CARTA Rectangle control points.
-     * @param[in] blcx Box bottom left corner x value as a casacore Quantity
-     * @param[in] blcy Box bottom left corner y value as a casacore Quantity
-     * @param[in] trcx Box top right corner x value as a casacore Quantity
-     * @param[in] trcy Box top right corner y value as a casacore Quantity
-     * @param[in] coord_frame Direction frame used to define casacore Quantities
-     * @param[out] control_points Vector of CARTA::Points in pixel coordinates defining CARTA Rectangle (center, width, height).
+     * @brief Convert box definition with blc, trc corners to control points.
+     * @param[in] blcx Box bottom left corner x
+     * @param[in] blcy Box bottom left corner y
+     * @param[in] trcx Box top right corner x
+     * @param[in] trcy Box top right corner y
+     * @param[in] coord_frame Direction frame used to define corners
+     * @param[out] control_points Rectangle control points
      */
     bool GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quantity& blcy, casacore::Quantity& trcx, casacore::Quantity& trcy,
         std::string& coord_frame, std::vector<CARTA::Point>& control_points);

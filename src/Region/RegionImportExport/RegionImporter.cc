@@ -11,15 +11,15 @@ using namespace carta;
 RegionImporter::RegionImporter(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, int file_id)
     : _coord_sys(image_coord_sys), _file_id(file_id) {}
 
-std::vector<RegionProperties> RegionImporter::GetImportedRegions(std::string& error) {
+std::vector<RegionProperties> RegionImporter::GetRegions(std::string& error) {
     // Parse the file in the constructor to create RegionProperties vector; return any errors in error
-    error = _import_errors;
-    if (_import_regions.size() == 0) {
+    error = _errors;
+    if (_regions.size() == 0) {
         if (error.empty()) {
             error = "Import error: zero regions set. No regions defined or regions lie outside image coordinate system.";
         }
     }
-    return _import_regions;
+    return _regions;
 }
 
 std::vector<std::string> RegionImporter::ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim) {
@@ -61,18 +61,18 @@ std::vector<std::string> RegionImporter::ReadRegionFile(const std::string& file,
     return split_lines;
 }
 
-bool RegionImporter::IsCommentLine(const std::string& line) {
+bool RegionImporter::IsCommentLine(const std::string& file_line) {
     // Determine if line starts with "# " + a region name.
-    if (line[0] != '#') {
+    if (file_line[0] != '#') {
         return false;
     }
-    if (line.find("# textbox") == 0 || line.find("# circle") == 0 || line.find("# segment") == 0) {
+    if (file_line.find("# textbox") == 0 || file_line.find("# circle") == 0 || file_line.find("# segment") == 0) {
         // not in map, are type RECTANGLE (CRTF "centerbox", DS9 "box"), ELLIPSE ("ellipse"), and POLYLINE
         return false;
     }
 
-    for (auto& name : _region_names) { // map {RegionType, string}
-        if (line.find(name.second) == 0) {
+    for (auto& region_name : _region_names) { // map {RegionType, name}
+        if (file_line.find(region_name.second) == 0) {
             return false;
         }
     }
@@ -200,20 +200,20 @@ void RegionImporter::AddTextStyleToProperties(const CARTA::RegionStyle& text_sty
     annotation_style->set_font_size(text_style.annotation_style().font_size());
 }
 
-double RegionImporter::WorldToPixelLength(casacore::Quantity input, unsigned int pixel_axis) {
+double RegionImporter::WorldToPixelLength(casacore::Quantity length, unsigned int pixel_axis) {
     // world->pixel conversion of ellipse/circle radius, box width/height, or compass length.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
-    if (input.getUnit() == "pix") {
-        return input.getValue();
+    if (length.getUnit() == "pix") {
+        return length.getValue();
     }
 
     // Convert to world axis units
     casacore::Vector<casacore::String> units = _coord_sys->worldAxisUnits();
-    input.convert(units[pixel_axis]);
+    length.convert(units[pixel_axis]);
 
     // Find pixel length
     casacore::Vector<casacore::Double> increments(_coord_sys->increment());
-    return fabs(input.getValue() / increments[pixel_axis]);
+    return fabs(length.getValue() / increments[pixel_axis]);
 }
 
 void RegionImporter::ImportCompassStyle(

@@ -168,7 +168,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 
     // Get regions and error message from importer
     std::string error;
-    auto imported_regions = importer->GetImportedRegions(error);
+    auto imported_regions = importer->GetRegions(error);
     import_ack.set_message(error);
     if (imported_regions.empty()) {
         import_ack.set_success(false);
@@ -240,7 +240,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         if (RegionSet(region_id)) {
             auto region = GetRegion(region_id);
             auto region_style = region_id_style.second;
-            if (!exporter->AddExportRegion(file_id, region, region_style, export_pixel_coords)) {
+            if (!exporter->AddRegion(file_id, region, region_style, export_pixel_coords)) {
                 std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
                 export_errors.append(region_error);
             }

@@ -23,154 +23,148 @@ class CrtfExporter : public RegionExporter {
 public:
     /**
      * @brief Constructor for CrtfExporter class for exporting regions to CRTF file.
-     * @param image_coord_sys casacore::CoordinateSystem of image from which region is exported
-     * @param image_shape casacore::IPosition describing shape of image from which region is exported
-     * @param stokes_axis Current stokes axis index in image from which region is exported, for exporting stokes type
+     * @param coord_sys casacore::CoordinateSystem of image from which region is exported
+     * @param shape casacore::IPosition describing shape of image from which region is exported
+     * @param stokes_axis Current stokes axis in image from which region is exported
      */
-    CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis);
+    CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& shape, int stokes_axis);
 
 protected:
     /**
-     * @brief Export region in pixel coordinates using RegionState and RegionStyle to _export_regions.
-     * @param region_state RegionState struct defining region parameters
-     * @param region_style CARTA RegionStyle submessage defining region style
-     * @return Whether the region export is successful
+     * @brief Add file line for region in pixel coordinates
+     * @param region_state Region definition parameters
+     * @param region_style Region style parameters
+     * @return Whether adding the region file line is successful
      */
-    bool AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) override;
+    bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) override;
 
     /**
-     * @brief Export region in world coordinates using casacore Quantities and RegionStyle to _export_regions.
-     * @param region_type CARTA RegionType enum defining type of region
-     * @param control_points Region control points as casacore Quantities in world coordinates
-     * @param rotation Region rotation as casacore Quantity
-     * @param region_style CARTA RegionStyle submessage defining region style
-     * @return Whether the region export is successful
+     * @brief Add file line for region in world coordinates or in matched image
+     * @param region_type Region type
+     * @param control_points Region control points in world coordinates
+     * @param rotation Region rotation
+     * @param region_style Region style parameters
+     * @return Whether adding the region file line is successful
      */
-    bool AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
-        const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) override;
+    bool AddRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation,
+        const CARTA::RegionStyle& region_style) override;
 
     /**
-     * @brief Export region file lines in _export_regions to file.
-     * @param[in] filename Name of region file for export
-     * @param[out] error Message describing error if export to filename fails
-     * @return Whether the region export is successful
+     * @brief Write region file lines to filename.
+     * @param[in] filename Name of region file
+     * @param[out] error Message describing error if export fails
+     * @return Whether writing any region lines is successful
      */
     bool ExportRegions(const std::string& filename, std::string& error) override;
 
     /**
-     * @brief Export region file lines in _export_regions to vector.
-     * @param[out] contents Vector to hold region strings
-     * @param[out] error Message describing error if export to contents fails
-     * @return Whether the region export is successful
+     * @brief Serialise region file lines to vector.
+     * @param[out] contents Vector for lines
+     * @param[out] error Message describing error if export fails
+     * @return Whether writing any region lines is successful
      */
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 private:
     /**
-     * @brief Create casa AnnotationBase or AnnRegion from region defined in world coordinates.
-     * @param[in] region_type CARTA RegionType enum defining type of region
-     * @param[in] control_points Region control points as casacore Quantities in world coordinates
-     * @param[in] rotation Region rotation as casacore Quantity
-     * @param[in] region_style CARTA RegionStyle submessage defining region style
+     * @brief Create casa AnnotationBase or AnnRegion from region parameters.
+     * @param[in] region_type Region type
+     * @param[in] control_points Region control points
+     * @param[in] rotation Region rotation
+     * @param[in] region_style Region style parameters
      * @param[out] ann_base Pointer to return new AnnotationBase region
      * @param[out] ann_region Pointer to return new AnnRegion region
-     * @return Whether the region creation is successful
+     * @return Whether the region was created
      */
     bool GetAnnRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style, casa::AnnotationBase*& ann_base,
         casa::AnnRegion*& ann_region);
 
     /**
-     * @brief Add region line to _export_regions after adjusting casa region name if needed and adding style.
-     * @param region_type CARTA RegionType enum defining type of region
-     * @param region_line CRTF-formatted string for file line, printed from casa annotation region
-     * @param region_style CARTA RegionStyle submessage defining region style
-     * @return Whether adding the region is successful
+     * @brief Add file line after adjusting line printed by CASA region
+     * @param region_type Region type
+     * @param file_line Line to be adjusted and added
+     * @param region_style Region style parameters
+     * @return Whether adding the file line is successful
      */
-    bool AddRegionExportLine(CARTA::RegionType region_type, std::string& region_line, const CARTA::RegionStyle& region_style);
+    bool AddFileLine(CARTA::RegionType region_type, std::string& file_line, const CARTA::RegionStyle& region_style);
 
     /**
-     * @brief Add region lines to _export_regions for text region, as text box file line then text file line
-     * @param region_type CARTA RegionType enum defining type of region
-     * @param region_line CRTF-formatted string for file line, printed from casa annotation box region
-     * @param control_points Region control points as casacore Quantities in world coordinates for text
-     * @param region_style CARTA RegionStyle submessage defining region style
-     * @return Whether adding the region is successful
+     * @brief Add file lines for text region, as textbox file line then text file line
+     * @param region_type Region type
+     * @param file_line Line for textbox region
+     * @param control_points Region control points for text region
+     * @param region_style Region style parameters
+     * @return Whether adding the file lines is successful
      */
-    bool AddTextRegionExportLines(CARTA::RegionType region_type, std::string& region_line,
-        const std::vector<casacore::Quantity>& control_points, const CARTA::RegionStyle& region_style);
+    bool AddTextFileLines(CARTA::RegionType region_type, std::string& file_line, const std::vector<casacore::Quantity>& control_points,
+        const CARTA::RegionStyle& region_style);
 
     /**
-     * @brief Fix region_line in place, replacing misspelled fontstyle output by casa to fontstyle imported by casa.
-     * @param[in, out] region_line CRTF-formatted string for file line, printed from casa annotation region
+     * @brief Fix fontstyle added by CASA region.
+     * @param[in, out] file_line Line to be fixed
      */
-    void FixFontstyle(std::string& region_line);
+    void FixFontstyle(std::string& file_line);
 
     /**
-     * @brief Convert CARTA point shape enum to casa AnnSymbol enum.
-     * @param point_shape CARTA PointAnnotationShape enum value
-     * @return casa::AnnSymbol::Symbol enum value corresponding to input point shape
+     * @brief Convert CARTA point shape to CASA annotation symbol.
+     * @param point_shape CARTA point shape
+     * @return CASA annotation symbol
      */
     casa::AnnSymbol::Symbol GetAnnSymbol(CARTA::PointAnnotationShape point_shape);
 
     /**
-     * @brief Convert CARTA point shape enum to character imported by casa.
-     * @param point_shape CARTA PointAnnotationShape enum value
-     * @return char corresponding to input point shape
+     * @brief Convert CARTA point shape to CASA symbol character.
+     * @param point_shape CARTA point shape
+     * @return char representing CASA symbol shape
      */
     char GetAnnSymbolCharacter(CARTA::PointAnnotationShape point_shape);
 
     /**
-     * @brief Convert RegionStyle color to formatted string
-     * @param region_style CARTA RegionStyle submessage defining region style
-     * @return Converted color string
+     * @brief Format region style color in CRTF format
+     * @param region_style Region style parameters
+     * @return Formatted color string
      */
-    std::string GetRegionColor(const CARTA::RegionStyle& region_style);
+    std::string GetStyleColor(const CARTA::RegionStyle& region_style);
 
     /**
-     * @brief Convert region style dash list to casa annotation line style else set default.
-     * @param region_style CARTA RegionStyle submessage defining region style
-     * @return casa::AnnotationBase::LineStyle enum representing dash style
+     * @brief Convert dash list to CASA line style else set default.
+     * @param region_style Region style parameters
+     * @return CASA line style
      */
-    casa::AnnotationBase::LineStyle GetRegionLineStyle(const CARTA::RegionStyle& region_style);
+    casa::AnnotationBase::LineStyle GetLineStyle(const CARTA::RegionStyle& region_style);
 
     /**
      * @brief Extract font parameters from region style else set defaults.
-     * @param[in] region_style CARTA RegionStyle submessage defining region style
-     * @param[out] font font name
-     * @param[out] font_size font size
-     * @param[out] font_style casa::AnnotationBase::FontStyle enum value
+     * @param[in] region_style Region style parameters
+     * @param[out] font Font name
+     * @param[out] font_size Font size
+     * @param[out] font_style Font style enum
      */
-    void GetAnnotationFontParameters(
+    void GetFontStyle(
         const CARTA::RegionStyle& region_style, std::string& font, unsigned int& font_size, casa::AnnotationBase::FontStyle& font_style);
 
     /**
-     * @brief Extract point parameters from region style else set defaults.
-     * @param[in] region_style CARTA RegionStyle submessage defining region style
-     * @param[out] symbol_size return point size
-     * @param[out] symbol_thickness return thickness of point outline.
+     * @brief Extract CASA symbol style parameters from region style else set defaults.
+     * @param[in] region_style Region style parameters
+     * @param[out] symbol_size Symbol size
+     * @param[out] symbol_thickness Symbol outline thickness.
      */
-    void GetAnnotationSymbolParameters(const CARTA::RegionStyle& region_style, unsigned int& symbol_size, unsigned int& symbol_thickness);
+    void GetSymbolStyle(const CARTA::RegionStyle& region_style, unsigned int& symbol_size, unsigned int& symbol_thickness);
 
     /**
-     * @brief Set export coordinate frame value from coordinate system direction coordinate or linear coordinate.
-     * @return Coordinate frame.
+     * @brief Add CRTF style parameters common to all regions to file line.
+     * @param[in] region_style Region style
+     * @param[in, out] file_line File line to append
      */
-    std::string GetAnnotationCoordinateSystem();
+    void AddStyle(const CARTA::RegionStyle& region_style, std::string& file_line);
 
     /**
-     * @brief Add standard CRTF keywords or region type-specific parameters and optional label to region line.
-     * @param[in] region_style CARTA RegionStyle submessage defining region style
-     * @param[in, out] region_line CRTF-formatted string for file line, printed from casa annotation region
+     * @brief Set region style parameters in AnnotationBase region
+     * @param[in] region_style Region style parameters
+     * @param[in, out] region Pointer to casa AnnotationBase region (AnnotationBase or AnnRegion)
      */
-    void ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
-
-    /**
-     * @brief Set region style parameters in AnnotationBase region, for printing by casa to region line.
-     * @param[in] region_style CARTA RegionStyle submessage defining region style
-     * @param[in, out] region Pointer to casa AnnotationBase region in which style parameters are set
-     */
-    void ExportStyleParameters(const CARTA::RegionStyle& region_style, casa::AnnotationBase* region);
+    void SetAnnotationRegionStyle(const CARTA::RegionStyle& region_style, casa::AnnotationBase* region);
 
     /**
      * @brief Get casacore stokes types for stokes axis set in constructor.
@@ -179,10 +173,10 @@ private:
     casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
 
     /**
-     * @brief Get CRTF file header string containing casa RegionTextParser version.
-     * @return CRTF file header string
+     * @brief Get CRTF file header string.
+     * @return header
      */
-    std::string GetCrtfVersionHeader();
+    std::string GetFileHeader();
 
     /** @brief stokes axis index for current stokes, set from constructor parameter for adding stokes type to export. */
     int _stokes_axis;

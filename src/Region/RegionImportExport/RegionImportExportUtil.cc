@@ -14,8 +14,6 @@
 namespace carta {
 
 std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::FileType region_file_type) {
-    // Return region names for CARTA region types
-    // Common names to CRTF and DS9
     if (region_file_type == CARTA::CRTF) {
         region_names[CARTA::RegionType::POINT] = "symbol";
         region_names[CARTA::RegionType::RECTANGLE] = "centerbox";
@@ -46,17 +44,19 @@ std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::Fil
 
 std::string GetImageDirectionFrame(std::shared_ptr<casacore::CoordinateSystem> coord_sys) {
     std::string dir_frame;
-    if (coord_sys->hasDirectionCoordinate()) {
-        casacore::MDirection::Types mdir_type = coord_sys->directionCoordinate().directionType();
-        dir_frame = casacore::MDirection::showType(mdir_type);
+    if (coord_sys) {
+        if (coord_sys->hasDirectionCoordinate()) {
+            casacore::MDirection::Types mdir_type = coord_sys->directionCoordinate().directionType();
+            dir_frame = casacore::MDirection::showType(mdir_type);
+        } else if (coord_sys->hasLinearCoordinate()) {
+            dir_frame = "linear";
+        }
     }
     return dir_frame;
 }
 
 bool ConvertPointToPixels(std::shared_ptr<casacore::CoordinateSystem> coord_sys, std::string& region_frame,
     std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords) {
-    // Convert point Quantities to pixels in coord sys
-    // Point is defined by 2 quantities, x and y
     if (point.size() != 2) {
         return false;
     }
@@ -109,7 +109,6 @@ bool ConvertPointToPixels(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
 }
 
 std::string FormatColor(const std::string& color) {
-    // Capitalize and add prefix if hex; else return same string
     std::string hex_color(color);
     if (color[0] == '#') {
         // Do conversion without prefix
@@ -119,6 +118,7 @@ std::string FormatColor(const std::string& color) {
     // Check if can convert entire string to hex number
     char* endptr(nullptr);
     if (std::strtoul(hex_color.c_str(), &endptr, 16) && (*endptr == '\0')) {
+        // Capitalize and add prefix
         std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::toupper);
         hex_color = "#" + hex_color;
     }

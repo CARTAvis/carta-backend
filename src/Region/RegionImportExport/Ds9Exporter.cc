@@ -19,33 +19,14 @@
 
 using namespace carta;
 
-Ds9Exporter::Ds9Exporter(
-    std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coords)
-    : RegionExporter(image_coord_sys, image_shape), _pixel_coords(pixel_coords) {
-    // Export regions to DS9 format
-    // Set properties for file header
+Ds9Exporter::Ds9Exporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& shape, bool export_pixels)
+    : RegionExporter(coord_sys, shape), _export_pixels(export_pixels) {
     InitGlobalProperties();
+    SetFileCoordFrame();
     _region_names = GetRegionTypeNames(CARTA::FileType::DS9_REG);
-
-    // Multiple options for these image frames, use fk* version
-    SetImageReferenceFrame(); // casacore frame, from coordinate system
-    if (_image_ref_frame == "b1950") {
-        _image_ref_frame = "fk4";
-    } else if (_image_ref_frame == "j2000") {
-        _image_ref_frame = "fk5";
-    }
-
-    if (pixel_coords) {
-        _file_ref_frame = "image";
-    } else {
-        _file_ref_frame = _image_ref_frame;
-    }
-
-    AddHeader();
 }
 
 void Ds9Exporter::InitGlobalProperties() {
-    // Set global properties to defaults
     _global_properties["color"] = "green";
     _global_properties["dashlist"] = "8 3";
     _global_properties["width"] = "1";
@@ -61,47 +42,45 @@ void Ds9Exporter::InitGlobalProperties() {
     _global_properties["source"] = "1";
 }
 
-// Public: for exporting regions
-
-bool Ds9Exporter::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
-    // Add pixel-coord region using RegionState
+bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
     auto region_type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
-    float angle = region_state.rotation;
+    float rotation = region_state.rotation;
+
     if (region_type == CARTA::RegionType::ELLIPSE || region_type == CARTA::RegionType::ANNELLIPSE) {
-        angle += 90.0; // DS9 angle measured from x-axis
-        if (angle > 360.0) {
-            angle -= 360.0;
+        rotation += 90.0; // DS9 angle measured from x-axis
+        if (rotation > 360.0) {
+            rotation -= 360.0;
         }
     }
 
     float one_based_x = points[0].x() + 1; // Change from 0-based to 1-based image coordinate in x
     float one_based_y = points[0].y() + 1; // Change from 0-based to 1-based image coordinate in y
-    std::string region_line;
+    std::string file_line;
 
     switch (region_type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT: {
             // point(x, y) or text(x, y) {Your Text Here}
-            region_line = fmt::format("{}({:.2f}, {:.2f})", _region_names[region_type], one_based_x, one_based_y);
+            file_line = fmt::format("{}({:.2f}, {:.2f})", _region_names[region_type], one_based_x, one_based_y);
             break;
         }
         case CARTA::RegionType::RECTANGLE:
         case CARTA::RegionType::ANNRECTANGLE: {
-            region_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", _region_names[region_type], one_based_x, one_based_y,
-                points[1].x(), points[1].y(), angle);
+            file_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", _region_names[region_type], one_based_x, one_based_y,
+                points[1].x(), points[1].y(), rotation);
             break;
         }
         case CARTA::RegionType::ANNTEXT: {
             // # textbox(cx,cy,width,height,angle)
-            region_line =
-                fmt::format("# textbox({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", one_based_x, one_based_y, points[1].x(), points[1].y(), angle);
-            ExportTextboxStyleParameters(region_style, region_line);
-            _export_regions.push_back(region_line);
+            file_line = fmt::format(
+                "# textbox({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", one_based_x, one_based_y, points[1].x(), points[1].y(), rotation);
+            AddTextboxStyle(region_style, file_line);
+            _file_lines.push_back(file_line);
             // # text(cx, cy)
-            region_line = fmt::format("{}({:.2f}, {:.2f})", _region_names[region_type], one_based_x, one_based_y);
-            if (angle > 0.0) {
-                region_line += fmt::format(" textangle={}", angle);
+            file_line = fmt::format("{}({:.2f}, {:.2f})", _region_names[region_type], one_based_x, one_based_y);
+            if (rotation > 0.0) {
+                file_line += fmt::format(" textangle={}", rotation);
             }
             break;
         }
@@ -114,13 +93,13 @@ bool Ds9Exporter::AddExportRegion(const RegionState& region_state, const CARTA::
                 if (region_type != CARTA::RegionType::ANNCOMPASS) {
                     name = (region_type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle");
                 }
-                region_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f})", name, one_based_x, one_based_y, points[1].x());
+                file_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f})", name, one_based_x, one_based_y, points[1].x());
             } else {
-                if (angle > 0.0) {
-                    region_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", _region_names[region_type], one_based_x,
-                        one_based_y, points[1].x(), points[1].y(), angle);
+                if (rotation > 0.0) {
+                    file_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", _region_names[region_type], one_based_x, one_based_y,
+                        points[1].x(), points[1].y(), rotation);
                 } else {
-                    region_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f})", _region_names[region_type], one_based_x, one_based_y,
+                    file_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f})", _region_names[region_type], one_based_x, one_based_y,
                         points[1].x(), points[1].y());
                 }
             }
@@ -134,12 +113,12 @@ bool Ds9Exporter::AddExportRegion(const RegionState& region_state, const CARTA::
         case CARTA::RegionType::ANNPOLYGON:
         case CARTA::RegionType::ANNRULER: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            region_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[region_type], one_based_x, one_based_y);
+            file_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[region_type], one_based_x, one_based_y);
             for (size_t i = 1; i < points.size(); ++i) {
                 // Change from 0-based to 1-based image coordinate for the other points in (x, y)
-                region_line += fmt::format(", {:.2f}, {:.2f}", points[i].x() + 1, points[i].y() + 1);
+                file_line += fmt::format(", {:.2f}, {:.2f}", points[i].x() + 1, points[i].y() + 1);
             }
-            region_line += ")";
+            file_line += ")";
             break;
         }
         case CARTA::RegionType::ANNVECTOR: {
@@ -148,7 +127,7 @@ bool Ds9Exporter::AddExportRegion(const RegionState& region_state, const CARTA::
             auto delta_y = points[1].y() - points[0].y();
             auto length = sqrt((delta_x * delta_x) + (delta_y * delta_y));
             auto angle = atan2((points[1].y() - points[0].y()), (points[1].x() - points[0].x())) * 180.0 / M_PI;
-            region_line =
+            file_line =
                 fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f})", _region_names[region_type], one_based_x, one_based_y, length, angle);
             break;
         }
@@ -157,35 +136,34 @@ bool Ds9Exporter::AddExportRegion(const RegionState& region_state, const CARTA::
     }
 
     // Add region style and add to list
-    if (!region_line.empty()) {
-        ExportStyleParameters(region_style, region_line);
-        ExportAnnotationStyleParameters(region_type, region_style, region_line);
-        region_line.append("\n");
-        _export_regions.push_back(region_line);
+    if (!file_line.empty()) {
+        AddStyle(region_style, file_line);
+        AddAnnotationStyle(region_type, region_style, file_line);
+        file_line.append("\n");
+        _file_lines.push_back(file_line);
         return true;
     }
 
     return false;
 }
 
-bool Ds9Exporter::AddExportRegion(const CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+bool Ds9Exporter::AddRegion(const CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
     const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) {
-    // Add region using Quantities
-    float angle = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
+    float rotation_deg = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
 
-    std::string region_line;
-    if (_pixel_coords || _file_ref_frame.empty()) {
-        region_line = AddExportRegionPixel(region_type, control_points, angle, region_style);
+    std::string file_line;
+    if (_export_pixels || _file_coord_frame == "image") {
+        file_line = GetRegionPixelLine(region_type, control_points, rotation_deg, region_style);
     } else {
-        region_line = AddExportRegionWorld(region_type, control_points, angle, region_style);
+        file_line = GetRegionWorldLine(region_type, control_points, rotation_deg, region_style);
     }
 
     // Add region style and add to list
-    if (!region_line.empty()) {
-        ExportStyleParameters(region_style, region_line);
-        ExportAnnotationStyleParameters(region_type, region_style, region_line);
-        region_line.append("\n");
-        _export_regions.push_back(region_line);
+    if (!file_line.empty()) {
+        AddStyle(region_style, file_line);
+        AddAnnotationStyle(region_type, region_style, file_line);
+        file_line.append("\n");
+        _file_lines.push_back(file_line);
         return true;
     }
 
@@ -193,104 +171,101 @@ bool Ds9Exporter::AddExportRegion(const CARTA::RegionType region_type, const std
 }
 
 bool Ds9Exporter::ExportRegions(const std::string& filename, std::string& error) {
-    // Print regions to DS9 file
-    if (_export_regions.empty()) {
-        error = "Export region failed: no regions to export.";
+    if (_file_lines.empty()) {
+        error = "Export regions failed: no regions to export.";
         return false;
     }
-
     std::ofstream export_file(filename);
-    for (auto& region : _export_regions) {
-        export_file << region;
+    for (auto& line : GetFileHeader()) {
+        export_file << line;
+    }
+    for (auto& line : _file_lines) {
+        export_file << line;
     }
     export_file.close();
     return true;
 }
 
 bool Ds9Exporter::ExportRegions(std::vector<std::string>& contents, std::string& error) {
-    // Print regions to DS9 file lines in vector
-    if (_export_regions.empty()) {
-        error = "Export region failed: no regions to export.";
+    if (_file_lines.empty()) {
+        error = "Export regions failed: no regions to export.";
         return false;
     }
 
-    contents = _export_regions;
+    for (auto& line : GetFileHeader()) {
+        contents.push_back(line);
+    }
+    for (auto& line : _file_lines) {
+        contents.push_back(line);
+    }
     return true;
 }
 
-void Ds9Exporter::SetImageReferenceFrame() {
-    // Set image coord sys direction frame
-    if (!_coord_sys) {
-        return;
-    }
-
-    if (_coord_sys->hasDirectionCoordinate()) {
-        casacore::MDirection::Types reference_frame = _coord_sys->directionCoordinate().directionType();
-        _image_ref_frame = casacore::MDirection::showType(reference_frame);
-    } else if (_coord_sys->hasLinearCoordinate()) {
-        _image_ref_frame = "linear";
+void Ds9Exporter::SetFileCoordFrame() {
+    if (_export_pixels || _image_coord_frame.empty()) {
+        _file_coord_frame = "image";
+    } else if (_image_coord_frame == "b1950") {
+        _file_coord_frame = "fk4";
+    } else if (_image_coord_frame == "j2000") {
+        _file_coord_frame = "fk5";
     } else {
-        _image_ref_frame = "image";
+        _file_coord_frame = _image_coord_frame;
     }
 }
 
-void Ds9Exporter::AddHeader() {
-    // print file format, globals, and coord sys
-    std::ostringstream os;
-    os << "# Region file format: DS9 CARTA " << VERSION_ID << std::endl;
-    os << "global";
+std::vector<std::string> Ds9Exporter::GetFileHeader() {
+    std::ostringstream oss;
+    oss << "# Region file format: DS9 CARTA " << VERSION_ID << std::endl;
+    oss << "global";
 
     std::vector<std::string> ordered_keys = {
         "color", "dashlist", "width", "font", "select", "highlite", "dash", "fixed", "edit", "move", "delete", "include", "source"};
     for (auto& key : ordered_keys) {
-        os << " " << key << "=" << _global_properties[key];
+        oss << " " << key << "=" << _global_properties[key];
     }
-    os << std::endl;
+    oss << std::endl;
 
-    std::string header = os.str();
-    _export_regions.push_back(header);
+    std::string header = oss.str();
+    std::vector<std::string> header_lines;
+    header_lines.push_back(header);
 
     // Add coordinate frame
-    os.str("");
-    if (_file_ref_frame.empty()) {
-        os << "image\n";
-    } else {
-        os << _file_ref_frame << std::endl;
-    }
-    _export_regions.push_back(os.str());
+    oss.str("");
+    oss << _file_coord_frame << std::endl;
+    header_lines.push_back(oss.str());
+    return header_lines;
 }
 
-std::string Ds9Exporter::AddExportRegionPixel(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
-    float angle, const CARTA::RegionStyle& region_style) {
-    // Add region using pixel Quantities.  RegionStyle needed for 2-line text region.
-    std::string region_line;
+std::string Ds9Exporter::GetRegionPixelLine(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+    float rotation, const CARTA::RegionStyle& region_style) {
+    std::string file_line;
 
     switch (region_type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT: {
             // point(x, y)
-            region_line =
+            file_line =
                 fmt::format("{}({:.4f}, {:.4f})", _region_names[region_type], control_points[0].getValue(), control_points[1].getValue());
             break;
         }
         case CARTA::RegionType::RECTANGLE:
         case CARTA::RegionType::ANNRECTANGLE: {
             // box(x,y,width,height,angle)
-            region_line = fmt::format("{}({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", _region_names[region_type], control_points[0].getValue(),
-                control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), angle);
+            file_line = fmt::format("{}({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", _region_names[region_type], control_points[0].getValue(),
+                control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), rotation);
             break;
         }
         case CARTA::RegionType::ANNTEXT: {
             // # textbox(x,y,width,height)
             auto cx = control_points[0].getValue();
             auto cy = control_points[1].getValue();
-            region_line = fmt::format(
-                "# textbox({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", cx, cy, control_points[2].getValue(), control_points[3].getValue(), angle);
-            ExportTextboxStyleParameters(region_style, region_line);
+            file_line = fmt::format("# textbox({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", cx, cy, control_points[2].getValue(),
+                control_points[3].getValue(), rotation);
+            AddTextboxStyle(region_style, file_line);
             // # text(x,y)
-            region_line += fmt::format("{}({:.4f}, {:.4f})", _region_names[region_type], cx, cy);
-            if (angle > 0.0) {
-                region_line += fmt::format(" textangle={}", angle);
+            file_line += fmt::format("{}({:.4f}, {:.4f})", _region_names[region_type], cx, cy);
+            if (rotation > 0.0) {
+                file_line += fmt::format(" textangle={}", rotation);
             }
             break;
         }
@@ -303,17 +278,16 @@ std::string Ds9Exporter::AddExportRegionPixel(CARTA::RegionType region_type, con
                 if (region_type != CARTA::RegionType::ANNCOMPASS) {
                     name = (region_type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle");
                 }
-                region_line = fmt::format("{}({:.4f}, {:.4f}, {:.4f}\")", name, control_points[0].getValue(), control_points[1].getValue(),
+                file_line = fmt::format("{}({:.4f}, {:.4f}, {:.4f}\")", name, control_points[0].getValue(), control_points[1].getValue(),
                     control_points[2].getValue());
             } else {
-                if (angle == 0.0) {
-                    region_line =
-                        fmt::format("{}({:.4f}, {:.4f}, {:.4f}, {:.4f})", _region_names[region_type], control_points[0].getValue(),
-                            control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue());
+                if (rotation == 0.0) {
+                    file_line = fmt::format("{}({:.4f}, {:.4f}, {:.4f}, {:.4f})", _region_names[region_type], control_points[0].getValue(),
+                        control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue());
                 } else {
-                    region_line =
+                    file_line =
                         fmt::format("{}({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", _region_names[region_type], control_points[0].getValue(),
-                            control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), angle);
+                            control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), rotation);
                 }
             }
             break;
@@ -326,11 +300,11 @@ std::string Ds9Exporter::AddExportRegionPixel(CARTA::RegionType region_type, con
         case CARTA::RegionType::ANNPOLYGON:
         case CARTA::RegionType::ANNRULER: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            region_line = fmt::format("{}({:.4f}", _region_names[region_type], control_points[0].getValue());
+            file_line = fmt::format("{}({:.4f}", _region_names[region_type], control_points[0].getValue());
             for (size_t i = 1; i < control_points.size(); ++i) {
-                region_line += fmt::format(", {:.4f}", control_points[i].getValue());
+                file_line += fmt::format(", {:.4f}", control_points[i].getValue());
             }
-            region_line += ")";
+            file_line += ")";
             break;
         }
         case CARTA::RegionType::ANNVECTOR: {
@@ -343,26 +317,25 @@ std::string Ds9Exporter::AddExportRegionPixel(CARTA::RegionType region_type, con
             // Angle from x-axis
             auto angle = atan2((y1 - y0), (x1 - x0)) * 180.0 / M_PI;
 
-            region_line = fmt::format("{}({:.4f}, {:.4f}, {:.2f}, {:.2f})", _region_names[region_type], x0, y0, length, angle);
+            file_line = fmt::format("{}({:.4f}, {:.4f}, {:.2f}, {:.2f})", _region_names[region_type], x0, y0, length, angle);
             break;
         }
         default:
             break;
     }
 
-    return region_line;
+    return file_line;
 }
 
-std::string Ds9Exporter::AddExportRegionWorld(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
-    float angle, const CARTA::RegionStyle& region_style) {
-    // Add region using world Quantities.  RegionStyle needed for 2-line text region.
-    std::string region_line;
+std::string Ds9Exporter::GetRegionWorldLine(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+    float rotation, const CARTA::RegionStyle& region_style) {
+    std::string file_line;
 
     switch (region_type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT: {
             // point(x, y)
-            region_line = fmt::format("{}({:.9f}, {:.9f})", _region_names[region_type], control_points[0].get("deg").getValue(),
+            file_line = fmt::format("{}({:.9f}, {:.9f})", _region_names[region_type], control_points[0].get("deg").getValue(),
                 control_points[1].get("deg").getValue());
             break;
         }
@@ -371,22 +344,21 @@ std::string Ds9Exporter::AddExportRegionWorld(CARTA::RegionType region_type, con
             // box(x,y,width,height,angle)
             casacore::Quantity cx(control_points[0]), cy(control_points[1]);
             casacore::Quantity width(control_points[2]), height(control_points[3]);
-            region_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", _region_names[region_type], cx.get("deg").getValue(),
-                cy.get("deg").getValue(), width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
+            file_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", _region_names[region_type], cx.get("deg").getValue(),
+                cy.get("deg").getValue(), width.get("arcsec").getValue(), height.get("arcsec").getValue(), rotation);
             break;
         }
         case CARTA::RegionType::ANNTEXT: {
             // # textbox(x,y,width,height,angle)
             casacore::Quantity cx(control_points[0]), cy(control_points[1]);
             casacore::Quantity width(control_points[2]), height(control_points[3]);
-            region_line = fmt::format("# textbox({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(),
-                cy.get("deg").getValue(), width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
-            ExportTextboxStyleParameters(region_style, region_line);
+            file_line = fmt::format("# textbox({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
+                width.get("arcsec").getValue(), height.get("arcsec").getValue(), rotation);
+            AddTextboxStyle(region_style, file_line);
             // # text(x,y)
-            region_line +=
-                fmt::format("{}({:.9f}, {:.9f})", _region_names[region_type], cx.get("deg").getValue(), cy.get("deg").getValue());
-            if (angle > 0.0) {
-                region_line += fmt::format(" textangle={}", angle);
+            file_line += fmt::format("{}({:.9f}, {:.9f})", _region_names[region_type], cx.get("deg").getValue(), cy.get("deg").getValue());
+            if (rotation > 0.0) {
+                file_line += fmt::format(" textangle={}", rotation);
             }
             break;
         }
@@ -396,18 +368,18 @@ std::string Ds9Exporter::AddExportRegionWorld(CARTA::RegionType region_type, con
             if (control_points[2].getValue() == control_points[3].getValue()) {
                 // circle when bmaj==bmin
                 std::string name = (region_type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle");
-                region_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\")", name, control_points[0].get("deg").getValue(),
+                file_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\")", name, control_points[0].get("deg").getValue(),
                     control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue());
             } else {
-                region_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", _region_names[region_type],
+                file_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", _region_names[region_type],
                     control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue(),
-                    control_points[2].get("arcsec").getValue(), control_points[3].get("arcsec").getValue(), angle);
+                    control_points[2].get("arcsec").getValue(), control_points[3].get("arcsec").getValue(), rotation);
             }
             break;
         }
         case CARTA::RegionType::ANNCOMPASS: {
             // compass(x1,y1,length)
-            region_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\")", _region_names[region_type], control_points[0].get("deg").getValue(),
+            file_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\")", _region_names[region_type], control_points[0].get("deg").getValue(),
                 control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue());
             break;
         }
@@ -419,11 +391,11 @@ std::string Ds9Exporter::AddExportRegionWorld(CARTA::RegionType region_type, con
         case CARTA::RegionType::ANNPOLYGON:
         case CARTA::RegionType::ANNRULER: {
             // region_name(x1,y1,x2,y2,...)
-            region_line = fmt::format("{}({:.9f}", _region_names[region_type], control_points[0].get("deg").getValue());
+            file_line = fmt::format("{}({:.9f}", _region_names[region_type], control_points[0].get("deg").getValue());
             for (size_t i = 1; i < control_points.size(); ++i) {
-                region_line += fmt::format(", {:.9f}", control_points[i].get("deg").getValue());
+                file_line += fmt::format(", {:.9f}", control_points[i].get("deg").getValue());
             }
-            region_line += ")";
+            file_line += ")";
             break;
         }
         case CARTA::RegionType::ANNVECTOR: {
@@ -444,7 +416,7 @@ std::string Ds9Exporter::AddExportRegionWorld(CARTA::RegionType region_type, con
                     auto mvdir1 = _coord_sys->directionCoordinate().toWorld(point1_pix);
                     auto length = mvdir0.separation(mvdir1, "arcsec").getValue();
                     auto angle = atan2((point1_pix[1] - point0_pix[1]), (point1_pix[0] - point0_pix[0])) * 180.0 / M_PI;
-                    region_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f})", _region_names[region_type], x0, y0, length, angle);
+                    file_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f})", _region_names[region_type], x0, y0, length, angle);
                 }
             }
             break;
@@ -453,24 +425,25 @@ std::string Ds9Exporter::AddExportRegionWorld(CARTA::RegionType region_type, con
             break;
     }
 
-    return region_line;
+    return file_line;
 }
 
-void Ds9Exporter::ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
-    // Add common region style properties from RegionStyle to line string
-    if (region_line[0] != '#') {
-        region_line.append(" #");
+void Ds9Exporter::AddStyle(const CARTA::RegionStyle& region_style, std::string& file_line) {
+    if (file_line[0] != '#') {
+        file_line.append(" #");
     }
-    region_line.append(" color=" + FormatColor(region_style.color()));
-    region_line.append(" width=" + std::to_string(region_style.line_width()));
+    file_line.append(" color=" + FormatColor(region_style.color()));
+    file_line.append(" width=" + std::to_string(region_style.line_width()));
 
-    bool is_text_region = region_line.find("text") != std::string::npos;
-    bool region_has_font = is_text_region || region_line.find("compass") != std::string::npos;
+    bool is_text_region = file_line.find("text") != std::string::npos;
+    bool region_has_font = is_text_region || file_line.find("compass") != std::string::npos;
+
+    // Region name as 'text' if not text region, and font style for regions with font
     if (!region_style.name().empty() && !is_text_region) {
-        region_line.append(" text={" + region_style.name() + "}");
-        ExportFontParameters(region_style, region_line);
+        file_line.append(" text={" + region_style.name() + "}");
+        AddFontStyle(region_style, file_line);
     } else if (region_has_font) {
-        ExportFontParameters(region_style, region_line);
+        AddFontStyle(region_style, file_line);
     }
 
     // dash list for enclosed regions
@@ -478,23 +451,23 @@ void Ds9Exporter::ExportStyleParameters(const CARTA::RegionStyle& region_style, 
         auto dash_on = region_style.dash_list(0);
         auto dash_off = region_style.dash_list_size() == 2 ? region_style.dash_list(1) : dash_on;
         auto dash_list = fmt::format(" dash=1 dashlist={} {}", dash_on, dash_off);
-        region_line.append(dash_list);
+        file_line.append(dash_list);
     }
 }
 
-void Ds9Exporter::ExportTextboxStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
-    // Add region name and alignment
+void Ds9Exporter::AddTextboxStyle(const CARTA::RegionStyle& region_style, std::string& file_line) {
     if (!region_style.name().empty()) {
-        region_line += fmt::format(" text={{{}}}", region_style.name());
+        file_line += fmt::format(" text={{{}}}", region_style.name());
     }
-    region_line += fmt::format(" align={}\n", text_positions[region_style.annotation_style().text_position()]);
+    file_line += fmt::format(" align={}\n", text_positions[region_style.annotation_style().text_position()]);
 }
 
-void Ds9Exporter::ExportFontParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
+void Ds9Exporter::AddFontStyle(const CARTA::RegionStyle& region_style, std::string& file_line) {
     if (!region_style.has_annotation_style()) {
         return;
     }
 
+    // Use defaults if not in annotation style parameters
     auto font = region_style.annotation_style().font();
     if (font.empty()) {
         font = "helvetica";
@@ -503,9 +476,7 @@ void Ds9Exporter::ExportFontParameters(const CARTA::RegionStyle& region_style, s
     }
 
     auto font_size = region_style.annotation_style().font_size();
-    if (font_size == 0) {
-        font_size = 10;
-    }
+    font_size = (font_size == 0 ? 10 : font_size);
 
     auto font_style = region_style.annotation_style().font_style();
     std::unordered_map<std::string, std::string> font_map = {{"", "normal roman"}, {"Normal", "normal roman"}, {"Bold", "bold roman"},
@@ -516,41 +487,40 @@ void Ds9Exporter::ExportFontParameters(const CARTA::RegionStyle& region_style, s
         font_style = font_map[font_style];
     }
 
-    region_line += fmt::format(" font=\"{} {} {}\"", font, font_size, font_style);
+    file_line += fmt::format(" font=\"{} {} {}\"", font, font_size, font_style);
 }
 
-void Ds9Exporter::ExportAnnotationStyleParameters(
-    CARTA::RegionType region_type, const CARTA::RegionStyle& region_style, std::string& region_line) {
+void Ds9Exporter::AddAnnotationStyle(CARTA::RegionType region_type, const CARTA::RegionStyle& region_style, std::string& file_line) {
     if (!region_style.has_annotation_style()) {
         return;
     }
 
     switch (region_type) {
         case CARTA::RegionType::ANNPOINT: {
-            ExportAnnPointParameters(region_style, region_line);
+            AddAnnPointStyle(region_style, file_line);
             break;
         }
         case CARTA::RegionType::ANNLINE: {
             // line has no arrows
-            region_line += " line=0 0";
+            file_line += " line=0 0";
             break;
         }
         case CARTA::RegionType::ANNVECTOR: {
             // by definition, vector has arrow
-            region_line += " vector=1";
+            file_line += " vector=1";
             break;
         }
         case CARTA::RegionType::ANNRULER: {
-            std::string unit = (_image_ref_frame == "image" || _image_ref_frame == "linear" ? "image" : "degrees");
-            region_line += fmt::format(" ruler={} {}", _image_ref_frame, unit);
+            std::string unit = (_image_coord_frame == "image" || _image_coord_frame == "linear" ? "image" : "degrees");
+            file_line += fmt::format(" ruler={} {}", _image_coord_frame, unit);
             break;
         }
         case CARTA::RegionType::ANNTEXT: {
-            region_line += fmt::format(" text={{{}}}", region_style.annotation_style().text_label0());
+            file_line += fmt::format(" text={{{}}}", region_style.annotation_style().text_label0());
             break;
         }
         case CARTA::RegionType::ANNCOMPASS: {
-            ExportAnnCompassStyle(region_style, _image_ref_frame, region_line);
+            AddCompassStyle(region_style, _image_coord_frame, file_line);
             break;
         }
         default:
@@ -558,58 +528,58 @@ void Ds9Exporter::ExportAnnotationStyleParameters(
     }
 }
 
-void Ds9Exporter::ExportAnnPointParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
-    std::string point_shape("circle");
-    bool fill(true);
+void Ds9Exporter::AddAnnPointStyle(const CARTA::RegionStyle& region_style, std::string& file_line) {
+    auto point_shape = region_style.annotation_style().point_shape();
+    auto point_size = region_style.annotation_style().point_width();
 
-    switch (region_style.annotation_style().point_shape()) {
+    std::string shape("circle");
+    bool fill(true);
+    switch (point_shape) {
         case CARTA::PointAnnotationShape::SQUARE: {
-            point_shape = "box";
+            shape = "box";
             break;
         }
         case CARTA::PointAnnotationShape::BOX: {
-            point_shape = "box";
+            shape = "box";
             fill = false;
             break;
         }
         case CARTA::PointAnnotationShape::CIRCLE: {
-            point_shape = "circle";
+            shape = "circle";
             break;
         }
         case CARTA::PointAnnotationShape::CIRCLE_LINED: {
-            point_shape = "circle";
+            shape = "circle";
             fill = false;
             break;
         }
         case CARTA::PointAnnotationShape::DIAMOND: {
-            point_shape = "diamond";
+            shape = "diamond";
             break;
         }
         case CARTA::PointAnnotationShape::DIAMOND_LINED: {
-            point_shape = "diamond";
+            shape = "diamond";
             fill = false;
             break;
         }
         case CARTA::PointAnnotationShape::CROSS: {
-            point_shape = "cross";
+            shape = "cross";
             fill = false;
             break;
         }
         case CARTA::PointAnnotationShape::X: {
-            point_shape = "x";
+            shape = "x";
             fill = false;
             break;
         }
         default: {
-            point_shape = "box";
             break;
         }
     }
 
-    auto point_size = region_style.annotation_style().point_width();
-    region_line += fmt::format(" point={} {}", point_shape, point_size);
+    file_line += fmt::format(" point={} {}", shape, point_size);
 
     if (fill) {
-        region_line += " fill=1";
+        file_line += " fill=1";
     }
 }
