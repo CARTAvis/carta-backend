@@ -64,23 +64,21 @@ struct Tile {
      * @param image_height The height of the full-resolution image.
      * @param tile_width The width of a tile in pixels.
      * @param tile_height The height of a tile in pixels.
-     * @param error A reference to a boolean that will be set to true if an error occurs.
      * @return The mip size corresponding to the given layer.
      */
-    static int32_t LayerToMip(
-        int32_t layer, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height, bool error = false) {
+    static int32_t LayerToMip(int32_t layer, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height) {
         if (image_width <= 0 || image_height <= 0 || tile_width <= 0 || tile_height <= 0 || layer < 0) {
-            error = true; // Invalid input
+            return -1; // Invalid input
         }
         double total_tiles_x = ceil((double)(image_width) / tile_width);
         double total_tiles_y = ceil((double)(image_height) / tile_height);
         double max_mip = std::max(total_tiles_x, total_tiles_y);
         if (max_mip < 1) {
-            error = true; // No tiles
+            return -1; // No tiles
         }
         double total_layers = ceil(log2(max_mip));
         if (layer > total_layers) {
-            error = true; // Layer out of range
+            return -1; // Layer out of range
         }
         return (int32_t)pow(2.0, total_layers - layer);
     }
