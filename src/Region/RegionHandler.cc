@@ -24,6 +24,7 @@
 #include "Timer/Timer.h"
 #include "Util/File.h"
 #include "Util/Image.h"
+#include "Util/Nan.h"
 
 #define LINE_PROFILE_PROGRESS_INTERVAL 500
 
@@ -1687,7 +1688,7 @@ bool RegionHandler::GetRegionHistogramData(
             // region outside image, send default histogram
             auto* default_histogram = histogram_message.mutable_histograms();
             std::vector<int> histogram_bins(1, 0);
-            FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, NAN, NAN);
+            FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, DOUBLE_NAN, DOUBLE_NAN);
             continue;
         }
 
@@ -1858,7 +1859,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     // Initialize results map for requested stats to NaN, progress to zero
     size_t profile_end = z_range.to;
     size_t profile_size = z_range.to - z_range.from + 1;
-    std::vector<double> init_spectral(profile_size, nan(""));
+    std::vector<double> init_spectral(profile_size, DOUBLE_NAN);
     std::map<CARTA::StatsType, std::vector<double>> results;
     for (const auto& stat : required_stats) {
         results[stat] = init_spectral;
@@ -2223,7 +2224,7 @@ bool RegionHandler::GetRegionStatsData(
             if (carta_stat == CARTA::StatsType::NumPixels) {
                 stats_results[carta_stat] = 0.0;
             } else {
-                stats_results[carta_stat] = nan("");
+                stats_results[carta_stat] = DOUBLE_NAN;
             }
         }
         FillStatistics(stats_message, required_stats, stats_results);
@@ -2542,7 +2543,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         }
     }
 
-    return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, NAN);
+    return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, FLOAT_NAN);
 }
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {
@@ -2569,7 +2570,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
 
     // Initialize return values
     auto profile_size = per_z ? (z_range.to - z_range.from + 1) : 1;
-    casacore::Vector<float> profile(profile_size, NAN);
+    casacore::Vector<float> profile(profile_size, FLOAT_NAN);
     num_pixels = 0.0;
 
     if (!region_state.RegionDefined()) {
@@ -2681,7 +2682,7 @@ void RegionHandler::GetStokesPlinear(const ProfilesMap& profiles_q, const Profil
 void RegionHandler::GetStokesPflinear(
     const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pflinear) {
     auto calc_pi = [&](double q, double u) { return std::sqrt(std::pow(q, 2) + std::pow(u, 2)); };
-    auto calc_fpi = [&](double i, double pi) { return (IsValid(i, pi) ? 100.0 * (pi / i) : std::numeric_limits<double>::quiet_NaN()); };
+    auto calc_fpi = [&](double i, double pi) { return (IsValid(i, pi) ? 100.0 * (pi / i) : DOUBLE_NAN); };
 
     CombineStokes(profiles_pflinear, profiles_q, profiles_u, calc_pi);
     CombineStokes(profiles_pflinear, profiles_i, calc_fpi);
@@ -2695,7 +2696,7 @@ void RegionHandler::GetStokesPangle(const ProfilesMap& profiles_q, const Profile
 
 void RegionHandler::CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
     const std::function<double(double, double)>& func) {
-    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : std::numeric_limits<double>::quiet_NaN()); };
+    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : DOUBLE_NAN); };
 
     for (auto stats_q : profiles_q) {
         for (auto stats_u : profiles_u) {
@@ -2710,7 +2711,7 @@ void RegionHandler::CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& 
 
 void RegionHandler::CombineStokes(
     ProfilesMap& profiles_out, const ProfilesMap& profiles_other, const std::function<double(double, double)>& func) {
-    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : std::numeric_limits<double>::quiet_NaN()); };
+    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : DOUBLE_NAN); };
 
     for (auto stats_out : profiles_out) {
         for (auto stats_other : profiles_other) {

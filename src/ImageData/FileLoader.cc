@@ -13,6 +13,7 @@
 
 #include "Logger/Logger.h"
 #include "Util/File.h"
+#include "Util/Nan.h"
 
 #include "CasaLoader.h"
 #include "CompListLoader.h"
@@ -365,7 +366,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
                     casacore::Array<bool>::iterator mask_data_iter = mask_data.begin();
                     for (; slice_data_iter != slice_data.end(); ++slice_data_iter, ++mask_data_iter) {
                         if (!*mask_data_iter) {
-                            *slice_data_iter = NAN;
+                            *slice_data_iter = FLOAT_NAN;
                         }
                     }
                 }
@@ -401,7 +402,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
 
                 for (size_t i = 0; i < cursor_data.nelements(); ++i) {
                     if (!pCursorMask[i]) {
-                        pMaskedData[i] = NAN;
+                        pMaskedData[i] = FLOAT_NAN;
                     }
                 }
 
@@ -911,7 +912,7 @@ std::string FileLoader::GetFileName() {
 double FileLoader::CalculateBeamArea() {
     auto image = GetImage();
     if (!image) {
-        return NAN;
+        return DOUBLE_NAN;
     }
 
     auto& info = image->imageInfo();
@@ -919,7 +920,7 @@ double FileLoader::CalculateBeamArea() {
     CloseImageIfUpdated();
 
     if (!info.hasSingleBeam() || !_coord_sys->hasDirectionCoordinate()) {
-        return NAN;
+        return DOUBLE_NAN;
     }
 
     return info.getBeamAreaInPixels(-1, -1, _coord_sys->directionCoordinate());

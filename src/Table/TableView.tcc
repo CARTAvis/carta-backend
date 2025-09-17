@@ -7,8 +7,6 @@
 #ifndef CARTA_SRC_TABLE_TABLEVIEW_TCC_
 #define CARTA_SRC_TABLE_TABLEVIEW_TCC_
 
-#include "TableView.h"
-
 namespace carta {
 
 template <class T>

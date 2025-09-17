@@ -16,11 +16,12 @@
 #include "AnimationObject.h"
 #include "Session.h"
 #include "SessionManager.h"
+#include "ThreadManager/ThreadManager.h"
 #include "Util/Message.h"
 
 namespace carta {
 
-class OnMessageTask {
+class OnMessageTask : public Task {
 private:
     static std::shared_ptr<SessionManager> _session_manager;
 
@@ -44,37 +45,33 @@ public:
     static void SetSessionManager(shared_ptr<SessionManager>& session_manager) {
         _session_manager = session_manager;
     }
-    virtual OnMessageTask* execute() = 0;
 };
 
 class SetImageChannelsTask : public OnMessageTask {
     int _file_id;
-    OnMessageTask* execute() override;
+    void execute() override;
 
 public:
     SetImageChannelsTask(Session* session, int file_id) : OnMessageTask(session), _file_id(file_id) {}
-    ~SetImageChannelsTask() = default;
 };
 
 class SetCursorTask : public OnMessageTask {
     int _file_id;
-    OnMessageTask* execute() override;
+    void execute() override;
 
 public:
     SetCursorTask(Session* session, int file_id) : OnMessageTask(session), _file_id(file_id) {}
-    ~SetCursorTask() = default;
 };
 
 class AnimationTask : public OnMessageTask {
-    OnMessageTask* execute() override;
+    void execute() override;
 
 public:
     AnimationTask(Session* session) : OnMessageTask(session) {}
-    ~AnimationTask() = default;
 };
 
 class StartAnimationTask : public OnMessageTask {
-    OnMessageTask* execute() override;
+    void execute() override;
     CARTA::StartAnimation _msg;
     int _msg_id;
 
@@ -83,37 +80,33 @@ public:
         _msg = msg;
         _msg_id = id;
     }
-    ~StartAnimationTask() = default;
 };
 
 class RegionDataStreamsTask : public OnMessageTask {
-    OnMessageTask* execute() override;
+    void execute() override;
     int _file_id, _region_id;
 
 public:
     RegionDataStreamsTask(Session* session, int file_id, int region_id)
         : OnMessageTask(session), _file_id(file_id), _region_id(region_id) {}
-    ~RegionDataStreamsTask() = default;
 };
 
 class SpectralProfileTask : public OnMessageTask {
-    OnMessageTask* execute() override;
+    void execute() override;
     int _file_id, _region_id;
 
 public:
     SpectralProfileTask(Session* session, int file_id, int region_id) : OnMessageTask(session), _file_id(file_id), _region_id(region_id) {}
-    ~SpectralProfileTask() = default;
 };
 
 class PvPreviewUpdateTask : public OnMessageTask {
-    OnMessageTask* execute() override;
+    void execute() override;
     int _file_id, _region_id;
     bool _preview_region;
 
 public:
     PvPreviewUpdateTask(Session* session, int file_id, int region_id, bool preview_region)
         : OnMessageTask(session), _file_id(file_id), _region_id(region_id), _preview_region(preview_region) {}
-    ~PvPreviewUpdateTask() = default;
 };
 
 } // namespace carta

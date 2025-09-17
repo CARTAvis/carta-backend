@@ -8,6 +8,7 @@
 #define CARTA_SRC_IMAGESTATS_BASICSTATSCALCULATOR_TCC_
 
 #include "Logger/Logger.h"
+#include "Util/Nan.h"
 
 #include <cmath>
 
@@ -22,7 +23,7 @@ void BasicStats<T>::join(BasicStats<T>& other) {
         min_val = std::min(min_val, other.min_val);
         max_val = std::max(max_val, other.max_val);
         mean = sum / num_pixels;
-        stdDev = num_pixels > 1 ? sqrt((sumSq - (sum * sum / num_pixels)) / (num_pixels - 1)) : NAN;
+        stdDev = num_pixels > 1 ? sqrt((sumSq - (sum * sum / num_pixels)) / (num_pixels - 1)) : DOUBLE_NAN;
         rms = sqrt(sumSq / num_pixels);
     }
 }
@@ -89,12 +90,12 @@ BasicStats<T> BasicStatsCalculator<T>::GetStats() const {
 
     if (_num_pixels > 0) {
         mean = _sum / _num_pixels;
-        stdDev = _num_pixels > 1 ? sqrt((_sum_squares - (_sum * _sum / _num_pixels)) / (_num_pixels - 1)) : NAN;
+        stdDev = _num_pixels > 1 ? sqrt((_sum_squares - (_sum * _sum / _num_pixels)) / (_num_pixels - 1)) : DOUBLE_NAN;
         rms = sqrt(_sum_squares / _num_pixels);
     } else {
-        mean = NAN;
-        stdDev = NAN;
-        rms = NAN;
+        mean = DOUBLE_NAN;
+        stdDev = DOUBLE_NAN;
+        rms = DOUBLE_NAN;
     }
 
     return BasicStats<T>{_num_pixels, _sum, mean, stdDev, _min_val, _max_val, rms, _sum_squares};

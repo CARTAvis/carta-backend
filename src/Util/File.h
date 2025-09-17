@@ -25,6 +25,30 @@
 #define TEMP_FILE_ID -100
 
 /**
+ * @brief Validates and resolves folder paths, ensuring the starting directory is within the top-level directory.
+ *
+ * @param[in,out] top_level_string Reference to the top-level directory path.
+ *                                  It is updated to its resolved absolute path.
+ * @param[in,out] starting_string Reference to the starting directory path.
+ *                                  It is updated to its resolved absolute path.
+ *
+ * @return `true` if the paths are valid and the starting directory is within the top-level directory,
+ *         otherwise `false`.
+ */
+bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
+
+/**
+ * @brief Determines whether a given folder is a subdirectory of a specified top-level folder.
+ *
+ * @param[in] folder The folder path to check, represented as a string.
+ * @param[in] top_folder The top-level folder path to compare against, represented as a string.
+ *
+ * @return `true` if `folder` is a subdirectory of `top_folder` or the same directory,
+ *         `false` otherwise.
+ */
+bool IsSubdirectory(std::string folder, std::string top_folder);
+
+/**
  * @brief Determines the image file type based on its content or extension.
  *
  * @param[in] path_string The path to the image file to be identified.

@@ -24,12 +24,6 @@ namespace carta {
 #define HTTP_500 "500 Internal Server Error"
 #define HTTP_501 "501 Not Implemented"
 
-// Schema URLs
-#define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preferences_schema_2.json"
-#define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
-#define CARTA_SNIPPET_SCHEMA_URL "https://cartavis.github.io/schemas/snippet_schema_1.json"
-#define CARTA_WORKSPACE_SCHEMA_URL "https://cartavis.github.io/schemas/workspace_schema_1.json"
-
 typedef uWS::HttpRequest Req;
 typedef uWS::HttpResponse<false> Res;
 typedef std::function<bool(int&, uint32_t&, std::string&, std::string&, std::string&, bool&, std::string&, ScriptingResponseCallback,
@@ -53,6 +47,7 @@ protected:
     std::string_view UpdatePreferencesFromString(const std::string& buffer);
     std::string_view ClearPreferencesFromString(const std::string& buffer);
     nlohmann::json GetExistingObjectList(const std::string& object_type);
+    nlohmann::json GetObjectFromPath(const fs::path& path, const std::string& object_type);
     nlohmann::json GetExistingObjects(const std::string& object_type);
     nlohmann::json GetExistingObject(const std::string& object_type, const std::string& object_name);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
@@ -69,7 +64,12 @@ private:
     void AddNoCacheHeaders(Res* res);
     void AddCorsHeaders(Res* res);
 
+    void NormalisePreferences(nlohmann::json& obj);
+    bool ValidatePreferences(nlohmann::json& obj);
+    bool ValidateObject(const std::string& object_type, nlohmann::json& obj);
+
     bool WritePreferencesFile(nlohmann::json& obj);
+    void WritePreferencesBackup();
     bool WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj);
     void WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback);
 

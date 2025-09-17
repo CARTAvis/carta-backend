@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
-#define CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
+#ifndef CARTA_SRC_IMAGEFITTING_IMAGEFITTER_H_
+#define CARTA_SRC_IMAGEFITTING_IMAGEFITTER_H_
 
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multifit_nlinear.h>
@@ -19,32 +19,12 @@
 #include <casacore/images/Images/TempImage.h>
 #include <imageanalysis/ImageTypedefs.h>
 
+#include "ImageFitting/InitialValueCalculator.h"
+#include "ImageFitting/Util.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 
 namespace carta {
-
-/** @brief Data structure for storing fitting-related data. */
-struct FitData {
-    /** @brief Pointer to the image data. */
-    float* data;
-    /** @brief The width of the image. */
-    size_t width;
-    /** @brief Number of pixels. */
-    size_t n;
-    /** @brief Number of pixels excluding nan pixels. */
-    size_t n_notnan;
-    /** @brief X-axis offset from the fitting region to the entire image. */
-    size_t offset_x;
-    /** @brief Y-axis offset from the fitting region to the entire image. */
-    size_t offset_y;
-    /** @brief Indexes of the Gaussian parameters in the fittig parameters. */
-    std::vector<int> fit_values_indexes;
-    /** @brief Initial fitting parameters. */
-    std::vector<double> initial_values;
-    /** @brief Whether to stop the fitting process. */
-    bool stop_fitting;
-};
 
 /** @brief Data structure for storing status of the fitting result. */
 struct FitStatus {
@@ -70,7 +50,7 @@ public:
      * @param image Pointer to the image data
      * @param beam_size Beam size of the image
      * @param unit Unit of the image
-     * @param initial_values Initial fitting parameters
+     * @param initial_values Initial values of the fixed and unfixed Gaussian parameters
      * @param fixed_params Whether the fitting parameters are fixed
      * @param background_offset Background offset of the image
      * @param solver The type of solver to use.
@@ -83,7 +63,7 @@ public:
      * @return Whether the fitting is successful
      */
     bool FitImage(size_t width, size_t height, float* image, double beam_size, string unit,
-        const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
+        std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
         CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
         GeneratorProgressCallback progress_callback, size_t offset_x = 0, size_t offset_y = 0);
     /**
@@ -146,13 +126,14 @@ private:
      * @param initial_values Initial fitting parameters
      * @param background_offset Background offset of the image
      * @param fixed_params Whether the fitting parameters are fixed
+     * @return Whether all parameters are valid
      */
-    void SetInitialValues(
+    bool SetInitialValues(
         const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params);
     /**
      * @brief Main function for the multiple Gaussian image fitting.
      * @param solver The type of solver to use
-     * @return The status of the fitting
+     * @return The status of the fitting: zero for success or non-zero for error codes
      */
     int SolveSystem(CARTA::FittingSolverType solver);
     /** @brief Calculate parameter errors after fitting. */
@@ -220,25 +201,20 @@ private:
      * @param initial_values Initial fitting parameter
      * @param offset_x X-axis offset from the fitting region to the entire image
      * @param offset_y Y-axis offset from the fitting region to the entire image
-     * @return A tuple of Gaussian parameters
+     * @return Gaussian parameters including center x, center y, amplitude, FWHM x, FWHM y, and position angle
      */
-    static std::tuple<double, double, double, double, double, double> GetGaussianParams(const gsl_vector* value_vector, size_t index,
-        std::vector<int>& fit_values_indexes, std::vector<double>& initial_values, size_t offset_x = 0, size_t offset_y = 0);
-    /**
-     * @brief Create a Gaussian component sub-message from Gaussian parameters.
-     * @param params Tuple containing Gaussian parameters
-     * @return A Gaussian component sub-message
-     */
-    static CARTA::GaussianComponent GetGaussianComponent(std::tuple<double, double, double, double, double, double> params);
+    static GaussianParams GetGaussianParams(const gsl_vector* value_vector, size_t index, std::vector<int>& fit_values_indexes,
+        std::vector<double>& initial_values, size_t offset_x = 0, size_t offset_y = 0);
+
     /**
      * @brief Calculate the Median Absolute Deviation (MAD) of an array of data.
-     * @param n The number of data points in the array.
-     * @param x An array containing the data points.
-     * @return The calculated MAD.
+     * @param n The number of data points in the array
+     * @param x An array containing the data points
+     * @return The calculated MAD
      */
     static double GetMedianAbsDeviation(const size_t n, double x[]);
 };
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
+#endif // CARTA_SRC_IMAGEFITTING_IMAGEFITTER_H_

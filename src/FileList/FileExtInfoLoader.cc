@@ -948,7 +948,11 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     casacore::ImageInfo image_info = image->imageInfo();
     if (image_info.hasBeam()) {
         const casacore::ImageBeamSet beam_set = image_info.getBeamSet();
-        AddBeamEntry(extended_info, beam_set, is_history_beam);
+        casacore::Vector<casacore::String> stokes_names;
+        if (image->coordinates().hasPolarizationAxis()) {
+            stokes_names = image->coordinates().stokesCoordinate().stokesStrings();
+        }
+        AddBeamEntry(extended_info, beam_set, stokes_names, is_history_beam);
     }
 
     AddCoordRanges(extended_info, image->coordinates(), image->shape());
@@ -1278,7 +1282,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         bool is_history_beam(false);
         const casacore::ImageBeamSet beam_set = compressed_fits->GetBeamSet(is_history_beam);
         if (!beam_set.empty()) {
-            AddBeamEntry(extended_info, beam_set, is_history_beam);
+            casacore::Vector<casacore::String> stokes_names;
+            if (coordsys.hasPolarizationAxis()) {
+                stokes_names = coordsys.stokesCoordinate().stokesStrings();
+            }
+            AddBeamEntry(extended_info, beam_set, stokes_names, is_history_beam);
             if (is_history_beam) {
                 // For logging
                 _loader->SetHistoryBeam(beam_set.getBeam());
@@ -1289,18 +1297,68 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
     }
 }
 
-void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set, bool is_history_beam) {
-    // Add restoring/median beam to computed entries.
-    casacore::GaussianBeam gaussian_beam;
+void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set,
+    const casacore::Vector<casacore::String>& stokes_names, bool is_history_beam) {
+    // Add restoring or median beam to computed entries.
+    casacore::GaussianBeam gaussian_beam, min_beam, max_beam;
     std::string entry_name;
+
     if (beam_set.hasSingleBeam()) {
         gaussian_beam = beam_set.getBeam();
         entry_name = "Restoring beam";
+        AddBeamEntry(extended_info, gaussian_beam, entry_name, is_history_beam);
     } else if (beam_set.hasMultiBeam()) {
-        gaussian_beam = beam_set.getMedianAreaBeam();
-        entry_name = "Median area beam";
-    }
+        unsigned int n_chan(beam_set.nchan()), n_stokes(beam_set.nstokes());
+        entry_name = n_chan > 1 ? "Median area beam" : "Restoring beam";
+        std::string stokes_name;
 
+        if (n_stokes == 1) {
+            // If multi beams and n_stokes==1, then n_chan > 1 so get median beam.
+            // Do not append Stokes name to entry name.
+            gaussian_beam = beam_set.getMedianAreaBeam();
+            min_beam = beam_set.getMinAreaBeam();
+            max_beam = beam_set.getMaxAreaBeam();
+            if (gaussian_beam == min_beam && gaussian_beam == max_beam) {
+                // Same across channels
+                entry_name = "Restoring beam";
+            }
+
+            AddBeamEntry(extended_info, gaussian_beam, entry_name, is_history_beam);
+        } else {
+            // Add entry for each Stokes unless all the same.  Keep in original order with vector.
+            std::vector<std::pair<std::string, casacore::GaussianBeam>> beam_list;
+            for (unsigned int i = 0; i < n_stokes; ++i) {
+                // Append Stokes name to entry name
+                if (stokes_names.empty()) {
+                    stokes_name = std::to_string(i);
+                } else {
+                    stokes_name = stokes_names(i);
+                }
+                std::string stokes_entry_name = entry_name + " (Stokes " + stokes_name + ")";
+
+                if (n_chan > 1) {
+                    // Median beam for stokes i.
+                    casacore::IPosition beam_pos; // position of median beam in beam set, not required here.
+                    gaussian_beam = beam_set.getMedianAreaBeamForPol(beam_pos, i);
+                    min_beam = beam_set.getMinAreaBeamForPol(beam_pos, i);
+                    max_beam = beam_set.getMaxAreaBeamForPol(beam_pos, i);
+                    if (gaussian_beam == min_beam && gaussian_beam == max_beam) {
+                        // Same across channels
+                        stokes_entry_name = "Restoring beam (Stokes " + stokes_name + ")";
+                    }
+                } else {
+                    // Get beam for channel 0, stokes i
+                    gaussian_beam = beam_set.getBeam(0, i);
+                }
+                beam_list.push_back(std::make_pair(stokes_entry_name, gaussian_beam));
+            }
+            AddStokesBeamEntries(extended_info, beam_list, is_history_beam);
+        }
+    }
+}
+
+void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::GaussianBeam& gaussian_beam,
+    const std::string& entry_name, bool is_history_beam) {
     if (!gaussian_beam.isNull()) {
         casacore::Quantity major = gaussian_beam.getMajor();
         casacore::Quantity minor = gaussian_beam.getMinor();
@@ -1343,6 +1401,31 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
             header_entry->set_value(fmt::format("{:E}", pa));
             header_entry->set_numeric_value(pa);
             header_entry->set_comment("extracted from HISTORY");
+        }
+    }
+}
+
+void FileExtInfoLoader::AddStokesBeamEntries(
+    CARTA::FileInfoExtended& extended_info, std::vector<std::pair<std::string, casacore::GaussianBeam>>& beam_list, bool is_history_beam) {
+    // Add entry for each Stokes beam or single entry for all Stokes beams if identical
+    bool beams_identical(true);
+    casacore::GaussianBeam gaussian_beam;
+    for (auto& beam : beam_list) {
+        if (gaussian_beam.isNull()) {
+            gaussian_beam = beam.second;
+        } else if (gaussian_beam != beam.second) {
+            beams_identical = false;
+            break;
+        }
+    }
+
+    if (beams_identical) {
+        auto first_entry_name = beam_list[0].first;
+        std::string entry_name = first_entry_name.substr(0, first_entry_name.find(" (")); // Remove " (Stokes X)"
+        AddBeamEntry(extended_info, gaussian_beam, entry_name, is_history_beam);
+    } else {
+        for (auto& beam : beam_list) {
+            AddBeamEntry(extended_info, beam.second, beam.first, is_history_beam);
         }
     }
 }
