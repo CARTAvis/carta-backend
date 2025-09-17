@@ -234,7 +234,8 @@ protected:
 
     // Downsampled data from image cache if current z
     bool GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
-    bool GetRasterTileData(int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error);
+    bool GetRasterTileData(
+        int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error);
 
     // Fill vector for given z and stokes
     void GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes);

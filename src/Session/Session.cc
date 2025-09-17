@@ -726,8 +726,8 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
                 if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, requested_z, stokes,
                                                   compression_type, compression_quality, is_current_z, tile_error)) {
                     if (tile_error) {
-                        SendLogEvent(
-                            fmt::format("Invalid mip calculation: channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y, tile.layer),
+                        SendLogEvent(fmt::format("Invalid mip calculation: channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y,
+                                         tile.layer),
                             {"invalid mip calculation"}, CARTA::ErrorSeverity::WARNING);
                     }
                     // Only use deflate on outgoing message if the raster image compression type is NONE

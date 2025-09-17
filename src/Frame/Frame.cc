@@ -583,7 +583,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     return false;
 }
 
-bool Frame::GetRasterTileData(int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error) {
+bool Frame::GetRasterTileData(
+    int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error) {
     int mip = Tile::LayerToMip(tile.layer, _dims.width, _dims.height, TILE_SIZE, TILE_SIZE);
     if (mip == -1) {
         spdlog::error("Invalid tile layer {} for image size {}x{}.", tile.layer, _dims.width, _dims.height);
