@@ -725,7 +725,6 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
                 bool tile_error(false);
                 if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, requested_z, stokes,
                                                   compression_type, compression_quality, is_current_z, tile_error)) {
-                    
                     // Only use deflate on outgoing message if the raster image compression type is NONE
                     SendFileEvent(
                         file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
