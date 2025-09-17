@@ -140,12 +140,12 @@ Node PolarizationCalculator::PlinearNode() {
 
 
 Node PolarizationCalculator::PFtotalNode() {
-    return 100.0 * TotalPolarizedIntensityNode() / (*_component_images[Pol::I]);
+    return 100.0 * PtotalNode() / (*_component_images[Pol::I]);
 }
 
 
 Node PolarizationCalculator::PFlinearNode() {
-    return 100.0 * PolarizedIntensityNode() / (*_component_images[Pol::I]);
+    return 100.0 * PlinearNode() / (*_component_images[Pol::I]);
 }
 
 
