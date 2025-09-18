@@ -198,6 +198,21 @@ std::vector<float> FitsDataReader::ReadRegion(std::vector<hsize_t> start, std::v
     return result;
 }
 
+float FitsDataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({x, y, channel, stokes}, {x + 1, y + 1, channel + 1, stokes + 1})[0];
+}
+
+std::vector<float> FitsDataReader::ReadProfileX(hsize_t y, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({0, y, channel, stokes}, {_width, y + 1, channel + 1, stokes + 1});
+}
+
+std::vector<float> FitsDataReader::ReadProfileY(hsize_t x, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({x, 0, channel, stokes}, {x + 1, _height, channel + 1, stokes + 1});
+}
+
+std::vector<float> FitsDataReader::ReadXY(hsize_t channel, hsize_t stokes) {
+    return ReadRegion({0, 0, channel, stokes}, {_width, _height, channel + 1, stokes + 1});
+}
 
 Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
     _imgfile = H5::H5File(imgpath, H5F_ACC_RDONLY);

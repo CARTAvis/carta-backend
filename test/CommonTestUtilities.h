@@ -46,7 +46,7 @@ public:
 
     virtual std::vector<float> ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) = 0;
     virtual float ReadPointXY(hsize_t x, hsize_t y, hsize_t channel = 0, hsize_t stokes = 0) = 0;
-    std::vector<float> ReadProfileX(hsize_t y, hsize_t channel = 0, hsize_t stokes = 0);
+    virtual std::vector<float> ReadProfileX(hsize_t y, hsize_t channel = 0, hsize_t stokes = 0) = 0;
     virtual std::vector<float> ReadProfileY(hsize_t x, hsize_t channel = 0, hsize_t stokes = 0) = 0;
     virtual std::vector<float> ReadXY(hsize_t channel = 0, hsize_t stokes = 0) = 0;
     hsize_t Width();
