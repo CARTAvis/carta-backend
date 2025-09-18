@@ -51,7 +51,7 @@ public:
         auto histogram_req_message = Message::SetHistogramRequirements(file_id, region_id);
         std::vector<CARTA::HistogramConfig> histogram_configs = {
             histogram_req_message.histograms().begin(), histogram_req_message.histograms().end()};
-        if (!region_handler.SetHistogramRequirements(region_id, file_id, frame, histogram_configs)) {
+        if (!region_handler.SetHistogramConfigs(region_id, file_id, frame, histogram_configs)) {
             return false;
         }
 

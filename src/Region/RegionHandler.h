@@ -17,6 +17,7 @@
 #include "ImageGenerators/PvPreviewCube.h"
 #include "ImageGenerators/PvPreviewCut.h"
 #include "Region.h"
+#include "RegionAnalysis/RegionHistogram.h"
 
 namespace carta {
 
@@ -48,8 +49,7 @@ public:
     void RemoveFrame(int file_id);
 
     // Requirements
-    bool SetHistogramRequirements(
-        int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::HistogramConfig>& configs);
+    bool SetHistogramConfigs(int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::HistogramConfig>& configs);
     bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
@@ -58,8 +58,7 @@ public:
         const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
 
     // Calculations
-    bool FillRegionHistogramData(
-        std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
+    bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> callback, int region_id, int file_id);
     bool FillSpectralProfileData(
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
@@ -183,8 +182,10 @@ private:
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
+    // Region analysis
+    std::unordered_map<int, std::unique_ptr<RegionHistogram>> _region_histograms;
+
     // Requirements; ConfigId key contains file, region
-    std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _histogram_req;
     std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> _spectral_req;
     std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
     std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
@@ -193,7 +194,6 @@ private:
     std::mutex _spectral_mutex;
 
     // Cache; CacheId key contains file, region, stokes, (optional) z index
-    std::unordered_map<CacheId, HistogramCache, CacheIdHash> _histogram_cache;
     std::unordered_map<CacheId, SpectralCache, CacheIdHash> _spectral_cache;
     std::unordered_map<CacheId, StatsCache, CacheIdHash> _stats_cache;
 

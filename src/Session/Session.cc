@@ -1068,7 +1068,7 @@ void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
             return;
         }
 
-        std::vector<CARTA::HistogramConfig> requirements = {message.histograms().begin(), message.histograms().end()};
+        std::vector<CARTA::HistogramConfig> configs = {message.histograms().begin(), message.histograms().end()};
 
         if (region_id > CURSOR_REGION_ID) {
             if (!_region_handler) {
@@ -1076,9 +1076,9 @@ void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
                 SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
                 return;
             }
-            requirements_set = _region_handler->SetHistogramRequirements(region_id, file_id, _frames.at(file_id), requirements);
+            requirements_set = _region_handler->SetHistogramConfigs(region_id, file_id, _frames.at(file_id), configs);
         } else {
-            requirements_set = _frames.at(file_id)->SetHistogramRequirements(region_id, requirements);
+            requirements_set = _frames.at(file_id)->SetHistogramRequirements(region_id, configs);
         }
 
         if (requirements_set) {
