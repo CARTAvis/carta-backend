@@ -215,10 +215,7 @@ public:
     // for specific cursor positions and configurations, abstracting away the details
     // of frame and loader setup.
     std::vector<CARTA::SpatialProfileData> LoadProfiles(
-        const std::string& path, 
-        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& profiles,
-        int x, int y
-    ) {
+        const std::string& path, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& profiles, int x, int y) {
         std::shared_ptr<carta::FileLoader> loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(path));
         std::unique_ptr<Frame> frame = std::make_unique<Frame>(0, loader, "0");
         frame->SetSpatialRequirements(profiles);
@@ -247,10 +244,10 @@ struct ExpectedProfile {
     int channel;
     int stokes;
     int profiles_size;
-    std::pair<int,int> x_range;
+    std::pair<int, int> x_range;
     int x_mip;
     size_t x_size;
-    std::pair<int,int> y_range;
+    std::pair<int, int> y_range;
     int y_mip;
     size_t y_size;
 };
@@ -259,18 +256,18 @@ struct CorrectProfileTestParams {
     std::string imageFile;
     std::vector<int> cursorDims;
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles;
-    std::pair<int,int> cmpValues; // first: x, second: y
+    std::pair<int, int> cmpValues; // first: x, second: y
     ExpectedProfile expected;
     ReaderType readerType;
 };
 
-class CorrectProfileTest :
-    public CursorSpatialProfileTest, public ::testing::TestWithParam<CorrectProfileTestParams> {};
+class CorrectProfileTest : public CursorSpatialProfileTest, public ::testing::TestWithParam<CorrectProfileTestParams> {};
 
 TEST_P(CorrectProfileTest, GeneratesCorrectProfile) {
     auto params = GetParam();
-    std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(params.imageFile, params.profiles, params.cursorDims[0], params.cursorDims[1]);
-    
+    std::vector<CARTA::SpatialProfileData> data_vec =
+        LoadProfiles(params.imageFile, params.profiles, params.cursorDims[0], params.cursorDims[1]);
+
     std::unique_ptr<DataReader> reader;
     if (params.readerType == ReaderType::Fits) {
         reader = std::make_unique<FitsDataReader>(params.imageFile);
@@ -307,36 +304,56 @@ TEST_P(CorrectProfileTest, GeneratesCorrectProfile) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    CorrectProfiles,
-    CorrectProfileTest,
+INSTANTIATE_TEST_SUITE_P(CorrectProfiles, CorrectProfileTest,
     ::testing::Values(
-        CorrectProfileTestParams{ // small fits profile
-            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
-            {5, 5},
-            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, 
-            {5, 5},
-            {.file_id = 0, .x = 5, .y = 5, .channel = 0, .stokes = 0, .profiles_size = 2,  .x_range = {0, 10}, .x_mip = 0, .x_size = 10, .y_range = {0, 10}, .y_mip = 0, .y_size = 10},
-            ReaderType::Fits
-        },
-        CorrectProfileTestParams{ // low resolution fits profile
-            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
-            {50, 50},
-            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)},
-            {5, 5},
-            {.file_id = 0, .x = 5, .y = 5, .channel = 0, .stokes = 0, .profiles_size = 2,  .x_range = {0, 10}, .x_mip = 0, .x_size = 10, .y_range = {0, 10}, .y_mip = 0, .y_size = 10},
-            ReaderType::Fits
-        },
-        CorrectProfileTestParams{ // small hdf5 profile
-            TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5",
-            {5, 5},
-            {Message::SpatialConfig("x"), Message::SpatialConfig("y")},
-            {5, 5},
-            {.file_id = 0, .x = 5, .y = 5, .channel = 0, .stokes = 0, .profiles_size = 2,  .x_range = {0, 10}, .x_mip = 0, .x_size = 10, .y_range = {0, 10}, .y_mip = 0, .y_size = 10},
-            ReaderType::Hdf5
-        }
-    )
-);
+        CorrectProfileTestParams{// small fits profile
+            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits", {5, 5},
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, {5, 5},
+            {.file_id = 0,
+                .x = 5,
+                .y = 5,
+                .channel = 0,
+                .stokes = 0,
+                .profiles_size = 2,
+                .x_range = {0, 10},
+                .x_mip = 0,
+                .x_size = 10,
+                .y_range = {0, 10},
+                .y_mip = 0,
+                .y_size = 10},
+            ReaderType::Fits},
+        CorrectProfileTestParams{// low resolution fits profile
+            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits", {50, 50},
+            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, {5, 5},
+            {.file_id = 0,
+                .x = 5,
+                .y = 5,
+                .channel = 0,
+                .stokes = 0,
+                .profiles_size = 2,
+                .x_range = {0, 10},
+                .x_mip = 0,
+                .x_size = 10,
+                .y_range = {0, 10},
+                .y_mip = 0,
+                .y_size = 10},
+            ReaderType::Fits},
+        CorrectProfileTestParams{// small hdf5 profile
+            TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5", {5, 5},
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, {5, 5},
+            {.file_id = 0,
+                .x = 5,
+                .y = 5,
+                .channel = 0,
+                .stokes = 0,
+                .profiles_size = 2,
+                .x_range = {0, 10},
+                .x_mip = 0,
+                .x_size = 10,
+                .y_range = {0, 10},
+                .y_mip = 0,
+                .y_size = 10},
+            ReaderType::Hdf5}));
 
 // LowResProfileTest:
 // Verifies that low-resolution (decimated) spatial profiles generated from an
@@ -346,10 +363,10 @@ INSTANTIATE_TEST_SUITE_P(
 
 struct ExpectedProfileLowRes {
     int profiles_size;
-    std::pair<int,int> x_range;
+    std::pair<int, int> x_range;
     int x_mip;
     size_t x_size;
-    std::pair<int,int> y_range;
+    std::pair<int, int> y_range;
     int y_mip;
     size_t y_size;
 };
@@ -358,19 +375,19 @@ struct LowResTestParams {
     std::string imageFile;
     std::vector<int> cursorDims;
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles;
-    std::pair<int,int> cmpValues; // first: x, second: y
+    std::pair<int, int> cmpValues; // first: x, second: y
     ExpectedProfileLowRes expected;
     ReaderType readerType;
 };
 
-class LowResProfileTest :
-    public CursorSpatialProfileTest, public ::testing::TestWithParam<LowResTestParams> {};
+class LowResProfileTest : public CursorSpatialProfileTest, public ::testing::TestWithParam<LowResTestParams> {};
 
 TEST_P(LowResProfileTest, GeneratesCorrectProfile) {
     auto params = GetParam();
     Hdf5DataReader reader(params.imageFile);
-    std::vector<CARTA::SpatialProfileData> data_vec = LoadProfiles(params.imageFile, params.profiles, params.cursorDims[0], params.cursorDims[1]);
-    
+    std::vector<CARTA::SpatialProfileData> data_vec =
+        LoadProfiles(params.imageFile, params.profiles, params.cursorDims[0], params.cursorDims[1]);
+
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), params.expected.profiles_size);
 
@@ -392,44 +409,28 @@ TEST_P(LowResProfileTest, GeneratesCorrectProfile) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    CorrectLowResProfiles,
-    LowResProfileTest,
+INSTANTIATE_TEST_SUITE_P(CorrectLowResProfiles, LowResProfileTest,
     ::testing::Values(
-        LowResTestParams{ // low res fits profile
-            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
-            {50, 50},
-            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, 
-            {50, 52},
-            {.profiles_size = 2,  .x_range = {0, 10}, .x_mip = 0, .x_size = 10, .y_range = {0, 10}, .y_mip = 0, .y_size = 10},
-            ReaderType::Fits
-        },
-        LowResTestParams{ // low res hdf5 profile, exact mip available
-            TestRoot() / "data" / "images" / "hdf5" / "130_100_row_column.hdf5",
-            {50, 50},
-            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, 
-            {50, 52},
-            {.profiles_size = 2,  .x_range = {0, 130}, .x_mip = 2, .x_size = 65, .y_range = {0, 100}, .y_mip = 2, .y_size = 50},
-            ReaderType::Hdf5
-        },
-        LowResTestParams{ // low res hdf5 profile, lower mip available
-            TestRoot() / "data" / "images" / "hdf5" / "130_100_row_column.hdf5",
-            {50, 50},
-            {Message::SpatialConfig("x", 0, 0, 4), Message::SpatialConfig("y", 0, 0, 4)}, 
-            {50, 52},
-            {.profiles_size = 2,  .x_range = {0, 130}, .x_mip = 2, .x_size = 65, .y_range = {0, 100}, .y_mip = 2, .y_size = 50},
-            ReaderType::Hdf5
-        },
-        LowResTestParams{ // low res hdf5 profile, no mip available
-            TestRoot() / "data" / "images" / "hdf5" / "120_100_row_column.hdf5",
-            {50, 50},
-            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, 
-            {50, 52},
-            {.profiles_size = 2,  .x_range = {0, 120}, .x_mip = 0, .x_size = 120, .y_range = {0, 100}, .y_mip = 0, .y_size = 100},
-            ReaderType::Hdf5
-        }
-    )
-);
+        LowResTestParams{// low res fits profile
+            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits", {50, 50},
+            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, {50, 52},
+            {.profiles_size = 2, .x_range = {0, 10}, .x_mip = 0, .x_size = 10, .y_range = {0, 10}, .y_mip = 0, .y_size = 10},
+            ReaderType::Fits},
+        LowResTestParams{// low res hdf5 profile, exact mip available
+            TestRoot() / "data" / "images" / "hdf5" / "130_100_row_column.hdf5", {50, 50},
+            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, {50, 52},
+            {.profiles_size = 2, .x_range = {0, 130}, .x_mip = 2, .x_size = 65, .y_range = {0, 100}, .y_mip = 2, .y_size = 50},
+            ReaderType::Hdf5},
+        LowResTestParams{// low res hdf5 profile, lower mip available
+            TestRoot() / "data" / "images" / "hdf5" / "130_100_row_column.hdf5", {50, 50},
+            {Message::SpatialConfig("x", 0, 0, 4), Message::SpatialConfig("y", 0, 0, 4)}, {50, 52},
+            {.profiles_size = 2, .x_range = {0, 130}, .x_mip = 2, .x_size = 65, .y_range = {0, 100}, .y_mip = 2, .y_size = 50},
+            ReaderType::Hdf5},
+        LowResTestParams{// low res hdf5 profile, no mip available
+            TestRoot() / "data" / "images" / "hdf5" / "120_100_row_column.hdf5", {50, 50},
+            {Message::SpatialConfig("x", 0, 0, 2), Message::SpatialConfig("y", 0, 0, 2)}, {50, 52},
+            {.profiles_size = 2, .x_range = {0, 120}, .x_mip = 0, .x_size = 120, .y_range = {0, 100}, .y_mip = 0, .y_size = 100},
+            ReaderType::Hdf5}));
 
 struct FullResStartEndParams {
     std::string imageFile;
@@ -465,24 +466,14 @@ TEST_P(FullResStartEndTest, GeneratesCorrectProfile) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    FullResStartEnd,
-    FullResStartEndTest,
+INSTANTIATE_TEST_SUITE_P(FullResStartEnd, FullResStartEndTest,
     ::testing::Values(
-        FullResStartEndParams{ // full res fits start end
-            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
-            ReaderType::Fits,
-            {Message::SpatialConfig("x", 100, 200, 0), Message::SpatialConfig("y", 100, 200, 0)},
-            150, 150, 100, 200, 100
-        },
-        FullResStartEndParams{ // full res hdf5 start end
-            TestRoot() / "data" / "images" / "hdf5" / "400_300_row_column.hdf5",
-            ReaderType::Hdf5,
-            {Message::SpatialConfig("x", 100, 200, 0), Message::SpatialConfig("y", 100, 200, 0)},
-            150, 150, 100, 200, 100
-        }
-    )
-);
+        FullResStartEndParams{// full res fits start end
+            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits", ReaderType::Fits,
+            {Message::SpatialConfig("x", 100, 200, 0), Message::SpatialConfig("y", 100, 200, 0)}, 150, 150, 100, 200, 100},
+        FullResStartEndParams{// full res hdf5 start end
+            TestRoot() / "data" / "images" / "hdf5" / "400_300_row_column.hdf5", ReaderType::Hdf5,
+            {Message::SpatialConfig("x", 100, 200, 0), Message::SpatialConfig("y", 100, 200, 0)}, 150, 150, 100, 200, 100}));
 
 // LowResStartEndTest:
 // Verifies that low-resolution spatial profiles (from FITS or HDF5 images) are
@@ -524,24 +515,14 @@ TEST_P(LowResStartEndTest, GeneratesCorrectProfile) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    LowResStartEnd,
-    LowResStartEndTest,
+INSTANTIATE_TEST_SUITE_P(LowResStartEnd, LowResStartEndTest,
     ::testing::Values(
-        LowResStartEndParams{ // low res fits start end
-            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
-            ReaderType::Fits,
-            {Message::SpatialConfig("x", 100, 200, 4), Message::SpatialConfig("y", 100, 200, 4)},
-            150, 150, 100, 200, 4, 24
-        },
-        LowResStartEndParams{ // low res hdf5 start end
-            TestRoot() / "data" / "images" / "hdf5" / "400_300_row_column.hdf5",
-            ReaderType::Hdf5,
-            {Message::SpatialConfig("x", 100, 200, 4), Message::SpatialConfig("y", 100, 200, 4)},
-            150, 150, 100, 200, 4, 25
-        }
-    )
-);
+        LowResStartEndParams{// low res fits start end
+            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits", ReaderType::Fits,
+            {Message::SpatialConfig("x", 100, 200, 4), Message::SpatialConfig("y", 100, 200, 4)}, 150, 150, 100, 200, 4, 24},
+        LowResStartEndParams{// low res hdf5 start end
+            TestRoot() / "data" / "images" / "hdf5" / "400_300_row_column.hdf5", ReaderType::Hdf5,
+            {Message::SpatialConfig("x", 100, 200, 4), Message::SpatialConfig("y", 100, 200, 4)}, 150, 150, 100, 200, 4, 25}));
 
 // MultiChunkTest:
 // Verifies that spatial profiles are generated correctly when the underlying
@@ -574,22 +555,15 @@ TEST_P(MultiChunkTest, GeneratesCorrectProfile) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    MultiChunk,
-    MultiChunkTest,
+INSTANTIATE_TEST_SUITE_P(MultiChunk, MultiChunkTest,
     ::testing::Values(
-        MultiChunkParams{ // hdf5 multiple chunk full res
+        MultiChunkParams{// hdf5 multiple chunk full res
             TestRoot() / "data" / "images" / "hdf5" / "3000_2000_row_column.hdf5",
-            {Message::SpatialConfig("x"), Message::SpatialConfig("y")},
-            150, 150, 0, 3000, 3000, 0, 2000, 2000
-        },
-        MultiChunkParams{ // hdf5 multiple chunk full res start end
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, 150, 150, 0, 3000, 3000, 0, 2000, 2000},
+        MultiChunkParams{// hdf5 multiple chunk full res start end
             TestRoot() / "data" / "images" / "hdf5" / "3000_2000_row_column.hdf5",
-            {Message::SpatialConfig("x", 1000, 1500), Message::SpatialConfig("y", 1000, 1500)},
-            1250, 1250, 1000, 1500, 500, 1000, 1500, 500
-        }
-    )
-);
+            {Message::SpatialConfig("x", 1000, 1500), Message::SpatialConfig("y", 1000, 1500)}, 1250, 1250, 1000, 1500, 500, 1000, 1500,
+            500}));
 
 // ChannelStokesTest:
 // Verifies that spatial profiles are generated correctly when different image
@@ -642,24 +616,14 @@ TEST_P(ChannelStokesTest, GeneratesCorrectProfile) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    ChannelStokes,
-    ChannelStokesTest,
+INSTANTIATE_TEST_SUITE_P(ChannelStokes, ChannelStokesTest,
     ::testing::Values(
-        ChannelStokesParams{ // fits channel change
-            TestRoot() / "data" / "images" / "fits" / "noise_3d.fits",
-            ReaderType::Fits,
-            {Message::SpatialConfig("x"), Message::SpatialConfig("y")},
-            5, 5, 1, 0, 0, 0, 10, 10, 0, 10, 10
-        },
-        ChannelStokesParams{ // fits channel and stokes change
-            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits",
-            ReaderType::Fits,
-            {Message::SpatialConfig("Qx"), Message::SpatialConfig("Qy")},
-            5, 5, 1, 0, 1, 0, 10, 10, 0, 10, 10
-        }
-    )
-);
+        ChannelStokesParams{// fits channel change
+            TestRoot() / "data" / "images" / "fits" / "noise_3d.fits", ReaderType::Fits,
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, 5, 5, 1, 0, 0, 0, 10, 10, 0, 10, 10},
+        ChannelStokesParams{// fits channel and stokes change
+            TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits", ReaderType::Fits,
+            {Message::SpatialConfig("Qx"), Message::SpatialConfig("Qy")}, 5, 5, 1, 0, 1, 0, 10, 10, 0, 10, 10}));
 
 // HDF5ChannelTest:
 // Verifies that spatial profiles are generated correctly when changing channels
@@ -677,7 +641,7 @@ struct HDF5ChannelParams {
     int stokes;
     int expected_stokes;
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles;
-    bool use_q_profiles;  // whether to use Qx/Qy profile readers
+    bool use_q_profiles; // whether to use Qx/Qy profile readers
 };
 
 class HDF5ChannelTest : public CursorSpatialProfileTest, public ::testing::TestWithParam<HDF5ChannelParams> {};
@@ -738,29 +702,14 @@ TEST_P(HDF5ChannelTest, HDF5ChannelChange) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    HDF5Channel,
-    HDF5ChannelTest,
+INSTANTIATE_TEST_SUITE_P(HDF5Channel, HDF5ChannelTest,
     ::testing::Values(
-        HDF5ChannelParams{ // Contiguous HDF5 Channel Change
-            TestRoot() / "data/images/hdf5/10_10_2_row_column.hdf5",
-            10, 1, 0, 0,
-            {Message::SpatialConfig("x"), Message::SpatialConfig("y")},
-            false
-        },
-        HDF5ChannelParams{ // Chunked HDF5 Channel Change
-            TestRoot() / "data/images/hdf5/1000_1000_2_row_column.hdf5",
-            1000, 1, 0, 0,
-            {Message::SpatialConfig("x"), Message::SpatialConfig("y")},
-            false
-        },
-        HDF5ChannelParams{ // Chunked HDF5 Channel Stokes Change
-            TestRoot() / "data/images/hdf5/1000_1000_2_2_row_column.hdf5",
-            1000, 1, 0, 1,
-            {Message::SpatialConfig("Qx"), Message::SpatialConfig("Qy")},
-            true
-        }
-    )
-);
-
-
+        HDF5ChannelParams{// Contiguous HDF5 Channel Change
+            TestRoot() / "data/images/hdf5/10_10_2_row_column.hdf5", 10, 1, 0, 0,
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, false},
+        HDF5ChannelParams{// Chunked HDF5 Channel Change
+            TestRoot() / "data/images/hdf5/1000_1000_2_row_column.hdf5", 1000, 1, 0, 0,
+            {Message::SpatialConfig("x"), Message::SpatialConfig("y")}, false},
+        HDF5ChannelParams{// Chunked HDF5 Channel Stokes Change
+            TestRoot() / "data/images/hdf5/1000_1000_2_2_row_column.hdf5", 1000, 1, 0, 1,
+            {Message::SpatialConfig("Qx"), Message::SpatialConfig("Qy")}, true}));

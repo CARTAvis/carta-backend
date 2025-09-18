@@ -23,7 +23,7 @@ public:
     //  2. Each contour level reports progress reaching 100%.
     //  3. When no smoothing is applied, the generated contour vertices correspond
     //     to valid pixel-derived values in the underlying dataset.
-    // 
+    //
     // The test also logs the number of vertices produced per contour level to
     // confirm completeness of the contouring process.
     void GenerateContour(std::string filename, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {

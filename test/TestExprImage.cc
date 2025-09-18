@@ -16,7 +16,7 @@ using namespace carta;
 struct ImageExprInfo {
     std::string file_path; // full path to the image file
     std::string directory; // directory containing the image file
-    std::string expr; // LEL expression for the image
+    std::string expr;      // LEL expression for the image
 };
 
 class ImageExprTest : public ::testing::Test {
@@ -52,7 +52,7 @@ public:
             expr = fs_path.filename().string() + " * 2";
         }
 
-        return { file_path, directory, expr };
+        return {file_path, directory, expr};
     }
 };
 
@@ -98,7 +98,6 @@ TEST_P(ImageExprParamTest, TimesTwo) {
     auto image_xprofile = reader->ReadProfileX(0);
     auto image_yprofile = reader->ReadProfileY(0);
 
-
     std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(info.expr, info.directory));
 
     if (param.invalid) {
@@ -137,15 +136,11 @@ TEST_P(ImageExprParamTest, TimesTwo) {
     CmpVectors<float>(image_yprofile, expr_yprofile.tovector());
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    ImageExprTests,
-    ImageExprParamTest,
-    ::testing::Values(
-        ImageExprParam{"noise_10px_10px.fits", "0", CARTA::FileType::FITS}, // FitsImageExprTimesTwo
-        ImageExprParam{"noise_10px_10px.hdf5", "", CARTA::FileType::HDF5}, // Hdf5ImageExprTimesTwo
-        ImageExprParam{"noise_10px_10px.fits", "", CARTA::FileType::FITS, true} // ImageExprFails
-    )
-);
+INSTANTIATE_TEST_SUITE_P(ImageExprTests, ImageExprParamTest,
+    ::testing::Values(ImageExprParam{"noise_10px_10px.fits", "0", CARTA::FileType::FITS}, // FitsImageExprTimesTwo
+        ImageExprParam{"noise_10px_10px.hdf5", "", CARTA::FileType::HDF5},                // Hdf5ImageExprTimesTwo
+        ImageExprParam{"noise_10px_10px.fits", "", CARTA::FileType::FITS, true}           // ImageExprFails
+        ));
 
 TEST_F(ImageExprTest, FitsImageExprSave) {
     auto info = PrepareImageExpr("noise_10px_10px.fits", CARTA::FileType::FITS);

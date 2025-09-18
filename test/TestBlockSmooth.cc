@@ -44,7 +44,7 @@ public:
 
     // Test fixture constructor for BlockSmoothingTest.
     // Initializes random number generators for use in smoothing tests:
-    // 
+    //
     //  1. `mt`: a Mersenne Twister RNG seeded with a random device.
     //  2. `float_random`: generates pixel values uniformly in the range [0, 1.0].
     //  3. `size_random`: generates random image dimensions uniformly in the range [512, 1024].
@@ -93,7 +93,7 @@ public:
     }
 
     // Utility function that checks whether a matrix contains only non-finite values.
-    // 
+    //
     // Behavior:
     //   * Iterates through all elements of the given Matrix2F.
     //   * If any element is finite (i.e., not NaN and not ±Infinity),
@@ -115,7 +115,7 @@ public:
     }
 
     // Utility function that compares two matrices for matching validity patterns.
-    // 
+    //
     // Behavior:
     //   * Iterates through each element of the given matrices (assumed to have the
     //     same dimensions).
