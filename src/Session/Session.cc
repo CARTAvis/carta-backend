@@ -1350,12 +1350,12 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             _region_handler->CalculateMoments(
                 file_id, region_id, frame, progress_callback, moment_request, moment_response, collapse_results);
         } else {
-            StokesRegion stokes_region;
+            casacore::ImageRegion image_region;
             int z_min(moment_request.spectral_range().min());
             int z_max(moment_request.spectral_range().max());
 
-            if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), stokes_region)) {
-                frame->CalculateMoments(file_id, progress_callback, stokes_region, moment_request, moment_response, collapse_results);
+            if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region)) {
+                frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
         }
 

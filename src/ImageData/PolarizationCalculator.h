@@ -27,11 +27,13 @@ public:
     using ImageMap = std::map<Pol, ImagePtr>;
     using CasaPol = casacore::Stokes::StokesTypes;
     using Node = casacore::LatticeExprNode;
+    using CoordSysPtr = std::shared_ptr<casacore::CoordinateSystem>;
     
     typedef Node (PolarizationCalculator::*NodeFunc)(ImageMap&);
     
     PolarizationCalculator(std::shared_ptr<FileLoader> loader);
     ImagePtr GetImage(Pol computed_type);
+    CoordSysPtr GetCoordSys(Pol computed_type);
     const std::unordered_set<Pol>& AvailablePolarizations() {
         return _available_polarizations;
     }
@@ -48,6 +50,7 @@ private:
     
     ImageMap _component_images;
     ImageMap _computed_images;
+    std::map<Pol, CoordSysPtr> _coord_sys;
     std::unordered_set<Pol> _available_polarizations;
 };
 

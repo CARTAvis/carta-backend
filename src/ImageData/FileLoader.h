@@ -69,11 +69,11 @@ public:
     bool FindCoordinateAxes(std::string& message);
 
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, int stokes_index);
 
     // SubImage
-    bool GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image);
-    bool GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const casacore::Slicer& slicer, int stokes_index, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const casacore::LattRegionHolder& region, int stokes_index, casacore::SubImage<float>& sub_image);
     bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics

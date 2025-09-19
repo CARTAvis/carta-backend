@@ -481,17 +481,11 @@ bool Hdf5Loader::GetDownsampledRasterData(
 bool Hdf5Loader::GetChunk(
     std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
     bool data_ok(false);
+    
+    // TODO what is supposed to happen here if the stokes is calculated????
 
     data_width = std::min(CHUNK_SIZE, (int)_dims.width - min_x);
     data_height = std::min(CHUNK_SIZE, (int)_dims.height - min_y);
-
-    StokesSource stokes_source(stokes, AxisRange(z), AxisRange(min_x, min_x + data_width - 1), AxisRange(min_y, min_y + data_height - 1));
-    if (!stokes_source.IsOriginalImage()) { // Reset the start position of the slicer as 0 for the computed stokes image
-        stokes = 0;
-        z = 0;
-        min_x = 0;
-        min_y = 0;
-    }
 
     casacore::Slicer slicer;
     if (_num_dims == 4) {
@@ -507,7 +501,7 @@ bool Hdf5Loader::GetChunk(
 
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
-        GetSlice(tmp, StokesSlicer(stokes_source, slicer));
+        GetSlice(tmp, slicer, stokes);
         data_ok = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Could not load image tile. AIPS ERROR: " << err.getMesg() << std::endl;

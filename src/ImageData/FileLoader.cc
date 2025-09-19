@@ -194,13 +194,14 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem() {
 }
 
 std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(int stokes_index) {
-    if (_stokes_types.count(stokes_index)) {
-        return _coord_sys;
-    }
+    CARTA::PolarizationType stokes_type;
     
-    auto image = GetStokesImage(stokes_index);
-    if (image) {
-        return std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(image->coordinates().clone()));
+    if (GetStokesType(stokes_index, stokes_type)) {
+        if IsComputed(stokes_index) {
+            return _polarization_calculator->GetCoordSys(stokes_type);
+        } else {
+            return _coord_sys;
+        }
     }
     
     return std::make_shared<casacore::CoordinateSystem>();
@@ -332,11 +333,10 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
     return true;
 }
 
-bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer) {
-    StokesSource stokes_source = stokes_slicer.stokes_source;
-    casacore::Slicer slicer = stokes_slicer.slicer;
+bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, int stokes_index) {
     try {
-        auto image = GetStokesImage(stokes_source); // Get the opened image or computed stokes image from the original one
+        // Get the original image or the computed Stokes image
+        auto image = GetStokesImage(stokes_index);
 
         if (!image) {
             return false;
@@ -424,12 +424,9 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
     }
 }
 
-bool FileLoader::GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image) {
-    StokesSource stokes_source = stokes_slicer.stokes_source;
-    casacore::Slicer slicer = stokes_slicer.slicer;
-
-    // Get the opened casacore image or computed stokes image
-    auto image = GetStokesImage(stokes_source);
+bool FileLoader::GetSubImage(const casacore::Slicer& slicer, int stokes_index, casacore::SubImage<float>& sub_image) {
+    // Get the original image or the computed Stokes image
+    auto image = GetStokesImage(stokes_index);
     if (!image) {
         return false;
     }
@@ -439,12 +436,9 @@ bool FileLoader::GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubIma
     return true;
 }
 
-bool FileLoader::GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image) {
-    StokesSource stokes_source = stokes_region.stokes_source;
-    casacore::LattRegionHolder region = stokes_region.image_region;
-
-    // Get the opened casacore image or computed stokes image
-    auto image = GetStokesImage(stokes_source);
+bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, int stokes_index, casacore::SubImage<float>& sub_image) {
+    // Get the original image or the computed Stokes image
+    auto image = GetStokesImage(stokes_index);
     if (!image) {
         return false;
     }
@@ -456,6 +450,8 @@ bool FileLoader::GetSubImage(const StokesRegion& stokes_region, casacore::SubIma
 
 bool FileLoader::GetSubImage(
     const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
+    // Always the original image here
+    // TODO should this also support computed Stokes for completeness?
     auto image = GetImage();
     if (!image) {
         return false;
@@ -928,7 +924,7 @@ double FileLoader::CalculateBeamArea() {
 
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
     // Computed type which is available for this image
-    if (_polarization_calculator.AvailablePolarizations().count(stokes_type)) {
+    if (_polarization_calculator->AvailablePolarizations().count(stokes_type)) {
         stokes_index = stokes_type;
         return true;
     }
@@ -957,7 +953,7 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
 
 bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type) {
     // Computed type which is available for this image
-    if (_polarization_calculator.AvailablePolarizations().count(stokes_index)) {
+    if (_polarization_calculator->AvailablePolarizations().count(stokes_index)) {
         stokes_type = Stokes::Get(stokes_index)
         return true;
     }
@@ -985,19 +981,20 @@ bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType&
 }
 
 ImagePtr FileLoader::GetStokesImage(int stokes_index) {
+    CARTA::PolarizationType stokes_type;
     ImagePtr stokes_image;
     
-    if (Stokes::IsComputed(stokes_index)) {
-        // The calculator 
-        stokes_image = _polarization_calculator.GetImage(stokes_index);
-    } else {
-        if (GetStokesType(stokes_index)) {
-            stokes_image = GetImage();
+    if (GetStokesType(stokes_index, stokes_type)) {
+        if (Stokes::IsComputed(stokes_index)) {
+            stokes_image = _polarization_calculator->GetImage(stokes_index);
         } else {
-            spdlog::error("No image available for polarization index {}", stokes_index);
-        }
-    }
+            stokes_image = GetImage();
+        } 
     
+    } else {
+        spdlog::error("No image available for polarization index {}", stokes_index);
+    }
+
     return stokes_image;
 
 void FileLoader::SetStokesCrval(float stokes_crval) {

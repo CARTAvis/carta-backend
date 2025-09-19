@@ -112,6 +112,7 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loade
         
         // Store computed image expression
         _computed_images[computed_type] = computed_image;
+        _coord_sys[computed_type] = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(computed_image->coordinates().clone()));
         _available_polarizations.insert(computed_type);
     }
 }
@@ -121,6 +122,15 @@ ImagePtr PolarizationCalculator::GetImage(Pol computed_type) {
         return _computed_images.at(computed_type);
     } catch(const std::out_of_range& e) {
         spdlog::error("No computed polarization image available for {}.", Stokes::Name(computed_type));
+        return nullptr;
+    }
+}
+
+CoordSysPtr PolarizationCalculator::GetCoordSys(Pol computed_type) {
+    try {
+        return _coord_sys.at(computed_type);
+    } catch(const std::out_of_range& e) {
+        spdlog::error("No coordinate system available for {}.", Stokes::Name(computed_type));
         return nullptr;
     }
 }
