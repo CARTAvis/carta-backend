@@ -1605,10 +1605,10 @@ bool RegionHandler::FillRegionHistogramData(
 
                 AxisRange z_range(histogram_data_message.channel());
                 int stokes(histogram_data_message.stokes());
-                std::shared_ptr<casacore::LCRegion> lc_region;
-                StokesRegion stokes_region;
+                StokesSource stokes_source(stokes, z_range);
+                std::shared_ptr<casacore::LCRegion> lcregion = ApplyRegionToFile(hist_region_id, hist_file_id, stokes_source);
 
-                if (!ApplyRegionToFile(hist_region_id, hist_file_id, z_range, stokes, lc_region, stokes_region)) {
+                if (!lcregion) {
                     // Default histogram for region outside image
                     histogram.second->AddDefaultHistogram(histogram_data_message);
                     callback(histogram_data_message);
@@ -1616,7 +1616,8 @@ bool RegionHandler::FillRegionHistogramData(
                     continue;
                 }
 
-                if (histogram.second->AddHistogram(hist_file_id, frame, histogram_config, stokes_region, histogram_data_message)) {
+                if (histogram.second->AddHistogram(
+                        hist_file_id, frame, histogram_config, lcregion, stokes_source, histogram_data_message)) {
                     callback(histogram_data_message);
                     success = true;
                 }

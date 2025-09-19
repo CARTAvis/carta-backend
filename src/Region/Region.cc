@@ -147,7 +147,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
 
     if (!lcregion) {
         if (IsInReferenceImage(file_id)) {
-            if (!_lcregion_set) {
+            if (!_lcregion_set || Stokes::IsComputed(stokes_source.stokes)) {
                 // Create LCRegion from TableRecord
                 casacore::TableRecord region_record;
                 if (GetRegionState().IsRotbox()) {
