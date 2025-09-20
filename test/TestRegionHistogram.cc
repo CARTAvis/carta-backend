@@ -59,6 +59,33 @@ public:
         return region_handler.FillRegionHistogramData(
             [&](CARTA::RegionHistogramData histogram_data) { region_histogram = histogram_data; }, region_id, file_id);
     }
+
+    static bool RegionHistogramMatched(const std::string& image_path0, const std::string& image_path1, const std::vector<float>& endpoints,
+        CARTA::RegionHistogramData& region_histogram) {
+        std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+        std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+        std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+        std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
+        carta::RegionHandler region_handler;
+
+        // Set polygon region in image0
+        int file_id(0), region_id(-1);
+        auto csys = frame0->CoordinateSystem();
+        if (!SetRegion(region_handler, file_id, region_id, endpoints, csys, false)) {
+            return false;
+        }
+        // Set histogram requirements for region in image1
+        file_id = 1;
+        auto histogram_req_message = Message::SetHistogramRequirements(file_id, region_id);
+        std::vector<CARTA::HistogramConfig> histogram_configs = {
+            histogram_req_message.histograms().begin(), histogram_req_message.histograms().end()};
+        if (!region_handler.SetHistogramConfigs(region_id, file_id, frame1, histogram_configs)) {
+            return false;
+        }
+        // Get histogram
+        return region_handler.FillRegionHistogramData(
+            [&](CARTA::RegionHistogramData histogram_data) { region_histogram = histogram_data; }, region_id, file_id);
+    }
 };
 
 TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
@@ -120,4 +147,22 @@ TEST_F(RegionHistogramTest, TestStokesRegionHistogram) {
             ASSERT_FALSE(histogram_data.has_histograms());
         }
     }
+}
+
+TEST_F(RegionHistogramTest, TestMatchedRegionHistogram) {
+    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
+    CARTA::RegionHistogramData histogram_data;
+    bool ok = RegionHistogramMatched(image_path0, image_path1, endpoints, histogram_data);
+    ASSERT_TRUE(ok);
+    ASSERT_EQ(histogram_data.file_id(), 1);
+    ASSERT_EQ(histogram_data.region_id(), 1);
+    ASSERT_EQ(histogram_data.channel(), 0);
+    ASSERT_EQ(histogram_data.stokes(), 0);
+    ASSERT_TRUE(histogram_data.has_histograms());
+    ASSERT_EQ(histogram_data.progress(), 1.0);
+    ASSERT_TRUE(histogram_data.has_config());
+    int expected_num_bins = sqrt(4 * 4); // region bounding box is 4x4
+    ASSERT_EQ(histogram_data.histograms().num_bins(), expected_num_bins);
 }

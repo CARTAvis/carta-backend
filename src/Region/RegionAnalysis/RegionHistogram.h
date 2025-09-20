@@ -21,6 +21,7 @@ public:
 
     /**
      * @brief Constructor which sets histogram requirements.
+     * @param region_id Region id for histogram
      * @param file_id File id for image frame
      * @param configs Histogram configurations
      */
