@@ -2044,7 +2044,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         // make compression
 
         compression_type = CARTA::CompressionType::ZFP;
-        compression_quality = 20; // high is 32, use 20 for now
+        compression_quality = 11; // high is 32, use 20 for now
         // compression_type = CARTA::CompressionType::NONE;
         // compression_quality = -1;
         
