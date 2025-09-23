@@ -137,9 +137,6 @@ private:
     /** @brief Whether to export in pixel or world coordinates. */
     bool _export_pixels;
 
-    /** @brief Map from DS9 to casacore coordinate frames. */
-    std::unordered_map<std::string, std::string> _coord_map;
-
     /** @brief Default DS9 properties. */
     std::unordered_map<std::string, std::string> _global_properties;
 };

@@ -8,6 +8,7 @@
 
 #include "Ds9Importer.h"
 
+#include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
 #define REGION_COLOR "#2EE6D6"
@@ -264,8 +265,8 @@ RegionState Ds9Importer::ImportCircleRegion(std::vector<std::string>& parameters
     RegionState region_state;
     auto region_name = parameters[0];
 
-    // For circle or compass, convert params to ellipse region (CARTA only has ellipse region) with no angle
     if (parameters.size() == 4) {
+        // For circle, create ellipse region (CARTA only has ellipse region) with no angle
         if (region_name == "circle") {
             region_name = "ellipse";
         }
@@ -286,17 +287,16 @@ RegionState Ds9Importer::ImportEllipseRegion(std::vector<std::string>& parameter
     // ellipse x y radius radius [angle]
     // circle x y radius, compass x1 y1 length
     // For circle or compass radius1=radius2
-    if ((nparam == 5) || (nparam == 6)) { // 6 if angle
+    if ((nparam == 5) || (nparam == 6)) { // nparam 6 if angle
         // Convert strings to Quantities
         std::vector<casacore::Quantity> param_quantities;
 
         for (size_t i = 1; i < nparam; ++i) {
-            std::string param(parameters[i]);
             bool is_angle(i == 2);
             bool is_xy = (i == 1 || i == 2);
             casacore::Quantity param_quantity;
 
-            if (ParameterToQuantity(param, is_angle, is_xy, region_name, param_quantity)) {
+            if (ParameterToQuantity(parameters[i], is_angle, is_xy, region_name, param_quantity)) {
                 param_quantities.push_back(param_quantity);
             } else {
                 return region_state;
@@ -335,7 +335,7 @@ RegionState Ds9Importer::ImportEllipseRegion(std::vector<std::string>& parameter
         // nparam includes region name, param_quantities does not!
         float rotation = (nparam > 5 ? param_quantities[4].getValue() : 0.0);
         if (control_points[1].x() != control_points[1].y()) {
-            // Adjust rotation for ellipse
+            // bmaj != bmin: Adjust rotation for ellipse
             rotation -= 90.0;
             if (rotation < 0.0) {
                 rotation += 360.0;
@@ -495,7 +495,7 @@ RegionState Ds9Importer::ImportVectorRegion(std::vector<std::string>& parameters
 
         for (size_t i = 1; i < nparam; ++i) {
             std::string param(parameters[i]);
-            bool is_angle(i == 2);
+            bool is_angle(i == 2); // dec/long
             bool is_xy = (i == 1 || i == 2);
             casacore::Quantity param_quantity;
 
@@ -513,14 +513,19 @@ RegionState Ds9Importer::ImportVectorRegion(std::vector<std::string>& parameters
         }
         auto angle_rad = angle.get("rad").getValue();
 
-        // Control points in pixel coordinates
+        auto length = param_quantities[2];
+        auto xlength = cos(angle_rad);
+        auto ylength = sin(angle_rad);
+
+        // Control points in pixel coordinates are endpoints x1 y1 x2 y2
         std::vector<CARTA::Point> control_points;
         if (_import_pixels) {
             auto x1 = param_quantities[0].getValue();
             auto y1 = param_quantities[1].getValue();
-            auto length = param_quantities[2].getValue();
-            auto x2 = x1 + (length * cos(angle_rad));
-            auto y2 = y1 + (length * sin(angle_rad));
+
+            // (length, angle) to (x2, y2)
+            auto x2 = x1 + (length.getValue() * xlength);
+            auto y2 = y1 + (length.getValue() * ylength);
             control_points.push_back(Message::Point(x1, y1));
             control_points.push_back(Message::Point(x2, y2));
         } else if (_coord_sys) {
@@ -537,9 +542,6 @@ RegionState Ds9Importer::ImportVectorRegion(std::vector<std::string>& parameters
             }
 
             // (length, angle) to (x2, y2)
-            auto length = param_quantities[2].getValue();
-            auto xlength = cos(angle_rad);
-            auto ylength = sin(angle_rad);
             auto dx = WorldToPixelLength(length * xlength, 0) * (xlength < 0 ? -1.0 : 1.0);
             auto dy = WorldToPixelLength(length * ylength, 1) * (ylength < 0 ? -1.0 : 1.0);
             control_points.push_back(Message::Point(pixel_coords[0] + dx, pixel_coords[1] + dy));
@@ -575,7 +577,7 @@ RegionState Ds9Importer::ImportRulerRegion(
             SetFileCoordFrame(file_coord_frame); // restore
         }
     } else {
-        // Use file coordinate to set RegionState
+        // Use file coordinate frame to set RegionState
         region_state = ImportPolygonLineRegion(parameters);
     }
 

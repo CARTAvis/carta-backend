@@ -204,12 +204,14 @@ bool Ds9Exporter::ExportRegions(std::vector<std::string>& contents, std::string&
 void Ds9Exporter::SetFileCoordFrame() {
     if (_export_pixels || _image_coord_frame.empty()) {
         _file_coord_frame = "image";
-    } else if (_image_coord_frame == "b1950") {
-        _file_coord_frame = "fk4";
-    } else if (_image_coord_frame == "j2000") {
-        _file_coord_frame = "fk5";
     } else {
-        _file_coord_frame = _image_coord_frame;
+        std::unordered_map<std::string, std::string> coord_map{
+            {"B1950", "fk4"}, {"J2000", "fk5"}, {"GALACTIC", "galactic"}, {"ECLIPTIC", "ecliptic"}, {"ICRS", "icrs"}};
+        if (coord_map.find(_image_coord_frame) != coord_map.end()) {
+            _file_coord_frame = coord_map[_image_coord_frame];
+        } else {
+            _file_coord_frame = _image_coord_frame;
+        }
     }
 }
 
@@ -512,7 +514,7 @@ void Ds9Exporter::AddAnnotationStyle(CARTA::RegionType region_type, const CARTA:
         }
         case CARTA::RegionType::ANNRULER: {
             std::string unit = (_image_coord_frame == "image" || _image_coord_frame == "linear" ? "image" : "degrees");
-            file_line += fmt::format(" ruler={} {}", _image_coord_frame, unit);
+            file_line += fmt::format(" ruler={} {}", _file_coord_frame, unit);
             break;
         }
         case CARTA::RegionType::ANNTEXT: {
@@ -520,7 +522,7 @@ void Ds9Exporter::AddAnnotationStyle(CARTA::RegionType region_type, const CARTA:
             break;
         }
         case CARTA::RegionType::ANNCOMPASS: {
-            AddCompassStyle(region_style, _image_coord_frame, file_line);
+            AddCompassStyle(region_style, _file_coord_frame, file_line);
             break;
         }
         default:
