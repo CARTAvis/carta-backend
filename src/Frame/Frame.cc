@@ -400,8 +400,8 @@ bool Frame::FillImageCache() {
     }
 
     auto dt = t.Elapsed();
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _dims.width, _dims.height, dt.ms(),
-        (float)(_dims.width * _dims.height) / dt.us());
+    spdlog::performance("Load {}x{} image Z {} pol. {} to cache in {:.3f} ms at {:.3f} MPix/s", _dims.width, _dims.height, _z_index,
+        _stokes_index, dt.ms(), (float)(_dims.width * _dims.height) / dt.us());
 
     _image_cache_valid = true;
     return true;
