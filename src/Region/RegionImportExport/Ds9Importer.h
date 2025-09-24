@@ -33,11 +33,6 @@ private:
     void SetFileLineRegions(std::vector<std::string>& file_lines);
 
     /**
-     * @brief Create map to convert DS9 coordinate in region file to casacore coordinate frame.
-     */
-    void InitDs9CoordMap();
-
-    /**
      * @brief Check if region file line is a DS9 coordinate.
      * @param file_line Line of region file to check
      */
@@ -177,9 +172,6 @@ private:
      */
     void ConvertTimeFormatToAngle(std::string& parameter);
 
-    /** @brief Conversion map from DS9 to casacore coordinate frame. */
-    std::unordered_map<std::string, std::string> _coord_map;
-
     /** @brief casacore coordinate frame from image coordinate system. */
     std::string _image_coord_frame;
 
@@ -188,6 +180,9 @@ private:
 
     // Whether to regions in file are in pixel or world coords
     bool _import_pixels;
+
+    /** @brief DS9 to casacore coordinate frame. */
+    static std::unordered_map<std::string, std::string> _coordinate_frames;
 };
 
 } // namespace carta

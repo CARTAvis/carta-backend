@@ -16,10 +16,15 @@
 
 using namespace carta;
 
+std::unordered_map<std::string, std::string> Ds9Importer::_coordinate_frames{{"physical", "image"}, {"image", "image"}, {"b1950", "B1950"},
+    {"fk4", "B1950"}, {"j2000", "J2000"}, {"fk5", "J2000"}, {"galactic", "GALACTIC"}, {"ecliptic", "ECLIPTIC"}, {"icrs", "ICRS"},
+    {"wcs", "UNSUPPORTED"}, {"wcsa", "UNSUPPORTED"}, {"linear", "UNSUPPORTED"}};
+
 Ds9Importer::Ds9Importer(std::shared_ptr<casacore::CoordinateSystem> coord_sys, int file_id, const std::string& file, bool file_is_filename)
     : RegionImporter(coord_sys, file_id), _file_coord_frame("image"), _import_pixels(true) {
     _region_names = GetRegionTypeNames(CARTA::FileType::DS9_REG);
     _image_coord_frame = GetImageDirectionFrame(coord_sys);
+
     SetParserDelim(" ,()#");
     std::vector<std::string> file_lines = ReadRegionFile(file, file_is_filename, ';');
     SetFileLineRegions(file_lines);
@@ -29,9 +34,6 @@ void Ds9Importer::SetFileLineRegions(std::vector<std::string>& file_lines) {
     if (file_lines.empty()) {
         return;
     }
-
-    // Map to check for DS9 keywords and convert to CASA
-    InitDs9CoordMap();
 
     bool ds9_coord_ok(true);            // flag for invalid coord line
     bool is_combo_region(false);        // flag for combining two region lines (textbox + text)
@@ -84,32 +86,16 @@ void Ds9Importer::SetFileLineRegions(std::vector<std::string>& file_lines) {
 
 // Coordinate system handlers
 
-void Ds9Importer::InitDs9CoordMap() {
-    _coord_map[""] = "";
-    _coord_map["physical"] = "";
-    _coord_map["image"] = "";
-    _coord_map["b1950"] = "B1950";
-    _coord_map["fk4"] = "B1950";
-    _coord_map["j2000"] = "J2000";
-    _coord_map["fk5"] = "J2000";
-    _coord_map["galactic"] = "GALACTIC";
-    _coord_map["ecliptic"] = "ECLIPTIC";
-    _coord_map["icrs"] = "ICRS";
-    _coord_map["wcs"] = "UNSUPPORTED";
-    _coord_map["wcsa"] = "UNSUPPORTED";
-    _coord_map["linear"] = "UNSUPPORTED";
-}
-
 bool Ds9Importer::IsDs9Coord(std::string& file_line) {
     std::string line_lower(file_line);
-    std::transform(file_line.begin(), file_line.end(), line_lower.begin(), ::tolower); // convert to lowercase
-    return (_coord_map.find(line_lower) != _coord_map.end());
+    std::transform(file_line.begin(), file_line.end(), line_lower.begin(), ::tolower);
+    return (_coordinate_frames.find(line_lower) != _coordinate_frames.end());
 }
 
 bool Ds9Importer::SetFileCoordFrame(std::string& ds9_coord) {
     std::transform(ds9_coord.begin(), ds9_coord.end(), ds9_coord.begin(), ::tolower);
-    if (_coord_map.find(ds9_coord) != _coord_map.end()) {
-        _file_coord_frame = _coord_map[ds9_coord];
+    if (_coordinate_frames.find(ds9_coord) != _coordinate_frames.end()) {
+        _file_coord_frame = _coordinate_frames[ds9_coord];
     } else {
         _file_coord_frame = "UNSUPPORTED";
         _import_pixels = false;
@@ -192,7 +178,7 @@ RegionProperties Ds9Importer::SetRegion(std::string& file_line) {
         } else {
             bool is_annulus = (region_name == "ellipse" || region_name == "box") && parameters.size() > 6;
             if (!is_annulus) { // error already appended
-                _errors.append("Invalid DS9 region syntax: " + region_name);
+                _errors.append("Invalid DS9 region syntax: " + region_name + "\n");
             }
         }
     }
@@ -569,8 +555,8 @@ RegionState Ds9Importer::ImportRulerRegion(
     }
 
     RegionState region_state;
-    if (!ruler_coord.empty() && (ruler_coord != _file_coord_frame)) {
-        // Use ruler coordinate to set RegionState
+    if (!ruler_coord.empty() && _file_coord_frame.empty()) {
+        // Use ruler coordinate to set RegionState if no file coord frame
         std::string file_coord_frame = _file_coord_frame; // copy
         if (SetFileCoordFrame(ruler_coord)) {
             region_state = ImportPolygonLineRegion(parameters);
@@ -596,8 +582,8 @@ RegionState Ds9Importer::ImportCompassRegion(
     }
 
     RegionState region_state;
-    if (!compass_coord.empty() && (compass_coord != _file_coord_frame)) {
-        // Use compass coordinate to set RegionState
+    if (!compass_coord.empty() && _file_coord_frame.empty()) {
+        // Use compass coordinate to set RegionState if no file coord frame
         std::string file_coord_frame = _file_coord_frame; // copy
         if (SetFileCoordFrame(compass_coord)) {
             region_state = ImportCircleRegion(parameters);

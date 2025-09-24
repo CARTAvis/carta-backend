@@ -72,6 +72,13 @@ private:
     void SetFileCoordFrame();
 
     /**
+     * @brief Convert casacore coordinate frame string to  DS9 frame.
+     * @param casacore_frame Coordinate frame in casacore format
+     * @return Coordinate frame in DS9 format
+     */
+    std::string CasacoreFrameToDs9(const std::string& casacore_frame);
+
+    /**
      * @brief Return DS9 file header lines.
      */
     std::vector<std::string> GetFileHeader();
@@ -139,6 +146,9 @@ private:
 
     /** @brief Default DS9 properties. */
     std::unordered_map<std::string, std::string> _global_properties;
+
+    /** @brief Casacore to DS9 coordinate frame. */
+    static std::unordered_map<std::string, std::string> _coordinate_frames;
 };
 
 } // namespace carta

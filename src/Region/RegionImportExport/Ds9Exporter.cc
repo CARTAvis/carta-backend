@@ -19,27 +19,17 @@
 
 using namespace carta;
 
+std::unordered_map<std::string, std::string> Ds9Exporter::_coordinate_frames{
+    {"B1950", "fk4"}, {"J2000", "fk5"}, {"GALACTIC", "galactic"}, {"ECLIPTIC", "ecliptic"}, {"ICRS", "icrs"}};
+
 Ds9Exporter::Ds9Exporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& shape, bool export_pixels)
     : RegionExporter(coord_sys, shape), _export_pixels(export_pixels) {
-    InitGlobalProperties();
-    SetFileCoordFrame();
+    _global_properties = {{"color", "green"}, {"dashlist", "8 3"}, {"width", "1"}, {"font", "\"helvetica 10 normal roman\""},
+        {"select", "1"}, {"highlite", "1"}, {"dash", "0"}, {"fixed", "0"}, {"edit", "1"}, {"move", "1"}, {"delete", "1"}, {"include", "1"},
+        {"source", "1"}};
     _region_names = GetRegionTypeNames(CARTA::FileType::DS9_REG);
-}
 
-void Ds9Exporter::InitGlobalProperties() {
-    _global_properties["color"] = "green";
-    _global_properties["dashlist"] = "8 3";
-    _global_properties["width"] = "1";
-    _global_properties["font"] = "\"helvetica 10 normal roman\"";
-    _global_properties["select"] = "1";
-    _global_properties["highlite"] = "1";
-    _global_properties["dash"] = "0";
-    _global_properties["fixed"] = "0";
-    _global_properties["edit"] = "1";
-    _global_properties["move"] = "1";
-    _global_properties["delete"] = "1";
-    _global_properties["include"] = "1";
-    _global_properties["source"] = "1";
+    SetFileCoordFrame();
 }
 
 bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
@@ -205,14 +195,15 @@ void Ds9Exporter::SetFileCoordFrame() {
     if (_export_pixels || _image_coord_frame.empty()) {
         _file_coord_frame = "image";
     } else {
-        std::unordered_map<std::string, std::string> coord_map{
-            {"B1950", "fk4"}, {"J2000", "fk5"}, {"GALACTIC", "galactic"}, {"ECLIPTIC", "ecliptic"}, {"ICRS", "icrs"}};
-        if (coord_map.find(_image_coord_frame) != coord_map.end()) {
-            _file_coord_frame = coord_map[_image_coord_frame];
-        } else {
-            _file_coord_frame = _image_coord_frame;
-        }
+        _file_coord_frame = CasacoreFrameToDs9(_image_coord_frame);
     }
+}
+
+std::string Ds9Exporter::CasacoreFrameToDs9(const std::string& casacore_frame) {
+    if (_coordinate_frames.find(casacore_frame) != _coordinate_frames.end()) {
+        return _coordinate_frames[casacore_frame];
+    }
+    return casacore_frame;
 }
 
 std::vector<std::string> Ds9Exporter::GetFileHeader() {
@@ -513,8 +504,14 @@ void Ds9Exporter::AddAnnotationStyle(CARTA::RegionType region_type, const CARTA:
             break;
         }
         case CARTA::RegionType::ANNRULER: {
-            std::string unit = (_image_coord_frame == "image" || _image_coord_frame == "linear" ? "image" : "degrees");
-            file_line += fmt::format(" ruler={} {}", _file_coord_frame, unit);
+            auto ruler_frame = CasacoreFrameToDs9(_image_coord_frame); // image coord frame regardless of pix/world coords
+            if (ruler_frame.empty()) {
+                file_line += fmt::format(" ruler=pixels");
+            } else if (ruler_frame == "image" || ruler_frame == "linear") {
+                file_line += fmt::format(" ruler={} pixels", ruler_frame);
+            } else {
+                file_line += fmt::format(" ruler={} degrees", ruler_frame);
+            }
             break;
         }
         case CARTA::RegionType::ANNTEXT: {
@@ -522,7 +519,8 @@ void Ds9Exporter::AddAnnotationStyle(CARTA::RegionType region_type, const CARTA:
             break;
         }
         case CARTA::RegionType::ANNCOMPASS: {
-            AddCompassStyle(region_style, _file_coord_frame, file_line);
+            auto compass_frame = CasacoreFrameToDs9(_image_coord_frame); // image coord frame regardless of pix/world coords
+            AddCompassStyle(region_style, compass_frame, file_line);
             break;
         }
         default:
