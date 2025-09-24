@@ -8,10 +8,11 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
+#include "Frame/Frame.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
 #include "Region/RegionHandler.h"
-#include "src/Frame/Frame.h"
+#include "Util/Stokes.h"
 
 using namespace carta;
 
@@ -123,26 +124,25 @@ TEST_F(RegionHistogramTest, TestFitsAnnotationRegionHistogram) {
 TEST_F(RegionHistogramTest, TestStokesRegionHistogram) {
     std::string image_path = FileFinder::FitsImagePath("noise_4d.fits"); // Stokes I and Q
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
-    std::vector<std::string> coordinates{"z", "Iz", "Qz", "Uz", "Plinearz", "PFlinearz", "Pangle"};
-    std::unordered_map<std::string, int> stokes_axis{{"I", 0}, {"Q", 1}};
-    int expected_num_bins = sqrt(4 * 4); // region bounding box is 4x4
+    std::vector<std::string> coordinates{"z", "Iz", "Qz", "Uz", "Plinearz", "PFlinearz", "Panglez"};
+    std::unordered_map<std::string, int> expected_stokes{{"z", 0}, {"Iz", 0}, {"Qz", 1}};
+    int expected_num_bins = sqrt(4 * 4); // for 4x4 region
 
     for (auto& coordinate : coordinates) {
         CARTA::RegionHistogramData histogram_data;
         bool ok = RegionHistogram(image_path, endpoints, histogram_data, coordinate);
-        std::string stokes_coord = (coordinate == "z" ? "I" : coordinate.substr(0, coordinate.length() - 1));
 
-        if (stokes_axis.find(stokes_coord) != stokes_axis.end()) {
+        if (expected_stokes.find(coordinate) != expected_stokes.end()) {
             ASSERT_TRUE(ok);
             ASSERT_TRUE(histogram_data.has_histograms());
-            ASSERT_EQ(histogram_data.stokes(), stokes_axis[stokes_coord]);
-            ASSERT_EQ(histogram_data.histograms().num_bins(), expected_num_bins); // default histogram has 1 bin
+            ASSERT_EQ(histogram_data.stokes(), expected_stokes[coordinate]);
+            ASSERT_EQ(histogram_data.histograms().num_bins(), sqrt(4 * 4)); // for 4x4 region
             ASSERT_GT(histogram_data.histograms().bin_width(), 0.0);
             ASSERT_NE(histogram_data.histograms().first_bin_center(), 0.0);
             ASSERT_FALSE(std::isnan(histogram_data.histograms().mean()));
             ASSERT_FALSE(std::isnan(histogram_data.histograms().std_dev()));
         } else {
-            // Fails for U and computed Stokes
+            // Histogram fails for U and all computed Stokes
             ASSERT_FALSE(ok);
             ASSERT_FALSE(histogram_data.has_histograms());
         }
