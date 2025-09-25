@@ -1556,8 +1556,7 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
 
 // ***** Fill histogram *****
 
-bool RegionHandler::FillRegionHistogramData(
-    std::function<void(CARTA::RegionHistogramData histogram_data)> callback, int region_id, int file_id) {
+bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
     // Fill histogram data for given region and file
     if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
@@ -1611,14 +1610,14 @@ bool RegionHandler::FillRegionHistogramData(
                 if (!lcregion) {
                     // Default histogram for region outside image
                     histogram.second->AddDefaultHistogram(histogram_data_message);
-                    callback(histogram_data_message);
+                    cb(histogram_data_message);
                     success = true;
                     continue;
                 }
 
                 if (histogram.second->AddHistogram(
                         hist_file_id, frame, histogram_config, lcregion, stokes_source, histogram_data_message)) {
-                    callback(histogram_data_message);
+                    cb(histogram_data_message);
                     success = true;
                 }
             }

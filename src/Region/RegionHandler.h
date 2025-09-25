@@ -58,7 +58,7 @@ public:
         const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
 
     // Calculations
-    bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> callback, int region_id, int file_id);
+    bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id);
     bool FillSpectralProfileData(
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
