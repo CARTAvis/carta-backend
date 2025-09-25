@@ -56,7 +56,7 @@ public:
      * @param[in] config Histogram configuration struct
      * @param[in] lcregion Region applied to image
      * @param[in] stokes_source Struct describing stokes and z range
-     * @param[in, out] histogram_data_message Region histogram data message
+     * @param[out] histogram_data_message Region histogram data message
      * @return Whether histogram was added
      */
     bool GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
@@ -72,10 +72,9 @@ private:
     /**
      * @brief Fill message with histogram parameters.
      * @param file_id File id for image frame
-     * @param[in] frame Image frame
+     * @param[in] stokes_source Struct describing stokes and z range
      * @param[in] config Histogram configuration struct
      * @param[out] histogram_data Histogram data message
-     * @return Whether parameters were filled
      */
     void FillHistogramDataParams(
         int file_id, StokesSource& stokes_source, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data_message);
