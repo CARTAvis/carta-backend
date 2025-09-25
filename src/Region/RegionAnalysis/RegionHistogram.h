@@ -50,23 +50,6 @@ public:
     std::vector<int> GetConfigFileIds(int file_id);
 
     /**
-     * @brief Fill message with histogram parameters.
-     * @param file_id File id for image frame
-     * @param[in] frame Image frame
-     * @param[in] config Histogram configuration struct
-     * @param[out] histogram_data Histogram data message
-     * @return Whether parameters were filled
-     */
-    bool FillHistogramDataParams(
-        int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data);
-
-    /**
-     * @brief Add default histogram to message.
-     * @param[in, out] histogram_data Histogram data message
-     */
-    void AddDefaultHistogram(CARTA::RegionHistogramData& histogram_data);
-
-    /**
      * @brief Add cached or calculated histogram to message.
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
@@ -76,7 +59,7 @@ public:
      * @param[in, out] histogram_data_message Region histogram data message
      * @return Whether histogram was added
      */
-    bool AddHistogram(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
+    bool GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
         std::shared_ptr<casacore::LCRegion> lcregion, StokesSource& stokes_source, CARTA::RegionHistogramData& histogram_data_message);
 
     /** @brief Clear cache when region changes. */
@@ -86,6 +69,17 @@ public:
     void ClearFileConfigsCache(int file_id);
 
 private:
+    /**
+     * @brief Fill message with histogram parameters.
+     * @param file_id File id for image frame
+     * @param[in] frame Image frame
+     * @param[in] config Histogram configuration struct
+     * @param[out] histogram_data Histogram data message
+     * @return Whether parameters were filled
+     */
+    void FillHistogramDataParams(
+        int file_id, StokesSource& stokes_source, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data_message);
+
     /**
      * @brief Get number of bins from config and calculate if not supplied.
      * @param config Histogram configuration struct
@@ -105,6 +99,12 @@ private:
      */
     bool AddCachedHistogram(
         CacheId& cache_id, const HistogramConfig& config, int num_bins, CARTA::RegionHistogramData& histogram_data_message);
+
+    /**
+     * @brief Add default histogram to message.
+     * @param[in, out] histogram_data Histogram data message
+     */
+    void AddDefaultHistogram(CARTA::RegionHistogramData& histogram_data);
 
     /** @brief Region id for this object, for config and cache ids. */
     int _region_id;

@@ -1597,25 +1597,18 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
 
             for (auto& histogram_config : histogram_configs) {
                 // Create data message for each configuration
-                CARTA::RegionHistogramData histogram_data_message;
-                if (!histogram.second->FillHistogramDataParams(hist_file_id, frame, histogram_config, histogram_data_message)) {
+                int stokes(0);
+                if (!frame->GetStokesTypeIndex(histogram_config.coordinate, stokes)) {
                     continue;
                 }
 
-                AxisRange z_range(histogram_data_message.channel());
-                int stokes(histogram_data_message.stokes());
+                int z = (histogram_config.channel == CURRENT_Z ? frame->CurrentZ() : histogram_config.channel);
+                AxisRange z_range(z);
                 StokesSource stokes_source(stokes, z_range);
                 std::shared_ptr<casacore::LCRegion> lcregion = ApplyRegionToFile(hist_region_id, hist_file_id, stokes_source);
+                CARTA::RegionHistogramData histogram_data_message;
 
-                if (!lcregion) {
-                    // Default histogram for region outside image
-                    histogram.second->AddDefaultHistogram(histogram_data_message);
-                    cb(histogram_data_message);
-                    success = true;
-                    continue;
-                }
-
-                if (histogram.second->AddHistogram(
+                if (histogram.second->GetRegionHistogramData(
                         hist_file_id, frame, histogram_config, lcregion, stokes_source, histogram_data_message)) {
                     cb(histogram_data_message);
                     success = true;

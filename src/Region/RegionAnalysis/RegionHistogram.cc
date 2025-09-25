@@ -50,15 +50,11 @@ std::vector<int> RegionHistogram::GetConfigFileIds(int file_id) {
     return file_ids;
 }
 
-bool RegionHistogram::FillHistogramDataParams(
-    int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data) {
-    int stokes(0);
-    if (!frame->GetStokesTypeIndex(config.coordinate, stokes)) {
-        return false;
-    }
-    int z = (config.channel == CURRENT_Z ? frame->CurrentZ() : config.channel);
-    histogram_data = Message::RegionHistogramData(file_id, _region_id, z, stokes, 1.0, config);
-    return true;
+void RegionHistogram::FillHistogramDataParams(
+    int file_id, StokesSource& stokes_source, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data_message) {
+    int stokes(stokes_source.stokes);
+    int z(stokes_source.z_range.from);
+    histogram_data_message = Message::RegionHistogramData(file_id, _region_id, z, stokes, 1.0, config);
 }
 
 void RegionHistogram::AddDefaultHistogram(CARTA::RegionHistogramData& histogram_data_message) {
@@ -67,13 +63,20 @@ void RegionHistogram::AddDefaultHistogram(CARTA::RegionHistogramData& histogram_
     FillHistogram(histogram, 1, 0.0, 0.0, histogram_bins, DOUBLE_NAN, DOUBLE_NAN); // Message helper
 }
 
-bool RegionHistogram::AddHistogram(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
+bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
     std::shared_ptr<casacore::LCRegion> lcregion, StokesSource& stokes_source, CARTA::RegionHistogramData& histogram_data_message) {
+    FillHistogramDataParams(file_id, stokes_source, config, histogram_data_message);
+    if (!lcregion) {
+        // Region outside image
+        AddDefaultHistogram(histogram_data_message);
+        return true;
+    }
+
     int num_bins = GetNumBins(config, frame, lcregion); // from config or calculated from region shape
 
     // Check cache
-    int stokes = histogram_data_message.stokes();
-    int z = histogram_data_message.channel();
+    int stokes = stokes_source.stokes;
+    int z = stokes_source.z_range.from;
     CacheId cache_id(file_id, _region_id, stokes, z);
     if (AddCachedHistogram(cache_id, config, num_bins, histogram_data_message)) {
         return true;
