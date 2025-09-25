@@ -74,7 +74,7 @@ private:
      * @param file_id File id for image frame
      * @param[in] stokes_source Struct describing stokes and z range
      * @param[in] config Histogram configuration struct
-     * @param[out] histogram_data Histogram data message
+     * @param[out] histogram_data_message Region histogram data message
      */
     void FillHistogramDataParams(
         int file_id, StokesSource& stokes_source, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data_message);
