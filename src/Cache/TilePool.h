@@ -12,6 +12,8 @@
 #include <stack>
 #include <vector>
 
+#include "Util/Image.h"
+
 namespace carta {
 
 using TilePtr = std::shared_ptr<std::vector<float>>;
@@ -22,11 +24,17 @@ using TilePtr = std::shared_ptr<std::vector<float>>;
  * be 4 more than the capacity of the cache, so that we can always load a chunk before evicting anything.
  */
 struct TilePool : std::enable_shared_from_this<TilePool> {
-    /** @brief Constructor */
-    TilePool() : _capacity(4) {}
-    /** @brief Grow the capacity of the pool.
-     *  @param size the size increment to be added
+    /** @brief Constructor with defaults */
+    TilePool() : TilePool(4, TILE_SIZE * TILE_SIZE, NAN) {}
+    /** @brief Configurable constructor
+     *  @param capacity maximum number of tiles in the pool
+     *  @param tile_size number of float elements in each tile
+     *  @param new_tile_fill fill value for newly created tiles (default NAN)
      */
+    TilePool(int capacity, size_t tile_size, float new_tile_fill = NAN)
+        : _capacity(capacity),
+          _tile_size(tile_size),
+          _new_tile_fill(new_tile_fill) {}
     void Grow(int size);
     /** @brief Request a tile object from the pool.
      *  @return A tile object.
@@ -58,6 +66,10 @@ private:
      *  @details When capacity is reached, discarded tile objects are really deleted instead of being returned to the pool.
      */
     int _capacity;
+    /** @brief The number of floats in each tile. */
+    size_t _tile_size;
+    /** @brief The fill value used when allocating new tiles. */
+    float _new_tile_fill;
 
     /** @brief The custom deleter which allows discarded tiles to be returned to the pool. */
     struct TilePtrDeleter {

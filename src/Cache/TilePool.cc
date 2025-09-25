@@ -41,7 +41,7 @@ bool TilePool::Full() {
 }
 
 TilePtr TilePool::Create() {
-    auto unique_tile = std::make_unique<std::vector<float>>(TILE_SIZE * TILE_SIZE, NAN);
+    auto unique_tile = std::make_unique<std::vector<float>>(_tile_size, _new_tile_fill);
     TilePtr tile(unique_tile.release(), TilePool::TilePtrDeleter());
     return tile;
 }

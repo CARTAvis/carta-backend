@@ -68,7 +68,7 @@ public:
     bool FillRender3DData(const CARTA::Render3DRequest& render3d_request, std::shared_ptr<Frame>& frame, std::function<void(CARTA::Render3DResponse render3d_response)> ack_callback, std::function<void(CARTA::Render3DData render3d_data)> cb);
     bool SendRender3DData(int file_id, int region_id, int viewer_id,
     AxisRange& spectral_range, int rebin_xy, int rebin_z, CARTA::CompressionType compression_type, float compression_quality, std::shared_ptr<Frame>& frame, std::function<void(CARTA::Render3DData render3d_data)> cb);
-    void Rebin(casacore::SubImage<float> sub_image, int width, int height, int num_slices, int rebin_xy, int rebin_z, std::vector<float>& rebinned_data);
+    void Rebin(casacore::SubImage<float> sub_image, int width, int height, int num_slices, int rebin_xy, int rebin_z, std::shared_ptr<std::vector<float>> rebinned_data_ptr);
 
     // Calculate moments
     bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
@@ -234,6 +234,8 @@ private:
     // 3D rendering, key is viewer_id. Mutex to protect cube in use.
     std::unordered_map<int, std::shared_ptr<PvPreviewCube>> _render3d_cubes;
     std::shared_mutex _render3d_cube_mutex;
+    // For 3D rendering FillRender3DData
+    std::shared_ptr<TilePool> _tile_pool; // memory allocated for tile data
 
     // Prevent crash during line profiles
     std::mutex _line_profile_mutex;

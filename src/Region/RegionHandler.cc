@@ -1967,6 +1967,30 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     int height;
     int depth = spectral_range.to - spectral_range.from + 1;
 
+    if (is_image_region) {
+        width = frame->Width();
+        height = frame->Height();
+    } else {
+        StokesSource stokes_source(stokes, AxisRange(spectral_range.from, std::min(spectral_range.from + num_slices - 1, spectral_range.to)));
+        std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(region_id, file_id, stokes_source);
+        if (!lc_region) {
+            //render3d_response.set_message("Failed to set preview region for preview cube (3D rendering).");
+            return false;
+        }
+        auto origin = lc_region->boundingBox().start();
+        auto ending = lc_region->boundingBox().end();
+        width = ending(0)-origin(0)+1;
+        height = ending(1)-origin(1)+1;
+    }
+
+    _tile_pool = std::make_shared<carta::TilePool>(3, std::ceil((float)width / (float)rebin_xy) * std::ceil((float)height / (float)rebin_xy) * num_slices, NAN);
+
+    // declare data container to reuse
+    casacore::Array<float> casa_data;
+    std::vector<int> nan_encodings;
+    std::vector<char> compression_buffer;
+    size_t compressed_size;
+
     float progress(0.0);
     for (int start = spectral_range.from; start <= spectral_range.to; start += num_slices) {  
         
@@ -2034,37 +2058,26 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
             }
         }
 
-        // preview_image = std::shared_ptr<casacore::ImageInterface<float>>
-        // sub_image = casacore::SubImage<float>
-        // we need casacore::Array<float> to compress
-        // after compression std::vector<float>?????
-
         progress = (float)(slices_range.to - spectral_range.from) / (float)(spectral_range.to - spectral_range.from);
-
-        // make compression
-
+        
         compression_type = CARTA::CompressionType::ZFP;
         compression_quality = 11; // high is 32, use 20 for now
         // compression_type = CARTA::CompressionType::NONE;
         // compression_quality = -1;
-        
-        std::vector<char> compression_buffer;
-        size_t compressed_size;
-        // get data and transform to vector
-        std::vector<float> image_data;
 
         size_t rebin_width = std::ceil((float)width / (float)rebin_xy);
         size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
         size_t rebin_depth = std::ceil((float)depth / (float)rebin_z);
-
         auto diff = slices_range.to - slices_range.from + 1;
 
+        auto image_data_ptr = _tile_pool->Pull();
+
         if (rebin_xy == 1 && rebin_z == 1) {
-            casacore::Array<float> casa_data;
             sub_image.get(casa_data);
-            image_data.insert(image_data.begin(), casa_data.begin(), casa_data.end());
+            // image_data.insert(image_data.begin(), casa_data.begin(), casa_data.end());
+            image_data_ptr->assign(casa_data.begin(), casa_data.end());
         } else {
-            Rebin(sub_image, width, height, diff, rebin_xy, rebin_z, image_data);
+            Rebin(sub_image, width, height, diff, rebin_xy, rebin_z, image_data_ptr);
         }
 
         CARTA::Render3DData data_message;
@@ -2078,7 +2091,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         data_message.set_progress(progress);
 
         if (compression_type == CARTA::CompressionType::NONE) {
-            data_message.set_image_data(image_data.data(), image_data.size() * sizeof(float));
+            data_message.set_image_data(image_data_ptr->data(), image_data_ptr->size() * sizeof(float));
             data_message.set_compression_type(compression_type);
             data_message.set_compression_quality(compression_quality);
             
@@ -2086,32 +2099,22 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
         } else {
 
-            std::vector<int> nan_encodings;
-
             if (num_slices == 1){
-                nan_encodings = GetNanEncodingsBlock(image_data, 0, std::ceil(width/rebin_xy), std::ceil(height/rebin_xy));
-                Compress(image_data, 0, compression_buffer, compressed_size, width, height, compression_quality);
+                // Only for sending individual slices.
+                nan_encodings = GetNanEncodingsBlock(*image_data_ptr, 0, rebin_width, rebin_height);
+                Compress(*image_data_ptr, 0, compression_buffer, compressed_size, width, height, compression_quality);
             } else {
                 // check how many slices are left
                 if ( diff < num_slices && rebin_xy == 1 && rebin_z == 1) {
                     data_message.set_slice(diff/rebin_z);
-                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, width, height, diff);
-                    Compress3D(image_data, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
+                    nan_encodings = GetNanEncodingsBlock3D(*image_data_ptr, 0, width, height, diff);
+                    Compress3D(*image_data_ptr, 0, compression_buffer, compressed_size, width, height, diff, compression_quality);
                 } else {
                     // Check how to compress with NaN values. Give a number of NaN values.
-                    nan_encodings = GetNanEncodingsBlock3D(image_data, 0, rebin_width, rebin_height, 4);
-                    Compress3D(image_data, 0, compression_buffer, compressed_size, rebin_width, rebin_height, 4, compression_quality);
+                    nan_encodings = GetNanEncodingsBlock3D(*image_data_ptr, 0, rebin_width, rebin_height, 4);
+                    Compress3D(*image_data_ptr, 0, compression_buffer, compressed_size, rebin_width, rebin_height, 4, compression_quality);
                 }
             }
-
-            // std::cout << "image_data size: " << image_data.size() << std::endl;
-            // std::cout << "compressed size: " << compressed_size << std::endl;
-            // std::cout << "compression_buffer size: " << compression_buffer.size() << std::endl;
-            // std::cout << "nan_encodings size: " << nan_encodings.size() << std::endl;
-            // std::cout << "width: " << width << std::endl;
-            // std::cout << "height: " << height << std::endl;
-            // std::cout << "depth: " << depth << std::endl;
-            // std::cout << "num_slice: " << num_slices << std::endl;
 
             data_message.set_image_data(compression_buffer.data(), compressed_size);
             data_message.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
@@ -2129,7 +2132,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
     return false;
 }
 
-void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int height, int num_slices, int rebin_xy, int rebin_z, std::vector<float>& rebinned_data) {
+void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int height, int num_slices, int rebin_xy, int rebin_z, std::shared_ptr<std::vector<float>> rebinned_data_ptr) {
 
     int spectral_axis(sub_image.coordinates().spectralAxisNumber());
     auto subimage_shape = sub_image.shape();
@@ -2143,34 +2146,30 @@ void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int he
     length(spectral_axis) = num_slices;
 
     size_t rebin_channel_size = rebin_width * rebin_height;
+    // size_t total_size = rebin_channel_size * rebin_nchan;
 
-    // std::vector<float> rebinned_data(rebin_channel_size * rebin_nchan, 0.0);
-    // rebinned_data = NAN; // Initialize with NaN
+    casacore::Array<float> data;
+    std::vector<float> channel_sum(rebin_channel_size, 0.0);
 
     for (auto ichan = 0; ichan < rebin_nchan * rebin_z; ichan += rebin_z) {
 
-        // Check if can average next rebin_z channels
-        // if (ichan + rebin_z - 1 >= num_slices) {
-        //     break;
-        // }
+        float* out_ptr = rebinned_data_ptr->data() + (ichan / rebin_z) * rebin_channel_size;
 
         // Accumulate rebin_z channels
-        std::vector<float> channel_sum(rebin_channel_size, 0.0);
 
         for (int rebin_chan = 0; rebin_chan < rebin_z; ++rebin_chan) {
-
-            casacore::Array<float> data;
             casacore::Slicer channel_slicer(start, length);
             sub_image.getSlice(data, channel_slicer, true);
             auto channel_data = data.tovector();
 
             if (rebin_xy > 1) {
                 // Rebin channel data in xy
-                std::vector<float> rebinned_data(rebin_channel_size, std::numeric_limits<double>::quiet_NaN()); // Initialize with NaNs
-                BlockSmooth(channel_data.data(), rebinned_data.data(), width, height, rebin_width, rebin_height, 0, 0, rebin_xy);
+                // std::vector<float> rebinned_data(rebin_channel_size, std::numeric_limits<double>::quiet_NaN()); // Initialize with NaNs
+                float* out_ptr = rebinned_data_ptr->data() + (ichan / rebin_z) * rebin_channel_size;
+                BlockSmooth(channel_data.data(), out_ptr, width, height, rebin_width, rebin_height, 0, 0, rebin_xy);
 
                 // Accumulate rebinned channel data
-                std::transform(channel_sum.begin(), channel_sum.end(), rebinned_data.begin(), channel_sum.begin(), std::plus<float>());
+                std::transform(channel_sum.begin(), channel_sum.end(), out_ptr, channel_sum.begin(), std::plus<float>());
             } else {
                 // Accumulate channel data
                 std::transform(channel_sum.begin(), channel_sum.end(), channel_data.begin(), channel_sum.begin(), std::plus<float>());
@@ -2181,7 +2180,9 @@ void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int he
         std::transform(channel_sum.begin(), channel_sum.end(), channel_sum.begin(), [rebin_z](float& s) { return s / (float)rebin_z; });
 
         // Fill rebinned_data with accumulated channel sums
-        rebinned_data.insert(rebinned_data.end(), channel_sum.begin(), channel_sum.end());
+        std::copy(channel_sum.begin(),
+                  channel_sum.end(),
+                  rebinned_data_ptr->begin() + (ichan / rebin_z) * rebin_channel_size);
     }
 }
 
