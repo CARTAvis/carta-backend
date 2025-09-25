@@ -9,6 +9,7 @@
 #include "RegionHistogram.h"
 
 #include "ImageStats/StatsCalculator.h"
+#include "RegionAnalysisUtil.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
 
@@ -126,22 +127,6 @@ bool RegionHistogram::AddCachedHistogram(
         }
     }
     return success;
-}
-
-StokesSlicer RegionHistogram::GetRegionStokesSlicer(
-    std::shared_ptr<Frame> frame, std::shared_ptr<casacore::LCRegion> lcregion, StokesSource& stokes_source) {
-    StokesSlicer image_slicer = frame->GetImageSlicer(stokes_source.z_range, stokes_source.stokes);
-    auto start = image_slicer.slicer.start();
-    auto end = image_slicer.slicer.end();
-
-    // Set start and end to region slicer
-    auto region_slicer = lcregion->boundingBox();
-    start[0] = region_slicer.start()[0];
-    start[1] = region_slicer.start()[1];
-    end[0] = region_slicer.end()[0];
-    end[1] = region_slicer.end()[1];
-    casacore::Slicer stokes_slicer(start, end, casacore::Slicer::endIsLast);
-    return StokesSlicer(stokes_source, stokes_slicer);
 }
 
 void RegionHistogram::ClearCache() {

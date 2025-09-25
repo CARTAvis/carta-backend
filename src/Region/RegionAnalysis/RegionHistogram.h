@@ -106,16 +106,6 @@ private:
     bool AddCachedHistogram(
         CacheId& cache_id, const HistogramConfig& config, int num_bins, CARTA::RegionHistogramData& histogram_data_message);
 
-    /**
-     * @brief Get stokes source and slicer for region applied to image.
-     * @param frame Image frame
-     * @param lcregion Region applied to image
-     * @param stokes_source Struct describing stokes and z range
-     * @return StokesSlicer for region
-     */
-    StokesSlicer GetRegionStokesSlicer(
-        std::shared_ptr<Frame> frame, std::shared_ptr<casacore::LCRegion> lcregion, StokesSource& stokes_source);
-
     /** @brief Region id for this object, for config and cache ids. */
     int _region_id;
 
