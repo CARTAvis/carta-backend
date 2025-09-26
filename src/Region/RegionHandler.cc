@@ -357,7 +357,7 @@ void RegionHandler::RemoveFrame(int file_id) {
 // ********************************************************************
 // Region requirements handling
 
-bool RegionHandler::SetHistogramConfigs(
+bool RegionHandler::SetHistogramRequirements(
     int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::HistogramConfig>& configs) {
     // Set histogram configurations for closed region
     if (configs.empty() && !RegionSet(region_id)) {
