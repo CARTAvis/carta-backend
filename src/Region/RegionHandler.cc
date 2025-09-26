@@ -2098,8 +2098,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     return true;
 }
 
-// ***** Fill stats data *****
-
 bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id) {
     // Fill stats data for given region and file
     if (!RegionFileIdsValid(region_id, file_id, true)) {

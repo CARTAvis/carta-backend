@@ -133,8 +133,6 @@ private:
     bool GetRegionSpectralData(int region_id, int file_id, const AxisRange& z_range, std::string& coordinate, int stokes_index,
         std::vector<CARTA::StatsType>& required_stats, bool report_error,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
-    bool GetRegionStatsData(
-        int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
     bool GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
         const std::function<void(std::vector<float>&, casacore::Quantity&)>& spatial_profile_callback);
 
