@@ -111,7 +111,7 @@ private:
     /** @brief Region id for this object, for config and cache ids. */
     int _region_id;
 
-    /** @brief Histogram configurations. */
+    /** @brief Histogram configurations stored as vector of HistogramConfig structs. */
     std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _configs;
 
     /** @brief Cache to hold calculated histograms. */

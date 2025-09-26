@@ -20,7 +20,7 @@ RegionHistogram::RegionHistogram(int region_id, int file_id, const std::vector<C
 }
 
 void RegionHistogram::SetConfigurations(int file_id, const std::vector<CARTA::HistogramConfig>& configs) {
-    std::vector<HistogramConfig> input_configs;
+    std::vector<HistogramConfig> input_configs; // config structs
     for (const auto& config : configs) {
         HistogramConfig hist_config(config);
         input_configs.push_back(hist_config);
@@ -42,8 +42,7 @@ bool RegionHistogram::GetConfigurations(int file_id, std::vector<HistogramConfig
 std::vector<int> RegionHistogram::GetConfigFileIds(int file_id) {
     std::vector<int> file_ids;
     for (auto& config : _configs) {
-        // File id -1 is for all files
-        if ((file_id < 0) || (config.first.file_id == file_id)) {
+        if ((file_id == ALL_FILES) || (config.first.file_id == file_id)) {
             file_ids.push_back(config.first.file_id);
         }
     }

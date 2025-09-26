@@ -1554,24 +1554,18 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
 // region_id < 0 file_id < 0    not allowed (all regions for all files?)
 // region_id = 0                not allowed (cursor region handled by Frame)
 
-// ***** Fill histogram *****
-
 bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
-    // Fill histogram data for given region and file
     if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
-    if (region_id > 0) {
-        // Fill histograms for specific region with file_id requirement (specific file_id or all files)
-        if (_region_histograms.find(region_id) == _region_histograms.end()) {
-            return false;
-        }
+    if ((region_id > 0) && (_region_histograms.find(region_id) == _region_histograms.end())) {
+        return false;
     }
 
     bool success(false);
     for (auto& histogram : _region_histograms) {
-        // Find histogram configurations with region_id (if set) and file_id (if set)
+        // Find histogram configurations with region_id and file_id
         int hist_region_id = histogram.first;
         if ((region_id > 0) && (hist_region_id != region_id)) {
             continue;
