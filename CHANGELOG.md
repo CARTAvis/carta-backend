@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * Standardized use of float and double NaN (Not a Number) ([#1502](https://github.com/CARTAvis/carta-backend/issues/1502)).
+* Moved region statistics implementation to new class ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
 
 ## [5.0.2]
 

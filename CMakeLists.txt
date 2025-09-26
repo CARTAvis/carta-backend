@@ -264,6 +264,7 @@ set(SOURCE_FILES
         src/Region/RegionConverter.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
+        src/Region/RegionAnalysis/RegionStatistics.cc
         src/Session/ChannelMapSettings.cc
         src/Session/CursorSettings.cc
         src/Session/OnMessageTask.cc

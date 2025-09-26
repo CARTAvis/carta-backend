@@ -17,6 +17,7 @@
 #include "ImageGenerators/PvPreviewCube.h"
 #include "ImageGenerators/PvPreviewCut.h"
 #include "Region.h"
+#include "RegionAnalysis/RegionStatistics.h"
 
 namespace carta {
 
@@ -54,8 +55,8 @@ public:
         const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs);
-    bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
-        const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
+    bool SetStatsRequirements(
+        int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs);
 
     // Calculations
     bool FillRegionHistogramData(
@@ -123,7 +124,7 @@ private:
         int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     // Returns StokesRegion struct with StokesSource and ImageRegion.
     // Uses LCRegion if supplied, else sets LCRegion to get ImageRegion
-    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, std::shared_ptr<casacore::LCRegion> lc_region,
+    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, std::shared_ptr<casacore::LCRegion> lcregion,
         StokesRegion& stokes_region);
 
     // Data stream helpers
@@ -183,10 +184,12 @@ private:
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
+    // Region analysis
+    std::unordered_map<int, std::unique_ptr<RegionStatistics>> _region_statistics;
+
     // Requirements; ConfigId key contains file, region
     std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _histogram_req;
     std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> _spectral_req;
-    std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
     std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
     // Lock to add/remove requirements
     std::mutex _spatial_mutex;
@@ -195,7 +198,6 @@ private:
     // Cache; CacheId key contains file, region, stokes, (optional) z index
     std::unordered_map<CacheId, HistogramCache, CacheIdHash> _histogram_cache;
     std::unordered_map<CacheId, SpectralCache, CacheIdHash> _spectral_cache;
-    std::unordered_map<CacheId, StatsCache, CacheIdHash> _stats_cache;
 
     // Spectral profiles to calculate with ImageStatistics.
     std::vector<CARTA::StatsType> _spectral_stats = {CARTA::StatsType::Sum, CARTA::StatsType::FluxDensity, CARTA::StatsType::Mean,

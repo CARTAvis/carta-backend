@@ -196,7 +196,7 @@ struct SpectralCache {
 // -------------------------------
 
 struct RegionStatsConfig {
-    std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs;
+    std::vector<CARTA::SetStatsRequirements_StatsConfig> configs;
 };
 
 struct StatsCache {

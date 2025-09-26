@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// RegionDataHandler.cc: handle requirements and data streams for regions
+// RegionHandler.cc: handle requirements and data streams for regions
 
 #include "RegionHandler.h"
 
@@ -594,10 +594,10 @@ void RegionHandler::UpdateNewSpectralRequirements(int region_id) {
 }
 
 bool RegionHandler::SetStatsRequirements(
-    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs) {
+    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs) {
     // Set stats data requirements for closed region
 
-    if (stats_configs.empty() && !RegionSet(region_id)) {
+    if (configs.empty() && !RegionSet(region_id)) {
         // frontend clears requirements after region removed, prevent error in log
         return true;
     }
@@ -615,9 +615,12 @@ bool RegionHandler::SetStatsRequirements(
     // Save frame pointer
     _frames[file_id] = frame;
 
-    // Set requirements
-    ConfigId config_id(file_id, region_id);
-    _stats_req[config_id].stats_configs = stats_configs;
+    // Set configurations
+    if (_region_statistics.find(region_id) == _region_statistics.end()) {
+        _region_statistics[region_id] = std::unique_ptr<RegionStatistics>(new RegionStatistics(region_id, file_id, configs));
+    } else {
+        _region_statistics[region_id]->SetConfigurations(file_id, configs);
+    }
     return true;
 }
 
@@ -625,7 +628,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for a specific region or for all regions when closed
     if (region_id == ALL_REGIONS) {
         _histogram_req.clear();
-        _stats_req.clear();
+        _region_statistics.clear();
 
         std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         _spectral_req.clear();
@@ -637,14 +640,18 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
 
         _histogram_cache.clear();
         _spectral_cache.clear();
-        _stats_cache.clear();
 
         std::unique_lock pv_cut_lock(_pv_cut_mutex);
         _pv_preview_cuts.clear();
         std::unique_lock pv_cube_lock(_pv_cube_mutex);
         _pv_preview_cubes.clear();
     } else {
-        // Iterate through requirements and remove those for given region_id
+        // Remove statistics for given region_id
+        if (_region_statistics.find(region_id) != _region_statistics.end()) {
+            _region_statistics.erase(region_id);
+        }
+
+        // Remove requirements for given region_id
         for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
             if ((*it).first.region_id == region_id) {
                 it = _histogram_req.erase(it);
@@ -663,14 +670,6 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         }
         spectral_lock.unlock();
 
-        for (auto it = _stats_req.begin(); it != _stats_req.end();) {
-            if ((*it).first.region_id == region_id) {
-                it = _stats_req.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
         std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         for (auto it = _spatial_req.begin(); it != _spatial_req.end();) {
             if ((*it).first.region_id == region_id) {
@@ -681,6 +680,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         }
         spatial_lock.unlock();
 
+        // Remove cache for given region_id
         for (auto it = _histogram_cache.begin(); it != _histogram_cache.end();) {
             if ((*it).first.region_id == region_id) {
                 it = _histogram_cache.erase(it);
@@ -692,14 +692,6 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         for (auto it = _spectral_cache.begin(); it != _spectral_cache.end();) {
             if ((*it).first.region_id == region_id) {
                 it = _spectral_cache.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
-        for (auto it = _stats_cache.begin(); it != _stats_cache.end();) {
-            if ((*it).first.region_id == region_id) {
-                it = _stats_cache.erase(it);
             } else {
                 ++it;
             }
@@ -723,8 +715,9 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
 void RegionHandler::RemoveFileRequirementsCache(int file_id) {
     // Clear requirements and cache for a specific file or for all files when closed
     if (file_id == ALL_FILES) {
+        _region_statistics.clear();
+
         _histogram_req.clear();
-        _stats_req.clear();
         std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         _spectral_req.clear();
         spectral_lock.unlock();
@@ -734,14 +727,18 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
 
         _histogram_cache.clear();
         _spectral_cache.clear();
-        _stats_cache.clear();
 
         std::unique_lock pv_cut_lock(_pv_cut_mutex);
         _pv_preview_cuts.clear();
         std::unique_lock pv_cube_lock(_pv_cube_mutex);
         _pv_preview_cubes.clear();
     } else {
-        // Iterate through requirements and remove those for given file_id
+        // Remove statistics for given file_id
+        for (auto& statistics : _region_statistics) {
+            statistics.second->ClearFileConfigsCache(file_id);
+        }
+
+        // Remove requirements for given file_id
         for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
             if ((*it).first.file_id == file_id) {
                 it = _histogram_req.erase(it);
@@ -760,14 +757,6 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         }
         spectral_lock.unlock();
 
-        for (auto it = _stats_req.begin(); it != _stats_req.end();) {
-            if ((*it).first.file_id == file_id) {
-                it = _stats_req.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
         std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         for (auto it = _spatial_req.begin(); it != _spatial_req.end();) {
             if ((*it).first.file_id == file_id) {
@@ -778,7 +767,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         }
         spatial_lock.unlock();
 
-        // Iterate through cache and remove those for given file_id
+        // Remove cache for given file_id
         for (auto it = _histogram_cache.begin(); it != _histogram_cache.end();) {
             if ((*it).first.file_id == file_id) {
                 it = _histogram_cache.erase(it);
@@ -790,14 +779,6 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         for (auto it = _spectral_cache.begin(); it != _spectral_cache.end();) {
             if ((*it).first.file_id == file_id) {
                 it = _spectral_cache.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
-        for (auto it = _stats_cache.begin(); it != _stats_cache.end();) {
-            if ((*it).first.file_id == file_id) {
-                it = _stats_cache.erase(it);
             } else {
                 ++it;
             }
@@ -837,10 +818,9 @@ void RegionHandler::ClearRegionCache(int region_id) {
             spcache.second.ClearProfiles();
         }
     }
-    for (auto& stcache : _stats_cache) {
-        if (stcache.first.region_id == region_id) {
-            stcache.second.ClearStats();
-        }
+
+    if (_region_statistics.find(region_id) != _region_statistics.end()) {
+        _region_statistics[region_id]->ClearCache();
     }
 }
 
@@ -1262,7 +1242,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
         auto box_mask = _regions.at(box_region_id)->GetImageRegionMask(frame_id);
         RemoveRegion(box_region_id);
 
-        // Use PvPreviewCube to calculate profile with lcregion and mask
+        // Use PvPreviewCube to calculate profile with lc_region and mask
         std::vector<float> profile;
         double max_num_pixels(0.0);
         std::string message;
@@ -2126,134 +2106,65 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
         return false;
     }
 
-    bool message_filled(false);
+    if (region_id > 0) {
+        // Fill histograms for specific region with file_id requirement (specific file_id or all files)
+        if (_region_statistics.find(region_id) == _region_statistics.end()) {
+            return false;
+        }
+    }
 
-    auto send_stats_results = [&](int region_id, int file_id, std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs) {
-        for (auto stats_config : stats_configs) {
-            // Get stokes index
-            int stokes;
-            if (!_frames.at(file_id)->GetStokesTypeIndex(stats_config.coordinate(), stokes)) {
+    bool success(false);
+
+    for (auto& statistics : _region_statistics) {
+        // Find statistics configurations with region_id (if set) and file_id (if set)
+        int stats_region_id = statistics.first;
+        if ((region_id > 0) && (stats_region_id != region_id)) {
+            continue;
+        }
+
+        auto config_file_ids = statistics.second->GetConfigFileIds(file_id);
+        if (config_file_ids.empty()) {
+            continue;
+        }
+
+        for (int stats_file_id : config_file_ids) {
+            // Get statistics for specific region id and file id
+            if (!RegionFileIdsValid(stats_region_id, stats_file_id)) {
                 continue;
             }
 
-            // Set required stats types
-            std::vector<CARTA::StatsType> required_stats;
-            for (int i = 0; i < stats_config.stats_types_size(); ++i) {
-                required_stats.push_back(stats_config.stats_types(i));
+            auto frame = _frames.at(stats_file_id);
+
+            std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs;
+            if (!statistics.second->GetConfigurations(stats_file_id, stats_configs)) {
+                continue;
             }
 
-            // Send stats results
-            CARTA::RegionStatsData stats_message;
-            if (GetRegionStatsData(region_id, file_id, stokes, required_stats, stats_message)) {
-                cb(stats_message); // send stats data with respect to stokes
-                message_filled = true;
-            }
-        }
-    };
-
-    if (region_id > 0) {
-        // Fill stats data for specific region with file_id requirement (specific file_id or all files)
-        std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> region_configs = _stats_req;
-        for (auto& region_config : region_configs) {
-            if ((region_config.first.region_id == region_id) && ((region_config.first.file_id == file_id) || (file_id == ALL_FILES))) {
-                if (region_config.second.stats_configs.empty()) { // no requirements
-                    continue;
-                }
-                int config_file_id(region_config.first.file_id);
-                if (!RegionFileIdsValid(region_id, config_file_id)) { // check specific ids
-                    continue;
+            // Create data message for each configuration
+            for (auto& stats_config : stats_configs) {
+                // Get stokes and channel from config
+                int stokes(0);
+                if (!frame->GetStokesTypeIndex(stats_config.coordinate(), stokes)) {
+                    continue; // invalid image/computed Stokes
                 }
 
-                // return stats for this requirement
-                send_stats_results(region_id, config_file_id, region_config.second.stats_configs);
-            }
-        }
-    } else {
-        // (region_id < 0) Fill stats data for all regions with specific file_id requirement
-        // Find requirements with file_id
-        std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> region_configs = _stats_req;
-        for (auto& region_config : region_configs) {
-            if (region_config.first.file_id == file_id) {
-                if (region_config.second.stats_configs.empty()) { // no requirements
-                    continue;
-                }
-                int config_region_id(region_config.first.region_id);
-                if (!RegionFileIdsValid(config_region_id, file_id)) { // check specific ids
-                    continue;
-                }
+                // Get LCRegion
+                int z(_frames.at(file_id)->CurrentZ());
+                AxisRange z_range(z);
+                std::shared_ptr<casacore::LCRegion> lc_region;
+                StokesRegion stokes_region;
+                ApplyRegionToFile(stats_region_id, stats_file_id, z_range, stokes, lc_region, stokes_region);
+                CARTA::RegionStatsData stats_data_message;
 
-                // return stats for this requirement
-                send_stats_results(config_region_id, file_id, region_config.second.stats_configs);
+                if (statistics.second->GetRegionStatsData(stats_file_id, frame, stats_config, stokes_region, stats_data_message)) {
+                    cb(stats_data_message);
+                    success = true;
+                }
             }
         }
     }
-    return message_filled;
-}
 
-bool RegionHandler::GetRegionStatsData(
-    int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
-    // Fill stats message for given region, file
-    Timer t;
-
-    int z(_frames.at(file_id)->CurrentZ());
-    stokes = (stokes == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes;
-
-    // Start filling message
-    stats_message.set_file_id(file_id);
-    stats_message.set_region_id(region_id);
-    stats_message.set_channel(z);
-    stats_message.set_stokes(stokes);
-
-    // Check cache
-    CacheId cache_id = CacheId(file_id, region_id, stokes, z);
-    if (_stats_cache.count(cache_id)) {
-        std::map<CARTA::StatsType, double> stats_results;
-        if (_stats_cache[cache_id].GetStats(stats_results)) {
-            FillStatistics(stats_message, required_stats, stats_results);
-            return true;
-        }
-    }
-
-    // Get region
-    AxisRange z_range(z);
-    StokesRegion stokes_region;
-    std::shared_ptr<casacore::LCRegion> lc_region;
-    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, lc_region, stokes_region)) {
-        // region outside image: NaN results
-        std::map<CARTA::StatsType, double> stats_results;
-        for (const auto& carta_stat : required_stats) {
-            if (carta_stat == CARTA::StatsType::NumPixels) {
-                stats_results[carta_stat] = 0.0;
-            } else {
-                stats_results[carta_stat] = DOUBLE_NAN;
-            }
-        }
-        FillStatistics(stats_message, required_stats, stats_results);
-        // cache results
-        _stats_cache[cache_id] = StatsCache(stats_results);
-        return true;
-    }
-
-    // calculate stats
-    bool per_z(false);
-    std::map<CARTA::StatsType, std::vector<double>> stats_map;
-    if (_frames.at(file_id)->GetRegionStats(stokes_region, required_stats, per_z, stats_map)) {
-        // convert vector to single value in map
-        std::map<CARTA::StatsType, double> stats_results;
-        for (auto& value : stats_map) {
-            stats_results[value.first] = value.second[0];
-        }
-
-        // add values to message
-        FillStatistics(stats_message, required_stats, stats_results);
-        // cache results
-        _stats_cache[cache_id] = StatsCache(stats_results);
-
-        spdlog::performance("Fill region stats in {:.3f} ms", t.Elapsed().ms());
-        return true;
-    }
-
-    return false;
+    return success;
 }
 
 bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
@@ -2272,13 +2183,13 @@ bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std:
     }
 
     // Map a region (region_id) to an image (file_id)
-    auto lcregion = ApplyRegionToFile(region_id, file_id);
-    if (!lcregion) {
+    auto lc_region = ApplyRegionToFile(region_id, file_id);
+    if (!lc_region) {
         return false;
     }
 
     // Get point region
-    casacore::IPosition origin = lcregion->boundingBox().start();
+    casacore::IPosition origin = lc_region->boundingBox().start();
     PointXy point(origin(0), origin(1));
 
     // Get profile for point region
