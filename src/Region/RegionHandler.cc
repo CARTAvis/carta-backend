@@ -2147,7 +2147,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 }
 
                 // Get LCRegion
-                int z(_frames.at(file_id)->CurrentZ());
+                int z(_frames.at(stats_file_id)->CurrentZ());
                 AxisRange z_range(z);
                 std::shared_ptr<casacore::LCRegion> lc_region;
                 StokesRegion stokes_region;
