@@ -65,13 +65,16 @@ public:
     /** @brief Clear cache when region changes. */
     void ClearCache();
 
-    /** @brief Clear configurations and cache for frame. */
+    /**
+     * @brief Clear configurations and cache for frame.
+     * @param file_id File id for image frame
+     */
     void ClearFileConfigsCache(int file_id);
 
 private:
     /**
      * @brief Fill message with histogram parameters.
-     * @param file_id File id for image frame
+     * @param[in] file_id File id for image frame
      * @param[in] stokes_source Struct describing stokes and z range
      * @param[in] config Histogram configuration struct
      * @param[out] histogram_data_message Region histogram data message
@@ -83,7 +86,7 @@ private:
      * @brief Get number of bins from config and calculate if not supplied.
      * @param config Histogram configuration struct
      * @param frame Image frame
-     * @param[in] lcregion Region applied to image
+     * @param lcregion Region applied to image
      * @return number of bins
      */
     int GetNumBins(const HistogramConfig& config, std::shared_ptr<Frame> frame, std::shared_ptr<casacore::LCRegion> lcregion);
@@ -108,10 +111,10 @@ private:
     /** @brief Region id for this object, for config and cache ids. */
     int _region_id;
 
-    /** @brief Requirements map. */
+    /** @brief Histogram configurations. */
     std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _configs;
 
-    /** @brief Cache to hold calculations. */
+    /** @brief Cache to hold calculated histograms. */
     std::unordered_map<CacheId, HistogramCache, CacheIdHash> _cache;
 };
 
