@@ -2104,17 +2104,13 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
         return false;
     }
 
-    if (region_id > 0) {
-        // Fill histograms for specific region with file_id requirement (specific file_id or all files)
-        if (_region_statistics.find(region_id) == _region_statistics.end()) {
-            return false;
-        }
+    if ((region_id > 0) && (_region_statistics.find(region_id) == _region_statistics.end())) {
+        return false;
     }
 
     bool success(false);
 
     for (auto& statistics : _region_statistics) {
-        // Find statistics configurations with region_id (if set) and file_id (if set)
         int stats_region_id = statistics.first;
         if ((region_id > 0) && (stats_region_id != region_id)) {
             continue;

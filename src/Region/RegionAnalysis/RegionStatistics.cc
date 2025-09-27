@@ -8,6 +8,7 @@
 
 #include "RegionStatistics.h"
 
+#include "Util/File.h"
 #include "Util/Message.h"
 
 using namespace carta;
@@ -34,8 +35,7 @@ bool RegionStatistics::GetConfigurations(int file_id, std::vector<CARTA::SetStat
 std::vector<int> RegionStatistics::GetConfigFileIds(int file_id) {
     std::vector<int> file_ids;
     for (auto& config : _configs) {
-        // File id -1 is for all files
-        if ((file_id < 0) || (config.first.file_id == file_id)) {
+        if ((file_id == ALL_FILES) || (config.first.file_id == file_id)) {
             file_ids.push_back(config.first.file_id);
         }
     }
