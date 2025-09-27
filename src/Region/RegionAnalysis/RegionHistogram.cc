@@ -10,6 +10,7 @@
 
 #include "ImageStats/StatsCalculator.h"
 #include "RegionAnalysisUtil.h"
+#include "Util/File.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
 
