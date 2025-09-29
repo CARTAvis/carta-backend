@@ -49,10 +49,10 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
             casacore::Stokes::StokesTypes casa_stokes_type;
 
             if (GetCasaStokesType(stokes_type, casa_stokes_type)) {
-                vec(0) = casa_stokes_type;                         // set stokes type
+                vec(0) = casa_stokes_type;                    // set stokes type
                 casacore::StokesCoordinate stokes_coord(vec); // set stokes coordinate
                 tmp_coord_sys->addCoordinate(stokes_coord);   // add stokes coordinate to the coordinate system
-                coord_sys[stokes_type] = tmp_coord_sys; // fill the new coordinate system map
+                coord_sys[stokes_type] = tmp_coord_sys;       // fill the new coordinate system map
             } else {
                 return fail_exit("Failed to set the stokes coordinate system!");
             }

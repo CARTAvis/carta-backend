@@ -1697,8 +1697,9 @@ bool Frame::GetSlicerData(const casacore::Slicer& slicer, int stokes_index, floa
     // Get image data with a slicer applied; data must be correctly resized
     bool data_ok(false);
     casacore::Array<float> tmp(slicer.length(), data, casacore::StorageInitPolicy::SHARE);
-    
-    if (_image_cache_valid && (Depth() == 1 || slicer.start()(_axes.z) == slicer.end()(_axes.z) == CurrentZ()) && stokes_index == CurrentStokes()) {
+
+    if (_image_cache_valid && (Depth() == 1 || slicer.start()(_axes.z) == slicer.end()(_axes.z) == CurrentZ()) &&
+        stokes_index == CurrentStokes()) {
         // Slice image cache
         auto cache_shape = ImageShape();
         auto slicer_start = slicer.start();
@@ -1731,8 +1732,8 @@ bool Frame::GetSlicerData(const casacore::Slicer& slicer, int stokes_index, floa
     return data_ok;
 }
 
-bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, int stokes_index, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
-    std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
+bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, int stokes_index, const std::vector<CARTA::StatsType>& required_stats,
+    bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
     bool subimage_ok = GetRegionSubImage(region, stokes_index, sub_image);
@@ -1776,9 +1777,9 @@ bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int s
 }
 
 // TODO do moments always use current stokes???
-bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region, int stokes_index,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
-    RegionState region_state) {
+bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+    int stokes_index, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<GeneratedImage>& collapse_results, RegionState region_state) {
     std::shared_lock lock(GetActiveTaskMutex());
     _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_index)));
     _loader->CloseImageIfUpdated();
@@ -1891,8 +1892,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 GetImageRegion(file_id, AxisRange(CurrentZ()), CurrentStokes(), output_region, stokes_index);
             }
             casa::SPIIF image(_loader->GetStokesImage(stokes_index));
-            success = _image_fitter->GetGeneratedImages(
-                image, output_region, GetFileName(), model_image, residual_image, fitting_response);
+            success = _image_fitter->GetGeneratedImages(image, output_region, GetFileName(), model_image, residual_image, fitting_response);
         }
     }
 
@@ -2489,8 +2489,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
         // Get stokes data I, Q, or U
         if (calculate_pi || calculate_pa) {
             for (auto [name, flag] : stokes_flag) {
-                if (flag &&
-                    !GetDownsampledRasterData(stokes_data[name], width, height, _z_index, stokes_indices[name], bounds, mip)) {
+                if (flag && !GetDownsampledRasterData(stokes_data[name], width, height, _z_index, stokes_indices[name], bounds, mip)) {
                     return false;
                 }
             }

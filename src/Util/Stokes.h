@@ -81,15 +81,14 @@ public:
     static bool IsComputed(const int value);
 
     /** @brief Retrieves the component polarizations required to calculate the given computed polarization.
-     * 
+     *
      * @param[in] type The computed polarization type.
      * @return A vector of the required component polarizations.
      */
     static std::vector<Pol> Components(const Pol type);
-    
 
     /** @brief Retrieves the polarizations which may be computed from the given component polarizations.
-     * 
+     *
      * @param[in] components A vector of the available component polarizations.
      * @return A sorted vector of the computable polarizations.
      */

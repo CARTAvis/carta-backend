@@ -195,15 +195,15 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem() {
 
 std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(int stokes_index) {
     CARTA::PolarizationType stokes_type;
-    
+
     if (GetStokesType(stokes_index, stokes_type)) {
-        if IsComputed(stokes_index) {
+        if IsComputed (stokes_index) {
             return _polarization_calculator->GetCoordSys(stokes_type);
         } else {
             return _coord_sys;
         }
     }
-    
+
     return std::make_shared<casacore::CoordinateSystem>();
 }
 
@@ -327,7 +327,7 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
 
     _axes = AxesInfo(render_axes, spatial_axes, spectral_axis, z_axis, stokes_axis);
     _dims = DimsInfo(_axes, _image_shape);
-    
+
     _polarization_calculator = std::make_shared<PolarizationCalculator>(this->shared_from_this());
 
     return true;
@@ -888,7 +888,7 @@ bool FileLoader::GetDownsampledRasterData(
 }
 
 bool FileLoader::GetChunk(
-    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
+    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes_index, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
@@ -928,13 +928,13 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
         stokes_index = stokes_type;
         return true;
     }
-    
+
     // Invalid computed type
     if (Stokes::IsComputed(stokes_type)) {
         spdlog::warn("Computed polarization {} is not available in this image.", Stokes::Name(stokes_type));
         return false;
     }
-    
+
     // Basic type
     try {
         stokes_index = _stokes_indices.at(stokes_type);
@@ -954,16 +954,16 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
 bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type) {
     // Computed type which is available for this image
     if (_polarization_calculator->AvailablePolarizations().count(stokes_index)) {
-        stokes_type = Stokes::Get(stokes_index)
+        stokes_type = Stokes::Get(stokes_index);
         return true;
     }
-    
+
     // Invalid computed type
     if (Stokes::IsComputed(stokes_index)) {
         spdlog::warn("Computed polarization {} is not available in this image.", Stokes::Name(Stokes::Get(stokes_index)));
         return false;
     }
-    
+
     // Basic type
     try {
         stokes_type = _stokes_types.at(stokes_index);
@@ -971,7 +971,8 @@ bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType&
     } catch (const std::out_of_range& e) {
         try {
             stokes_type = _deduced_stokes_types.at(stokes_index);
-            spdlog::warn("Could not get polarization type from header. Assuming type of index {} is {}.", stokes_index, Stokes::Name(stokes_type));
+            spdlog::warn(
+                "Could not get polarization type from header. Assuming type of index {} is {}.", stokes_index, Stokes::Name(stokes_type));
             return true;
         } catch (const std::out_of_range& e) {
             spdlog::warn("Could not get or deduce polarization type for index {}.", stokes_index);
@@ -983,41 +984,41 @@ bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType&
 ImagePtr FileLoader::GetStokesImage(int stokes_index) {
     CARTA::PolarizationType stokes_type;
     ImagePtr stokes_image;
-    
+
     if (GetStokesType(stokes_index, stokes_type)) {
         if (Stokes::IsComputed(stokes_index)) {
             stokes_image = _polarization_calculator->GetImage(stokes_index);
         } else {
             stokes_image = GetImage();
-        } 
-    
+        }
+
     } else {
         spdlog::error("No image available for polarization index {}", stokes_index);
     }
 
     return stokes_image;
 
-void FileLoader::SetStokesCrval(float stokes_crval) {
-    _stokes_crval = stokes_crval;
-}
+    void FileLoader::SetStokesCrval(float stokes_crval) {
+        _stokes_crval = stokes_crval;
+    }
 
-void FileLoader::SetStokesCrpix(float stokes_crpix) {
-    _stokes_crpix = stokes_crpix;
-}
+    void FileLoader::SetStokesCrpix(float stokes_crpix) {
+        _stokes_crpix = stokes_crpix;
+    }
 
-void FileLoader::SetStokesCdelt(int stokes_cdelt) {
-    _stokes_cdelt = stokes_cdelt;
-}
+    void FileLoader::SetStokesCdelt(int stokes_cdelt) {
+        _stokes_cdelt = stokes_cdelt;
+    }
 
-bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
-    // Override in ExprLoader to save LEL image
-    return false;
-}
+    bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
+        // Override in ExprLoader to save LEL image
+        return false;
+    }
 
-void FileLoader::SetAipsBeamSupport(bool support) {
-    _support_aips_beam = support;
-}
+    void FileLoader::SetAipsBeamSupport(bool support) {
+        _support_aips_beam = support;
+    }
 
-bool FileLoader::GetAipsBeamSupport() {
-    return _support_aips_beam;
-}
+    bool FileLoader::GetAipsBeamSupport() {
+        return _support_aips_beam;
+    }

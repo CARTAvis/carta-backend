@@ -4,51 +4,38 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <algorithm>
 #include "Stokes.h"
+#include <algorithm>
 
 using namespace carta;
 
-/** @details This map stores the component polarizations required to calculate each computed polarization type. It is used to determine whether a polarization can be computed from the polarizations available in an image file. The map is ordered so that Stokes::Computable does not have to sort its output.
+/** @details This map stores the component polarizations required to calculate each computed polarization type. It is used to determine
+ * whether a polarization can be computed from the polarizations available in an image file. The map is ordered so that Stokes::Computable
+ * does not have to sort its output.
  */
-std::map<Pol, std::vector<Pol>> Stokes::_components{
-    {Pol::Ptotal, {Pol::Q, Pol::U, Pol::V}},
-    {Pol::Plinear, {Pol::Q, Pol::U}},
-    {Pol::PFtotal, {Pol::I, Pol::Q, Pol::U, Pol::V}},
-    {Pol::PFlinear, {Pol::I, Pol::Q, Pol::U}},
-    {Pol::Pangle, {Pol::Q, Pol::U}}};
+std::map<Pol, std::vector<Pol>> Stokes::_components{{Pol::Ptotal, {Pol::Q, Pol::U, Pol::V}}, {Pol::Plinear, {Pol::Q, Pol::U}},
+    {Pol::PFtotal, {Pol::I, Pol::Q, Pol::U, Pol::V}}, {Pol::PFlinear, {Pol::I, Pol::Q, Pol::U}}, {Pol::Pangle, {Pol::Q, Pol::U}}};
 
 /**
  * @details This unordered map provides a conversion between the CARTA polarization type
  * enumeration and the corresponding CASA Stokes type enumeration.
  * It is used to translate polarization representations between the two frameworks.
  */
-std::unordered_map<Pol, CasaPol> Stokes::_to_casa{
-    {Pol::POLARIZATION_TYPE_NONE, CasaPol::Undefined},
-    {Pol::I, CasaPol::I}, {Pol::Q, CasaPol::Q},
-    {Pol::U, CasaPol::U}, {Pol::V, CasaPol::V},
-    {Pol::RR, CasaPol::RR}, {Pol::LL, CasaPol::LL},
-    {Pol::RL, CasaPol::RL}, {Pol::LR, CasaPol::LR},
-    {Pol::XX, CasaPol::XX}, {Pol::YY, CasaPol::YY},
-    {Pol::XY, CasaPol::XY}, {Pol::YX, CasaPol::YX},
-    {Pol::Ptotal, CasaPol::Ptotal},
-    {Pol::Plinear, CasaPol::Plinear},
-    {Pol::PFtotal, CasaPol::PFtotal},
-    {Pol::PFlinear, CasaPol::PFlinear},
-    {Pol::Pangle, CasaPol::Pangle}};
+std::unordered_map<Pol, CasaPol> Stokes::_to_casa{{Pol::POLARIZATION_TYPE_NONE, CasaPol::Undefined}, {Pol::I, CasaPol::I},
+    {Pol::Q, CasaPol::Q}, {Pol::U, CasaPol::U}, {Pol::V, CasaPol::V}, {Pol::RR, CasaPol::RR}, {Pol::LL, CasaPol::LL},
+    {Pol::RL, CasaPol::RL}, {Pol::LR, CasaPol::LR}, {Pol::XX, CasaPol::XX}, {Pol::YY, CasaPol::YY}, {Pol::XY, CasaPol::XY},
+    {Pol::YX, CasaPol::YX}, {Pol::Ptotal, CasaPol::Ptotal}, {Pol::Plinear, CasaPol::Plinear}, {Pol::PFtotal, CasaPol::PFtotal},
+    {Pol::PFlinear, CasaPol::PFlinear}, {Pol::Pangle, CasaPol::Pangle}};
 
 /**
  * @details This unordered map associates each CARTA polarization type enumeration value
  * with a corresponding descriptive string. It is used to provide user-friendly
  * labels for polarization types in logs, UI displays, or reports.
  */
-std::unordered_map<Pol, std::string> Stokes::_description{{Pol::POLARIZATION_TYPE_NONE, "Unknown"},
-    {Pol::I, "Stokes I"}, {Pol::Q, "Stokes Q"}, {Pol::U, "Stokes U"},
-    {Pol::V, "Stokes V"}, {Pol::Ptotal, "Total polarization intensity"},
-    {Pol::Plinear, "Linear polarization intensity"},
-    {Pol::PFtotal, "Fractional total polarization intensity"},
-    {Pol::PFlinear, "Fractional linear polarization intensity"},
-    {Pol::Pangle, "Polarization angle"}};
+std::unordered_map<Pol, std::string> Stokes::_description{{Pol::POLARIZATION_TYPE_NONE, "Unknown"}, {Pol::I, "Stokes I"},
+    {Pol::Q, "Stokes Q"}, {Pol::U, "Stokes U"}, {Pol::V, "Stokes V"}, {Pol::Ptotal, "Total polarization intensity"},
+    {Pol::Plinear, "Linear polarization intensity"}, {Pol::PFtotal, "Fractional total polarization intensity"},
+    {Pol::PFlinear, "Fractional linear polarization intensity"}, {Pol::Pangle, "Polarization angle"}};
 
 /**
  * @details This function checks if the provided integer value is a valid CARTA polarization type.
@@ -132,7 +119,9 @@ bool Stokes::IsComputed(const int value) {
     return (value >= Pol::Ptotal) && (value <= Pol::Pangle);
 }
 
-/** @details This function returns a vector containing the polarization types required to calculate the given computed polarization type, using the `_components` map. For example, for `Ptotal` it returns `Q`, `U`, and `V`. If the input value is not found in the map, an empty vector is returned. 
+/** @details This function returns a vector containing the polarization types required to calculate the given computed polarization type,
+ * using the `_components` map. For example, for `Ptotal` it returns `Q`, `U`, and `V`. If the input value is not found in the map, an empty
+ * vector is returned.
  */
 std::vector<Pol> Stokes::Components(const Pol type) {
     try {
@@ -142,7 +131,9 @@ std::vector<Pol> Stokes::Components(const Pol type) {
     }
 }
 
-/** @details This function retrieves the polarizations which may be computed from the given component polarizations, using the `_components` map. The components may be given in any order. The returned polarizations are sorted by numeric value. If no polarizations are computable from the components provided, an empty vector is returned.
+/** @details This function retrieves the polarizations which may be computed from the given component polarizations, using the `_components`
+ * map. The components may be given in any order. The returned polarizations are sorted by numeric value. If no polarizations are computable
+ * from the components provided, an empty vector is returned.
  */
 std::vector<Pol> Stokes::Computable(const std::vector<Pol>& components) {
     // Ensure that components are sorted and deduplicated
@@ -150,10 +141,10 @@ std::vector<Pol> Stokes::Computable(const std::vector<Pol>& components) {
     std::sort(available.begin(), available.end());
     last = std::unique(available.begin(), available.end());
     available.erase(last, available.end());
-    
+
     std::vector<Pol> computable;
 
-    for (auto& [computed, required]: _components) {
+    for (auto& [computed, required] : _components) {
         if (std::includes(required.begin(), required.end(), available.begin(), available.end())) {
             computable.push_back(computed);
         }

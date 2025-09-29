@@ -174,11 +174,12 @@ public:
     bool GetRegionSubImage(const casacore::LattRegionHolder& region, int stokes_index, casacore::SubImage<float>& sub_image);
     bool GetSlicerSubImage(const casacore::Slicer& slicer, int stokes_index, casacore::SubImage<float>& sub_image);
     // Returns data vector
-    bool GetRegionData(const casacore::LattRegionHolder& region, int stokes_index, std::vector<float>& data, bool report_performance = true);
+    bool GetRegionData(
+        const casacore::LattRegionHolder& region, int stokes_index, std::vector<float>& data, bool report_performance = true);
     bool GetSlicerData(const casacore::Slicer& slicer, int stokes_index, float* data, bool use_loader = true);
     // Returns stats_values map for spectral profiles and stats data
-    bool GetRegionStats(const casacore::LattRegionHolder& region, int stokes_index, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
-        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+    bool GetRegionStats(const casacore::LattRegionHolder& region, int stokes_index, const std::vector<CARTA::StatsType>& required_stats,
+        bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const casacore::Slicer& slicer, int stokes_index, std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     // Spectral profiles from loader
@@ -188,14 +189,15 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
     // Moments calculation
-    bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region, int stokes_index,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
-        RegionState region_state = RegionState());
+    bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+        int stokes_index, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        std::vector<GeneratedImage>& collapse_results, RegionState region_state = RegionState());
     void StopMomentCalc();
 
     // Image fitting
     bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image,
-        GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, casacore::ImageRegion* region = nullptr, int stokes_index = -1);
+        GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, casacore::ImageRegion* region = nullptr,
+        int stokes_index = -1);
     void StopFitting();
 
     // Save as a new file or export sub-image to CASA/FITS format
