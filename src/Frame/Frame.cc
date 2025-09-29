@@ -82,10 +82,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
     if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2))) {
-        // allocate memory for full image cache
-        _image_cache_size = _dims.width * _dims.height;
-        _image_cache = std::make_unique<float[]>(_image_cache_size);
-
         if (!FillImageCache()) {
             _open_image_error = fmt::format("Cannot load image data. Check log.");
             _valid = false;
@@ -392,6 +388,12 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
+
+    if (_image_cache == nullptr) {
+        // allocate memory for full image cache
+        _image_cache_size = _dims.width * _dims.height;
+        _image_cache = std::make_unique<float[]>(_image_cache_size);
+    }
 
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
@@ -894,7 +896,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
 
         if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
             // calculate histogram from image cache
-            if ((_image_cache == nullptr) && !FillImageCache()) {
+            if ((!_image_cache_valid) && !FillImageCache()) {
                 // cannot calculate
                 return false;
             }
@@ -962,7 +964,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
 
     if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
         // calculate histogram from current image cache
-        if ((_image_cache == nullptr) && !FillImageCache()) {
+        if ((!_image_cache_valid) && !FillImageCache()) {
             return false;
         }
         bool write_lock(false);
