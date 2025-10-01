@@ -732,7 +732,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
                     if (tile_error) {
                         SendLogEvent(fmt::format("Invalid mip calculation: channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y,
                                          tile.layer),
-                            {"invalid mip calculation"}, CARTA::ErrorSeverity::WARNING);
+                            {"animation"}, CARTA::ErrorSeverity::WARNING);
                     } else {
                         spdlog::warn(
                             "Discarding stale tile request for channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y, tile.layer);
