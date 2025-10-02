@@ -256,7 +256,7 @@ jobs:
   NotifyEmail:
     name: Send email on failure
     runs-on: ubuntu-latest
-    needs: [format-check, Ubuntu-Noble, macOS-15, AlmaLinux-9]
+    needs: [format-check, doxygen-check, Ubuntu-Noble, macOS-15, AlmaLinux-9]
     if: failure()
     steps:
       - name: Send email notification
@@ -280,6 +280,7 @@ jobs:
 
             Failed jobs:
             - format-check: ${{ needs.format-check.result }}
+            - doxygen-check: ${{ needs.doxygen-check.result }}
             - Ubuntu-Noble: ${{ needs.Ubuntu-Noble.result }}
             - macOS-15: ${{ needs.macOS-15.result }}
             - AlmaLinux-9: ${{ needs.AlmaLinux-9.result }}

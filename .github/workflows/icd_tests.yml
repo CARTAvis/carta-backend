@@ -1015,9 +1015,9 @@ jobs:
           server_port: 465
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "CARTA CI Failed: ${{ github.repository }} @ ${{ github.ref }}"
+          subject: "CARTA ICD Failed: ${{ github.repository }} @ ${{ github.ref }}"
           to: ${{ secrets.MAIL_TO }} ${{ secrets.MAIL_USERNAME }}
-          from: "CARTA CI <${{ secrets.MAIL_USERNAME }}>"
+          from: "CARTA ICD <${{ secrets.MAIL_USERNAME }}>"
           body: |
             Workflow failed
 
@@ -1042,6 +1042,6 @@ jobs:
             - Match-ICD-Tests: ${{ needs['Match-ICD-Tests'].result }}
             - Close-File-ICD-Tests: ${{ needs['Close-File-ICD-Tests'].result }}
             - Image-Fitting-ICD-Tests: ${{ needs['Image-Fitting-ICD-Tests'].result }}
-            - Vector-Overlay-ICD-Tests: ${{ needs['Vector-Overlay-ICD-Tests-ICD-Tests'].result }}
+            - Vector-Overlay-ICD-Tests: ${{ needs['Vector-Overlay-ICD-Tests'].result }}
             - Resume-ICD-Tests: ${{ needs['Resume-ICD-Tests'].result }}
 
