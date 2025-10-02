@@ -992,20 +992,20 @@ jobs:
     needs:
       - Build 
       - Prepare-ICD-RxJS 
-      - File-Browser 
-      - Animator 
-      - Region Statistics 
-      - Region Manipulation 
-      - Cube Histogram 
-      - PV Generator 
-      - Raster Tiles 
-      - Catalog 
-      - Moment 
-      - Match 
-      - Close File 
-      - Image Fitting 
-      - Vector Overlay 
-      - Resume 
+      - File-Browser-ICD-Tests
+      - Animator-ICD-Tests
+      - Region-Statistics-ICD-Tests
+      - Region-Manipulation-ICD-Tests
+      - Cube-Histogram-ICD-Tests
+      - PV-Generator-ICD-Tests
+      - Raster-Tiles-ICD-Tests
+      - Catalog-ICD-Tests
+      - Moment-ICD-Tests
+      - Match-ICD-Tests
+      - Close-File-ICD-Tests
+      - Image-Fitting-ICD-Tests
+      - Vector-Overlay-ICD-Tests
+      - Resume-ICD-Tests
     if: failure()
     steps:
       - name: Send email notification
@@ -1030,18 +1030,18 @@ jobs:
             Failed jobs:
             - Build: ${{ needs['Build'].result }}
             - Prepare-ICD-RxJS: ${{ needs['Prepare-ICD-RxJS'].result }}
-            - File-Browser: ${{ needs['File-Browser'].result }}
-            - Animator: ${{ needs['Animator'].result }}
-            - Region Statistics: ${{ needs['Region Statistics'].result }}
-            - Region Manipulation: ${{ needs['Region Manipulation'].result }}
-            - Cube Histogram: ${{ needs['Cube Histogram'].result }}
-            - PV Generator: ${{ needs['PV Generator'].result }}
-            - Raster Tiles: ${{ needs['Raster Tiles'].result }}
-            - Catalog: ${{ needs['Catalog'].result }}
-            - Moment: ${{ needs['Moment'].result }}
-            - Match: ${{ needs['Match'].result }}
-            - Close File: ${{ needs['Close File'].result }}
-            - Image Fitting: ${{ needs['Image Fitting'].result }}
-            - Vector Overlay: ${{ needs['Vector Overlay'].result }}
-            - Resume: ${{ needs['Resume'].result }}
+            - File-Browser-ICD-Tests: ${{ needs['File-Browser-ICD-Tests'].result }}
+            - Animator-ICD-Tests: ${{ needs['Animator-ICD-Tests'].result }}
+            - Region-Statistics-ICD-Tests: ${{ needs['Region-Statistics-ICD-Tests'].result }}
+            - Region-Manipulation-ICD-Tests: ${{ needs['Region-Manipulation-ICD-Tests'].result }}
+            - Cube-Histogram-ICD-Tests: ${{ needs['Cube-Histogram-ICD-Tests'].result }}
+            - PV-Generator-ICD-Tests: ${{ needs['PV-Generator-ICD-Tests'].result }}
+            - Raster-Tiles-ICD-Tests: ${{ needs['Raster-Tiles-ICD-Tests'].result }}
+            - Catalog-ICD-Tests: ${{ needs['Catalog-ICD-Tests'].result }}
+            - Moment-ICD-Tests: ${{ needs['Moment-ICD-Tests'].result }}
+            - Match-ICD-Tests: ${{ needs['Match-ICD-Tests'].result }}
+            - Close-File-ICD-Tests: ${{ needs['Close-File-ICD-Tests'].result }}
+            - Image-Fitting-ICD-Tests: ${{ needs['Image-Fitting-ICD-Tests'].result }}
+            - Vector-Overlay-ICD-Tests: ${{ needs['Vector-Overlay-ICD-Tests-ICD-Tests'].result }}
+            - Resume-ICD-Tests: ${{ needs['Resume-ICD-Tests'].result }}
 
