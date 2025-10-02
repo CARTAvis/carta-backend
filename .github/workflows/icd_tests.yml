@@ -985,3 +985,254 @@ jobs:
           image: ${{ matrix.image }}
           port: ${{ matrix.port }}
           test_stage_name: 'resume'
+
+  NotifyEmail:
+    name: Send email on failure
+    runs-on: ubuntu-latest
+    needs:
+      - Build macOS-13
+      - Build macOS-14
+      - Build macOS-15
+      - Build ubuntu-22.04
+      - Build ubuntu-24.04
+      - Build rhel-8
+      - Build rhel-9
+      - Prepare-ICD-RxJS macOS-13
+      - Prepare-ICD-RxJS macOS-14
+      - Prepare-ICD-RxJS macOS-15
+      - Prepare-ICD-RxJS ubuntu-22.04
+      - Prepare-ICD-RxJS ubuntu-24.04
+      - Prepare-ICD-RxJS rhel-8
+      - Prepare-ICD-RxJS rhel-9
+      - File-Browser macOS-13
+      - File-Browser macOS-14
+      - File-Browser macOS-15
+      - File-Browser ubuntu-22.04
+      - File-Browser ubuntu-24.04
+      - File-Browser rhel-8
+      - File-Browser rhel-9
+      - Animator macOS-13
+      - Animator macOS-14
+      - Animator macOS-15
+      - Animator ubuntu-22.04
+      - Animator ubuntu-24.04
+      - Animator rhel-8
+      - Animator rhel-9
+      - Region Statistics macOS-13
+      - Region Statistics macOS-14
+      - Region Statistics macOS-15
+      - Region Statistics ubuntu-22.04
+      - Region Statistics ubuntu-24.04
+      - Region Statistics rhel-8
+      - Region Statistics rhel-9
+      - Region Manipulation macOS-13
+      - Region Manipulation macOS-14
+      - Region Manipulation macOS-15
+      - Region Manipulation ubuntu-22.04
+      - Region Manipulation ubuntu-24.04
+      - Region Manipulation rhel-8
+      - Region Manipulation rhel-9
+      - Cube Histogram macOS-13
+      - Cube Histogram macOS-14
+      - Cube Histogram macOS-15
+      - Cube Histogram ubuntu-22.04
+      - Cube Histogram ubuntu-24.04
+      - Cube Histogram rhel-8
+      - Cube Histogram rhel-9
+      - PV Generator macOS-13
+      - PV Generator macOS-14
+      - PV Generator macOS-15
+      - PV Generator ubuntu-22.04
+      - PV Generator ubuntu-24.04
+      - PV Generator rhel-8
+      - PV Generator rhel-9
+      - Raster Tiles macOS-13
+      - Raster Tiles macOS-14
+      - Raster Tiles macOS-15
+      - Raster Tiles ubuntu-22.04
+      - Raster Tiles ubuntu-24.04
+      - Raster Tiles rhel-8
+      - Raster Tiles rhel-9
+      - Catalog macOS-13
+      - Catalog macOS-14
+      - Catalog macOS-15
+      - Catalog ubuntu-22.04
+      - Catalog ubuntu-24.04
+      - Catalog rhel-8
+      - Catalog rhel-9
+      - Moment macOS-13
+      - Moment macOS-14
+      - Moment macOS-15
+      - Moment ubuntu-22.04
+      - Moment ubuntu-24.04
+      - Moment rhel-8
+      - Moment rhel-9
+      - Match macOS-13
+      - Match macOS-14
+      - Match macOS-15
+      - Match ubuntu-22.04
+      - Match ubuntu-24.04
+      - Match rhel-8
+      - Match rhel-9
+      - Close File macOS-13
+      - Close File macOS-14
+      - Close File macOS-15
+      - Close File ubuntu-22.04
+      - Close File ubuntu-24.04
+      - Close File rhel-8
+      - Close File rhel-9
+      - Image Fitting macOS-13
+      - Image Fitting macOS-14
+      - Image Fitting macOS-15
+      - Image Fitting ubuntu-22.04
+      - Image Fitting ubuntu-24.04
+      - Image Fitting rhel-8
+      - Image Fitting rhel-9
+      - Vector Overlay macOS-13
+      - Vector Overlay macOS-14
+      - Vector Overlay macOS-15
+      - Vector Overlay ubuntu-22.04
+      - Vector Overlay ubuntu-24.04
+      - Vector Overlay rhel-8
+      - Vector Overlay rhel-9
+      - Resume macOS-13
+      - Resume macOS-14
+      - Resume macOS-15
+      - Resume ubuntu-22.04
+      - Resume ubuntu-24.04
+      - Resume rhel-8
+      - Resume rhel-9
+    if: failure()
+    steps:
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "CARTA CI Failed: ${{ github.repository }} @ ${{ github.ref }}"
+          to: ${{ secrets.MAIL_TO }} ${{ secrets.MAIL_USERNAME }}
+          from: "CARTA CI <${{ secrets.MAIL_USERNAME }}>"
+          body: |
+            Workflow failed
+
+            Repository: ${{ github.repository }}
+            Branch/Ref: ${{ github.ref }}
+            Workflow: ${{ github.workflow }}
+            Run ID: ${{ github.run_id }}
+            URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Failed jobs:
+            - Build macOS-13: ${{ needs['Build macOS-13'].result }}
+            - Build macOS-14: ${{ needs['Build macOS-14'].result }}
+            - Build macOS-15: ${{ needs['Build macOS-15'].result }}
+            - Build ubuntu-22.04: ${{ needs['Build ubuntu-22.04'].result }}
+            - Build ubuntu-24.04: ${{ needs['Build ubuntu-24.04'].result }}
+            - Build rhel-8: ${{ needs['Build rhel-8'].result }}
+            - Build rhel-9: ${{ needs['Build rhel-9'].result }}
+            - Prepare-ICD-RxJS macOS-13: ${{ needs['Prepare-ICD-RxJS macOS-13'].result }}
+            - Prepare-ICD-RxJS macOS-14: ${{ needs['Prepare-ICD-RxJS macOS-14'].result }}
+            - Prepare-ICD-RxJS macOS-15: ${{ needs['Prepare-ICD-RxJS macOS-15'].result }}
+            - Prepare-ICD-RxJS ubuntu-22.04: ${{ needs['Prepare-ICD-RxJS ubuntu-22.04'].result }}
+            - Prepare-ICD-RxJS ubuntu-24.04: ${{ needs['Prepare-ICD-RxJS ubuntu-24.04'].result }}
+            - Prepare-ICD-RxJS rhel-8: ${{ needs['Prepare-ICD-RxJS rhel-8'].result }}
+            - Prepare-ICD-RxJS rhel-9: ${{ needs['Prepare-ICD-RxJS rhel-9'].result }}
+            - File-Browser macOS-13: ${{ needs['File-Browser macOS-13'].result }}
+            - File-Browser macOS-14: ${{ needs['File-Browser macOS-14'].result }}
+            - File-Browser macOS-15: ${{ needs['File-Browser macOS-15'].result }}
+            - File-Browser ubuntu-22.04: ${{ needs['File-Browser ubuntu-22.04'].result }}
+            - File-Browser ubuntu-24.04: ${{ needs['File-Browser ubuntu-24.04'].result }}
+            - File-Browser rhel-8: ${{ needs['File-Browser rhel-8'].result }}
+            - File-Browser rhel-9: ${{ needs['File-Browser rhel-9'].result }}
+            - Animator macOS-13: ${{ needs['Animator macOS-13'].result }}
+            - Animator macOS-14: ${{ needs['Animator macOS-14'].result }}
+            - Animator macOS-15: ${{ needs['Animator macOS-15'].result }}
+            - Animator ubuntu-22.04: ${{ needs['Animator ubuntu-22.04'].result }}
+            - Animator ubuntu-24.04: ${{ needs['Animator ubuntu-24.04'].result }}
+            - Animator rhel-8: ${{ needs['Animator rhel-8'].result }}
+            - Animator rhel-9: ${{ needs['Animator rhel-9'].result }}
+            - Region Statistics macOS-13: ${{ needs['Region Statistics macOS-13'].result }}
+            - Region Statistics macOS-14: ${{ needs['Region Statistics macOS-14'].result }}
+            - Region Statistics macOS-15: ${{ needs['Region Statistics macOS-15'].result }}
+            - Region Statistics ubuntu-22.04: ${{ needs['Region Statistics ubuntu-22.04'].result }}
+            - Region Statistics ubuntu-24.04: ${{ needs['Region Statistics ubuntu-24.04'].result }}
+            - Region Statistics rhel-8: ${{ needs['Region Statistics rhel-8'].result }}
+            - Region Statistics rhel-9: ${{ needs['Region Statistics rhel-9'].result }}
+            - Region Manipulation macOS-13: ${{ needs['Region Manipulation macOS-13'].result }}
+            - Region Manipulation macOS-14: ${{ needs['Region Manipulation macOS-14'].result }}
+            - Region Manipulation macOS-15: ${{ needs['Region Manipulation macOS-15'].result }}
+            - Region Manipulation ubuntu-22.04: ${{ needs['Region Manipulation ubuntu-22.04'].result }}
+            - Region Manipulation ubuntu-24.04: ${{ needs['Region Manipulation ubuntu-24.04'].result }}
+            - Region Manipulation rhel-8: ${{ needs['Region Manipulation rhel-8'].result }}
+            - Region Manipulation rhel-9: ${{ needs['Region Manipulation rhel-9'].result }}
+            - Cube Histogram macOS-13: ${{ needs['Cube Histogram macOS-13'].result }}
+            - Cube Histogram macOS-14: ${{ needs['Cube Histogram macOS-14'].result }}
+            - Cube Histogram macOS-15: ${{ needs['Cube Histogram macOS-15'].result }}
+            - Cube Histogram ubuntu-22.04: ${{ needs['Cube Histogram ubuntu-22.04'].result }}
+            - Cube Histogram ubuntu-24.04: ${{ needs['Cube Histogram ubuntu-24.04'].result }}
+            - Cube Histogram rhel-8: ${{ needs['Cube Histogram rhel-8'].result }}
+            - Cube Histogram rhel-9: ${{ needs['Cube Histogram rhel-9'].result }}
+            - PV Generator macOS-13: ${{ needs['PV Generator macOS-13'].result }}
+            - PV Generator macOS-14: ${{ needs['PV Generator macOS-14'].result }}
+            - PV Generator macOS-15: ${{ needs['PV Generator macOS-15'].result }}
+            - PV Generator ubuntu-22.04: ${{ needs['PV Generator ubuntu-22.04'].result }}
+            - PV Generator ubuntu-24.04: ${{ needs['PV Generator ubuntu-24.04'].result }}
+            - PV Generator rhel-8: ${{ needs['PV Generator rhel-8'].result }}
+            - PV Generator rhel-9: ${{ needs['PV Generator rhel-9'].result }}
+            - Raster Tiles macOS-13: ${{ needs['Raster Tiles macOS-13'].result }}
+            - Raster Tiles macOS-14: ${{ needs['Raster Tiles macOS-14'].result }}
+            - Raster Tiles macOS-15: ${{ needs['Raster Tiles macOS-15'].result }}
+            - Raster Tiles ubuntu-22.04: ${{ needs['Raster Tiles ubuntu-22.04'].result }}
+            - Raster Tiles ubuntu-24.04: ${{ needs['Raster Tiles ubuntu-24.04'].result }}
+            - Raster Tiles rhel-8: ${{ needs['Raster Tiles rhel-8'].result }}
+            - Raster Tiles rhel-9: ${{ needs['Raster Tiles rhel-9'].result }}
+            - Catalog macOS-13: ${{ needs['Catalog macOS-13'].result }}
+            - Catalog macOS-14: ${{ needs['Catalog macOS-14'].result }}
+            - Catalog macOS-15: ${{ needs['Catalog macOS-15'].result }}
+            - Catalog ubuntu-22.04: ${{ needs['Catalog ubuntu-22.04'].result }}
+            - Catalog ubuntu-24.04: ${{ needs['Catalog ubuntu-24.04'].result }}
+            - Catalog rhel-8: ${{ needs['Catalog rhel-8'].result }}
+            - Catalog rhel-9: ${{ needs['Catalog rhel-9'].result }}
+            - Moment macOS-13: ${{ needs['Moment macOS-13'].result }}
+            - Moment macOS-14: ${{ needs['Moment macOS-14'].result }}
+            - Moment macOS-15: ${{ needs['Moment macOS-15'].result }}
+            - Moment ubuntu-22.04: ${{ needs['Moment ubuntu-22.04'].result }}
+            - Moment ubuntu-24.04: ${{ needs['Moment ubuntu-24.04'].result }}
+            - Moment rhel-8: ${{ needs['Moment rhel-8'].result }}
+            - Moment rhel-9: ${{ needs['Moment rhel-9'].result }}
+            - Match macOS-13: ${{ needs['Match macOS-13'].result }}
+            - Match macOS-14: ${{ needs['Match macOS-14'].result }}
+            - Match macOS-15: ${{ needs['Match macOS-15'].result }}
+            - Match ubuntu-22.04: ${{ needs['Match ubuntu-22.04'].result }}
+            - Match ubuntu-24.04: ${{ needs['Match ubuntu-24.04'].result }}
+            - Match rhel-8: ${{ needs['Match rhel-8'].result }}
+            - Match rhel-9: ${{ needs['Match rhel-9'].result }}
+            - Close File macOS-13: ${{ needs['Close File macOS-13'].result }}
+            - Close File macOS-14: ${{ needs['Close File macOS-14'].result }}
+            - Close File macOS-15: ${{ needs['Close File macOS-15'].result }}
+            - Close File ubuntu-22.04: ${{ needs['Close File ubuntu-22.04'].result }}
+            - Close File ubuntu-24.04: ${{ needs['Close File ubuntu-24.04'].result }}
+            - Close File rhel-8: ${{ needs['Close File rhel-8'].result }}
+            - Close File rhel-9: ${{ needs['Close File rhel-9'].result }}
+            - Image Fitting macOS-13: ${{ needs['Image Fitting macOS-13'].result }}
+            - Image Fitting macOS-14: ${{ needs['Image Fitting macOS-14'].result }}
+            - Image Fitting macOS-15: ${{ needs['Image Fitting macOS-15'].result }}
+            - Image Fitting ubuntu-22.04: ${{ needs['Image Fitting ubuntu-22.04'].result }}
+            - Image Fitting ubuntu-24.04: ${{ needs['Image Fitting ubuntu-24.04'].result }}
+            - Image Fitting rhel-8: ${{ needs['Image Fitting rhel-8'].result }}
+            - Image Fitting rhel-9: ${{ needs['Image Fitting rhel-9'].result }}
+            - Vector Overlay macOS-13: ${{ needs['Vector Overlay macOS-13'].result }}
+            - Vector Overlay macOS-14: ${{ needs['Vector Overlay macOS-14'].result }}
+            - Vector Overlay macOS-15: ${{ needs['Vector Overlay macOS-15'].result }}
+            - Vector Overlay ubuntu-22.04: ${{ needs['Vector Overlay ubuntu-22.04'].result }}
+            - Vector Overlay ubuntu-24.04: ${{ needs['Vector Overlay ubuntu-24.04'].result }}
+            - Vector Overlay rhel-8: ${{ needs['Vector Overlay rhel-8'].result }}
+            - Vector Overlay rhel-9: ${{ needs['Vector Overlay rhel-9'].result }}
+            - Resume macOS-13: ${{ needs['Resume macOS-13'].result }}
+            - Resume macOS-14: ${{ needs['Resume macOS-14'].result }}
+            - Resume macOS-15: ${{ needs['Resume macOS-15'].result }}
+            - Resume ubuntu-22.04: ${{ needs['Resume ubuntu-22.04'].result }}
+            - Resume ubuntu-24.04: ${{ needs['Resume ubuntu-24.04'].result }}
+            - Resume rhel-8: ${{ needs['Resume rhel-8'].result }}
+            - Resume rhel-9: ${{ needs['Resume rhel-9'].result }}
