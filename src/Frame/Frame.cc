@@ -1776,12 +1776,10 @@ bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int s
     return _loader->GetRegionSpectralData(region_id, z_range, stokes, mask, origin, _image_mutex, results, progress);
 }
 
-// TODO do moments always use current stokes???
-bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
-    int stokes_index, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<GeneratedImage>& collapse_results, RegionState region_state) {
     std::shared_lock lock(GetActiveTaskMutex());
-    _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_index)));
+    _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetImage()));
     _loader->CloseImageIfUpdated();
 
     if (region_state.control_points.empty()) {
@@ -1798,8 +1796,8 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
 
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         auto stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
-        _loader->GetStokesType(stokes_index, stokes_type);
-        _moment_generator->CalculateMoments(file_id, image_region, stokes_index, _axes.z, _axes.stokes, name_index, progress_callback,
+        _loader->GetStokesType(stokes_index, CurrentStokes());
+        _moment_generator->CalculateMoments(file_id, image_region, _axes.z, _axes.stokes, name_index, progress_callback,
             moment_request, moment_response, collapse_results, region_state, Stokes::Description(stokes_type));
         ulock.unlock();
     }
@@ -1813,9 +1811,8 @@ void Frame::StopMomentCalc() {
     }
 }
 
-// TODO regions aren't currently implemented. If they were, what stokes would be applicable?
 bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image,
-    GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, casacore::ImageRegion* region, int stokes_index) {
+    GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, casacore::ImageRegion* region) {
     if (!_image_fitter) {
         _image_fitter = std::make_unique<ImageFitter>();
     }
@@ -1858,11 +1855,11 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
         std::vector<bool> fixed_params(fitting_request.fixed_params().begin(), fitting_request.fixed_params().end());
 
         if (region != nullptr) {
-            casacore::IPosition region_shape = GetRegionShape(*region, stokes_index);
+            casacore::IPosition region_shape = GetRegionShape(*region, CurrentStokes());
             spdlog::info("Creating region subimage data with shape {} x {}.", region_shape(0), region_shape(1));
 
             std::vector<float> region_data;
-            if (!GetRegionData(*region, stokes_index, region_data)) {
+            if (!GetRegionData(*region, CurrentStokes(), region_data)) {
                 spdlog::error("Failed to get data in the region!");
                 fitting_response.set_message("failed to get data");
                 fitting_response.set_success(false);
@@ -1889,9 +1886,9 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             if (region != nullptr) {
                 output_region = *region;
             } else {
-                GetImageRegion(file_id, AxisRange(CurrentZ()), CurrentStokes(), output_region, stokes_index);
+                GetImageRegion(file_id, AxisRange(CurrentZ()), CurrentStokes(), output_region);
             }
-            casa::SPIIF image(_loader->GetStokesImage(stokes_index));
+            casa::SPIIF image(_loader->GetImage());
             success = _image_fitter->GetGeneratedImages(image, output_region, GetFileName(), model_image, residual_image, fitting_response);
         }
     }
@@ -2420,8 +2417,8 @@ bool Frame::GetDownsampledRasterData(
         int y_max = bounds.y_max() - 1;
 
         auto tile_stokes_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(z), stokes);
-        tile_data.resize(tile_stokes_section.slicer.length().product());
-        if (!GetSlicerData(tile_stokes_section, tile_data.data())) {
+        tile_data.resize(tile_stokes_section.length().product());
+        if (!GetSlicerData(tile_stokes_section, stokes, tile_data.data())) {
             return false;
         }
     }

@@ -133,7 +133,7 @@ std::shared_mutex& Region::GetActiveTaskMutex() {
 // Apply region to image and return LCRegion, mask or Record
 
 std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> csys,
-    const casacore::IPosition& image_shape, const StokesSource& stokes_source, bool report_error) {
+    const casacore::IPosition& image_shape, int stokes_index, bool report_error) {
     // Return lattice-coordinate region applied to image and/or computed stokes.
     // Returns nullptr if is annotation, is not a closed region (line/polyline), or outside image.
     std::shared_ptr<casacore::LCRegion> lcregion;
@@ -143,7 +143,9 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
     }
 
     // Check cache
-    lcregion = GetCachedLCRegion(file_id, stokes_source);
+    if (!Stokes::IsComputed(stokes_index)) {
+        lcregion = GetCachedLCRegion(file_id);
+    }
 
     if (!lcregion) {
         if (IsInReferenceImage(file_id)) {
@@ -165,7 +167,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 _lcregion_set = true;
 
                 // Cache LCRegion
-                if (lcregion && stokes_source.IsOriginalImage()) {
+                if (lcregion && !Stokes::IsComputed(stokes_index)) {
                     std::lock_guard<std::mutex> guard(_lcregion_mutex);
                     _lcregion = lcregion;
                 }
@@ -174,19 +176,16 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
             if (!_region_converter) {
                 _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
             }
-            return _region_converter->GetImageRegion(file_id, csys, image_shape, stokes_source, report_error);
+            return _region_converter->GetImageRegion(file_id, csys, image_shape, stokes_index, report_error);
         }
     }
 
     return lcregion;
 }
 
-std::shared_ptr<casacore::LCRegion> Region::GetCachedLCRegion(int file_id, const StokesSource& stokes_source) {
+std::shared_ptr<casacore::LCRegion> Region::GetCachedLCRegion(int file_id) {
     // Return cached LCRegion applied to image
     std::shared_ptr<casacore::LCRegion> lcregion;
-    if (!stokes_source.IsOriginalImage()) {
-        return lcregion;
-    }
 
     if (IsInReferenceImage(file_id)) {
         // Return _lcregion even if unassigned
@@ -208,8 +207,7 @@ casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
     // Requires that LCRegion for this file id has been set and cached (via GetImageRegion),
     // else returns empty mask.
     casacore::ArrayLattice<casacore::Bool> mask;
-    auto stokes_source = StokesSource();
-    auto lcregion = GetCachedLCRegion(file_id, stokes_source);
+    auto lcregion = GetCachedLCRegion(file_id);
 
     if (lcregion) {
         // LCRegion is an extension region or a fixed region, depending on whether image is reference or matched.

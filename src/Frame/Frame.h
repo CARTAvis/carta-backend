@@ -189,15 +189,13 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
     // Moments calculation
-    bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
-        int stokes_index, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         std::vector<GeneratedImage>& collapse_results, RegionState region_state = RegionState());
     void StopMomentCalc();
 
     // Image fitting
     bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image,
-        GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, casacore::ImageRegion* region = nullptr,
-        int stokes_index = -1);
+        GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, casacore::ImageRegion* region = nullptr);
     void StopFitting();
 
     // Save as a new file or export sub-image to CASA/FITS format
