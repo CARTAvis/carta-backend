@@ -1,10 +1,10 @@
-
 name: ci
 on:
   push:
     branches:
       - dev
       - release/*
+      - posh/actions_notifications
   pull_request:
 jobs:
 
@@ -254,3 +254,27 @@ jobs:
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
           github_context: ${{ toJson(github) }}
 
+  NotifyEmail:
+    name: Send email on failure
+    runs-on: ubuntu-latest
+    needs: [format-check, Ubuntu-Noble, macOS-15, AlmaLinux-9]
+    if: always()
+    steps:
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.MAIL_USERNAME }}   # 建議放 GitHub Secret
+          password: ${{ secrets.MAIL_PASSWORD }}   # 建議放 GitHub Secret
+          subject: "❌ CI Failed: ${{ github.repository }} @ ${{ github.ref }}"
+          to: posheng@asiaa.sinica.edu.tw
+          from: "CARTA CI <${{ secrets.MAIL_USERNAME }}>"
+          body: |
+            🚨 Workflow failed 🚨
+
+            Repository: ${{ github.repository }}
+            Branch/Ref: ${{ github.ref }}
+            Workflow: ${{ github.workflow }}
+            Run ID: ${{ github.run_id }}
+            URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
