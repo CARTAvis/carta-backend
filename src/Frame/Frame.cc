@@ -81,12 +81,10 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _use_tile_cache = _loader->UseTileCache();
 
     // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
-    if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2))) {
-        if (!FillImageCache()) {
-            _open_image_error = fmt::format("Cannot load image data. Check log.");
-            _valid = false;
-            return;
-        }
+    if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2)) && !FillImageCache()) {
+        _open_image_error = fmt::format("Cannot load image data. Check log.");
+        _valid = false;
+        return;
     }
 
     // set the tile pool capacity
