@@ -635,7 +635,7 @@ TEST_F(CursorSpatialProfileTest, FitsChannelStokesChange) {
 }
 
 TEST_F(CursorSpatialProfileTest, ContiguousHDF5ChannelChange) {
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_2_10_row_column.hdf5");
+    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_2_row_column.hdf5");
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);

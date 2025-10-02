@@ -346,7 +346,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
 }
 
 TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
-    const std::string input = DataPath("settings-good-fields.json");
+    const std::string input = TestRoot() / "data" / "settings" / "settings-good-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);

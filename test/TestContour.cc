@@ -151,7 +151,7 @@ TEST_F(ContourTest, NoSmoothingHdf5FileNaN) {
 }
 
 TEST_F(ContourTest, GaussianBlurHdf5File) {
-    GenerateContour("500_500_image_opts.hd5f", CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);
+    GenerateContour("500_500_image_opts.hdf5", CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);
 }
 TEST_F(ContourTest, GaussianBlurHdf5FileNaN) {
     GenerateContour("500_500_image_opts_nan.hdf5", CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);

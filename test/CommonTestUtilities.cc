@@ -63,7 +63,7 @@ std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params, co
 }
 
 std::string FileFinder::DataPath(const std::string& filename) {
-    return (TestRoot() / "data" / filename).string();
+    return (TestRoot() / "data" / "settings" / filename).string();
 }
 
 std::string FileFinder::FitsImagePath(const std::string& filename) {
