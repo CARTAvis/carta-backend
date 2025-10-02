@@ -267,7 +267,7 @@ jobs:
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
           subject: "CARTA CI Failed: ${{ github.repository }} @ ${{ github.ref }}"
-          to: kswang@asiaa.sinica.edu.tw posheng@asiaa.sinica.edu.tw
+          to: ${{ secrets.MAIL_TO }} ${{ secrets.MAIL_USERNAME }}
           from: "CARTA CI <${{ secrets.MAIL_USERNAME }}>"
           body: |
             Workflow failed
