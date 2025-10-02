@@ -290,8 +290,7 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetImageRegion(int file_id,
 }
 
 std::shared_ptr<casacore::LCRegion> RegionConverter::GetConvertedLCRegion(int file_id,
-    std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape, int stokes_index,
-    bool report_error) {
+    std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape, int stokes_index, bool report_error) {
     // Convert reference WCRegion to LCRegion in output coord_sys and shape, and cache converted region.
     // Check cache before calling this else will needlessly create a new LCRegion and cache it.
     std::shared_ptr<casacore::LCRegion> lc_region;

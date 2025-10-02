@@ -1776,8 +1776,9 @@ bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int s
     return _loader->GetRegionSpectralData(region_id, z_range, stokes, mask, origin, _image_mutex, results, progress);
 }
 
-bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<GeneratedImage>& collapse_results, RegionState region_state) {
+bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
+    RegionState region_state) {
     std::shared_lock lock(GetActiveTaskMutex());
     _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetImage()));
     _loader->CloseImageIfUpdated();
@@ -1797,8 +1798,8 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         auto stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
         _loader->GetStokesType(stokes_index, CurrentStokes());
-        _moment_generator->CalculateMoments(file_id, image_region, _axes.z, _axes.stokes, name_index, progress_callback,
-            moment_request, moment_response, collapse_results, region_state, Stokes::Description(stokes_type));
+        _moment_generator->CalculateMoments(file_id, image_region, _axes.z, _axes.stokes, name_index, progress_callback, moment_request,
+            moment_response, collapse_results, region_state, Stokes::Description(stokes_type));
         ulock.unlock();
     }
 

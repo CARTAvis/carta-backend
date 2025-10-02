@@ -861,8 +861,7 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id, bool check_an
     return true;
 }
 
-std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
-    int region_id, int file_id, int stokes_index, bool report_error) {
+std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(int region_id, int file_id, int stokes_index, bool report_error) {
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
     if (!RegionFileIdsValid(region_id, file_id, true)) {
