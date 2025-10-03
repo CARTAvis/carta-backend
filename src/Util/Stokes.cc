@@ -13,15 +13,16 @@ using namespace carta;
  * whether a polarization can be computed from the polarizations available in an image file. The map is ordered so that Stokes::Computable
  * does not have to sort its output.
  */
-std::map<Pol, std::vector<Pol>> Stokes::_components{{Pol::Ptotal, {Pol::Q, Pol::U, Pol::V}}, {Pol::Plinear, {Pol::Q, Pol::U}},
-    {Pol::PFtotal, {Pol::I, Pol::Q, Pol::U, Pol::V}}, {Pol::PFlinear, {Pol::I, Pol::Q, Pol::U}}, {Pol::Pangle, {Pol::Q, Pol::U}}};
+std::map<Stokes::Pol, std::vector<Stokes::Pol>> Stokes::_components{{Pol::Ptotal, {Pol::Q, Pol::U, Pol::V}},
+    {Pol::Plinear, {Pol::Q, Pol::U}}, {Pol::PFtotal, {Pol::I, Pol::Q, Pol::U, Pol::V}}, {Pol::PFlinear, {Pol::I, Pol::Q, Pol::U}},
+    {Pol::Pangle, {Pol::Q, Pol::U}}};
 
 /**
  * @details This unordered map provides a conversion between the CARTA polarization type
  * enumeration and the corresponding CASA Stokes type enumeration.
  * It is used to translate polarization representations between the two frameworks.
  */
-std::unordered_map<Pol, CasaPol> Stokes::_to_casa{{Pol::POLARIZATION_TYPE_NONE, CasaPol::Undefined}, {Pol::I, CasaPol::I},
+std::unordered_map<Stokes::Pol, Stokes::CasaPol> Stokes::_to_casa{{Pol::POLARIZATION_TYPE_NONE, CasaPol::Undefined}, {Pol::I, CasaPol::I},
     {Pol::Q, CasaPol::Q}, {Pol::U, CasaPol::U}, {Pol::V, CasaPol::V}, {Pol::RR, CasaPol::RR}, {Pol::LL, CasaPol::LL},
     {Pol::RL, CasaPol::RL}, {Pol::LR, CasaPol::LR}, {Pol::XX, CasaPol::XX}, {Pol::YY, CasaPol::YY}, {Pol::XY, CasaPol::XY},
     {Pol::YX, CasaPol::YX}, {Pol::Ptotal, CasaPol::Ptotal}, {Pol::Plinear, CasaPol::Plinear}, {Pol::PFtotal, CasaPol::PFtotal},
@@ -32,7 +33,7 @@ std::unordered_map<Pol, CasaPol> Stokes::_to_casa{{Pol::POLARIZATION_TYPE_NONE, 
  * with a corresponding descriptive string. It is used to provide user-friendly
  * labels for polarization types in logs, UI displays, or reports.
  */
-std::unordered_map<Pol, std::string> Stokes::_description{{Pol::POLARIZATION_TYPE_NONE, "Unknown"}, {Pol::I, "Stokes I"},
+std::unordered_map<Stokes::Pol, std::string> Stokes::_description{{Pol::POLARIZATION_TYPE_NONE, "Unknown"}, {Pol::I, "Stokes I"},
     {Pol::Q, "Stokes Q"}, {Pol::U, "Stokes U"}, {Pol::V, "Stokes V"}, {Pol::Ptotal, "Total polarization intensity"},
     {Pol::Plinear, "Linear polarization intensity"}, {Pol::PFtotal, "Fractional total polarization intensity"},
     {Pol::PFlinear, "Fractional linear polarization intensity"}, {Pol::Pangle, "Polarization angle"}};
@@ -42,8 +43,8 @@ std::unordered_map<Pol, std::string> Stokes::_description{{Pol::POLARIZATION_TYP
  * If valid, it returns the corresponding enumeration value. Otherwise, it returns
  * `CARTA::PolarizationType::POLARIZATION_TYPE_NONE` as a fallback.
  */
-Pol Stokes::Get(const int value) {
-    if (Pol_IsValid(value)) {
+Stokes::Pol Stokes::Get(const int value) {
+    if (CARTA::PolarizationType_IsValid(value)) {
         return static_cast<Pol>(value);
     }
     return Pol::POLARIZATION_TYPE_NONE;
@@ -54,9 +55,9 @@ Pol Stokes::Get(const int value) {
  * If parsing is successful, it returns the corresponding enumeration value.
  * If the name is invalid, it returns `CARTA::PolarizationType::POLARIZATION_TYPE_NONE`.
  */
-Pol Stokes::Get(const std::string name) {
+Stokes::Pol Stokes::Get(const std::string name) {
     auto type = Pol::POLARIZATION_TYPE_NONE;
-    Pol_Parse(name, &type);
+    CARTA::PolarizationType_Parse(name, &type);
     return type;
 }
 
@@ -65,7 +66,7 @@ Pol Stokes::Get(const std::string name) {
  * using a predefined lookup table. If the provided type is not found in the mapping,
  * an `std::out_of_range` exception may be thrown.
  */
-CasaPol Stokes::ToCasa(const Pol type) {
+Stokes::CasaPol Stokes::ToCasa(const Pol type) {
     return _to_casa.at(type);
 }
 
@@ -95,7 +96,7 @@ bool Stokes::ConvertFits(const int& in_stokes_value, int& out_stokes_value) {
  * using the `CARTA::PolarizationType_Name` function.
  */
 std::string Stokes::Name(const Pol type) {
-    return Pol_Name(type);
+    return CARTA::PolarizationType_Name(type);
 }
 
 /**
@@ -107,7 +108,7 @@ std::string Stokes::Description(const Pol type) {
     try {
         return _description.at(type);
     } catch (const std::out_of_range& e) {
-        return Pol_Name(type);
+        return CARTA::PolarizationType_Name(type);
     }
 }
 
@@ -123,7 +124,7 @@ bool Stokes::IsComputed(const int value) {
  * using the `_components` map. For example, for `Ptotal` it returns `Q`, `U`, and `V`. If the input value is not found in the map, an empty
  * vector is returned.
  */
-std::vector<Pol> Stokes::Components(const Pol type) {
+std::vector<Stokes::Pol> Stokes::Components(const Pol type) {
     try {
         return _components.at(type);
     } catch (const std::out_of_range& e) {
@@ -135,11 +136,11 @@ std::vector<Pol> Stokes::Components(const Pol type) {
  * map. The components may be given in any order. The returned polarizations are sorted by numeric value. If no polarizations are computable
  * from the components provided, an empty vector is returned.
  */
-std::vector<Pol> Stokes::Computable(const std::vector<Pol>& components) {
+std::vector<Stokes::Pol> Stokes::Computable(const std::vector<Pol>& components) {
     // Ensure that components are sorted and deduplicated
     std::vector<Pol> available(components);
     std::sort(available.begin(), available.end());
-    last = std::unique(available.begin(), available.end());
+    auto last = std::unique(available.begin(), available.end());
     available.erase(last, available.end());
 
     std::vector<Pol> computable;

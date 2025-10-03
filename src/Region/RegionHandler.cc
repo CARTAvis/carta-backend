@@ -1110,7 +1110,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
             if (is_image_region) {
                 // Apply slicer to source image to get SubImage
                 auto slicer = frame->GetImageSlicer(spectral_range, frame->CurrentStokes());
-                if (!frame->GetSlicerSubImage(slicer, sub_image)) {
+                if (!frame->GetSlicerSubImage(slicer, frame->CurrentStokes(), sub_image)) {
                     pv_response.set_message("Failed to set spectral range for preview cube.");
                     return false;
                 }

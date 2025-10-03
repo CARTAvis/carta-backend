@@ -23,10 +23,11 @@
 
 namespace carta {
 
+class PolarizationCalculator;
+
 class FileLoader : std::enable_shared_from_this<FileLoader> {
 public:
     using ImagePtr = std::shared_ptr<casacore::ImageInterface<float>>;
-
     // directory only for ExprLoader, is_gz only for FitsLoader
     FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false, bool is_generated = false);
     virtual ~FileLoader() = default;

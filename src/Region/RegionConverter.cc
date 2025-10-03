@@ -671,7 +671,8 @@ casacore::TableRecord RegionConverter::GetImageRegionRecord(
 
         // Convert reference region to output image
         if (!lc_region) {
-            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+            // Use stokes_index = 0 here because this is always the original image
+            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, 0);
         }
 
         // Get LCRegion definition as Record

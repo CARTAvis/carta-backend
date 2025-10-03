@@ -20,6 +20,8 @@
 
 namespace carta {
 
+class FileLoader;
+
 class PolarizationCalculator {
 public:
     using ImagePtr = std::shared_ptr<casacore::ImageInterface<float>>;
@@ -29,7 +31,7 @@ public:
     using Node = casacore::LatticeExprNode;
     using CoordSysPtr = std::shared_ptr<casacore::CoordinateSystem>;
 
-    typedef Node (PolarizationCalculator::*NodeFunc)(ImageMap&);
+    typedef Node (PolarizationCalculator::*NodeFunc)();
 
     PolarizationCalculator(std::shared_ptr<FileLoader> loader);
     ImagePtr GetImage(Pol computed_type);

@@ -174,8 +174,7 @@ public:
     bool GetRegionSubImage(const casacore::LattRegionHolder& region, int stokes_index, casacore::SubImage<float>& sub_image);
     bool GetSlicerSubImage(const casacore::Slicer& slicer, int stokes_index, casacore::SubImage<float>& sub_image);
     // Returns data vector
-    bool GetRegionData(
-        const casacore::LattRegionHolder& region, int stokes_index, std::vector<float>& data, bool report_performance = true);
+    bool GetRegionData(const casacore::ImageRegion& region, int stokes_index, std::vector<float>& data, bool report_performance = true);
     bool GetSlicerData(const casacore::Slicer& slicer, int stokes_index, float* data, bool use_loader = true);
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const casacore::LattRegionHolder& region, int stokes_index, const std::vector<CARTA::StatsType>& required_stats,

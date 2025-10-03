@@ -11,6 +11,7 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
+#include "ImageData/PolarizationCalculator.h"
 #include "Logger/Logger.h"
 #include "Util/File.h"
 #include "Util/Nan.h"
@@ -23,7 +24,6 @@
 #include "Hdf5Loader.h"
 #include "ImagePtrLoader.h"
 #include "MiriadLoader.h"
-#include "PolarizationCalculator.h"
 
 using namespace carta;
 
@@ -105,7 +105,7 @@ void FileLoader::OpenFile(const std::string& hdu) {
     }
 }
 
-ImagePtr FileLoader::GetImage(bool check_data_type) {
+FileLoader::ImagePtr FileLoader::GetImage(bool check_data_type) {
     if (!_image) {
         OpenFile(_hdu);
     }
@@ -197,7 +197,7 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(int 
     CARTA::PolarizationType stokes_type;
 
     if (GetStokesType(stokes_index, stokes_type)) {
-        if IsComputed (stokes_index) {
+        if (Stokes::IsComputed(stokes_index)) {
             return _polarization_calculator->GetCoordSys(stokes_type);
         } else {
             return _coord_sys;
@@ -952,14 +952,14 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
 }
 
 bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type) {
-    // Computed type which is available for this image
-    if (_polarization_calculator->AvailablePolarizations().count(stokes_index)) {
-        stokes_type = Stokes::Get(stokes_index);
-        return true;
-    }
-
-    // Invalid computed type
     if (Stokes::IsComputed(stokes_index)) {
+        // Computed type which is available for this image
+        if (_polarization_calculator->AvailablePolarizations().count((CARTA::PolarizationType)stokes_index)) {
+            stokes_type = Stokes::Get(stokes_index);
+            return true;
+        }
+
+        // Invalid computed type
         spdlog::warn("Computed polarization {} is not available in this image.", Stokes::Name(Stokes::Get(stokes_index)));
         return false;
     }
@@ -981,13 +981,13 @@ bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType&
     }
 }
 
-ImagePtr FileLoader::GetStokesImage(int stokes_index) {
+FileLoader::ImagePtr FileLoader::GetStokesImage(int stokes_index) {
     CARTA::PolarizationType stokes_type;
     ImagePtr stokes_image;
 
     if (GetStokesType(stokes_index, stokes_type)) {
         if (Stokes::IsComputed(stokes_index)) {
-            stokes_image = _polarization_calculator->GetImage(stokes_index);
+            stokes_image = _polarization_calculator->GetImage(stokes_type);
         } else {
             stokes_image = GetImage();
         }
@@ -997,28 +997,29 @@ ImagePtr FileLoader::GetStokesImage(int stokes_index) {
     }
 
     return stokes_image;
+}
 
-    void FileLoader::SetStokesCrval(float stokes_crval) {
-        _stokes_crval = stokes_crval;
-    }
+void FileLoader::SetStokesCrval(float stokes_crval) {
+    _stokes_crval = stokes_crval;
+}
 
-    void FileLoader::SetStokesCrpix(float stokes_crpix) {
-        _stokes_crpix = stokes_crpix;
-    }
+void FileLoader::SetStokesCrpix(float stokes_crpix) {
+    _stokes_crpix = stokes_crpix;
+}
 
-    void FileLoader::SetStokesCdelt(int stokes_cdelt) {
-        _stokes_cdelt = stokes_cdelt;
-    }
+void FileLoader::SetStokesCdelt(int stokes_cdelt) {
+    _stokes_cdelt = stokes_cdelt;
+}
 
-    bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
-        // Override in ExprLoader to save LEL image
-        return false;
-    }
+bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
+    // Override in ExprLoader to save LEL image
+    return false;
+}
 
-    void FileLoader::SetAipsBeamSupport(bool support) {
-        _support_aips_beam = support;
-    }
+void FileLoader::SetAipsBeamSupport(bool support) {
+    _support_aips_beam = support;
+}
 
-    bool FileLoader::GetAipsBeamSupport() {
-        return _support_aips_beam;
-    }
+bool FileLoader::GetAipsBeamSupport() {
+    return _support_aips_beam;
+}

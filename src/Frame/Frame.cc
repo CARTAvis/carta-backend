@@ -1495,9 +1495,9 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     const auto N = slicer.length().product();
                     std::unique_ptr<float[]> buffer(new float[N]);
                     end_channel = start(_axes.z) + nz - 1;
-                    auto stokes_slicer =
+                    auto image_slicer =
                         GetImageSlicer(AxisRange(x_index), AxisRange(y_index), AxisRange(start(_axes.z), end_channel), stokes);
-                    if (!GetSlicerData(stokes_slicer, buffer.get())) {
+                    if (!GetSlicerData(image_slicer, stokes, buffer.get())) {
                         return false;
                     }
                     // copy buffer to spectral_data
@@ -1615,7 +1615,7 @@ bool Frame::GetSlicerSubImage(const casacore::Slicer& slicer, int stokes_index, 
     return _loader->GetSubImage(slicer, stokes_index, sub_image);
 }
 
-bool Frame::GetRegionData(const casacore::LattRegionHolder& region, int stokes_index, std::vector<float>& data, bool report_performance) {
+bool Frame::GetRegionData(const casacore::ImageRegion& region, int stokes_index, std::vector<float>& data, bool report_performance) {
     // Get image data with a region applied
     Timer t;
     std::vector<bool> region_mask;
@@ -1625,7 +1625,7 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, int stokes_i
         casacore::Slicer bounding_box = region.asLCRegion().boundingBox();
         data.resize(bounding_box.length().product());
 
-        if (GetSlicerData(slicer, stokes_index, data.data(), false)) {
+        if (GetSlicerData(bounding_box, stokes_index, data.data(), false)) {
             // Next get the LCRegion as a mask (LCRegion is a Lattice<bool>)
             casacore::Array<bool> tmpmask = region.asLCRegion().get();
             region_mask = tmpmask.tovector();
@@ -1797,7 +1797,7 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
 
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         auto stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
-        _loader->GetStokesType(stokes_index, CurrentStokes());
+        _loader->GetStokesType(CurrentStokes(), stokes_type);
         _moment_generator->CalculateMoments(file_id, image_region, _axes.z, _axes.stokes, name_index, progress_callback, moment_request,
             moment_response, collapse_results, region_state, Stokes::Description(stokes_type));
         ulock.unlock();
@@ -2000,7 +2000,6 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     }
 
     //// Todo: support saving computed stokes images
-    // TODO why does that not work?? Wrong dims?
     if (image_shape.size() == 2) {
         if (region && GetRegionSubImage(ImageRegion(image_region->cloneRegion()), CurrentStokes(), sub_image)) {
             image = sub_image.cloneII();
@@ -2015,7 +2014,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image);
             } else {
                 auto slice_sub_image = GetExportImageSlicer(save_file_msg, image_shape);
-                _loader->GetSubImage(slice_sub_image, stokes_index, sub_image);
+                _loader->GetSubImage(slice_sub_image, CurrentStokes(), sub_image);
             }
 
             // If keep degenerated axes
@@ -2465,9 +2464,9 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 
     // Set stokes flags and get their indices
     bool use_threshold_I = !std::isnan(threshold) && threshold_option == CARTA::PolarizationType::I;
-    stokes_flag["I"] = (fractional || use_threshold_I) && _loader->GetStokesTypeIndex("I", stokes_indices["I"]);
-    stokes_flag["Q"] = (calculate_pi || calculate_pa) && _loader->GetStokesTypeIndex("Q", stokes_indices["Q"]);
-    stokes_flag["U"] = (calculate_pi || calculate_pa) && _loader->GetStokesTypeIndex("U", stokes_indices["U"]);
+    stokes_flag["I"] = (fractional || use_threshold_I) && _loader->GetStokesTypeIndex(CARTA::PolarizationType::I, stokes_indices["I"]);
+    stokes_flag["Q"] = (calculate_pi || calculate_pa) && _loader->GetStokesTypeIndex(CARTA::PolarizationType::Q, stokes_indices["Q"]);
+    stokes_flag["U"] = (calculate_pi || calculate_pa) && _loader->GetStokesTypeIndex(CARTA::PolarizationType::U, stokes_indices["U"]);
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {

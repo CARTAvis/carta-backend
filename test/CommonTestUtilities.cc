@@ -277,14 +277,9 @@ bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const st
     return image_ok;
 }
 
-void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::ImageInterface<float>> image, int stokes, AxisRange z_range,
-    AxisRange x_range, AxisRange y_range) {
-    // Get spectral and stokes indices
+void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::ImageInterface<float>> image, int stokes) {
+    // Get stokes axis
     casacore::CoordinateSystem coord_sys = image->coordinates();
-    int spectral_axis = coord_sys.spectralAxisNumber();
-    if (spectral_axis < 0 && image->ndim() > 2) {
-        spectral_axis = 2; // assume spectral axis
-    }
     int stokes_axis = coord_sys.polarizationAxisNumber();
     if (stokes_axis < 0 && image->ndim() > 3) {
         stokes_axis = 3; // assume stokes axis
@@ -295,42 +290,6 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
     start = 0;
     casacore::IPosition end(image->shape());
     end -= 1;
-
-    auto x_axis_size = image->shape()[0];
-    auto y_axis_size = image->shape()[1];
-
-    // Set x range
-    if ((x_range.from >= 0) && (x_range.from < x_axis_size) && (x_range.to >= 0) && (x_range.to < x_axis_size) &&
-        (x_range.from <= x_range.to)) {
-        start(0) = x_range.from;
-        end(0) = x_range.to;
-    } else {
-        start(0) = 0;
-        end(0) = x_axis_size - 1;
-    }
-
-    // Set y range
-    if ((y_range.from >= 0) && (y_range.from < y_axis_size) && (y_range.to >= 0) && (y_range.to < y_axis_size) &&
-        (y_range.from <= y_range.to)) {
-        start(1) = y_range.from;
-        end(1) = y_range.to;
-    } else {
-        start(1) = 0;
-        end(1) = y_axis_size - 1;
-    }
-
-    // Set z range
-    if (spectral_axis >= 0) {
-        auto z_axis_size = image->shape()[spectral_axis];
-        if ((z_range.from >= 0) && (z_range.from < z_axis_size) && (z_range.to >= 0) && (z_range.to < z_axis_size) &&
-            (z_range.from <= z_range.to)) {
-            start(spectral_axis) = z_range.from;
-            end(spectral_axis) = z_range.to;
-        } else {
-            start(spectral_axis) = 0;
-            end(spectral_axis) = z_axis_size - 1;
-        }
-    }
 
     // Set stokes range
     if (stokes_axis >= 0) {

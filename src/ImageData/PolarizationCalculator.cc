@@ -5,22 +5,23 @@
 */
 
 #include "PolarizationCalculator.h"
+#include "ImageData/FileLoader.h"
 #include "Logger/Logger.h"
 
 using namespace carta;
+using PolCalc = PolarizationCalculator;
 
-std::unordered_map<Pol, CalculatorFunc> PolarizationCalculator::_nodes = {{Pol::Ptotal, &PolarizationCalculator::PtotalNode},
-    {Pol::Plinear, &PolarizationCalculator::PlinearNode}, {Pol::PFtotal, &PolarizationCalculator::PFtotalNode},
-    {Pol::PFlinear, &PolarizationCalculator::PFlinearNode}, {Pol::Pangle, &PolarizationCalculator::PangleNode}}
+std::unordered_map<PolCalc::Pol, PolCalc::NodeFunc> PolCalc::_nodes = {{Pol::Ptotal, &PolCalc::PtotalNode},
+    {Pol::Plinear, &PolCalc::PlinearNode}, {Pol::PFtotal, &PolCalc::PFtotalNode}, {Pol::PFlinear, &PolCalc::PFlinearNode},
+    {Pol::Pangle, &PolCalc::PangleNode}};
 
-std::unordered_map<Pol, casacore::Unit>
-    PolarizationCalculator::_units = {{Pol::PFtotal, casacore::Unit("%")}, {Pol::PFlinear, casacore::Unit("%")},
-        {Pol::Pangle, casacore::Unit("deg")}}
+std::unordered_map<PolCalc::Pol, casacore::Unit> PolCalc::_units = {
+    {Pol::PFtotal, casacore::Unit("%")}, {Pol::PFlinear, casacore::Unit("%")}, {Pol::Pangle, casacore::Unit("deg")}};
 
-std::unordered_map<Pol, Pol>
-    PolarizationCalculator::_beam_types = {{Pol::Ptotal, Pol::Q}, {Pol::Plinear, Pol::Q}, {Pol::PFtotal, Pol::I}, {Pol::PFlinear, Pol::I}}
+std::unordered_map<PolCalc::Pol, PolCalc::Pol> PolCalc::_beam_types = {
+    {Pol::Ptotal, Pol::Q}, {Pol::Plinear, Pol::Q}, {Pol::PFtotal, Pol::I}, {Pol::PFlinear, Pol::I}};
 
-PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loader) {
+PolCalc::PolarizationCalculator(std::shared_ptr<FileLoader> loader) {
     auto original_image = loader->GetImage();
 
     if (original_image->ndim() < 4) {
@@ -39,7 +40,6 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loade
     end -= 1;
     end(stokes_axis) = 0;
     casacore::IPosition start(end.size(), 0);
-    casacore::Slicer slicer(start, end, casacore::Slicer::endIsLast);
 
     // Get the components
     std::vector<Pol> components;
@@ -52,11 +52,10 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loade
 
     for (const auto& [pol, idx] : indices) {
         components.push_back(pol);
-
-        slicer(axis) = idx;
-        casacore::LCSlicer lc_slicer(slicer);
-        casacore::ImageRegion region(lc_slicer);
-        _component_images[pol] = std::make_shared<casacore::SubImage<float>>(*original_image, region);
+        start(stokes_axis) = idx;
+        end(stokes_axis) = idx;
+        casacore::Slicer slicer(start, end, casacore::Slicer::endIsLast);
+        _component_images[pol] = std::make_shared<casacore::SubImage<float>>(*original_image, slicer);
     }
 
     // Get the computed images
@@ -104,7 +103,7 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<FileLoader> loade
     }
 }
 
-ImagePtr PolarizationCalculator::GetImage(Pol computed_type) {
+PolCalc::ImagePtr PolCalc::GetImage(Pol computed_type) {
     try {
         return _computed_images.at(computed_type);
     } catch (const std::out_of_range& e) {
@@ -113,7 +112,7 @@ ImagePtr PolarizationCalculator::GetImage(Pol computed_type) {
     }
 }
 
-CoordSysPtr PolarizationCalculator::GetCoordSys(Pol computed_type) {
+PolCalc::CoordSysPtr PolCalc::GetCoordSys(Pol computed_type) {
     try {
         return _coord_sys.at(computed_type);
     } catch (const std::out_of_range& e) {
@@ -122,27 +121,27 @@ CoordSysPtr PolarizationCalculator::GetCoordSys(Pol computed_type) {
     }
 }
 
-Node PolarizationCalculator::PtotalNode() {
+PolCalc::Node PolCalc::PtotalNode() {
     casacore::LatticeExprNode lin_node =
         casacore::LatticeExprNode(casacore::pow(*_component_images[Pol::V], 2) + casacore::pow(*_component_images[Pol::U], 2) +
                                   casacore::pow(*_component_images[Pol::Q], 2));
     return casacore::sqrt(lin_node);
 }
 
-Node PolarizationCalculator::PlinearNode() {
+PolCalc::Node PolCalc::PlinearNode() {
     casacore::LatticeExprNode lin_node =
         casacore::LatticeExprNode(casacore::pow(*_component_images[Pol::U], 2) + casacore::pow(*_component_images[Pol::Q], 2));
     return casacore::sqrt(lin_node);
 }
 
-Node PolarizationCalculator::PFtotalNode() {
+PolCalc::Node PolCalc::PFtotalNode() {
     return 100.0 * PtotalNode() / (*_component_images[Pol::I]);
 }
 
-Node PolarizationCalculator::PFlinearNode() {
+PolCalc::Node PolCalc::PFlinearNode() {
     return 100.0 * PlinearNode() / (*_component_images[Pol::I]);
 }
 
-Node PolarizationCalculator::PangleNode() {
+PolCalc::Node PolCalc::PangleNode() {
     return casacore::pa(*_component_images[Pol::U], *_component_images[Pol::Q]);
 }

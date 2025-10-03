@@ -96,7 +96,7 @@ TEST_F(RegionTest, TestReferenceImageRectangleLCRegion) {
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
     auto image_shape = frame->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+    auto lc_region = region->GetImageRegion(file_id, csys, image_shape, 0);
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
     ASSERT_EQ(lc_region->ndim(), 2);
     ASSERT_EQ(lc_region->latticeShape()(0), image_shape(0));
@@ -123,7 +123,7 @@ TEST_F(RegionTest, TestReferenceImageRotboxLCRegion) {
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
     auto image_shape = frame->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+    auto lc_region = region->GetImageRegion(file_id, csys, image_shape, 0);
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
     ASSERT_EQ(lc_region->ndim(), 2);
     ASSERT_EQ(lc_region->latticeShape()(0), image_shape(0));
@@ -150,7 +150,7 @@ TEST_F(RegionTest, TestReferenceImageEllipseLCRegion) {
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
     auto image_shape = frame->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+    auto lc_region = region->GetImageRegion(file_id, csys, image_shape, 0);
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
     ASSERT_EQ(lc_region->ndim(), 2);
     ASSERT_EQ(lc_region->latticeShape()(0), image_shape(0));
@@ -177,7 +177,7 @@ TEST_F(RegionTest, TestReferenceImagePolygonLCRegion) {
     auto region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
     auto image_shape = frame->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+    auto lc_region = region->GetImageRegion(file_id, csys, image_shape, 0);
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
     ASSERT_EQ(lc_region->ndim(), 2);
     ASSERT_EQ(lc_region->latticeShape()(0), image_shape(0));

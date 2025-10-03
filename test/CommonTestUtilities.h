@@ -87,8 +87,7 @@ public:
 };
 
 bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0);
-void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::ImageInterface<float>> image, int stokes,
-    AxisRange z_range = AxisRange(ALL_Z), AxisRange x_range = AxisRange(ALL_X), AxisRange y_range = AxisRange(ALL_Y));
+void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::ImageInterface<float>> image, int stokes);
 template <typename T>
 std::vector<T> GetSpectralProfileValues(const CARTA::SpectralProfile& profile);
 std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile);
