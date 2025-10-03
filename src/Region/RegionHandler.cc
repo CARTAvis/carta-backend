@@ -68,8 +68,8 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
     // CoordinateSystem will be owned by Region
     bool valid_region(false);
 
+    // Check for id > 0 so do not update temp region
     if ((region_id > 0) && RegionSet(region_id)) {
-        // Check for id > 0 so do not update temp region
         auto region = GetRegion(region_id);
         region->UpdateRegion(region_state);
         valid_region = region->IsValid();
@@ -2224,8 +2224,6 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
         return false;
     }
 
-    CARTA::RegionType region_type = GetRegion(region_id)->GetRegionState().type; // point or line/polyline
-    int z = _frames.at(file_id)->CurrentZ();                                     // to cancel if channel changes
     bool success(false);
 
     for (auto& spatial_profile : _region_spatial_profiles) {
@@ -2241,20 +2239,22 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
         }
 
         for (int spatial_file_id : config_file_ids) {
-            // Get statistics for specific region id and file id
+            // Get statistics for specific region and file ids (input ids may be ALL)
             if (!RegionFileIdsValid(spatial_region_id, spatial_file_id)) {
                 continue;
             }
 
             auto frame = _frames.at(spatial_file_id);
+            int z = frame->CurrentZ();
 
             std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_configs;
             if (!spatial_profile.second->GetConfigurations(spatial_file_id, spatial_configs)) {
                 continue;
             }
 
+            auto region_type = GetRegion(region_id)->GetRegionState().type;
             if (region_type == CARTA::POINT) {
-                auto lc_region = ApplyRegionToFile(region_id, file_id);
+                auto lc_region = ApplyRegionToFile(spatial_region_id, spatial_file_id);
                 std::vector<CARTA::SpatialProfileData> spatial_profile_messages;
                 if (spatial_profile.second->GetPointSpatialProfile(
                         spatial_file_id, frame, spatial_configs, lc_region, spatial_profile_messages)) {
@@ -2270,11 +2270,6 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
                     int stokes(0);
                     if (!frame->GetStokesTypeIndex(spatial_config.coordinate(), stokes)) {
                         continue; // invalid image/computed Stokes
-                    }
-
-                    // Cancel if z changed
-                    if (frame->CurrentZ() != z) {
-                        return false;
                     }
 
                     bool cancelled;
@@ -2297,7 +2292,6 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
             }
         }
     }
-
     return success;
 }
 

@@ -1782,7 +1782,8 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
         data_sent = _region_handler->FillSpatialProfileData(
             [&](CARTA::SpatialProfileData spatial_profile_message) {
                 if (spatial_profile_message.profiles_size() > 0) {
-                    SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_message);
+                    auto spatial_file_id = spatial_profile_message.file_id();
+                    SendFileEvent(spatial_file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_message);
                     data_sent = true;
                 }
             },
