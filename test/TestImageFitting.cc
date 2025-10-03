@@ -73,11 +73,11 @@ public:
             GeneratedImage model_image;
             GeneratedImage residual_image;
             int file_id(0);
-            StokesRegion output_stokes_region;
-            frame->GetImageRegion(file_id, AxisRange(frame->CurrentZ()), frame->CurrentStokes(), output_stokes_region);
-            casa::SPIIF image(loader->GetStokesImage(output_stokes_region.stokes_source));
-            success = image_fitter->GetGeneratedImages(
-                image, output_stokes_region.image_region, frame->GetFileName(), model_image, residual_image, fitting_response);
+            casacore::ImageRegion output_region;
+            frame->GetImageRegion(file_id, AxisRange(frame->CurrentZ()), frame->CurrentStokes(), output_region);
+            casa::SPIIF image(loader->GetStokesImage(frame->CurrentStokes()));
+            success =
+                image_fitter->GetGeneratedImages(image, output_region, frame->GetFileName(), model_image, residual_image, fitting_response);
 
             EXPECT_TRUE(success);
             CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->GetImageCacheData());

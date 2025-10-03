@@ -61,7 +61,7 @@ public:
         casacore::Slicer xslicer(start, end, casacore::Slicer::endIsLast);
         casacore::Array<float> expr_xprofile;
         expr_xprofile.resize(xslicer.length());
-        expr_loader->GetSlice(expr_xprofile, carta::StokesSlicer(StokesSource(), xslicer));
+        expr_loader->GetSlice(expr_xprofile, xslicer, 0);
 
         // Slicer for y spatial profile at x=0
         end = start;
@@ -69,7 +69,7 @@ public:
         casacore::Slicer yslicer(start, end, casacore::Slicer::endIsLast);
         casacore::Array<float> expr_yprofile;
         expr_yprofile.resize(yslicer.length());
-        expr_loader->GetSlice(expr_yprofile, carta::StokesSlicer(StokesSource(), yslicer));
+        expr_loader->GetSlice(expr_yprofile, yslicer, 0);
 
         // Tests
         ASSERT_EQ(expr_loader->GetImage()->imageType(), "ImageExpr");
