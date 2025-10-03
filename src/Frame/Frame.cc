@@ -716,7 +716,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
 // ****************************************************
 // Histogram Requirements and Data
 
-bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& histogram_configs) {
+bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& configs) {
     // Set histogram requirements for image or cube
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -728,7 +728,7 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::His
         _cube_histogram_configs.clear();
     }
 
-    for (const auto& histogram_config : histogram_configs) {
+    for (const auto& histogram_config : configs) {
         // set histogram requirements for histogram widgets
         HistogramConfig config(histogram_config);
         if (region_id == IMAGE_REGION_ID) {
@@ -998,12 +998,12 @@ void Frame::CacheCubeHistogram(int stokes, Histogram& hist) {
 // ****************************************************
 // Stats Requirements and Data
 
-bool Frame::SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs) {
+bool Frame::SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs) {
     if (region_id != IMAGE_REGION_ID) {
         return false;
     }
 
-    _image_required_stats = stats_configs;
+    _image_required_stats = configs;
     return true;
 }
 
@@ -1080,19 +1080,19 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
 // ****************************************************
 // Spatial Requirements and Data
 
-void Frame::SetSpatialRequirements(const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
+void Frame::SetSpatialRequirements(const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& configs) {
     _cursor_spatial_configs.clear();
-    for (auto& profile : spatial_profiles) {
-        _cursor_spatial_configs.push_back(profile);
+    for (auto& config : configs) {
+        _cursor_spatial_configs.push_back(config);
     }
 }
 
-bool Frame::FillSpatialProfileData(std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
-    return FillSpatialProfileData(_cursor, _cursor_spatial_configs, spatial_data_vec);
+bool Frame::FillSpatialProfileData(std::vector<CARTA::SpatialProfileData>& spatial_profile_messages) {
+    return FillSpatialProfileData(_cursor, _cursor_spatial_configs, spatial_profile_messages);
 }
 
-bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_configs,
-    std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
+bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialRequirements_SpatialConfig> configs,
+    std::vector<CARTA::SpatialProfileData>& spatial_profile_messages) {
     // Fill spatial profile message for cursor/point region only
     // Send even if no requirements, to update value of data at cursor/point region
 
@@ -1129,32 +1129,28 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         cursor_value_with_current_stokes = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
     }
 
-    if (spatial_configs.empty()) { // Only send a spatial data message for the cursor value with current stokes
-        auto spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), CurrentStokes(), cursor_value_with_current_stokes);
-        spatial_data_vec.push_back(spatial_data);
+    if (configs.empty()) { // Only send a spatial data message for the cursor value with current stokes
+        auto spatial_profile_message = Message::SpatialProfileData(x, y, CurrentZ(), CurrentStokes(), cursor_value_with_current_stokes);
+        spatial_profile_messages.push_back(spatial_profile_message);
         return true;
     }
 
     // When spatial configs is not empty
     // Get point region spatial configs with respect to the stokes (key)
-    std::unordered_map<int, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>> point_regions_spatial_configs;
-
-    for (auto& config : spatial_configs) {
+    std::unordered_map<int, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>> stokes_configs;
+    for (auto& config : configs) {
         // Get stokes
-        std::string coordinate(config.coordinate());
         int stokes;
-        if (!GetStokesTypeIndex(coordinate, stokes)) {
+        if (!GetStokesTypeIndex(config.coordinate(), stokes)) {
             continue;
         }
-        point_regions_spatial_configs[stokes].push_back(config);
+        stokes_configs[stokes].push_back(config);
     }
 
     // Get point region spatial profile data with respect to the stokes (key)
-    for (auto& point_regions_spatial_config : point_regions_spatial_configs) {
-        int stokes = point_regions_spatial_config.first;
-
+    for (auto& stokes_config : stokes_configs) {
+        int stokes = stokes_config.first;
         bool is_current_stokes(stokes == CurrentStokes());
-
         float cursor_value(0.0);
 
         // Get the cursor value with stokes
@@ -1170,25 +1166,27 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         }
 
         // set message fields
-        auto spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), stokes, cursor_value);
+        auto spatial_profile_message = Message::SpatialProfileData(x, y, CurrentZ(), stokes, cursor_value);
 
         // add profiles
         std::vector<float> profile;
         bool write_lock(false);
 
         // for each widget config with the same stokes setting
-        for (auto& config : point_regions_spatial_config.second) {
-            size_t start(config.start());
-            size_t end(config.end());
-            int mip(config.mip());
+        for (auto& spatial_config : stokes_config.second) {
+            std::string coordinate(spatial_config.coordinate());
+            bool is_x_profile(coordinate.back() == 'x');
+            bool is_y_profile(coordinate.back() == 'y');
+            size_t start(spatial_config.start());
+            size_t end(spatial_config.end());
+            int mip(spatial_config.mip());
 
             if (!end) {
-                end = config.coordinate().back() == 'x' ? _dims.width : _dims.height;
+                end = is_x_profile ? _dims.width : _dims.height;
             }
 
             int requested_start(start);
             int requested_end(end);
-
             int decimated_start(start);
             int decimated_end(end);
 
@@ -1204,13 +1202,13 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                 // Select the bounds of data to downsample so that it contains the requested row or column
                 CARTA::ImageBounds bounds;
 
-                if (config.coordinate().back() == 'x') {
+                if (is_x_profile) {
                     bounds.set_x_min(start);
                     bounds.set_x_max(end);
                     int y_floor = std::floor((float)y / mip) * mip;
                     bounds.set_y_min(y_floor);
                     bounds.set_y_max(y_floor + mip);
-                } else if (config.coordinate().back() == 'y') {
+                } else if (is_y_profile) {
                     int x_floor = std::floor((float)x / mip) * mip;
                     bounds.set_x_min(x_floor);
                     bounds.set_x_max(x_floor + mip);
@@ -1228,7 +1226,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     // These values will be used to fetch the data to decimate
                     start = decimated_start * mip;
                     end = decimated_end * mip;
-                    end = config.coordinate().back() == 'x' ? std::min(end, _dims.width) : std::min(end, _dims.height);
+                    end = is_x_profile ? std::min(end, _dims.width) : std::min(end, _dims.height);
                     start = std::min(start, end);
                 }
 
@@ -1236,7 +1234,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     if (_use_tile_cache) { // Use tile cache to return full resolution data or prepare data for decimation
                         profile.resize(end - start);
 
-                        if (config.coordinate().back() == 'x') {
+                        if (is_x_profile) {
                             int tile_y = tile_index(y);
                             bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
 
@@ -1259,8 +1257,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                             }
 
                             have_profile = true;
-
-                        } else if (config.coordinate().back() == 'y') {
+                        } else if (is_y_profile) {
                             int tile_x = tile_index(x);
                             bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
 
@@ -1288,8 +1285,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                         }
                     } else { // Use image cache to return full resolution data or prepare data for decimation
                         profile.reserve(end - start);
-
-                        if (config.coordinate().back() == 'x') {
+                        if (is_x_profile) {
                             auto x_start = y * _dims.width;
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
@@ -1297,7 +1293,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                                 profile.push_back(_image_cache[idx]);
                             }
                             cache_lock.release();
-                        } else if (config.coordinate().back() == 'y') {
+                        } else if (is_y_profile) {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
                                 auto idx = (j * _dims.width) + x;
@@ -1310,11 +1306,10 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     }
                 } else { // When required stokes is not the current stokes or the stokes needs to be computed
                     profile.reserve(end - start);
-
                     StokesSlicer stokes_slicer;
-                    if (config.coordinate().back() == 'x') {
+                    if (is_x_profile) {
                         stokes_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
-                    } else if (config.coordinate().back() == 'y') {
+                    } else if (is_y_profile) {
                         stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
                     }
 
@@ -1367,8 +1362,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
             if (have_profile) {
                 // add SpatialProfile to message
-                auto spatial_profile = spatial_data.add_profiles();
-                spatial_profile->set_coordinate(config.coordinate());
+                auto spatial_profile = spatial_profile_message.add_profiles();
+                spatial_profile->set_coordinate(coordinate);
                 // Should these be set to the rounded endpoints if the data is downsampled or decimated?
                 spatial_profile->set_start(requested_start);
                 spatial_profile->set_end(requested_end);
@@ -1378,7 +1373,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         }
 
         // Fill the spatial profile data with respect to the stokes in a vector
-        spatial_data_vec.emplace_back(spatial_data);
+        spatial_profile_messages.emplace_back(spatial_profile_message);
     }
 
     spdlog::performance("Fill spatial profile in {:.3f} ms", t.Elapsed().ms());
@@ -1388,42 +1383,30 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
 // ****************************************************
 // Spectral Requirements and Data
-bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs) {
+bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs) {
     if (region_id != CURSOR_REGION_ID) {
         return false;
     }
 
-    if (spectral_configs.empty()) {
+    if (configs.empty()) {
         _cursor_spectral_configs.clear();
         return true;
     }
 
-    int nstokes = NumStokes();
-    std::vector<SpectralConfig> new_configs;
-    for (auto& config : spectral_configs) {
+    std::vector<SpectralConfig> spectral_configs;
+    for (auto& config : configs) {
         std::string coordinate(config.coordinate());
-        int stokes;
-        if (!GetStokesTypeIndex(coordinate, stokes)) {
-            continue;
-        }
-
-        // Set required stats for coordinate
-        size_t nstats = config.stats_types_size();
         std::vector<CARTA::StatsType> stats;
-        for (size_t i = 0; i < config.stats_types_size(); ++i) {
+        for (int i = 0; i < config.stats_types_size(); ++i) {
             stats.push_back(config.stats_types(i));
         }
-        SpectralConfig new_config(coordinate, stats);
-        new_configs.push_back(new_config);
-    }
-
-    if (new_configs.empty()) {
-        return false;
+        SpectralConfig spectral_config(coordinate, stats);
+        spectral_configs.push_back(spectral_config);
     }
 
     // Set cursor spectral config
     std::lock_guard<std::mutex> guard(_spectral_mutex);
-    _cursor_spectral_configs = new_configs;
+    _cursor_spectral_configs = spectral_configs;
     return true;
 }
 

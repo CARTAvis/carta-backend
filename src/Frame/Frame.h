@@ -137,7 +137,7 @@ public:
     bool ContourImage(ContourCallback& partial_contour_callback, int channel);
 
     // Histograms: image and cube
-    bool SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& histogram_configs);
+    bool SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& configs);
     bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id,
         int file_id, bool channel_changed);
     bool GetBasicStats(int z, int stokes, BasicStats<float>& stats);
@@ -147,17 +147,17 @@ public:
     void CacheCubeHistogram(int stokes, Histogram& hist);
 
     // Stats: image
-    bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
+    bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> stats_data_callback, int region_id, int file_id);
 
     // Spatial: cursor
-    void SetSpatialRequirements(const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
-    bool FillSpatialProfileData(std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
-    bool FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_configs,
-        std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    void SetSpatialRequirements(const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& configs);
+    bool FillSpatialProfileData(std::vector<CARTA::SpatialProfileData>& spatial_profile_messages);
+    bool FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialRequirements_SpatialConfig> configs,
+        std::vector<CARTA::SpatialProfileData>& spatial_profile_messages);
 
     // Spectral: cursor
-    bool SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs);
+    bool SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs);
     bool FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool stokes_changed);
 
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished

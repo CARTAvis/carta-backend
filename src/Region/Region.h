@@ -52,7 +52,7 @@ public:
     }
 
     inline bool IsLineType() {
-        // Not enclosed region defined by 2 or more points
+        // Not closed region defined by 2 or more points (includes annotation)
         return GetRegionState().IsLineType();
     }
 

@@ -1776,67 +1776,37 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 bool Session::SendSpatialProfileData(int file_id, int region_id) {
     // return true if data sent
     bool data_sent(false);
+    std::vector<CARTA::SpatialProfileData> spatial_profile_messages;
 
-    auto send_results = [&](int file_id, int region_id, std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec) {
-        for (auto& spatial_profile_data : spatial_profile_data_vec) {
-            spatial_profile_data.set_file_id(file_id);
-            spatial_profile_data.set_region_id(region_id);
-            SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_data);
-            data_sent = true;
-        }
-    };
-
-    if (_frames.find(file_id) != _frames.end()) {
-        if (region_id == CURSOR_REGION_ID) {
-            std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec;
-            if (_frames.at(file_id)->FillSpatialProfileData(spatial_profile_data_vec)) {
-                send_results(file_id, region_id, spatial_profile_data_vec);
-            }
-        } else if (_region_handler->IsPointRegion(region_id)) {
-            std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec;
-            if (_region_handler->FillPointSpatialProfileData(file_id, region_id, spatial_profile_data_vec)) {
-                send_results(file_id, region_id, spatial_profile_data_vec);
-            }
-        } else if (_region_handler->IsLineRegion(region_id)) {
-            data_sent = _region_handler->FillLineSpatialProfileData(file_id, region_id, [&](CARTA::SpatialProfileData profile_data) {
-                if (profile_data.profiles_size() > 0) {
-                    SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, profile_data);
+    if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
+        data_sent = _region_handler->FillSpatialProfileData(
+            [&](CARTA::SpatialProfileData spatial_profile_message) {
+                if (spatial_profile_message.profiles_size() > 0) {
+                    SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_message);
+                    data_sent = true;
                 }
-            });
+            },
+            file_id, region_id);
+    } else if (region_id == CURSOR_REGION_ID) {
+        // Cursor spatial profile
+        if (_frames.find(file_id) != _frames.end()) {
+            if (_frames.at(file_id)->FillSpatialProfileData(spatial_profile_messages)) {
+                for (auto& spatial_profile_message : spatial_profile_messages) {
+                    spatial_profile_message.set_file_id(file_id);
+                    spatial_profile_message.set_region_id(region_id);
+                    SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_message);
+                    data_sent = true;
+                }
+            }
         } else {
-            string error = fmt::format("Spatial profiles not valid for region {} type", region_id);
+            string error = fmt::format("File id {} not found", file_id);
             SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
-        string error = fmt::format("File id {} not found", file_id);
+        string error = fmt::format("Spatial profiles not valid for region {} type", region_id);
         SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
     }
     return data_sent;
-}
-
-void Session::SendSpatialProfileDataByFileId(int file_id) {
-    // Update spatial profile data for the cursor
-    SendSpatialProfileData(file_id, CURSOR_REGION_ID);
-
-    // Update spatial profile data for point and line regions
-    if (_region_handler) {
-        // Get region ids with respect to the given file id
-        auto region_ids = _region_handler->GetSpatialReqRegionsForFile(file_id);
-        for (auto region_id : region_ids) {
-            SendSpatialProfileData(file_id, region_id);
-        }
-    }
-}
-
-void Session::SendSpatialProfileDataByRegionId(int region_id) {
-    // Update spatial profile data for point regions
-    if (_region_handler) {
-        // Get file ids with respect to the region id (if a region projects on multiple files)
-        auto file_ids = _region_handler->GetSpatialReqFilesForRegion(region_id);
-        for (auto file_id : file_ids) {
-            SendSpatialProfileData(file_id, region_id);
-        }
-    }
 }
 
 bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_changed) {
@@ -1858,7 +1828,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
             region_id, file_id, stokes_changed);
     } else if (region_id == CURSOR_REGION_ID) {
         // Cursor spectral profile
-        if (_frames.count(file_id)) {
+        if (_frames.find(file_id) != _frames.end()) {
             data_sent = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) {
@@ -2059,7 +2029,7 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool z_cha
             SendRegionStatsData(file_id, IMAGE_REGION_ID);
 
             if (z_changed) { // requirements sent for stokes change
-                SendSpatialProfileDataByFileId(file_id);
+                SendSpatialProfileData(file_id, ALL_REGIONS);
             }
         }
     }
@@ -2076,7 +2046,7 @@ void Session::UpdateRegionData(int file_id, int region_id, bool z_changed, bool 
     SendRegionStatsData(file_id, region_id);
 
     if (!channel_changed) { // Region changed, update all
-        SendSpatialProfileDataByRegionId(region_id);
+        SendSpatialProfileData(file_id, region_id);
         SendSpectralProfileData(file_id, region_id, stokes_changed);
     }
 }
