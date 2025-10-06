@@ -9,6 +9,7 @@
 #ifndef CARTA_SRC_REGION_REGIONHANDLER_H_
 #define CARTA_SRC_REGION_REGIONHANDLER_H_
 
+#include <mutex>
 #include <vector>
 
 #include "Cache/RequirementsCache.h"
@@ -177,7 +178,8 @@ private:
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
     // Region analysis
-    std::unordered_map<int, std::unique_ptr<RegionSpatialProfile>> _region_spatial_profiles;
+    std::unordered_map<int, std::shared_ptr<RegionSpatialProfile>> _region_spatial_profiles;
+    std::mutex _spatial_mutex;
 
     // Requirements; ConfigId key contains file, region
     std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _histogram_req;

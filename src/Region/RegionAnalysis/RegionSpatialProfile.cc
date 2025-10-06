@@ -116,6 +116,9 @@ bool RegionSpatialProfile::GetLineSpatialProfile(int file_id, std::shared_ptr<Fr
         return false;
     }
 
+    CARTA::ProfileAxisType axis_type =
+        (region->GetRegionState().type == CARTA::LINE ? CARTA::ProfileAxisType::Offset : CARTA::ProfileAxisType::Distance);
+
     casacore::Vector<float> profile;
     casacore::Quantity increment;
     if (!GetLineProfile(file_id, frame, region, stokes, z, config, cancelled, message, profile, increment)) {
@@ -132,8 +135,6 @@ bool RegionSpatialProfile::GetLineSpatialProfile(int file_id, std::shared_ptr<Fr
     int end = profile_size - 1;
     float crpix = profile_size / 2;
     float cdelt = increment.getValue();
-    CARTA::ProfileAxisType axis_type =
-        (region->GetRegionState().type == CARTA::LINE ? CARTA::ProfileAxisType::Offset : CARTA::ProfileAxisType::Distance);
     float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
     std::string unit = increment.getUnit();
 

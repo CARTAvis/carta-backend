@@ -136,7 +136,6 @@ bool LineBoxRegions::GetFixedPixelRegions(const RegionState& line_region_state, 
 
             int start(0);
             if (trim_line) {
-                spdlog::debug("Trimming line segment {}", iline);
                 start = 1;
             }
 

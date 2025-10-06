@@ -1778,7 +1778,7 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
     bool data_sent(false);
     std::vector<CARTA::SpatialProfileData> spatial_profile_messages;
 
-    if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
+    if (_region_handler && (region_id > CURSOR_REGION_ID || region_id == ALL_REGIONS || file_id == ALL_FILES)) {
         data_sent = _region_handler->FillSpatialProfileData(
             [&](CARTA::SpatialProfileData spatial_profile_message) {
                 if (spatial_profile_message.profiles_size() > 0) {

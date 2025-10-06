@@ -414,8 +414,9 @@ bool RegionHandler::SetSpatialRequirements(
     // Save frame pointer
     _frames[file_id] = frame;
 
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
     if (_region_spatial_profiles.find(region_id) == _region_spatial_profiles.end()) {
-        _region_spatial_profiles[region_id] = std::unique_ptr<RegionSpatialProfile>(new RegionSpatialProfile(region_id, file_id, configs));
+        _region_spatial_profiles[region_id] = std::shared_ptr<RegionSpatialProfile>(new RegionSpatialProfile(region_id, file_id, configs));
     } else {
         _region_spatial_profiles[region_id]->SetConfigurations(file_id, configs);
     }
@@ -592,9 +593,11 @@ bool RegionHandler::SetStatsRequirements(
 }
 
 void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
-    // Clear requirements and cache for a specific region or for all regions when closed
+    // Clear requirements and cache for all regions or a specific region
     if (region_id == ALL_REGIONS) {
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         _region_spatial_profiles.clear();
+        spatial_lock.unlock();
 
         _histogram_req.clear();
         _stats_req.clear();
@@ -613,9 +616,11 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         _pv_preview_cubes.clear();
     } else {
         // Remove spatial profiles for given region_id
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         if (_region_spatial_profiles.find(region_id) != _region_spatial_profiles.end()) {
             _region_spatial_profiles.erase(region_id);
         }
+        spatial_lock.unlock();
 
         // Remove requirements for given region_id
         for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
@@ -669,10 +674,10 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             }
         }
 
+        // Do not attempt to get lock for removing temporary box region id.
         if (region_id > 0) {
             // Needed only for pv cut region in source image.
-            // Do not attempt to get lock for removing temporary box region.
-            std::unique_lock pv_cut_lock(_pv_cut_mutex);
+            std::unique_lock<std::shared_mutex> pv_cut_lock(_pv_cut_mutex);
             for (auto it = _pv_preview_cuts.begin(); it != _pv_preview_cuts.end();) {
                 if ((*it).second->HasPreviewFileRegionIds(ALL_FILES, region_id)) {
                     it = _pv_preview_cuts.erase(it);
@@ -687,7 +692,9 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
 void RegionHandler::RemoveFileRequirementsCache(int file_id) {
     // Clear requirements and cache for a specific file or for all files when closed
     if (file_id == ALL_FILES) {
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         _region_spatial_profiles.clear();
+        spatial_lock.unlock();
 
         _histogram_req.clear();
         _stats_req.clear();
@@ -699,15 +706,17 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         _spectral_cache.clear();
         _stats_cache.clear();
 
-        std::unique_lock pv_cut_lock(_pv_cut_mutex);
+        std::unique_lock<std::shared_mutex> pv_cut_lock(_pv_cut_mutex);
         _pv_preview_cuts.clear();
-        std::unique_lock pv_cube_lock(_pv_cube_mutex);
+        std::unique_lock<std::shared_mutex> pv_cube_lock(_pv_cube_mutex);
         _pv_preview_cubes.clear();
     } else {
         // Remove spatial configs for given file_id
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         for (auto& spatial_profile : _region_spatial_profiles) {
             spatial_profile.second->ClearFileConfigs(file_id);
         }
+        spatial_lock.unlock();
 
         // Remove requirements for given file_id
         for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
@@ -761,7 +770,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
             }
         }
 
-        std::unique_lock pv_cut_lock(_pv_cut_mutex);
+        std::unique_lock<std::shared_mutex> pv_cut_lock(_pv_cut_mutex);
         for (auto it = _pv_preview_cuts.begin(); it != _pv_preview_cuts.end();) {
             if ((*it).second->HasPreviewFileRegionIds(file_id, ALL_REGIONS)) {
                 it = _pv_preview_cuts.erase(it);
@@ -771,7 +780,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         }
         pv_cut_lock.unlock();
 
-        std::unique_lock pv_cube_lock(_pv_cube_mutex);
+        std::unique_lock<std::shared_mutex> pv_cube_lock(_pv_cube_mutex);
         for (auto it = _pv_preview_cubes.begin(); it != _pv_preview_cubes.end();) {
             if ((*it).second->HasFileId(file_id)) {
                 it = _pv_preview_cubes.erase(it);
@@ -2220,20 +2229,35 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
         return false;
     }
 
-    if ((region_id > 0) && (_region_spatial_profiles.find(region_id) == _region_spatial_profiles.end())) {
-        return false;
+    std::vector<int> spatial_region_ids;
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    if (region_id > 0) {
+        if (_region_spatial_profiles.find(region_id) == _region_spatial_profiles.end()) {
+            return false;
+        }
+        spatial_region_ids.push_back(region_id);
+    } else {
+        for (auto& spatial_profile : _region_spatial_profiles) {
+            // Get actual region ids for ALL_REGIONS
+            int spatial_region_id = spatial_profile.first;
+            spatial_region_ids.push_back(spatial_region_id);
+        }
     }
+    ulock.unlock();
 
     bool success(false);
-
-    for (auto& spatial_profile : _region_spatial_profiles) {
-        // Spatial ids are for actual regions and frames, not "all"
-        int spatial_region_id = spatial_profile.first;
-        if ((region_id > 0) && (spatial_region_id != region_id)) {
+    for (int spatial_region_id : spatial_region_ids) {
+        // Get region spatial profile
+        std::unique_lock<std::mutex> ulock(_spatial_mutex);
+        if (_region_spatial_profiles.find(spatial_region_id) == _region_spatial_profiles.end()) {
+            ulock.unlock();
             continue;
         }
+        auto spatial_profile = _region_spatial_profiles.at(spatial_region_id);
+        ulock.unlock();
 
-        auto config_file_ids = spatial_profile.second->GetConfigFileIds(file_id);
+        // Get file ids in spatial profile configurations
+        auto config_file_ids = spatial_profile->GetConfigFileIds(file_id);
         if (config_file_ids.empty()) {
             continue;
         }
@@ -2248,16 +2272,15 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
             int z = frame->CurrentZ();
 
             std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_configs;
-            if (!spatial_profile.second->GetConfigurations(spatial_file_id, spatial_configs)) {
+            if (!spatial_profile->GetConfigurations(spatial_file_id, spatial_configs)) {
                 continue;
             }
 
-            auto region_type = GetRegion(region_id)->GetRegionState().type;
+            auto region_type = GetRegion(spatial_region_id)->GetRegionState().type;
             if (region_type == CARTA::POINT) {
                 auto lc_region = ApplyRegionToFile(spatial_region_id, spatial_file_id);
                 std::vector<CARTA::SpatialProfileData> spatial_profile_messages;
-                if (spatial_profile.second->GetPointSpatialProfile(
-                        spatial_file_id, frame, spatial_configs, lc_region, spatial_profile_messages)) {
+                if (spatial_profile->GetPointSpatialProfile(spatial_file_id, frame, spatial_configs, lc_region, spatial_profile_messages)) {
                     // Use callback to return each profile individually.
                     for (auto& profile_message : spatial_profile_messages) {
                         cb(profile_message);
@@ -2267,6 +2290,11 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
             } else {
                 auto region = _regions.at(spatial_region_id);
                 for (auto& spatial_config : spatial_configs) {
+                    if (!RegionFileIdsValid(spatial_region_id, spatial_file_id)) {
+                        spdlog::info("Region {} spatial profile was cancelled, ids no longer valid.", spatial_region_id);
+                        break;
+                    }
+
                     int stokes(0);
                     if (!frame->GetStokesTypeIndex(spatial_config.coordinate(), stokes)) {
                         continue; // invalid image/computed Stokes
@@ -2276,7 +2304,7 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
                     std::string message;
                     CARTA::SpatialProfileData spatial_profile_message;
 
-                    if (!spatial_profile.second->GetLineSpatialProfile(
+                    if (!spatial_profile->GetLineSpatialProfile(
                             spatial_file_id, frame, region, stokes, z, spatial_config, cancelled, message, spatial_profile_message)) {
                         if (cancelled) {
                             spdlog::info("Region {} spatial profile was cancelled.", spatial_region_id);
@@ -2290,6 +2318,10 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
                     }
                 }
             }
+        }
+
+        if (_region_spatial_profiles.empty()) {
+            break;
         }
     }
     return success;
