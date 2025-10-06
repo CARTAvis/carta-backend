@@ -408,11 +408,11 @@ void Frame::InvalidateImageCache() {
     _image_cache_valid = false;
 }
 
-void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
-    // fill matrix for given z and stokes
+void Frame::GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes) {
+    // fill slice for given z and stokes
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
-    z_matrix.resize(stokes_slicer.slicer.length().product());
-    GetSlicerData(stokes_slicer, z_matrix.data());
+    z_slice.resize(stokes_slicer.slicer.length().product());
+    GetSlicerData(stokes_slicer, z_slice.data());
 }
 
 // ****************************************************
@@ -453,14 +453,14 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
 
     Timer t;
     float* z_data;
-    std::vector<float> z_matrix;
+    std::vector<float> z_slice;
     if (z == _z_index) {
         // Use image cache for current z
         z_data = _image_cache.get();
     } else {
         // Load data for requested z
-        GetZMatrix(z_matrix, z, _stokes_index);
-        z_data = z_matrix.data();
+        GetZSlice(z_slice, z, _stokes_index);
+        z_data = z_slice.data();
     }
 
     if (mean_filter && mip > 1) {
@@ -656,7 +656,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
         } else {
             // Get channel data
             std::vector<float> channel_data;
-            GetZMatrix(channel_data, channel, CurrentStokes());
+            GetZSlice(channel_data, channel, CurrentStokes());
             TraceContours(channel_data.data(), _dims.width, _dims.height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback);
         }
@@ -680,7 +680,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
         } else {
             // Get channel data
             std::vector<float> channel_data;
-            GetZMatrix(channel_data, channel, CurrentStokes());
+            GetZSlice(channel_data, channel, CurrentStokes());
             smooth_successful = GaussianSmooth(channel_data.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
                 _contour_settings.smoothing_factor);
         }
@@ -900,7 +900,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
 
         // calculate histogram from given z/stokes data
         std::vector<float> data;
-        GetZMatrix(data, z, stokes);
+        GetZSlice(data, z, stokes);
         CalcBasicStats(stats, data.data(), data.size());
 
         // cache results
@@ -966,7 +966,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
-        GetZMatrix(data, z, stokes);
+        GetZSlice(data, z, stokes);
         hist = CalcHistogram(num_bins, bounds, data.data(), data.size());
     }
 
