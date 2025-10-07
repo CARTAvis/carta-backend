@@ -11,6 +11,7 @@
 #include <casacore/casa/Arrays/ArrayMath.h>
 
 #include "Logger/Logger.h"
+#include "Util/Nan.h"
 
 namespace carta {
 
@@ -90,7 +91,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
                                 for (size_t j = 0; j < result.size(); ++j) {
                                     casacore::IPosition index(1, j);
                                     if ((result(index) == 0.0) && (num_points(index) == 0.0)) {
-                                        result(index) = nan("");
+                                        result(index) = DOUBLE_NAN;
                                     }
                                 }
                             }
@@ -123,7 +124,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
             if (dbl_result.empty()) {
                 // Stat failed: set to NaN
                 for (size_t j = 0; j < result_size; ++j) {
-                    dbl_result.push_back(nan(""));
+                    dbl_result.push_back(DOUBLE_NAN);
                 }
             }
             stats_values.emplace(carta_stats_type, dbl_result);
@@ -223,7 +224,7 @@ bool ComputeFluxDensity(
 
     for (size_t i = 0; i < npts.size(); ++i) {
         if (npts[i] == 0) {
-            result.push_back(nan(""));
+            result.push_back(DOUBLE_NAN);
         } else {
             double sum = sums[i];
 

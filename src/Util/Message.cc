@@ -7,6 +7,7 @@
 #include "Message.h"
 #include "Cache/RequirementsCache.h"
 #include "DataStream/Compression.h"
+#include "Util/Nan.h"
 
 #include <chrono>
 
@@ -488,7 +489,7 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = std::nan("");
+            double nan_value = DOUBLE_NAN;
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -763,7 +764,7 @@ void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA:
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = std::nan("");
+                value = DOUBLE_NAN;
             }
         }
 

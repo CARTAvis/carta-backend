@@ -8,6 +8,7 @@
 
 #include "../Logger/Logger.h"
 #include "Util/Image.h"
+#include "Util/Nan.h"
 
 namespace carta {
 
@@ -368,7 +369,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
                         case CARTA::StatsType::NumPixels:
                             break;
                         default:
-                            kv.second[z] = NAN;
+                            kv.second[z] = DOUBLE_NAN;
                             break;
                     }
                 }

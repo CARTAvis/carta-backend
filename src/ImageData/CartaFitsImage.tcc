@@ -11,6 +11,8 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
+#include "Util/Nan.h"
+
 namespace carta {
 
 template <typename T>
@@ -63,12 +65,12 @@ bool CartaFitsImage::GetDataSubset(int datatype, const casacore::Slicer& section
             break;
         }
         case -32: {
-            float* fnull_val(nullptr);
-            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), fnull_val, tmp_buffer.data(), &anynul, &status);
+            float fnull_val(FLOAT_NAN);
+            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), &fnull_val, tmp_buffer.data(), &anynul, &status);
             break;
         }
         case -64: {
-            double dnull_val(NAN);
+            double dnull_val(DOUBLE_NAN);
             fits_read_subset(fptr, TDOUBLE, start.data(), end.data(), inc.data(), &dnull_val, tmp_buffer.data(), &anynul, &status);
             break;
         }
