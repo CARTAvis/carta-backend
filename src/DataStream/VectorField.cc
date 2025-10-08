@@ -113,7 +113,7 @@ void VectorField::ClearSettings() {
     _file_id = -1;
     _smoothing_factor = 0;
     _fractional = false;
-    _threshold = std::numeric_limits<double>::quiet_NaN();
+    _threshold = DOUBLE_NAN;
     _debiasing = false;
     _q_error = 0;
     _u_error = 0;

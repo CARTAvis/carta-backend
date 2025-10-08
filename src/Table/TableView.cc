@@ -9,9 +9,6 @@
 #include <algorithm>
 #include <numeric>
 
-#include "Table.h"
-#include "ThreadingManager/ThreadingManager.h"
-
 namespace carta {
 
 TableView::TableView(const Table& table) : _table(table) {
@@ -47,10 +44,10 @@ bool TableView::NumericFilter(const Column* column, CARTA::ComparisonOperator co
     return true;
 }
 
-bool TableView::StringFilter(const Column* column, string search_string, bool case_insensitive) {
+bool TableView::StringFilter(const Column* column, std::string search_string, bool case_insensitive) {
     IndexList matching_indices;
 
-    auto string_column = DataColumn<string>::TryCast(column);
+    auto string_column = DataColumn<std::string>::TryCast(column);
     if (!string_column) {
         _is_subset = true;
         return false;
@@ -68,7 +65,7 @@ bool TableView::StringFilter(const Column* column, string search_string, bool ca
                 }
                 auto val = string_column->entries[i];
                 transform(val.begin(), val.end(), val.begin(), ::tolower);
-                if (val.find(search_string) != string::npos) {
+                if (val.find(search_string) != std::string::npos) {
                     matching_indices.push_back(i);
                 }
             }
@@ -76,7 +73,7 @@ bool TableView::StringFilter(const Column* column, string search_string, bool ca
             for (auto i = 0; i < num_entries; i++) {
                 auto val = string_column->entries[i];
                 transform(val.begin(), val.end(), val.begin(), ::tolower);
-                if (val.find(search_string) != string::npos) {
+                if (val.find(search_string) != std::string::npos) {
                     matching_indices.push_back(i);
                 }
             }
@@ -89,14 +86,14 @@ bool TableView::StringFilter(const Column* column, string search_string, bool ca
                     continue;
                 }
                 auto& val = string_column->entries[i];
-                if (val.find(search_string) != string::npos) {
+                if (val.find(search_string) != std::string::npos) {
                     matching_indices.push_back(i);
                 }
             }
         } else {
             for (auto i = 0; i < num_entries; i++) {
                 auto& val = string_column->entries[i];
-                if (val.find(search_string) != string::npos) {
+                if (val.find(search_string) != std::string::npos) {
                     matching_indices.push_back(i);
                 }
             }

@@ -64,7 +64,12 @@ private:
     void AddNoCacheHeaders(Res* res);
     void AddCorsHeaders(Res* res);
 
+    void NormalisePreferences(nlohmann::json& obj);
+    bool ValidatePreferences(nlohmann::json& obj);
+    bool ValidateObject(const std::string& object_type, nlohmann::json& obj);
+
     bool WritePreferencesFile(nlohmann::json& obj);
+    void WritePreferencesBackup();
     bool WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj);
     void WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback);
 
