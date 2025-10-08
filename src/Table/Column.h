@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_TABLE_COLUMNS_H_
-#define CARTA_SRC_TABLE_COLUMNS_H_
+#ifndef CARTA_SRC_TABLE_COLUMN_H_
+#define CARTA_SRC_TABLE_COLUMN_H_
 
 #include <cmath>
 #include <limits>
@@ -22,8 +22,6 @@
 namespace carta {
 
 typedef std::vector<int64_t> IndexList;
-template <class T>
-class DataColumn;
 
 class Column {
 public:
@@ -93,4 +91,6 @@ protected:
 };
 } // namespace carta
 
-#endif // CARTA_SRC_TABLE_COLUMNS_H_
+#include "DataColumn.tcc"
+
+#endif // CARTA_SRC_TABLE_COLUMN_H_

@@ -4,14 +4,24 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_THREADINGMANAGER_CONCURRENCY_H_
-#define CARTA_SRC_THREADINGMANAGER_CONCURRENCY_H_
+#ifndef CARTA_SRC_UTIL_CONCURRENCY_H_
+#define CARTA_SRC_UTIL_CONCURRENCY_H_
 
 #include <condition_variable>
 #include <iostream>
 #include <list>
 #include <mutex>
 #include <shared_mutex>
+
+#if __has_include(<parallel/algorithm>)
+#include <parallel/algorithm>
+#define parallel_sort(...) __gnu_parallel::sort(__VA_ARGS__)
+#elif __has_include(<execution>) && defined(_LIBCPP_HAS_PARALLEL_ALGORITHMS)
+#include <execution>
+#define parallel_sort(...) std::sort(std::execution::par_unseq, __VA_ARGS__)
+#else
+#define parallel_sort(...) std::sort(__VA_ARGS__)
+#endif
 
 namespace carta {
 /*
@@ -188,4 +198,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_SRC_THREADINGMANAGER_CONCURRENCY_H_
+#endif // CARTA_SRC_UTIL_CONCURRENCY_H_

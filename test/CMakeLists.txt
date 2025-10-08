@@ -44,8 +44,8 @@ set(TEST_SOURCES
         TestExprImage.cc
         TestFileInfo.cc
         TestFileList.cc
-        TestFitsTable.cc
         TestFitsImage.cc
+        TestFitsTable.cc
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
@@ -58,17 +58,18 @@ set(TEST_SOURCES
         TestRegion.cc
         # TestRegionImportExport.cc
         TestRegionHistogram.cc
+        TestRegionImportExport.cc
         TestRegionMatched.cc
         TestRegionSpatialProfiles.cc
         TestRegionSpectralProfiles.cc
         TestRegionStats.cc
         TestRestApi.cc
         TestTileEncoding.cc
+        TestVoTable.cc
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc
-        Util/TestUtilString.cc
-        TestVoTable.cc)
+        Util/TestUtilString.cc)
 
 # Add all the sources in the main project and remove Main.cc
 foreach(src_file ${SOURCE_FILES})

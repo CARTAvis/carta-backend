@@ -13,9 +13,11 @@
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
 #include "Main/ProgramSettings.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 
 #define TASK_THREAD_COUNT 3
+
+using namespace carta;
 
 int main(int argc, char** argv) {
     // Set gtest environment

@@ -223,24 +223,13 @@ void HttpServer::AddCorsHeaders(Res* res) {
     res->writeHeader("Access-Control-Max-Age", "3600");
 }
 
-json HttpServer::GetExistingPreferences() {
-    auto preferences_path = _config_folder / "preferences.json";
-    json obj = {};
+void HttpServer::NormalisePreferences(nlohmann::json& obj) {
+    // Ensure correct schema and version values are written
+    obj["$schema"] = Json::Schema("preferences")["$id"];
+    obj["version"] = 2;
+}
 
-    if (!fs::exists(preferences_path)) {
-        return {{"version", 1}};
-    }
-
-    std::ifstream file(preferences_path.string());
-    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-    try {
-        obj = json::parse(json_string);
-    } catch (json::parse_error e) {
-        spdlog::warn(e.what());
-        return {};
-    }
-
+bool HttpServer::ValidatePreferences(nlohmann::json& obj) {
     bool valid(true);
     auto error_callback = [&](const json::json_pointer& pointer, const json& instance, const std::string& message) {
         spdlog::debug("Error validating preferences at {} with value {}: {}", pointer.to_string(), instance.dump(), message);
@@ -250,8 +239,51 @@ json HttpServer::GetExistingPreferences() {
     JsonCustomErrorHandler error_handler(error_callback);
     Json::Validator("preferences").validate(obj, error_handler);
 
-    if (!valid) {
-        spdlog::warn("Returning invalid preferences.");
+    return valid;
+}
+
+bool HttpServer::ValidateObject(const std::string& object_type, nlohmann::json& obj) {
+    bool valid(true);
+    auto error_callback = [&](const json::json_pointer& pointer, const json& instance, const std::string& message) {
+        spdlog::debug("Error validating {} at {} with value {}: {}", object_type, pointer.to_string(), instance.dump(), message);
+        valid = false;
+    };
+
+    JsonCustomErrorHandler error_handler(error_callback);
+    Json::Validator(object_type).validate(obj, error_handler);
+
+    return valid;
+}
+
+void HttpServer::WritePreferencesBackup() {
+    auto preferences_path = _config_folder / "preferences.json";
+    auto backup_path = _config_folder / "preferences.json.bak";
+    std::error_code error_code;
+
+    fs::copy_file(preferences_path, backup_path, fs::copy_options::update_existing, error_code);
+    if (error_code) {
+        spdlog::warn("Could not back up preferences file: {}", error_code.message());
+    } else {
+        spdlog::info("Backed up preferences file to {}.", backup_path.string());
+    }
+}
+
+json HttpServer::GetExistingPreferences() {
+    auto preferences_path = _config_folder / "preferences.json";
+    json obj = {};
+
+    if (!fs::exists(preferences_path) || !fs::file_size(preferences_path)) {
+        return {{"version", 2}};
+    }
+
+    std::ifstream file(preferences_path.string());
+    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    try {
+        obj = json::parse(json_string);
+    } catch (json::parse_error e) {
+        spdlog::warn("Preferences file is malformed: {}", e.what());
+        return {};
     }
 
     return obj;
@@ -260,23 +292,21 @@ json HttpServer::GetExistingPreferences() {
 bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
     auto preferences_path = _config_folder / "preferences.json";
 
+    // Dump the preferences to string
+    std::string json_string;
     try {
-        fs::create_directories(preferences_path.parent_path().string());
-        std::ofstream file(preferences_path.string());
-        // Ensure correct schema and version values are written
-        obj["$schema"] = Json::Schema("preferences")["$id"];
-        obj["version"] = 2;
-        Json::Validator("preferences").validate(obj);
-        auto json_string = obj.dump(4);
-        file << json_string;
-        return true;
+        json_string = obj.dump(4);
     } catch (json::type_error e) {
         spdlog::warn(e.what());
         return false;
-    } catch (std::exception e) {
-        spdlog::warn(e.what());
-        return false;
     }
+
+    // Write out the preferences to file
+    fs::create_directories(preferences_path.parent_path().string());
+    std::ofstream file(preferences_path.string());
+    file << json_string;
+
+    return true;
 }
 
 void HttpServer::WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback) {
@@ -301,6 +331,10 @@ void HttpServer::HandleGetPreferences(Res* res, Req* req) {
     // Read preferences JSON file
     json existing_preferences = GetExistingPreferences();
     if (!existing_preferences.empty()) {
+        if (!ValidatePreferences(existing_preferences)) {
+            spdlog::warn("Returning invalid preferences.");
+        }
+
         res->writeStatus(HTTP_200);
         AddNoCacheHeaders(res);
         res->writeHeader("Content-Type", "application/json");
@@ -321,16 +355,39 @@ std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buff
 
     try {
         json update_data = json::parse(buffer);
+
+        // Validate the new preferences *before* merging with existing preferences
+        // First we need to ensure the version is included
+        NormalisePreferences(update_data);
+        if (!ValidatePreferences(update_data)) {
+            spdlog::warn("Rejecting invalid preference update.");
+            return HTTP_400;
+        }
+
         json existing_data = GetExistingPreferences();
 
-        // Update each preference key-value pair
+        // If returned object is completely empty, the prefs are malformed. Back up before writing.
+        bool malformed(existing_data.empty());
+
+        // Apply here too to avoid counting these as changed prefs
+        NormalisePreferences(existing_data);
+
+        // Update each preference key-value pair, and count changes
         int modified_key_count = 0;
         for (auto& [key, value] : update_data.items()) {
-            existing_data[key] = value;
-            modified_key_count++;
+            if (!existing_data.count(key) || existing_data[key] != value) {
+                existing_data[key] = value;
+                modified_key_count++;
+            }
         }
 
         if (modified_key_count) {
+            if (malformed) {
+                spdlog::warn(
+                    "Preferences file is malformed. All preferences will be reset to defaults before update. Attempting to back up "
+                    "preferences file.");
+                WritePreferencesBackup();
+            }
             if (WritePreferencesFile(existing_data)) {
                 spdlog::debug("Updated {} preferences", modified_key_count);
                 return HTTP_200;
@@ -389,6 +446,7 @@ std::string_view HttpServer::ClearPreferencesFromString(const std::string& buffe
                     }
                 }
                 if (modified_key_count) {
+                    NormalisePreferences(existing_data);
                     if (WritePreferencesFile(existing_data)) {
                         spdlog::debug("Cleared {} preferences", modified_key_count);
                         return HTTP_200;
@@ -566,20 +624,13 @@ nlohmann::json HttpServer::GetObjectFromPath(const fs::path& path, const std::st
     try {
         obj = json::parse(json_string);
     } catch (json::exception e) {
-        spdlog::warn(e.what());
+        std::string type_str(object_type);
+        type_str[0] = std::toupper(type_str[0]);
+        spdlog::warn("{} file {} is malformed: {}", type_str, path.string(), e.what());
         return obj;
     }
 
-    bool valid(true);
-    auto error_callback = [&](const json::json_pointer& pointer, const json& instance, const std::string& message) {
-        spdlog::debug("Error validating {} at {} with value {}: {}", object_type, pointer.to_string(), instance.dump(), message);
-        valid = false;
-    };
-
-    JsonCustomErrorHandler error_handler(error_callback);
-    Json::Validator(object_type).validate(obj, error_handler);
-
-    if (!valid) {
+    if (!ValidateObject(object_type, obj)) {
         spdlog::warn("Returning invalid {}.", object_type);
     }
 
@@ -623,29 +674,33 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
 bool HttpServer::WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj) {
     auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
 
+    // Ensure correct schema value is written
+    if (OBJECT_TYPES.count(object_type)) {
+        obj["$schema"] = Json::Schema(object_type)["$id"];
+    } else {
+        spdlog::error("Unknown object types: {}.", object_type);
+        return false;
+    }
+
+    // Validate the object
+    if (!ValidateObject(object_type, obj)) {
+        spdlog::warn("Rejecting invalid {} update.", object_type);
+        return false;
+    }
+
+    // Write out the object to file
+    std::string json_string;
     try {
-        fs::create_directories(object_path.parent_path());
-        std::ofstream file(object_path.string());
-        // Ensure correct schema value is written
-        if (OBJECT_TYPES.count(object_type)) {
-            obj["$schema"] = Json::Schema(object_type)["$id"];
-        } else {
-            spdlog::error("Unknown object types: {}.", object_type);
-            return false;
-        }
-
-        Json::Validator(object_type).validate(obj);
-
-        auto json_string = obj.dump(4);
-        file << json_string;
-        return true;
+        json_string = obj.dump(4);
     } catch (json::type_error e) {
         spdlog::warn(e.what());
         return false;
-    } catch (std::exception e) {
-        spdlog::warn(e.what());
-        return false;
     }
+    fs::create_directories(object_path.parent_path());
+    std::ofstream file(object_path.string());
+    file << json_string;
+
+    return true;
 }
 
 std::string_view HttpServer::SetObjectFromString(const std::string& object_type, const std::string& buffer) {
