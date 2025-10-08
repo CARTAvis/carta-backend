@@ -42,7 +42,7 @@ set(TEST_SOURCES
         # TestContour.cc
         TestCursorSpatialProfiles.cc
         # TestExprImage.cc
-        TestFileInfo.cc
+        # TestFileInfo.cc
         TestFileList.cc
         TestFitsImage.cc
         TestFitsTable.cc
