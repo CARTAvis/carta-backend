@@ -30,7 +30,7 @@ TEST_F(VoTableTest, FailOnMissingResource) {
 }
 
 TEST_F(VoTableTest, FailOnMissingTable) {
-    Table table(TestRoot() / "data" / "tables" / "xml" /"no_table.xml");
+    Table table(TestRoot() / "data" / "tables" / "xml" / "no_table.xml");
     EXPECT_FALSE(table.IsValid());
 }
 
