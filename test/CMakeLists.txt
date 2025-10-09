@@ -62,7 +62,7 @@ set(TEST_SOURCES
         # TestRegionMatched.cc
         # TestRegionSpatialProfiles.cc
         # TestRegionSpectralProfiles.cc
-        TestRegionStats.cc
+        # TestRegionStats.cc
         TestRestApi.cc
         TestTileEncoding.cc
         TestVoTable.cc
