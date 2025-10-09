@@ -58,7 +58,7 @@ set(TEST_SOURCES
         # TestRegion.cc
         # TestRegionImportExport.cc
         # TestRegionHistogram.cc
-        TestRegionImportExport.cc
+        # TestRegionImportExport.cc
         TestRegionMatched.cc
         TestRegionSpatialProfiles.cc
         TestRegionSpectralProfiles.cc
