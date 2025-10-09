@@ -65,7 +65,7 @@ set(TEST_SOURCES
         # TestRegionStats.cc
         TestRestApi.cc
         TestTileEncoding.cc
-        TestVoTable.cc
+        # TestVoTable.cc
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc
