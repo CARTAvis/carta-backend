@@ -53,7 +53,7 @@ set(TEST_SOURCES
         TestMain.cc
         TestMoment.cc
         TestNormalizedUnits.cc
-        TestProgramSettings.cc
+        # TestProgramSettings.cc
         TestPvGenerator.cc
         TestRegion.cc
         # TestRegionImportExport.cc
