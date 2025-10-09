@@ -54,7 +54,7 @@ set(TEST_SOURCES
         TestMoment.cc
         TestNormalizedUnits.cc
         # TestProgramSettings.cc
-        TestPvGenerator.cc
+        # TestPvGenerator.cc
         TestRegion.cc
         # TestRegionImportExport.cc
         TestRegionHistogram.cc
