@@ -37,17 +37,17 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
-      - name: Ensure Git LFS is installed
+      - name: Install Git LFS
         run: |
-          apt-get update
-          apt-get install -y git-lfs
+          apt-get update && apt-get install -y git-lfs
           git lfs install --system
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
             submodules: true
             lfs: true
-            
+
       - name: Fix ownership
         run: |
           chown -R $(id -u):$(id -g) $PWD
@@ -144,14 +144,16 @@ jobs:
     runs-on: [self-hosted, macOS-15-M1, CI]
     needs: format-check
     steps:
+      - name: Install Git LFS
+        run: |
+          apt-get update && apt-get install -y git-lfs
+          git lfs install --system
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
             submodules: true
             lfs: true
-
-      - name: Disable Git hooks
-        run: git config core.hooksPath /dev/null
 
       - name: System information
         shell: bash
@@ -203,14 +205,16 @@ jobs:
     needs: format-check
     container: carta/backend-builder-almalinux-9
     steps:
+      - name: Install Git LFS
+        run: |
+          apt-get update && apt-get install -y git-lfs
+          git lfs install --system
+          
       - name: Checkout
         uses: actions/checkout@v4
         with:
             submodules: true
             lfs: true
-
-      - name: Disable Git hooks
-        run: git config core.hooksPath /dev/null
 
       - name: Fix ownership
         run: |
