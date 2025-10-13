@@ -392,13 +392,11 @@ bool Frame::FillImageCache() {
         // allocate memory for full image cache
         _image_cache_size = _dims.width * _dims.height;
         _image_cache = std::make_unique<float[]>(_image_cache_size);
-
-#ifdef NO_CORE_DUMP_ADVICE
         // Exclude the image cache from core dumps if the platform supports it
-        if (madvise(_image_cache.get(), _image_cache_size * sizeof(float), NO_CORE_DUMP_ADVICE)) {
-            spdlog::error("Session {}: {}", _session_id, "Failed to exclude image cache from core dump.");
+        std::string message("failed to exclude image cache from core dump");
+        if (!ExcludeFromCoreDump(_image_cache.get(), _image_cache_size * sizeof(float), message)) {
+            spdlog::error("Session {}: {}", _session_id, message);
         }
-#endif
     }
 
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
