@@ -47,10 +47,7 @@ jobs:
         with:
             submodules: true
             lfs: true
-
-      - name: Disable Git hooks
-        run: git config core.hooksPath /dev/null
-
+            
       - name: Fix ownership
         run: |
           chown -R $(id -u):$(id -g) $PWD
