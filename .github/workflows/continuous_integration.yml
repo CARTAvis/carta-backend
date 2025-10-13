@@ -43,9 +43,8 @@ jobs:
             submodules: true
             lfs: true
 
-      - name: Set up Git LFS
-        run: |
-          git lfs install --force
+      - name: Disable Git hooks
+        run: git config core.hooksPath /dev/null
 
       - name: Fix ownership
         run: |
@@ -149,9 +148,8 @@ jobs:
             submodules: true
             lfs: true
 
-      - name: Set up Git LFS
-        run: |
-          git lfs install --force
+      - name: Disable Git hooks
+        run: git config core.hooksPath /dev/null
 
       - name: System information
         shell: bash
@@ -209,9 +207,8 @@ jobs:
             submodules: true
             lfs: true
 
-      - name: Set up Git LFS
-        run: |
-          git lfs install --force
+      - name: Disable Git hooks
+        run: git config core.hooksPath /dev/null
 
       - name: Fix ownership
         run: |
