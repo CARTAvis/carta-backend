@@ -39,33 +39,33 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         ImageData/TestFitsUtil.cc
         TestBlockSmooth.cc
-        # TestContour.cc
+        TestContour.cc
         TestCursorSpatialProfiles.cc
-        # TestExprImage.cc
-        # TestFileInfo.cc
+        TestExprImage.cc
+        TestFileInfo.cc
         TestFileList.cc
-        # TestFitsImage.cc
-        # TestFitsTable.cc
+        TestFitsImage.cc
+        TestFitsTable.cc
         TestHdf5Attributes.cc
-        # TestHdf5Image.cc
+        TestHdf5Image.cc
         TestHistogram.cc
-        # TestImageFitting.cc
+        TestImageFitting.cc
         TestMain.cc
         TestMoment.cc
         TestNormalizedUnits.cc
-        # TestProgramSettings.cc
-        # TestPvGenerator.cc
-        # TestRegion.cc
-        # TestRegionImportExport.cc
-        # TestRegionHistogram.cc
-        # TestRegionImportExport.cc
-        # TestRegionMatched.cc
-        # TestRegionSpatialProfiles.cc
-        # TestRegionSpectralProfiles.cc
-        # TestRegionStats.cc
+        TestProgramSettings.cc
+        TestPvGenerator.cc
+        TestRegion.cc
+        TestRegionImportExport.cc
+        TestRegionHistogram.cc
+        TestRegionImportExport.cc
+        TestRegionMatched.cc
+        TestRegionSpatialProfiles.cc
+        TestRegionSpectralProfiles.cc
+        TestRegionStats.cc
         TestRestApi.cc
         TestTileEncoding.cc
-        # TestVoTable.cc
+        TestVoTable.cc
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc
