@@ -20,14 +20,6 @@
 
 namespace carta {
 
-struct RegionProperties {
-    RegionProperties() {}
-    RegionProperties(RegionState& region_state, CARTA::RegionStyle& region_style) : state(region_state), style(region_style) {}
-
-    RegionState state;
-    CARTA::RegionStyle style;
-};
-
 class RegionHandler {
 public:
     RegionHandler() = default;
@@ -96,9 +88,8 @@ public:
         GeneratedImage& model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback);
 
 private:
-    // Get unique region id: max id (from 0) + 1
+    // Region ID handling
     int GetNextRegionId();
-    // Get unique region id: min id (from TEMP_REGION_ID) - 1
     int GetNextTemporaryRegionId();
 
     // Check specific id or if any regions/frames set
@@ -107,13 +98,10 @@ private:
     bool FrameSet(int file_id);
 
     // Requirements helpers
-    // Check if requirements exist
     bool HasSpectralRequirements(
         int region_id, int file_id, const std::string& coordinate, const std::vector<CARTA::StatsType>& required_stats);
     bool HasSpatialRequirements(int region_id, int file_id, const std::string& coordinate, int width);
-    // Set all spectral requirements "new" when region changes
     void UpdateNewSpectralRequirements(int region_id);
-    // Clear requirements and cache for region(s) or file(s)
     void RemoveRegionRequirementsCache(int region_id);
     void RemoveFileRequirementsCache(int file_id);
     void ClearRegionCache(int region_id);
@@ -121,8 +109,6 @@ private:
     // Apply region to image
     std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(
         int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
-    // Returns StokesRegion struct with StokesSource and ImageRegion.
-    // Uses LCRegion if supplied, else sets LCRegion to get ImageRegion
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, std::shared_ptr<casacore::LCRegion> lc_region,
         StokesRegion& stokes_region);
 
