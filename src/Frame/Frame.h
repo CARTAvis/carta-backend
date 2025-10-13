@@ -296,7 +296,7 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    long long int _image_cache_size;
+    size_t _image_cache_size;
     std::unique_ptr<float[]> _image_cache;
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
