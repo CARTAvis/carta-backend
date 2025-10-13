@@ -43,6 +43,10 @@ jobs:
             submodules: true
             lfs: true
 
+      - name: Set up Git LFS
+        run: |
+          git lfs install --force
+
       - name: Fix ownership
         run: |
           chown -R $(id -u):$(id -g) $PWD
@@ -145,6 +149,10 @@ jobs:
             submodules: true
             lfs: true
 
+      - name: Set up Git LFS
+        run: |
+          git lfs install --force
+
       - name: System information
         shell: bash
         run: |
@@ -200,6 +208,10 @@ jobs:
         with:
             submodules: true
             lfs: true
+
+      - name: Set up Git LFS
+        run: |
+          git lfs install --force
 
       - name: Fix ownership
         run: |
