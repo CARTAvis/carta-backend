@@ -81,7 +81,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     _use_tile_cache = _loader->UseTileCache();
 
-    // load full image cache for loaders that don't use the tile cache and mipmaps
+    // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
     if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
@@ -387,16 +387,21 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
-    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    _image_cache_size = stokes_slicer.slicer.length().product();
-    _image_cache = std::make_unique<float[]>(_image_cache_size);
+
+    if (_image_cache == nullptr) {
+        // allocate memory for full image cache
+        _image_cache_size = _dims.width * _dims.height;
+        _image_cache = std::make_unique<float[]>(_image_cache_size);
 
 #ifdef NO_CORE_DUMP_ADVICE
-    // Exclude the image cache data from core dumps if the platform supports it
-    if (madvise(_image_cache.get(), _image_cache_size * sizeof(float), NO_CORE_DUMP_ADVICE)) {
-        spdlog::error("Session {}: {}", _session_id, "Failed to exclude image cache from core dump.");
-    }
+        // Exclude the image cache from core dumps if the platform supports it
+        if (madvise(_image_cache.get(), _image_cache_size * sizeof(float), NO_CORE_DUMP_ADVICE)) {
+            spdlog::error("Session {}: {}", _session_id, "Failed to exclude image cache from core dump.");
+        }
 #endif
+    }
+
+    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
 
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
@@ -404,8 +409,8 @@ bool Frame::FillImageCache() {
     }
 
     auto dt = t.Elapsed();
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _dims.width, _dims.height, dt.ms(),
-        (float)(_dims.width * _dims.height) / dt.us());
+    spdlog::performance("Load {}x{} image Z {} pol. {} to cache in {:.3f} ms at {:.3f} MPix/s", _dims.width, _dims.height, _z_index,
+        _stokes_index, dt.ms(), (float)(_dims.width * _dims.height) / dt.us());
 
     _image_cache_valid = true;
     return true;
@@ -898,7 +903,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
 
         if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
             // calculate histogram from image cache
-            if ((_image_cache_size == 0) && !FillImageCache()) {
+            if ((!_image_cache_valid) && !FillImageCache()) {
                 // cannot calculate
                 return false;
             }
@@ -966,7 +971,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
 
     if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
         // calculate histogram from current image cache
-        if ((_image_cache_size == 0) && !FillImageCache()) {
+        if ((!_image_cache_valid) && !FillImageCache()) {
             return false;
         }
         bool write_lock(false);
