@@ -15,15 +15,15 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
-#include "CrtfImportExport.h"
-#include "Ds9ImportExport.h"
 #include "ImageData/FileLoader.h"
 #include "ImageStats/StatsCalculator.h"
 #include "LineBoxRegions.h"
 #include "Logger/Logger.h"
+#include "RegionImportExport/RegionImportExport.h"
 #include "Timer/Timer.h"
 #include "Util/File.h"
 #include "Util/Image.h"
+#include "Util/Nan.h"
 
 #define LINE_PROFILE_PROGRESS_INTERVAL 500
 
@@ -151,20 +151,10 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
     // Set regions from region file
     auto csys = frame->CoordinateSystem();
-    const casacore::IPosition shape = frame->ImageShape();
-    std::unique_ptr<RegionImportExport> importer;
+    std::unique_ptr<RegionImporter> importer(nullptr);
 
     try {
-        switch (region_file_type) {
-            case CARTA::FileType::CRTF:
-                importer.reset(new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
-                break;
-            case CARTA::FileType::DS9_REG:
-                importer.reset(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
-                break;
-            default:
-                break;
-        }
+        importer = GetRegionImporter(region_file_type, csys, file_id, region_file, file_is_filename);
     } catch (const casacore::AipsError& err) {
         import_ack.set_success(false);
         import_ack.set_message("Region import failed: " + err.getMesg());
@@ -177,47 +167,44 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         return;
     }
 
-    // Get regions from parser or error message
+    // Get regions and error message from importer
     std::string error;
-    std::vector<RegionProperties> region_list = importer->GetImportedRegions(error);
-    if (region_list.empty()) {
+    auto imported_regions = importer->GetRegions(error);
+    import_ack.set_message(error);
+    if (imported_regions.empty()) {
         import_ack.set_success(false);
-        import_ack.set_message(error);
         return;
     }
 
-    // Set reference file pointer
+    // Set frame for region reference file
     _frames[file_id] = frame;
 
-    // Set Regions from RegionState list and complete message
-    import_ack.set_success(true);
-    import_ack.set_message(error);
-    int region_id = GetNextRegionId();
+    // Set Region from RegionProperties; if successful, add RegionInfo to ack message
     auto region_info_map = import_ack.mutable_regions();
     auto region_style_map = import_ack.mutable_region_styles();
-    for (auto& imported_region : region_list) {
-        auto region_state = imported_region.state;
-        auto region_style = imported_region.style;
+    int region_id = GetNextRegionId();
+    bool success(false);
 
-        auto region_csys = frame->CoordinateSystem();
-        auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
+    for (auto& region_properties : imported_regions) {
+        auto region_state = region_properties.state;
+        auto region_style = region_properties.style;
+        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
 
         if (region && region->IsValid()) {
             std::unique_lock<std::mutex> region_lock(_region_mutex);
             _regions[region_id] = std::move(region);
             region_lock.unlock();
 
-            // Set CARTA::RegionInfo
             CARTA::RegionInfo region_info;
             region_info.set_region_type(region_state.type);
             *region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
             region_info.set_rotation(region_state.rotation);
-
-            // Add info and style to import_ack; increment region id for next region
             (*region_info_map)[region_id] = region_info;
             (*region_style_map)[region_id++] = region_style;
+            success = true; // if any regions were set
         }
     }
+    import_ack.set_success(success);
 }
 
 void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
@@ -231,103 +218,41 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         return;
     }
 
-    // Check ability to create export file if filename given
-    std::string message;
-    if (!filename.empty()) {
-        casacore::File export_file(filename);
-        if (export_file.exists()) {
-            if (export_file.isDirectory()) {
-                message = "Export region failed: cannot overwrite existing directory.";
-            } else if (!export_file.isRegular()) {
-                message = "Export region failed: existing path is not a file.";
-            } else if (!overwrite) {
-                message = "Export region failed: cannot overwrite existing file.";
-                export_ack.set_overwrite_confirmation_required(true);
-            } else if (!export_file.isWritable()) {
-                message = "Export region failed: cannot overwrite read-only file.";
-            }
-        } else if (!export_file.canCreate()) {
-            message = "Export region failed: cannot create file.";
-        }
-
-        if (!message.empty()) {
-            export_ack.set_success(false);
-            export_ack.set_message(message);
-            return;
-        }
-    }
-
-    bool export_pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
     auto output_csys = frame->CoordinateSystem();
-    if (!export_pixel_coord && !output_csys->hasDirectionCoordinate()) {
+    auto output_shape = frame->ImageShape();
+    auto stokes_axis = frame->StokesAxis();
+
+    bool export_pixel_coords(coord_type == CARTA::CoordinateType::PIXEL);
+    if (!export_pixel_coords && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
         export_ack.set_success(false);
         export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
         return;
     }
 
-    const casacore::IPosition output_shape = frame->ImageShape();
-    std::unique_ptr<RegionImportExport> exporter;
-    switch (region_file_type) {
-        case CARTA::FileType::CRTF:
-            exporter = std::unique_ptr<RegionImportExport>(new CrtfImportExport(output_csys, output_shape, frame->StokesAxis()));
-            break;
-        case CARTA::FileType::DS9_REG:
-            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, export_pixel_coord));
-            break;
-        default:
-            break;
+    auto exporter = GetRegionExporter(region_file_type, output_csys, output_shape, stokes_axis, export_pixel_coords);
+    if (!exporter->CanExportToFile(filename, overwrite, export_ack)) {
+        return;
     }
 
+    std::string export_errors; // for ack message
     for (auto& region_id_style : region_styles) {
         auto region_id = region_id_style.first;
-        auto region_style = region_id_style.second;
-
         if (RegionSet(region_id)) {
-            bool region_added(false);
             auto region = GetRegion(region_id);
-            auto region_state = region->GetRegionState();
-
-            if ((region_state.reference_file_id == file_id) && export_pixel_coord) {
-                // Use RegionState control points with reference file id for pixel export
-                region_added = exporter->AddExportRegion(region_state, region_style);
-            } else {
-                try {
-                    // Use Record containing pixel coords of region converted to output image
-                    casacore::TableRecord region_record = region->GetImageRegionRecord(file_id, output_csys, output_shape);
-                    if (!region_record.empty()) {
-                        region_added = exporter->AddExportRegion(region_state, region_style, region_record, export_pixel_coord);
-                    }
-                } catch (const casacore::AipsError& err) {
-                    spdlog::error("Export region record failed: {}", err.getMesg());
-                }
-            }
-
-            if (!region_added) {
+            auto region_style = region_id_style.second;
+            if (!exporter->AddRegion(file_id, region, region_style, export_pixel_coords)) {
                 std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
-                message.append(region_error);
+                export_errors.append(region_error);
             }
         } else {
             std::string region_error = fmt::format("Region {} not found for export.\n", region_id);
-            message.append(region_error);
+            export_errors.append(region_error);
         }
     }
 
-    bool success(false);
-    if (filename.empty()) {
-        // Return contents
-        std::vector<std::string> line_contents;
-        success = exporter->ExportRegions(line_contents, message);
-        if (success) {
-            *export_ack.mutable_contents() = {line_contents.begin(), line_contents.end()};
-        }
-    } else {
-        // Write to file
-        success = exporter->ExportRegions(filename, message);
-    }
-
-    export_ack.set_success(success);
-    export_ack.set_message(message);
+    // Export regions to file or contents, and complete ack message.
+    exporter->ExportRegions(filename, export_errors, export_ack);
 }
 
 // ********************************************************************
@@ -1687,7 +1612,7 @@ bool RegionHandler::GetRegionHistogramData(
             // region outside image, send default histogram
             auto* default_histogram = histogram_message.mutable_histograms();
             std::vector<int> histogram_bins(1, 0);
-            FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, NAN, NAN);
+            FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, DOUBLE_NAN, DOUBLE_NAN);
             continue;
         }
 
@@ -1858,7 +1783,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     // Initialize results map for requested stats to NaN, progress to zero
     size_t profile_end = z_range.to;
     size_t profile_size = z_range.to - z_range.from + 1;
-    std::vector<double> init_spectral(profile_size, nan(""));
+    std::vector<double> init_spectral(profile_size, DOUBLE_NAN);
     std::map<CARTA::StatsType, std::vector<double>> results;
     for (const auto& stat : required_stats) {
         results[stat] = init_spectral;
@@ -2224,7 +2149,7 @@ bool RegionHandler::GetRegionStatsData(
             if (carta_stat == CARTA::StatsType::NumPixels) {
                 stats_results[carta_stat] = 0.0;
             } else {
-                stats_results[carta_stat] = nan("");
+                stats_results[carta_stat] = DOUBLE_NAN;
             }
         }
         FillStatistics(stats_message, required_stats, stats_results);
@@ -2543,7 +2468,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         }
     }
 
-    return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, NAN);
+    return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, FLOAT_NAN);
 }
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {
@@ -2570,7 +2495,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
 
     // Initialize return values
     auto profile_size = per_z ? (z_range.to - z_range.from + 1) : 1;
-    casacore::Vector<float> profile(profile_size, NAN);
+    casacore::Vector<float> profile(profile_size, FLOAT_NAN);
     num_pixels = 0.0;
 
     if (!region_state.RegionDefined()) {
@@ -2682,7 +2607,7 @@ void RegionHandler::GetStokesPlinear(const ProfilesMap& profiles_q, const Profil
 void RegionHandler::GetStokesPflinear(
     const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pflinear) {
     auto calc_pi = [&](double q, double u) { return std::sqrt(std::pow(q, 2) + std::pow(u, 2)); };
-    auto calc_fpi = [&](double i, double pi) { return (IsValid(i, pi) ? 100.0 * (pi / i) : std::numeric_limits<double>::quiet_NaN()); };
+    auto calc_fpi = [&](double i, double pi) { return (IsValid(i, pi) ? 100.0 * (pi / i) : DOUBLE_NAN); };
 
     CombineStokes(profiles_pflinear, profiles_q, profiles_u, calc_pi);
     CombineStokes(profiles_pflinear, profiles_i, calc_fpi);
@@ -2696,7 +2621,7 @@ void RegionHandler::GetStokesPangle(const ProfilesMap& profiles_q, const Profile
 
 void RegionHandler::CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
     const std::function<double(double, double)>& func) {
-    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : std::numeric_limits<double>::quiet_NaN()); };
+    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : DOUBLE_NAN); };
 
     for (auto stats_q : profiles_q) {
         for (auto stats_u : profiles_u) {
@@ -2711,7 +2636,7 @@ void RegionHandler::CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& 
 
 void RegionHandler::CombineStokes(
     ProfilesMap& profiles_out, const ProfilesMap& profiles_other, const std::function<double(double, double)>& func) {
-    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : std::numeric_limits<double>::quiet_NaN()); };
+    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : DOUBLE_NAN); };
 
     for (auto stats_out : profiles_out) {
         for (auto stats_other : profiles_other) {

@@ -29,7 +29,7 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "Region/Region.h"
-#include "ThreadingManager/Concurrency.h"
+#include "Util/Concurrency.h"
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
@@ -237,7 +237,7 @@ protected:
     bool GetRasterTileData(int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height);
 
     // Fill vector for given z and stokes
-    void GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes);
+    void GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
 
     // Histograms: z is single z index or ALL_Z for cube
     int AutoBinSize();

@@ -14,8 +14,7 @@
 #include "DataStream/Compression.h"
 #include "DataStream/Tile.h"
 #include "Util/Image.h"
-
-#define FLOAT_NAN std::numeric_limits<float>::quiet_NaN()
+#include "Util/Nan.h"
 
 namespace carta {
 

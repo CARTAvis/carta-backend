@@ -34,7 +34,7 @@
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
 #include "Table/TableController.h"
-#include "ThreadingManager/Concurrency.h"
+#include "Util/Concurrency.h"
 #include "Util/Message.h"
 
 #define HISTOGRAM_CANCEL -1.0
