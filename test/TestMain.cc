@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include <filesystem>
+
 #include <gtest/gtest.h>
 #include <omp.h>
 #include <cxxopts/cxxopts.hpp>
@@ -20,27 +22,6 @@
 using namespace carta;
 
 int main(int argc, char** argv) {
-
-    try {
-        for (const auto& entry : fs::recursive_directory_iterator(TestRoot())) {
-            // Indent based on the current depth
-            for (int i = 0; i < entry.depth(); ++i) {
-                std::cout << "  "; // Two spaces for each level of depth
-            }
-
-            // Print the filename or directory name
-            std::cout << entry.path().filename().string();
-
-            // Add an indicator for directories
-            if (fs::is_directory(entry.status())) {
-                std::cout << "/";
-            }
-            std::cout << std::endl;
-        }
-    } catch (const fs::filesystem_error& e) {
-        std::cerr << "Filesystem error: " << e.what() << std::endl;
-    }
-
     // Set gtest environment
     testing::InitGoogleTest(&argc, argv);
     testing::AddGlobalTestEnvironment(new CartaEnvironment());
