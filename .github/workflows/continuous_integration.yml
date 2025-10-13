@@ -37,6 +37,11 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
+      - name: Ensure Git LFS is installed
+        run: |
+          apt-get update
+          apt-get install -y git-lfs
+          git lfs install --system
       - name: Checkout
         uses: actions/checkout@v4
         with:
