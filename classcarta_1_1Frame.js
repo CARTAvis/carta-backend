@@ -63,7 +63,7 @@ var classcarta_1_1Frame =
     [ "GetSlicerSubImage", "classcarta_1_1Frame.html#abfb51ff40ed64be4d295af2d3e448619", null ],
     [ "GetStokesType", "classcarta_1_1Frame.html#aee72393b7b1a3e676815cbf65cc23f48", null ],
     [ "GetStokesTypeIndex", "classcarta_1_1Frame.html#aad7fc7f3462a849a9cea9562fb45e220", null ],
-    [ "GetZMatrix", "classcarta_1_1Frame.html#a68a31253118f829703cbfb42e0c81257", null ],
+    [ "GetZSlice", "classcarta_1_1Frame.html#a8a21dff2870c7af8fedf02365c4faa91", null ],
     [ "HasSpectralConfig", "classcarta_1_1Frame.html#a484fe0a17431676c96ec0a7562fd1a31", null ],
     [ "Height", "classcarta_1_1Frame.html#a41e6b02b0af60f3ce60a1478a3c56e0d", null ],
     [ "ImageShape", "classcarta_1_1Frame.html#aeff1a00d7f22df6f180888b1d9eaf457", null ],

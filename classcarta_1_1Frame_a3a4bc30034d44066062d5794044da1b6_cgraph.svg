@@ -249,9 +249,9 @@ var sectionId = 'dynsection-23';
 <!-- Node20 -->
 <g id="Node000020" class="node">
 <title>Node20</title>
-<g id="a_Node000020"><a xlink:href="classcarta_1_1Frame.html#a68a31253118f829703cbfb42e0c81257" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="538.5,-195.5 398.5,-195.5 398.5,-176.5 538.5,-176.5 538.5,-195.5"/>
-<text text-anchor="middle" x="468.5" y="-183.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetZMatrix</text>
+<g id="a_Node000020"><a xlink:href="classcarta_1_1Frame.html#a8a21dff2870c7af8fedf02365c4faa91" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="534,-195.5 403,-195.5 403,-176.5 534,-176.5 534,-195.5"/>
+<text text-anchor="middle" x="468.5" y="-183.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetZSlice</text>
 </a>
 </g>
 </g>
@@ -478,8 +478,8 @@ var sectionId = 'dynsection-23';
 <g id="edge23_Node000020_Node000013" class="edge">
 <title>Node20&#45;&gt;Node13</title>
 <g id="a_edge23_Node000020_Node000013"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M538.63,-186C549.93,-186 561.76,-186 573.46,-186"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="573.68,-189.5 583.68,-186 573.68,-182.5 573.68,-189.5"/>
+<path fill="none" stroke="#63b8ff" d="M534.03,-186C546.78,-186 560.37,-186 573.76,-186"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="573.94,-189.5 583.94,-186 573.94,-182.5 573.94,-189.5"/>
 </a>
 </g>
 </g>

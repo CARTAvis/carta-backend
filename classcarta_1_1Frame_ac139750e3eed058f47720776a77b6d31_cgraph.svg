@@ -358,9 +358,9 @@ var sectionId = 'dynsection-30';
 <!-- Node19 -->
 <g id="Node000019" class="node">
 <title>Node19</title>
-<g id="a_Node000019"><a xlink:href="classcarta_1_1Frame.html#a68a31253118f829703cbfb42e0c81257" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="744.5,-304 604.5,-304 604.5,-285 744.5,-285 744.5,-304"/>
-<text text-anchor="middle" x="674.5" y="-292" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetZMatrix</text>
+<g id="a_Node000019"><a xlink:href="classcarta_1_1Frame.html#a8a21dff2870c7af8fedf02365c4faa91" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="740,-304 609,-304 609,-285 740,-285 740,-304"/>
+<text text-anchor="middle" x="674.5" y="-292" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetZSlice</text>
 </a>
 </g>
 </g>
@@ -558,8 +558,8 @@ var sectionId = 'dynsection-30';
 <g id="edge22_Node000019_Node000012" class="edge">
 <title>Node19&#45;&gt;Node12</title>
 <g id="a_edge22_Node000019_Node000012"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M744.63,-288.05C755.93,-287 767.76,-285.89 779.46,-284.8"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="780.04,-288.26 789.68,-283.85 779.39,-281.3 780.04,-288.26"/>
+<path fill="none" stroke="#63b8ff" d="M740.03,-288.48C752.78,-287.29 766.37,-286.02 779.76,-284.78"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="780.31,-288.24 789.94,-283.83 779.66,-281.27 780.31,-288.24"/>
 </a>
 </g>
 </g>

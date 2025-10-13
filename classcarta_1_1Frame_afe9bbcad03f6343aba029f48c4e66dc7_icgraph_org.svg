@@ -158,9 +158,9 @@
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="classcarta_1_1Frame.html#a68a31253118f829703cbfb42e0c81257" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="750.5,-100.5 610.5,-100.5 610.5,-81.5 750.5,-81.5 750.5,-100.5"/>
-<text text-anchor="middle" x="680.5" y="-88.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetZMatrix</text>
+<g id="a_Node000018"><a xlink:href="classcarta_1_1Frame.html#a8a21dff2870c7af8fedf02365c4faa91" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="746,-100.5 615,-100.5 615,-81.5 746,-81.5 746,-100.5"/>
+<text text-anchor="middle" x="680.5" y="-88.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetZSlice</text>
 </a>
 </g>
 </g>
@@ -370,8 +370,8 @@
 <g id="edge22_Node000018_Node000006" class="edge">
 <title>Node18&#45;&gt;Node6</title>
 <g id="a_edge22_Node000018_Node000006"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M600.32,-91C586.9,-91 572.88,-91 559.22,-91"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="600.45,-94.5 610.45,-91 600.45,-87.5 600.45,-94.5"/>
+<path fill="none" stroke="#63b8ff" d="M604.71,-91C589.94,-91 574.3,-91 559.1,-91"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="604.78,-94.5 614.78,-91 604.78,-87.5 604.78,-94.5"/>
 </a>
 </g>
 </g>

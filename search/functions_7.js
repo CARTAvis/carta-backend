@@ -212,7 +212,7 @@ var searchData=
   ['getvalidchannelmaptiles_209',['GetValidChannelMapTiles',['../classcarta_1_1Session.html#a0ac74e2204905d2e0b437a09b8164382',1,'carta::Session']]],
   ['getvalidtiles_210',['GetValidTiles',['../classcarta_1_1ChannelMapSettings.html#add960b1d48247a5471f91e936cf59dee',1,'carta::ChannelMapSettings']]],
   ['getwidth_211',['GetWidth',['../classcarta_1_1PvPreviewCut.html#a5818d165c040a09155bce62b51b7c413',1,'carta::PvPreviewCut']]],
-  ['getzmatrix_212',['GetZMatrix',['../classcarta_1_1Frame.html#a68a31253118f829703cbfb42e0c81257',1,'carta::Frame']]],
+  ['getzslice_212',['GetZSlice',['../classcarta_1_1Frame.html#a8a21dff2870c7af8fedf02365c4faa91',1,'carta::Frame']]],
   ['gildas_5fregex_213',['GILDAS_REGEX',['../Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99',1,'Casacore.cc']]],
   ['group_214',['Group',['../classcarta_1_1CartaHdf5Image.html#aa163d9cdc235a1e8b1c70679b6538feb',1,'carta::CartaHdf5Image']]],
   ['grow_215',['Grow',['../structcarta_1_1TilePool.html#ae6813f4659eb5ed6e472b5af8ed439c7',1,'carta::TilePool']]],

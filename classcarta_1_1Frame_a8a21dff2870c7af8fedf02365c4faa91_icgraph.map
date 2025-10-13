@@ -1,13 +1,13 @@
-<map id="carta::Frame::GetZMatrix" name="carta::Frame::GetZMatrix">
-<area shape="rect" id="Node000001" title=" " alt="" coords="799,109,985,135"/>
+<map id="carta::Frame::GetZSlice" name="carta::Frame::GetZSlice">
+<area shape="rect" id="Node000001" title=" " alt="" coords="799,109,973,135"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326" title=" " alt="" coords="509,5,751,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="845,107,662,33,664,28,847,102"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="840,106,661,33,663,28,842,102"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1Frame.html#af382d7b27adada74fab429616e48dbb4" title=" " alt="" coords="243,156,447,181"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="785,134,448,163,448,157,785,128"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="785,133,448,163,447,157,784,128"/>
 <area shape="rect" id="Node000005" href="$classcarta_1_1Frame.html#a1bd6cad34fcc337311218150f6771850" title=" " alt="" coords="529,84,731,109"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="785,114,731,109,732,104,785,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="785,115,731,109,732,104,786,109"/>
 <area shape="rect" id="Node000007" href="$classcarta_1_1Frame.html#a310f7f896ec0b4288fc3795e5fcf71ec" title=" " alt="" coords="526,185,734,211"/>
-<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="840,141,751,169,682,188,680,183,750,163,838,136"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="836,142,751,169,682,188,681,183,750,163,834,137"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" title=" " alt="" coords="5,34,181,74"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="496,23,367,29,230,38,182,43,181,38,229,33,366,23,495,18"/>
 <area shape="poly" id="edge7_Node000005_Node000003" title=" " alt="" coords="514,87,461,82,181,62,182,56,462,77,515,82"/>
