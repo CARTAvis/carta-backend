@@ -80,7 +80,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     _use_tile_cache = _loader->UseTileCache();
 
-    // load full image cache for loaders that don't use the tile cache and mipmaps
+    // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
     if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
@@ -386,17 +386,22 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
+
+    if (_image_cache == nullptr) {
+        // allocate memory for full image cache
+        _image_cache_size = _dims.width * _dims.height;
+        _image_cache = std::make_unique<float[]>(_image_cache_size);
+    }
+
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    _image_cache_size = stokes_slicer.slicer.length().product();
-    _image_cache = std::make_unique<float[]>(_image_cache_size);
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
 
     auto dt = t.Elapsed();
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _dims.width, _dims.height, dt.ms(),
-        (float)(_dims.width * _dims.height) / dt.us());
+    spdlog::performance("Load {}x{} image Z {} pol. {} to cache in {:.3f} ms at {:.3f} MPix/s", _dims.width, _dims.height, _z_index,
+        _stokes_index, dt.ms(), (float)(_dims.width * _dims.height) / dt.us());
 
     _image_cache_valid = true;
     return true;
@@ -408,11 +413,11 @@ void Frame::InvalidateImageCache() {
     _image_cache_valid = false;
 }
 
-void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
-    // fill matrix for given z and stokes
+void Frame::GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes) {
+    // fill slice for given z and stokes
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
-    z_matrix.resize(stokes_slicer.slicer.length().product());
-    GetSlicerData(stokes_slicer, z_matrix.data());
+    z_slice.resize(stokes_slicer.slicer.length().product());
+    GetSlicerData(stokes_slicer, z_slice.data());
 }
 
 // ****************************************************
@@ -453,14 +458,14 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
 
     Timer t;
     float* z_data;
+    std::vector<float> z_slice;
     if (z == _z_index) {
         // Use image cache for current z
         z_data = _image_cache.get();
     } else {
         // Load data for requested z
-        std::vector<float> z_matrix;
-        GetZMatrix(z_matrix, z, _stokes_index);
-        z_data = z_matrix.data();
+        GetZSlice(z_slice, z, _stokes_index);
+        z_data = z_slice.data();
     }
 
     if (mean_filter && mip > 1) {
@@ -656,7 +661,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
         } else {
             // Get channel data
             std::vector<float> channel_data;
-            GetZMatrix(channel_data, channel, CurrentStokes());
+            GetZSlice(channel_data, channel, CurrentStokes());
             TraceContours(channel_data.data(), _dims.width, _dims.height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback);
         }
@@ -680,7 +685,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
         } else {
             // Get channel data
             std::vector<float> channel_data;
-            GetZMatrix(channel_data, channel, CurrentStokes());
+            GetZSlice(channel_data, channel, CurrentStokes());
             smooth_successful = GaussianSmooth(channel_data.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
                 _contour_settings.smoothing_factor);
         }
@@ -889,7 +894,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
 
         if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
             // calculate histogram from image cache
-            if ((_image_cache_size == 0) && !FillImageCache()) {
+            if ((!_image_cache_valid) && !FillImageCache()) {
                 // cannot calculate
                 return false;
             }
@@ -900,7 +905,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
 
         // calculate histogram from given z/stokes data
         std::vector<float> data;
-        GetZMatrix(data, z, stokes);
+        GetZSlice(data, z, stokes);
         CalcBasicStats(stats, data.data(), data.size());
 
         // cache results
@@ -957,7 +962,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
 
     if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
         // calculate histogram from current image cache
-        if ((_image_cache_size == 0) && !FillImageCache()) {
+        if ((!_image_cache_valid) && !FillImageCache()) {
             return false;
         }
         bool write_lock(false);
@@ -966,7 +971,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
-        GetZMatrix(data, z, stokes);
+        GetZSlice(data, z, stokes);
         hist = CalcHistogram(num_bins, bounds, data.data(), data.size());
     }
 
