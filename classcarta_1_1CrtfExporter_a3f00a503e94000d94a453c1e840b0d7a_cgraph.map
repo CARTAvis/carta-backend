@@ -1,0 +1,7 @@
+<map id="carta::CrtfExporter::AddFileLine" name="carta::CrtfExporter::AddFileLine">
+<area shape="rect" id="Node000001" title="Add file line after adjusting line printed by CASA region." alt="" coords="5,37,148,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionExporter.html#a512c04cd11aeba7f9dbefd8dd0f017b0" title="Append compass style parameters to region file line." alt="" coords="196,5,359,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,43,182,38,183,43,149,49"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfExporter.html#a99611c038a58efeac1c5c2369c176bcf" title="Fix fontstyle added by CASA region." alt="" coords="206,69,349,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,66,193,73,192,78,148,71"/>
+</map>

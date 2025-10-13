@@ -1,0 +1,15 @@
+<map id="carta::RegionExporter::AddCompassStyle" name="carta::RegionExporter::AddCompassStyle">
+<area shape="rect" id="Node000001" title="Append compass style parameters to region file line." alt="" coords="403,133,565,173"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#af26c15b4f436e147a795115e6c09d4e1" title="Add annotation style parameters to file line." alt="" coords="196,69,355,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="404,132,340,112,342,107,406,127"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CrtfExporter.html#a3f00a503e94000d94a453c1e840b0d7a" title="Add file line after adjusting line printed by CASA region." alt="" coords="204,133,347,173"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="389,156,347,156,347,151,389,151"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1CrtfExporter.html#abb09338faf1d3e9ddc876272692bedf3" title="Add file line for region in pixel coordinates." alt="" coords="204,197,347,237"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="406,180,342,200,340,195,404,175"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Exporter.html#a8a9d15cf23a1f2e3fcd0217e69c4cf27" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,5,148,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="199,68,138,48,140,43,200,63"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Exporter.html#a87ee194f7248a7402d783a66b5838a1a" title="Add file line for region in pixel coordinates." alt="" coords="5,69,148,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="183,92,148,92,148,87,183,87"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1CrtfExporter.html#a3592f0d1e36982452799906a6b0cc360" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,133,148,173"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="190,156,148,156,148,151,190,151"/>
+</map>

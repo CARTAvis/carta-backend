@@ -1,0 +1,9 @@
+<map id="carta::Ds9Importer::ImportFontStyle" name="carta::Ds9Importer::ImportFontStyle">
+<area shape="rect" id="Node000001" title="Set annotation style font parameters." alt="" coords="5,63,149,103"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionImporter.html#aa6f333dd70c5b7950532beea1e145c65" title="Return value of name in region properties or global properties." alt="" coords="197,5,361,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,60,195,47,196,52,149,65"/>
+<area shape="rect" id="Node000003" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="235,70,324,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="150,80,221,80,221,85,150,85"/>
+<area shape="rect" id="Node000004" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title="Converts a string to an integer." alt="" coords="234,119,325,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="150,98,221,115,220,120,149,103"/>
+</map>

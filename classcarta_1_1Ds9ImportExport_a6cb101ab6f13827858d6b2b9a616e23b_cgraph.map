@@ -1,7 +1,0 @@
-<map id="carta::Ds9ImportExport::AddExportRegionWorld" name="carta::Ds9ImportExport::AddExportRegionWorld">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,184,77"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1RegionImportExport.html#a4dbf1bb6405ba5cbc0dea6803c3d2eef" title=" " alt="" coords="251,5,444,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="184,43,237,37,237,42,184,49"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#ac3874716c51503c3ea3954ec42f898d9" title=" " alt="" coords="232,69,463,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="184,66,219,70,218,76,184,71"/>
-</map>

@@ -1,0 +1,17 @@
+<map id="carta::Ds9Importer::ImportCircleRegion" name="carta::Ds9Importer::ImportCircleRegion">
+<area shape="rect" id="Node000001" title="Import circle or compass region." alt="" coords="5,85,160,125"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Importer.html#a611bb8a1925b7ddd0a1bcf0f0f0b1a33" title="Import ellipse, circle, or compass region." alt="" coords="208,85,369,125"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="160,102,195,102,195,107,160,107"/>
+<area shape="rect" id="Node000003" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="417,5,616,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="326,82,416,41,445,32,446,37,418,46,328,87"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#a9bf6f34606681307634beab92b0389b9" title="Convert region parameter string to casacore Quantity." alt="" coords="433,55,600,95"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="369,92,420,85,420,90,370,97"/>
+<area shape="rect" id="Node000007" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="456,120,577,145"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="370,112,443,121,442,126,369,117"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1RegionImporter.html#a0ea1f626f62f70a50e7255d03ec6406f" title="Convert length region parameter to pixels if in world coordinates." alt="" coords="435,170,599,210"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="337,122,418,156,439,163,438,168,416,160,335,127"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#a3acf918fc8874d2fd8a813bb5ea2b5da" title="Convert parameter in sexagesimal format to angle format." alt="" coords="664,23,875,63"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="600,62,650,56,651,61,601,67"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Ds9Importer.html#a5b5f9be7632117e1b9c45c74b0da9c3b" title="Convert DS9 unit to casacore unit in parameter." alt="" coords="691,87,847,127"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="601,83,678,93,677,98,600,89"/>
+</map>

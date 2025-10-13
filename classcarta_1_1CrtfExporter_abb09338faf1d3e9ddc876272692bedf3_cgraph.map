@@ -1,0 +1,17 @@
+<map id="carta::CrtfExporter::AddRegion" name="carta::CrtfExporter::AddRegion">
+<area shape="rect" id="Node000001" title="Add file line for region in pixel coordinates." alt="" coords="5,101,148,141"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionExporter.html#a512c04cd11aeba7f9dbefd8dd0f017b0" title="Append compass style parameters to region file line." alt="" coords="210,37,373,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="144,99,210,79,211,84,145,104"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfExporter.html#a8dfff103fdb22ba4b0c0188e02417088" title="Add CRTF style parameters common to all regions to file line." alt="" coords="220,101,363,141"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,119,206,119,206,124,148,124"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1CrtfExporter.html#ac52883c168b6c4d0a561e2d0049f190a" title="Convert CARTA point shape to CASA symbol character." alt="" coords="196,165,387,205"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="145,139,211,159,210,164,144,144"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CrtfExporter.html#afb15cf6fcfcca39dd3f3de27a46b6e8e" title="Format color for file line." alt="" coords="435,5,577,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="358,99,385,87,409,72,433,55,444,49,447,54,436,60,412,76,388,92,360,104"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CrtfExporter.html#a7771f4bcc6069ab8659adf8439a5f229" title="Extract font parameters from region style else set defaults." alt="" coords="435,69,577,109"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="362,108,421,99,422,105,363,113"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1CrtfExporter.html#a3c16b38994000eb417433c5ba9f632db" title="Convert dash list to CASA line style else set default." alt="" coords="435,133,577,173"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="363,129,422,138,421,143,362,135"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1CrtfExporter.html#a8e76a7ddf74eca12e640715243d8a629" title="Extract CASA symbol style parameters from region style else set defaults." alt="" coords="435,197,577,237"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="360,139,388,151,412,167,436,183,447,189,444,194,433,188,409,171,385,156,358,144"/>
+</map>

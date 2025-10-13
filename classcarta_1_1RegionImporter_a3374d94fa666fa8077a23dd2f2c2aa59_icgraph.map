@@ -1,0 +1,11 @@
+<map id="carta::RegionImporter::IsCommentLine" name="carta::RegionImporter::IsCommentLine">
+<area shape="rect" id="Node000001" title="Determine whether file line starting with comment marker is a comment and not an annotation region." alt="" coords="399,37,563,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImporter.html#a82a0bb41105ebe379205e0e7d4fecd53" title="Parse each line of file to import regions." alt="" coords="197,5,351,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="384,45,351,40,351,35,385,40"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#ad65f2b2bb3b9c2697555f657b02deda0" title="Parse each line of file to import regions." alt="" coords="197,69,351,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="385,75,351,80,351,75,384,70"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfImporter.html#a76d502152aced149c17100a9bc4e24f3" title="Constructor for CrtfImporter class for importing regions in CRTF region file." alt="" coords="6,5,149,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="184,28,149,28,149,23,184,23"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#ab6ee9e9b9ecb91aea03f13c7636cc6a4" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="5,69,149,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="183,92,150,92,150,87,183,87"/>
+</map>

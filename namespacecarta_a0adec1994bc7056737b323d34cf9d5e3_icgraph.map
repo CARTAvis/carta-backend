@@ -1,0 +1,15 @@
+<map id="carta::GetImageDirectionFrame" name="carta::GetImageDirectionFrame">
+<area shape="rect" id="Node000001" title="Return name of coordinate frame from coordinate system direction coordinate, if any." alt="" coords="644,101,831,141"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfExporter.html#aa9abb7c397f6729fc4357ac9dc2e2126" title="Constructor for CrtfExporter class for exporting regions to CRTF file." alt="" coords="425,5,568,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="682,98,595,60,562,48,564,43,597,55,684,93"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#ab6ee9e9b9ecb91aea03f13c7636cc6a4" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="425,69,569,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="630,110,568,101,569,96,631,104"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CrtfImporter.html#a09ab2c319f8945b487db1c144f8add1d" title="Get direction frame coord value in region properties." alt="" coords="397,133,596,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="631,138,596,143,596,138,630,133"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1RegionExporter.html#a348d69f608083079ecfda25265ccece2" title="Constructor for RegionExporter class." alt="" coords="415,197,578,237"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="684,150,597,188,564,200,562,195,595,183,682,145"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CrtfImporter.html#a82a0bb41105ebe379205e0e7d4fecd53" title="Parse each line of file to import regions." alt="" coords="196,133,349,173"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="383,156,349,156,349,151,383,151"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1CrtfImporter.html#a76d502152aced149c17100a9bc4e24f3" title="Constructor for CrtfImporter class for importing regions in CRTF region file." alt="" coords="5,133,148,173"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="182,156,149,156,149,151,182,151"/>
+</map>

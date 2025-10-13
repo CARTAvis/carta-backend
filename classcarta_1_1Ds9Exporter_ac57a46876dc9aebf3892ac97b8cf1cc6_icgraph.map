@@ -1,0 +1,5 @@
+<map id="carta::Ds9Exporter::GetRegionPixelLine" name="carta::Ds9Exporter::GetRegionPixelLine">
+<area shape="rect" id="Node000001" title="Create region file line using pixel coordinates." alt="" coords="196,5,352,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#a8a9d15cf23a1f2e3fcd0217e69c4cf27" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,5,148,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,28,148,28,148,23,182,23"/>
+</map>

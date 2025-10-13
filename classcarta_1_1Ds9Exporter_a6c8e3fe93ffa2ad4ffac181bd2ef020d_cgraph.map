@@ -1,0 +1,5 @@
+<map id="carta::Ds9Exporter::ExportRegions" name="carta::Ds9Exporter::ExportRegions">
+<area shape="rect" id="Node000001" title="Write region file lines to filename." alt="" coords="5,5,148,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#a285fb2e9867fc45722d0dc0551cb37dc" title="Return DS9 file header lines." alt="" coords="196,5,339,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,23,183,23,183,28,148,28"/>
+</map>

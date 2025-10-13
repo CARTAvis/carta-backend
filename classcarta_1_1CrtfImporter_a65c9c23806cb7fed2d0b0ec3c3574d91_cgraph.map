@@ -1,0 +1,9 @@
+<map id="carta::CrtfImporter::ImportAnnEllipse" name="carta::CrtfImporter::ImportAnnEllipse">
+<area shape="rect" id="Node000001" title="Import ellipse region." alt="" coords="5,47,148,87"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="196,5,395,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,49,224,31,226,36,149,54"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="235,55,356,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,65,221,65,221,70,148,70"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionImporter.html#a0ea1f626f62f70a50e7255d03ec6406f" title="Convert length region parameter to pixels if in world coordinates." alt="" coords="213,105,377,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="149,83,206,99,205,104,147,89"/>
+</map>

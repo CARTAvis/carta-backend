@@ -1,0 +1,7 @@
+<map id="carta::CrtfImporter::GetRegionDirectionFrame" name="carta::CrtfImporter::GetRegionDirectionFrame">
+<area shape="rect" id="Node000001" title="Get direction frame coord value in region properties." alt="" coords="5,37,204,77"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a0adec1994bc7056737b323d34cf9d5e3" title="Return name of coordinate frame from coordinate system direction coordinate, if any." alt="" coords="252,5,439,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="204,41,238,37,239,42,205,47"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionImporter.html#aa6f333dd70c5b7950532beea1e145c65" title="Return value of name in region properties or global properties." alt="" coords="263,69,427,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="205,68,250,74,249,79,204,73"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="carta::Ds9Exporter::AddAnnotationStyle" name="carta::Ds9Exporter::AddAnnotationStyle">
+<area shape="rect" id="Node000001" title="Add annotation style parameters to file line." alt="" coords="5,69,164,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#a5aa2279874b35ab60ca70c49e74e6f26" title="Add annotation point region style to file line." alt="" coords="224,5,371,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="151,67,216,47,218,52,153,72"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionExporter.html#a512c04cd11aeba7f9dbefd8dd0f017b0" title="Append compass style parameters to region file line." alt="" coords="216,69,379,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="164,87,202,87,202,92,164,92"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Exporter.html#a8e9a1defe826c8832f82cfa5a04e4b8a" title="Convert casacore coordinate frame string to DS9 frame." alt="" coords="212,133,383,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="153,107,218,127,216,132,151,112"/>
+</map>

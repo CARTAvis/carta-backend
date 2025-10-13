@@ -1,0 +1,9 @@
+<map id="carta::Ds9Exporter::AddFontStyle" name="carta::Ds9Exporter::AddFontStyle">
+<area shape="rect" id="Node000001" title="Add font style parameters to file line." alt="" coords="387,37,529,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#a366523dec7744c453adc447a3ce3e80d" title="Add DS9 style parameters common to all region types to file line." alt="" coords="196,37,339,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="373,60,339,60,339,55,373,55"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Exporter.html#a8a9d15cf23a1f2e3fcd0217e69c4cf27" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,5,148,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="182,46,148,40,149,35,183,41"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Exporter.html#a87ee194f7248a7402d783a66b5838a1a" title="Add file line for region in pixel coordinates." alt="" coords="5,69,148,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="183,74,149,80,148,75,182,69"/>
+</map>

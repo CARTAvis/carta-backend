@@ -1,7 +1,0 @@
-<map id="carta::RegionImportExport::ReadRegionFile" name="carta::RegionImportExport::ReadRegionFile">
-<area shape="rect" id="Node000001" title=" " alt="" coords="227,37,420,77"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImportExport.html#a4dda042b0ce6f62290cc4cdebc047375" title=" " alt="" coords="6,5,178,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="213,45,178,40,178,35,213,39"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="5,69,179,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="213,75,179,80,178,75,213,70"/>
-</map>

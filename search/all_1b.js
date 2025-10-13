@@ -24,11 +24,12 @@ var searchData=
   ['_7epvpreviewcut_21',['~PvPreviewCut',['../classcarta_1_1PvPreviewCut.html#aa52c6b23d9b460a0e71a4c796ce25e3a',1,'carta::PvPreviewCut']]],
   ['_7equeuing_5frw_5fmutex_22',['~queuing_rw_mutex',['../classcarta_1_1queuing__rw__mutex.html#aa7025173ce9c50622e41989f94e7a77b',1,'carta::queuing_rw_mutex']]],
   ['_7equeuing_5frw_5fmutex_5fscoped_23',['~queuing_rw_mutex_scoped',['../classcarta_1_1queuing__rw__mutex__scoped.html#a03861967ae0801c5e90f185aebd9e7dc',1,'carta::queuing_rw_mutex_scoped']]],
-  ['_7eregionhandler_24',['~RegionHandler',['../classcarta_1_1RegionHandler.html#ab51161364a45784bb0f864f517d12a3f',1,'carta::RegionHandler']]],
-  ['_7eregionimportexport_25',['~RegionImportExport',['../classcarta_1_1RegionImportExport.html#aa868a606098bd3c29ae885cdf2771263',1,'carta::RegionImportExport']]],
-  ['_7esession_26',['~Session',['../classcarta_1_1Session.html#a8753bb9dee966b7d39abc9b7237cd665',1,'carta::Session']]],
-  ['_7estokesfilesconnector_27',['~StokesFilesConnector',['../classcarta_1_1StokesFilesConnector.html#abe3e3e249bb380ab9cd0c0d4a092ca2c',1,'carta::StokesFilesConnector']]],
-  ['_7etask_28',['~Task',['../classcarta_1_1Task.html#ab4d5fbecc9da470f965db3f8ae7209ee',1,'carta::Task']]],
-  ['_7etimer_29',['~Timer',['../classcarta_1_1Timer.html#ac1e0472d7a642bf33f152bd8583dbac8',1,'carta::Timer']]],
-  ['_7ewebbrowser_30',['~WebBrowser',['../classcarta_1_1WebBrowser.html#afdfb9fee1f4180d5e836ba44d1184138',1,'carta::WebBrowser']]]
+  ['_7eregionexporter_24',['~RegionExporter',['../classcarta_1_1RegionExporter.html#affbfd63d5f4dd770f009dbab9b40d6c9',1,'carta::RegionExporter']]],
+  ['_7eregionhandler_25',['~RegionHandler',['../classcarta_1_1RegionHandler.html#ab51161364a45784bb0f864f517d12a3f',1,'carta::RegionHandler']]],
+  ['_7eregionimporter_26',['~RegionImporter',['../classcarta_1_1RegionImporter.html#a6cf1997564c4b4e35f178472da1d1437',1,'carta::RegionImporter']]],
+  ['_7esession_27',['~Session',['../classcarta_1_1Session.html#a8753bb9dee966b7d39abc9b7237cd665',1,'carta::Session']]],
+  ['_7estokesfilesconnector_28',['~StokesFilesConnector',['../classcarta_1_1StokesFilesConnector.html#abe3e3e249bb380ab9cd0c0d4a092ca2c',1,'carta::StokesFilesConnector']]],
+  ['_7etask_29',['~Task',['../classcarta_1_1Task.html#ab4d5fbecc9da470f965db3f8ae7209ee',1,'carta::Task']]],
+  ['_7etimer_30',['~Timer',['../classcarta_1_1Timer.html#ac1e0472d7a642bf33f152bd8583dbac8',1,'carta::Timer']]],
+  ['_7ewebbrowser_31',['~WebBrowser',['../classcarta_1_1WebBrowser.html#afdfb9fee1f4180d5e836ba44d1184138',1,'carta::WebBrowser']]]
 ];

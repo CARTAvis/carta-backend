@@ -1,0 +1,7 @@
+<map id="carta::Ds9Exporter::GetRegionWorldLine" name="carta::Ds9Exporter::GetRegionWorldLine">
+<area shape="rect" id="Node000001" title="Create region file line using world coordinates." alt="" coords="5,35,168,75"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#a71af6a6a2c4bddd7d286d96764023fdd" title="Add textbox region style to file line." alt="" coords="244,5,387,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="168,42,230,34,230,39,169,47"/>
+<area shape="rect" id="Node000003" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="216,70,415,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="169,62,203,66,202,71,168,67"/>
+</map>

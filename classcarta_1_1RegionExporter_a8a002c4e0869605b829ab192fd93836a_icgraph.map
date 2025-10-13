@@ -1,0 +1,6 @@
+<map id="carta::RegionExporter::AddRegion" name="carta::RegionExporter::AddRegion">
+<area shape="rect" id="Node000001" title="Add file line for region." alt="" coords="216,29,379,69"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="333,18,320,11,297,8,277,10,265,15,261,21,263,28,258,30,255,20,262,10,276,5,297,3,322,6,335,13"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionExporter.html#a495b5698231eb7c19d4c936185172193" title="Add file line for region in world coordinates or for matched image." alt="" coords="5,29,168,69"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="202,52,168,52,168,47,202,47"/>
+</map>

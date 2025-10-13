@@ -1,0 +1,13 @@
+<map id="carta::Ds9Importer::ImportPolygonLineRegion" name="carta::Ds9Importer::ImportPolygonLineRegion">
+<area shape="rect" id="Node000001" title="Import polygon and line&#45;based regions." alt="" coords="5,55,203,95"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="251,5,449,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,53,281,31,282,36,191,58"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#a9bf6f34606681307634beab92b0389b9" title="Convert region parameter string to casacore Quantity." alt="" coords="267,55,433,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="203,73,253,73,253,78,203,78"/>
+<area shape="rect" id="Node000006" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="289,120,411,145"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="191,93,282,114,281,120,190,98"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#a3acf918fc8874d2fd8a813bb5ea2b5da" title="Convert parameter in sexagesimal format to angle format." alt="" coords="497,23,708,63"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="433,62,483,56,484,61,434,67"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#a5b5f9be7632117e1b9c45c74b0da9c3b" title="Convert DS9 unit to casacore unit in parameter." alt="" coords="525,87,681,127"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="434,83,511,93,511,98,433,89"/>
+</map>

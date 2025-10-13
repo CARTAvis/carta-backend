@@ -1,0 +1,16 @@
+<map id="carta::CrtfImporter::ImportAnnBox" name="carta::CrtfImporter::ImportAnnBox">
+<area shape="rect" id="Node000001" title="Import rectangle region." alt="" coords="5,47,148,87"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImporter.html#ad79a0157e2f7565329ec9244cfca1843" title="Convert box definition with all corner points to control points." alt="" coords="196,47,361,87"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,65,182,65,182,70,148,70"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfImporter.html#a8b47d947fad67610c263525414809493" title="Convert box definition with center and width/height to control points." alt="" coords="604,47,765,87"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="361,62,409,61,556,61,590,61,590,67,556,66,409,66,361,67"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1CrtfImporter.html#a0bdb7ef1c39dc093713d98aa498a4983" title="Convert box definition with blc, trc corners to control points." alt="" coords="409,75,556,115"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="362,76,396,81,395,86,362,81"/>
+<area shape="rect" id="Node000004" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="813,5,1012,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="765,47,839,31,840,36,766,53"/>
+<area shape="rect" id="Node000005" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="852,55,973,80"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="765,65,838,65,838,70,765,70"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1RegionImporter.html#a0ea1f626f62f70a50e7255d03ec6406f" title="Convert length region parameter to pixels if in world coordinates." alt="" coords="831,105,995,145"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="765,85,820,99,819,104,764,90"/>
+<area shape="poly" id="edge7_Node000007_Node000003" title=" " alt="" coords="556,83,590,78,591,83,557,88"/>
+</map>

@@ -1,0 +1,17 @@
+<map id="carta::CrtfExporter::AddTextFileLines" name="carta::CrtfExporter::AddTextFileLines">
+<area shape="rect" id="Node000001" title="Add file lines for text region, as textbox file line then text file line." alt="" coords="5,69,148,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfExporter.html#a99611c038a58efeac1c5c2369c176bcf" title="Fix fontstyle added by CASA region." alt="" coords="225,5,367,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,67,213,47,215,52,147,72"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfExporter.html#a7cf164219f777e1d2b4a2d766bf9eb70" title="Get casacore stokes types for stokes axis set in constructor." alt="" coords="225,69,367,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,87,211,87,211,92,148,92"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CrtfExporter.html#aa2dae1e891657976d65724d1d11a76be" title="Set region style parameters in AnnotationBase region." alt="" coords="196,133,396,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="147,107,215,127,213,132,145,112"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CrtfExporter.html#afb15cf6fcfcca39dd3f3de27a46b6e8e" title="Format color for file line." alt="" coords="444,37,587,77"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="366,131,395,119,419,104,443,87,454,81,456,86,445,92,422,108,397,124,368,136"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1CrtfExporter.html#a7771f4bcc6069ab8659adf8439a5f229" title="Extract font parameters from region style else set defaults." alt="" coords="444,101,587,141"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="396,136,430,131,431,136,397,141"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1CrtfExporter.html#a3c16b38994000eb417433c5ba9f632db" title="Convert dash list to CASA line style else set default." alt="" coords="444,165,587,205"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="397,165,431,170,430,176,396,171"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1CrtfExporter.html#a8e76a7ddf74eca12e640715243d8a629" title="Extract CASA symbol style parameters from region style else set defaults." alt="" coords="444,229,587,269"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="344,171,457,221,455,226,342,176"/>
+</map>

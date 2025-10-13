@@ -1,0 +1,15 @@
+<map id="carta::Ds9Importer::ImportRectangleRegion" name="carta::Ds9Importer::ImportRectangleRegion">
+<area shape="rect" id="Node000001" title="Import rectangle region." alt="" coords="5,85,188,125"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="236,5,435,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="137,82,235,41,264,32,266,37,237,46,139,87"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#a9bf6f34606681307634beab92b0389b9" title="Convert region parameter string to casacore Quantity." alt="" coords="252,55,419,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="188,91,238,85,239,90,189,96"/>
+<area shape="rect" id="Node000006" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="275,120,396,145"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="189,113,261,121,260,127,188,118"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1RegionImporter.html#a0ea1f626f62f70a50e7255d03ec6406f" title="Convert length region parameter to pixels if in world coordinates." alt="" coords="253,170,417,210"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="149,122,237,155,258,163,257,168,235,161,147,127"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#a3acf918fc8874d2fd8a813bb5ea2b5da" title="Convert parameter in sexagesimal format to angle format." alt="" coords="483,23,693,63"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="419,62,469,56,469,61,419,67"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#a5b5f9be7632117e1b9c45c74b0da9c3b" title="Convert DS9 unit to casacore unit in parameter." alt="" coords="510,87,666,127"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="419,83,497,93,496,98,419,89"/>
+</map>

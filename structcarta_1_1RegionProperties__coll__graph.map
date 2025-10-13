@@ -1,5 +1,5 @@
 <map id="carta::RegionProperties" name="carta::RegionProperties">
-<area shape="rect" id="Node000001" title=" " alt="" coords="199,284,373,309"/>
+<area shape="rect" id="Node000001" title="Data structure for returning imported region definition and style parameters." alt="" coords="199,284,373,309"/>
 <area shape="rect" id="Node000002" href="$structcarta_1_1RegionState.html" title=" " alt="" coords="143,196,285,221"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="234,230,278,282,274,285,230,234"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="5,101,44,126"/>

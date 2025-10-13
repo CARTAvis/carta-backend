@@ -1,0 +1,9 @@
+<map id="carta::CrtfImporter::GetBoxControlPoints" name="carta::CrtfImporter::GetBoxControlPoints">
+<area shape="rect" id="Node000001" title="Convert box definition with all corner points to control points." alt="" coords="588,5,753,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImporter.html#a543c010a68859e35934d353bca32a629" title="Import rectangle region." alt="" coords="397,5,540,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="574,28,540,28,540,23,574,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfImporter.html#a82a0bb41105ebe379205e0e7d4fecd53" title="Parse each line of file to import regions." alt="" coords="196,5,349,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="383,28,350,28,350,23,383,23"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CrtfImporter.html#a76d502152aced149c17100a9bc4e24f3" title="Constructor for CrtfImporter class for importing regions in CRTF region file." alt="" coords="5,5,148,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="182,28,149,28,149,23,182,23"/>
+</map>

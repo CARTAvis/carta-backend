@@ -1,0 +1,41 @@
+<map id="carta::Ds9Importer::ImportRulerRegion" name="carta::Ds9Importer::ImportRulerRegion">
+<area shape="rect" id="Node000001" title="Import ruler region and its style parameters." alt="" coords="5,305,157,345"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionImporter.html#aa6f333dd70c5b7950532beea1e145c65" title="Return value of name in region properties or global properties." alt="" coords="721,7,885,47"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="89,304,131,223,164,175,204,133,264,85,317,54,375,34,450,16,516,6,584,3,649,5,707,10,707,15,649,10,584,8,517,11,451,21,376,39,319,59,267,89,207,137,168,179,136,226,94,306"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#a9db44517a54a7da3a2f878e152898e1d" title="Import polygon and line&#45;based regions." alt="" coords="205,369,403,409"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="152,343,221,363,220,368,151,348"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1RegionImporter.html#a65cda674a77e2fc18f6ee9337fa66f24" title="Get style parameters for ruler region." alt="" coords="222,305,386,345"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="158,323,208,323,208,328,158,328"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1Ds9Importer.html#a8a493142fac9617517b9249601886e39" title="Set common region style parameters." alt="" coords="232,147,376,187"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="109,303,262,193,265,197,112,308"/>
+<area shape="rect" id="Node000016" href="$classcarta_1_1Ds9Importer.html#a5e3d229890e8d8c36695ddf6f3233022" title="Convert DS9 coordinate frame to casacore coordinate frame." alt="" coords="227,433,381,473"/>
+<area shape="poly" id="edge23_Node000001_Node000016" title=" " alt="" coords="105,344,150,382,207,419,220,426,218,431,204,424,147,386,102,348"/>
+<area shape="rect" id="Node000004" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="451,419,649,445"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="403,404,463,414,463,420,402,409"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#a9bf6f34606681307634beab92b0389b9" title="Convert region parameter string to casacore Quantity." alt="" coords="467,469,633,509"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="377,407,404,419,428,437,452,454,469,462,467,467,449,458,425,441,401,424,374,412"/>
+<area shape="rect" id="Node000008" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="489,370,611,395"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="403,384,475,382,476,387,403,389"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Ds9Importer.html#a3acf918fc8874d2fd8a813bb5ea2b5da" title="Convert parameter in sexagesimal format to angle format." alt="" coords="697,437,908,477"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="633,476,683,470,684,475,634,482"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Ds9Importer.html#a5b5f9be7632117e1b9c45c74b0da9c3b" title="Convert DS9 unit to casacore unit in parameter." alt="" coords="725,501,881,541"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="634,497,711,507,711,513,633,503"/>
+<area shape="rect" id="Node000010" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="758,241,847,266"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="386,322,510,315,649,297,704,284,754,268,755,273,705,289,650,303,511,321,386,327"/>
+<area shape="poly" id="edge12_Node000011_Node000002" title=" " alt="" coords="322,144,375,95,411,70,450,51,515,32,582,21,648,17,707,17,707,22,648,22,583,26,516,37,452,56,414,75,379,100,325,148"/>
+<area shape="poly" id="edge21_Node000011_Node000010" title=" " alt="" coords="330,185,383,222,416,240,451,254,529,268,609,272,683,268,744,261,745,266,683,273,609,277,529,273,450,259,414,245,381,227,327,189"/>
+<area shape="rect" id="Node000012" href="$namespacecarta.html#a63294be28839a8e351bbc73154e6cd49" title="Format input color string as expected for import or export." alt="" coords="479,154,621,179"/>
+<area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="376,164,465,164,465,169,376,169"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1Ds9Importer.html#a183368f5c723152a1a6023e6ffb3258a" title="Set annotation style font parameters." alt="" coords="478,89,622,129"/>
+<area shape="poly" id="edge13_Node000011_Node000013" title=" " alt="" coords="376,147,464,127,466,132,377,153"/>
+<area shape="rect" id="Node000014" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title="Converts a string to an integer." alt="" coords="757,97,848,122"/>
+<area shape="poly" id="edge22_Node000011_Node000014" title=" " alt="" coords="327,145,381,107,414,88,450,75,490,66,531,62,612,64,687,76,749,90,748,95,686,81,612,70,531,68,490,72,451,80,416,93,383,111,330,149"/>
+<area shape="rect" id="Node000015" href="$classcarta_1_1Ds9Importer.html#a066b9f2e946ad80eb660a7d1c7bfeb64" title="Set annotation style point parameters." alt="" coords="478,204,622,244"/>
+<area shape="poly" id="edge17_Node000011_Node000015" title=" " alt="" coords="377,181,466,202,464,207,376,186"/>
+<area shape="poly" id="edge14_Node000013_Node000002" title=" " alt="" coords="611,87,727,49,729,54,613,92"/>
+<area shape="poly" id="edge15_Node000013_Node000010" title=" " alt="" coords="623,127,651,139,722,185,779,230,775,234,719,189,648,144,621,132"/>
+<area shape="poly" id="edge16_Node000013_Node000014" title=" " alt="" coords="622,107,744,107,744,112,622,112"/>
+<area shape="poly" id="edge18_Node000015_Node000002" title=" " alt="" coords="621,206,648,189,659,176,666,164,672,138,678,111,695,82,715,65,736,51,739,56,718,69,699,86,683,113,677,139,671,166,663,179,651,193,624,210"/>
+<area shape="poly" id="edge19_Node000015_Node000010" title=" " alt="" coords="623,230,745,244,744,249,622,235"/>
+<area shape="poly" id="edge20_Node000015_Node000014" title=" " alt="" coords="614,202,648,188,712,157,767,127,770,131,715,162,650,193,616,207"/>
+</map>

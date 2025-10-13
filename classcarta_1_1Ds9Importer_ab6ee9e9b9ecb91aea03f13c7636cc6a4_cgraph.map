@@ -1,0 +1,113 @@
+<map id="carta::Ds9Importer::Ds9Importer" name="carta::Ds9Importer::Ds9Importer">
+<area shape="rect" id="Node000001" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="5,384,149,424"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a0adec1994bc7056737b323d34cf9d5e3" title="Return name of coordinate frame from coordinate system direction coordinate, if any." alt="" coords="207,269,394,309"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,382,145,351,196,320,215,312,218,317,199,325,148,355,105,386"/>
+<area shape="rect" id="Node000003" href="$namespacecarta.html#a4781de4e9fb7a2b9ee34baf2b2d4222a" title="Return map from CARTA region type to string for region file type." alt="" coords="197,334,404,359"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,382,197,369,234,360,235,365,198,375,150,387"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionImporter.html#ad41003f6fc547f2ff3c460873dacdc37" title="Read region file into file lines." alt="" coords="219,384,383,424"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="150,401,205,401,205,407,150,407"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Ds9Importer.html#ad65f2b2bb3b9c2697555f657b02deda0" title="Parse each line of file to import regions." alt="" coords="224,448,377,488"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="149,422,218,442,216,447,147,427"/>
+<area shape="rect" id="Node000038" href="$classcarta_1_1RegionImporter.html#a95e1d8cff4b0abca24919e81dac0ac9b" title="Set parser delimiter to use in parsing file line." alt="" coords="219,512,383,552"/>
+<area shape="poly" id="edge73_Node000001_Node000038" title=" " alt="" coords="101,422,144,460,199,498,212,504,210,509,196,502,140,465,97,426"/>
+<area shape="rect" id="Node000005" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="1441,145,1531,170"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="381,383,402,370,419,351,428,332,435,311,450,288,492,233,527,180,559,132,590,90,626,54,668,26,720,9,785,3,1011,3,1077,7,1142,18,1206,34,1267,54,1375,98,1451,136,1449,140,1372,103,1266,59,1205,39,1141,23,1076,12,1011,8,785,8,721,14,670,31,629,58,594,93,563,135,532,183,496,236,454,291,440,313,433,334,424,354,406,374,384,387"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1RegionImporter.html#a4c3476e7bc9dc92e7fd78e499f2cce39" title="Add text region style to textbox region properties." alt="" coords="452,416,647,456"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="377,456,438,448,439,453,378,461"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1RegionImporter.html#a3374d94fa666fa8077a23dd2f2c2aa59" title="Determine whether file line starting with comment marker is a comment and not an annotation region." alt="" coords="467,480,631,520"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="378,475,454,485,453,490,377,480"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1Ds9Importer.html#a1ed3cad7f19e1ed9eebd96d9997f0f8d" title="Check if region file line is a DS9 coordinate." alt="" coords="477,544,621,584"/>
+<area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="376,486,405,498,430,514,453,530,469,537,466,541,451,534,427,518,403,502,374,491"/>
+<area shape="rect" id="Node000010" href="$structcarta_1_1RegionState.html#a0530ad49eec4b1decafae42dd786d095" title=" " alt="" coords="715,1096,858,1136"/>
+<area shape="poly" id="edge9_Node000006_Node000010" title=" " alt="" coords="379,479,406,498,431,536,443,572,445,607,442,642,438,678,435,715,440,754,454,798,503,890,552,956,612,1012,696,1075,716,1088,714,1092,693,1080,609,1016,548,959,498,893,450,800,435,756,430,715,432,677,437,642,440,607,438,573,427,538,402,502,376,483"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1Ds9Importer.html#a5e3d229890e8d8c36695ddf6f3233022" title="Convert DS9 coordinate frame to casacore coordinate frame." alt="" coords="933,327,1087,367"/>
+<area shape="poly" id="edge10_Node000006_Node000011" title=" " alt="" coords="374,445,403,434,426,417,436,409,451,401,522,389,647,375,919,351,920,356,647,380,523,394,453,407,439,413,429,421,405,438,376,450"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1Ds9Importer.html#ad55b0047e3533c0944100c1bbca08e17" title="Set properties from global file line." alt="" coords="477,301,621,341"/>
+<area shape="poly" id="edge11_Node000006_Node000012" title=" " alt="" coords="376,449,402,434,418,416,426,397,434,378,450,358,468,346,471,350,454,362,438,381,431,399,423,419,406,438,379,453"/>
+<area shape="rect" id="Node000014" href="$classcarta_1_1Ds9Importer.html#a903684a70c77768fe9c5b3c85689926c" title="Parse file line to set a region." alt="" coords="477,747,621,787"/>
+<area shape="poly" id="edge14_Node000006_Node000014" title=" " alt="" coords="379,482,406,498,426,521,436,543,443,567,454,595,532,733,527,736,450,597,438,568,431,545,421,524,402,502,376,486"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1RegionImporter.html#a7ce1c0a8cf2cbe2b1ecb8c74110935bf" title="Parse file line into region parameters and style properties." alt="" coords="695,301,879,341"/>
+<area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="622,319,681,319,681,324,622,324"/>
+<area shape="poly" id="edge13_Node000013_Node000005" title=" " alt="" coords="798,299,847,232,884,194,925,163,981,133,1031,111,1078,98,1123,92,1170,92,1220,96,1339,112,1391,123,1439,138,1438,143,1390,128,1338,117,1219,101,1170,97,1124,97,1079,103,1033,116,984,137,928,168,887,198,852,235,802,303"/>
+<area shape="poly" id="edge72_Node000014_Node000010" title=" " alt="" coords="563,786,649,963,661,997,667,1024,676,1049,697,1075,711,1087,707,1091,693,1079,672,1052,662,1026,656,998,644,965,558,788"/>
+<area shape="poly" id="edge71_Node000014_Node000013" title=" " alt="" coords="562,745,601,680,644,595,659,551,666,515,674,478,692,435,722,389,754,350,758,353,726,392,697,437,679,480,671,516,664,552,649,597,606,682,566,748"/>
+<area shape="rect" id="Node000015" href="$classcarta_1_1RegionImporter.html#aa6f333dd70c5b7950532beea1e145c65" title="Return value of name in region properties or global properties." alt="" coords="1404,493,1568,533"/>
+<area shape="poly" id="edge15_Node000014_Node000015" title=" " alt="" coords="621,749,992,666,1193,617,1338,576,1432,537,1434,542,1340,581,1194,623,993,671,622,754"/>
+<area shape="rect" id="Node000016" href="$classcarta_1_1RegionImporter.html#aaeaf3a1a371e596bb7632966635b9b54" title="Convert text region position to CARTA position enum." alt="" coords="705,880,869,920"/>
+<area shape="poly" id="edge16_Node000014_Node000016" title=" " alt="" coords="579,784,632,821,696,859,723,872,720,877,693,864,630,825,576,789"/>
+<area shape="rect" id="Node000017" href="$classcarta_1_1Ds9Importer.html#ad193e12f65187c202203e447e9b2cf11" title="Import circle or compass region." alt="" coords="933,907,1087,947"/>
+<area shape="poly" id="edge17_Node000014_Node000017" title=" " alt="" coords="563,785,583,819,612,860,650,900,672,916,696,930,751,947,809,953,867,952,919,945,920,951,867,957,809,959,750,952,694,934,669,921,647,904,608,864,578,822,558,788"/>
+<area shape="rect" id="Node000018" href="$classcarta_1_1Ds9Importer.html#a611bb8a1925b7ddd0a1bcf0f0f0b1a33" title="Import ellipse, circle, or compass region." alt="" coords="1159,907,1321,947"/>
+<area shape="poly" id="edge44_Node000014_Node000018" title=" " alt="" coords="567,785,696,959,759,961,892,960,1093,956,1147,947,1148,952,1094,961,892,965,759,966,693,964,563,788"/>
+<area shape="rect" id="Node000025" href="$classcarta_1_1Ds9Importer.html#afbc45e957005a314aa54c7ff8840ea66" title="Import compass region and its style parameters." alt="" coords="697,448,876,488"/>
+<area shape="poly" id="edge25_Node000014_Node000025" title=" " alt="" coords="560,745,644,595,656,567,663,543,673,521,693,498,699,493,702,498,697,502,677,524,668,545,661,569,649,597,565,748"/>
+<area shape="rect" id="Node000027" href="$classcarta_1_1Ds9Importer.html#a8a493142fac9617517b9249601886e39" title="Set common region style parameters." alt="" coords="938,455,1082,495"/>
+<area shape="poly" id="edge65_Node000014_Node000027" title=" " alt="" coords="564,744,616,683,653,649,693,619,743,596,785,587,827,580,878,562,928,532,972,501,975,505,931,537,880,566,828,585,786,593,744,601,696,624,656,653,620,687,568,748"/>
+<area shape="rect" id="Node000032" href="$classcarta_1_1Ds9Importer.html#ad1711f614c4bc82cc101ec606cf2a3ed" title="Import point or text region." alt="" coords="1165,779,1315,819"/>
+<area shape="poly" id="edge45_Node000014_Node000032" title=" " alt="" coords="622,767,1151,792,1151,797,622,773"/>
+<area shape="rect" id="Node000033" href="$classcarta_1_1Ds9Importer.html#a9db44517a54a7da3a2f878e152898e1d" title="Import polygon and line&#45;based regions." alt="" coords="1141,715,1339,755"/>
+<area shape="poly" id="edge49_Node000014_Node000033" title=" " alt="" coords="622,761,1127,737,1128,742,622,766"/>
+<area shape="rect" id="Node000034" href="$classcarta_1_1Ds9Importer.html#a8c7c75235403b3818262848a9d3ead66" title="Import rectangle region." alt="" coords="1149,971,1331,1011"/>
+<area shape="poly" id="edge53_Node000014_Node000034" title=" " alt="" coords="568,785,649,899,669,937,678,952,696,966,749,990,806,1007,865,1017,924,1022,1037,1021,1135,1009,1135,1015,1037,1026,923,1028,864,1022,805,1012,747,995,693,970,675,956,664,940,644,901,563,789"/>
+<area shape="rect" id="Node000035" href="$classcarta_1_1Ds9Importer.html#a3a00bea2c379949f6976b25f0c9ee60c" title="Import ruler region and its style parameters." alt="" coords="711,512,863,552"/>
+<area shape="poly" id="edge58_Node000014_Node000035" title=" " alt="" coords="559,745,609,661,648,612,693,569,712,556,715,560,696,573,652,616,614,664,563,747"/>
+<area shape="rect" id="Node000037" href="$classcarta_1_1Ds9Importer.html#a569c8f7f24f98f33f7c7b4f3bcea3f48" title="Import vector region." alt="" coords="1161,843,1319,883"/>
+<area shape="poly" id="edge66_Node000014_Node000037" title=" " alt="" coords="622,774,1147,847,1146,852,621,779"/>
+<area shape="poly" id="edge18_Node000017_Node000018" title=" " alt="" coords="1088,924,1145,924,1145,929,1088,929"/>
+<area shape="rect" id="Node000019" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="1387,843,1585,869"/>
+<area shape="poly" id="edge19_Node000018_Node000019" title=" " alt="" coords="1303,904,1386,879,1420,870,1421,875,1387,884,1304,909"/>
+<area shape="rect" id="Node000020" href="$classcarta_1_1Ds9Importer.html#a9bf6f34606681307634beab92b0389b9" title="Convert region parameter string to casacore Quantity." alt="" coords="1403,893,1569,933"/>
+<area shape="poly" id="edge20_Node000018_Node000020" title=" " alt="" coords="1321,920,1389,916,1389,921,1321,925"/>
+<area shape="rect" id="Node000023" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="1425,794,1547,819"/>
+<area shape="poly" id="edge23_Node000018_Node000023" title=" " alt="" coords="1317,904,1337,893,1352,877,1360,862,1369,845,1385,830,1411,817,1413,822,1388,834,1373,849,1365,864,1356,881,1340,897,1319,909"/>
+<area shape="rect" id="Node000024" href="$classcarta_1_1RegionImporter.html#a0ea1f626f62f70a50e7255d03ec6406f" title="Convert length region parameter to pixels if in world coordinates." alt="" coords="1404,957,1568,997"/>
+<area shape="poly" id="edge24_Node000018_Node000024" title=" " alt="" coords="1321,941,1391,955,1390,960,1320,946"/>
+<area shape="rect" id="Node000021" href="$classcarta_1_1Ds9Importer.html#a3acf918fc8874d2fd8a813bb5ea2b5da" title="Convert parameter in sexagesimal format to angle format." alt="" coords="1633,861,1844,901"/>
+<area shape="poly" id="edge21_Node000020_Node000021" title=" " alt="" coords="1569,900,1619,894,1620,899,1570,905"/>
+<area shape="rect" id="Node000022" href="$classcarta_1_1Ds9Importer.html#a5b5f9be7632117e1b9c45c74b0da9c3b" title="Convert DS9 unit to casacore unit in parameter." alt="" coords="1661,925,1817,965"/>
+<area shape="poly" id="edge22_Node000020_Node000022" title=" " alt="" coords="1570,921,1647,931,1647,936,1569,927"/>
+<area shape="poly" id="edge43_Node000025_Node000011" title=" " alt="" coords="814,446,865,411,925,376,939,370,942,375,928,381,868,416,817,450"/>
+<area shape="poly" id="edge26_Node000025_Node000015" title=" " alt="" coords="848,486,927,504,1052,517,1177,521,1293,521,1390,517,1390,522,1294,526,1177,527,1051,522,926,509,846,491"/>
+<area shape="poly" id="edge27_Node000025_Node000017" title=" " alt="" coords="865,486,881,498,917,545,947,597,969,652,985,708,1005,813,1011,893,1006,893,999,814,980,710,964,654,942,599,913,548,877,502,862,490"/>
+<area shape="rect" id="Node000026" href="$classcarta_1_1RegionImporter.html#a47ffabb08771da0f74b76268f2ebc9da" title="Set style parameters for compass region." alt="" coords="927,177,1093,217"/>
+<area shape="poly" id="edge28_Node000025_Node000026" title=" " alt="" coords="803,446,981,227,986,230,807,449"/>
+<area shape="poly" id="edge30_Node000025_Node000027" title=" " alt="" coords="877,468,924,469,924,475,876,473"/>
+<area shape="poly" id="edge29_Node000026_Node000005" title=" " alt="" coords="1044,175,1089,153,1141,136,1218,126,1296,127,1368,133,1428,143,1427,148,1368,138,1296,132,1218,132,1142,141,1091,158,1046,180"/>
+<area shape="poly" id="edge41_Node000027_Node000005" title=" " alt="" coords="1078,453,1091,441,1108,415,1115,389,1115,363,1113,336,1110,310,1111,284,1120,257,1140,231,1428,167,1429,172,1143,236,1125,260,1117,285,1115,310,1118,336,1121,362,1120,389,1113,417,1095,444,1081,457"/>
+<area shape="poly" id="edge32_Node000027_Node000015" title=" " alt="" coords="1082,478,1390,503,1390,508,1082,483"/>
+<area shape="rect" id="Node000028" href="$namespacecarta.html#a63294be28839a8e351bbc73154e6cd49" title="Format input color string as expected for import or export." alt="" coords="1169,425,1311,450"/>
+<area shape="poly" id="edge31_Node000027_Node000028" title=" " alt="" coords="1082,460,1155,448,1155,454,1082,466"/>
+<area shape="rect" id="Node000029" href="$classcarta_1_1Ds9Importer.html#a183368f5c723152a1a6023e6ffb3258a" title="Set annotation style font parameters." alt="" coords="1168,245,1312,285"/>
+<area shape="poly" id="edge33_Node000027_Node000029" title=" " alt="" coords="1076,453,1091,441,1104,424,1111,407,1115,373,1119,338,1126,320,1139,302,1154,290,1157,294,1143,306,1131,323,1124,340,1120,374,1116,408,1109,426,1095,445,1080,457"/>
+<area shape="rect" id="Node000030" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title="Converts a string to an integer." alt="" coords="1441,310,1531,335"/>
+<area shape="poly" id="edge42_Node000027_Node000030" title=" " alt="" coords="1075,452,1092,441,1102,429,1108,417,1113,393,1120,368,1127,357,1140,346,1174,327,1211,314,1250,305,1289,301,1364,301,1427,308,1426,313,1363,306,1289,306,1251,311,1213,319,1176,332,1143,350,1131,360,1125,370,1118,394,1113,419,1106,432,1095,445,1078,457"/>
+<area shape="rect" id="Node000031" href="$classcarta_1_1Ds9Importer.html#a066b9f2e946ad80eb660a7d1c7bfeb64" title="Set annotation style point parameters." alt="" coords="1168,360,1312,400"/>
+<area shape="poly" id="edge37_Node000027_Node000031" title=" " alt="" coords="1066,452,1092,440,1116,426,1140,411,1160,403,1162,407,1143,416,1119,430,1095,445,1068,457"/>
+<area shape="poly" id="edge35_Node000029_Node000005" title=" " alt="" coords="1293,243,1338,224,1446,174,1448,179,1340,229,1295,248"/>
+<area shape="poly" id="edge34_Node000029_Node000015" title=" " alt="" coords="1269,283,1341,346,1408,417,1462,481,1458,484,1404,421,1337,350,1265,287"/>
+<area shape="poly" id="edge36_Node000029_Node000030" title=" " alt="" coords="1313,279,1428,307,1427,312,1312,285"/>
+<area shape="poly" id="edge39_Node000031_Node000005" title=" " alt="" coords="1264,358,1337,295,1460,178,1464,182,1340,299,1268,362"/>
+<area shape="poly" id="edge38_Node000031_Node000015" title=" " alt="" coords="1309,398,1340,411,1400,446,1451,483,1447,487,1397,451,1337,416,1307,402"/>
+<area shape="poly" id="edge40_Node000031_Node000030" title=" " alt="" coords="1312,361,1427,334,1428,339,1313,366"/>
+<area shape="poly" id="edge46_Node000032_Node000019" title=" " alt="" coords="1316,814,1418,838,1417,843,1315,819"/>
+<area shape="poly" id="edge47_Node000032_Node000020" title=" " alt="" coords="1317,816,1340,828,1355,841,1365,854,1374,867,1388,879,1399,885,1396,890,1385,884,1370,871,1360,858,1352,845,1337,833,1314,821"/>
+<area shape="poly" id="edge48_Node000032_Node000023" title=" " alt="" coords="1316,798,1412,802,1411,807,1316,804"/>
+<area shape="poly" id="edge50_Node000033_Node000019" title=" " alt="" coords="1319,752,1340,765,1356,781,1365,799,1373,815,1388,830,1398,836,1395,840,1385,834,1368,818,1360,801,1352,785,1337,769,1317,757"/>
+<area shape="poly" id="edge51_Node000033_Node000020" title=" " alt="" coords="1324,753,1340,765,1353,779,1360,794,1365,824,1370,852,1377,866,1389,879,1394,884,1390,888,1385,883,1372,869,1365,854,1360,824,1355,796,1348,782,1337,769,1321,757"/>
+<area shape="poly" id="edge52_Node000033_Node000023" title=" " alt="" coords="1310,752,1429,788,1428,793,1308,757"/>
+<area shape="poly" id="edge54_Node000034_Node000019" title=" " alt="" coords="1318,968,1337,957,1353,938,1360,919,1368,899,1385,879,1397,872,1399,877,1388,883,1372,901,1365,921,1357,941,1340,961,1321,973"/>
+<area shape="poly" id="edge55_Node000034_Node000020" title=" " alt="" coords="1304,968,1408,935,1409,940,1305,973"/>
+<area shape="poly" id="edge56_Node000034_Node000023" title=" " alt="" coords="1321,968,1337,957,1349,942,1356,926,1360,894,1364,862,1371,846,1385,830,1411,815,1414,819,1388,834,1376,849,1369,864,1365,895,1361,928,1354,944,1341,961,1324,973"/>
+<area shape="poly" id="edge57_Node000034_Node000024" title=" " alt="" coords="1331,983,1390,980,1390,985,1332,988"/>
+<area shape="poly" id="edge64_Node000035_Node000011" title=" " alt="" coords="861,510,877,498,889,483,895,469,900,439,905,408,912,393,925,377,929,373,933,377,929,380,917,395,910,410,906,440,901,471,893,486,881,502,864,514"/>
+<area shape="poly" id="edge59_Node000035_Node000015" title=" " alt="" coords="863,546,927,555,1043,565,1133,571,1223,568,1338,555,1418,535,1419,540,1339,560,1224,574,1133,576,1042,571,926,560,862,551"/>
+<area shape="poly" id="edge63_Node000035_Node000027" title=" " alt="" coords="862,510,924,494,925,499,863,515"/>
+<area shape="poly" id="edge60_Node000035_Node000033" title=" " alt="" coords="823,550,928,606,1057,662,1172,707,1170,712,1055,667,926,610,821,555"/>
+<area shape="rect" id="Node000036" href="$classcarta_1_1RegionImporter.html#a65cda674a77e2fc18f6ee9337fa66f24" title="Get style parameters for ruler region." alt="" coords="928,391,1092,431"/>
+<area shape="poly" id="edge61_Node000035_Node000036" title=" " alt="" coords="856,510,877,498,892,484,901,470,910,455,925,441,933,435,936,440,928,445,914,459,905,473,896,487,880,502,859,514"/>
+<area shape="poly" id="edge62_Node000036_Node000005" title=" " alt="" coords="1078,389,1091,377,1107,353,1113,329,1111,281,1110,257,1111,233,1120,210,1140,187,1161,175,1191,166,1267,155,1352,152,1427,152,1427,158,1352,157,1268,161,1192,171,1163,180,1143,191,1125,212,1117,234,1115,257,1117,281,1118,330,1112,355,1095,380,1081,393"/>
+<area shape="poly" id="edge67_Node000037_Node000019" title=" " alt="" coords="1320,858,1373,856,1373,862,1320,863"/>
+<area shape="poly" id="edge68_Node000037_Node000020" title=" " alt="" coords="1320,876,1389,891,1388,896,1319,882"/>
+<area shape="poly" id="edge69_Node000037_Node000023" title=" " alt="" coords="1319,842,1416,820,1417,825,1320,847"/>
+<area shape="poly" id="edge70_Node000037_Node000024" title=" " alt="" coords="1317,881,1340,892,1355,905,1365,918,1374,931,1388,943,1399,949,1396,954,1385,948,1370,935,1360,922,1352,909,1337,897,1315,885"/>
+</map>

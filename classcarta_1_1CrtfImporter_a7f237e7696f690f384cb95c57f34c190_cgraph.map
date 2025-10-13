@@ -1,0 +1,7 @@
+<map id="carta::CrtfImporter::ImportAnnSymbolText" name="carta::CrtfImporter::ImportAnnSymbolText">
+<area shape="rect" id="Node000001" title="Import point or text region." alt="" coords="5,23,180,63"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="228,5,427,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="180,31,214,28,215,33,181,37"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="267,55,388,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="181,50,254,57,253,62,180,55"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="carta::CrtfExporter::GetAnnSymbol" name="carta::CrtfExporter::GetAnnSymbol">
+<area shape="rect" id="Node000001" title="Convert CARTA point shape to CASA annotation symbol." alt="" coords="387,5,529,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfExporter.html#a40ca82ff038ef954a3f68b50777e0472" title="Create casa AnnotationBase or AnnRegion from region parameters." alt="" coords="196,5,339,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="373,28,339,28,339,23,373,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfExporter.html#a3592f0d1e36982452799906a6b0cc360" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,5,148,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="183,28,148,28,148,23,183,23"/>
+</map>

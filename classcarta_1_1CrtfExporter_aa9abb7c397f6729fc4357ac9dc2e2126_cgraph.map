@@ -1,0 +1,7 @@
+<map id="carta::CrtfExporter::CrtfExporter" name="carta::CrtfExporter::CrtfExporter">
+<area shape="rect" id="Node000001" title="Constructor for CrtfExporter class for exporting regions to CRTF file." alt="" coords="5,35,148,75"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a0adec1994bc7056737b323d34cf9d5e3" title="Return name of coordinate frame from coordinate system direction coordinate, if any." alt="" coords="206,5,393,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,43,192,37,193,42,149,48"/>
+<area shape="rect" id="Node000003" href="$namespacecarta.html#a4781de4e9fb7a2b9ee34baf2b2d4222a" title="Return map from CARTA region type to string for region file type." alt="" coords="196,70,403,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,61,185,66,185,71,148,66"/>
+</map>

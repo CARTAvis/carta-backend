@@ -1,0 +1,5 @@
+<map id="carta::RegionExporter::ConvertRecordToRectangle" name="carta::RegionExporter::ConvertRecordToRectangle">
+<area shape="rect" id="Node000001" title="Convert casacore Record to rectangle region control points." alt="" coords="5,5,211,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionExporter.html#a204ed3aebbbfba036056401034648074" title="Convert casacore Vector from float to double." alt="" coords="259,5,423,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="211,23,245,23,245,28,211,28"/>
+</map>

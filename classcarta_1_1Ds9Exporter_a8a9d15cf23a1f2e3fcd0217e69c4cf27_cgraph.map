@@ -1,0 +1,26 @@
+<map id="carta::Ds9Exporter::AddRegion" name="carta::Ds9Exporter::AddRegion">
+<area shape="rect" id="Node000001" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,240,148,280"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#af26c15b4f436e147a795115e6c09d4e1" title="Add annotation style parameters to file line." alt="" coords="198,123,357,163"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="111,238,229,168,231,172,113,242"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Ds9Exporter.html#a366523dec7744c453adc447a3ce3e80d" title="Add DS9 style parameters common to all region types to file line." alt="" coords="206,208,349,248"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="148,246,192,239,193,244,149,251"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1Ds9Exporter.html#ac57a46876dc9aebf3892ac97b8cf1cc6" title="Create region file line using pixel coordinates." alt="" coords="199,272,355,312"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="149,269,186,275,185,280,148,274"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1Ds9Exporter.html#aee064234af6dbb9aeca9d3baee17e569" title="Create region file line using world coordinates." alt="" coords="196,336,359,376"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="114,278,197,322,212,328,210,333,195,326,111,282"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Exporter.html#a5aa2279874b35ab60ca70c49e74e6f26" title="Add annotation point region style to file line." alt="" coords="433,5,579,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="303,120,349,87,405,55,421,48,424,53,408,60,352,92,306,125"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionExporter.html#a512c04cd11aeba7f9dbefd8dd0f017b0" title="Append compass style parameters to region file line." alt="" coords="425,69,587,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="356,122,411,109,412,114,358,127"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Exporter.html#a8e9a1defe826c8832f82cfa5a04e4b8a" title="Convert casacore coordinate frame string to DS9 frame." alt="" coords="421,133,591,173"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="357,144,407,146,407,151,357,149"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Ds9Exporter.html#a05368aa2fe4f8d3d41f73c2e21fe89dd" title="Add font style parameters to file line." alt="" coords="435,197,577,237"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="349,222,421,219,421,224,349,227"/>
+<area shape="rect" id="Node000008" href="$namespacecarta.html#a63294be28839a8e351bbc73154e6cd49" title="Format input color string as expected for import or export." alt="" coords="435,262,577,287"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="349,240,430,257,429,262,348,245"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1Ds9Exporter.html#a71af6a6a2c4bddd7d286d96764023fdd" title="Add textbox region style to file line." alt="" coords="435,312,577,352"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="356,303,421,314,420,320,355,308"/>
+<area shape="poly" id="edge11_Node000011_Node000010" title=" " alt="" coords="359,345,420,338,421,344,359,350"/>
+<area shape="rect" id="Node000012" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="407,377,605,402"/>
+<area shape="poly" id="edge12_Node000011_Node000012" title=" " alt="" coords="359,365,405,372,405,377,359,370"/>
+</map>

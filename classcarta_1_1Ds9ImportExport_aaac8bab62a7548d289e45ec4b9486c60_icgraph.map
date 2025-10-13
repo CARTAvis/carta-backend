@@ -1,9 +1,0 @@
-<map id="carta::Ds9ImportExport::InitDs9CoordMap" name="carta::Ds9ImportExport::InitDs9CoordMap">
-<area shape="rect" id="Node000001" title=" " alt="" coords="448,37,621,77"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9ImportExport.html#af3abb83d0dc8a766f1b964ba3ef68f74" title=" " alt="" coords="227,5,400,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="434,45,400,40,401,35,435,40"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588" title=" " alt="" coords="227,69,400,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="435,74,401,79,400,74,434,69"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="5,69,179,109"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="213,92,179,92,179,87,213,87"/>
-</map>

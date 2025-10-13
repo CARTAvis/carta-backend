@@ -1,0 +1,9 @@
+<map id="carta::Ds9Importer::ImportRulerRegion" name="carta::Ds9Importer::ImportRulerRegion">
+<area shape="rect" id="Node000001" title="Import ruler region and its style parameters." alt="" coords="591,5,743,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Importer.html#a903684a70c77768fe9c5b3c85689926c" title="Parse file line to set a region." alt="" coords="399,5,543,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="577,28,543,28,543,23,577,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#ad65f2b2bb3b9c2697555f657b02deda0" title="Parse each line of file to import regions." alt="" coords="197,5,351,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="385,28,351,28,351,23,385,23"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#ab6ee9e9b9ecb91aea03f13c7636cc6a4" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="5,5,149,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="183,28,150,28,150,23,183,23"/>
+</map>

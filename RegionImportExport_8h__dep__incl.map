@@ -1,16 +1,5 @@
 <map id="RegionImportExport.h" name="RegionImportExport.h">
-<area shape="rect" id="Node000001" title=" " alt="" coords="249,5,413,31"/>
-<area shape="rect" id="Node000002" href="$CrtfImportExport_8h.html" title=" " alt="" coords="91,79,234,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="292,38,191,81,189,76,290,34"/>
-<area shape="rect" id="Node000005" href="$Ds9ImportExport_8h.html" title=" " alt="" coords="259,79,403,104"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="333,44,333,79,328,79,328,44"/>
-<area shape="rect" id="Node000007" href="$RegionImportExport_8cc.html" title=" " alt="" coords="427,79,597,104"/>
-<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="373,33,483,76,481,81,371,38"/>
-<area shape="rect" id="Node000003" href="$CrtfImportExport_8cc.html" title=" " alt="" coords="5,152,155,177"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="141,115,95,154,92,150,137,111"/>
-<area shape="rect" id="Node000004" href="$RegionHandler_8cc.html" title=" " alt="" coords="179,152,314,177"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="188,111,235,150,231,154,185,115"/>
-<area shape="poly" id="edge6_Node000005_Node000004" title=" " alt="" coords="308,115,262,154,259,150,305,111"/>
-<area shape="rect" id="Node000006" href="$Ds9ImportExport_8cc.html" title=" " alt="" coords="338,152,489,177"/>
-<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="356,111,402,150,398,154,353,115"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,169,31"/>
+<area shape="rect" id="Node000002" href="$RegionHandler_8cc.html" title=" " alt="" coords="20,79,155,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="90,44,90,79,85,79,85,44"/>
 </map>

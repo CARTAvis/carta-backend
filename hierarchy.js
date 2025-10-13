@@ -112,11 +112,15 @@ var hierarchy =
     [ "carta::queuing_rw_mutex_scoped", "classcarta_1_1queuing__rw__mutex__scoped.html", null ],
     [ "carta::Region", "classcarta_1_1Region.html", null ],
     [ "carta::RegionConverter", "classcarta_1_1RegionConverter.html", null ],
+    [ "carta::RegionExporter", "classcarta_1_1RegionExporter.html", [
+      [ "carta::CrtfExporter", "classcarta_1_1CrtfExporter.html", null ],
+      [ "carta::Ds9Exporter", "classcarta_1_1Ds9Exporter.html", null ]
+    ] ],
     [ "carta::RegionHandler", "classcarta_1_1RegionHandler.html", null ],
     [ "carta::RegionHistogramConfig", "structcarta_1_1RegionHistogramConfig.html", null ],
-    [ "carta::RegionImportExport", "classcarta_1_1RegionImportExport.html", [
-      [ "carta::CrtfImportExport", "classcarta_1_1CrtfImportExport.html", null ],
-      [ "carta::Ds9ImportExport", "classcarta_1_1Ds9ImportExport.html", null ]
+    [ "carta::RegionImporter", "classcarta_1_1RegionImporter.html", [
+      [ "carta::CrtfImporter", "classcarta_1_1CrtfImporter.html", null ],
+      [ "carta::Ds9Importer", "classcarta_1_1Ds9Importer.html", null ]
     ] ],
     [ "carta::RegionProperties", "structcarta_1_1RegionProperties.html", null ],
     [ "carta::RegionSpectralConfig", "structcarta_1_1RegionSpectralConfig.html", null ],

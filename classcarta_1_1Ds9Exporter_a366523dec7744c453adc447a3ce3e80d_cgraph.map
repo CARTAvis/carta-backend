@@ -1,0 +1,7 @@
+<map id="carta::Ds9Exporter::AddStyle" name="carta::Ds9Exporter::AddStyle">
+<area shape="rect" id="Node000001" title="Add DS9 style parameters common to all region types to file line." alt="" coords="5,35,148,75"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#a05368aa2fe4f8d3d41f73c2e21fe89dd" title="Add font style parameters to file line." alt="" coords="196,5,339,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,41,182,36,183,41,148,46"/>
+<area shape="rect" id="Node000003" href="$namespacecarta.html#a63294be28839a8e351bbc73154e6cd49" title="Format input color string as expected for import or export." alt="" coords="196,70,339,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,62,183,68,182,73,148,68"/>
+</map>

@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['name_0',['name',['../classcarta_1_1CartaHdf5Image.html#a3b9ca60ae8616bc15fa88a76719f8083',1,'carta::CartaHdf5Image::name()'],['../classcarta_1_1CartaMiriadImage.html#a5baebbd7731bbf1f0f7e8d0591d9c720',1,'carta::CartaMiriadImage::name()'],['../classcarta_1_1Stokes.html#ac6e9651a6bcb9a06f8a9d6bd013e5fc1',1,'carta::Stokes::Name()'],['../classcarta_1_1CartaFitsImage.html#abb24134c684eb0c903ffb78b3d5f11e8',1,'carta::CartaFitsImage::name()']]],
+  ['name_0',['name',['../classcarta_1_1CartaFitsImage.html#abb24134c684eb0c903ffb78b3d5f11e8',1,'carta::CartaFitsImage::name()'],['../classcarta_1_1CartaHdf5Image.html#a3b9ca60ae8616bc15fa88a76719f8083',1,'carta::CartaHdf5Image::name()'],['../classcarta_1_1CartaMiriadImage.html#a5baebbd7731bbf1f0f7e8d0591d9c720',1,'carta::CartaMiriadImage::name()'],['../classcarta_1_1Stokes.html#ac6e9651a6bcb9a06f8a9d6bd013e5fc1',1,'carta::Stokes::Name()']]],
   ['nativetype_1',['NativeType',['../classcarta_1_1CartaMiriadImage.html#abd3dc522a82db77196b31eaba8fb0970',1,'carta::CartaMiriadImage']]],
   ['nearestneighbor_2',['NearestNeighbor',['../namespacecarta.html#a724d5f79d7c1320592c011bd3bb57e98',1,'carta']]],
   ['newauthtoken_3',['newauthtoken',['../Token_8h.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc'],['../Token_8cc.html#a1c7bd166d08982c5d50419e14824833f',1,'NewAuthToken():&#160;Token.cc']]],

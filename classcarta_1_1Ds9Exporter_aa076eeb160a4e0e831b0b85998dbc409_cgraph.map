@@ -1,0 +1,5 @@
+<map id="carta::Ds9Exporter::SetFileCoordFrame" name="carta::Ds9Exporter::SetFileCoordFrame">
+<area shape="rect" id="Node000001" title="Set frame to use for file lines from image coordinate system." alt="" coords="5,5,159,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#a8e9a1defe826c8832f82cfa5a04e4b8a" title="Convert casacore coordinate frame string to DS9 frame." alt="" coords="207,5,377,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="159,23,193,23,193,28,159,28"/>
+</map>

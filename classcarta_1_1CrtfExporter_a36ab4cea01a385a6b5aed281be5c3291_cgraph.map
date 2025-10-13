@@ -1,0 +1,5 @@
+<map id="carta::CrtfExporter::ExportRegions" name="carta::CrtfExporter::ExportRegions">
+<area shape="rect" id="Node000001" title="Serialise region file lines to vector." alt="" coords="5,5,148,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfExporter.html#a25ed3c6bf704ab464ec83bce8c30cdf5" title="Get CRTF file header string." alt="" coords="196,5,339,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,23,183,23,183,28,148,28"/>
+</map>

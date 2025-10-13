@@ -1,9 +1,0 @@
-<map id="carta::Ds9ImportExport::ImportCompassRegion" name="carta::Ds9ImportExport::ImportCompassRegion">
-<area shape="rect" id="Node000001" title=" " alt="" coords="669,5,848,45"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9ImportExport.html#aa2a42c3190f56fc57565646a5b98a45d" title=" " alt="" coords="448,5,621,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="656,28,622,28,622,23,656,23"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9ImportExport.html#ac30be76c02bcb4a5cac81596eef56588" title=" " alt="" coords="227,5,400,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="434,28,400,28,400,23,434,23"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9ImportExport.html#aaf9d85eccbc3df844536b5105992cdeb" title=" " alt="" coords="5,5,179,45"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="213,28,179,28,179,23,213,23"/>
-</map>

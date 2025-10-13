@@ -1,0 +1,16 @@
+<map id="carta::RegionImporter::ParseRegionParameters" name="carta::RegionImporter::ParseRegionParameters">
+<area shape="rect" id="Node000001" title="Parse file line into region parameters and style properties." alt="" coords="600,69,784,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImporter.html#a82a0bb41105ebe379205e0e7d4fecd53" title="Parse each line of file to import regions." alt="" coords="399,5,552,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="610,68,543,48,544,43,612,63"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#ad55b0047e3533c0944100c1bbca08e17" title="Set properties from global file line." alt="" coords="403,69,547,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="586,92,547,92,547,87,586,87"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Ds9Importer.html#a903684a70c77768fe9c5b3c85689926c" title="Parse file line to set a region." alt="" coords="403,133,547,173"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="612,116,544,136,543,131,610,111"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfImporter.html#a76d502152aced149c17100a9bc4e24f3" title="Constructor for CrtfImporter class for importing regions in CRTF region file." alt="" coords="203,5,345,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="385,28,346,28,346,23,385,23"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#ad65f2b2bb3b9c2697555f657b02deda0" title="Parse each line of file to import regions." alt="" coords="197,101,351,141"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="390,106,351,112,350,107,389,100"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Ds9Importer.html#ab6ee9e9b9ecb91aea03f13c7636cc6a4" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="5,101,149,141"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="183,124,150,124,150,119,183,119"/>
+<area shape="poly" id="edge7_Node000007_Node000005" title=" " alt="" coords="389,142,350,136,351,131,390,137"/>
+</map>

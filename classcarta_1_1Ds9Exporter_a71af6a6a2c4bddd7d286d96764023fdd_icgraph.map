@@ -1,0 +1,12 @@
+<map id="carta::Ds9Exporter::AddTextboxStyle" name="carta::Ds9Exporter::AddTextboxStyle">
+<area shape="rect" id="Node000001" title="Add textbox region style to file line." alt="" coords="407,69,549,109"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#a87ee194f7248a7402d783a66b5838a1a" title="Add file line for region in pixel coordinates." alt="" coords="206,5,349,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="401,68,340,48,341,43,402,63"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Exporter.html#ac57a46876dc9aebf3892ac97b8cf1cc6" title="Create region file line using pixel coordinates." alt="" coords="199,69,355,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="393,92,356,92,356,87,393,87"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Exporter.html#aee064234af6dbb9aeca9d3baee17e569" title="Create region file line using world coordinates." alt="" coords="196,133,359,173"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="402,116,341,136,340,131,401,111"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Exporter.html#a8a9d15cf23a1f2e3fcd0217e69c4cf27" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,101,148,141"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="186,107,149,113,148,107,185,101"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="182,141,148,135,149,130,183,136"/>
+</map>

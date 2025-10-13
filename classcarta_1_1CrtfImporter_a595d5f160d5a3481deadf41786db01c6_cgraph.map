@@ -1,0 +1,13 @@
+<map id="carta::CrtfImporter::ImportStyle" name="carta::CrtfImporter::ImportStyle">
+<area shape="rect" id="Node000001" title="Import region style parameters for region type." alt="" coords="5,78,148,118"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a63294be28839a8e351bbc73154e6cd49" title="Format input color string as expected for import or export." alt="" coords="196,5,339,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="124,75,223,34,225,39,126,80"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionImporter.html#aa6f333dd70c5b7950532beea1e145c65" title="Return value of name in region properties or global properties." alt="" coords="387,63,551,103"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,93,373,84,373,90,148,98"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CrtfImporter.html#af2e7fa8b1cbc161303c74a54fb94a833" title="Set annotation style font parameters." alt="" coords="196,106,339,146"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="148,106,183,111,182,116,148,111"/>
+<area shape="rect" id="Node000005" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title="Converts a string to an integer." alt="" coords="423,143,514,168"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="109,116,150,138,197,155,252,164,309,167,409,161,410,167,309,172,252,170,195,161,148,143,107,121"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="338,108,373,101,374,106,339,114"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="339,134,410,144,410,149,338,139"/>
+</map>

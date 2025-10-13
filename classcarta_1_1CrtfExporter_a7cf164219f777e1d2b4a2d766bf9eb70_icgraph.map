@@ -1,0 +1,10 @@
+<map id="carta::CrtfExporter::GetStokesTypes" name="carta::CrtfExporter::GetStokesTypes">
+<area shape="rect" id="Node000001" title="Get casacore stokes types for stokes axis set in constructor." alt="" coords="387,37,529,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfExporter.html#aeda3453ef5e15a8b9fe9ef3433d2715f" title="Add file lines for text region, as textbox file line then text file line." alt="" coords="196,5,339,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="373,46,338,40,339,35,374,41"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CrtfExporter.html#a40ca82ff038ef954a3f68b50777e0472" title="Create casa AnnotationBase or AnnRegion from region parameters." alt="" coords="196,69,339,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="374,74,339,80,338,75,373,69"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfExporter.html#a3592f0d1e36982452799906a6b0cc360" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,37,148,77"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="183,42,149,48,148,43,182,37"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="182,78,148,72,149,67,183,73"/>
+</map>

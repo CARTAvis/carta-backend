@@ -1,0 +1,9 @@
+<map id="carta::Ds9Exporter::Ds9Exporter" name="carta::Ds9Exporter::Ds9Exporter">
+<area shape="rect" id="Node000001" title="Constructor for Ds9Exporter class for exporting regions to DS9 file." alt="" coords="5,27,148,67"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a4781de4e9fb7a2b9ee34baf2b2d4222a" title="Return map from CARTA region type to string for region file type." alt="" coords="196,5,403,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,35,189,30,190,35,149,41"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Exporter.html#aa076eeb160a4e0e831b0b85998dbc409" title="Set frame to use for file lines from image coordinate system." alt="" coords="223,55,376,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,54,209,61,208,67,148,59"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Exporter.html#a8e9a1defe826c8832f82cfa5a04e4b8a" title="Convert casacore coordinate frame string to DS9 frame." alt="" coords="451,55,621,95"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="377,73,437,73,437,78,377,78"/>
+</map>

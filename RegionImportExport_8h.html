@@ -95,16 +95,15 @@ $(document).ready(function(){initNavTree('RegionImportExport_8h.html',''); initR
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">RegionImportExport.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;carta-protobuf/defs.pb.h&gt;</code><br />
-<code>#include &lt;casacore/casa/Arrays/IPosition.h&gt;</code><br />
-<code>#include &lt;casacore/coordinates/Coordinates/CoordinateSystem.h&gt;</code><br />
-<code>#include &quot;<a class="el" href="RegionHandler_8h.html">RegionHandler.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="CrtfExporter_8h.html">CrtfExporter.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="CrtfImporter_8h.html">CrtfImporter.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Ds9Exporter_8h.html">Ds9Exporter.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Ds9Importer_8h.html">Ds9Importer.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for RegionImportExport.h:</div>
 <div class="dyncontent">
@@ -113,77 +112,29 @@ Include dependency graph for RegionImportExport.h:</div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="RegionImportExport_8h__dep__incl.svg" width="603" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="RegionImportExport_8h__dep__incl.svg" width="175" height="110"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
-Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html">carta::RegionImportExport</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:namespacecarta" id="r_namespacecarta"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html">carta</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:a538be111f4a2cf5f0fcc6544a4b9bd17" id="r_a538be111f4a2cf5f0fcc6544a4b9bd17"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="RegionImportExport_8h.html#a538be111f4a2cf5f0fcc6544a4b9bd17">REGION_COLOR</a>&#160;&#160;&#160;&quot;#2EE6D6&quot;</td></tr>
-<tr class="separator:a538be111f4a2cf5f0fcc6544a4b9bd17"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a794b43322ed3539a9207d3655918c4b8" id="r_a794b43322ed3539a9207d3655918c4b8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="RegionImportExport_8h.html#a794b43322ed3539a9207d3655918c4b8">REGION_DASH_LENGTH</a>&#160;&#160;&#160;2</td></tr>
-<tr class="separator:a794b43322ed3539a9207d3655918c4b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e428cff57676584084f384837300ed3" id="r_a8e428cff57676584084f384837300ed3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="RegionImportExport_8h.html#a8e428cff57676584084f384837300ed3">REGION_LINE_WIDTH</a>&#160;&#160;&#160;2</td></tr>
-<tr class="separator:a8e428cff57676584084f384837300ed3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a69252619dfa7d9664a4517b757f6ca4c" id="r_a69252619dfa7d9664a4517b757f6ca4c"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1RegionImporter.html">RegionImporter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a69252619dfa7d9664a4517b757f6ca4c">carta::GetRegionImporter</a> (CARTA::FileType region_file_type, std::shared_ptr&lt; casacore::CoordinateSystem &gt; image_coord_sys, int file_id, const std::string &amp;region_file, bool file_is_filename)</td></tr>
+<tr class="memdesc:a69252619dfa7d9664a4517b757f6ca4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create and return importer according to region file type.  <br /></td></tr>
+<tr class="separator:a69252619dfa7d9664a4517b757f6ca4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6ee0598c9f0b17590e94238a0d495eb" id="r_ad6ee0598c9f0b17590e94238a0d495eb"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1RegionExporter.html">RegionExporter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ad6ee0598c9f0b17590e94238a0d495eb">carta::GetRegionExporter</a> (CARTA::FileType region_file_type, std::shared_ptr&lt; casacore::CoordinateSystem &gt; image_coord_sys, const casacore::IPosition &amp;image_shape, int stokes_axis, bool export_pixel_coords)</td></tr>
+<tr class="memdesc:ad6ee0598c9f0b17590e94238a0d495eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create and return exporter according to region file type.  <br /></td></tr>
+<tr class="separator:ad6ee0598c9f0b17590e94238a0d495eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a538be111f4a2cf5f0fcc6544a4b9bd17" name="a538be111f4a2cf5f0fcc6544a4b9bd17"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a538be111f4a2cf5f0fcc6544a4b9bd17">&#9670;&#160;</a></span>REGION_COLOR</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define REGION_COLOR&#160;&#160;&#160;&quot;#2EE6D6&quot;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a794b43322ed3539a9207d3655918c4b8" name="a794b43322ed3539a9207d3655918c4b8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a794b43322ed3539a9207d3655918c4b8">&#9670;&#160;</a></span>REGION_DASH_LENGTH</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define REGION_DASH_LENGTH&#160;&#160;&#160;2</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a8e428cff57676584084f384837300ed3" name="a8e428cff57676584084f384837300ed3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8e428cff57676584084f384837300ed3">&#9670;&#160;</a></span>REGION_LINE_WIDTH</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define REGION_LINE_WIDTH&#160;&#160;&#160;2</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_8b2a86062e1b328e66c775d0dfce5a31.html">Region</a></li><li class="navelem"><a class="el" href="RegionImportExport_8h.html">RegionImportExport.h</a></li>
+    <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_8b2a86062e1b328e66c775d0dfce5a31.html">Region</a></li><li class="navelem"><a class="el" href="dir_d6eca236d12801aad9c65554037f933b.html">RegionImportExport</a></li><li class="navelem"><a class="el" href="RegionImportExport_8h.html">RegionImportExport.h</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
   </ul>
 </div>

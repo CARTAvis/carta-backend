@@ -1,0 +1,21 @@
+<map id="carta::Ds9Importer::ImportStyle" name="carta::Ds9Importer::ImportStyle">
+<area shape="rect" id="Node000001" title="Set common region style parameters." alt="" coords="5,138,149,178"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a63294be28839a8e351bbc73154e6cd49" title="Format input color string as expected for import or export." alt="" coords="198,5,341,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,136,139,93,196,48,221,34,223,39,199,52,143,97,99,140"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionImporter.html#aa6f333dd70c5b7950532beea1e145c65" title="Return value of name in region properties or global properties." alt="" coords="389,167,553,207"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="108,176,149,200,198,219,249,227,302,226,352,219,397,208,398,214,353,224,302,231,249,232,197,225,147,205,105,180"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#a183368f5c723152a1a6023e6ffb3258a" title="Set annotation style font parameters." alt="" coords="197,106,341,146"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="149,143,183,138,184,143,150,149"/>
+<area shape="rect" id="Node000005" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="427,232,516,257"/>
+<area shape="poly" id="edge11_Node000001_Node000005" title=" " alt="" coords="103,176,146,206,171,221,198,231,254,244,311,250,413,248,413,254,311,255,253,249,197,237,169,225,143,211,100,180"/>
+<area shape="rect" id="Node000006" href="$String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" title="Converts a string to an integer." alt="" coords="426,113,517,139"/>
+<area shape="poly" id="edge12_Node000001_Node000006" title=" " alt="" coords="105,136,147,111,197,91,256,83,317,86,373,95,421,107,419,112,372,100,316,91,257,89,198,97,149,116,108,140"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1Ds9Importer.html#a066b9f2e946ad80eb660a7d1c7bfeb64" title="Set annotation style point parameters." alt="" coords="197,170,341,210"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="150,167,184,173,183,178,149,173"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="337,144,392,161,391,166,335,149"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="324,144,343,156,358,172,367,188,376,203,391,217,414,229,412,234,388,222,372,206,363,191,354,175,340,160,321,148"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="342,123,412,123,412,129,342,129"/>
+<area shape="poly" id="edge8_Node000007_Node000003" title=" " alt="" coords="341,186,376,186,376,191,342,192"/>
+<area shape="poly" id="edge9_Node000007_Node000005" title=" " alt="" coords="342,207,414,227,413,232,341,212"/>
+<area shape="poly" id="edge10_Node000007_Node000006" title=" " alt="" coords="332,167,417,140,418,145,334,172"/>
+</map>

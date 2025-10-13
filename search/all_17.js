@@ -13,7 +13,7 @@ var searchData=
   ['width_10',['width',['../structcarta_1_1PreviewCutParameters.html#acd3a13f48a5959a71e5924c61b591b2d',1,'carta::PreviewCutParameters::width'],['../classcarta_1_1Frame.html#aff03d724914298bb04b3ac69fecdc72f',1,'carta::Frame::Width()'],['../structDimsInfo.html#a32941459ac5af2c7a2fc953a845bb162',1,'DimsInfo::width'],['../structcarta_1_1FitData.html#a4e26a16b01621a23ff66ff27cf5d53f5',1,'carta::FitData::width']]],
   ['with_20asan_20flags_11',['Building with ASAN flags',['../md_docs_2static_2faq.html#autotoc_md1',1,'']]],
   ['worldpointtoimagepixels_12',['WorldPointToImagePixels',['../classcarta_1_1RegionConverter.html#ac39257df92defdcc7bbd460d724da66e',1,'carta::RegionConverter']]],
-  ['worldtopixellength_13',['WorldToPixelLength',['../classcarta_1_1RegionImportExport.html#a316dd4dbbc4907464ac3ed89c6b41cf5',1,'carta::RegionImportExport']]],
+  ['worldtopixellength_13',['WorldToPixelLength',['../classcarta_1_1RegionImporter.html#a0ea1f626f62f70a50e7255d03ec6406f',1,'carta::RegionImporter']]],
   ['writeobjectfile_14',['WriteObjectFile',['../classcarta_1_1HttpServer.html#a44362263707890daf7c642f9c8400877',1,'carta::HttpServer']]],
   ['writepreferencesbackup_15',['WritePreferencesBackup',['../classcarta_1_1HttpServer.html#add455810cf9d5ac9d440d686285d8db2',1,'carta::HttpServer']]],
   ['writepreferencesfile_16',['WritePreferencesFile',['../classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de',1,'carta::HttpServer']]],

@@ -1,0 +1,58 @@
+<map id="carta::ConvertPointToPixels" name="carta::ConvertPointToPixels">
+<area shape="rect" id="Node000001" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="1308,294,1507,319"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImporter.html#a8b47d947fad67610c263525414809493" title="Convert box definition with center and width/height to control points." alt="" coords="1098,25,1259,65"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1394,282,1374,239,1345,185,1306,128,1258,79,1241,68,1244,63,1262,75,1310,125,1349,182,1379,236,1398,280"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1Ds9Exporter.html#aee064234af6dbb9aeca9d3baee17e569" title="Create region file line using world coordinates." alt="" coords="1097,89,1260,129"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="1386,284,1333,219,1297,183,1258,150,1228,132,1230,127,1262,146,1301,179,1337,216,1391,281"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1CrtfImporter.html#a65c9c23806cb7fed2d0b0ec3c3574d91" title="Import ellipse region." alt="" coords="415,141,557,181"/>
+<area shape="poly" id="edge10_Node000001_Node000010" title=" " alt="" coords="1375,288,1323,257,1259,230,1163,205,1064,186,964,173,867,164,690,158,557,160,557,155,690,153,867,159,965,168,1065,181,1164,200,1261,225,1325,253,1378,284"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1CrtfImporter.html#a4dd35615bb338ac64f58f0110465a4cd" title="Import polygon or line&#45;based region." alt="" coords="641,199,784,239"/>
+<area shape="poly" id="edge12_Node000001_Node000011" title=" " alt="" coords="1363,291,1314,274,1259,260,1129,239,998,228,879,222,784,220,784,215,879,217,998,222,1130,234,1261,255,1315,269,1364,286"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1CrtfImporter.html#a7f237e7696f690f384cb95c57f34c190" title="Import point or text region." alt="" coords="399,256,573,296"/>
+<area shape="poly" id="edge14_Node000001_Node000012" title=" " alt="" coords="1294,305,573,281,574,276,1294,300"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1Ds9Importer.html#a611bb8a1925b7ddd0a1bcf0f0f0b1a33" title="Import ellipse, circle, or compass region." alt="" coords="1098,337,1259,377"/>
+<area shape="poly" id="edge16_Node000001_Node000013" title=" " alt="" coords="1336,325,1260,342,1259,337,1335,320"/>
+<area shape="rect" id="Node000019" href="$classcarta_1_1Ds9Importer.html#ad1711f614c4bc82cc101ec606cf2a3ed" title="Import point or text region." alt="" coords="875,475,1026,515"/>
+<area shape="poly" id="edge24_Node000001_Node000019" title=" " alt="" coords="1376,329,1323,360,1261,392,1136,441,1023,477,1022,472,1134,436,1259,387,1321,355,1374,324"/>
+<area shape="rect" id="Node000020" href="$classcarta_1_1Ds9Importer.html#a9db44517a54a7da3a2f878e152898e1d" title="Import polygon and line&#45;based regions." alt="" coords="852,539,1049,579"/>
+<area shape="poly" id="edge26_Node000001_Node000020" title=" " alt="" coords="1391,332,1338,394,1301,428,1261,458,1210,486,1155,509,1050,541,1049,536,1153,504,1208,481,1259,454,1298,424,1334,390,1387,328"/>
+<area shape="rect" id="Node000022" href="$classcarta_1_1Ds9Importer.html#a8c7c75235403b3818262848a9d3ead66" title="Import rectangle region." alt="" coords="621,644,804,684"/>
+<area shape="poly" id="edge30_Node000001_Node000022" title=" " alt="" coords="1399,333,1380,377,1350,431,1311,486,1287,511,1262,533,1207,567,1148,595,1087,618,1025,635,905,656,804,665,804,660,905,651,1024,630,1086,612,1146,590,1205,563,1258,528,1284,507,1307,482,1346,428,1375,374,1394,331"/>
+<area shape="rect" id="Node000023" href="$classcarta_1_1Ds9Importer.html#a569c8f7f24f98f33f7c7b4f3bcea3f48" title="Import vector region." alt="" coords="1099,691,1258,731"/>
+<area shape="poly" id="edge32_Node000001_Node000023" title=" " alt="" coords="1402,333,1385,393,1356,475,1315,564,1290,607,1262,648,1239,673,1214,693,1210,688,1235,669,1258,645,1286,605,1310,561,1351,473,1379,392,1397,332"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfImporter.html#ad79a0157e2f7565329ec9244cfca1843" title="Convert box definition with all corner points to control points." alt="" coords="630,25,795,65"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1097,25,1049,16,951,8,852,16,787,28,786,22,852,11,951,3,1050,11,1098,19"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1CrtfImporter.html#a0bdb7ef1c39dc093713d98aa498a4983" title="Convert box definition with blc, trc corners to control points." alt="" coords="877,25,1024,65"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="1084,48,1024,48,1024,43,1084,43"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CrtfImporter.html#a543c010a68859e35934d353bca32a629" title="Import rectangle region." alt="" coords="415,56,557,96"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="617,61,558,69,557,64,616,56"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1CrtfImporter.html#a82a0bb41105ebe379205e0e7d4fecd53" title="Parse each line of file to import regions." alt="" coords="197,171,351,211"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="437,105,313,173,311,168,435,100"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1CrtfImporter.html#a76d502152aced149c17100a9bc4e24f3" title="Constructor for CrtfImporter class for importing regions in CRTF region file." alt="" coords="6,171,149,211"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="184,193,149,193,149,188,184,188"/>
+<area shape="poly" id="edge7_Node000007_Node000003" title=" " alt="" coords="863,48,796,48,796,43,863,43"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1Ds9Exporter.html#a8a9d15cf23a1f2e3fcd0217e69c4cf27" title="Add file line for region in world coordinates or in matched image." alt="" coords="879,89,1022,129"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="1084,112,1022,112,1022,107,1084,107"/>
+<area shape="poly" id="edge11_Node000010_Node000005" title=" " alt="" coords="401,176,351,183,350,177,400,170"/>
+<area shape="poly" id="edge13_Node000011_Node000005" title=" " alt="" coords="628,216,351,198,351,193,628,210"/>
+<area shape="poly" id="edge15_Node000012_Node000005" title=" " alt="" coords="422,253,323,213,325,208,424,248"/>
+<area shape="rect" id="Node000014" href="$classcarta_1_1Ds9Importer.html#ad193e12f65187c202203e447e9b2cf11" title="Import circle or compass region." alt="" coords="873,337,1028,377"/>
+<area shape="poly" id="edge17_Node000013_Node000014" title=" " alt="" coords="1084,360,1028,360,1028,355,1084,355"/>
+<area shape="rect" id="Node000016" href="$classcarta_1_1Ds9Importer.html#a903684a70c77768fe9c5b3c85689926c" title="Parse file line to set a region." alt="" coords="414,497,558,537"/>
+<area shape="poly" id="edge23_Node000013_Node000016" title=" " alt="" coords="1086,383,1050,392,559,504,558,499,1049,387,1085,378"/>
+<area shape="rect" id="Node000015" href="$classcarta_1_1Ds9Importer.html#afbc45e957005a314aa54c7ff8840ea66" title="Import compass region and its style parameters." alt="" coords="623,313,802,353"/>
+<area shape="poly" id="edge18_Node000014_Node000015" title=" " alt="" coords="859,351,802,345,803,340,860,345"/>
+<area shape="poly" id="edge22_Node000014_Node000016" title=" " alt="" coords="860,367,744,387,682,403,622,425,591,441,560,461,511,499,508,495,557,456,588,437,620,420,681,398,743,382,859,362"/>
+<area shape="poly" id="edge19_Node000015_Node000016" title=" " alt="" coords="644,362,623,374,586,404,553,438,504,499,500,495,549,435,582,400,620,370,641,357"/>
+<area shape="rect" id="Node000017" href="$classcarta_1_1Ds9Importer.html#ad65f2b2bb3b9c2697555f657b02deda0" title="Parse each line of file to import regions." alt="" coords="197,497,351,537"/>
+<area shape="poly" id="edge20_Node000016_Node000017" title=" " alt="" coords="400,520,351,520,351,515,400,515"/>
+<area shape="rect" id="Node000018" href="$classcarta_1_1Ds9Importer.html#ab6ee9e9b9ecb91aea03f13c7636cc6a4" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="5,497,149,537"/>
+<area shape="poly" id="edge21_Node000017_Node000018" title=" " alt="" coords="183,520,150,520,150,515,183,515"/>
+<area shape="poly" id="edge25_Node000019_Node000016" title=" " alt="" coords="862,501,558,516,558,511,861,496"/>
+<area shape="poly" id="edge29_Node000020_Node000016" title=" " alt="" coords="838,551,558,526,558,521,838,546"/>
+<area shape="rect" id="Node000021" href="$classcarta_1_1Ds9Importer.html#a3a00bea2c379949f6976b25f0c9ee60c" title="Import ruler region and its style parameters." alt="" coords="637,580,789,620"/>
+<area shape="poly" id="edge27_Node000020_Node000021" title=" " alt="" coords="839,581,789,589,788,584,838,575"/>
+<area shape="poly" id="edge28_Node000021_Node000016" title=" " alt="" coords="644,578,541,540,543,535,645,573"/>
+<area shape="poly" id="edge31_Node000022_Node000016" title=" " alt="" coords="632,640,620,634,586,612,554,586,505,540,508,536,558,582,589,607,623,630,634,636"/>
+<area shape="poly" id="edge33_Node000023_Node000016" title=" " alt="" coords="1086,734,986,748,866,753,803,749,740,739,678,723,620,698,596,683,574,664,537,620,510,575,493,539,498,536,515,573,542,617,578,660,599,679,623,693,680,718,741,734,803,744,866,747,985,743,1086,729"/>
+</map>

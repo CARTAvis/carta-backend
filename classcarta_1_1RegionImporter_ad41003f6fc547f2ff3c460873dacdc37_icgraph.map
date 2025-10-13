@@ -1,0 +1,7 @@
+<map id="carta::RegionImporter::ReadRegionFile" name="carta::RegionImporter::ReadRegionFile">
+<area shape="rect" id="Node000001" title="Read region file into file lines." alt="" coords="197,37,361,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImporter.html#a76d502152aced149c17100a9bc4e24f3" title="Constructor for CrtfImporter class for importing regions in CRTF region file." alt="" coords="6,5,149,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="183,45,148,39,149,34,184,40"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#ab6ee9e9b9ecb91aea03f13c7636cc6a4" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="5,69,149,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="184,75,150,81,149,75,183,70"/>
+</map>

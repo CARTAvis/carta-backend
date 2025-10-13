@@ -1,0 +1,8 @@
+<map id="carta::CrtfExporter::SetAnnotationRegionStyle" name="carta::CrtfExporter::SetAnnotationRegionStyle">
+<area shape="rect" id="Node000001" title="Set region style parameters in AnnotationBase region." alt="" coords="387,5,587,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfExporter.html#a3592f0d1e36982452799906a6b0cc360" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,5,148,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="373,25,339,24,196,24,149,25,148,20,196,19,339,19,373,19"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1CrtfExporter.html#aeda3453ef5e15a8b9fe9ef3433d2715f" title="Add file lines for text region, as textbox file line then text file line." alt="" coords="196,33,339,73"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="373,43,339,47,339,42,373,37"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="182,44,148,38,148,33,183,38"/>
+</map>

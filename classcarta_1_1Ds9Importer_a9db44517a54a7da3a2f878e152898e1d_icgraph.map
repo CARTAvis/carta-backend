@@ -1,0 +1,12 @@
+<map id="carta::Ds9Importer::ImportPolygonLineRegion" name="carta::Ds9Importer::ImportPolygonLineRegion">
+<area shape="rect" id="Node000001" title="Import polygon and line&#45;based regions." alt="" coords="791,35,988,75"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Importer.html#a3a00bea2c379949f6976b25f0c9ee60c" title="Import ruler region and its style parameters." alt="" coords="591,5,743,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="776,42,743,38,743,33,777,37"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#a903684a70c77768fe9c5b3c85689926c" title="Parse file line to set a region." alt="" coords="399,35,543,75"/>
+<area shape="poly" id="edge5_Node000001_Node000003" title=" " alt="" coords="777,60,743,60,591,60,543,59,543,54,591,55,743,55,777,54"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="578,41,543,47,542,41,577,36"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#ad65f2b2bb3b9c2697555f657b02deda0" title="Parse each line of file to import regions." alt="" coords="197,35,351,75"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="385,57,351,57,351,52,385,52"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#ab6ee9e9b9ecb91aea03f13c7636cc6a4" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="5,35,149,75"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="183,57,150,57,150,52,183,52"/>
+</map>

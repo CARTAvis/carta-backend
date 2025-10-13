@@ -1,0 +1,14 @@
+<map id="carta::CrtfImporter::GetBoxControlPoints" name="carta::CrtfImporter::GetBoxControlPoints">
+<area shape="rect" id="Node000001" title="Convert box definition with all corner points to control points." alt="" coords="5,47,171,87"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1CrtfImporter.html#a8b47d947fad67610c263525414809493" title="Convert box definition with center and width/height to control points." alt="" coords="413,47,575,87"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="171,62,219,61,365,61,400,61,400,67,365,66,219,66,171,67"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1CrtfImporter.html#a0bdb7ef1c39dc093713d98aa498a4983" title="Convert box definition with blc, trc corners to control points." alt="" coords="219,75,365,115"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="172,76,205,81,205,86,171,81"/>
+<area shape="rect" id="Node000003" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="623,5,821,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="574,47,648,31,649,36,575,53"/>
+<area shape="rect" id="Node000004" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="661,55,783,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="575,65,648,65,648,70,575,70"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionImporter.html#a0ea1f626f62f70a50e7255d03ec6406f" title="Convert length region parameter to pixels if in world coordinates." alt="" coords="640,105,804,145"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="575,85,630,99,628,104,573,90"/>
+<area shape="poly" id="edge6_Node000006_Node000002" title=" " alt="" coords="365,83,399,78,400,83,366,88"/>
+</map>

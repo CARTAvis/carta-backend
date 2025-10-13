@@ -1,0 +1,15 @@
+<map id="carta::Ds9Importer::ImportEllipseRegion" name="carta::Ds9Importer::ImportEllipseRegion">
+<area shape="rect" id="Node000001" title="Import ellipse, circle, or compass region." alt="" coords="1020,85,1181,125"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Importer.html#ad193e12f65187c202203e447e9b2cf11" title="Import circle or compass region." alt="" coords="817,56,972,96"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1006,95,972,90,973,84,1007,89"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#a903684a70c77768fe9c5b3c85689926c" title="Parse file line to set a region." alt="" coords="399,63,543,103"/>
+<area shape="poly" id="edge7_Node000001_Node000004" title=" " alt="" coords="1006,110,972,111,817,111,670,102,542,92,543,87,671,97,817,105,972,105,1006,105"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#afbc45e957005a314aa54c7ff8840ea66" title="Import compass region and its style parameters." alt="" coords="591,5,769,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="803,57,765,48,766,43,804,52"/>
+<area shape="poly" id="edge6_Node000002_Node000004" title=" " alt="" coords="803,80,543,84,543,79,803,75"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="594,52,544,66,542,60,592,46"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#ad65f2b2bb3b9c2697555f657b02deda0" title="Parse each line of file to import regions." alt="" coords="197,63,351,103"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="385,85,351,85,351,80,385,80"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1Ds9Importer.html#ab6ee9e9b9ecb91aea03f13c7636cc6a4" title="Constructor for Ds9Importer class for importing regions in DS9 region file." alt="" coords="5,63,149,103"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="183,85,150,85,150,80,183,80"/>
+</map>

@@ -1,0 +1,15 @@
+<map id="carta::Ds9Importer::ImportEllipseRegion" name="carta::Ds9Importer::ImportEllipseRegion">
+<area shape="rect" id="Node000001" title="Import ellipse, circle, or compass region." alt="" coords="5,85,167,125"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a5481d549c8ec66987dbc3efac8c96677" title="Convert point control points in world coordinates to pixel coordinates in region frame." alt="" coords="215,5,413,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,82,214,41,242,32,244,37,216,46,125,87"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Importer.html#a9bf6f34606681307634beab92b0389b9" title="Convert region parameter string to casacore Quantity." alt="" coords="231,55,397,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="166,92,217,85,218,90,167,97"/>
+<area shape="rect" id="Node000006" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="253,120,375,145"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="167,112,240,121,239,126,166,117"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1RegionImporter.html#a0ea1f626f62f70a50e7255d03ec6406f" title="Convert length region parameter to pixels if in world coordinates." alt="" coords="232,170,396,210"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="134,122,216,156,237,163,235,168,214,160,132,127"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Importer.html#a3acf918fc8874d2fd8a813bb5ea2b5da" title="Convert parameter in sexagesimal format to angle format." alt="" coords="461,23,672,63"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="397,62,447,56,448,61,398,67"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1Ds9Importer.html#a5b5f9be7632117e1b9c45c74b0da9c3b" title="Convert DS9 unit to casacore unit in parameter." alt="" coords="489,87,645,127"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="398,83,475,93,475,98,397,89"/>
+</map>

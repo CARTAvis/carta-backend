@@ -1,0 +1,9 @@
+<map id="carta::Ds9Exporter::AddAnnPointStyle" name="carta::Ds9Exporter::AddAnnPointStyle">
+<area shape="rect" id="Node000001" title="Add annotation point region style to file line." alt="" coords="403,37,549,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Ds9Exporter.html#af26c15b4f436e147a795115e6c09d4e1" title="Add annotation style parameters to file line." alt="" coords="196,37,355,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="389,60,355,60,355,55,389,55"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Ds9Exporter.html#a8a9d15cf23a1f2e3fcd0217e69c4cf27" title="Add file line for region in world coordinates or in matched image." alt="" coords="5,5,148,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="182,45,148,39,149,34,183,40"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Ds9Exporter.html#a87ee194f7248a7402d783a66b5838a1a" title="Add file line for region in pixel coordinates." alt="" coords="5,69,148,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="183,75,149,81,148,75,182,70"/>
+</map>
