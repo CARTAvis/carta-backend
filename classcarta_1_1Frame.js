@@ -114,7 +114,7 @@ var classcarta_1_1Frame =
     [ "_ignore_interrupt_Y_mutex", "classcarta_1_1Frame.html#ae3af3e39534f36f88078bdd784535f24", null ],
     [ "_image_basic_stats", "classcarta_1_1Frame.html#ad92c2335ca68b26ddb5a96704d3941db", null ],
     [ "_image_cache", "classcarta_1_1Frame.html#a7bb05e4ccc60d5a49b16cd4bce0203bc", null ],
-    [ "_image_cache_size", "classcarta_1_1Frame.html#a791d63a36e38305432bb7bc7a87de2e3", null ],
+    [ "_image_cache_size", "classcarta_1_1Frame.html#a15b0df9c9aba915bd2b910862524837e", null ],
     [ "_image_cache_valid", "classcarta_1_1Frame.html#aed19c8b977c5a52793b8369cb287b154", null ],
     [ "_image_fitter", "classcarta_1_1Frame.html#a664c9fd4c9a6e1b64349c045577e1af2", null ],
     [ "_image_histogram_configs", "classcarta_1_1Frame.html#a4e6362646aa6a3691a5e4085a2d65856", null ],

@@ -156,7 +156,7 @@ var searchData=
   ['_5fimage_5f2d_5fconvolver_153',['_image_2d_convolver',['../classcarta_1_1ImageMoments.html#a6b67a9f206faeca2f544c49c0845ec7e',1,'carta::ImageMoments']]],
   ['_5fimage_5fbasic_5fstats_154',['_image_basic_stats',['../classcarta_1_1Frame.html#ad92c2335ca68b26ddb5a96704d3941db',1,'carta::Frame']]],
   ['_5fimage_5fcache_155',['_image_cache',['../classcarta_1_1Frame.html#a7bb05e4ccc60d5a49b16cd4bce0203bc',1,'carta::Frame']]],
-  ['_5fimage_5fcache_5fsize_156',['_image_cache_size',['../classcarta_1_1Frame.html#a791d63a36e38305432bb7bc7a87de2e3',1,'carta::Frame']]],
+  ['_5fimage_5fcache_5fsize_156',['_image_cache_size',['../classcarta_1_1Frame.html#a15b0df9c9aba915bd2b910862524837e',1,'carta::Frame']]],
   ['_5fimage_5fcache_5fvalid_157',['_image_cache_valid',['../classcarta_1_1Frame.html#aed19c8b977c5a52793b8369cb287b154',1,'carta::Frame']]],
   ['_5fimage_5fchannel_5fmutexes_158',['_image_channel_mutexes',['../classcarta_1_1Session.html#ab0a248835375df159d56bae319f2ca43',1,'carta::Session']]],
   ['_5fimage_5fchannel_5ftask_5factive_159',['_image_channel_task_active',['../classcarta_1_1Session.html#a4144fc60a739348e87357e6131ba2058',1,'carta::Session']]],
