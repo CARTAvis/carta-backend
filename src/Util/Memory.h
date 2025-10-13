@@ -7,13 +7,15 @@
 #ifndef CARTA_SRC_UTIL_MEMORY_H_
 #define CARTA_SRC_UTIL_MEMORY_H_
 
+#include <sys/mman.h>
+
 // If either of these madvise flags is defined, we can support excluding memory addresses from core dumps.
 #if defined(MADV_DONTDUMP)
-    // Available on Linux
-    #define NO_CORE_DUMP_ADVICE MADV_DONTDUMP
+// Available on Linux
+#define NO_CORE_DUMP_ADVICE MADV_DONTDUMP
 #elif defined(MADV_NOCORE)
-    // Available on FreeBSD
-    #define NO_CORE_DUMP_ADVICE MADV_NOCORE
+// Available on FreeBSD
+#define NO_CORE_DUMP_ADVICE MADV_NOCORE
 #endif
 
 #endif // CARTA_SRC_UTIL_MEMORY_H_

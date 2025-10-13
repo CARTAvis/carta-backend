@@ -11,7 +11,6 @@
 #include <cmath>
 #include <fstream>
 #include <thread>
-#include <sys/mman.h>
 
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/WCBox.h>
