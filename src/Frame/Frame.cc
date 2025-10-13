@@ -27,6 +27,7 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
+#include "Util/Memory.h"
 #include "Util/Nan.h"
 
 namespace carta {
@@ -391,9 +392,12 @@ bool Frame::FillImageCache() {
     _image_cache_size = stokes_slicer.slicer.length().product();
     _image_cache = std::make_unique<float[]>(_image_cache_size);
 
-    if (madvise(_image_cache.get(), _image_cache_size * sizeof(float), MADV_DONTDUMP)) {
+#ifdef NO_CORE_DUMP_ADVICE
+    // Exclude the image cache data from core dumps if the platform supports it
+    if (madvise(_image_cache.get(), _image_cache_size * sizeof(float), NO_CORE_DUMP_ADVICE)) {
         spdlog::error("Session {}: {}", _session_id, "Failed to exclude image cache from core dump.");
     }
+#endif
 
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
