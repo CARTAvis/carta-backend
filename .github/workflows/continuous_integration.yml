@@ -38,9 +38,10 @@ jobs:
     container: carta/backend-builder-ubuntu-noble
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
             submodules: true
+            lfs: true
 
       - name: Fix ownership
         run: |
@@ -139,9 +140,10 @@ jobs:
     needs: format-check
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
             submodules: true
+            lfs: true
 
       - name: System information
         shell: bash
@@ -194,9 +196,10 @@ jobs:
     container: carta/backend-builder-almalinux-9
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
             submodules: true
+            lfs: true
 
       - name: Fix ownership
         run: |
