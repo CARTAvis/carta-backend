@@ -144,6 +144,11 @@ jobs:
     runs-on: [self-hosted, macOS-15-M1, CI]
     needs: format-check
     steps:
+      - name: Install Git LFS
+        run: |
+          brew install git-lfs
+          git lfs install --skip-repo --force
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
