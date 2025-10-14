@@ -46,7 +46,10 @@ jobs:
         uses: actions/checkout@v4
         with:
             submodules: true
-            lfs: true
+            lfs: false
+
+      - name: Fetch LFS files
+        run: git lfs pull
 
       - name: Fix ownership
         run: |
