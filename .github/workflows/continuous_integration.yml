@@ -44,9 +44,11 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        env:
+          HOME: /tmp
         with:
             submodules: true
-            lfs: false
+            lfs: true
 
       - name: Fetch LFS files
         run: git lfs pull
