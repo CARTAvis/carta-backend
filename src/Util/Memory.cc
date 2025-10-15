@@ -20,6 +20,6 @@ bool ExcludeFromCoreDump(void* address, size_t size, std::string& message) {
     }
     return true;
 #endif
-    message = fmt::format("{}: unsupported platform.", message);
+    message = fmt::format("{}: unsupported platform", message);
     return false;
 }

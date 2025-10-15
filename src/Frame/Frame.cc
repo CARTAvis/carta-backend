@@ -6,6 +6,7 @@
 
 #include "Frame.h"
 
+#include <unistd.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -38,6 +39,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _tile_cache(0),
       _z_index(default_z),
       _stokes_index(DEFAULT_STOKES),
+      _image_cache(nullptr, &std::free),
       _image_cache_valid(false),
       _tile_pool(std::make_shared<TilePool>()),
       _use_tile_cache(false),
@@ -391,11 +393,14 @@ bool Frame::FillImageCache() {
     if (_image_cache == nullptr) {
         // allocate memory for full image cache
         _image_cache_size = _dims.width * _dims.height;
-        _image_cache = std::make_unique<float[]>(_image_cache_size);
+        size_t page_size = sysconf(_SC_PAGE_SIZE);
+        size_t padded_size = (_image_cache_size * sizeof(float) + page_size - 1) & -page_size;
+        _image_cache =
+            std::unique_ptr<float[], decltype(&std::free)>(static_cast<float*>(std::aligned_alloc(page_size, padded_size)), &std::free);
         // Exclude the image cache from core dumps if the platform supports it
         std::string message("failed to exclude image cache from core dump");
-        if (!ExcludeFromCoreDump(_image_cache.get(), _image_cache_size * sizeof(float), message)) {
-            spdlog::error("Session {}: {}", _session_id, message);
+        if (!ExcludeFromCoreDump(_image_cache.get(), padded_size, message)) {
+            spdlog::error("Session {}: {}.", _session_id, message);
         }
     }
 
