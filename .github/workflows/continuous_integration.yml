@@ -41,6 +41,7 @@ jobs:
         run: |
           git config --show-scope --show-origin -l
           grep -r lfs .git/hooks
+          rm .git/hooks/*
     
       - name: Checkout
         uses: actions/checkout@v4
