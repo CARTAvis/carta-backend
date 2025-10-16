@@ -37,23 +37,25 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
-      - name: Install Git LFS (manual binary install)
+      - name: Install Git LFS
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          HOME: /root
         run: |
-          curl -s -L https://github.com/git-lfs/git-lfs/releases/latest/download/git-lfs-linux-amd64-v3.5.1.tar.gz -o git-lfs.tar.gz
-          tar -xzf git-lfs.tar.gz
-          cd git-lfs-*
-          ./install.sh
-          git lfs install --skip-smudge --system --force
+          apt-get update
+          apt-get install -y git-lfs || true
+          # force global install and skip local hooks to avoid /dev/null issues
+          git lfs install --system --skip-repo --force || true
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
-          lfs: false
+          lfs: false  # disable checkout’s built-in LFS install
 
-      - name: Fetch LFS files
+      - name: Pull LFS files
         run: |
-          git lfs install --system --force
-          git lfs fetch --all
+          git lfs fetch
           git lfs checkout
 
       - name: Fix ownership
