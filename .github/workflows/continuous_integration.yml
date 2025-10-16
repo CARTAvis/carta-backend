@@ -39,9 +39,9 @@ jobs:
     steps:
       - name: Debug weirdness
         run: |
+          git config --show-scope --show-origin -l
           git config --unset core.hooksPath
-          git config  --show-scope --show-origin -l
-
+    
       - name: Checkout
         uses: actions/checkout@v4
         with:
