@@ -87,6 +87,11 @@ jobs:
         run: |
           ./build/carta_backend --version
 
+      - name: Debug test files
+        run: |
+          find $PWD/test/data/images -type f | xargs ls -l
+          echo "Current working dir: $PWD"
+
       - name: Run unit tests
         shell: bash
         run: |
@@ -218,12 +223,6 @@ jobs:
     needs: format-check
     container: carta/backend-builder-almalinux-9
     steps:
-      - name: Install Git LFS
-        run: |
-          apt-get update
-          apt-get install -y git-lfs || true
-          git lfs install --system --force
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
