@@ -39,8 +39,7 @@ jobs:
     steps:
       - name: Debug weirdness
         run: |
-          dpkg -l | grep lfs
-          git config -l | grep lfs
+          git config -l
           env
     
       - name: Checkout
