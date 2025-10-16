@@ -53,7 +53,7 @@ jobs:
           lfs: false
 
       - name: Fetch LFS files
-        run: 
+        run: |
           git lfs install --system --force
           git lfs fetch --all
           git lfs checkout
