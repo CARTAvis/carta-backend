@@ -38,10 +38,13 @@ jobs:
     container: carta/backend-builder-ubuntu-noble
     steps:
       - name: Install Git LFS
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          HOME: /root
         run: |
           apt-get update
           apt-get install -y git-lfs || true
-          git lfs install --system --force
+          git lfs install --system --force || true
 
       - name: Checkout
         uses: actions/checkout@v4
