@@ -37,11 +37,6 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
-      - name: Debug weirdness
-        run: |
-          git config --show-scope --show-origin -l
-          git config --unset core.hooksPath
-    
       - name: Checkout
         uses: actions/checkout@v4
         with:
