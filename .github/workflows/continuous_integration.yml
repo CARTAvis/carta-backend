@@ -40,7 +40,8 @@ jobs:
       - name: Install Git LFS
         run: |
           apt-get update && apt-get install -y git-lfs
-          
+          git lfs install --system --force
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -210,6 +211,7 @@ jobs:
       - name: Install Git LFS
         run: |
           apt-get update && apt-get install -y git-lfs
+          git lfs install --system --force
 
       - name: Checkout
         uses: actions/checkout@v4
