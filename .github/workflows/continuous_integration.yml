@@ -37,20 +37,11 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
-      #- name: Debug weirdness
-        #run: |
-          #git config --show-scope --show-origin -l
-          #grep -r lfs .git/hooks
-          #rm .git/hooks/*
-    
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
           lfs: true
-
-      #- name: List test files
-        #run: ls -R test/data
 
       - name: Fix ownership
         run: |
@@ -77,11 +68,6 @@ jobs:
         shell: bash
         run: |
           ./build/carta_backend --version
-
-      #- name: Debug test files
-        #run: |
-          #find $PWD/test/data/images -type f | xargs ls -l
-          #echo "Current working dir: $PWD"
 
       - name: Run unit tests
         shell: bash
@@ -153,24 +139,11 @@ jobs:
     runs-on: [self-hosted, macOS-15-M1, CI]
     needs: format-check
     steps:
-      #- name: Install Git LFS
-        #run: |
-          #brew install git-lfs
-          #git lfs install --skip-repo --force
-
-      #- name: Debug weirdness
-        #run: |
-          #git config --show-scope --show-origin -l
-          #grep -r lfs .git/hooks
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
             submodules: true
             lfs: true
-
-      #- name: List test files
-        #run: ls -R test/data
 
       - name: System information
         shell: bash
@@ -222,19 +195,11 @@ jobs:
     needs: format-check
     container: carta/backend-builder-almalinux-9
     steps:
-      #- name: Debug weirdness
-        #run: |
-          #git config --show-scope --show-origin -l
-          #grep -r lfs .git/hooks
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
           lfs: true
-
-      #- name: List test files
-        #run: ls -R test/data
 
       - name: Fix ownership
         run: |
