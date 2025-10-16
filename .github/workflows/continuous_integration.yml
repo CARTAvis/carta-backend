@@ -37,6 +37,11 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
+      - name: Debug weirdness
+        run: |
+          git config --show-scope --show-origin -l
+          grep -r lfs .git/hooks
+    
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -152,6 +157,11 @@ jobs:
           brew install git-lfs
           git lfs install --skip-repo --force
 
+      - name: Debug weirdness
+        run: |
+          git config --show-scope --show-origin -l
+          grep -r lfs .git/hooks
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -211,6 +221,11 @@ jobs:
     needs: format-check
     container: carta/backend-builder-almalinux-9
     steps:
+      - name: Debug weirdness
+        run: |
+          git config --show-scope --show-origin -l
+          grep -r lfs .git/hooks
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
