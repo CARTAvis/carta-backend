@@ -37,11 +37,20 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
+      - name: Debug before checkout
+        run: |
+          cat .git/hooks/pre-push
+          rm .git/hooks/*
+    
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
           lfs: true
+
+      - name: Debug after checkout
+        run: |
+          cat .git/hooks/pre-push
 
       - name: Fix ownership
         run: |
@@ -139,11 +148,20 @@ jobs:
     runs-on: [self-hosted, macOS-15-M1, CI]
     needs: format-check
     steps:
+      - name: Debug before checkout
+        run: |
+          cat .git/hooks/pre-push
+          rm .git/hooks/*
+    
       - name: Checkout
         uses: actions/checkout@v4
         with:
-            submodules: true
-            lfs: true
+          submodules: true
+          lfs: true
+
+      - name: Debug after checkout
+        run: |
+          cat .git/hooks/pre-push
 
       - name: System information
         shell: bash
@@ -195,11 +213,20 @@ jobs:
     needs: format-check
     container: carta/backend-builder-almalinux-9
     steps:
+      - name: Debug before checkout
+        run: |
+          cat .git/hooks/pre-push
+          rm .git/hooks/*
+    
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
           lfs: true
+
+      - name: Debug after checkout
+        run: |
+          cat .git/hooks/pre-push
 
       - name: Fix ownership
         run: |
