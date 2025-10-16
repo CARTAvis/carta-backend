@@ -51,12 +51,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-          lfs: false  # disable checkout’s built-in LFS install
+          lfs: false
 
       - name: Pull LFS files
         run: |
           git lfs fetch
           git lfs checkout
+
+      - name: List test files
+        run: ls -R test/data
 
       - name: Fix ownership
         run: |
