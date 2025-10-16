@@ -37,14 +37,19 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
+      - name: Debug weirdness
+        run: |
+          dpkg -l | grep lfs
+          git config -l | grep lfs
+    
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
           lfs: true
 
-      - name: List test files
-        run: ls -R test/data
+      #- name: List test files
+        #run: ls -R test/data
 
       - name: Fix ownership
         run: |
@@ -72,10 +77,10 @@ jobs:
         run: |
           ./build/carta_backend --version
 
-      - name: Debug test files
-        run: |
-          find $PWD/test/data/images -type f | xargs ls -l
-          echo "Current working dir: $PWD"
+      #- name: Debug test files
+        #run: |
+          #find $PWD/test/data/images -type f | xargs ls -l
+          #echo "Current working dir: $PWD"
 
       - name: Run unit tests
         shell: bash
