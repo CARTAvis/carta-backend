@@ -41,6 +41,7 @@ jobs:
         run: |
           dpkg -l | grep lfs
           git config -l | grep lfs
+          env
     
       - name: Checkout
         uses: actions/checkout@v4
