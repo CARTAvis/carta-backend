@@ -37,11 +37,6 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
-      - name: Install Git LFS
-        run: |
-          apt-get update && apt-get install -y git-lfs
-          git lfs install --skip-repo --force
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -208,11 +203,6 @@ jobs:
     needs: format-check
     container: carta/backend-builder-almalinux-9
     steps:
-      - name: Install Git LFS
-        run: |
-          apt-get update && apt-get install -y git-lfs
-          git lfs install --skip-repo --force
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
