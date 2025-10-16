@@ -37,12 +37,13 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
-      - name: Install Git LFS (official release)
+      - name: Install Git LFS (manual binary install)
         run: |
-          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
-          apt-get install -y git-lfs
-          git lfs install --system --force
-
+          curl -s -L https://github.com/git-lfs/git-lfs/releases/latest/download/git-lfs-linux-amd64-v3.5.1.tar.gz -o git-lfs.tar.gz
+          tar -xzf git-lfs.tar.gz
+          cd git-lfs-*
+          ./install.sh
+          git lfs install --skip-smudge --system --force
       - name: Checkout
         uses: actions/checkout@v4
         with:
