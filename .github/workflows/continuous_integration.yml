@@ -39,7 +39,8 @@ jobs:
     steps:
       - name: Install Git LFS
         run: |
-          apt-get update && apt-get install -y git-lfs
+          apt-get update
+          apt-get install -y git-lfs || true
           git lfs install --system --force
 
       - name: Checkout
@@ -210,7 +211,8 @@ jobs:
     steps:
       - name: Install Git LFS
         run: |
-          apt-get update && apt-get install -y git-lfs
+          apt-get update
+          apt-get install -y git-lfs || true
           git lfs install --system --force
 
       - name: Checkout
