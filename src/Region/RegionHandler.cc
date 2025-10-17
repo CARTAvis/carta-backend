@@ -541,7 +541,7 @@ bool RegionHandler::SetStatsRequirements(
 
     // Set configurations
     if (_region_statistics.find(region_id) == _region_statistics.end()) {
-        _region_statistics[region_id] = std::unique_ptr<RegionStatistics>(new RegionStatistics(region_id, file_id, configs));
+        _region_statistics[region_id] = std::make_unique<RegionStatistics>(region_id, file_id, configs);
     } else {
         _region_statistics[region_id]->SetConfigurations(file_id, configs);
     }
@@ -658,8 +658,8 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         _pv_preview_cubes.clear();
     } else {
         // Remove statistics for given file_id
-        for (auto& statistics : _region_statistics) {
-            statistics.second->ClearFileConfigsCache(file_id);
+        for (const auto& [_, region_statistics] : _region_statistics) {
+            region_statistics->ClearFileConfigsCache(file_id);
         }
 
         // Remove requirements for given file_id
@@ -2034,13 +2034,12 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 
     bool success(false);
 
-    for (auto& statistics : _region_statistics) {
-        int stats_region_id = statistics.first;
+    for (const auto& [stats_region_id, region_statistics] : _region_statistics) {
         if ((region_id > 0) && (stats_region_id != region_id)) {
             continue;
         }
 
-        auto config_file_ids = statistics.second->GetConfigFileIds(file_id);
+        auto config_file_ids = region_statistics->GetConfigFileIds(file_id);
         if (config_file_ids.empty()) {
             continue;
         }
@@ -2054,7 +2053,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
             auto frame = _frames.at(stats_file_id);
 
             std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs;
-            if (!statistics.second->GetConfigurations(stats_file_id, stats_configs)) {
+            if (!region_statistics->GetConfigurations(stats_file_id, stats_configs)) {
                 continue;
             }
 
@@ -2074,7 +2073,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 ApplyRegionToFile(stats_region_id, stats_file_id, z_range, stokes, lc_region, stokes_region);
                 CARTA::RegionStatsData stats_data_message;
 
-                if (statistics.second->GetRegionStatsData(stats_file_id, frame, stats_config, stokes_region, stats_data_message)) {
+                if (region_statistics->GetRegionStatsData(stats_file_id, frame, stats_config, stokes_region, stats_data_message)) {
                     cb(stats_data_message);
                     success = true;
                 }

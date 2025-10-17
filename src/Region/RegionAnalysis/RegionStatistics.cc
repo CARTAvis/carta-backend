@@ -34,9 +34,9 @@ bool RegionStatistics::GetConfigurations(int file_id, std::vector<CARTA::SetStat
 
 std::vector<int> RegionStatistics::GetConfigFileIds(int file_id) {
     std::vector<int> file_ids;
-    for (auto& config : _configs) {
-        if ((file_id == ALL_FILES) || (config.first.file_id == file_id)) {
-            file_ids.push_back(config.first.file_id);
+    for (const auto& [config_id, _] : _configs) {
+        if ((file_id == ALL_FILES) || (config_id.file_id == file_id)) {
+            file_ids.push_back(config_id.file_id);
         }
     }
     return file_ids;
@@ -85,8 +85,8 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
     if (frame->GetRegionStats(stokes_region, required_stats, per_z, stats_map)) {
         // convert vector to single value in map
         std::map<CARTA::StatsType, double> stats_results;
-        for (auto& value : stats_map) {
-            stats_results[value.first] = value.second[0];
+        for (const auto& [type, statistic] : stats_map) {
+            stats_results[type] = statistic[0];
         }
 
         // add values to message
