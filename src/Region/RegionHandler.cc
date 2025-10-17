@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// RegionDataHandler.cc: handle requirements and data streams for regions
+// RegionHandler.cc: handle requirements and data streams for regions
 
 #include "RegionHandler.h"
 
@@ -283,8 +283,7 @@ void RegionHandler::RemoveFrame(int file_id) {
 
 bool RegionHandler::SetHistogramRequirements(
     int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::HistogramConfig>& configs) {
-    // Set histogram requirements for closed region
-
+    // Set histogram configurations for closed region
     if (configs.empty() && !RegionSet(region_id)) {
         // Frontend clears requirements after region removed, prevent error in log by returning true.
         return true;
@@ -303,16 +302,12 @@ bool RegionHandler::SetHistogramRequirements(
     // Save frame pointer
     _frames[file_id] = frame;
 
-    // Make HistogramConfig vector of requirements
-    std::vector<HistogramConfig> input_configs;
-    for (const auto& config : configs) {
-        HistogramConfig hist_config(config);
-        input_configs.push_back(hist_config);
+    if (_region_histograms.find(region_id) == _region_histograms.end()) {
+        _region_histograms[region_id] = std::make_unique<RegionHistogram>(region_id, file_id, configs);
+    } else {
+        _region_histograms[region_id]->SetConfigurations(file_id, configs);
     }
 
-    // Set requirements
-    ConfigId config_id(file_id, region_id);
-    _histogram_req[config_id].configs = input_configs;
     return true;
 }
 
@@ -548,7 +543,7 @@ bool RegionHandler::SetStatsRequirements(
 void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for a specific region or for all regions when closed
     if (region_id == ALL_REGIONS) {
-        _histogram_req.clear();
+        _region_histograms.clear();
         _stats_req.clear();
 
         std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
@@ -559,7 +554,6 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         _spatial_req.clear();
         spatial_lock.unlock();
 
-        _histogram_cache.clear();
         _spectral_cache.clear();
         _stats_cache.clear();
 
@@ -568,15 +562,12 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         std::unique_lock pv_cube_lock(_pv_cube_mutex);
         _pv_preview_cubes.clear();
     } else {
-        // Iterate through requirements and remove those for given region_id
-        for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
-            if ((*it).first.region_id == region_id) {
-                it = _histogram_req.erase(it);
-            } else {
-                ++it;
-            }
+        // Remove histograms for given region_id
+        if (_region_histograms.find(region_id) != _region_histograms.end()) {
+            _region_histograms.erase(region_id);
         }
 
+        // Iterate through requirements and remove those for given region_id
         std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         for (auto it = _spectral_req.begin(); it != _spectral_req.end();) {
             if ((*it).first.region_id == region_id) {
@@ -604,14 +595,6 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             }
         }
         spatial_lock.unlock();
-
-        for (auto it = _histogram_cache.begin(); it != _histogram_cache.end();) {
-            if ((*it).first.region_id == region_id) {
-                it = _histogram_cache.erase(it);
-            } else {
-                ++it;
-            }
-        }
 
         for (auto it = _spectral_cache.begin(); it != _spectral_cache.end();) {
             if ((*it).first.region_id == region_id) {
@@ -647,7 +630,8 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
 void RegionHandler::RemoveFileRequirementsCache(int file_id) {
     // Clear requirements and cache for a specific file or for all files when closed
     if (file_id == ALL_FILES) {
-        _histogram_req.clear();
+        _region_histograms.clear();
+
         _stats_req.clear();
         std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         _spectral_req.clear();
@@ -656,7 +640,6 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         _spatial_req.clear();
         spatial_lock.unlock();
 
-        _histogram_cache.clear();
         _spectral_cache.clear();
         _stats_cache.clear();
 
@@ -665,15 +648,12 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         std::unique_lock pv_cube_lock(_pv_cube_mutex);
         _pv_preview_cubes.clear();
     } else {
-        // Iterate through requirements and remove those for given file_id
-        for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
-            if ((*it).first.file_id == file_id) {
-                it = _histogram_req.erase(it);
-            } else {
-                ++it;
-            }
+        // Remove histogram configurations and cache for given file_id
+        for (const auto& [_, region_histogram] : _region_histograms) {
+            region_histogram->ClearFileConfigsCache(file_id);
         }
 
+        // Iterate through requirements and remove those for given file_id
         std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         for (auto it = _spectral_req.begin(); it != _spectral_req.end();) {
             if ((*it).first.file_id == file_id) {
@@ -703,14 +683,6 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         spatial_lock.unlock();
 
         // Iterate through cache and remove those for given file_id
-        for (auto it = _histogram_cache.begin(); it != _histogram_cache.end();) {
-            if ((*it).first.file_id == file_id) {
-                it = _histogram_cache.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
         for (auto it = _spectral_cache.begin(); it != _spectral_cache.end();) {
             if ((*it).first.file_id == file_id) {
                 it = _spectral_cache.erase(it);
@@ -751,10 +723,8 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
 
 void RegionHandler::ClearRegionCache(int region_id) {
     // Remove cached data when region changes
-    for (auto& hcache : _histogram_cache) {
-        if (hcache.first.region_id == region_id) {
-            hcache.second.ClearHistograms();
-        }
+    if (_region_histograms.find(region_id) != _region_histograms.end()) {
+        _region_histograms[region_id]->ClearCache();
     }
     for (auto& spcache : _spectral_cache) {
         if (spcache.first.region_id == region_id) {
@@ -1508,177 +1478,62 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
 // region_id < 0 file_id < 0    not allowed (all regions for all files?)
 // region_id = 0                not allowed (cursor region handled by Frame)
 
-// ***** Fill histogram *****
-
-bool RegionHandler::FillRegionHistogramData(
-    std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id) {
-    // Fill histogram data for given region and file
+bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
     if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
-    bool message_filled(false);
-    if (region_id > 0) {
-        // Fill histograms for specific region with file_id requirement (specific file_id or all files)
-        std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> region_configs = _histogram_req;
-        for (auto& region_config : region_configs) {
-            if ((region_config.first.region_id == region_id) && ((region_config.first.file_id == file_id) || (file_id == ALL_FILES))) {
-                if (region_config.second.configs.empty()) { // no requirements
-                    continue;
-                }
-                int config_file_id = region_config.first.file_id;
-                if (!RegionFileIdsValid(region_id, config_file_id)) { // check specific ids
-                    continue;
-                }
+    if ((region_id > 0) && (_region_histograms.find(region_id) == _region_histograms.end())) {
+        return false;
+    }
 
-                // return histograms for this requirement
-                std::vector<CARTA::RegionHistogramData> histogram_messages;
-                std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
-                if (GetRegionHistogramData(region_id, config_file_id, histogram_configs, histogram_messages)) {
-                    for (const auto& histogram_message : histogram_messages) {
-                        region_histogram_callback(histogram_message); // send histogram data with respect to stokes
-                    }
-                    message_filled = true;
-                }
-            }
+    bool success(false);
+    for (const auto& [hist_region_id, region_histogram] : _region_histograms) {
+        // Find histogram configurations with region_id and file_id
+        if ((region_id > 0) && (hist_region_id != region_id)) {
+            continue;
         }
-    } else {
-        // (region_id < 0) Fill histograms for all regions with specific file_id requirement
-        std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> region_configs = _histogram_req;
-        for (auto& region_config : region_configs) {
-            if (region_config.first.file_id == file_id) {
-                if (region_config.second.configs.empty()) { // requirements removed
-                    continue;
-                }
-                int config_region_id(region_config.first.region_id);
-                if (!RegionFileIdsValid(config_region_id, file_id)) { // check specific ids
+
+        auto config_file_ids = region_histogram->GetConfigFileIds(file_id);
+        if (config_file_ids.empty()) {
+            continue;
+        }
+
+        for (int hist_file_id : config_file_ids) {
+            // Get histogram for specific region id and file id
+            if (!RegionFileIdsValid(hist_region_id, hist_file_id)) {
+                continue;
+            }
+
+            auto frame = _frames.at(hist_file_id);
+
+            std::vector<HistogramConfig> histogram_configs;
+            if (!region_histogram->GetConfigurations(hist_file_id, histogram_configs)) {
+                continue;
+            }
+
+            for (auto& histogram_config : histogram_configs) {
+                // Create data message for each configuration
+                int stokes(0);
+                if (!frame->GetStokesTypeIndex(histogram_config.coordinate, stokes)) {
                     continue;
                 }
 
-                // return histograms for this requirement
-                std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
-                std::vector<CARTA::RegionHistogramData> histogram_messages;
-                if (GetRegionHistogramData(config_region_id, file_id, histogram_configs, histogram_messages)) {
-                    for (const auto& histogram_message : histogram_messages) {
-                        region_histogram_callback(histogram_message); // send histogram data with respect to stokes
-                    }
-                    message_filled = true;
+                int z = (histogram_config.channel == CURRENT_Z ? frame->CurrentZ() : histogram_config.channel);
+                AxisRange z_range(z);
+                StokesSource stokes_source(stokes, z_range);
+                std::shared_ptr<casacore::LCRegion> lcregion = ApplyRegionToFile(hist_region_id, hist_file_id, stokes_source);
+                CARTA::RegionHistogramData histogram_data_message;
+
+                if (region_histogram->GetRegionHistogramData(
+                        hist_file_id, frame, histogram_config, lcregion, stokes_source, histogram_data_message)) {
+                    cb(histogram_data_message);
+                    success = true;
                 }
             }
         }
     }
-    return message_filled;
-}
-
-bool RegionHandler::GetRegionHistogramData(
-    int region_id, int file_id, std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
-    // Fill stats message for given region, file
-    Timer t;
-
-    // Set channel range is the current channel
-    int z(_frames.at(file_id)->CurrentZ());
-    AxisRange z_range(z);
-
-    // Stokes type to be determined in each of histogram configs
-    int stokes;
-
-    // Flags for calculations
-    bool have_basic_stats(false);
-
-    // Reuse the image region for each histogram
-    StokesRegion stokes_region;
-    std::shared_ptr<casacore::LCRegion> lc_region;
-
-    // Reuse data with respect to stokes and stats for each histogram; results depend on num_bins
-    std::unordered_map<int, std::vector<float>> data;
-    BasicStats<float> stats;
-
-    for (auto& hist_config : configs) {
-        // check for cancel
-        if (!RegionFileIdsValid(region_id, file_id)) {
-            return false;
-        }
-
-        // Get stokes index
-        if (!_frames.at(file_id)->GetStokesTypeIndex(hist_config.coordinate, stokes)) {
-            continue;
-        }
-
-        // Set histogram fields
-        auto histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0, hist_config);
-
-        // Get image region
-        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, lc_region, stokes_region)) {
-            // region outside image, send default histogram
-            auto* default_histogram = histogram_message.mutable_histograms();
-            std::vector<int> histogram_bins(1, 0);
-            FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, DOUBLE_NAN, DOUBLE_NAN);
-            continue;
-        }
-
-        // number of bins may be set or calculated
-        int num_bins(hist_config.num_bins);
-        if (num_bins == AUTO_BIN_SIZE) {
-            casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(stokes_region);
-            num_bins = int(std::max(sqrt(region_shape(0) * region_shape(1)), 2.0));
-        }
-
-        // Key for cache
-        CacheId cache_id = CacheId(file_id, region_id, stokes, z);
-
-        // check cache
-        if (_histogram_cache.count(cache_id)) {
-            have_basic_stats = _histogram_cache[cache_id].GetBasicStats(stats);
-            if (have_basic_stats) {
-                // Set histogram bounds
-                auto bounds = hist_config.GetBounds(stats);
-                Histogram hist;
-                if (_histogram_cache[cache_id].GetHistogram(num_bins, bounds, hist)) {
-                    auto* histogram = histogram_message.mutable_histograms();
-                    FillHistogram(histogram, stats, hist);
-
-                    // Fill in the cached message
-                    histogram_messages.emplace_back(histogram_message);
-                    continue;
-                }
-            }
-        }
-
-        // Calculate stats and/or histograms, not in cache
-        // Get data in region
-        if (!data.count(stokes)) {
-            if (!_frames.at(file_id)->GetRegionData(stokes_region, data[stokes])) {
-                spdlog::error("Failed to get data in the region!");
-                return false;
-            }
-        }
-
-        // Calculate and cache stats
-        if (!have_basic_stats) {
-            CalcBasicStats(stats, data[stokes].data(), data[stokes].size());
-            _histogram_cache[cache_id].SetBasicStats(stats);
-            have_basic_stats = true;
-        }
-
-        // Set histogram bounds
-        Bounds bounds = hist_config.GetBounds(stats);
-
-        // Calculate and cache histogram for number of bins
-        Histogram histo = CalcHistogram(num_bins, bounds, data[stokes].data(), data[stokes].size());
-        _histogram_cache[cache_id].SetHistogram(num_bins, histo);
-
-        // Complete Histogram submessage
-        auto* histogram = histogram_message.mutable_histograms();
-        FillHistogram(histogram, stats, histo);
-
-        // Fill in the final result
-        histogram_messages.emplace_back(histogram_message);
-    }
-
-    auto dt = t.Elapsed();
-    spdlog::performance("Fill region histogram in {:.3f} ms at {:.3f} MPix/s", dt.ms(), (float)stats.num_pixels / dt.us());
-
-    return true;
+    return success;
 }
 
 // ***** Fill spectral profile *****
