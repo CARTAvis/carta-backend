@@ -68,6 +68,7 @@ set(TEST_SOURCES
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc
+        Util/TestUtilMemory.cc
         Util/TestUtilString.cc)
 
 # Add all the sources in the main project and remove Main.cc
