@@ -649,8 +649,8 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         _pv_preview_cubes.clear();
     } else {
         // Remove histogram configurations and cache for given file_id
-        for (auto& histogram : _region_histograms) {
-            histogram.second->ClearFileConfigsCache(file_id);
+        for (const auto& [_, region_histogram] : _region_histograms) {
+            region_histogram->ClearFileConfigsCache(file_id);
         }
 
         // Iterate through requirements and remove those for given file_id
