@@ -59,10 +59,10 @@ bool RegionSpatialProfile::HasConfiguration(int file_id, CARTA::SetSpatialRequir
 std::vector<int> RegionSpatialProfile::GetConfigFileIds(int file_id) {
     std::vector<int> file_ids;
     std::lock_guard<std::mutex> guard(_config_mutex);
-    for (auto& config : _configs) {
+    for (const auto& [config_id, _] : _configs) {
         // File id -1 is for all files
-        if ((file_id < 0) || (config.first.file_id == file_id)) {
-            file_ids.push_back(config.first.file_id);
+        if ((file_id < 0) || (config_id.file_id == file_id)) {
+            file_ids.push_back(config_id.file_id);
         }
     }
     return file_ids;

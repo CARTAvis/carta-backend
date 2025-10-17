@@ -164,7 +164,7 @@ private:
 
     // Region analysis
     std::unordered_map<int, std::unique_ptr<RegionHistogram>> _region_histograms;
-    std::unordered_map<int, std::shared_ptr<RegionSpatialProfile>> _region_spatial_profiles;
+    std::unordered_map<int, std::unique_ptr<RegionSpatialProfile>> _region_spatial_profiles;
     std::mutex _spatial_mutex;
 
     // Requirements; ConfigId key contains file, region

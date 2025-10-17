@@ -335,7 +335,7 @@ bool RegionHandler::SetSpatialRequirements(
 
     std::unique_lock<std::mutex> ulock(_spatial_mutex);
     if (_region_spatial_profiles.find(region_id) == _region_spatial_profiles.end()) {
-        _region_spatial_profiles[region_id] = std::shared_ptr<RegionSpatialProfile>(new RegionSpatialProfile(region_id, file_id, configs));
+        _region_spatial_profiles[region_id] = std::make_unique<RegionSpatialProfile>(region_id, file_id, configs);
     } else {
         _region_spatial_profiles[region_id]->SetConfigurations(file_id, configs);
     }
@@ -2016,9 +2016,8 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
         }
         spatial_region_ids.push_back(region_id);
     } else {
-        for (auto& spatial_profile : _region_spatial_profiles) {
-            // Get actual region ids for ALL_REGIONS
-            int spatial_region_id = spatial_profile.first;
+        for (const auto& [spatial_region_id, _] : _region_spatial_profiles) {
+            // Get actual region ids when region_id == ALL_REGIONS
             spatial_region_ids.push_back(spatial_region_id);
         }
     }
