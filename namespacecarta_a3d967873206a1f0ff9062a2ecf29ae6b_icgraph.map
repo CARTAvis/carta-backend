@@ -1,13 +1,11 @@
 <map id="carta::CalcHistogram" name="carta::CalcHistogram">
-<area shape="rect" id="Node000001" title="Calculate a histogram from a float vector using Histogram." alt="" coords="536,70,695,95"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326" title=" " alt="" coords="247,13,488,38"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="552,69,487,53,430,41,431,35,489,48,553,64"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a7d419cae3ba9a6b3f2435cde1d6838ee" title=" " alt="" coords="267,63,467,103"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="522,85,467,85,467,80,522,80"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHandler.html#a7797d9c5eca341dcb490a338fc66967a" title=" " alt="" coords="269,127,466,167"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="552,102,446,129,445,124,551,96"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" title=" " alt="" coords="14,5,190,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="233,28,190,28,190,23,233,23"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1RegionHandler.html#a781809901786ab1cf5a4705a77ebe9bb" title=" " alt="" coords="5,127,199,167"/>
-<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="255,149,199,149,199,144,255,144"/>
+<area shape="rect" id="Node000001" title="Calculate a histogram from a float vector using Histogram." alt="" coords="519,70,677,95"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326" title=" " alt="" coords="229,13,471,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="535,69,470,53,413,41,414,35,471,48,536,64"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a7d419cae3ba9a6b3f2435cde1d6838ee" title=" " alt="" coords="250,63,450,103"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="505,85,450,85,450,80,505,80"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHistogram.html#afd90bbee75976291eb1ae211acfe3e22" title="Add cached or calculated histogram to message." alt="" coords="251,127,449,167"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="535,102,429,129,428,124,534,96"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" title=" " alt="" coords="5,5,181,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="216,28,181,28,181,23,216,23"/>
 </map>

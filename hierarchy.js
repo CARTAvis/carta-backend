@@ -117,6 +117,7 @@ var hierarchy =
       [ "carta::Ds9Exporter", "classcarta_1_1Ds9Exporter.html", null ]
     ] ],
     [ "carta::RegionHandler", "classcarta_1_1RegionHandler.html", null ],
+    [ "carta::RegionHistogram", "classcarta_1_1RegionHistogram.html", null ],
     [ "carta::RegionHistogramConfig", "structcarta_1_1RegionHistogramConfig.html", null ],
     [ "carta::RegionImporter", "classcarta_1_1RegionImporter.html", [
       [ "carta::CrtfImporter", "classcarta_1_1CrtfImporter.html", null ],

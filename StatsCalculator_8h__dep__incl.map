@@ -1,9 +1,11 @@
 <map id="StatsCalculator.h" name="StatsCalculator.h">
-<area shape="rect" id="Node000001" title=" " alt="" coords="112,5,244,31"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="196,5,328,31"/>
 <area shape="rect" id="Node000002" href="$Frame_8cc.html" title=" " alt="" coords="5,79,87,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="146,39,69,81,66,76,144,35"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="215,37,82,81,80,76,213,32"/>
 <area shape="rect" id="Node000003" href="$RegionHandler_8cc.html" title=" " alt="" coords="111,79,245,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="181,44,181,79,175,79,175,44"/>
-<area shape="rect" id="Node000004" href="$StatsCalculator_8cc.html" title=" " alt="" coords="270,79,409,104"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="217,34,314,76,312,81,215,39"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="240,42,193,80,190,76,236,38"/>
+<area shape="rect" id="Node000004" href="$RegionHistogram_8cc.html" title=" " alt="" coords="269,79,423,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="288,38,334,76,331,80,284,42"/>
+<area shape="rect" id="Node000005" href="$StatsCalculator_8cc.html" title=" " alt="" coords="447,79,586,104"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="317,32,476,76,475,81,316,37"/>
 </map>

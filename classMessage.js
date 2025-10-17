@@ -45,7 +45,7 @@ var classMessage =
     [ "ScriptingRequest", "classMessage.html#a60da007fe3902ca53c342359ad9e29a0", null ],
     [ "SetContourParameters", "classMessage.html#a67b174f2dedf2f95388439d86ad2ed03", null ],
     [ "SetCursor", "classMessage.html#a3d4cf7b23300e939ae7994029c776650", null ],
-    [ "SetHistogramRequirements", "classMessage.html#aff42cb06470d65aa915523847fcff7e1", null ],
+    [ "SetHistogramRequirements", "classMessage.html#a07ae6b4b51508e801e8399170c63785b", null ],
     [ "SetImageChannels", "classMessage.html#a1ddbaf9748774ff4043ed66c89e40fff", null ],
     [ "SetRegion", "classMessage.html#a916c7171fc85a251d96cbe4d3d6e7dbe", null ],
     [ "SetRegion", "classMessage.html#a9cd958593df60d02c3300fdbef012a81", null ],

@@ -85,6 +85,7 @@ var annotated_dup =
       [ "RegionDataStreamsTask", "classcarta_1_1RegionDataStreamsTask.html", "classcarta_1_1RegionDataStreamsTask" ],
       [ "RegionExporter", "classcarta_1_1RegionExporter.html", "classcarta_1_1RegionExporter" ],
       [ "RegionHandler", "classcarta_1_1RegionHandler.html", "classcarta_1_1RegionHandler" ],
+      [ "RegionHistogram", "classcarta_1_1RegionHistogram.html", "classcarta_1_1RegionHistogram" ],
       [ "RegionHistogramConfig", "structcarta_1_1RegionHistogramConfig.html", "structcarta_1_1RegionHistogramConfig" ],
       [ "RegionImporter", "classcarta_1_1RegionImporter.html", "classcarta_1_1RegionImporter" ],
       [ "RegionProperties", "structcarta_1_1RegionProperties.html", "structcarta_1_1RegionProperties" ],

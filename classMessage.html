@@ -120,8 +120,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a89d298caa52de00152b737a39fb1210f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af2a443107871719730e5e8ad6bf0179c" id="r_af2a443107871719730e5e8ad6bf0179c"><td class="memItemLeft" align="right" valign="top">static CARTA::SetStatsRequirements&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#af2a443107871719730e5e8ad6bf0179c">SetStatsRequirements</a> (int32_t file_id, int32_t region_id)</td></tr>
 <tr class="separator:af2a443107871719730e5e8ad6bf0179c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff42cb06470d65aa915523847fcff7e1" id="r_aff42cb06470d65aa915523847fcff7e1"><td class="memItemLeft" align="right" valign="top">static CARTA::SetHistogramRequirements&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#aff42cb06470d65aa915523847fcff7e1">SetHistogramRequirements</a> (int32_t file_id, int32_t region_id, int32_t channel=<a class="el" href="Image_8h.html#a1534a6d48c686d441767c9bda9e58712">CURRENT_Z</a>, int32_t num_bins=<a class="el" href="Image_8h.html#a0d7c8081a29b46e6a70f0065eda31de2">AUTO_BIN_SIZE</a>)</td></tr>
-<tr class="separator:aff42cb06470d65aa915523847fcff7e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07ae6b4b51508e801e8399170c63785b" id="r_a07ae6b4b51508e801e8399170c63785b"><td class="memItemLeft" align="right" valign="top">static CARTA::SetHistogramRequirements&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a07ae6b4b51508e801e8399170c63785b">SetHistogramRequirements</a> (int32_t file_id, int32_t region_id, const std::string &amp;coordinate=&quot;z&quot;, int32_t channel=<a class="el" href="Image_8h.html#a1534a6d48c686d441767c9bda9e58712">CURRENT_Z</a>, int32_t num_bins=<a class="el" href="Image_8h.html#a0d7c8081a29b46e6a70f0065eda31de2">AUTO_BIN_SIZE</a>)</td></tr>
+<tr class="separator:a07ae6b4b51508e801e8399170c63785b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f3f50d7c76224f6c11eb8f074a47259" id="r_a8f3f50d7c76224f6c11eb8f074a47259"><td class="memItemLeft" align="right" valign="top">static CARTA::AddRequiredTiles&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a8f3f50d7c76224f6c11eb8f074a47259">AddRequiredTiles</a> (int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector&lt; int32_t &gt; &amp;tiles)</td></tr>
 <tr class="separator:a8f3f50d7c76224f6c11eb8f074a47259"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c0bb5e50ad8b90bade291ab17a18cf5" id="r_a0c0bb5e50ad8b90bade291ab17a18cf5"><td class="memItemLeft" align="right" valign="top">static CARTA::Point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5">Point</a> (float x, float y)</td></tr>
@@ -2482,8 +2482,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aff42cb06470d65aa915523847fcff7e1" name="aff42cb06470d65aa915523847fcff7e1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff42cb06470d65aa915523847fcff7e1">&#9670;&#160;</a></span>SetHistogramRequirements()</h2>
+<a id="a07ae6b4b51508e801e8399170c63785b" name="a07ae6b4b51508e801e8399170c63785b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07ae6b4b51508e801e8399170c63785b">&#9670;&#160;</a></span>SetHistogramRequirements()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2502,6 +2502,12 @@ Here is the caller graph for this function:</div>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
           <td class="paramname"><em>region_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>coordinate</em> = <code>&quot;z&quot;</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

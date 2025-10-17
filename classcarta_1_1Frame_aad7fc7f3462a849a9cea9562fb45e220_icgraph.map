@@ -1,5 +1,6 @@
 <map id="carta::Frame::GetStokesTypeIndex" name="carta::Frame::GetStokesTypeIndex">
 <area shape="rect" id="Node000001" title=" " alt="" coords="519,165,727,205"/>
+<area shape="poly" id="edge7_Node000001_Node000001" title=" " alt="" coords="666,154,651,147,623,144,598,146,583,151,578,157,581,164,576,166,573,156,580,146,597,141,623,139,652,142,668,149"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918" title=" " alt="" coords="268,5,471,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="591,157,537,107,504,82,469,60,444,48,446,43,472,55,507,78,541,103,595,153"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" title=" " alt="" coords="281,69,457,109"/>
@@ -11,7 +12,7 @@
 <area shape="rect" id="Node000007" href="$classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101" title=" " alt="" coords="277,261,461,301"/>
 <area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="566,213,472,252,437,264,436,259,470,247,564,208"/>
 <area shape="rect" id="Node000008" href="$classcarta_1_1Frame.html#abecd729603025b455a3612dfb277dcd9" title=" " alt="" coords="276,325,463,365"/>
-<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="595,217,541,267,507,293,472,316,446,328,444,323,469,311,504,289,537,263,591,213"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="595,217,541,267,507,293,472,316,446,328,444,323,469,311,504,289,537,263,591,213"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ae3ee51cc1bda05842764364c3f49db45" title=" " alt="" coords="5,5,220,45"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="255,28,220,28,220,23,255,23"/>
 </map>

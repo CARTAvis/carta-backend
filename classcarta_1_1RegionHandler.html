@@ -137,8 +137,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ae05f9bc832b30378281c5897edee7339"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f27f6890487e19f0eb43331962f2fb2" id="r_a2f27f6890487e19f0eb43331962f2fb2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a2f27f6890487e19f0eb43331962f2fb2">SetStatsRequirements</a> (int region_id, int file_id, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; frame, const std::vector&lt; CARTA::SetStatsRequirements_StatsConfig &gt; &amp;stats_configs)</td></tr>
 <tr class="separator:a2f27f6890487e19f0eb43331962f2fb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a781809901786ab1cf5a4705a77ebe9bb" id="r_a781809901786ab1cf5a4705a77ebe9bb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a781809901786ab1cf5a4705a77ebe9bb">FillRegionHistogramData</a> (std::function&lt; void(CARTA::RegionHistogramData histogram_data)&gt; region_histogram_callback, int region_id, int file_id)</td></tr>
-<tr class="separator:a781809901786ab1cf5a4705a77ebe9bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5939c9fed8588472dd9a4fe10f81b919" id="r_a5939c9fed8588472dd9a4fe10f81b919"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a5939c9fed8588472dd9a4fe10f81b919">FillRegionHistogramData</a> (std::function&lt; void(CARTA::RegionHistogramData histogram_data)&gt; cb, int region_id, int file_id)</td></tr>
+<tr class="separator:a5939c9fed8588472dd9a4fe10f81b919"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adf0a26d068e926212c682fdf15d367fe" id="r_adf0a26d068e926212c682fdf15d367fe"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#adf0a26d068e926212c682fdf15d367fe">FillSpectralProfileData</a> (std::function&lt; void(CARTA::SpectralProfileData profile_data)&gt; cb, int region_id, int file_id, bool stokes_changed)</td></tr>
 <tr class="separator:adf0a26d068e926212c682fdf15d367fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a409ecbf6d655eab69b1465b819cffb85" id="r_a409ecbf6d655eab69b1465b819cffb85"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a409ecbf6d655eab69b1465b819cffb85">FillRegionStatsData</a> (std::function&lt; void(CARTA::RegionStatsData stats_data)&gt; cb, int region_id, int file_id)</td></tr>
@@ -209,8 +209,6 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a5c734366cb3b4b307c54a66251dd270c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa839bd4075f976babaaa3e2f8d4a4f2f" id="r_aa839bd4075f976babaaa3e2f8d4a4f2f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#aa839bd4075f976babaaa3e2f8d4a4f2f">ApplyRegionToFile</a> (int region_id, int file_id, const <a class="el" href="structAxisRange.html">AxisRange</a> &amp;z_range, int stokes, std::shared_ptr&lt; casacore::LCRegion &gt; lc_region, <a class="el" href="structcarta_1_1StokesRegion.html">StokesRegion</a> &amp;stokes_region)</td></tr>
 <tr class="separator:aa839bd4075f976babaaa3e2f8d4a4f2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7797d9c5eca341dcb490a338fc66967a" id="r_a7797d9c5eca341dcb490a338fc66967a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a7797d9c5eca341dcb490a338fc66967a">GetRegionHistogramData</a> (int region_id, int file_id, std::vector&lt; <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &gt; &amp;configs, std::vector&lt; CARTA::RegionHistogramData &gt; &amp;histogram_messages)</td></tr>
-<tr class="separator:a7797d9c5eca341dcb490a338fc66967a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a32e479940a3721ce03fd2fb2076b40d9" id="r_a32e479940a3721ce03fd2fb2076b40d9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a32e479940a3721ce03fd2fb2076b40d9">GetRegionSpectralData</a> (int region_id, int file_id, const <a class="el" href="structAxisRange.html">AxisRange</a> &amp;z_range, std::string &amp;coordinate, int stokes_index, std::vector&lt; CARTA::StatsType &gt; &amp;required_stats, bool report_error, const std::function&lt; void(std::map&lt; CARTA::StatsType, std::vector&lt; double &gt; &gt;, float)&gt; &amp;partial_results_callback)</td></tr>
 <tr class="separator:a32e479940a3721ce03fd2fb2076b40d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5400b6dee0622f4ce2060ae424e1e559" id="r_a5400b6dee0622f4ce2060ae424e1e559"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a5400b6dee0622f4ce2060ae424e1e559">GetRegionStatsData</a> (int region_id, int file_id, int stokes, const std::vector&lt; CARTA::StatsType &gt; &amp;required_stats, CARTA::RegionStatsData &amp;stats_message)</td></tr>
@@ -258,8 +256,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a86e8efd8bff3348e82060d6c8c701560"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa383be9b40acecaf9a7302aa6b036127" id="r_aa383be9b40acecaf9a7302aa6b036127"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#aa383be9b40acecaf9a7302aa6b036127">_frames</a></td></tr>
 <tr class="separator:aa383be9b40acecaf9a7302aa6b036127"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a26c88d32fdc63b3b2ac2a71c362599c2" id="r_a26c88d32fdc63b3b2ac2a71c362599c2"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1ConfigId.html">ConfigId</a>, <a class="el" href="structcarta_1_1RegionHistogramConfig.html">RegionHistogramConfig</a>, <a class="el" href="structcarta_1_1ConfigIdHash.html">ConfigIdHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a26c88d32fdc63b3b2ac2a71c362599c2">_histogram_req</a></td></tr>
-<tr class="separator:a26c88d32fdc63b3b2ac2a71c362599c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97b8e4e6982dc608a2d113c43658eaea" id="r_a97b8e4e6982dc608a2d113c43658eaea"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, std::unique_ptr&lt; <a class="el" href="classcarta_1_1RegionHistogram.html">RegionHistogram</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a97b8e4e6982dc608a2d113c43658eaea">_region_histograms</a></td></tr>
+<tr class="separator:a97b8e4e6982dc608a2d113c43658eaea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a64a5ae175a87f52630a7a7fb34ad4245" id="r_a64a5ae175a87f52630a7a7fb34ad4245"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1ConfigId.html">ConfigId</a>, <a class="el" href="structcarta_1_1RegionSpectralConfig.html">RegionSpectralConfig</a>, <a class="el" href="structcarta_1_1ConfigIdHash.html">ConfigIdHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a64a5ae175a87f52630a7a7fb34ad4245">_spectral_req</a></td></tr>
 <tr class="separator:a64a5ae175a87f52630a7a7fb34ad4245"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5dcaa11ea35b7c7a129feab0737a0223" id="r_a5dcaa11ea35b7c7a129feab0737a0223"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1ConfigId.html">ConfigId</a>, <a class="el" href="structcarta_1_1RegionStatsConfig.html">RegionStatsConfig</a>, <a class="el" href="structcarta_1_1ConfigIdHash.html">ConfigIdHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a5dcaa11ea35b7c7a129feab0737a0223">_stats_req</a></td></tr>
@@ -270,8 +268,6 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a29231752632059fa71e0234c9a223c7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a77e45a485c15d880372000c8a11f68db" id="r_a77e45a485c15d880372000c8a11f68db"><td class="memItemLeft" align="right" valign="top">std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a77e45a485c15d880372000c8a11f68db">_spectral_mutex</a></td></tr>
 <tr class="separator:a77e45a485c15d880372000c8a11f68db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a846360320ffd5b6ecfc001c5e2e0d82d" id="r_a846360320ffd5b6ecfc001c5e2e0d82d"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1CacheId.html">CacheId</a>, <a class="el" href="structcarta_1_1HistogramCache.html">HistogramCache</a>, <a class="el" href="structcarta_1_1CacheIdHash.html">CacheIdHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a846360320ffd5b6ecfc001c5e2e0d82d">_histogram_cache</a></td></tr>
-<tr class="separator:a846360320ffd5b6ecfc001c5e2e0d82d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1f1546481a69319bcfabcc2ee701b1dc" id="r_a1f1546481a69319bcfabcc2ee701b1dc"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1CacheId.html">CacheId</a>, <a class="el" href="structcarta_1_1SpectralCache.html">SpectralCache</a>, <a class="el" href="structcarta_1_1CacheIdHash.html">CacheIdHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a1f1546481a69319bcfabcc2ee701b1dc">_spectral_cache</a></td></tr>
 <tr class="separator:a1f1546481a69319bcfabcc2ee701b1dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae651c0c672e487f193eba00f6d396c0b" id="r_ae651c0c672e487f193eba00f6d396c0b"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1CacheId.html">CacheId</a>, <a class="el" href="structcarta_1_1StatsCache.html">StatsCache</a>, <a class="el" href="structcarta_1_1CacheIdHash.html">CacheIdHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#ae651c0c672e487f193eba00f6d396c0b">_stats_cache</a></td></tr>
@@ -1225,8 +1221,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="a781809901786ab1cf5a4705a77ebe9bb" name="a781809901786ab1cf5a4705a77ebe9bb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a781809901786ab1cf5a4705a77ebe9bb">&#9670;&#160;</a></span>FillRegionHistogramData()</h2>
+<a id="a5939c9fed8588472dd9a4fe10f81b919" name="a5939c9fed8588472dd9a4fe10f81b919"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5939c9fed8588472dd9a4fe10f81b919">&#9670;&#160;</a></span>FillRegionHistogramData()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1235,7 +1231,7 @@ Here is the call graph for this function:</div>
           <td class="memname">bool carta::RegionHandler::FillRegionHistogramData </td>
           <td>(</td>
           <td class="paramtype">std::function&lt; void(CARTA::RegionHistogramData histogram_data)&gt;&#160;</td>
-          <td class="paramname"><em>region_histogram_callback</em>, </td>
+          <td class="paramname"><em>cb</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1259,7 +1255,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a781809901786ab1cf5a4705a77ebe9bb_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a5939c9fed8588472dd9a4fe10f81b919_cgraph.svg" width="100%" height="478"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1785,64 +1781,6 @@ Here is the call graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a4d3eaa8da979a4b0640aa3b598a9415b_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
-</div>
-
-</div>
-</div>
-<a id="a7797d9c5eca341dcb490a338fc66967a" name="a7797d9c5eca341dcb490a338fc66967a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7797d9c5eca341dcb490a338fc66967a">&#9670;&#160;</a></span>GetRegionHistogramData()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool carta::RegionHandler::GetRegionHistogramData </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>region_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>file_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::vector&lt; <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &gt; &amp;&#160;</td>
-          <td class="paramname"><em>configs</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::vector&lt; CARTA::RegionHistogramData &gt; &amp;&#160;</td>
-          <td class="paramname"><em>histogram_messages</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a7797d9c5eca341dcb490a338fc66967a_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a7797d9c5eca341dcb490a338fc66967a_icgraph.svg" width="450" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -3314,50 +3252,6 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="a846360320ffd5b6ecfc001c5e2e0d82d" name="a846360320ffd5b6ecfc001c5e2e0d82d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a846360320ffd5b6ecfc001c5e2e0d82d">&#9670;&#160;</a></span>_histogram_cache</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::unordered_map&lt;<a class="el" href="structcarta_1_1CacheId.html">CacheId</a>, <a class="el" href="structcarta_1_1HistogramCache.html">HistogramCache</a>, <a class="el" href="structcarta_1_1CacheIdHash.html">CacheIdHash</a>&gt; carta::RegionHandler::_histogram_cache</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a26c88d32fdc63b3b2ac2a71c362599c2" name="a26c88d32fdc63b3b2ac2a71c362599c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a26c88d32fdc63b3b2ac2a71c362599c2">&#9670;&#160;</a></span>_histogram_req</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::unordered_map&lt;<a class="el" href="structcarta_1_1ConfigId.html">ConfigId</a>, <a class="el" href="structcarta_1_1RegionHistogramConfig.html">RegionHistogramConfig</a>, <a class="el" href="structcarta_1_1ConfigIdHash.html">ConfigIdHash</a>&gt; carta::RegionHandler::_histogram_req</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a6ff46693e87f4a982fbb3b8a9101a083" name="a6ff46693e87f4a982fbb3b8a9101a083"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6ff46693e87f4a982fbb3b8a9101a083">&#9670;&#160;</a></span>_line_profile_mutex</h2>
 
@@ -3479,6 +3373,28 @@ Here is the call graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">std::unordered_map&lt;int, std::shared_ptr&lt;<a class="el" href="classcarta_1_1PvPreviewCut.html">PvPreviewCut</a>&gt; &gt; carta::RegionHandler::_pv_preview_cuts</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a97b8e4e6982dc608a2d113c43658eaea" name="a97b8e4e6982dc608a2d113c43658eaea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97b8e4e6982dc608a2d113c43658eaea">&#9670;&#160;</a></span>_region_histograms</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unordered_map&lt;int, std::unique_ptr&lt;<a class="el" href="classcarta_1_1RegionHistogram.html">RegionHistogram</a>&gt; &gt; carta::RegionHandler::_region_histograms</td>
         </tr>
       </table>
   </td>
