@@ -90,11 +90,13 @@ CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32
     return set_stats_requirements;
 }
 
-CARTA::SetHistogramRequirements Message::SetHistogramRequirements(int32_t file_id, int32_t region_id, int32_t channel, int32_t num_bins) {
+CARTA::SetHistogramRequirements Message::SetHistogramRequirements(
+    int32_t file_id, int32_t region_id, const std::string& coordinate, int32_t channel, int32_t num_bins) {
     CARTA::SetHistogramRequirements set_histogram_requirements;
     set_histogram_requirements.set_file_id(file_id);
     set_histogram_requirements.set_region_id(region_id);
     auto* histograms = set_histogram_requirements.add_histograms();
+    histograms->set_coordinate(coordinate);
     histograms->set_channel(channel);
     histograms->set_num_bins(num_bins);
     return set_histogram_requirements;
