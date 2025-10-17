@@ -15,12 +15,7 @@
  * @details Mark the memory address range provided to be excluded from core dumps, using the madvise system function, if this is supported
  * by the platform (either MADV_DONTDUMP nor MADV_NOCORE must be defined). The address range must be page-aligned.
  *
- * If the functionality is unsupported or the address range is invalid, this function prints a warning message.
- *
- * @param address The starting address of the memory range, which must be page-aligned.
- * @param size The size of the memory range, which must be an exact multiple of the page size.
- *
- * @return Whether the address range was successfully marked.
+ * @note If the functionality is unsupported or the address range is invalid, this function prints a warning message.
  */
 bool ExcludeFromCoreDump(void* address, size_t size) {
 #ifdef NO_CORE_DUMP_ADVICE

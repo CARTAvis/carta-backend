@@ -24,8 +24,8 @@
 /**
  * @brief Mark the memory address range provided to be excluded from core dumps, if this is supported by the platform. The range must be
  * page-aligned.
- * @param address The starting address of the memory range.
- * @param size The size of the memory range.
+ * @param address The starting address of the memory range, which must be page-aligned.
+ * @param size The size of the memory range, which must be an exact multiple of the page size.
  *
  * @return Whether the address range was successfully marked.
  */
