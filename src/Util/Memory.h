@@ -35,7 +35,7 @@ bool ExcludeFromCoreDump(void* address, size_t size);
  * @brief Custom deleter for page-aligned data.
  * @see UniqueAlignedDataPtr
  * @note This is a wrapper around std::free which allows UniqueAlignedDataPtr to be constructed without the need for an explicit deleter
- * parameter. parameter.
+ * parameter.
  */
 struct AlignedDataDeleter {
     void operator()(void* ptr) {
