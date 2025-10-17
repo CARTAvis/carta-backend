@@ -77,8 +77,8 @@ public:
     static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);
     static CARTA::SetSpatialRequirements SetSpatialRequirements(int32_t file_id, int32_t region_id);
     static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id);
-    static CARTA::SetHistogramRequirements SetHistogramRequirements(
-        int32_t file_id, int32_t region_id, int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
+    static CARTA::SetHistogramRequirements SetHistogramRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate = "z",
+        int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
     static CARTA::AddRequiredTiles AddRequiredTiles(
         int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<int32_t>& tiles);
     static CARTA::Point Point(float x, float y);

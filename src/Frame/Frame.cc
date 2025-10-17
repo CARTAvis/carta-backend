@@ -1700,13 +1700,13 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
 
             // Get image data and mask, with image mutex locked
             std::unique_lock<std::mutex> ulock(_image_mutex);
-            casacore::Array<float> tmpdata;
             if (_loader->IsGenerated() || is_computed_stokes) { // For the image in memory
+                casacore::Array<float> tmpdata;
                 sub_image.doGetSlice(tmpdata, slicer);
                 data = tmpdata.tovector();
             } else {
                 data.resize(subimage_shape.product()); // must size correctly before sharing
-                tmpdata = casacore::Array<float>(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+                casacore::Array<float> tmpdata(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
                 sub_image.doGetSlice(tmpdata, slicer);
             }
 
@@ -2371,8 +2371,8 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 }
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
-    // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
-
+    // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy).
+    // Returns stokes axis index for coordinate or computed stokes, and whether this index exists or can be computed.
     if (coordinate.empty() || coordinate == 'x' || coordinate == 'y' || coordinate == 'z') {
         // Profile only or blank; use current Stokes
         stokes_index = CurrentStokes();
@@ -2394,7 +2394,18 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
     if (stokes_type) {
         if (Stokes::IsComputed(stokes_type)) {
             stokes_index = stokes_type;
-            stokes_ok = true;
+
+            // Recursively check if components exist for computed stokes.
+            std::unordered_map<CARTA::PolarizationType, std::vector<string>> computed_stokes_components{{CARTA::Ptotal, {"Q", "U", "V"}},
+                {CARTA::Plinear, {"Q", "U"}}, {CARTA::PFtotal, {"Ptotal", "I"}}, {CARTA::PFlinear, {"Plinear", "I"}},
+                {CARTA::Pangle, {"Q", "U"}}};
+            int test_stokes;
+            for (auto& component : computed_stokes_components[stokes_type]) {
+                stokes_ok = GetStokesTypeIndex(component, test_stokes);
+                if (!stokes_ok) {
+                    break;
+                }
+            }
         } else {
             if (!_loader->GetStokesIndices().empty()) {
                 // Stokes are defined in image
