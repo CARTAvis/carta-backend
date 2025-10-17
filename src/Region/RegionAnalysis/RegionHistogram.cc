@@ -42,9 +42,9 @@ bool RegionHistogram::GetConfigurations(int file_id, std::vector<HistogramConfig
 
 std::vector<int> RegionHistogram::GetConfigFileIds(int file_id) {
     std::vector<int> file_ids;
-    for (auto& config : _configs) {
-        if ((file_id == ALL_FILES) || (config.first.file_id == file_id)) {
-            file_ids.push_back(config.first.file_id);
+    for (const auto& [config_id, _] : _configs) {
+        if ((file_id == ALL_FILES) || (config_id.file_id == file_id)) {
+            file_ids.push_back(config_id.file_id);
         }
     }
     return file_ids;

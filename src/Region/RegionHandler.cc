@@ -303,7 +303,7 @@ bool RegionHandler::SetHistogramRequirements(
     _frames[file_id] = frame;
 
     if (_region_histograms.find(region_id) == _region_histograms.end()) {
-        _region_histograms[region_id] = std::unique_ptr<RegionHistogram>(new RegionHistogram(region_id, file_id, configs));
+        _region_histograms[region_id] = std::make_unique<RegionHistogram>(region_id, file_id, configs);
     } else {
         _region_histograms[region_id]->SetConfigurations(file_id, configs);
     }
@@ -1488,14 +1488,13 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
     }
 
     bool success(false);
-    for (auto& histogram : _region_histograms) {
+    for (const auto& [hist_region_id, region_histogram] : _region_histograms) {
         // Find histogram configurations with region_id and file_id
-        int hist_region_id = histogram.first;
         if ((region_id > 0) && (hist_region_id != region_id)) {
             continue;
         }
 
-        auto config_file_ids = histogram.second->GetConfigFileIds(file_id);
+        auto config_file_ids = region_histogram->GetConfigFileIds(file_id);
         if (config_file_ids.empty()) {
             continue;
         }
@@ -1509,7 +1508,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
             auto frame = _frames.at(hist_file_id);
 
             std::vector<HistogramConfig> histogram_configs;
-            if (!histogram.second->GetConfigurations(hist_file_id, histogram_configs)) {
+            if (!region_histogram->GetConfigurations(hist_file_id, histogram_configs)) {
                 continue;
             }
 
@@ -1526,7 +1525,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 std::shared_ptr<casacore::LCRegion> lcregion = ApplyRegionToFile(hist_region_id, hist_file_id, stokes_source);
                 CARTA::RegionHistogramData histogram_data_message;
 
-                if (histogram.second->GetRegionHistogramData(
+                if (region_histogram->GetRegionHistogramData(
                         hist_file_id, frame, histogram_config, lcregion, stokes_source, histogram_data_message)) {
                     cb(histogram_data_message);
                     success = true;
