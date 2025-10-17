@@ -1,5 +1,7 @@
 <map id="Message::RegionStatsData" name="Message::RegionStatsData">
-<area shape="rect" id="Node000001" title=" " alt="" coords="229,13,427,38"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="229,45,427,70"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a7b6124c45df53a4dc2e8096ce5314b18" title=" " alt="" coords="5,5,181,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="216,28,181,28,181,23,216,23"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="221,45,181,40,182,35,222,40"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionStatistics.html#a786c9eb2ddec95a83a14596b17b588a0" title="Add cached or calculated statistics to message." alt="" coords="9,69,177,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="222,75,178,81,177,75,221,69"/>
 </map>

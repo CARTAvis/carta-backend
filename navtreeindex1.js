@@ -108,6 +108,8 @@ var NAVTREEINDEX1 =
 "RegionImporter_8cc.html":[5,0,1,11,1,10],
 "RegionImporter_8h.html":[5,0,1,11,1,11],
 "RegionState_8h.html":[5,0,1,11,10],
+"RegionStatistics_8cc.html":[5,0,1,11,0,3],
+"RegionStatistics_8h.html":[5,0,1,11,0,4],
 "Region_8cc.html":[5,0,1,11,4],
 "Region_8h.html":[5,0,1,11,5],
 "RemoteFiles_8cc.html":[5,0,1,16,15],
@@ -247,7 +249,5 @@ var NAVTREEINDEX1 =
 "classMessage.html#a3408af875693d81d8aa8b236a70431c4":[4,0,7,3],
 "classMessage.html#a3d4cf7b23300e939ae7994029c776650":[4,0,7,44],
 "classMessage.html#a4219aad3d558ca35844027283d980b33":[4,0,7,35],
-"classMessage.html#a4e7fcbdfac275064dfd1a3f3582d2bcc":[4,0,7,60],
-"classMessage.html#a4fc4f717b634e66070366cb7722d7761":[4,0,7,0],
-"classMessage.html#a50066c9b8734724d4be0ced5e2143dfd":[4,0,7,4]
+"classMessage.html#a4e7fcbdfac275064dfd1a3f3582d2bcc":[4,0,7,60]
 };

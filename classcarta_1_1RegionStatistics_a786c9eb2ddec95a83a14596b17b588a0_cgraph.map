@@ -1,0 +1,7 @@
+<map id="carta::RegionStatistics::GetRegionStatsData" name="carta::RegionStatistics::GetRegionStatsData">
+<area shape="rect" id="Node000001" title="Add cached or calculated statistics to message." alt="" coords="5,23,173,63"/>
+<area shape="rect" id="Node000002" href="$Message_8cc.html#a30d3b3e61fe64e3f953b3a7a2ed9280e" title=" " alt="" coords="269,5,371,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,31,256,22,256,28,174,37"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#a1641ebe3a971aa233d8621a1abe0bd76" title=" " alt="" coords="221,55,419,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="174,49,208,53,207,58,173,55"/>
+</map>

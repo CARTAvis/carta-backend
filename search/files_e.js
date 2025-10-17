@@ -17,8 +17,10 @@ var searchData=
   ['regionimportexportutil_2ecc_14',['RegionImportExportUtil.cc',['../RegionImportExportUtil_8cc.html',1,'']]],
   ['regionimportexportutil_2eh_15',['RegionImportExportUtil.h',['../RegionImportExportUtil_8h.html',1,'']]],
   ['regionstate_2eh_16',['RegionState.h',['../RegionState_8h.html',1,'']]],
-  ['release_2emd_17',['release.md',['../release_8md.html',1,'']]],
-  ['remotefiles_2ecc_18',['RemoteFiles.cc',['../RemoteFiles_8cc.html',1,'']]],
-  ['remotefiles_2eh_19',['RemoteFiles.h',['../RemoteFiles_8h.html',1,'']]],
-  ['requirementscache_2eh_20',['RequirementsCache.h',['../RequirementsCache_8h.html',1,'']]]
+  ['regionstatistics_2ecc_17',['RegionStatistics.cc',['../RegionStatistics_8cc.html',1,'']]],
+  ['regionstatistics_2eh_18',['RegionStatistics.h',['../RegionStatistics_8h.html',1,'']]],
+  ['release_2emd_19',['release.md',['../release_8md.html',1,'']]],
+  ['remotefiles_2ecc_20',['RemoteFiles.cc',['../RemoteFiles_8cc.html',1,'']]],
+  ['remotefiles_2eh_21',['RemoteFiles.h',['../RemoteFiles_8h.html',1,'']]],
+  ['requirementscache_2eh_22',['RequirementsCache.h',['../RequirementsCache_8h.html',1,'']]]
 ];

@@ -127,6 +127,7 @@ var hierarchy =
     [ "carta::RegionSpectralConfig", "structcarta_1_1RegionSpectralConfig.html", null ],
     [ "carta::FileInfo::RegionSpectralStats", "structcarta_1_1FileInfo_1_1RegionSpectralStats.html", null ],
     [ "carta::RegionState", "structcarta_1_1RegionState.html", null ],
+    [ "carta::RegionStatistics", "classcarta_1_1RegionStatistics.html", null ],
     [ "carta::RegionStatsConfig", "structcarta_1_1RegionStatsConfig.html", null ],
     [ "carta::FileInfo::RegionStatsId", "structcarta_1_1FileInfo_1_1RegionStatsId.html", null ],
     [ "carta::RequiredTiles", "structcarta_1_1RequiredTiles.html", null ],

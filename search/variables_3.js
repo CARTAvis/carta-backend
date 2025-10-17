@@ -16,7 +16,7 @@ var searchData=
   ['compression_5flevel_13',['compression_level',['../structcarta_1_1ContourSettings.html#a5ec25d47bcbd51bfa57c1f41b5b0d387',1,'carta::ContourSettings']]],
   ['compression_5fquality_14',['compression_quality',['../structcarta_1_1RequiredTiles.html#a484a2f94fb14a6c6ebe76155f1bedf06',1,'carta::RequiredTiles']]],
   ['compression_5ftype_15',['compression_type',['../structcarta_1_1RequiredTiles.html#aaab401591771f83b61cf90dc762c142d',1,'carta::RequiredTiles']]],
-  ['configs_16',['configs',['../structcarta_1_1RegionHistogramConfig.html#ad8ed1b8fb32ff14b4f2720d7d78b358c',1,'carta::RegionHistogramConfig::configs'],['../structcarta_1_1RegionSpectralConfig.html#a2aa9292365dfa8f6cc302353795d9c2d',1,'carta::RegionSpectralConfig::configs']]],
+  ['configs_16',['configs',['../structcarta_1_1RegionHistogramConfig.html#ad8ed1b8fb32ff14b4f2720d7d78b358c',1,'carta::RegionHistogramConfig::configs'],['../structcarta_1_1RegionSpectralConfig.html#a2aa9292365dfa8f6cc302353795d9c2d',1,'carta::RegionSpectralConfig::configs'],['../structcarta_1_1RegionStatsConfig.html#a6106ab2796bab5ea3ad22dfaece6ef10',1,'carta::RegionStatsConfig::configs']]],
   ['control_5fpoints_17',['control_points',['../structcarta_1_1RegionState.html#a514f735c4244bb03216af80803a5f977',1,'carta::RegionState']]],
   ['controller_5fdeployment_18',['controller_deployment',['../structcarta_1_1ProgramSettings.html#a3d95a3072052a718598c2a1830550970',1,'carta::ProgramSettings']]],
   ['coordinate_19',['coordinate',['../structcarta_1_1HistogramConfig.html#ae625a69e48d46ef7887b9ee10cc04d53',1,'carta::HistogramConfig::coordinate'],['../structcarta_1_1SpectralConfig.html#a14b3cd201eb63f63d10211afc931d1ee',1,'carta::SpectralConfig::coordinate']]],

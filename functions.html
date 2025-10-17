@@ -122,7 +122,7 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 <li>_bin_center&#160;:&#160;<a class="el" href="classcarta_1_1Histogram.html#a7223c57ddab053cf3ee64b5f7338a969">carta::Histogram</a></li>
 <li>_bin_width&#160;:&#160;<a class="el" href="classcarta_1_1Histogram.html#ab264436df99d2ac3f0de27382efe7a6b">carta::Histogram</a></li>
 <li>_bitpix&#160;:&#160;<a class="el" href="classcarta_1_1CartaFitsImage.html#a2847c2eb4404d8d410d37d9715902ff9">carta::CartaFitsImage</a></li>
-<li>_cache&#160;:&#160;<a class="el" href="classcarta_1_1RegionHistogram.html#a24b3b5d75b44a683d4aecd553362d8d7">carta::RegionHistogram</a></li>
+<li>_cache&#160;:&#160;<a class="el" href="classcarta_1_1RegionHistogram.html#a24b3b5d75b44a683d4aecd553362d8d7">carta::RegionHistogram</a>, <a class="el" href="classcarta_1_1RegionStatistics.html#a1718712bcb05c0b56a19ef9530a5ec5b">carta::RegionStatistics</a></li>
 <li>_cache_loaded&#160;:&#160;<a class="el" href="classcarta_1_1Frame.html#add23fba058d63973e275c6153a30f27b">carta::Frame</a></li>
 <li>_cache_mutex&#160;:&#160;<a class="el" href="classcarta_1_1Frame.html#a62d33c7eff2a801c2d19073954b483ab">carta::Frame</a></li>
 <li>_calculate_pa&#160;:&#160;<a class="el" href="classcarta_1_1VectorField.html#aba1b939d323dbe9660ec853a729fdec6">carta::VectorField</a></li>
@@ -146,7 +146,7 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 <li>_computed_stokes_image&#160;:&#160;<a class="el" href="classcarta_1_1FileLoader.html#a5d673186ac95f8099586e1e45224b2e1">carta::FileLoader</a></li>
 <li>_concatenated_name&#160;:&#160;<a class="el" href="classcarta_1_1StokesFilesConnector.html#a6edbf96d75b4888e490a2974ad3b2128">carta::StokesFilesConnector</a></li>
 <li>_config_folder&#160;:&#160;<a class="el" href="classcarta_1_1HttpServer.html#ae7ea890ec1b5c17d10bd9cedcb58a598">carta::HttpServer</a></li>
-<li>_configs&#160;:&#160;<a class="el" href="classcarta_1_1RegionHistogram.html#a7d89c74ecb313202bc93710bf404f8d8">carta::RegionHistogram</a></li>
+<li>_configs&#160;:&#160;<a class="el" href="classcarta_1_1RegionHistogram.html#a7d89c74ecb313202bc93710bf404f8d8">carta::RegionHistogram</a>, <a class="el" href="classcarta_1_1RegionStatistics.html#a3ad1b2c4b4445a87901185571199ca09">carta::RegionStatistics</a></li>
 <li>_connected&#160;:&#160;<a class="el" href="classcarta_1_1Frame.html#ae1c8c423f810d6ffe8ecfe0c8d8b0ff7">carta::Frame</a>, <a class="el" href="classcarta_1_1Region.html#a13edb9e6b8731c8eca833d71fdfe1918">carta::Region</a>, <a class="el" href="classcarta_1_1Session.html#aaeabfdcc50fb0c7272c3b2bbe6eb1ee0">carta::Session</a></li>
 <li>_context&#160;:&#160;<a class="el" href="classcarta_1_1AnimationObject.html#a887d922e560822817fe6b6292e48e667">carta::AnimationObject</a></li>
 <li>_contour_settings&#160;:&#160;<a class="el" href="classcarta_1_1Frame.html#a0253f61585e2ddbf5c0957d35ddbbf90">carta::Frame</a></li>
@@ -378,12 +378,13 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 <li>_region_converter&#160;:&#160;<a class="el" href="classcarta_1_1Region.html#a3cf5bf2d80efbdbc4cd0de0e98e2f5cd">carta::Region</a></li>
 <li>_region_handler&#160;:&#160;<a class="el" href="classcarta_1_1Session.html#a6d9acd72fb35d1f18327a95491b6894c">carta::Session</a></li>
 <li>_region_histograms&#160;:&#160;<a class="el" href="classcarta_1_1RegionHandler.html#a97b8e4e6982dc608a2d113c43658eaea">carta::RegionHandler</a></li>
-<li>_region_id&#160;:&#160;<a class="el" href="classcarta_1_1PvPreviewUpdateTask.html#aa9dc84b0ea49d4d2a7ae2ec8e41ed93c">carta::PvPreviewUpdateTask</a>, <a class="el" href="classcarta_1_1RegionDataStreamsTask.html#a2041151f2a372d7dc54c16cd187d7e98">carta::RegionDataStreamsTask</a>, <a class="el" href="classcarta_1_1RegionHistogram.html#a93887f33e03ac34c7d25ccc2022712f2">carta::RegionHistogram</a>, <a class="el" href="classcarta_1_1SpectralProfileTask.html#a38a11b93f7b51cd40dcc36c2cf5dab71">carta::SpectralProfileTask</a></li>
+<li>_region_id&#160;:&#160;<a class="el" href="classcarta_1_1PvPreviewUpdateTask.html#aa9dc84b0ea49d4d2a7ae2ec8e41ed93c">carta::PvPreviewUpdateTask</a>, <a class="el" href="classcarta_1_1RegionDataStreamsTask.html#a2041151f2a372d7dc54c16cd187d7e98">carta::RegionDataStreamsTask</a>, <a class="el" href="classcarta_1_1RegionHistogram.html#a93887f33e03ac34c7d25ccc2022712f2">carta::RegionHistogram</a>, <a class="el" href="classcarta_1_1RegionStatistics.html#a0465a5736a833f9e983a27242f919b3c">carta::RegionStatistics</a>, <a class="el" href="classcarta_1_1SpectralProfileTask.html#a38a11b93f7b51cd40dcc36c2cf5dab71">carta::SpectralProfileTask</a></li>
 <li>_region_list_mutex&#160;:&#160;<a class="el" href="classcarta_1_1FileListHandler.html#a03f77f9cdff61d9c22d414b2f7ee34c2">carta::FileListHandler</a></li>
 <li>_region_mutex&#160;:&#160;<a class="el" href="classcarta_1_1RegionConverter.html#a3cb57550a686487734aa79c4e88d89e2">carta::RegionConverter</a>, <a class="el" href="classcarta_1_1RegionHandler.html#a86e8efd8bff3348e82060d6c8c701560">carta::RegionHandler</a></li>
 <li>_region_names&#160;:&#160;<a class="el" href="classcarta_1_1RegionExporter.html#ac0c49c30a879ce4fa805378936329a0f">carta::RegionExporter</a>, <a class="el" href="classcarta_1_1RegionImporter.html#ad10be7b4f532ce15ba964623b43e096b">carta::RegionImporter</a></li>
 <li>_region_state&#160;:&#160;<a class="el" href="classcarta_1_1Region.html#a0689c50d4e815b8eb4de969a5cb3b39e">carta::Region</a>, <a class="el" href="classcarta_1_1RegionConverter.html#a59aad995502f7b55b4a32b5aea4b1bb4">carta::RegionConverter</a></li>
 <li>_region_state_mutex&#160;:&#160;<a class="el" href="classcarta_1_1Region.html#a3d477e98453230e5ac8beb5cb25ea596">carta::Region</a></li>
+<li>_region_statistics&#160;:&#160;<a class="el" href="classcarta_1_1RegionHandler.html#a4ee3ba04a3662862334bc3cd4112fa01">carta::RegionHandler</a></li>
 <li>_region_stats&#160;:&#160;<a class="el" href="classcarta_1_1Hdf5Loader.html#af0d4af966110e470ff6e02fbb6c436d9">carta::Hdf5Loader</a></li>
 <li>_regionlist_folder&#160;:&#160;<a class="el" href="classcarta_1_1FileListHandler.html#a9653ee54f3c5e8de90cfa2ca6e2a9a5e">carta::FileListHandler</a></li>
 <li>_regions&#160;:&#160;<a class="el" href="classcarta_1_1RegionHandler.html#a0a0216f5a72b22e01b7745bc07133b79">carta::RegionHandler</a>, <a class="el" href="classcarta_1_1RegionImporter.html#a2221df38194d41a00f878bb83916d76a">carta::RegionImporter</a></li>
@@ -427,8 +428,6 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 <li>_start_frame&#160;:&#160;<a class="el" href="classcarta_1_1AnimationObject.html#ae890767e1b50bea900ea280bf1244a13">carta::AnimationObject</a></li>
 <li>_start_time&#160;:&#160;<a class="el" href="classcarta_1_1ListProgressReporter.html#ad20150d2fad7cbe6e7cc1ca2ceb11d55">carta::ListProgressReporter</a>, <a class="el" href="classcarta_1_1MomentGenerator.html#ad5ae148c593956c7db5104fe77a06264">carta::MomentGenerator</a></li>
 <li>_starting_folder&#160;:&#160;<a class="el" href="classcarta_1_1FileListHandler.html#af2417dfe5b890a61e101d34b49ad4e4e">carta::FileListHandler</a>, <a class="el" href="classcarta_1_1TableController.html#af0c4fa2f0444f3b41ce0187918a0d781">carta::TableController</a></li>
-<li>_stats_cache&#160;:&#160;<a class="el" href="classcarta_1_1RegionHandler.html#ae651c0c672e487f193eba00f6d396c0b">carta::RegionHandler</a></li>
-<li>_stats_req&#160;:&#160;<a class="el" href="classcarta_1_1RegionHandler.html#a5dcaa11ea35b7c7a129feab0737a0223">carta::RegionHandler</a></li>
 <li>_status&#160;:&#160;<a class="el" href="classcarta_1_1WebBrowser.html#af668cd182ec040016f6d59d601c1713a">carta::WebBrowser</a></li>
 <li>_steps_for_beam_convolution&#160;:&#160;<a class="el" href="classcarta_1_1ImageMoments.html#a3c758f9487a3673927f7e3c8222fb42e">carta::ImageMoments&lt; T &gt;</a></li>
 <li>_stokes&#160;:&#160;<a class="el" href="classcarta_1_1TileCache.html#a435a320d652dbd8e74e84beae36517f7">carta::TileCache</a></li>

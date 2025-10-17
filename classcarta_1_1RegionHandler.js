@@ -31,7 +31,6 @@ var classcarta_1_1RegionHandler =
     [ "GetPvPreviewFrameId", "classcarta_1_1RegionHandler.html#ab0b3358b46e9265c92310a735aa44156", null ],
     [ "GetRegion", "classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b", null ],
     [ "GetRegionSpectralData", "classcarta_1_1RegionHandler.html#a32e479940a3721ce03fd2fb2076b40d9", null ],
-    [ "GetRegionStatsData", "classcarta_1_1RegionHandler.html#a5400b6dee0622f4ce2060ae424e1e559", null ],
     [ "GetSpatialReqFilesForRegion", "classcarta_1_1RegionHandler.html#a3de66887f1781fe1d346106e475b521c", null ],
     [ "GetSpatialReqRegionsForFile", "classcarta_1_1RegionHandler.html#ad6d28b44cd711c8c202d53b3564cad3a", null ],
     [ "GetStokesPangle", "classcarta_1_1RegionHandler.html#a6cbe0993d9c7c1efc36eb8252cfe6177", null ],
@@ -57,7 +56,7 @@ var classcarta_1_1RegionHandler =
     [ "SetRegion", "classcarta_1_1RegionHandler.html#a16e2a6c2b25be9784d31a71c14bf6c31", null ],
     [ "SetSpatialRequirements", "classcarta_1_1RegionHandler.html#aaa29bac6b3845d7b15ec257a1683e028", null ],
     [ "SetSpectralRequirements", "classcarta_1_1RegionHandler.html#ae05f9bc832b30378281c5897edee7339", null ],
-    [ "SetStatsRequirements", "classcarta_1_1RegionHandler.html#a2f27f6890487e19f0eb43331962f2fb2", null ],
+    [ "SetStatsRequirements", "classcarta_1_1RegionHandler.html#a0917d5f2e048be320f6998267fe808a1", null ],
     [ "StopPvCalc", "classcarta_1_1RegionHandler.html#a48531b61f365e6d5a8a790e8b1725464", null ],
     [ "StopPvPreview", "classcarta_1_1RegionHandler.html#a6f72e1cc41cfcbf6149dbe9c238b656d", null ],
     [ "StopPvPreviewUpdates", "classcarta_1_1RegionHandler.html#a882b501e30e61f46ca6f0503c34335c1", null ],
@@ -73,6 +72,7 @@ var classcarta_1_1RegionHandler =
     [ "_pv_preview_cuts", "classcarta_1_1RegionHandler.html#a47ebdf3e90caf7153f84033b6127e1ec", null ],
     [ "_region_histograms", "classcarta_1_1RegionHandler.html#a97b8e4e6982dc608a2d113c43658eaea", null ],
     [ "_region_mutex", "classcarta_1_1RegionHandler.html#a86e8efd8bff3348e82060d6c8c701560", null ],
+    [ "_region_statistics", "classcarta_1_1RegionHandler.html#a4ee3ba04a3662862334bc3cd4112fa01", null ],
     [ "_regions", "classcarta_1_1RegionHandler.html#a0a0216f5a72b22e01b7745bc07133b79", null ],
     [ "_spatial_mutex", "classcarta_1_1RegionHandler.html#a29231752632059fa71e0234c9a223c7e", null ],
     [ "_spatial_req", "classcarta_1_1RegionHandler.html#a019395fa414a82d22bcf1eb5b251757b", null ],
@@ -80,7 +80,5 @@ var classcarta_1_1RegionHandler =
     [ "_spectral_mutex", "classcarta_1_1RegionHandler.html#a77e45a485c15d880372000c8a11f68db", null ],
     [ "_spectral_req", "classcarta_1_1RegionHandler.html#a64a5ae175a87f52630a7a7fb34ad4245", null ],
     [ "_spectral_stats", "classcarta_1_1RegionHandler.html#a5b3cc330128db83deff8b70319c123fd", null ],
-    [ "_stats_cache", "classcarta_1_1RegionHandler.html#ae651c0c672e487f193eba00f6d396c0b", null ],
-    [ "_stats_req", "classcarta_1_1RegionHandler.html#a5dcaa11ea35b7c7a129feab0737a0223", null ],
     [ "_stop_pv", "classcarta_1_1RegionHandler.html#a037682014bb7a934c6b77b337c9ac0e7", null ]
 ];

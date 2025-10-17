@@ -91,6 +91,7 @@ var annotated_dup =
       [ "RegionProperties", "structcarta_1_1RegionProperties.html", "structcarta_1_1RegionProperties" ],
       [ "RegionSpectralConfig", "structcarta_1_1RegionSpectralConfig.html", "structcarta_1_1RegionSpectralConfig" ],
       [ "RegionState", "structcarta_1_1RegionState.html", "structcarta_1_1RegionState" ],
+      [ "RegionStatistics", "classcarta_1_1RegionStatistics.html", "classcarta_1_1RegionStatistics" ],
       [ "RegionStatsConfig", "structcarta_1_1RegionStatsConfig.html", "structcarta_1_1RegionStatsConfig" ],
       [ "RequiredTiles", "structcarta_1_1RequiredTiles.html", "structcarta_1_1RequiredTiles" ],
       [ "Session", "classcarta_1_1Session.html", "classcarta_1_1Session" ],
