@@ -237,7 +237,7 @@ protected:
     bool GetRasterTileData(int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height);
 
     // Fill vector for given z and stokes
-    void GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes);
+    void GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
 
     // Histograms: z is single z index or ALL_Z for cube
     int AutoBinSize();
@@ -296,7 +296,7 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    long long int _image_cache_size;
+    size_t _image_cache_size;
     std::unique_ptr<float[]> _image_cache;
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write

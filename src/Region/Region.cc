@@ -138,7 +138,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
     // Returns nullptr if is annotation, is not a closed region (line/polyline), or outside image.
     std::shared_ptr<casacore::LCRegion> lcregion;
 
-    if (IsAnnotation() || IsLineType()) {
+    if (IsAnnotation() || IsLineType() || image_shape.empty()) { // no image shape if invalid stokes
         return lcregion;
     }
 
@@ -149,7 +149,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
 
     if (!lcregion) {
         if (IsInReferenceImage(file_id)) {
-            if (!_lcregion_set) {
+            if (!_lcregion_set || Stokes::IsComputed(stokes_source.stokes)) {
                 // Create LCRegion from TableRecord
                 casacore::TableRecord region_record;
                 if (GetRegionState().IsRotbox()) {
@@ -399,16 +399,18 @@ void Region::CompleteRegionRecord(casacore::TableRecord& record, const casacore:
         record.define("comment", "");
         record.define("oneRel", false); // control points are 0-based
 
-        casacore::Vector<int> record_shape;
-        if (_region_state.IsPoint()) {
-            // LCBox uses entire image shape
-            record_shape = image_shape.asVector();
-        } else {
-            // Other regions use 2D shape
-            record_shape.resize(2);
-            record_shape(0) = image_shape(0);
-            record_shape(1) = image_shape(1);
+        if (!image_shape.empty()) {
+            casacore::Vector<int> record_shape;
+            if (_region_state.IsPoint()) {
+                // LCBox uses entire image shape
+                record_shape = image_shape.asVector();
+            } else {
+                // Other regions use 2D shape
+                record_shape.resize(2);
+                record_shape(0) = image_shape(0);
+                record_shape(1) = image_shape(1);
+            }
+            record.define("shape", record_shape);
         }
-        record.define("shape", record_shape);
     }
 }
