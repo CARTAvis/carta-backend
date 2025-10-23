@@ -9,7 +9,6 @@
 #include "RegionHistogram.h"
 
 #include "ImageStats/StatsCalculator.h"
-#include "RegionAnalysisUtil.h"
 #include "Util/File.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
@@ -64,15 +63,18 @@ void RegionHistogram::AddDefaultHistogram(CARTA::RegionHistogramData& histogram_
 }
 
 bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
-    std::shared_ptr<casacore::LCRegion> lcregion, StokesSource& stokes_source, CARTA::RegionHistogramData& histogram_data_message) {
+    StokesRegion& stokes_region, CARTA::RegionHistogramData& histogram_data_message) {
+    auto image_region = stokes_region.image_region;
+    auto stokes_source = stokes_region.stokes_source;
+
     FillHistogramDataParams(file_id, stokes_source, config, histogram_data_message);
-    if (!lcregion) {
+    if (!image_region.isLCRegion()) {
         // Region outside image
         AddDefaultHistogram(histogram_data_message);
         return true;
     }
 
-    int num_bins = GetNumBins(config, frame, lcregion); // from config or calculated from region shape
+    int num_bins = GetNumBins(config, frame, image_region); // config setting, or calculated from region shape
 
     // Check cache
     int stokes = stokes_source.stokes;
@@ -83,9 +85,8 @@ bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame>
     }
 
     // Calculate stats and histogram
-    auto stokes_slicer = GetRegionStokesSlicer(frame, lcregion, stokes_source);
-    std::vector<float> region_data(stokes_slicer.slicer.length().product(), FLOAT_NAN);
-    if (!frame->GetSlicerData(stokes_slicer, region_data.data())) {
+    std::vector<float> region_data;
+    if (!frame->GetRegionData(stokes_region, region_data, false)) {
         return false;
     }
 
@@ -104,10 +105,10 @@ bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame>
     return true;
 }
 
-int RegionHistogram::GetNumBins(const HistogramConfig& config, std::shared_ptr<Frame> frame, std::shared_ptr<casacore::LCRegion> lcregion) {
+int RegionHistogram::GetNumBins(const HistogramConfig& config, std::shared_ptr<Frame> frame, casacore::ImageRegion& image_region) {
     int num_bins(config.num_bins);
     if (num_bins == AUTO_BIN_SIZE) {
-        casacore::IPosition region_shape = lcregion->shape();
+        casacore::IPosition region_shape = image_region.asLCRegionPtr()->shape();
         num_bins = int(std::max(sqrt(region_shape(0) * region_shape(1)), 2.0));
     }
     return num_bins;
