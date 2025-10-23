@@ -1457,14 +1457,16 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                     continue;
                 }
 
+                // Get StokesRegion
                 int z = (histogram_config.channel == CURRENT_Z ? frame->CurrentZ() : histogram_config.channel);
                 AxisRange z_range(z);
-                StokesSource stokes_source(stokes, z_range);
-                std::shared_ptr<casacore::LCRegion> lcregion = ApplyRegionToFile(hist_region_id, hist_file_id, stokes_source);
+                std::shared_ptr<casacore::LCRegion> lc_region;
+                StokesRegion stokes_region;
+                ApplyRegionToFile(hist_region_id, hist_file_id, z_range, stokes, lc_region, stokes_region);
                 CARTA::RegionHistogramData histogram_data_message;
 
                 if (region_histogram->GetRegionHistogramData(
-                        hist_file_id, frame, histogram_config, lcregion, stokes_source, histogram_data_message)) {
+                        hist_file_id, frame, histogram_config, stokes_region, histogram_data_message)) {
                     cb(histogram_data_message);
                     success = true;
                 }

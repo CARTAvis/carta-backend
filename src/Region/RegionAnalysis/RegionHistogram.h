@@ -54,13 +54,12 @@ public:
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
      * @param[in] config Histogram configuration struct
-     * @param[in] lcregion Region applied to image
-     * @param[in] stokes_source Struct describing stokes and z range
+     * @param[in] stokes_region Struct describing region, stokes, and z range
      * @param[out] histogram_data_message Region histogram data message
      * @return Whether histogram was added
      */
-    bool GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
-        std::shared_ptr<casacore::LCRegion> lcregion, StokesSource& stokes_source, CARTA::RegionHistogramData& histogram_data_message);
+    bool GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config, StokesRegion& stokes_region,
+        CARTA::RegionHistogramData& histogram_data_message);
 
     /** @brief Clear cache when region changes. */
     void ClearCache();
@@ -86,10 +85,10 @@ private:
      * @brief Get number of bins from config and calculate if not supplied.
      * @param config Histogram configuration struct
      * @param frame Image frame
-     * @param lcregion Region applied to image
+     * @param image_region Region applied to image
      * @return number of bins
      */
-    int GetNumBins(const HistogramConfig& config, std::shared_ptr<Frame> frame, std::shared_ptr<casacore::LCRegion> lcregion);
+    int GetNumBins(const HistogramConfig& config, std::shared_ptr<Frame> frame, casacore::ImageRegion& image_region);
 
     /**
      * @brief Add Histogram from cache if it exists.
