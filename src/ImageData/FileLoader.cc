@@ -333,7 +333,6 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
     return true;
 }
 
-// TODO TODO TODO if casacore *references* data in memory, we have to copy here if stokes is computed!
 bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, int stokes_index) {
     try {
         // Get the original image or the computed Stokes image

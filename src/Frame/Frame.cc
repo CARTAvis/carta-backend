@@ -361,8 +361,8 @@ bool Frame::FillImageCache() {
         _image_cache = std::make_unique<float[]>(_image_cache_size);
     }
 
-    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
+    casacore::Slicer slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
+    if (!GetSlicerData(slicer, _stokes_index, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
