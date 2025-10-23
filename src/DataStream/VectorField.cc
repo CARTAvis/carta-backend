@@ -203,10 +203,6 @@ bool GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& til
     int num_tile_columns = ceil((double)image_width / tile_size_original);
     int num_tile_rows = ceil((double)image_height / tile_size_original);
     int32_t tile_layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
-    if (tile_layer < 0) {
-        spdlog::error("Invalid tile layer {} for image size {}x{}.", tile_layer, image_width, image_height);
-        return false;
-    }
     tiles.resize(num_tile_rows * num_tile_columns);
 
     for (int j = 0; j < num_tile_rows; ++j) {
