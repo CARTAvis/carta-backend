@@ -21,7 +21,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="classcarta_1_1RegionHistogram.html#afd90bbee75976291eb1ae211acfe3e22" target="_top" xlink:title="Add cached or calculated histogram to message.">
+<g id="a_Node000002"><a xlink:href="classcarta_1_1RegionHistogram.html#a321b3705f07785c1c801048934f47595" target="_top" xlink:title="Add cached or calculated histogram to message.">
 <polygon fill="white" stroke="#666666" points="148,-30 0,-30 0,0 148,0 148,-30"/>
 <text text-anchor="start" x="8" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHistogram</text>
 <text text-anchor="middle" x="74" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::GetRegionHistogramData</text>

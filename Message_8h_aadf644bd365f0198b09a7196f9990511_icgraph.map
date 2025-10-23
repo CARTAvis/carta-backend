@@ -2,7 +2,7 @@
 <area shape="rect" id="Node000001" title=" " alt="" coords="1628,439,1737,465"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1RegionHistogram.html#a7be797944d5fc08f6bd113e3914e75e0" title="Add Histogram from cache if it exists." alt="" coords="1392,189,1568,229"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1672,427,1660,388,1641,341,1614,292,1578,250,1550,232,1553,227,1582,246,1618,289,1646,338,1665,386,1677,425"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHistogram.html#afd90bbee75976291eb1ae211acfe3e22" title="Add cached or calculated histogram to message." alt="" coords="1134,247,1331,287"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHistogram.html#a321b3705f07785c1c801048934f47595" title="Add cached or calculated histogram to message." alt="" coords="1134,247,1331,287"/>
 <area shape="poly" id="edge47_Node000001_Node000003" title=" " alt="" coords="1671,427,1658,395,1639,358,1612,323,1579,294,1550,280,1519,269,1455,255,1391,252,1332,254,1332,249,1391,246,1456,250,1521,263,1552,275,1581,290,1616,319,1643,355,1663,393,1676,425"/>
 <area shape="rect" id="Node000004" href="$classcarta_1_1RegionHistogram.html#a7e70857b43c04060abf93c7a0d5b9956" title="Add default histogram to message." alt="" coords="1392,304,1568,344"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1660,431,1624,394,1579,358,1554,347,1557,342,1581,354,1628,390,1664,427"/>

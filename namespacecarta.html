@@ -470,9 +470,6 @@ Functions</h2></td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192" id="r_aa3581dda6f86c582d960a381773a4192"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aa3581dda6f86c582d960a381773a4192">applyOptionalArgument</a> (T &amp;val, const string &amp;argument_name, const cxxopts::ParseResult &amp;results)</td></tr>
 <tr class="separator:aa3581dda6f86c582d960a381773a4192"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afcfce2217a084adc1bd0d293023a76f7" id="r_afcfce2217a084adc1bd0d293023a76f7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1StokesSlicer.html">StokesSlicer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#afcfce2217a084adc1bd0d293023a76f7">GetRegionStokesSlicer</a> (std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; frame, std::shared_ptr&lt; casacore::LCRegion &gt; lcregion, <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source)</td></tr>
-<tr class="memdesc:afcfce2217a084adc1bd0d293023a76f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get stokes slicer for region, z range, and stokes applied to image.  <br /></td></tr>
-<tr class="separator:afcfce2217a084adc1bd0d293023a76f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a69252619dfa7d9664a4517b757f6ca4c" id="r_a69252619dfa7d9664a4517b757f6ca4c"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1RegionImporter.html">RegionImporter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a69252619dfa7d9664a4517b757f6ca4c">GetRegionImporter</a> (CARTA::FileType region_file_type, std::shared_ptr&lt; casacore::CoordinateSystem &gt; image_coord_sys, int file_id, const std::string &amp;region_file, bool file_is_filename)</td></tr>
 <tr class="memdesc:a69252619dfa7d9664a4517b757f6ca4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create and return importer according to region file type.  <br /></td></tr>
 <tr class="separator:a69252619dfa7d9664a4517b757f6ca4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -2048,56 +2045,6 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a69252619dfa7d9664a4517b757f6ca4c_icgraph.svg" width="404" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-
-</div>
-</div>
-<a id="afcfce2217a084adc1bd0d293023a76f7" name="afcfce2217a084adc1bd0d293023a76f7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afcfce2217a084adc1bd0d293023a76f7">&#9670;&#160;</a></span>GetRegionStokesSlicer()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structcarta_1_1StokesSlicer.html">StokesSlicer</a> carta::GetRegionStokesSlicer </td>
-          <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt;&#160;</td>
-          <td class="paramname"><em>frame</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td>
-          <td class="paramname"><em>lcregion</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;&#160;</td>
-          <td class="paramname"><em>stokes_source</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Get stokes slicer for region, z range, and stokes applied to image. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">frame</td><td>Image frame </td></tr>
-    <tr><td class="paramname">lcregion</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> applied to image </td></tr>
-    <tr><td class="paramname">stokes_source</td><td>Struct describing stokes and z range </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd><a class="el" href="structcarta_1_1StokesSlicer.html">StokesSlicer</a> for region </dd></dl>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_afcfce2217a084adc1bd0d293023a76f7_icgraph.svg" width="467" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>

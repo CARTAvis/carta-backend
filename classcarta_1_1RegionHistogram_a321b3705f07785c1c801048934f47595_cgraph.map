@@ -1,0 +1,30 @@
+<map id="carta::RegionHistogram::GetRegionHistogramData" name="carta::RegionHistogram::GetRegionHistogramData">
+<area shape="rect" id="Node000001" title="Add cached or calculated histogram to message." alt="" coords="5,188,203,228"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHistogram.html#a7be797944d5fc08f6bd113e3914e75e0" title="Add Histogram from cache if it exists." alt="" coords="261,106,437,146"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="163,186,275,148,277,153,165,191"/>
+<area shape="rect" id="Node000003" href="$Message_8cc.html#aadf644bd365f0198b09a7196f9990511" title=" " alt="" coords="556,49,665,74"/>
+<area shape="poly" id="edge11_Node000001_Node000003" title=" " alt="" coords="112,186,132,150,161,105,201,61,224,42,250,27,291,12,334,5,378,3,422,6,503,22,567,42,565,47,501,27,421,11,378,8,334,10,292,17,252,32,227,46,204,65,165,108,136,152,117,189"/>
+<area shape="rect" id="Node000004" href="$structcarta_1_1HistogramConfig.html#aee3b990962e991922bcf9f3779401bcd" title=" " alt="" coords="525,102,697,142"/>
+<area shape="poly" id="edge14_Node000001_Node000004" title=" " alt="" coords="202,193,446,155,511,142,512,147,447,160,203,198"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHistogram.html#a7e70857b43c04060abf93c7a0d5b9956" title="Add default histogram to message." alt="" coords="261,42,437,82"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="124,186,178,139,213,114,249,91,263,84,266,89,252,96,216,118,182,143,128,190"/>
+<area shape="rect" id="Node000006" href="$namespacecarta.html#a96f7cab56516141317895bada342c0b1" title="Calculate basic stats from a float vector using BasicStatsCalculator." alt="" coords="269,221,428,246"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="203,216,256,221,255,227,202,221"/>
+<area shape="rect" id="Node000009" href="$namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" title="Calculate a histogram from a float vector using Histogram." alt="" coords="269,270,428,296"/>
+<area shape="poly" id="edge9_Node000001_Node000009" title=" " alt="" coords="162,226,251,255,284,264,282,269,250,260,160,231"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1RegionHistogram.html#ae0832f86a050e66772f4767f0c55deeb" title="Fill message with histogram parameters." alt="" coords="251,320,447,360"/>
+<area shape="poly" id="edge12_Node000001_Node000011" title=" " alt="" coords="132,226,186,265,252,305,270,313,268,317,249,309,183,270,129,231"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1RegionHistogram.html#a0dd4f14bfb38b9dcb5d42e081e231cfc" title="Get number of bins from config and calculate if not supplied." alt="" coords="261,384,437,424"/>
+<area shape="poly" id="edge15_Node000001_Node000013" title=" " alt="" coords="120,227,172,297,210,336,252,370,262,376,259,381,249,374,206,340,168,300,116,230"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="430,103,494,87,543,75,544,80,495,92,431,108"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="437,122,511,120,511,126,437,127"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="437,59,543,59,543,64,437,64"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1BasicStatsCalculator.html#a884fc3cea2905271fd40a289efda0321" title=" " alt="" coords="512,166,709,206"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="418,218,498,203,499,209,419,224"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1BasicStatsCalculator.html#a14873f9d84d2abb0fabe85f4b70d0a44" title=" " alt="" coords="512,230,709,270"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="428,236,498,240,498,245,428,241"/>
+<area shape="rect" id="Node000010" href="$structcarta_1_1Bounds.html#a2af56587636d988cdf82b7d2a808dcc7" title=" " alt="" coords="529,294,692,320"/>
+<area shape="poly" id="edge10_Node000009_Node000010" title=" " alt="" coords="428,287,516,296,515,301,428,293"/>
+<area shape="rect" id="Node000012" href="$classMessage.html#a730c49c8e93e27faf31796d44748088b" title=" " alt="" coords="495,344,727,369"/>
+<area shape="poly" id="edge13_Node000011_Node000012" title=" " alt="" coords="447,344,481,346,481,351,447,349"/>
+</map>

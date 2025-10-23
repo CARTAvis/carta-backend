@@ -127,9 +127,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a038ac814989d2267f21ff2a41ae58d73" id="r_a038ac814989d2267f21ff2a41ae58d73"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a038ac814989d2267f21ff2a41ae58d73">GetConfigFileIds</a> (int file_id)</td></tr>
 <tr class="memdesc:a038ac814989d2267f21ff2a41ae58d73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get file ids in configurations which match file id.  <br /></td></tr>
 <tr class="separator:a038ac814989d2267f21ff2a41ae58d73"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afd90bbee75976291eb1ae211acfe3e22" id="r_afd90bbee75976291eb1ae211acfe3e22"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#afd90bbee75976291eb1ae211acfe3e22">GetRegionHistogramData</a> (int file_id, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; frame, const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, std::shared_ptr&lt; casacore::LCRegion &gt; lcregion, <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source, CARTA::RegionHistogramData &amp;histogram_data_message)</td></tr>
-<tr class="memdesc:afd90bbee75976291eb1ae211acfe3e22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add cached or calculated histogram to message.  <br /></td></tr>
-<tr class="separator:afd90bbee75976291eb1ae211acfe3e22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a321b3705f07785c1c801048934f47595" id="r_a321b3705f07785c1c801048934f47595"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a321b3705f07785c1c801048934f47595">GetRegionHistogramData</a> (int file_id, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; frame, const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, <a class="el" href="structcarta_1_1StokesRegion.html">StokesRegion</a> &amp;stokes_region, CARTA::RegionHistogramData &amp;histogram_data_message)</td></tr>
+<tr class="memdesc:a321b3705f07785c1c801048934f47595"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add cached or calculated histogram to message.  <br /></td></tr>
+<tr class="separator:a321b3705f07785c1c801048934f47595"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6846f4c9a8481c16f0d036f7da5d9c4d" id="r_a6846f4c9a8481c16f0d036f7da5d9c4d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a6846f4c9a8481c16f0d036f7da5d9c4d">ClearCache</a> ()</td></tr>
 <tr class="memdesc:a6846f4c9a8481c16f0d036f7da5d9c4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clear cache when region changes.  <br /></td></tr>
 <tr class="separator:a6846f4c9a8481c16f0d036f7da5d9c4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,9 +142,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:ae0832f86a050e66772f4767f0c55deeb" id="r_ae0832f86a050e66772f4767f0c55deeb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#ae0832f86a050e66772f4767f0c55deeb">FillHistogramDataParams</a> (int file_id, <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source, const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, CARTA::RegionHistogramData &amp;histogram_data_message)</td></tr>
 <tr class="memdesc:ae0832f86a050e66772f4767f0c55deeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fill message with histogram parameters.  <br /></td></tr>
 <tr class="separator:ae0832f86a050e66772f4767f0c55deeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa004493bdd2aafcc9bc332b342efd125" id="r_aa004493bdd2aafcc9bc332b342efd125"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#aa004493bdd2aafcc9bc332b342efd125">GetNumBins</a> (const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; frame, std::shared_ptr&lt; casacore::LCRegion &gt; lcregion)</td></tr>
-<tr class="memdesc:aa004493bdd2aafcc9bc332b342efd125"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get number of bins from config and calculate if not supplied.  <br /></td></tr>
-<tr class="separator:aa004493bdd2aafcc9bc332b342efd125"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0dd4f14bfb38b9dcb5d42e081e231cfc" id="r_a0dd4f14bfb38b9dcb5d42e081e231cfc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a0dd4f14bfb38b9dcb5d42e081e231cfc">GetNumBins</a> (const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; frame, casacore::ImageRegion &amp;image_region)</td></tr>
+<tr class="memdesc:a0dd4f14bfb38b9dcb5d42e081e231cfc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get number of bins from config and calculate if not supplied.  <br /></td></tr>
+<tr class="separator:a0dd4f14bfb38b9dcb5d42e081e231cfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7be797944d5fc08f6bd113e3914e75e0" id="r_a7be797944d5fc08f6bd113e3914e75e0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a7be797944d5fc08f6bd113e3914e75e0">AddCachedHistogram</a> (<a class="el" href="structcarta_1_1CacheId.html">CacheId</a> &amp;cache_id, const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, int num_bins, CARTA::RegionHistogramData &amp;histogram_data_message)</td></tr>
 <tr class="memdesc:a7be797944d5fc08f6bd113e3914e75e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> from cache if it exists.  <br /></td></tr>
 <tr class="separator:a7be797944d5fc08f6bd113e3914e75e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -535,8 +535,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aa004493bdd2aafcc9bc332b342efd125" name="aa004493bdd2aafcc9bc332b342efd125"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa004493bdd2aafcc9bc332b342efd125">&#9670;&#160;</a></span>GetNumBins()</h2>
+<a id="a0dd4f14bfb38b9dcb5d42e081e231cfc" name="a0dd4f14bfb38b9dcb5d42e081e231cfc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0dd4f14bfb38b9dcb5d42e081e231cfc">&#9670;&#160;</a></span>GetNumBins()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -559,8 +559,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td>
-          <td class="paramname"><em>lcregion</em>&#160;</td>
+          <td class="paramtype">casacore::ImageRegion &amp;&#160;</td>
+          <td class="paramname"><em>image_region</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -580,7 +580,7 @@ Here is the caller graph for this function:</div>
   <table class="params">
     <tr><td class="paramname">config</td><td><a class="el" href="classcarta_1_1Histogram.html">Histogram</a> configuration struct </td></tr>
     <tr><td class="paramname">frame</td><td>Image frame </td></tr>
-    <tr><td class="paramname">lcregion</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> applied to image </td></tr>
+    <tr><td class="paramname">image_region</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> applied to image </td></tr>
   </table>
   </dd>
 </dl>
@@ -588,13 +588,13 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHistogram_aa004493bdd2aafcc9bc332b342efd125_icgraph.svg" width="432" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHistogram_a0dd4f14bfb38b9dcb5d42e081e231cfc_icgraph.svg" width="432" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
 </div>
-<a id="afd90bbee75976291eb1ae211acfe3e22" name="afd90bbee75976291eb1ae211acfe3e22"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afd90bbee75976291eb1ae211acfe3e22">&#9670;&#160;</a></span>GetRegionHistogramData()</h2>
+<a id="a321b3705f07785c1c801048934f47595" name="a321b3705f07785c1c801048934f47595"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a321b3705f07785c1c801048934f47595">&#9670;&#160;</a></span>GetRegionHistogramData()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -620,14 +620,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td>
-          <td class="paramname"><em>lcregion</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;&#160;</td>
-          <td class="paramname"><em>stokes_source</em>, </td>
+          <td class="paramtype"><a class="el" href="structcarta_1_1StokesRegion.html">StokesRegion</a> &amp;&#160;</td>
+          <td class="paramname"><em>stokes_region</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -649,8 +643,7 @@ Here is the caller graph for this function:</div>
     <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id for image frame </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">frame</td><td>Image frame </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">config</td><td><a class="el" href="classcarta_1_1Histogram.html">Histogram</a> configuration struct </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">lcregion</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> applied to image </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stokes_source</td><td>Struct describing stokes and z range </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stokes_region</td><td>Struct describing region, stokes, and z range </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">histogram_data_message</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> histogram data message </td></tr>
   </table>
   </dd>
@@ -659,7 +652,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHistogram_afd90bbee75976291eb1ae211acfe3e22_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHistogram_a321b3705f07785c1c801048934f47595_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
