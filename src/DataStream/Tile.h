@@ -104,9 +104,6 @@ struct Tile {
             return -1; // No tiles or mip out of range
         }
         double layer = ceil(log2(max_mip / mip));
-        if (layer < 0) {
-            return -1; // Layer out of range
-        }
         return (int32_t)layer;
     }
 };
