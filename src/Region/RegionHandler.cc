@@ -918,10 +918,11 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
 
     // Save cut and cube settings for updates, including current pv cut region state
     RegionState region_state = GetRegion(region_id)->GetRegionState();
-    auto stokes = frame->CurrentStokes();
+    auto stokes_index = frame->CurrentStokes();
     PreviewCutParameters cut_parameters(
         file_id, region_id, line_width, reverse, compression, image_quality, animation_quality, region_state.reference_file_id);
-    PreviewCubeParameters cube_parameters(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, stokes, preview_region_state);
+    PreviewCubeParameters cube_parameters(
+        file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, stokes_index, preview_region_state);
 
     // Update cut and/or cube settings for existing preview ID.
     // Set unique locks so in-progress preview images are completed before update.
@@ -990,7 +991,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
                 preview_cube->SetPreviewRegionOrigin(origin);
             } else {
                 // Apply preview region to source image (LCRegion) to get SubImage
-                std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(preview_region_id, file_id, stokes);
+                std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(preview_region_id, file_id, stokes_index);
                 if (!lc_region) {
                     pv_response.set_message("Failed to set preview region for preview cube.");
                     return false;
@@ -1002,13 +1003,13 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
 
                 // Apply LCRegion and spectral range to source image to get ImageRegion
                 casacore::ImageRegion image_region;
-                if (!ApplyRegionToFile(preview_region_id, file_id, spectral_range, stokes, lc_region, image_region)) {
+                if (!ApplyRegionToFile(preview_region_id, file_id, spectral_range, stokes_index, lc_region, image_region)) {
                     pv_response.set_message("Failed to set preview region or spectral range for preview cube.");
                     return false;
                 }
 
                 // Apply ImageRegion to source image to get SubImage
-                if (!frame->GetRegionSubImage(image_region, stokes, sub_image)) {
+                if (!frame->GetRegionSubImage(image_region, stokes_index, sub_image)) {
                     pv_response.set_message("Failed to set preview region in image for preview cube.");
                     return false;
                 }
@@ -1166,12 +1167,12 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     PvGenerator::PositionAxisType pos_axis_type = (preview_cut_state.type == CARTA::LINE ? PvGenerator::OFFSET : PvGenerator::DISTANCE);
     casacore::Matrix<float> no_preview_data; // do not copy actual preview data into image
     int start_channel(0);                    // spectral range applied in preview image
-    int stokes(preview_cube->GetStokes());
+    int stokes_index(preview_cube->GetStokes());
     PvGenerator pv_generator;
     pv_generator.SetFileName(preview_id, preview_cube->GetSourceFileName(), true);
 
     if (pv_generator.GetPvImage(
-            preview_frame, no_preview_data, data_shape, pos_axis_type, increment, start_channel, stokes, reverse, pv_image, error)) {
+            preview_frame, no_preview_data, data_shape, pos_axis_type, increment, start_channel, stokes_index, reverse, pv_image, error)) {
         int width = data_shape(0);
         int height = data_shape(1);
 
@@ -1423,11 +1424,11 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
     _frames[file_id] = frame;
 
     AxisRange z_range(frame->CurrentZ());
-    int stokes = frame->CurrentStokes();
+    int stokes_index = frame->CurrentStokes();
     casacore::ImageRegion image_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
 
-    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, lc_region, image_region)) {
+    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes_index, lc_region, image_region)) {
         fitting_response.set_message("region is outside image or is not closed");
         fitting_response.set_success(false);
         return false;
@@ -1488,21 +1489,21 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
 
             for (auto& histogram_config : histogram_configs) {
                 // Create data message for each configuration
-                int stokes(0);
-                if (!frame->GetCoordinateStokesIndex(histogram_config.coordinate, stokes)) {
+                int stokes_index(0);
+                if (!frame->GetCoordinateStokesIndex(histogram_config.coordinate, stokes_index)) {
                     continue;
                 }
 
-                // Get StokesRegion
+                // Get ImageRegion
                 int z = (histogram_config.channel == CURRENT_Z ? frame->CurrentZ() : histogram_config.channel);
                 AxisRange z_range(z);
                 std::shared_ptr<casacore::LCRegion> lc_region;
-                StokesRegion stokes_region;
-                ApplyRegionToFile(hist_region_id, hist_file_id, z_range, stokes, lc_region, stokes_region);
+                casacore::ImageRegion image_region;
+                ApplyRegionToFile(hist_region_id, hist_file_id, z_range, stokes_index, lc_region, image_region);
                 CARTA::RegionHistogramData histogram_data_message;
 
                 if (region_histogram->GetRegionHistogramData(
-                        hist_file_id, frame, histogram_config, stokes_region, histogram_data_message)) {
+                        hist_file_id, frame, histogram_config, image_region, z, stokes_index, histogram_data_message)) {
                     cb(histogram_data_message);
                     success = true;
                 }
@@ -1911,20 +1912,21 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
             // Create data message for each configuration
             for (auto& stats_config : stats_configs) {
                 // Get stokes and channel from config
-                int stokes(0);
-                if (!frame->GetCoordinateStokesIndex(stats_config.coordinate(), stokes)) {
+                int stokes_index(0);
+                if (!frame->GetCoordinateStokesIndex(stats_config.coordinate(), stokes_index)) {
                     continue; // invalid image/computed Stokes
                 }
 
-                // Get StokesRegion
+                // Get ImageRegion
                 int z(_frames.at(stats_file_id)->CurrentZ());
                 AxisRange z_range(z);
                 std::shared_ptr<casacore::LCRegion> lc_region;
                 casacore::ImageRegion image_region;
-                ApplyRegionToFile(stats_region_id, stats_file_id, z_range, stokes, lc_region, image_region);
+                ApplyRegionToFile(stats_region_id, stats_file_id, z_range, stokes_index, lc_region, image_region);
                 CARTA::RegionStatsData stats_data_message;
 
-                if (region_statistics->GetRegionStatsData(stats_file_id, frame, stats_config, stokes_region, stats_data_message)) {
+                if (region_statistics->GetRegionStatsData(
+                        stats_file_id, frame, stats_config, image_region, z, stokes_index, stats_data_message)) {
                     cb(stats_data_message);
                     success = true;
                 }

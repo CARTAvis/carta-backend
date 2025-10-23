@@ -142,14 +142,16 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
         return lcregion;
     }
 
+    bool is_computed_stokes(Stokes::IsComputed(stokes_index));
+
     // Check cache
-    if (!Stokes::IsComputed(stokes_index)) {
+    if (!is_computed_stokes) {
         lcregion = GetCachedLCRegion(file_id);
     }
 
     if (!lcregion) {
         if (IsInReferenceImage(file_id)) {
-            if (!_lcregion_set || Stokes::IsComputed(stokes_source.stokes)) {
+            if (!_lcregion_set || is_computed_stokes) {
                 // Create LCRegion from TableRecord
                 casacore::TableRecord region_record;
                 if (GetRegionState().IsRotbox()) {
@@ -167,7 +169,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 _lcregion_set = true;
 
                 // Cache LCRegion
-                if (lcregion && !Stokes::IsComputed(stokes_index)) {
+                if (lcregion && !is_computed_stokes) {
                     std::lock_guard<std::mutex> guard(_lcregion_mutex);
                     _lcregion = lcregion;
                 }

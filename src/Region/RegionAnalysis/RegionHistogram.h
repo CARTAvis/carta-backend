@@ -54,12 +54,14 @@ public:
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
      * @param[in] config Histogram configuration struct
-     * @param[in] stokes_region Struct describing region, stokes, and z range
+     * @param[in] image_region Image region object
+     * @param[in] z The z index
+     * @param[in] stokes_index The Stokes index
      * @param[out] histogram_data_message Region histogram data message
      * @return Whether histogram was added
      */
-    bool GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config, StokesRegion& stokes_region,
-        CARTA::RegionHistogramData& histogram_data_message);
+    bool GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
+        casacore::ImageRegion& image_region, int z, int stokes_index, CARTA::RegionHistogramData& histogram_data_message);
 
     /** @brief Clear cache when region changes. */
     void ClearCache();
@@ -74,12 +76,13 @@ private:
     /**
      * @brief Fill message with histogram parameters.
      * @param[in] file_id File id for image frame
-     * @param[in] stokes_source Struct describing stokes and z range
+     * @param[in] z The z index
+     * @param[in] stokes_index The Stokes index
      * @param[in] config Histogram configuration struct
      * @param[out] histogram_data_message Region histogram data message
      */
     void FillHistogramDataParams(
-        int file_id, StokesSource& stokes_source, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data_message);
+        int file_id, int z, int stokes_index, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data_message);
 
     /**
      * @brief Get number of bins from config and calculate if not supplied.
