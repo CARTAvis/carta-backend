@@ -24,7 +24,7 @@ public:
         }
 
         // Image on disk
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        auto loader = carta::FileLoader::GetLoader(file_path);
         loader->OpenFile(hdu);
         casacore::IPosition image_shape(loader->GetShape());
 
@@ -50,7 +50,7 @@ public:
             expr = fs_path.filename().string() + " * 2";
         }
 
-        std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
+        auto expr_loader = carta::FileLoader::GetLoader(expr, directory);
         expr_loader->OpenFile(hdu);
         casacore::IPosition expr_shape(expr_loader->GetShape());
 
@@ -95,7 +95,7 @@ public:
         std::string expr = fs_path.filename().string() + " * 2";
         std::string directory = fs_path.parent_path().string();
 
-        std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
+        auto expr_loader = carta::FileLoader::GetLoader(expr, directory);
         expr_loader->OpenFile(hdu);
         casacore::IPosition expr_shape(expr_loader->GetShape());
 
@@ -105,7 +105,7 @@ public:
         ASSERT_TRUE(expr_loader->SaveFile(CARTA::FileType::CASA, save_path, message));
 
         // Load saved image
-        std::shared_ptr<carta::FileLoader> saved_expr_loader(carta::FileLoader::GetLoader(save_path));
+        auto saved_expr_loader = carta::FileLoader::GetLoader(save_path);
         saved_expr_loader->OpenFile(hdu);
         ASSERT_TRUE(expr_loader->GetImage().get() != nullptr);
         ASSERT_EQ(expr_loader->GetImage()->imageType(), "ImageExpr");
@@ -138,12 +138,12 @@ TEST_F(ImageExprTest, ImageExprTwoDirs) {
     std::string directory = image_path.string();
     std::string expr = "noise_10px_10px.fits + '../casa/noise_10px_10px.im'";
 
-    std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
+    auto expr_loader = carta::FileLoader::GetLoader(expr, directory);
     expr_loader->OpenFile("");
     casacore::IPosition expr_shape(expr_loader->GetShape());
 
     auto fits_path = FileFinder::FitsImagePath("noise_10px_10px.fits");
-    std::shared_ptr<carta::FileLoader> fits_loader(carta::FileLoader::GetLoader(fits_path));
+    auto fits_loader = carta::FileLoader::GetLoader(fits_path);
     fits_loader->OpenFile("");
     casacore::IPosition fits_shape(fits_loader->GetShape());
     ASSERT_EQ(fits_shape, expr_shape);

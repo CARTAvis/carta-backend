@@ -199,7 +199,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             if (hdu.empty()) { // use first when required
                 hdu = "0";
             }
-            _loaders[stokes_type].reset(FileLoader::GetLoader(full_name));
+            _loaders[stokes_type] = FileLoader::GetLoader(full_name);
             _loaders[stokes_type]->OpenFile(hdu);
         } catch (casacore::AipsError& ex) {
             err = fmt::format("Failed to open the file: {}", ex.getMesg());
@@ -314,9 +314,6 @@ bool StokesFilesConnector::GetCasaStokesType(
 }
 
 void StokesFilesConnector::ClearCache() {
-    for (auto& [stokes_type, loader] : _loaders) {
-        loader.reset();
-    }
     _loaders.clear();
     _concatenated_name = "";
 }

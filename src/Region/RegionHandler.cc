@@ -87,7 +87,7 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
             region_id = GetNextTemporaryRegionId();
         }
 
-        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
+        auto region = std::make_shared<Region>(region_state, csys);
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
             valid_region = true;
@@ -188,7 +188,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     for (auto& region_properties : imported_regions) {
         auto region_state = region_properties.state;
         auto region_style = region_properties.style;
-        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
+        auto region = std::make_shared<Region>(region_state, csys);
 
         if (region && region->IsValid()) {
             std::unique_lock<std::mutex> region_lock(_region_mutex);
@@ -932,7 +932,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
         _pv_preview_cuts.at(preview_id)->AddRegion(region_state);
     } else {
         // Preview cut settings changed, set new PvPreviewCut
-        _pv_preview_cuts[preview_id] = std::shared_ptr<PvPreviewCut>(new PvPreviewCut(cut_parameters, region_state));
+        _pv_preview_cuts[preview_id] = std::make_shared<PvPreviewCut>(cut_parameters, region_state);
     }
     auto preview_cut = _pv_preview_cuts.at(preview_id);
     pv_cut_lock.unlock();
@@ -953,7 +953,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
             }
         }
         if (!cube_found) {
-            _pv_preview_cubes[preview_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+            _pv_preview_cubes[preview_id] = std::make_shared<PvPreviewCube>(cube_parameters);
         }
 
         // If preview cube changed, then frame for its preview image cube is invalid
@@ -1026,7 +1026,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
         }
 
         // Preview image is now set, make frame to access it.
-        auto preview_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(preview_image, ""));
+        auto preview_loader = FileLoader::GetLoader(preview_image, "");
         auto preview_session_id(-1);
         auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
 

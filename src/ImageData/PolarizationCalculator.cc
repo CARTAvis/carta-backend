@@ -21,7 +21,13 @@ std::unordered_map<PolCalc::Pol, casacore::Unit> PolCalc::_units = {
 std::unordered_map<PolCalc::Pol, PolCalc::Pol> PolCalc::_beam_types = {
     {Pol::Ptotal, Pol::Q}, {Pol::Plinear, Pol::Q}, {Pol::PFtotal, Pol::I}, {Pol::PFlinear, Pol::I}};
 
-PolCalc::PolarizationCalculator(std::shared_ptr<FileLoader> loader) {
+PolCalc::PolarizationCalculator(std::weak_ptr<FileLoader> loader_w) {
+    std::shared_ptr<FileLoader> loader = loader_w.lock();
+    if (!loader) {
+        spdlog::info("Loader has been deleted.");
+        return;
+    }
+
     auto original_image = loader->GetImage();
 
     if (original_image->ndim() < 4) {

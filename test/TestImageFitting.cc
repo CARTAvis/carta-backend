@@ -58,7 +58,7 @@ public:
 
     void FitImage(std::vector<float> gaussian_model, std::string failed_message = "") {
         std::string file_path = GetGeneratedFilePath(gaussian_model);
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        auto loader = carta::FileLoader::GetLoader(file_path);
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 
         CARTA::FittingResponse fitting_response;
@@ -86,7 +86,7 @@ public:
 
     void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
         std::string file_path = GetGeneratedFilePath(gaussian_model);
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        auto loader = carta::FileLoader::GetLoader(file_path);
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
         // TODO: avoid using higher level function region_handler.FitImage

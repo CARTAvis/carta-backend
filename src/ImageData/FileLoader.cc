@@ -27,23 +27,23 @@
 
 using namespace carta;
 
-FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string& directory) {
+std::shared_ptr<FileLoader> FileLoader::GetLoader(const std::string& filename, const std::string& directory) {
     if (!directory.empty()) {
         // filename is LEL expression for image(s) in directory
-        return new ExprLoader(filename, directory);
+        return std::make_shared<ExprLoader>(filename, directory);
     } else if (IsCompressedFits(filename)) {
-        return new FitsLoader(filename, true);
+        return std::make_shared<FitsLoader>(filename, true);
     } else if (IsRemoteHttpFile(filename)) {
-        return new FitsLoader(filename, false, true);
+        return std::make_shared<FitsLoader>(filename, false, true);
     }
 
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
-            return new CasaLoader(filename);
+            return std::make_shared<CasaLoader>(filename);
         case casacore::ImageOpener::FITS:
-            return new FitsLoader(filename);
+            return std::make_shared<FitsLoader>(filename);
         case casacore::ImageOpener::MIRIAD:
-            return new MiriadLoader(filename);
+            return std::make_shared<MiriadLoader>(filename);
         case casacore::ImageOpener::GIPSY:
             break;
         case casacore::ImageOpener::CAIPS:
@@ -51,22 +51,22 @@ FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string
         case casacore::ImageOpener::NEWSTAR:
             break;
         case casacore::ImageOpener::HDF5:
-            return new Hdf5Loader(filename);
+            return std::make_shared<Hdf5Loader>(filename);
         case casacore::ImageOpener::IMAGECONCAT:
-            return new ConcatLoader(filename);
+            return std::make_shared<ConcatLoader>(filename);
         case casacore::ImageOpener::IMAGEEXPR:
-            return new ExprLoader(filename);
+            return std::make_shared<ExprLoader>(filename);
         case casacore::ImageOpener::COMPLISTIMAGE:
-            return new CompListLoader(filename);
+            return std::make_shared<CompListLoader>(filename);
         default:
             break;
     }
     return nullptr;
 }
 
-FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename) {
+std::shared_ptr<FileLoader> FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename) {
     if (image) {
-        return new ImagePtrLoader(image, filename);
+        return std::make_shared<ImagePtrLoader>(image, filename);
     } else {
         spdlog::error("Fail to assign an image pointer!");
         return nullptr;
@@ -263,50 +263,52 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
         _axes = AxesInfo(render_axes, spatial_axes, spectral_axis);
         // Keep depth and num_stokes defaults of 1
         _dims = DimsInfo(_axes, _image_shape);
-        return true;
-    }
+    } else {
+        // Cope with incomplete/invalid headers for 3D, 4D images
+        bool no_spectral(spectral_axis < 0), no_stokes(stokes_axis < 0);
+        if ((no_spectral && no_stokes) && (_num_dims == 3)) {
+            // assume third is spectral with no stokes
+            spectral_axis = 2;
+        }
 
-    // Cope with incomplete/invalid headers for 3D, 4D images
-    bool no_spectral(spectral_axis < 0), no_stokes(stokes_axis < 0);
-    if ((no_spectral && no_stokes) && (_num_dims == 3)) {
-        // assume third is spectral with no stokes
-        spectral_axis = 2;
-    }
+        if ((no_spectral || no_stokes) && (_num_dims == 4)) {
+            if (no_spectral && !no_stokes) { // stokes is known
+                spectral_axis = (stokes_axis == 3 ? 2 : 3);
+            } else if (!no_spectral && no_stokes) { // spectral is known
+                stokes_axis = (spectral_axis == 3 ? 2 : 3);
+            } else { // neither is known
+                // guess by shape (max 4 stokes)
+                if (_image_shape(2) > 4) {
+                    spectral_axis = 2;
+                    stokes_axis = 3;
+                } else if (_image_shape(3) > 4) {
+                    spectral_axis = 3;
+                    stokes_axis = 2;
+                }
 
-    if ((no_spectral || no_stokes) && (_num_dims == 4)) {
-        if (no_spectral && !no_stokes) { // stokes is known
-            spectral_axis = (stokes_axis == 3 ? 2 : 3);
-        } else if (!no_spectral && no_stokes) { // spectral is known
-            stokes_axis = (spectral_axis == 3 ? 2 : 3);
-        } else { // neither is known
-            // guess by shape (max 4 stokes)
-            if (_image_shape(2) > 4) {
-                spectral_axis = 2;
-                stokes_axis = 3;
-            } else if (_image_shape(3) > 4) {
-                spectral_axis = 3;
-                stokes_axis = 2;
-            }
-
-            if ((spectral_axis < 0) && (stokes_axis < 0)) {
-                // could not guess, assume [spectral, stokes]
-                spectral_axis = 2;
-                stokes_axis = 3;
+                if ((spectral_axis < 0) && (stokes_axis < 0)) {
+                    // could not guess, assume [spectral, stokes]
+                    spectral_axis = 2;
+                    stokes_axis = 3;
+                }
             }
         }
-    }
 
-    // Z axis is non-render axis that is not stokes (if any)
-    for (size_t i = 0; i < _num_dims; ++i) {
-        if ((i != render_axes[0]) && (i != render_axes[1]) && (i != stokes_axis)) {
-            z_axis = i;
-            break;
+        // Z axis is non-render axis that is not stokes (if any)
+        for (size_t i = 0; i < _num_dims; ++i) {
+            if ((i != render_axes[0]) && (i != render_axes[1]) && (i != stokes_axis)) {
+                z_axis = i;
+                break;
+            }
         }
+
+        _axes = AxesInfo(render_axes, spatial_axes, spectral_axis, z_axis, stokes_axis);
+        _dims = DimsInfo(_axes, _image_shape);
     }
 
     size_t num_stokes = DimsInfo::FromAxis(stokes_axis, _image_shape);
 
-    // save stokes types with respect to the stokes index
+    // map polarization types to indices and vice versa
     if (_stokes_cdelt != 0) {
         for (int i = 0; i < num_stokes; ++i) {
             int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
@@ -325,10 +327,7 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
         }
     }
 
-    _axes = AxesInfo(render_axes, spatial_axes, spectral_axis, z_axis, stokes_axis);
-    _dims = DimsInfo(_axes, _image_shape);
-
-    _polarization_calculator = std::make_shared<PolarizationCalculator>(this->shared_from_this());
+    _polarization_calculator = std::make_shared<PolarizationCalculator>(this->weak_from_this());
 
     return true;
 }

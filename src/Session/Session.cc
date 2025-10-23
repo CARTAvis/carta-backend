@@ -308,7 +308,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::
     bool file_info_ok(false);
 
     try {
-        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image, filename));
+        image_loader = FileLoader::GetLoader(image, filename);
         FileExtInfoLoader ext_info_loader(image_loader);
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
@@ -523,7 +523,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             loader->SetAipsBeamSupport(support_aips_beam);
 
             // create Frame for image
-            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
+            auto frame = make_shared<Frame>(_id, loader, hdu);
 
             // query loader for mipmap dataset
             bool has_mipmaps(loader->HasMip(2));

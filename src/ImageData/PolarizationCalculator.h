@@ -33,7 +33,7 @@ public:
 
     typedef Node (PolarizationCalculator::*NodeFunc)();
 
-    PolarizationCalculator(std::shared_ptr<FileLoader> loader);
+    PolarizationCalculator(std::weak_ptr<FileLoader> loader_w);
     ImagePtr GetImage(Pol computed_type);
     CoordSysPtr GetCoordSys(Pol computed_type);
     const std::unordered_set<Pol>& AvailablePolarizations() {
