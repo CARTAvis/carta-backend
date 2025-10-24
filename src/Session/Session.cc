@@ -308,7 +308,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::
     bool file_info_ok(false);
 
     try {
-        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image, filename));
+        image_loader = FileLoader::GetLoader(image, filename);
         FileExtInfoLoader ext_info_loader(image_loader);
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
@@ -523,7 +523,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             loader->SetAipsBeamSupport(support_aips_beam);
 
             // create Frame for image
-            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
+            auto frame = make_shared<Frame>(_id, loader, hdu);
 
             // query loader for mipmap dataset
             bool has_mipmaps(loader->HasMip(2));
@@ -1350,12 +1350,12 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             _region_handler->CalculateMoments(
                 file_id, region_id, frame, progress_callback, moment_request, moment_response, collapse_results);
         } else {
-            StokesRegion stokes_region;
+            casacore::ImageRegion image_region;
             int z_min(moment_request.spectral_range().min());
             int z_max(moment_request.spectral_range().max());
 
-            if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), stokes_region)) {
-                frame->CalculateMoments(file_id, progress_callback, stokes_region, moment_request, moment_response, collapse_results);
+            if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region)) {
+                frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
         }
 
@@ -1649,7 +1649,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // Get stokes index
             int stokes;
-            if (!_frames.at(file_id)->GetStokesTypeIndex(cube_histogram_config.coordinate, stokes)) {
+            if (!_frames.at(file_id)->GetCoordinateStokesIndex(cube_histogram_config.coordinate, stokes)) {
                 return calculated;
             }
 

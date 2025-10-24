@@ -56,12 +56,14 @@ public:
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
      * @param[in] config Statistics configuration
-     * @param[in] stokes_region Struct holding image region and struct describing stokes and z range
+     * @param[in] image_region Image region object
+     * @param[in] z The z index
+     * @param[in] stokes_index The Stokes index
      * @param[in, out] stats_data_message Region stats data message
      * @return Whether statistics were added
      */
     bool GetRegionStatsData(int file_id, std::shared_ptr<Frame> frame, const CARTA::SetStatsRequirements_StatsConfig& config,
-        StokesRegion& stokes_region, CARTA::RegionStatsData& stats_data_message);
+        casacore::ImageRegion& image_region, int z, int stokes_index, CARTA::RegionStatsData& stats_data_message);
 
     /** @brief Clear cache when region changes. */
     void ClearCache();

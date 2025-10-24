@@ -75,7 +75,7 @@ public:
 
     // LCRegion and mask for region applied to image.  Must be a closed region (not line) and not annotation.
     std::shared_ptr<casacore::LCRegion> GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> csys,
-        const casacore::IPosition& shape, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
+        const casacore::IPosition& shape, int stokes_index, bool report_error = true);
     casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
 
     // Record for region applied to image, for export.  Not for converting to LCRegion for analytics.
@@ -89,7 +89,7 @@ private:
 
     // Cached LCRegion
     void ResetRegionCache();
-    std::shared_ptr<casacore::LCRegion> GetCachedLCRegion(int file_id, const StokesSource& stokes_source);
+    std::shared_ptr<casacore::LCRegion> GetCachedLCRegion(int file_id);
 
     // Record in pixel coordinates from control points, for reference image
     casacore::TableRecord GetControlPointsRecord(const casacore::IPosition& shape);

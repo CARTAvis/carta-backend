@@ -56,7 +56,7 @@ public:
     static bool RegionSpatialProfile(const std::string& image_path, const std::vector<float>& endpoints,
         const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_reqs, CARTA::SpatialProfileData& spatial_profile,
         bool is_annotation = false) {
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+        auto loader = carta::FileLoader::GetLoader(image_path);
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
 
@@ -116,7 +116,7 @@ public:
 
 TEST_F(RegionSpatialProfileTest, TestSpatialRequirements) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    auto loader = carta::FileLoader::GetLoader(image_path);
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
     // Set line region

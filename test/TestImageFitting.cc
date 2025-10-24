@@ -58,7 +58,7 @@ public:
 
     void FitImage(std::vector<float> gaussian_model, std::string failed_message = "") {
         std::string file_path = GetGeneratedFilePath(gaussian_model);
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        auto loader = carta::FileLoader::GetLoader(file_path);
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 
         CARTA::FittingResponse fitting_response;
@@ -73,11 +73,11 @@ public:
             GeneratedImage model_image;
             GeneratedImage residual_image;
             int file_id(0);
-            StokesRegion output_stokes_region;
-            frame->GetImageRegion(file_id, AxisRange(frame->CurrentZ()), frame->CurrentStokes(), output_stokes_region);
-            casa::SPIIF image(loader->GetStokesImage(output_stokes_region.stokes_source));
-            success = image_fitter->GetGeneratedImages(
-                image, output_stokes_region.image_region, frame->GetFileName(), model_image, residual_image, fitting_response);
+            casacore::ImageRegion output_region;
+            frame->GetImageRegion(file_id, AxisRange(frame->CurrentZ()), frame->CurrentStokes(), output_region);
+            casa::SPIIF image(loader->GetStokesImage(frame->CurrentStokes()));
+            success =
+                image_fitter->GetGeneratedImages(image, output_region, frame->GetFileName(), model_image, residual_image, fitting_response);
 
             EXPECT_TRUE(success);
             CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->GetImageCacheData());
@@ -86,7 +86,7 @@ public:
 
     void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
         std::string file_path = GetGeneratedFilePath(gaussian_model);
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        auto loader = carta::FileLoader::GetLoader(file_path);
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
         // TODO: avoid using higher level function region_handler.FitImage

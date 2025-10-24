@@ -43,11 +43,9 @@ std::vector<int> RegionStatistics::GetConfigFileIds(int file_id) {
 }
 
 bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> frame, const CARTA::SetStatsRequirements_StatsConfig& config,
-    StokesRegion& stokes_region, CARTA::RegionStatsData& stats_data_message) {
+    casacore::ImageRegion& image_region, int z, int stokes_index, CARTA::RegionStatsData& stats_data_message) {
     bool success(false);
-    int z(stokes_region.stokes_source.z_range.from);
-    int stokes(stokes_region.stokes_source.stokes);
-    stats_data_message = Message::RegionStatsData(file_id, _region_id, z, stokes);
+    stats_data_message = Message::RegionStatsData(file_id, _region_id, z, stokes_index);
 
     // Set required stats types
     std::vector<CARTA::StatsType> required_stats;
@@ -56,7 +54,7 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
     }
 
     // Check cache
-    CacheId cache_id = CacheId(file_id, _region_id, stokes, z);
+    CacheId cache_id = CacheId(file_id, _region_id, stokes_index, z);
     if (_cache.find(cache_id) != _cache.end()) {
         std::map<CARTA::StatsType, double> stats_results;
         if (_cache[cache_id].GetStats(stats_results)) {
@@ -65,7 +63,7 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
         }
     }
 
-    if (!stokes_region.image_region.isLCRegion()) {
+    if (!image_region.isLCRegion()) {
         // region outside image: NaN results
         std::map<CARTA::StatsType, double> stats_results;
         for (const auto& carta_stat : required_stats) {
@@ -82,7 +80,7 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
     // Calculate stats
     bool per_z(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_map;
-    if (frame->GetRegionStats(stokes_region, required_stats, per_z, stats_map)) {
+    if (frame->GetRegionStats(image_region, stokes_index, required_stats, per_z, stats_map)) {
         // convert vector to single value in map
         std::map<CARTA::StatsType, double> stats_results;
         for (const auto& [type, statistic] : stats_map) {

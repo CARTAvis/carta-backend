@@ -108,10 +108,10 @@ private:
     void ClearRegionCache(int region_id);
 
     // Apply region to image
-    std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(
-        int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
-    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, std::shared_ptr<casacore::LCRegion> lc_region,
-        StokesRegion& stokes_region);
+    std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(int region_id, int file_id, int stokes_index, bool report_error = true);
+    // Uses LCRegion if supplied, else sets LCRegion to get ImageRegion
+    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes_index,
+        std::shared_ptr<casacore::LCRegion> lc_region, casacore::ImageRegion& image_region);
 
     // Data stream helpers
     bool GetRegionSpectralData(int region_id, int file_id, const AxisRange& z_range, std::string& coordinate, int stokes_index,

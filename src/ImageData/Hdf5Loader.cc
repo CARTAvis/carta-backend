@@ -478,24 +478,20 @@ bool Hdf5Loader::GetDownsampledRasterData(
     return data_ok;
 }
 
+// TODO TODO TODO this should be refactored into a more generic slicer creation function in the base class (and possibly replace creation of
+// slicers in the frame)
 bool Hdf5Loader::GetChunk(
-    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
+    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes_index, std::mutex& image_mutex) {
     bool data_ok(false);
 
     data_width = std::min(CHUNK_SIZE, (int)_dims.width - min_x);
     data_height = std::min(CHUNK_SIZE, (int)_dims.height - min_y);
 
-    StokesSource stokes_source(stokes, AxisRange(z), AxisRange(min_x, min_x + data_width - 1), AxisRange(min_y, min_y + data_height - 1));
-    if (!stokes_source.IsOriginalImage()) { // Reset the start position of the slicer as 0 for the computed stokes image
-        stokes = 0;
-        z = 0;
-        min_x = 0;
-        min_y = 0;
-    }
-
     casacore::Slicer slicer;
     if (_num_dims == 4) {
-        slicer = casacore::Slicer(casacore::IPosition(4, min_x, min_y, z, stokes), casacore::IPosition(4, data_width, data_height, 1, 1));
+        int slicer_stokes_index(Stokes::IsComputed(stokes_index) ? 0 : stokes_index);
+        slicer = casacore::Slicer(
+            casacore::IPosition(4, min_x, min_y, z, slicer_stokes_index), casacore::IPosition(4, data_width, data_height, 1, 1));
     } else if (_num_dims == 3) {
         slicer = casacore::Slicer(casacore::IPosition(3, min_x, min_y, z), casacore::IPosition(3, data_width, data_height, 1));
     } else if (_num_dims == 2) {
@@ -507,7 +503,7 @@ bool Hdf5Loader::GetChunk(
 
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
-        GetSlice(tmp, StokesSlicer(stokes_source, slicer));
+        GetSlice(tmp, slicer, stokes_index);
         data_ok = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Could not load image tile. AIPS ERROR: " << err.getMesg() << std::endl;

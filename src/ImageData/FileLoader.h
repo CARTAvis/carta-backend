@@ -23,34 +23,18 @@
 
 namespace carta {
 
-struct StokesSlicer {
-    StokesSource stokes_source;
-    casacore::Slicer slicer;
+class PolarizationCalculator;
 
-    StokesSlicer() {}
-    StokesSlicer(StokesSource stokes_source_, casacore::Slicer slicer_) : stokes_source(stokes_source_), slicer(slicer_) {}
-};
-
-struct StokesRegion {
-    StokesSource stokes_source;
-    casacore::ImageRegion image_region;
-
-    StokesRegion() {}
-    StokesRegion(StokesSource stokes_source_, casacore::ImageRegion image_region_)
-        : stokes_source(stokes_source_), image_region(image_region_) {}
-};
-
-class FileLoader {
+class FileLoader : std::enable_shared_from_this<FileLoader> {
 public:
-    using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
-
+    using ImagePtr = std::shared_ptr<casacore::ImageInterface<float>>;
     // directory only for ExprLoader, is_gz only for FitsLoader
     FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false, bool is_generated = false);
     virtual ~FileLoader() = default;
 
-    static FileLoader* GetLoader(const std::string& filename, const std::string& directory = "");
+    static std::shared_ptr<FileLoader> GetLoader(const std::string& filename, const std::string& directory = "");
     // Access an image from the memory, not from the disk
-    static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename);
+    static std::shared_ptr<FileLoader> GetLoader(ImagePtr image, const std::string& filename);
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
@@ -67,12 +51,12 @@ public:
     void CloseImageIfUpdated();
 
     // Return the opened casacore image or its class name
-    ImageRef GetImage(bool check_data_type = true);
+    ImagePtr GetImage(bool check_data_type = true);
     casacore::DataType GetDataType();
     bool IsComplexDataType();
 
     // Return the opened casacore image or computed stokes image
-    ImageRef GetStokesImage(const StokesSource& stokes_source);
+    ImagePtr GetStokesImage(int stokes_index);
 
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
@@ -81,15 +65,16 @@ public:
     casacore::IPosition GetShape();
     AxesInfo GetAxes();
     DimsInfo GetDims();
-    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
+    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem();
+    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(int stokes_index);
     bool FindCoordinateAxes(std::string& message);
 
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, int stokes_index);
 
     // SubImage
-    bool GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image);
-    bool GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const casacore::Slicer& slicer, int stokes_index, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const casacore::LattRegionHolder& region, int stokes_index, casacore::SubImage<float>& sub_image);
     bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics
@@ -108,8 +93,8 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
-    virtual bool GetChunk(
-        std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex);
+    virtual bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes_index,
+        std::mutex& image_mutex);
 
     virtual bool HasMip(int mip) const;
     virtual bool UseTileCache() const;
@@ -123,8 +108,11 @@ public:
     virtual void SetStokesCdelt(int stokes_cdelt);
     virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
     virtual bool GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type);
-    std::unordered_map<CARTA::PolarizationType, int> GetStokesIndices() {
+    const std::map<CARTA::PolarizationType, int>& GetStokesIndices() {
         return _stokes_indices;
+    };
+    const std::map<CARTA::PolarizationType, int>& GetDeducedStokesIndices() {
+        return _deduced_stokes_indices;
     };
 
     // Modify time changed
@@ -160,11 +148,10 @@ protected:
     bool _is_history_beam;
     casacore::GaussianBeam _history_beam; // for compressed fits file info
 
-    std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
+    ImagePtr _image;
 
-    // Computed stokes image
-    std::shared_ptr<casacore::ImageInterface<float>> _computed_stokes_image;
-    StokesSource _stokes_source;
+    // Computed polarization image expressions
+    std::shared_ptr<PolarizationCalculator> _polarization_calculator;
 
     // Save image properties
     casacore::IPosition _image_shape;
@@ -181,8 +168,10 @@ protected:
     FileInfo::ImageStats _empty_stats;
 
     // Storage for the stokes type vs. stokes index
-    std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;
-    std::unordered_map<int, CARTA::PolarizationType> _stokes_types;
+    std::map<CARTA::PolarizationType, int> _stokes_indices;
+    std::map<CARTA::PolarizationType, int> _deduced_stokes_indices;
+    std::map<int, CARTA::PolarizationType> _stokes_types;
+    std::map<int, CARTA::PolarizationType> _deduced_stokes_types;
     float _stokes_crval;
     float _stokes_crpix;
     int _stokes_cdelt;

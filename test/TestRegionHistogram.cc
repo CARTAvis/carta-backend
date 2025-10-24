@@ -37,7 +37,7 @@ public:
 
     static bool RegionHistogram(const std::string& image_path, const std::vector<float>& endpoints,
         CARTA::RegionHistogramData& region_histogram, const std::string& coordinate = "z", bool is_annotation = false) {
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+        auto loader = carta::FileLoader::GetLoader(image_path);
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
 
@@ -63,9 +63,9 @@ public:
 
     static bool RegionHistogramMatched(const std::string& image_path0, const std::string& image_path1, const std::vector<float>& endpoints,
         CARTA::RegionHistogramData& region_histogram) {
-        std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
+        auto loader0 = carta::FileLoader::GetLoader(image_path0);
         std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
-        std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
+        auto loader1 = carta::FileLoader::GetLoader(image_path1);
         std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
         carta::RegionHandler region_handler;
 

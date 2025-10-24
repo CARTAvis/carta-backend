@@ -16,36 +16,45 @@
 #include <casacore/lattices/LatticeMath/LatticeStatistics.h>
 
 #include "Util/Image.h"
+#include "Util/Stokes.h"
 
 namespace carta {
 
+class FileLoader;
+
 class PolarizationCalculator {
-    enum StokesTypes { I, Q, U, V };
-
 public:
-    PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxesInfo axes, DimsInfo dims, AxisRange z_range,
-        AxisRange x_range, AxisRange y_range);
-    ~PolarizationCalculator() = default;
+    using ImagePtr = std::shared_ptr<casacore::ImageInterface<float>>;
+    using Pol = CARTA::PolarizationType;
+    using ImageMap = std::map<Pol, ImagePtr>;
+    using CasaPol = casacore::Stokes::StokesTypes;
+    using Node = casacore::LatticeExprNode;
+    using CoordSysPtr = std::shared_ptr<casacore::CoordinateSystem>;
 
-    std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalPolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalFractionalPolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputeFractionalPolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedAngle();
+    typedef Node (PolarizationCalculator::*NodeFunc)();
+
+    PolarizationCalculator(std::weak_ptr<FileLoader> loader_w);
+    ImagePtr GetImage(Pol computed_type);
+    CoordSysPtr GetCoordSys(Pol computed_type);
+    const std::unordered_set<Pol>& AvailablePolarizations() {
+        return _available_polarizations;
+    }
 
 private:
-    std::shared_ptr<casacore::ImageInterface<float>> MakeSubImage(casacore::IPosition& blc, casacore::IPosition& trc, int axis, int pix);
-    casacore::LatticeExprNode MakeTotalPolarizedIntensityNode();
-    casacore::LatticeExprNode MakePolarizedIntensityNode();
-    void SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes);
-    void FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type);
+    Node PtotalNode();
+    Node PlinearNode();
+    Node PFtotalNode();
+    Node PFlinearNode();
+    Node PangleNode();
 
-    // These blocks are always size 4, with I/Q/U/V in slots 0/1/2/3. If an image is I/V only, it uses slots 0/3
-    std::vector<std::shared_ptr<casacore::ImageInterface<float>>> _stokes_images =
-        std::vector<std::shared_ptr<casacore::ImageInterface<float>>>(4);
+    static std::unordered_map<Pol, NodeFunc> _nodes;
+    static std::unordered_map<Pol, casacore::Unit> _units;
+    static std::unordered_map<Pol, Pol> _beam_types;
 
-    const std::shared_ptr<const casacore::ImageInterface<float>> _image;
-    bool _image_valid;
+    ImageMap _component_images;
+    ImageMap _computed_images;
+    std::map<Pol, CoordSysPtr> _coord_sys;
+    std::unordered_set<Pol> _available_polarizations;
 };
 
 } // namespace carta

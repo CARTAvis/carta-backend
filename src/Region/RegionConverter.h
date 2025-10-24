@@ -34,7 +34,7 @@ public:
     // LCRegion and mask for region applied to image.  Must be a closed region (not line) and not annotation.
     std::shared_ptr<casacore::LCRegion> GetCachedLCRegion(int file_id, bool use_approx_polygon = true);
     std::shared_ptr<casacore::LCRegion> GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> csys,
-        const casacore::IPosition& shape, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
+        const casacore::IPosition& shape, int stokes_index, bool report_error = true);
     casacore::TableRecord GetImageRegionRecord(
         int file_id, std::shared_ptr<casacore::CoordinateSystem> csys, const casacore::IPosition& shape);
 
@@ -48,7 +48,7 @@ private:
 
     // Region converted directly to image (not polygon approximation)
     std::shared_ptr<casacore::LCRegion> GetConvertedLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
-        const casacore::IPosition& output_shape, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
+        const casacore::IPosition& output_shape, int stokes_index, bool report_error = true);
 
     // Reference region converted to image as approximate polygon, cached with file_id
     bool UseApproximatePolygon(std::shared_ptr<casacore::CoordinateSystem> output_csys);
