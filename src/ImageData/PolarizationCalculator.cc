@@ -128,10 +128,10 @@ PolCalc::CoordSysPtr PolCalc::GetCoordSys(Pol computed_type) {
 }
 
 PolCalc::Node PolCalc::PtotalNode() {
-    casacore::LatticeExprNode lin_node =
+    casacore::LatticeExprNode tot_node =
         casacore::LatticeExprNode(casacore::pow(*_component_images[Pol::V], 2) + casacore::pow(*_component_images[Pol::U], 2) +
                                   casacore::pow(*_component_images[Pol::Q], 2));
-    return casacore::sqrt(lin_node);
+    return casacore::sqrt(tot_node);
 }
 
 PolCalc::Node PolCalc::PlinearNode() {
