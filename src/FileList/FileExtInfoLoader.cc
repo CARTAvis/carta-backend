@@ -1204,8 +1204,6 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    std::cout << "+++++ Before  if (compressed_fits); projection is " << projection << std::endl;
-
     if (compressed_fits) {
         casacore::CoordinateSystem coordsys;
         auto shape = compressed_fits->GetShape();
