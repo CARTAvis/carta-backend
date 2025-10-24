@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
@@ -52,6 +53,8 @@ public:
 
         auto expr_loader = carta::FileLoader::GetLoader(expr, directory);
         expr_loader->OpenFile(hdu);
+        std::string err;
+        expr_loader->FindCoordinateAxes(err);
         casacore::IPosition expr_shape(expr_loader->GetShape());
 
         // Slicer for x spatial profile at y=0
@@ -76,10 +79,10 @@ public:
         EXPECT_EQ(image_shape, expr_shape);
         // Compare image xprofile * 2 to expr xprofile
         for_each(image_xprofile.begin(), image_xprofile.end(), [](float& a) { a *= 2; });
-        CmpVectors<float>(image_xprofile, expr_xprofile.tovector());
+        EXPECT_THAT(expr_xprofile.tovector(), testing::Pointwise(testing::FloatEq(), image_xprofile));
         // Compare image yprofile * 2 to expr yprofile
         for_each(image_yprofile.begin(), image_yprofile.end(), [](float& a) { a *= 2; });
-        CmpVectors<float>(image_yprofile, expr_yprofile.tovector());
+        EXPECT_THAT(expr_yprofile.tovector(), testing::Pointwise(testing::FloatEq(), image_yprofile));
     }
 
     void SaveImageExpr(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type) {
