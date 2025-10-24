@@ -1594,13 +1594,6 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // ****************************************************
 // Region/Slicer Support (Frame manages image mutex)
 
-std::shared_ptr<casacore::LCRegion> Frame::GetImageRegion(
-    int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source, bool report_error) {
-    // Return LCRegion formed by applying region params to image.
-    // Returns nullptr if region outside image
-    return region->GetImageRegion(file_id, CoordinateSystem(stokes_source), ImageShape(stokes_source), stokes_source, report_error);
-}
-
 bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region) {
     if (!CheckZ(z_range.from) || !CheckZ(z_range.to) || !CheckStokes(stokes)) {
         return false;
@@ -1609,8 +1602,8 @@ bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, St
         StokesSlicer stokes_slicer = GetImageSlicer(z_range, stokes);
         stokes_region.stokes_source = stokes_slicer.stokes_source;
         casacore::LCSlicer lcslicer(stokes_slicer.slicer);
-        casacore::ImageRegion this_region(lcslicer);
-        stokes_region.image_region = this_region;
+        casacore::ImageRegion image_region(lcslicer);
+        stokes_region.image_region = image_region;
         return true;
     } catch (casacore::AipsError error) {
         spdlog::error("Error converting full region to file {}: {}", file_id, error.getMesg());
@@ -2011,7 +2004,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     casacore::IPosition region_shape;
 
     if (region) {
-        image_region = GetImageRegion(file_id, region);
+        image_region = region->GetLCRegion(file_id, CoordinateSystem(), ImageShape());
 
         if (!image_region) {
             save_file_ack.set_success(false);

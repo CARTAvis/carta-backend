@@ -103,9 +103,6 @@ private:
     void RemoveFileRequirementsCache(int file_id);
     void ClearRegionCache(int region_id);
 
-    // Apply region to image
-
-
     // Data stream helpers
     bool GetRegionSpectralData(int region_id, int file_id, const AxisRange& z_range, std::string& coordinate, int stokes_index,
         std::vector<CARTA::StatsType>& required_stats, bool report_error,

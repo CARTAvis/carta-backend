@@ -10,7 +10,7 @@
 
 #include "ImageStats/StatsCalculator.h"
 #include "LineBoxRegions.h"
-#include "RegionAnalysisUtil.h"
+#include "Region/ImageRegion.h"
 #include "Util/Nan.h"
 
 namespace carta {
@@ -195,15 +195,22 @@ float RegionSpatialProfile::GetBoxMeanValue(int file_id, std::shared_ptr<Frame> 
     // Get box LCRegion
     std::shared_ptr<Region> box_region(new Region(box_region_state, box_csys));
     StokesSource stokes_source(stokes, AxisRange(z));
-    auto box_lc_region = frame->GetImageRegion(file_id, box_region, stokes_source);
+    auto box_lc_region =
+        box_region->GetLCRegion(file_id, frame->CoordinateSystem(stokes_source), frame->ImageShape(stokes_source), stokes_source);
+
     if (!box_lc_region) {
         return FLOAT_NAN;
     }
 
-    // Get data from box LCRegion
-    auto stokes_slicer = GetRegionStokesSlicer(frame, box_lc_region, stokes_source);
-    std::vector<float> region_data(stokes_slicer.slicer.length().product(), FLOAT_NAN);
-    if (!frame->GetSlicerData(stokes_slicer, region_data.data())) {
+    casacore::ImageRegion image_region;
+    if (!GetImageRegion(box_region, frame, AxisRange(z), stokes, box_lc_region, image_region)) {
+        return FLOAT_NAN;
+    }
+
+    // Get data from box image region
+    StokesRegion stokes_region(stokes_source, image_region);
+    std::vector<float> region_data;
+    if (!frame->GetRegionData(stokes_region, region_data)) {
         return FLOAT_NAN;
     }
 

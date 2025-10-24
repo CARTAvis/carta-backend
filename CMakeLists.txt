@@ -257,6 +257,7 @@ set(SOURCE_FILES
         src/Main/Main.cc
         src/Main/ProgramSettings.cc
         src/Main/WebBrowser.cc
+        src/Region/ImageRegion.cc
         src/Region/Region.cc
         src/Region/RegionConverter.cc
         src/Region/RegionHandler.cc

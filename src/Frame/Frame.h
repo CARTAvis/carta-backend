@@ -165,21 +165,21 @@ public:
     // Check flag if Frame is to be destroyed
     bool IsConnected();
 
-    // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
-    std::shared_ptr<casacore::LCRegion> GetImageRegion(
-        int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region);
-    casacore::IPosition GetRegionShape(const StokesRegion& stokes_region);
     bool GetRegionSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image);
     bool GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image);
+    casacore::IPosition GetRegionShape(const StokesRegion& stokes_region);
+
     // Returns data vector
     bool GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data, bool report_performance = true);
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
+
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+
     // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);

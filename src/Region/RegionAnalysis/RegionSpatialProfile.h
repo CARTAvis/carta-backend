@@ -69,8 +69,8 @@ public:
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
      * @param[in] region Line or polyline region
-     * @param[in] stokes Stokes index
-     * @param[in] z Z index
+     * @param[in] stokes Stokes axis index
+     * @param[in] z Z axis index
      * @param[in] config Spatial configuration
      * @param[out] cancelled Whether line profile was cancelled
      * @param[out] message Message if line profile failed
