@@ -111,21 +111,21 @@ private:
      * @return Whether profile calculation completed
      */
     bool GetLineProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region, int stokes, int z,
-        CARTA::SetSpatialRequirements_SpatialConfig& config, bool& cancelled, std::string& message, casacore::Vector<float>& profile,
+        CARTA::SetSpatialRequirements_SpatialConfig& config, bool& cancelled, std::string& message, std::vector<float>& profile,
         casacore::Quantity& increment);
 
     /**
      * @brief Calculate mean value for box region along line.
      * @param file_id File id for image frame
      * @param frame Image frame
-     * @param box_region_state Box region parameters
-     * @param box_csys Coordinate system used to define box
+     * @param region_state Box region parameters
+     * @param coord_sys Coordinate system used to define box
      * @param z Z axis index
      * @param stokes Stokes axis index
      * @return Mean value of box region
      */
-    float GetBoxMeanValue(int file_id, std::shared_ptr<Frame> frame, RegionState& box_region_state,
-        std::shared_ptr<casacore::CoordinateSystem> box_csys, int z, int stokes);
+    float GetBoxMeanValue(int file_id, std::shared_ptr<Frame> frame, RegionState& region_state,
+        std::shared_ptr<casacore::CoordinateSystem> coord_sys, int z, int stokes);
 
     /**
      * @brief Check whether to cancel line profile calculation

@@ -104,7 +104,6 @@ bool LineBoxRegions::GetFixedPixelRegions(const RegionState& line_region_state, 
             increment = sqrt((xlength * xlength) + (ylength * ylength));
         } else if (!CheckLinearOffsets(box_centers, line_coord_sys, increment)) {
             // Check if angular separation of pixels (box centers) is linear
-            spdlog::debug("Fixed pixel offsets not linear");
             return false;
         }
 
