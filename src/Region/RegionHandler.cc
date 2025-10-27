@@ -179,21 +179,11 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Set frame for region reference file
     _frames[file_id] = frame;
 
-<<<<<<< HEAD
-    // Set Regions from RegionState list and complete message
-    import_ack.set_success(true);
-    import_ack.set_message(error);
-    int region_id = GetNextRegionId();
-    for (auto& imported_region : region_list) {
-        auto region_state = imported_region.state;
-        auto region_style = imported_region.style;
-=======
     // Set Region from RegionProperties; if successful, add RegionInfo to ack message
     auto region_info_map = import_ack.mutable_regions();
     auto region_style_map = import_ack.mutable_region_styles();
     int region_id = GetNextRegionId();
     bool success(false);
->>>>>>> origin/dev
 
         for (auto& region_properties : imported_regions) {
             auto region_state = region_properties.state;
@@ -205,12 +195,6 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                 _regions[region_id] = std::move(region);
                 region_lock.unlock();
 
-<<<<<<< HEAD
-                Message::AddImportedRegion(
-                    import_ack, region_id, region_state.type, region_state.control_points, region_state.rotation, region_style);
-
-                region_id++;
-=======
             CARTA::RegionInfo region_info;
             region_info.set_region_type(region_state.type);
             *region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
@@ -218,7 +202,6 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             (*region_info_map)[region_id] = region_info;
             (*region_style_map)[region_id++] = region_style;
             success = true; // if any regions were set
->>>>>>> origin/dev
             }
         }
         import_ack.set_success(success);
