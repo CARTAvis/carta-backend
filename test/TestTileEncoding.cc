@@ -98,24 +98,6 @@ TEST(TileEncodingTest, LayerToMipConversion) {
     }
 }
 
-TEST(TileEncodingTest, MipLayerRoundTrip) {
-    int32_t img_width = 1024;
-    int32_t img_height = 1024;
-    int32_t tile_width = 256;
-    int32_t tile_height = 256;
-
-    for (int layer = 0; layer <= 4; ++layer) {
-        int mip = Tile::LayerToMip(layer, img_width, img_height, tile_width, tile_height);
-
-        // Skip invalid mip-to-layer mappings
-        if (mip <= 0)
-            continue;
-
-        int roundtrip_layer = Tile::MipToLayer(mip, img_width, img_height, tile_width, tile_height);
-        EXPECT_EQ(roundtrip_layer, layer) << "Round-trip failed: layer " << layer << " → mip " << mip << " → layer " << roundtrip_layer;
-    }
-}
-
 TEST(TileEncodingTest, MaxLayerRoundTrip) {
     int32_t layer = 12;
     int32_t width = 1 << layer;
@@ -131,17 +113,6 @@ TEST(TileEncodingTest, MaxLayerRoundTrip) {
             EXPECT_EQ(decoded.layer, layer);
         }
     }
-}
-
-TEST(TileEncodingTest, MipToLayerInvalidInput) {
-    int img_width = 256;
-    int img_height = 256;
-    int tile_width = 256;
-    int tile_height = 256;
-
-    EXPECT_EQ(Tile::MipToLayer(0, img_width, img_height, tile_width, tile_height), -1);
-    EXPECT_EQ(Tile::MipToLayer(-5, img_width, img_height, tile_width, tile_height), -1);
-    EXPECT_EQ(Tile::MipToLayer(1000, img_width, img_height, tile_width, tile_height), -1);
 }
 
 TEST(TileEncodingTest, EdgeAndBoundaryCoordinates) {
@@ -207,36 +178,6 @@ TEST(TileEncodingTest, LayerToMipEdgeCasesAndSweep) {
         int mip = Tile::LayerToMip(layer, img_width, img_height, tile_width, tile_height);
         if (mip != last_mip) {
             last_mip = mip;
-        }
-    }
-}
-
-TEST(TileEncodingTest, MipToLayerEdgeCasesAndSweep) {
-    int32_t tile_width = 256;
-    int32_t tile_height = 256;
-    int32_t mip = 2;
-
-    // Automated checks for specific edge cases
-    struct EdgeCase {
-        int32_t img_width;
-        int32_t expected_layer;
-    };
-    std::vector<EdgeCase> edge_cases = {
-        {511, 0}, // Slightly under 512px (max tiles = 1.996)
-        {513, 1}  // Slightly over 512px (max tiles = 2.003)
-    };
-    int32_t img_height = 256;
-    for (const auto& ec : edge_cases) {
-        int32_t layer = Tile::MipToLayer(mip, ec.img_width, img_height, tile_width, tile_height);
-        EXPECT_EQ(layer, ec.expected_layer) << "Should resolve to layer " << ec.expected_layer << " for " << ec.img_width << "px width";
-    }
-
-    // Sweep logging for manual inspection
-    int last_layer = -1;
-    for (int img_width = 450; img_width <= 550; ++img_width) {
-        int layer = Tile::MipToLayer(mip, img_width, img_height, tile_width, tile_height);
-        if (layer != last_layer) {
-            last_layer = layer;
         }
     }
 }
