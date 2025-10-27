@@ -24,13 +24,17 @@ class TestHttpServer : public carta::HttpServer {
 public:
     TestHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, std::string auth_token, bool read_only_mode)
         : carta::HttpServer(session_manager, root_folder, UserDirectory(), auth_token, read_only_mode) {}
+    FRIEND_TEST(RestApiTest, MissingStartingPrefs);
     FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
+    FRIEND_TEST(RestApiTest, MalformedStartingPrefs);
     FRIEND_TEST(RestApiTest, GetExistingPrefs);
     FRIEND_TEST(RestApiTest, UpdatePrefsEmpty);
     FRIEND_TEST(RestApiTest, UpdatePrefsNotJson);
     FRIEND_TEST(RestApiTest, UpdatePrefsInvalidResult);
     FRIEND_TEST(RestApiTest, UpdatePrefsSingleKey);
     FRIEND_TEST(RestApiTest, UpdatePrefsKeyList);
+    FRIEND_TEST(RestApiTest, UpdatePrefsExistingMalformed);
+    FRIEND_TEST(RestApiTest, UpdatePrefsExistingMalformedNoChange);
     FRIEND_TEST(RestApiTest, DeletePrefsEmpty);
     FRIEND_TEST(RestApiTest, DeletePrefsNotJson);
     FRIEND_TEST(RestApiTest, DeletePrefsIgnoresInvalidKeys);
@@ -90,20 +94,23 @@ class RestApiTest : public ::testing::Test {
 public:
     std::unique_ptr<TestHttpServer> _frontend_server;
     std::unique_ptr<TestHttpServer> _frontend_server_read_only_mode;
+    fs::path test_user_folder;
     fs::path preferences_path;
     fs::path layouts_path;
     fs::path snippets_path;
     fs::path workspaces_path;
     json example_options;
+    json new_options;
     json example_layout;
     json example_snippet;
     json example_workspace;
 
     RestApiTest() {
-        preferences_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/preferences.json";
-        layouts_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/layouts";
-        snippets_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/snippets";
-        workspaces_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/workspaces";
+        test_user_folder = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
+        preferences_path = test_user_folder / "config/preferences.json";
+        layouts_path = test_user_folder / "config/layouts";
+        snippets_path = test_user_folder / "config/snippets";
+        workspaces_path = test_user_folder / "config/workspaces";
 
         example_options = R"({
             "$schema": "https://cartavis.org/schemas/preferences_schema_2.json",
@@ -113,6 +120,11 @@ public:
             "beamType": "open",
             "beamVisible": true,
             "beamWidth": 1
+        })"_json;
+
+        new_options = R"({
+            "$schema": "https://cartavis.org/schemas/preferences_schema_2.json",
+            "version": 2
         })"_json;
 
         example_layout = R"({
@@ -172,15 +184,27 @@ public:
     void SetUp() {
         _frontend_server.reset(new TestHttpServer(nullptr, "/", "my_test_key", false));
         _frontend_server_read_only_mode.reset(new TestHttpServer(nullptr, "/", "my_test_key", true));
-        fs::remove(preferences_path);
-        fs::remove_all(layouts_path);
-        fs::remove_all(snippets_path);
-        fs::remove_all(workspaces_path);
+
+        // Guard to avoid deleting a real user directory
+        ASSERT_NE(CARTA_USER_FOLDER_PREFIX, ".carta");
+        ASSERT_NE(CARTA_USER_FOLDER_PREFIX, ".carta-beta");
+        // Remove .carta-unit-tests
+        fs::remove_all(test_user_folder);
     }
 
     void WriteDefaultPrefs() {
         fs::create_directories(preferences_path.parent_path());
         std::ofstream(preferences_path.string()) << example_options.dump(4);
+    }
+
+    void WriteEmptyPrefs() {
+        fs::create_directories(preferences_path.parent_path());
+        std::ofstream(preferences_path.string()) << "";
+    }
+
+    void WriteMalformedPrefs() {
+        fs::create_directories(preferences_path.parent_path());
+        std::ofstream(preferences_path.string()) << "this is not a json file!";
     }
 
     void WriteDefaultLayouts() {
@@ -208,22 +232,32 @@ public:
     }
 
     void TearDown() {
-        // Remove .carta-unit-tests/config/preferences (and empty dirs)
-        fs::remove(preferences_path);
-        fs::remove_all(layouts_path);
-        fs::remove_all(snippets_path);
-        fs::remove_all(workspaces_path);
-        fs::remove(preferences_path.parent_path());
-        fs::remove(preferences_path.parent_path().parent_path());
+        // Guard to avoid deleting a real user directory
+        ASSERT_NE(CARTA_USER_FOLDER_PREFIX, ".carta");
+        ASSERT_NE(CARTA_USER_FOLDER_PREFIX, ".carta-beta");
+        // Remove .carta-unit-tests
+        fs::remove_all(test_user_folder);
     }
 
 private:
     fs::path working_directory;
 };
 
-TEST_F(RestApiTest, EmptyStartingPrefs) {
+TEST_F(RestApiTest, MissingStartingPrefs) {
     auto existing_preferences = _frontend_server->GetExistingPreferences();
-    EXPECT_EQ(existing_preferences, json({{"version", 1}}));
+    EXPECT_EQ(existing_preferences, json({{"version", 2}}));
+}
+
+TEST_F(RestApiTest, EmptyStartingPrefs) {
+    WriteEmptyPrefs();
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_EQ(existing_preferences, json({{"version", 2}}));
+}
+
+TEST_F(RestApiTest, MalformedStartingPrefs) {
+    WriteMalformedPrefs();
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_EQ(existing_preferences, json());
 }
 
 TEST_F(RestApiTest, GetExistingPrefs) {
@@ -261,6 +295,8 @@ TEST_F(RestApiTest, UpdatePrefsSingleKey) {
     // Check that only the beamType key has been modified
     existing_preferences["beamType"] = "open";
     EXPECT_EQ(existing_preferences, example_options);
+    // Check that the original prefs were not backed up
+    EXPECT_FALSE(fs::exists(preferences_path.string() + ".bak"));
 }
 
 TEST_F(RestApiTest, UpdatePrefsKeyList) {
@@ -275,6 +311,34 @@ TEST_F(RestApiTest, UpdatePrefsKeyList) {
     existing_preferences["beamType"] = "open";
     existing_preferences["beamColor"] = "#8A9BA8";
     EXPECT_EQ(existing_preferences, example_options);
+    // Check that the original prefs were not backed up
+    EXPECT_FALSE(fs::exists(preferences_path.string() + ".bak"));
+}
+
+TEST_F(RestApiTest, UpdatePrefsExistingMalformed) {
+    WriteMalformedPrefs();
+    json prefs = {{"beamType", "solid"}};
+    auto status = _frontend_server->UpdatePreferencesFromString(prefs.dump());
+    EXPECT_EQ(status, HTTP_200);
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_TRUE(existing_preferences["beamType"] == "solid");
+    // Check that the other preferences were reset
+    existing_preferences.erase("beamType");
+    EXPECT_EQ(existing_preferences, new_options);
+    // Check that the original prefs were backed up
+    EXPECT_TRUE(fs::exists(preferences_path.string() + ".bak"));
+}
+
+TEST_F(RestApiTest, UpdatePrefsExistingMalformedNoChange) {
+    WriteMalformedPrefs();
+    json prefs = {{"version", "2"}};
+    auto status = _frontend_server->UpdatePreferencesFromString(prefs.dump());
+    EXPECT_EQ(status, HTTP_200);
+    // Check that the preferences are blank (still malformed)
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_EQ(existing_preferences, json());
+    // Check that the original prefs were not backed up
+    EXPECT_FALSE(fs::exists(preferences_path.string() + ".bak"));
 }
 
 TEST_F(RestApiTest, DeletePrefsEmpty) {

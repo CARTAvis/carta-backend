@@ -114,7 +114,7 @@ struct HistogramCache {
     }
 
     bool GetHistogram(int num_bins_, const HistogramBounds& bounds, Histogram& histogram_) {
-        if (histograms.count(num_bins_)) {
+        if (histograms.find(num_bins_) != histograms.end()) {
             const auto& hist = histograms.at(num_bins_);
             if (bounds == hist.GetBounds()) {
                 histogram_ = hist;
@@ -180,7 +180,7 @@ struct SpectralCache {
     SpectralCache(std::map<CARTA::StatsType, std::vector<double>>& profiles_) : profiles(profiles_) {}
 
     bool GetProfile(CARTA::StatsType type_, std::vector<double>& profile_) {
-        if (!profiles.empty() && profiles.count(type_)) {
+        if (!profiles.empty() && profiles.find(type_) != profiles.end()) {
             profile_ = profiles.at(type_);
             return true;
         }
@@ -196,7 +196,7 @@ struct SpectralCache {
 // -------------------------------
 
 struct RegionStatsConfig {
-    std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs;
+    std::vector<CARTA::SetStatsRequirements_StatsConfig> configs;
 };
 
 struct StatsCache {

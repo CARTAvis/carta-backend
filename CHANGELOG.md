@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+* Fixed linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
+* Fixed NaN values in FITS image with BLANK header keyword ([#1492](https://github.com/CARTAvis/carta-backend/issues/1492)).
+* Don't reallocate memory for image cache unnecessarily ([#1508](https://github.com/CARTAvis/carta-backend/pull/1508)).
+* Fixed crash in ICD channel map test with ASAN enabled ([#1518](https://github.com/CARTAvis/carta-backend/issues/1518)).
+
+### Changed
+* Standardized use of float and double NaN (Not a Number) ([#1502](https://github.com/CARTAvis/carta-backend/issues/1502)).
+* Moved region import/export implementation to new subdirectory ([#1505](https://github.com/CARTAvis/carta-backend/issues/1505)).
+* Moved region histogram implementation to analysis subdirectory ([#1509](https://github.com/CARTAvis/carta-backend/issues/1509)).
+* Moved region statistics implementation to analysis subdirectory ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
+
+## [5.0.2]
+
+### Fixed
+* Fixed bug in region spectral profile with flux density statistic ([#1493](https://github.com/CARTAvis/carta-backend/issues/1493)).
+
+## [5.0.1]
+
+### Fixed
+* Fixed bugs in database validation error handling which caused preferences to be wiped, and corrected preferences schema ([#1485](https://github.com/CARTAvis/carta-backend/issues/1485)).
+
 ## [5.0.0]
 
 ### Added

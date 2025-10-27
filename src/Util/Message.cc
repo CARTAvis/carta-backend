@@ -7,6 +7,7 @@
 #include "Message.h"
 #include "Cache/RequirementsCache.h"
 #include "DataStream/Compression.h"
+#include "Util/Nan.h"
 
 #include <chrono>
 
@@ -89,11 +90,13 @@ CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32
     return set_stats_requirements;
 }
 
-CARTA::SetHistogramRequirements Message::SetHistogramRequirements(int32_t file_id, int32_t region_id, int32_t channel, int32_t num_bins) {
+CARTA::SetHistogramRequirements Message::SetHistogramRequirements(
+    int32_t file_id, int32_t region_id, const std::string& coordinate, int32_t channel, int32_t num_bins) {
     CARTA::SetHistogramRequirements set_histogram_requirements;
     set_histogram_requirements.set_file_id(file_id);
     set_histogram_requirements.set_region_id(region_id);
     auto* histograms = set_histogram_requirements.add_histograms();
+    histograms->set_coordinate(coordinate);
     histograms->set_channel(channel);
     histograms->set_num_bins(num_bins);
     return set_histogram_requirements;
@@ -453,7 +456,7 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float pr
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = std::nan("");
+            double nan_value = DOUBLE_NAN;
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data.at(stats_type).data(), spectral_data.at(stats_type).size() * sizeof(double));
@@ -800,7 +803,7 @@ void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA:
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = std::nan("");
+                value = DOUBLE_NAN;
             }
         }
 

@@ -7,7 +7,7 @@
 #include "SessionManager.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 #include "Util/Message.h"
 #include "Util/Token.h"
 

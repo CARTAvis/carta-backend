@@ -985,3 +985,63 @@ jobs:
           image: ${{ matrix.image }}
           port: ${{ matrix.port }}
           test_stage_name: 'resume'
+
+  NotifyEmail:
+    name: Send email on failure
+    runs-on: ubuntu-latest
+    needs:
+      - Build 
+      - Prepare-ICD-RxJS 
+      - File-Browser-ICD-Tests
+      - Animator-ICD-Tests
+      - Region-Statistics-ICD-Tests
+      - Region-Manipulation-ICD-Tests
+      - Cube-Histogram-ICD-Tests
+      - PV-Generator-ICD-Tests
+      - Raster-Tiles-ICD-Tests
+      - Catalog-ICD-Tests
+      - Moment-ICD-Tests
+      - Match-ICD-Tests
+      - Close-File-ICD-Tests
+      - Image-Fitting-ICD-Tests
+      - Vector-Overlay-ICD-Tests
+      - Resume-ICD-Tests
+    if: failure()
+    steps:
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "CARTA ICD Failed: ${{ github.repository }} @ ${{ github.ref }}"
+          to: ${{ secrets.MAIL_TO }} ${{ secrets.MAIL_USERNAME }}
+          from: "CARTA ICD <${{ secrets.MAIL_USERNAME }}>"
+          body: |
+            Workflow failed
+
+            Repository: ${{ github.repository }}
+            Branch/Ref: ${{ github.ref }}
+            Workflow: ${{ github.workflow }}
+            Run ID: ${{ github.run_id }}
+            URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Failed jobs:
+            - Build: ${{ needs['Build'].result }}
+            - Prepare-ICD-RxJS: ${{ needs['Prepare-ICD-RxJS'].result }}
+            - File-Browser-ICD-Tests: ${{ needs['File-Browser-ICD-Tests'].result }}
+            - Animator-ICD-Tests: ${{ needs['Animator-ICD-Tests'].result }}
+            - Region-Statistics-ICD-Tests: ${{ needs['Region-Statistics-ICD-Tests'].result }}
+            - Region-Manipulation-ICD-Tests: ${{ needs['Region-Manipulation-ICD-Tests'].result }}
+            - Cube-Histogram-ICD-Tests: ${{ needs['Cube-Histogram-ICD-Tests'].result }}
+            - PV-Generator-ICD-Tests: ${{ needs['PV-Generator-ICD-Tests'].result }}
+            - Raster-Tiles-ICD-Tests: ${{ needs['Raster-Tiles-ICD-Tests'].result }}
+            - Catalog-ICD-Tests: ${{ needs['Catalog-ICD-Tests'].result }}
+            - Moment-ICD-Tests: ${{ needs['Moment-ICD-Tests'].result }}
+            - Match-ICD-Tests: ${{ needs['Match-ICD-Tests'].result }}
+            - Close-File-ICD-Tests: ${{ needs['Close-File-ICD-Tests'].result }}
+            - Image-Fitting-ICD-Tests: ${{ needs['Image-Fitting-ICD-Tests'].result }}
+            - Vector-Overlay-ICD-Tests: ${{ needs['Vector-Overlay-ICD-Tests'].result }}
+            - Resume-ICD-Tests: ${{ needs['Resume-ICD-Tests'].result }}
+
