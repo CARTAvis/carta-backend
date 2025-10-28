@@ -17,7 +17,8 @@ namespace carta {
  * @brief Apply Region to image in Frame in image coordinates.
  * @param[in] region Region object to apply
  * @param[in] frame Image frame to apply region to
- * @param[in] stokes_source Struct describing stokes and z range
+ * @param[in] z_range Z axis range
+ * @param[in] stokes Stokes axis index
  * @param[in] lc_region Region in lattice coordinates
  * @param[out] image_region Region in image coordinates
  * @return Whether ImageRegion was created
