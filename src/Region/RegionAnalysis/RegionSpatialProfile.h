@@ -69,7 +69,7 @@ public:
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
      * @param[in] region Line or polyline region
-     * @param[in] stokes Stokes axis index
+     * @param[in] stokes_index Stokes axis index
      * @param[in] z Z axis index
      * @param[in] config Spatial configuration
      * @param[out] cancelled Whether line profile was cancelled
@@ -77,7 +77,7 @@ public:
      * @param[out] spatial_profile_message Region spatial profile data message
      * @return Whether profile was added
      */
-    bool GetLineSpatialProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region, int stokes, int z,
+    bool GetLineSpatialProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region, int stokes_index, int z,
         CARTA::SetSpatialRequirements_SpatialConfig& config, bool& cancelled, std::string& message,
         CARTA::SpatialProfileData& spatial_profile_message);
 
@@ -101,7 +101,7 @@ private:
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
      * @param[in] region Line or polyline region
-     * @param[in] stokes Stokes axis index
+     * @param[in] stokes_index Stokes axis index
      * @param[in] z Z axis index
      * @param[in] config Spatial configuration
      * @param[out] cancelled Whether profile was cancelled
@@ -110,7 +110,7 @@ private:
      * @param[out] increment Increment of spatial axis in profile
      * @return Whether profile calculation completed
      */
-    bool GetLineProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region, int stokes, int z,
+    bool GetLineProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region, int stokes_index, int z,
         CARTA::SetSpatialRequirements_SpatialConfig& config, bool& cancelled, std::string& message, std::vector<float>& profile,
         casacore::Quantity& increment);
 
@@ -121,11 +121,11 @@ private:
      * @param region_state Box region parameters
      * @param coord_sys Coordinate system used to define box
      * @param z Z axis index
-     * @param stokes Stokes axis index
+     * @param stokes_index Stokes axis index
      * @return Mean value of box region
      */
     float GetBoxMeanValue(int file_id, std::shared_ptr<Frame> frame, RegionState& region_state,
-        std::shared_ptr<casacore::CoordinateSystem> coord_sys, int z, int stokes);
+        std::shared_ptr<casacore::CoordinateSystem> coord_sys, int z, int stokes_index);
 
     /**
      * @brief Check whether to cancel line profile calculation

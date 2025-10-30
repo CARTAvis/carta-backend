@@ -18,12 +18,12 @@ namespace carta {
  * @param[in] region Region object to apply
  * @param[in] frame Image frame to apply region to
  * @param[in] z_range Z axis range
- * @param[in] stokes Stokes axis index
+ * @param[in] stokes_index Stokes axis index
  * @param[in] lc_region Region in lattice coordinates
  * @param[out] image_region Region in image coordinates
  * @return Whether ImageRegion was created
  */
-bool GetImageRegion(std::shared_ptr<Region> region, std::shared_ptr<Frame> frame, const AxisRange& z_range, int stokes,
+bool GetImageRegion(std::shared_ptr<Region> region, std::shared_ptr<Frame> frame, const AxisRange& z_range, int stokes_index,
     std::shared_ptr<casacore::LCRegion> lc_region, casacore::ImageRegion& image_region);
 
 } // namespace carta

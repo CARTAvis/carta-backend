@@ -104,8 +104,8 @@ bool RegionSpatialProfile::GetPointSpatialProfile(int file_id, std::shared_ptr<F
     return true;
 }
 
-bool RegionSpatialProfile::GetLineSpatialProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region, int stokes,
-    int z, CARTA::SetSpatialRequirements_SpatialConfig& config, bool& cancelled, std::string& message,
+bool RegionSpatialProfile::GetLineSpatialProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region,
+    int stokes_index, int z, CARTA::SetSpatialRequirements_SpatialConfig& config, bool& cancelled, std::string& message,
     CARTA::SpatialProfileData& spatial_profile_message) {
     int width(config.width());
     std::string coordinate(config.coordinate());
@@ -121,7 +121,7 @@ bool RegionSpatialProfile::GetLineSpatialProfile(int file_id, std::shared_ptr<Fr
 
     std::vector<float> profile;
     casacore::Quantity increment;
-    if (!GetLineProfile(file_id, frame, region, stokes, z, config, cancelled, message, profile, increment)) {
+    if (!GetLineProfile(file_id, frame, region, stokes_index, z, config, cancelled, message, profile, increment)) {
         return false;
     }
 
@@ -139,12 +139,12 @@ bool RegionSpatialProfile::GetLineSpatialProfile(int file_id, std::shared_ptr<Fr
 
     // Set message return value
     spatial_profile_message = Message::SpatialProfileData(
-        file_id, _region_id, x, y, z, stokes, value, start, end, profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
+        file_id, _region_id, x, y, z, stokes_index, value, start, end, profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
     return true;
 }
 
-bool RegionSpatialProfile::GetLineProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region, int stokes, int z,
-    CARTA::SetSpatialRequirements_SpatialConfig& config, bool& cancelled, std::string& message, std::vector<float>& profile,
+bool RegionSpatialProfile::GetLineProfile(int file_id, std::shared_ptr<Frame> frame, std::shared_ptr<Region> region, int stokes_index,
+    int z, CARTA::SetSpatialRequirements_SpatialConfig& config, bool& cancelled, std::string& message, std::vector<float>& profile,
     casacore::Quantity& increment) {
     std::shared_lock region_lock(region->GetActiveTaskMutex());
     auto initial_region_state = region->GetRegionState();
@@ -172,7 +172,7 @@ bool RegionSpatialProfile::GetLineProfile(int file_id, std::shared_ptr<Frame> fr
         }
 
         // Set mean for each box region in profile
-        profile.push_back(GetBoxMeanValue(file_id, frame, box_region, region_csys, z, stokes));
+        profile.push_back(GetBoxMeanValue(file_id, frame, box_region, region_csys, z, stokes_index));
     }
 
     if (CancelLineProfile(file_id, frame, region, z, initial_region_state, config)) {
@@ -185,14 +185,14 @@ bool RegionSpatialProfile::GetLineProfile(int file_id, std::shared_ptr<Frame> fr
 }
 
 float RegionSpatialProfile::GetBoxMeanValue(int file_id, std::shared_ptr<Frame> frame, RegionState& region_state,
-    std::shared_ptr<casacore::CoordinateSystem> coord_sys, int z, int stokes) {
+    std::shared_ptr<casacore::CoordinateSystem> coord_sys, int z, int stokes_index) {
     if (!region_state.RegionDefined()) {
         return FLOAT_NAN;
     }
 
     // Set box Region
     std::shared_ptr<Region> box_region = std::make_shared<Region>(region_state, coord_sys);
-    StokesSource stokes_source(stokes, AxisRange(z));
+    StokesSource stokes_source(stokes_index, AxisRange(z));
 
     // Get box LCRegion
     std::shared_lock frame_lock(frame->GetActiveTaskMutex());
@@ -205,7 +205,7 @@ float RegionSpatialProfile::GetBoxMeanValue(int file_id, std::shared_ptr<Frame> 
 
     // Get box ImageRegion
     casacore::ImageRegion image_region;
-    if (!GetImageRegion(box_region, frame, AxisRange(z), stokes, box_lc_region, image_region)) {
+    if (!GetImageRegion(box_region, frame, AxisRange(z), stokes_index, box_lc_region, image_region)) {
         return FLOAT_NAN;
     }
 

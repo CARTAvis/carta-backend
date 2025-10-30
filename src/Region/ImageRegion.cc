@@ -16,7 +16,7 @@
 
 namespace carta {
 
-bool GetImageRegion(std::shared_ptr<Region> region, std::shared_ptr<Frame> frame, const AxisRange& z_range, int stokes,
+bool GetImageRegion(std::shared_ptr<Region> region, std::shared_ptr<Frame> frame, const AxisRange& z_range, int stokes_index,
     std::shared_ptr<casacore::LCRegion> lc_region, casacore::ImageRegion& image_region) {
     if (!lc_region) {
         return false;
@@ -24,9 +24,9 @@ bool GetImageRegion(std::shared_ptr<Region> region, std::shared_ptr<Frame> frame
 
     try {
         // Create LCBox for z range and stokes using a slicer
-        StokesSource stokes_source(stokes, z_range);
+        StokesSource stokes_source(stokes_index, z_range);
         casacore::IPosition image_shape(frame->ImageShape(stokes_source));
-        casacore::Slicer z_stokes_slicer = frame->GetImageSlicer(z_range, stokes).slicer;
+        casacore::Slicer z_stokes_slicer = frame->GetImageSlicer(z_range, stokes_index).slicer;
 
         // Combine LCRegion with LCBox
         if (lc_region->shape().size() == image_shape.size()) {
