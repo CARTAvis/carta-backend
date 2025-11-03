@@ -113,7 +113,7 @@ var classcarta_1_1Frame =
     [ "_ignore_interrupt_X_mutex", "classcarta_1_1Frame.html#a5d20f4ff279364f45c6001cfabf28039", null ],
     [ "_ignore_interrupt_Y_mutex", "classcarta_1_1Frame.html#ae3af3e39534f36f88078bdd784535f24", null ],
     [ "_image_basic_stats", "classcarta_1_1Frame.html#ad92c2335ca68b26ddb5a96704d3941db", null ],
-    [ "_image_cache", "classcarta_1_1Frame.html#a7bb05e4ccc60d5a49b16cd4bce0203bc", null ],
+    [ "_image_cache", "classcarta_1_1Frame.html#ae5409dc8e66b9c23c007fccbc02030e0", null ],
     [ "_image_cache_size", "classcarta_1_1Frame.html#a15b0df9c9aba915bd2b910862524837e", null ],
     [ "_image_cache_valid", "classcarta_1_1Frame.html#aed19c8b977c5a52793b8369cb287b154", null ],
     [ "_image_fitter", "classcarta_1_1Frame.html#a664c9fd4c9a6e1b64349c045577e1af2", null ],

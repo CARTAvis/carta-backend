@@ -1,5 +1,6 @@
 var hierarchy =
 [
+    [ "AlignedDataDeleter", "structAlignedDataDeleter.html", null ],
     [ "carta::AnimationObject", "classcarta_1_1AnimationObject.html", null ],
     [ "ansicolor_sink", "classansicolor__sink.html", [
       [ "spdlog::sinks::carta_sink", "classspdlog_1_1sinks_1_1carta__sink.html", null ]

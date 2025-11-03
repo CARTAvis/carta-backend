@@ -1,0 +1,5 @@
+<map id="MakeUniqueAlignedDataPtr" name="MakeUniqueAlignedDataPtr">
+<area shape="rect" id="Node000001" title="Create a UniqueAlignedDataPtr and optionally mark its data to be excluded from core dumps." alt="" coords="5,5,207,31"/>
+<area shape="rect" id="Node000002" href="$Memory_8cc.html#aed502e6e12b21d1ea4ce93c6a09c404c" title="Mark the memory address range provided to be excluded from core dumps, if this is supported by the pl..." alt="" coords="255,5,429,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="207,15,241,15,241,21,207,21"/>
+</map>

@@ -145,7 +145,7 @@ var searchData=
   ['_5fimage_142',['_image',['../classcarta_1_1FileLoader.html#a956d1aa4fb19e50a2956bdcef29d8eae',1,'carta::FileLoader::_image'],['../classcarta_1_1PolarizationCalculator.html#a31e43138701da246c65c16e3b8b4ed54',1,'carta::PolarizationCalculator::_image'],['../classcarta_1_1InitialValueCalculator.html#ad6df615a12480b6825a5708104368106',1,'carta::InitialValueCalculator::_image'],['../classcarta_1_1ImageMoments.html#a11ecf0e16116d68a2e76b07c0b681f9c',1,'carta::ImageMoments::_image'],['../classcarta_1_1MomentGenerator.html#a2b796a189ee6e5558fbb41a373414fee',1,'carta::MomentGenerator::_image']]],
   ['_5fimage_5f2d_5fconvolver_143',['_image_2d_convolver',['../classcarta_1_1ImageMoments.html#a6b67a9f206faeca2f544c49c0845ec7e',1,'carta::ImageMoments']]],
   ['_5fimage_5fbasic_5fstats_144',['_image_basic_stats',['../classcarta_1_1Frame.html#ad92c2335ca68b26ddb5a96704d3941db',1,'carta::Frame']]],
-  ['_5fimage_5fcache_145',['_image_cache',['../classcarta_1_1Frame.html#a7bb05e4ccc60d5a49b16cd4bce0203bc',1,'carta::Frame']]],
+  ['_5fimage_5fcache_145',['_image_cache',['../classcarta_1_1Frame.html#ae5409dc8e66b9c23c007fccbc02030e0',1,'carta::Frame']]],
   ['_5fimage_5fcache_5fsize_146',['_image_cache_size',['../classcarta_1_1Frame.html#a15b0df9c9aba915bd2b910862524837e',1,'carta::Frame']]],
   ['_5fimage_5fcache_5fvalid_147',['_image_cache_valid',['../classcarta_1_1Frame.html#aed19c8b977c5a52793b8369cb287b154',1,'carta::Frame']]],
   ['_5fimage_5fchannel_5fmutexes_148',['_image_channel_mutexes',['../classcarta_1_1Session.html#ab0a248835375df159d56bae319f2ca43',1,'carta::Session']]],
