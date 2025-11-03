@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Don't reallocate memory for image cache unnecessarily ([#1508](https://github.com/CARTAvis/carta-backend/pull/1508)).
 
+### Changed
+* Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
+
 ## [5.0.2]
 
 ### Fixed

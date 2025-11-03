@@ -64,11 +64,12 @@ set(TEST_SOURCES
         TestRegionStats.cc
         TestRestApi.cc
         TestTileEncoding.cc
+	TestVoTable.cc
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc
-        Util/TestUtilString.cc
-        TestVoTable.cc)
+        Util/TestUtilMemory.cc
+        Util/TestUtilString.cc)
 
 # Add all the sources in the main project and remove Main.cc
 foreach(src_file ${SOURCE_FILES})
