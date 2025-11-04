@@ -2084,7 +2084,7 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         if (rebin_xy == 1 && rebin_z == 1) {
             casacore::Array<float> final_data_array(shape, rebinned_data_ptr->data(), casacore::StorageInitPolicy::SHARE);
             sub_image.get(final_data_array);
-            // std::cout << "rebinned_data_ptr data = " << rebinned_data_ptr->data() << std::endl;
+            std::cout << "rebinned_data_ptr data = " << rebinned_data_ptr->data() << std::endl;
         } else {
             Rebin(sub_image, width, height, diff, rebin_xy, rebin_z, rebinned_data_ptr, rebinned_pool, data_pool);
         }
@@ -2150,13 +2150,15 @@ void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int he
     size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
     size_t rebin_channel_size = rebin_width * rebin_height;
 
-    std::vector<float> out_vector(rebin_channel_size, 0.0);
+    // std::vector<float> out_vector(rebin_channel_size, 0.0);
+    std::shared_ptr<std::vector<float>> out_vector_ptr = rebinned_pool->Pull();
 
     for (auto rebin_ichan = 0; rebin_ichan < 4; ++rebin_ichan) {
         std::shared_ptr<std::vector<float>> smoothed_ptr = rebinned_pool->Pull();
         float* slice_ptr = rebinned_data_ptr->data() + rebin_channel_size * rebin_ichan;
+        // std::cout << "rebinned_data_ptr data = " << rebinned_data_ptr->data() << std::endl;
 
-        std::fill(slice_ptr, slice_ptr + rebin_channel_size, 0.0f);
+        // std::fill(slice_ptr, slice_ptr + rebin_channel_size, 0.0f);
 
         for (auto smooth_ichan = 0; smooth_ichan < rebin_z; ++smooth_ichan) {
             if (rebin_ichan * rebin_z + smooth_ichan > diff - 1) {
@@ -2177,10 +2179,10 @@ void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int he
 
             if (rebin_xy > 1) {
                 const float* in_ptr = image_data_ptr->data();
-                BlockSmooth(in_ptr, out_vector.data(), width, height, rebin_width, rebin_height, 0, 0, rebin_xy); // smooth the single slice
+                BlockSmooth(in_ptr, out_vector_ptr->data(), width, height, rebin_width, rebin_height, 0, 0, rebin_xy); // smooth the single slice
 
                 // Accumulate rebinned channel data
-                std::transform(slice_ptr, slice_ptr + rebin_channel_size, out_vector.begin(), slice_ptr, std::plus<float>());
+                std::transform(slice_ptr, slice_ptr + rebin_channel_size, out_vector_ptr->begin(), slice_ptr, std::plus<float>());
                 // std::transform(slice_ptr, slice_ptr + rebin_channel_size out_vector.begin(), slice_ptr, [](float out_val, float dest_val) {return std::isnan(dest_val) ? out_val : dest_val + out_val; });
                
             } else {                
