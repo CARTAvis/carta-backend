@@ -145,9 +145,9 @@ protected:
  * @param tiles Reference to a vector of `Tile` objects that will be filled with the computed tile data.
  *              The vector is resized to fit all required tiles.
  *
- * @return `true` if the tiles were successfully computed and the layer was valid, `false` otherwise.
+ * @return `void
  */
-bool GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
+void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 

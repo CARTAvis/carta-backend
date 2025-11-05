@@ -189,13 +189,7 @@ void VectorField::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int3
     }
 }
 
-/**
- * @note This function calculates how many tiles (of size `TILE_SIZE * mip`) are needed to cover the given
- * image dimensions (`image_width` × `image_height`) at the specified mip level. It then populates
- * the `tiles` vector with `Tile` objects that store the (x, y) coordinates and the corresponding layer
- * index for that mip level.
- */
-bool GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles) {
+void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles) {
     int tile_size_original = TILE_SIZE * mip;
     int num_tile_columns = ceil((double)image_width / tile_size_original);
     int num_tile_rows = ceil((double)image_height / tile_size_original);
@@ -209,7 +203,6 @@ bool GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& til
             tiles[j * num_tile_columns + i].layer = tile_layer;
         }
     }
-    return true;
 }
 
 CARTA::ImageBounds GetImageBounds(const Tile& tile, int image_width, int image_height, int mip) {
