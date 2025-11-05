@@ -51,8 +51,19 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     
     // Get tiles
     std::vector<Tile> tiles;
-    GetTiles(_dims.width, _dims.height, _smoothing_factor, tiles); // TODO - why this is global and should it always remain a global function, why not at least a static one somewhere ???
+    int tile_size_original = TILE_SIZE * _smoothing_factor;
+    int num_tile_columns = ceil((double)_dims.width / tile_size_original);
+    int num_tile_rows = ceil((double)_dims.height / tile_size_original);
+    int32_t tile_layer = Tile::MipToLayer(_smoothing_factor, _dims.width, _dims.height, TILE_SIZE, TILE_SIZE);
+    tiles.resize(num_tile_rows * num_tile_columns);
 
+    for (int j = 0; j < num_tile_rows; ++j) {
+        for (int i = 0; i < num_tile_columns; ++i) {
+            tiles[j * num_tile_columns + i].x = i;
+            tiles[j * num_tile_columns + i].y = j;
+            tiles[j * num_tile_columns + i].layer = tile_layer;
+        }
+    }
 
     // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
@@ -245,22 +256,6 @@ void VectorField::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int3
             tile->set_image_data(compression_buffer.data(), compressed_size);
         } else {
             tile->set_image_data(array.data(), sizeof(float) * array.size());
-        }
-    }
-}
-
-void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles) {
-    int tile_size_original = TILE_SIZE * mip;
-    int num_tile_columns = ceil((double)image_width / tile_size_original);
-    int num_tile_rows = ceil((double)image_height / tile_size_original);
-    int32_t tile_layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
-    tiles.resize(num_tile_rows * num_tile_columns);
-
-    for (int j = 0; j < num_tile_rows; ++j) {
-        for (int i = 0; i < num_tile_columns; ++i) {
-            tiles[j * num_tile_columns + i].x = i;
-            tiles[j * num_tile_columns + i].y = j;
-            tiles[j * num_tile_columns + i].layer = tile_layer;
         }
     }
 }
