@@ -16,7 +16,12 @@
 #include "Util/Image.h"
 #include "Util/Nan.h"
 
+// TODO : is it elegant enough or we need to do better ?
+class DimsInfo; 
+
 namespace carta {
+   // TODO : is it elegant enough or we need to do better ?
+   class Frame;
 
 class VectorField {
 public:
@@ -24,35 +29,13 @@ public:
 
     bool SetParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
     bool ClearParameters(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int z_index);
+    
+    // WARNING : _dims and _z_index are protected in Frame -> hence added as parameters (for now)
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , DimsInfo& _dims, carta::Frame& frame, int _z_index ); // , Frame& frame, DimsInfo& _dims );
 
     void CalculatePiPa(std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag,
         const Tile& tile, int width, int height, int z_index, double progress,
         const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
-
-    int Mip() const {
-        return _smoothing_factor;
-    }
-    bool Fractional() const {
-        return _fractional;
-    }
-    float Threshold() const {
-        return _threshold;
-    }
-    CARTA::PolarizationType ThresholdOption() const {
-        return _threshold_option;
-    }
-    bool CalculatePi() const {
-        return _calculate_pi;
-    }
-    bool CalculatePa() const {
-        return _calculate_pa;
-    }
-    bool CurrStokesAsPi() const {
-        return _current_stokes_as_pi;
-    }
-    bool CurrStokesAsPa() const {
-        return _current_stokes_as_pa;
-    }
 
 protected:
     void ClearSettings();

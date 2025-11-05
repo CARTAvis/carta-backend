@@ -264,9 +264,6 @@ protected:
         return (z * 10) + stokes;
     }
 
-    // For vector field calculation
-    bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
-
     // Setup
     uint32_t _session_id;
 

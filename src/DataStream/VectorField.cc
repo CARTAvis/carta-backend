@@ -6,6 +6,8 @@
 
 #include "VectorField.h"
 #include "Util/Message.h"
+#include "Frame/Frame.h"
+#include "Util/Image.h"
 
 namespace carta {
 
@@ -35,6 +37,65 @@ bool VectorField::ClearParameters(const std::function<void(CARTA::VectorOverlayT
         return true;
     }
     return false;
+}
+
+// TODO/TBD : _dims and _z_index are protected in Frame -> for now passed as parameters is it ok ?
+//            passing Frame by reference as well as there is probably no other way 
+bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , DimsInfo& _dims , carta::Frame& frame, int _z_index ) // , Frame& frame, DimsInfo& _dims )
+{
+     if (ClearParameters(callback, _z_index)) {
+        return true;
+    }
+
+    // Prevent deleting the Frame while this task is not finished yet
+    std::shared_lock lock(frame.GetActiveTaskMutex());
+    
+    // Get tiles
+    std::vector<Tile> tiles;
+    GetTiles(_dims.width, _dims.height, _smoothing_factor, tiles); // TODO - why this is global and should it always remain a global function, why not at least a static one somewhere ???
+
+
+    // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
+    std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
+    std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
+
+    // Set stokes flags and get their indices
+    bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == CARTA::PolarizationType::I;
+    stokes_flag["I"] = (_fractional || use_threshold_I) && frame.GetStokesTypeIndex("I", stokes_indices["I"]);
+    stokes_flag["Q"] = (_calculate_pi || _calculate_pa) && frame.GetStokesTypeIndex("Q", stokes_indices["Q"]);
+    stokes_flag["U"] = (_calculate_pi || _calculate_pa) && frame.GetStokesTypeIndex("U", stokes_indices["U"]);
+
+   // Get image tiles data
+    for (int i = 0; i < tiles.size(); ++i) {
+        auto& tile = tiles[i];
+        auto bounds = GetImageBounds(tile, _dims.width, _dims.height, _smoothing_factor );
+        int width, height;
+        std::unordered_map<std::string, std::vector<float>> stokes_data;
+        double progress = (double)(i + 1) / tiles.size();
+
+        // Get current stokes data
+        if (_current_stokes_as_pi || _current_stokes_as_pa) {
+            if (!frame.GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, frame.CurrentStokes(), bounds, _smoothing_factor )) {
+                return false;
+            }
+        }
+
+        // Get stokes data I, Q, or U
+        if (_calculate_pi || _calculate_pa) {
+            for (auto one : stokes_flag) {
+                std::string stokes = one.first;
+                if (stokes_flag[stokes] &&
+                    !frame.GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, _smoothing_factor )) {
+                    return false;
+                }
+            }
+        }
+
+        // Calculate PI or PA and then send a partial response message
+        CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+    }
+    
+    return true;
 }
 
 void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<float>>& stokes_data,
