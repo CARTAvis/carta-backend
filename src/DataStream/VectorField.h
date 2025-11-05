@@ -16,9 +16,6 @@
 #include "Util/Image.h"
 #include "Util/Nan.h"
 
-// TODO : is it elegant enough or we need to do better ?
-class DimsInfo; 
-
 namespace carta {
    // TODO : is it elegant enough or we need to do better ?
    class Frame;

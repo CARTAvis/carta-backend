@@ -7,7 +7,6 @@
 #include "VectorField.h"
 #include "Util/Message.h"
 #include "Frame/Frame.h"
-#include "Util/Image.h"
 
 namespace carta {
 
