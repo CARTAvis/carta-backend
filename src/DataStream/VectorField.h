@@ -144,8 +144,6 @@ protected:
  * @param mip The mip level to generate tiles for.
  * @param tiles Reference to a vector of `Tile` objects that will be filled with the computed tile data.
  *              The vector is resized to fit all required tiles.
- *
- * @return `void
  */
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 
