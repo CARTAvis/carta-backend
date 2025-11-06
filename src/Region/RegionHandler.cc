@@ -807,6 +807,8 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
 
     // If not image region, check preview region and get its region state.
     bool is_image_region(preview_region_id == IMAGE_REGION_ID);
+    std::shared_ptr<Region> preview_region;
+    RegionState preview_region_state;
     if (!is_image_region) {
         if (!RegionSet(preview_region_id)) {
             pv_response.set_message("PV preview cube requested for invalid preview region id.");
@@ -816,10 +818,9 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
             pv_response.set_message("PV preview cube requested for invalid preview region type.");
             return false;
         }
+        preview_region = GetRegion(preview_region_id);
+        preview_region_state = preview_region->GetRegionState();
     }
-
-    auto preview_region = GetRegion(preview_region_id);
-    auto preview_region_state = preview_region->GetRegionState();
 
     // Save cut and cube settings for updates, including current pv cut region state
     RegionState region_state = GetRegion(region_id)->GetRegionState();
