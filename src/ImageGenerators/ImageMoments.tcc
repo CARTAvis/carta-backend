@@ -10,6 +10,8 @@
 #ifndef CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
 #define CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
 
+#include <cmath>
+
 #include "../Logger/Logger.h"
 #include "Util/Casacore.h"
 
@@ -518,7 +520,7 @@ void ImageMoments<T>::WhatIsTheNoise(T& sigma, const casacore::ImageInterface<T>
 
         // Return values of fit
         if (!fail && fitter.converged()) {
-            sigma = T(abs(solution(2)) / casacore::C::sqrt2);
+            sigma = T(abs(solution(2)) / M_SQRT2);
             spdlog::info("The fitted standard deviation of the noise is {}.", sigma);
         } else {
             spdlog::warn("The fit to determine the noise level failed. Try inputting it directly.");

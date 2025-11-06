@@ -9,6 +9,7 @@
 #include "RegionHandler.h"
 
 #include <chrono>
+#include <cmath>
 
 #include <casacore/casa/math.h>
 #include <casacore/lattices/LRegions/LCBox.h>
@@ -2373,7 +2374,7 @@ void RegionHandler::GetStokesPflinear(
 }
 
 void RegionHandler::GetStokesPangle(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pangle) {
-    auto calc_pa = [&](double q, double u) { return (180.0 / casacore::C::pi) * atan2(u, q) / 2; };
+    auto calc_pa = [&](double q, double u) { return (180.0 / M_PI) * atan2(u, q) / 2; };
 
     CombineStokes(profiles_pangle, profiles_q, profiles_u, calc_pa);
 }
