@@ -40,9 +40,9 @@ bool VectorField::ClearParameters(const std::function<void(CARTA::VectorOverlayT
 
 // TODO/TBD : _dims and _z_index are protected in Frame -> for now passed as parameters is it ok ?
 //            passing Frame by reference as well as there is probably no other way 
-bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , DimsInfo& _dims , carta::Frame& frame, int _z_index ) // , Frame& frame, DimsInfo& _dims )
+bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , DimsInfo& dims , carta::Frame& frame, int z_index ) // , Frame& frame, DimsInfo& _dims )
 {
-     if (ClearParameters(callback, _z_index)) {
+     if (ClearParameters(callback, z_index)) {
         return true;
     }
 
@@ -52,9 +52,9 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     // Get tiles
     std::vector<Tile> tiles;
     int tile_size_original = TILE_SIZE * _smoothing_factor;
-    int num_tile_columns = ceil((double)_dims.width / tile_size_original);
-    int num_tile_rows = ceil((double)_dims.height / tile_size_original);
-    int32_t tile_layer = Tile::MipToLayer(_smoothing_factor, _dims.width, _dims.height, TILE_SIZE, TILE_SIZE);
+    int num_tile_columns = ceil((double)dims.width / tile_size_original);
+    int num_tile_rows = ceil((double)dims.height / tile_size_original);
+    int32_t tile_layer = Tile::MipToLayer(_smoothing_factor, dims.width, dims.height, TILE_SIZE, TILE_SIZE);
     tiles.resize(num_tile_rows * num_tile_columns);
 
     for (int j = 0; j < num_tile_rows; ++j) {
@@ -75,17 +75,17 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     stokes_flag["Q"] = (_calculate_pi || _calculate_pa) && frame.GetStokesTypeIndex("Q", stokes_indices["Q"]);
     stokes_flag["U"] = (_calculate_pi || _calculate_pa) && frame.GetStokesTypeIndex("U", stokes_indices["U"]);
 
-   // Get image tiles data
+    // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
         auto& tile = tiles[i];
-        auto bounds = GetImageBounds(tile, _dims.width, _dims.height, _smoothing_factor );
+        auto bounds = GetImageBounds(tile, dims.width, dims.height, _smoothing_factor );
         int width, height;
         std::unordered_map<std::string, std::vector<float>> stokes_data;
         double progress = (double)(i + 1) / tiles.size();
 
         // Get current stokes data
         if (_current_stokes_as_pi || _current_stokes_as_pa) {
-            if (!frame.GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, frame.CurrentStokes(), bounds, _smoothing_factor )) {
+            if (!frame.GetDownsampledRasterData(stokes_data["CUR"], width, height, z_index, frame.CurrentStokes(), bounds, _smoothing_factor )) {
                 return false;
             }
         }
@@ -95,14 +95,14 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
             for (auto one : stokes_flag) {
                 std::string stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !frame.GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, _smoothing_factor )) {
+                    !frame.GetDownsampledRasterData(stokes_data[stokes], width, height, z_index, stokes_indices[stokes], bounds, _smoothing_factor )) {
                     return false;
                 }
             }
         }
 
         // Calculate PI or PA and then send a partial response message
-        CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+        CalculatePiPa(stokes_data, stokes_flag, tile, width, height, z_index, progress, callback);
     }
     
     return true;

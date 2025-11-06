@@ -28,7 +28,7 @@ public:
     bool ClearParameters(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int z_index);
     
     // WARNING : _dims and _z_index are protected in Frame -> hence added as parameters (for now)
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , DimsInfo& _dims, carta::Frame& frame, int _z_index ); // , Frame& frame, DimsInfo& _dims );
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , DimsInfo& dims, carta::Frame& frame, int z_index ); // , Frame& frame, DimsInfo& _dims );
 
     void CalculatePiPa(std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag,
         const Tile& tile, int width, int height, int z_index, double progress,
