@@ -2522,8 +2522,12 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     std::cout << "DEBUG (Q) : " << stokes_indices["Q"].index << " / " << stokes_indices["Q"].valid << std::endl;
     std::cout << "DEBUG (U) : " << stokes_indices["U"].index << " / " << stokes_indices["U"].valid << std::endl;
 
+    auto Frame_GetDownsampledRasterData = std::bind(&Frame::GetDownsampledRasterData,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3,std::placeholders::_4,std::placeholders::_5,std::placeholders::_6,std::placeholders::_7);
     
-    return _vector_field.CalculateVectorField(callback, stokes_indices, _dims, *this, _z_index );
+    // TODO : decide with CurrentStokes() - currently by value so the current value is passed, but if it changes in side the tiles loop in CalculateVectorField
+    //        I should probably pass _stokes_index by const reference here so CurrentStokes() -> _stokes_index and change  VectorField::CalculateVectorField(...int stokes_index ...) to "const int& stokes_index"
+    //        I am not yet sure if this would be thread-safe / correct though ...
+    return _vector_field.CalculateVectorField(callback, stokes_indices, _dims, _z_index, CurrentStokes(), GetActiveTaskMutex(), Frame_GetDownsampledRasterData );
 }
 
 } // namespace carta

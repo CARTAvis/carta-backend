@@ -6,7 +6,6 @@
 
 #include "VectorField.h"
 #include "Util/Message.h"
-#include "Frame/Frame.h"
 
 namespace carta {
 
@@ -40,14 +39,18 @@ bool VectorField::ClearParameters(const std::function<void(CARTA::VectorOverlayT
 
 // TODO/TBD : _dims and _z_index are protected in Frame -> for now passed as parameters is it ok ?
 //            passing Frame by reference as well as there is probably no other way 
-bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, DimsInfo& dims , carta::Frame& frame, int z_index ) // , Frame& frame, DimsInfo& _dims )
+bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOverlayTileData&)>& callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, DimsInfo& dims , 
+                                        int z_index, int current_stokes_index, std::shared_mutex& frame_mutex, 
+                                        const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >& Frame_GetDownsampledRasterData ) // , Frame& frame, DimsInfo& _dims )
 {
      if (ClearParameters(callback, z_index)) {
         return true;
     }
 
+    // TODO : not very elegant for now, but I just wanted to get rid of #include "Frame.h" first and then make follow-up improvements / clean-ups
+    // TODO : ok this is the last one to fix - but might need a bit more changes, check with Adrianna
     // Prevent deleting the Frame while this task is not finished yet
-    std::shared_lock lock(frame.GetActiveTaskMutex());
+    std::shared_lock lock( frame_mutex );
     
     // Get tiles
     std::vector<Tile> tiles;
@@ -87,7 +90,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
 
         // Get current stokes data
         if (_current_stokes_as_pi || _current_stokes_as_pa) {
-            if (!frame.GetDownsampledRasterData(stokes_data["CUR"], width, height, z_index, frame.CurrentStokes(), bounds, _smoothing_factor )) {
+            if (!Frame_GetDownsampledRasterData(stokes_data["CUR"], width, height, z_index, current_stokes_index, bounds, _smoothing_factor )) {
                 return false;
             }
         }
@@ -97,7 +100,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
             for (auto one : stokes_flag) {
                 std::string stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !frame.GetDownsampledRasterData(stokes_data[stokes], width, height, z_index, stokes_indices[stokes].index, bounds, _smoothing_factor )) {
+                    !Frame_GetDownsampledRasterData(stokes_data[stokes], width, height, z_index, stokes_indices[stokes].index, bounds, _smoothing_factor )) {
                     return false;
                 }
             }

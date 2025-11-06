@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 #define CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 
+#include <shared_mutex>
+
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
 #include <casacore/casa/BasicSL/Constants.h>
@@ -24,8 +26,6 @@ struct StokesIndex
 };
 
 namespace carta {
-   // TODO : is it elegant enough or we need to do better ?
-   class Frame;
 
 class VectorField {
 public:
@@ -34,8 +34,14 @@ public:
     bool SetParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
     bool ClearParameters(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int z_index);
     
-    // WARNING : _dims and _z_index are protected in Frame -> hence added as parameters (for now)
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, DimsInfo& dims, carta::Frame& frame, int z_index ); // , Frame& frame, DimsInfo& _dims );
+    // TODO/TBD : _dims and _z_index are protected in Frame -> hence added as parameters (for now)
+    // TODO/TBD : decide with CurrentStokes() - currently by value so the current value is passed, but if it changes in side the tiles loop in CalculateVectorField
+    //        I should probably pass _stokes_index by const reference here so CurrentStokes() -> _stokes_index and change  VectorField::CalculateVectorField(...int stokes_index ...) to "const int& stokes_index"
+    //        I am not yet sure if this would be thread-safe / correct though ...
+    // MUTEX : passed from Frame, which may also need to be changed in case Frame ceased to exist etc (thread-safe)        
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, 
+                              DimsInfo& dims, int z_index, int current_stokes_index, std::shared_mutex& frame_mutex, 
+                              const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >& Frame_GetDownsampledRasterData );
 
     void CalculatePiPa(std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag,
         const Tile& tile, int width, int height, int z_index, double progress,
