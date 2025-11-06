@@ -40,7 +40,7 @@ bool VectorField::ClearParameters(const std::function<void(CARTA::VectorOverlayT
 
 // TODO/TBD : _dims and _z_index are protected in Frame -> for now passed as parameters is it ok ?
 //            passing Frame by reference as well as there is probably no other way 
-bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , DimsInfo& dims , carta::Frame& frame, int z_index ) // , Frame& frame, DimsInfo& _dims )
+bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, DimsInfo& dims , carta::Frame& frame, int z_index ) // , Frame& frame, DimsInfo& _dims )
 {
      if (ClearParameters(callback, z_index)) {
         return true;
@@ -67,16 +67,18 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
 
     // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
-    std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
+//    std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
 
     // Set stokes flags and get their indices
     bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == CARTA::PolarizationType::I;
-    stokes_flag["I"] = (_fractional || use_threshold_I) && frame.GetStokesTypeIndex("I", stokes_indices["I"]);
-    stokes_flag["Q"] = (_calculate_pi || _calculate_pa) && frame.GetStokesTypeIndex("Q", stokes_indices["Q"]);
-    stokes_flag["U"] = (_calculate_pi || _calculate_pa) && frame.GetStokesTypeIndex("U", stokes_indices["U"]);
+    stokes_flag["I"] = (_fractional || use_threshold_I) && stokes_indices["I"].valid;
+    stokes_flag["Q"] = (_calculate_pi || _calculate_pa) && stokes_indices["Q"].valid;
+    stokes_flag["U"] = (_calculate_pi || _calculate_pa) && stokes_indices["U"].valid;
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
+        std::cout << "DEBUG : processing tile " << i << std::endl;
+        
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, dims.width, dims.height, _smoothing_factor );
         int width, height;
@@ -95,7 +97,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
             for (auto one : stokes_flag) {
                 std::string stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !frame.GetDownsampledRasterData(stokes_data[stokes], width, height, z_index, stokes_indices[stokes], bounds, _smoothing_factor )) {
+                    !frame.GetDownsampledRasterData(stokes_data[stokes], width, height, z_index, stokes_indices[stokes].index, bounds, _smoothing_factor )) {
                     return false;
                 }
             }

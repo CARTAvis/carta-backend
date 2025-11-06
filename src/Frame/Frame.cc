@@ -2513,7 +2513,17 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
 }
 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    return _vector_field.CalculateVectorField(callback, _dims, *this, _z_index );
+    std::unordered_map<std::string, StokesIndex> stokes_indices{ {"I", {-1,false}}, {"Q", {-1,false}}, {"U", {-1,false}} };
+    stokes_indices["I"].valid = GetStokesTypeIndex("I", stokes_indices["I"].index);
+    stokes_indices["Q"].valid = GetStokesTypeIndex("Q", stokes_indices["Q"].index);
+    stokes_indices["U"].valid = GetStokesTypeIndex("U", stokes_indices["U"].index);
+    
+    std::cout << "DEBUG (I) : " << stokes_indices["I"].index << " / " << stokes_indices["I"].valid << std::endl;
+    std::cout << "DEBUG (Q) : " << stokes_indices["Q"].index << " / " << stokes_indices["Q"].valid << std::endl;
+    std::cout << "DEBUG (U) : " << stokes_indices["U"].index << " / " << stokes_indices["U"].valid << std::endl;
+
+    
+    return _vector_field.CalculateVectorField(callback, stokes_indices, _dims, *this, _z_index );
 }
 
 } // namespace carta
