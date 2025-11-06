@@ -6,9 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-* Updated for compatibility with latest carta-casacore using CASA 6.7.0 ([#1499](https://github.com/CARTAvis/carta-backend/issues/1499)).
-
 ### Fixed
 * Fixed linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
 * Fixed NaN values in FITS image with BLANK header keyword ([#1492](https://github.com/CARTAvis/carta-backend/issues/1492)).
@@ -21,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Moved region histogram implementation to analysis subdirectory ([#1509](https://github.com/CARTAvis/carta-backend/issues/1509)).
 * Moved region statistics implementation to analysis subdirectory ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
 * Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
+* Updated for compatibility with latest carta-casacore using CASA 6.7.2 ([#1499](https://github.com/CARTAvis/carta-backend/issues/1499)).
 
 ## [5.0.2]
 
