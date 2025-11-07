@@ -39,19 +39,11 @@ bool VectorField::ClearParameters(const std::function<void(CARTA::VectorOverlayT
 
 // TODO/TBD : _dims and _z_index are protected in Frame -> for now passed as parameters is it ok ?
 //            passing Frame by reference as well as there is probably no other way 
-bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOverlayTileData&)>& callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, DimsInfo& dims , 
-                                        int z_index, int current_stokes_index, std::shared_mutex& frame_mutex, 
-                                        const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >& Frame_GetDownsampledRasterData ) // , Frame& frame, DimsInfo& _dims )
+bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, DimsInfo& dims ,
+                                        int z_index, int current_stokes_index, 
+                                        const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >& tile_callback )
 {
-     if (ClearParameters(callback, z_index)) {
-        return true;
-    }
-
-    // TODO : not very elegant for now, but I just wanted to get rid of #include "Frame.h" first and then make follow-up improvements / clean-ups
-    // TODO : ok this is the last one to fix - but might need a bit more changes, check with Adrianna
-    // Prevent deleting the Frame while this task is not finished yet
-    std::shared_lock lock( frame_mutex );
-    
+    // TODO : Tiles initialisation - this will use some global TilePool object
     // Get tiles
     std::vector<Tile> tiles;
     int tile_size_original = TILE_SIZE * _smoothing_factor;
@@ -79,19 +71,20 @@ bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOv
     stokes_flag["U"] = (_calculate_pi || _calculate_pa) && stokes_indices["U"].valid;
 
     // Get image tiles data
+    std::unordered_map<std::string, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
-//        std::cout << "DEBUG : processing tile " << i << std::endl;
+        std::cout << "DEBUG : processing tile " << i << std::endl;
 //        sleep(1);
         
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, dims.width, dims.height, _smoothing_factor );
         int width, height;
-        std::unordered_map<std::string, std::vector<float>> stokes_data; // TODO : move outside the loop, + UNIT TEST !
+//        std::unordered_map<std::string, std::vector<float>> stokes_data; // TODO : move outside the loop, + UNIT TEST !
         double progress = (double)(i + 1) / tiles.size();
 
         // Get current stokes data
         if (_current_stokes_as_pi || _current_stokes_as_pa) {
-            if (!Frame_GetDownsampledRasterData(stokes_data["CUR"], width, height, z_index, current_stokes_index, bounds, _smoothing_factor )) {
+            if (!tile_callback(stokes_data["CUR"], width, height, z_index, current_stokes_index, bounds, _smoothing_factor )) {
                 return false;
             }
         }
@@ -101,7 +94,7 @@ bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOv
             for (auto one : stokes_flag) {
                 std::string stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !Frame_GetDownsampledRasterData(stokes_data[stokes], width, height, z_index, stokes_indices[stokes].index, bounds, _smoothing_factor )) {
+                    !tile_callback(stokes_data[stokes], width, height, z_index, stokes_indices[stokes].index, bounds, _smoothing_factor )) {
                     return false;
                 }
             }
@@ -169,7 +162,7 @@ bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOv
 
        // Send response message
        response.set_progress(progress);
-       callback(response);
+       progress_callback(response);
     }
     
     return true;
