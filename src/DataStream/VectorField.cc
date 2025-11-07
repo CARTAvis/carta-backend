@@ -71,6 +71,7 @@ bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOv
     stokes_flag["U"] = (_calculate_pi || _calculate_pa) && stokes_indices["U"].valid;
 
     // Get image tiles data
+    // TODO/TBD : make sure this declaration can stay before the loop and shoudn't be inside the loop as originally was. Unit test case ?
     std::unordered_map<std::string, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
         std::cout << "DEBUG : processing tile " << i << std::endl;
