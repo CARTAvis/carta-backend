@@ -80,12 +80,13 @@ bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOv
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
-        std::cout << "DEBUG : processing tile " << i << std::endl;
+//        std::cout << "DEBUG : processing tile " << i << std::endl;
+//        sleep(1);
         
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, dims.width, dims.height, _smoothing_factor );
         int width, height;
-        std::unordered_map<std::string, std::vector<float>> stokes_data;
+        std::unordered_map<std::string, std::vector<float>> stokes_data; // TODO : move outside the loop, + UNIT TEST !
         double progress = (double)(i + 1) / tiles.size();
 
         // Get current stokes data
@@ -106,83 +107,72 @@ bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOv
             }
         }
 
-        // Calculate PI or PA and then send a partial response message
-        CalculatePiPa(stokes_data, stokes_flag, tile, width, height, z_index, progress, callback);
+        // The body of the previous function CalculatePiPa has been moved here:
+        auto response =  Message::VectorOverlayTileData(_file_id, z_index, _stokes_intensity, _stokes_angle, _compression_type, _compression_quality);
+        auto* tile_pi = response.add_intensity_tiles();
+        auto* tile_pa = response.add_angle_tiles();
+
+        // Threshold cut operator to be applied
+        ThresholdCut threshold_cut(_threshold);
+
+        // Current stokes data as PI or PA
+        if (_current_stokes_as_pi || _current_stokes_as_pa) {
+           // Apply a threshold cut
+           std::for_each(stokes_data["CUR"].begin(), stokes_data["CUR"].end(), threshold_cut);
+
+           if (_current_stokes_as_pi) {
+              FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data["CUR"], _compression_type, _compression_quality);
+           }
+           if (_current_stokes_as_pa) {
+              FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data["CUR"], _compression_type, _compression_quality);
+           }
+        }
+
+        // Calculate PI and PA using stokes data I, Q or U
+        std::vector<float> pi;
+        if (_calculate_pi || (_calculate_pa && _threshold_option == CARTA::PolarizationType::Plinear)) {
+           // Lambda function to calculate PI, errors are applied
+           CalcPi calc_pi(_q_error, _u_error);
+           pi.resize(width * height);
+           std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pi.begin(), calc_pi);
+           if (_fractional) { // Calculate fractional PI
+              CalcFpi calc_fpi;
+              std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), calc_fpi);
+           }
+
+           // Set NAN for PI/FPI if stokes I or Plinear (pi) is NAN or below the threshold
+           if (stokes_flag["I"] && _threshold_option == CARTA::PolarizationType::I) {
+              std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), threshold_cut);
+           } else {
+             std::for_each(pi.begin(), pi.end(), threshold_cut);
+           }
+
+           if (_calculate_pi) {
+               FillTileData( tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
+           }
+        }
+
+        if (_calculate_pa) {
+           std::vector<float> pa;
+           pa.resize(width * height);
+           CalcPa calc_pa;
+           std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), calc_pa);
+
+           // Set NAN for PA if stokes I or Plinear (pi) is NAN or below the threshold
+           if (stokes_flag["I"] && _threshold_option == CARTA::PolarizationType::I) {
+               std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
+           } else {
+               std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
+           }
+           FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
+       }
+
+       // Send response message
+       response.set_progress(progress);
+       callback(response);
     }
     
     return true;
-}
-
-void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<float>>& stokes_data,
-    std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile, int width, int height, int z_index, double progress,
-    const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    // Set response messages
-    auto response =
-        Message::VectorOverlayTileData(_file_id, z_index, _stokes_intensity, _stokes_angle, _compression_type, _compression_quality);
-    auto* tile_pi = response.add_intensity_tiles();
-    auto* tile_pa = response.add_angle_tiles();
-
-    // Threshold cut operator to be applied
-    ThresholdCut threshold_cut(_threshold);
-
-    // Current stokes data as PI or PA
-    if (_current_stokes_as_pi || _current_stokes_as_pa) {
-        // Apply a threshold cut
-        std::for_each(stokes_data["CUR"].begin(), stokes_data["CUR"].end(), threshold_cut);
-
-        if (_current_stokes_as_pi) {
-            FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data["CUR"], _compression_type,
-                _compression_quality);
-        }
-        if (_current_stokes_as_pa) {
-            FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data["CUR"], _compression_type,
-                _compression_quality);
-        }
-    }
-
-    // Calculate PI and PA using stokes data I, Q or U
-    std::vector<float> pi;
-    if (_calculate_pi || (_calculate_pa && _threshold_option == CARTA::PolarizationType::Plinear)) {
-        // Lambda function to calculate PI, errors are applied
-        CalcPi calc_pi(_q_error, _u_error);
-        pi.resize(width * height);
-        std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pi.begin(), calc_pi);
-        if (_fractional) { // Calculate fractional PI
-            CalcFpi calc_fpi;
-            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), calc_fpi);
-        }
-
-        // Set NAN for PI/FPI if stokes I or Plinear (pi) is NAN or below the threshold
-        if (stokes_flag["I"] && _threshold_option == CARTA::PolarizationType::I) {
-            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), threshold_cut);
-        } else {
-            std::for_each(pi.begin(), pi.end(), threshold_cut);
-        }
-
-        if (_calculate_pi) {
-            FillTileData(
-                tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
-        }
-    }
-
-    if (_calculate_pa) {
-        std::vector<float> pa;
-        pa.resize(width * height);
-        CalcPa calc_pa;
-        std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), calc_pa);
-
-        // Set NAN for PA if stokes I or Plinear (pi) is NAN or below the threshold
-        if (stokes_flag["I"] && _threshold_option == CARTA::PolarizationType::I) {
-            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
-        } else {
-            std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
-        }
-        FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
-    }
-
-    // Send response message
-    response.set_progress(progress);
-    callback(response);
 }
 
 void VectorField::ClearSettings() {

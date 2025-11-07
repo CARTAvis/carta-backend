@@ -43,10 +43,6 @@ public:
                               DimsInfo& dims, int z_index, int current_stokes_index, std::shared_mutex& frame_mutex, 
                               const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >& Frame_GetDownsampledRasterData );
 
-    void CalculatePiPa(std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag,
-        const Tile& tile, int width, int height, int z_index, double progress,
-        const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
-
 protected:
     void ClearSettings();
     bool IsEqual(const CARTA::SetVectorOverlayParameters& message);
