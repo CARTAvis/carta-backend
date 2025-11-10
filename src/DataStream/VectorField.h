@@ -19,13 +19,21 @@
 #include "Util/Nan.h"
 
 // TODO : align with naming conventions etc , could also be a pair but I do not like first, second fields which have no meaning
-struct StokesIndex
+// This should probably go into carta namespace 
+/*struct StokesIndex
 {
    int index;
    bool valid;
-};
+};*/
 
 namespace carta {
+   struct StokesIndex
+   {
+      int index;
+      bool valid;
+   };
+
+   using tile_callback_func = const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >&;
 
 class VectorField {
 public:
@@ -40,8 +48,7 @@ public:
     //        I am not yet sure if this would be thread-safe / correct though ...
     // MUTEX : passed from Frame, which may also need to be changed in case Frame ceased to exist etc (thread-safe)        
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, 
-                              DimsInfo& dims, int z_index, int current_stokes_index, 
-                              const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >& tile_callback );
+                              DimsInfo& dims, int z_index, int current_stokes_index, tile_callback_func tile_callback);
 
 protected:
     void ClearSettings();

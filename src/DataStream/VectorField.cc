@@ -39,9 +39,12 @@ bool VectorField::ClearParameters(const std::function<void(CARTA::VectorOverlayT
 
 // TODO/TBD : _dims and _z_index are protected in Frame -> for now passed as parameters is it ok ?
 //            passing Frame by reference as well as there is probably no other way 
-bool VectorField::CalculateVectorField( const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback , std::unordered_map<std::string, StokesIndex>& stokes_indices, DimsInfo& dims ,
-                                        int z_index, int current_stokes_index, 
-                                        const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >& tile_callback )
+bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
+                                       std::unordered_map<std::string, StokesIndex>& stokes_indices,
+                                       DimsInfo& dims,
+                                       int z_index,
+                                       int current_stokes_index,
+                                       tile_callback_func tile_callback)
 {
     // TODO : Tiles initialisation - this will use some global TilePool object
     // Get tiles
