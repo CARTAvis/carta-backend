@@ -18,22 +18,14 @@
 #include "Util/Image.h"
 #include "Util/Nan.h"
 
-// TODO : align with naming conventions etc , could also be a pair but I do not like first, second fields which have no meaning
-// This should probably go into carta namespace 
-/*struct StokesIndex
-{
-   int index;
-   bool valid;
-};*/
-
 namespace carta {
-   struct StokesIndex
-   {
-      int index;
-      bool valid;
-   };
 
-   using tile_callback_func = const std::function< bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int) >&;
+struct StokesIndex {
+    int index;
+    bool valid;
+};
+
+using tile_callback_func = const std::function<bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int)>&;
 
 class VectorField {
 public:

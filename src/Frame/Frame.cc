@@ -2519,26 +2519,29 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     if (_vector_field.ClearParameters(callback, _z_index)) {
         return true;
     }
-    
+
     // Prevent deleting the Frame while this task is not finished yet
     // TODO/TBD : will we still need this with the vector/queue and VectorField object creation on field calculation request?
-    std::shared_lock lock( _active_task_mutex );
+    std::shared_lock lock(_active_task_mutex);
 
-    std::unordered_map<std::string, StokesIndex> stokes_indices{ {"I", {-1,false}}, {"Q", {-1,false}}, {"U", {-1,false}} };
+    std::unordered_map<std::string, StokesIndex> stokes_indices{{"I", {-1, false}}, {"Q", {-1, false}}, {"U", {-1, false}}};
     stokes_indices["I"].valid = GetStokesTypeIndex("I", stokes_indices["I"].index);
     stokes_indices["Q"].valid = GetStokesTypeIndex("Q", stokes_indices["Q"].index);
     stokes_indices["U"].valid = GetStokesTypeIndex("U", stokes_indices["U"].index);
-    
+
     std::cout << "DEBUG (I) : " << stokes_indices["I"].index << " / " << stokes_indices["I"].valid << std::endl;
     std::cout << "DEBUG (Q) : " << stokes_indices["Q"].index << " / " << stokes_indices["Q"].valid << std::endl;
     std::cout << "DEBUG (U) : " << stokes_indices["U"].index << " / " << stokes_indices["U"].valid << std::endl;
 
-    auto tile_callback = std::bind(&Frame::GetDownsampledRasterData,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3,std::placeholders::_4,std::placeholders::_5,std::placeholders::_6,std::placeholders::_7);
-    
-    // TODO : decide with CurrentStokes() - currently by value so the current value is passed, but if it changes in side the tiles loop in CalculateVectorField
-    //        I should probably pass _stokes_index by const reference here so CurrentStokes() -> _stokes_index and change  VectorField::CalculateVectorField(...int stokes_index ...) to "const int& stokes_index"
+    auto tile_callback = std::bind(&Frame::GetDownsampledRasterData, this, std::placeholders::_1, std::placeholders::_2,
+        std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7);
+
+    // TODO : decide with CurrentStokes() - currently by value so the current value is passed,
+    //        but if it changes in side the tiles loop in CalculateVectorField
+    //        I should probably pass _stokes_index by const reference here so CurrentStokes() -> _stokes_index and change
+    //        VectorField::CalculateVectorField(...int stokes_index ...) to "const int& stokes_index"
     //        I am not yet sure if this would be thread-safe / correct though ...
-    return _vector_field.CalculateVectorField(callback, stokes_indices, _dims, _z_index, CurrentStokes(), tile_callback );
+    return _vector_field.CalculateVectorField(callback, stokes_indices, _dims, _z_index, CurrentStokes(), tile_callback);
 }
 
 } // namespace carta
