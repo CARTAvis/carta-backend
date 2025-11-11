@@ -40,7 +40,6 @@ bool VectorField::ClearParameters(const std::function<void(CARTA::VectorOverlayT
 // TODO/TBD : _dims and _z_index are protected in Frame -> for now passed as parameters is it ok ?
 //            passing Frame by reference as well as there is probably no other way
 bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
-                                       std::unordered_map<CARTA::PolarizationType, StokesIndex>& stokes_indices,
                                        DimsInfo& dims,
                                        int z_index,
                                        tile_callback_func tile_callback)
@@ -64,15 +63,14 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
 
     // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
     std::unordered_map<CARTA::PolarizationType, bool> stokes_flag{ {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, false}, {CARTA::PolarizationType::I, false}, {CARTA::PolarizationType::Q, false}, {CARTA::PolarizationType::U, false}};
-//  std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
 
     // Set stokes flags and get their indices
     bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == CARTA::PolarizationType::I;
     
     // TODO: eliminate this stokes_flag completely - is it really OK ?
-    stokes_flag[CARTA::PolarizationType::I] = (_fractional || use_threshold_I) && stokes_indices[CARTA::PolarizationType::I].valid;
-    stokes_flag[CARTA::PolarizationType::Q] = (_calculate_pi || _calculate_pa) && stokes_indices[CARTA::PolarizationType::Q].valid;
-    stokes_flag[CARTA::PolarizationType::U] = (_calculate_pi || _calculate_pa) && stokes_indices[CARTA::PolarizationType::U].valid;
+    stokes_flag[CARTA::PolarizationType::I] = (_fractional || use_threshold_I);
+    stokes_flag[CARTA::PolarizationType::Q] = (_calculate_pi || _calculate_pa);
+    stokes_flag[CARTA::PolarizationType::U] = (_calculate_pi || _calculate_pa);
 
     // Get image tiles data
     // TODO/TBD : make sure this declaration can stay before the loop and shoudn't be inside the loop as originally was. Unit test case ?
@@ -84,12 +82,10 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, dims.width, dims.height, _smoothing_factor);
         int width, height;
-//        std::unordered_map<std::string, std::vector<float>> stokes_data; // TODO : move outside the loop, + UNIT TEST !
         double progress = (double)(i + 1) / tiles.size();
 
         // Get current stokes data
         if (_current_stokes_as_pi || _current_stokes_as_pa) {
-            // if (!tile_callback(stokes_data["CUR"], width, height, z_index, current_stokes_index, bounds, _smoothing_factor)) {
             if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor, z_index, CARTA::PolarizationType::POLARIZATION_TYPE_NONE, width, height )) { // current_stokes_index,
                 return false;
             }
@@ -100,7 +96,6 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
             for (auto one : stokes_flag) {
                 CARTA::PolarizationType stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    // !tile_callback(stokes_data[stokes], width, height, z_index, stokes_indices[stokes].index, bounds, _smoothing_factor)
                     !tile_callback(stokes_data[stokes], bounds, _smoothing_factor, z_index, stokes, width, height ) ) { // stokes_indices[stokes].index
                     return false;
                 }

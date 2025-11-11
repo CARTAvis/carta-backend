@@ -40,8 +40,7 @@ public:
     //        I should probably pass _stokes_index by const reference here so CurrentStokes() -> _stokes_index and change  VectorField::CalculateVectorField(...int stokes_index ...) to "const int& stokes_index"
     //        I am not yet sure if this would be thread-safe / correct though ...
     // MUTEX : passed from Frame, which may also need to be changed in case Frame ceased to exist etc (thread-safe)        
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback , std::unordered_map<CARTA::PolarizationType, StokesIndex>& stokes_indices, 
-                              DimsInfo& dims, int z_index, tile_callback_func tile_callback);
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, int z_index, tile_callback_func tile_callback);
 
 protected:
     void ClearSettings();
