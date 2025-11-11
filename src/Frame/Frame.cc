@@ -2524,19 +2524,23 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     // TODO/TBD : will we still need this with the vector/queue and VectorField object creation on field calculation request?
     std::shared_lock lock(_active_task_mutex);
 
-    std::unordered_map<std::string, StokesIndex> stokes_indices{{"I", {-1, false}}, {"Q", {-1, false}}, {"U", {-1, false}}};
-    stokes_indices["I"].valid = GetStokesTypeIndex("I", stokes_indices["I"].index);
-    stokes_indices["Q"].valid = GetStokesTypeIndex("Q", stokes_indices["Q"].index);
-    stokes_indices["U"].valid = GetStokesTypeIndex("U", stokes_indices["U"].index);
+    std::unordered_map<CARTA::PolarizationType, StokesIndex> stokes_indices{ {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, {-1,false}}, {CARTA::PolarizationType::I, {-1, false}}, {CARTA::PolarizationType::Q, {-1, false}}, {CARTA::PolarizationType::U, {-1, false}}};
+    stokes_indices[CARTA::PolarizationType::I].valid = GetStokesTypeIndex("I", stokes_indices[CARTA::PolarizationType::I].index);
+    stokes_indices[CARTA::PolarizationType::Q].valid = GetStokesTypeIndex("Q", stokes_indices[CARTA::PolarizationType::Q].index);
+    stokes_indices[CARTA::PolarizationType::U].valid = GetStokesTypeIndex("U", stokes_indices[CARTA::PolarizationType::U].index);
 
-    std::cout << "DEBUG (I) : " << stokes_indices["I"].index << " / " << stokes_indices["I"].valid << std::endl;
-    std::cout << "DEBUG (Q) : " << stokes_indices["Q"].index << " / " << stokes_indices["Q"].valid << std::endl;
-    std::cout << "DEBUG (U) : " << stokes_indices["U"].index << " / " << stokes_indices["U"].valid << std::endl;
+    std::cout << "DEBUG (I) : " << stokes_indices[CARTA::PolarizationType::I].index << " / " << stokes_indices[CARTA::PolarizationType::I].valid << std::endl;
+    std::cout << "DEBUG (Q) : " << stokes_indices[CARTA::PolarizationType::Q].index << " / " << stokes_indices[CARTA::PolarizationType::Q].valid << std::endl;
+    std::cout << "DEBUG (U) : " << stokes_indices[CARTA::PolarizationType::U].index << " / " << stokes_indices[CARTA::PolarizationType::U].valid << std::endl;
 
     // TODO : add decoding of stokes_index to remove 1 of lambda parameters. 
     //        instead enum will be passed to enable this decoding use this->_stokes_index for Current (enum=0) or stokes_indices[stokes].index for enum!=0 :
-    auto tile_callback = [this](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, int stokes_index, int& width, int& height)
-        {         
+    auto tile_callback = [this,&stokes_indices](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
+        {          
+           int stokes_index = this->CurrentStokes();
+           if( stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE ){
+              stokes_index = stokes_indices[stokes_type].index;
+           }
            return GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
         };
 
@@ -2545,7 +2549,7 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     //        I should probably pass _stokes_index by const reference here so CurrentStokes() -> _stokes_index and change
     //        VectorField::CalculateVectorField(...int stokes_index ...) to "const int& stokes_index"
     //        I am not yet sure if this would be thread-safe / correct though ...
-    return _vector_field.CalculateVectorField(callback, stokes_indices, _dims, _z_index, CurrentStokes(), tile_callback);
+    return _vector_field.CalculateVectorField(callback, stokes_indices, _dims, _z_index, tile_callback);
 }
 
 } // namespace carta
