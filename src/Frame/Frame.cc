@@ -2524,13 +2524,12 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     // TODO/TBD : will we still need this with the vector/queue and VectorField object creation on field calculation request?
     std::shared_lock lock(_active_task_mutex);
 
-    // TBD/TODO/FUTURE : mapping from enum to string just to call function GetStokesTypeIndex which takes string. It's called in couple of places and I did not change all of them yet ...
-    std::unordered_map<CARTA::PolarizationType, std::string> enum2string_mapping{ {CARTA::PolarizationType::POLARIZATION_TYPE_NONE,"CUR"}, {CARTA::PolarizationType::I, "I"}, {CARTA::PolarizationType::Q,"Q"}, {CARTA::PolarizationType::U, "U"} };    
-    auto tile_callback = [this,&enum2string_mapping](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
+    auto tile_callback = [this](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
         {                     
            int stokes_index = this->CurrentStokes();
            if( stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE ){
-              if( !GetStokesTypeIndex( enum2string_mapping[stokes_type] , stokes_index ) ){
+              std::string stokes_name = Stokes::Name( stokes_type );
+              if( !GetStokesTypeIndex( stokes_name.c_str() , stokes_index ) ){
                   return false;
               }
            }
