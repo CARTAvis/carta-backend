@@ -25,7 +25,8 @@ struct StokesIndex {
     bool valid;
 };
 
-using tile_callback_func = const std::function<bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int)>&;
+// using tile_callback_func = const std::function<bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int)>&;
+using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, int, int, int&, int& )>&;
 
 class VectorField {
 public:

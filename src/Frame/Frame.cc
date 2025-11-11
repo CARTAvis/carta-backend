@@ -2533,8 +2533,12 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     std::cout << "DEBUG (Q) : " << stokes_indices["Q"].index << " / " << stokes_indices["Q"].valid << std::endl;
     std::cout << "DEBUG (U) : " << stokes_indices["U"].index << " / " << stokes_indices["U"].valid << std::endl;
 
-    auto tile_callback = std::bind(&Frame::GetDownsampledRasterData, this, std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7);
+    // TODO : add decoding of stokes_index to remove 1 of lambda parameters. 
+    //        instead enum will be passed to enable this decoding use this->_stokes_index for Current (enum=0) or stokes_indices[stokes].index for enum!=0 :
+    auto tile_callback = [this](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, int stokes_index, int& width, int& height)
+        {         
+           return GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
+        };
 
     // TODO : decide with CurrentStokes() - currently by value so the current value is passed,
     //        but if it changes in side the tiles loop in CalculateVectorField

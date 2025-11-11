@@ -77,7 +77,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     // TODO/TBD : make sure this declaration can stay before the loop and shoudn't be inside the loop as originally was. Unit test case ?
     std::unordered_map<std::string, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
-        std::cout << "DEBUG : processing tile " << i << std::endl;
+        std::cout << "DEBUG : processing tile " << i << " (" << this << ")" << std::endl;
 //        sleep(1);
         
         auto& tile = tiles[i];
@@ -88,7 +88,8 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
 
         // Get current stokes data
         if (_current_stokes_as_pi || _current_stokes_as_pa) {
-            if (!tile_callback(stokes_data["CUR"], width, height, z_index, current_stokes_index, bounds, _smoothing_factor)) {
+            // if (!tile_callback(stokes_data["CUR"], width, height, z_index, current_stokes_index, bounds, _smoothing_factor)) {
+            if (!tile_callback(stokes_data["CUR"], bounds, _smoothing_factor, z_index, current_stokes_index, width, height )) {
                 return false;
             }
         }
@@ -98,7 +99,8 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
             for (auto one : stokes_flag) {
                 std::string stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !tile_callback(stokes_data[stokes], width, height, z_index, stokes_indices[stokes].index, bounds, _smoothing_factor)) {
+                    // !tile_callback(stokes_data[stokes], width, height, z_index, stokes_indices[stokes].index, bounds, _smoothing_factor)
+                    !tile_callback(stokes_data[stokes], bounds, _smoothing_factor, z_index, stokes_indices[stokes].index, width, height ) ) {
                     return false;
                 }
             }
