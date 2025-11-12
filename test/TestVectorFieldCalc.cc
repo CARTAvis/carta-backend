@@ -38,7 +38,7 @@ TEST_F(VectorFieldCalcTest, TestStokesI) {
           // check angle tiles :
           const CARTA::TileData& tile_data = message.angle_tiles(0); // message.intensity_tiles(0);
           const std::string& image_data = tile_data.image_data();
-          const float* float_data = (const float*)image_data.c_str(); // static_cast<const float*>(image_data.c_str());
+          const float* float_data = reinterpret_cast<const float*>(image_data.c_str()); // static_cast<const float*>(image_data.c_str());
           std::cout << "DEBUG : image_data len = " << image_data.length() << " test value = " << image_data[0] << " float values = " << float_data[0] << " , " << float_data[1] << std::endl; // not const value ??? even compressed in some way should be constant, right ?
           
           int float_size = image_data.size()/4;
@@ -84,7 +84,7 @@ TEST_F(VectorFieldCalcTest, TestStokesPa) {
           // check angle tiles :
           const CARTA::TileData& tile_data = message.angle_tiles(0); // message.intensity_tiles(0);
           const std::string& image_data = tile_data.image_data();
-          const float* float_data = (const float*)image_data.c_str(); // static_cast<const float*>(image_data.c_str());
+          const float* float_data = reinterpret_cast<const float*>(image_data.c_str()); // static_cast<const float*>(image_data.c_str());
           std::cout << "DEBUG : image_data len = " << image_data.length() << " test value = " << image_data[0] << " float values = " << float_data[0] << " , " << float_data[1] << std::endl; // not const value ??? even compressed in some way should be constant, right ?
           
           VectorField::CalcPa calcpa;
@@ -144,7 +144,7 @@ TEST_F(VectorFieldCalcTest, TestStokesPi) {
           // check angle tiles :
           const CARTA::TileData& tile_data = message.intensity_tiles(0);
           const std::string& image_data = tile_data.image_data();
-          const float* float_data = (const float*)image_data.c_str(); // static_cast<const float*>(image_data.c_str());
+          const float* float_data = reinterpret_cast<const float*>(image_data.c_str()); // static_cast<const float*>(image_data.c_str());
           std::cout << "DEBUG : image_data len = " << image_data.length() << " test value = " << image_data[0] << " float values = " << float_data[0] << " , " << float_data[1] << std::endl; // not const value ??? even compressed in some way should be constant, right ?
           
           VectorField::CalcPi calcpi(0.0f,0.0f);
