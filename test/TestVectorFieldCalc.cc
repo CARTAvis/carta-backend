@@ -68,10 +68,22 @@ TEST_F(VectorFieldCalcTest, BasicStartTest) {
           // TileData : image_data()
           EXPECT_EQ( message.intensity_tiles_size(), 1 );
           EXPECT_EQ( message.angle_tiles_size(), 1 );
-          const CARTA::TileData& tile_data = message.intensity_tiles(0);
+          const CARTA::TileData& tile_data = message.angle_tiles(0); // message.intensity_tiles(0);
           std::string image_data = tile_data.image_data();
-          std::cout << "DEBUG : test value = " << image_data[0] << std::endl; // not const value ??? even compressed in some way should be constant, right ?
-
+          const float* float_data = (const float*)image_data.c_str(); // static_cast<const float*>(image_data.c_str());
+          std::cout << "DEBUG : image_data len = " << image_data.length() << " test value = " << image_data[0] << " float values = " << float_data[0] << " , " << float_data[1] << std::endl; // not const value ??? even compressed in some way should be constant, right ?
+          
+          // vs: Compression.cc 
+          // int Decompress(std::vector<float>& array, std::vector<char>& compression_buffer, int nx, int ny, int precision);
+          std::vector<float> tile_data_float;
+          std::vector<char>  tile_data_char( image_data.length() );
+          memcpy(tile_data_char.data(),image_data.c_str(),image_data.length() );
+          if(  Decompress( tile_data_float, tile_data_char, tile_data.width(), tile_data.height(), 100 ) ){
+             std::cout << "WARNING : decompression failed !" << std::endl;
+          }
+          std::cout << "DEBUG2 : " << " char values = "  << tile_data_char[0] << " , " << tile_data_char[1] << std::endl;    // these have some values 
+          std::cout << "DEBUG2 : " << " float values = " << tile_data_float[0] << " , " << tile_data_float[1] << std::endl;  // these seem to be all zeros ??? hmm...
+          
 // ???          
 // QUESTION : how to decode these message to check if the values in IQUV images match 1,2,3,4 as in the generated image ???
 // ???
