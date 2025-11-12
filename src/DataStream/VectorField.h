@@ -20,13 +20,7 @@
 
 namespace carta {
 
-struct StokesIndex {
-    int index;
-    bool valid;
-};
-
-// using tile_callback_func = const std::function<bool(std::vector<float>&, int&, int&, int, int, CARTA::ImageBounds&, int)>&;
-using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, int, CARTA::PolarizationType, int&, int& )>&;
+using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, int, CARTA::PolarizationType, int&, int& )>; // was & 
 
 class VectorField {
 public:
