@@ -42,13 +42,6 @@ public:
     // MUTEX : passed from Frame, which may also need to be changed in case Frame ceased to exist etc (thread-safe)        
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, int z_index, tile_callback_func tile_callback);
 
-protected:
-    void ClearSettings();
-    bool IsEqual(const CARTA::SetVectorOverlayParameters& message);
-    void RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
-    void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
-        std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
-
     struct Valid {
         bool operator()(float a, float b) {
             return (!std::isnan(a) && !std::isnan(b));
@@ -102,6 +95,13 @@ protected:
             return (valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
         }
     };
+
+protected:
+    void ClearSettings();
+    bool IsEqual(const CARTA::SetVectorOverlayParameters& message);
+    void RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
+    void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
+        std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
 
     int _file_id;
     int _smoothing_factor;
