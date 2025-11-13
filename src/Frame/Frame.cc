@@ -2508,8 +2508,40 @@ bool Frame::GetDownsampledRasterData(
         tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
 }
 
+bool Frame::AreEqual(const CARTA::SetVectorOverlayParameters& message_left, const CARTA::SetVectorOverlayParameters& message_right) {
+    double q_error_left = message_left.debiasing() ? message_left.q_error() : 0;
+    double u_error_left = message_left.debiasing() ? message_left.u_error() : 0;
+
+    double q_error_right = message_right.debiasing() ? message_right.q_error() : 0;
+    double u_error_right = message_right.debiasing() ? message_right.u_error() : 0;
+    
+    return ( message_left.file_id()          == message_right.file_id() && 
+             message_left.smoothing_factor() == message_right.smoothing_factor() &&
+             message_left.fractional()       == message_right.fractional() && 
+             message_left.threshold()        == message_right.threshold() && 
+             message_left.debiasing()        == message_right.debiasing() && 
+             message_left.stokes_intensity() == message_right.stokes_intensity() && 
+             message_left.stokes_angle()     == message_right.stokes_angle() && 
+             message_left.compression_type() == message_right.compression_type() && 
+             message_left.compression_quality() == message_right.compression_quality() && 
+             message_left.threshold_option() == message_right.threshold_option() && 
+             q_error_left == q_error_right && 
+             u_error_left == u_error_right 
+           );
+}
+
 bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
     std::cout << "DEBUG : Frame::SetVectorOverlayParameters called, _axes.stokes = " << _axes.stokes << std::endl;
+    
+    // TODO : probably need to narrow down list of parameters :
+    // currently Clear sets smoothing to 0, Apply changes it back from 0 to whatever is on the form :
+    // so AreEqual is always false !!!
+    if( AreEqual( _vector_field_request_message, message ) ){       
+       std::cout << "DEBUG : parameters are the same as previously" << std::endl;
+    }else{
+       std::cout << "DEBUG : parameters have changed e.g. " << _vector_field_request_message.smoothing_factor() << " != " << message.smoothing_factor() << std::endl;
+       // TODO : invalidate all calculations and make them stop
+    }
     _vector_field_request_message = message;
     
     // TODO - here ?
