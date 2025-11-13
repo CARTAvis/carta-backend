@@ -333,7 +333,9 @@ protected:
     std::unique_ptr<ImageFitter> _image_fitter;
 
     // Vector field settings
-    VectorField _vector_field;
+    CARTA::SetVectorOverlayParameters _vector_field_request_message;
+    std::mutex  _vector_field_mutex;
+    std::list<std::unique_ptr<VectorField>> _vector_fields; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
 };
 
 } // namespace carta

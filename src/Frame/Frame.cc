@@ -2509,16 +2509,30 @@ bool Frame::GetDownsampledRasterData(
 }
 
 bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    std::cout << "DEBUG : Frame::SetVectorOverlayParameters called" << std::endl;
-    return _vector_field.SetParameters(message, _axes.stokes);
+    std::cout << "DEBUG : Frame::SetVectorOverlayParameters called, _axes.stokes = " << _axes.stokes << std::endl;
+    _vector_field_request_message = message;
+    
+    // TODO - here ?
+    // if parameters changed - invalidate all on-going calculations and safely remove them from the list     
+    
+    std::unique_lock lock_vector_fields(_vector_field_mutex);
+    _vector_fields.push_back(std::move(make_unique<VectorField>()));
+    bool ret = (_vector_fields.back())->SetParameters(message, _axes.stokes);
+    std::cout << "DEBUG : object added " << std::endl;
+
+    return ret;
 }
 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // clear paramaters will not be needed once we create object every time we do calculation
     // this can also go outsidde for now -> it will go away later !!!
-    if (_vector_field.ClearParameters(callback, _z_index)) {
-        return true;
+/*    if( !_vector_field ){
+       _vector_field = make_unique<VectorField>();
     }
+
+    if (_vector_field->ClearParameters(callback, _z_index)) {
+        return true;
+    }*/
 
     // Prevent deleting the Frame while this task is not finished yet
     // TODO/TBD : will we still need this with the vector/queue and VectorField object creation on field calculation request?
@@ -2536,7 +2550,18 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
            return GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
         };
 
-    return _vector_field.CalculateVectorField(callback, _dims, _z_index, tile_callback);
+    bool ret=true;
+    for(std::list<std::unique_ptr<VectorField>>::iterator it=_vector_fields.begin();it!=_vector_fields.end();it++){
+       std::cout << "DEBUG : running calculation on object " << std::endl;
+       ret = ret && (*it)->CalculateVectorField(callback, _dims, _z_index, tile_callback);
+    }
+
+    // removing all calculators for now :    
+    std::unique_lock lock_vector_fields(_vector_field_mutex);
+    _vector_fields.clear();
+    std::cout << "DEBUG : deleted all vector field calculator objects" << std::endl;
+
+    return ret;
 }
 
 } // namespace carta
