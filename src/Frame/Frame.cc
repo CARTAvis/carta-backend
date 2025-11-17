@@ -2533,26 +2533,38 @@ bool Frame::AreEqual(const CARTA::SetVectorOverlayParameters& message_left, cons
 bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
     std::cout << "DEBUG : Frame::SetVectorOverlayParameters called, _axes.stokes = " << _axes.stokes << std::endl;
     
+// NEW TODO : this function only sets the new message and does not create the object !!!    
+    
     // TODO : probably need to narrow down list of parameters :
     // currently Clear sets smoothing to 0, Apply changes it back from 0 to whatever is on the form :
     // so AreEqual is always false !!!
-    if( AreEqual( _vector_field_request_message, message ) ){       
-       std::cout << "DEBUG : parameters are the same as previously" << std::endl;
-    }else{
-       std::cout << "DEBUG : parameters have changed e.g. " << _vector_field_request_message.smoothing_factor() << " != " << message.smoothing_factor() << std::endl;
+//    if( AreEqual( _vector_field_request_message, message ) ){       
+//       std::cout << "DEBUG : parameters are the same as previously" << std::endl;
+//    }else{
+//       std::cout << "DEBUG : parameters have changed e.g. " << _vector_field_request_message.smoothing_factor() << " != " << message.smoothing_factor() << std::endl;
        // TODO : invalidate all calculations and make them stop
+//   }
+    if( VectorField::Equivalent(message,_vector_field_request_message) ){
+        // requesting the same calculation as before -> no need for this
+        return false;
     }
+    
+    // Invalidate all on-going calculation to stop them :
+    for_each(_vector_fields.begin(),_vector_fields.end(),[](shared_ptr<VectorField>& vf){vf->Invalidate();});
+
     _vector_field_request_message = message;
     
     // TODO - here ?
     // if parameters changed - invalidate all on-going calculations and safely remove them from the list     
-    
-    std::unique_lock lock_vector_fields(_vector_field_mutex);
+
+
+// TODO : !!! creation of the object to be moved to Frame::CalculateVectorField
+/*    std::unique_lock lock_vector_fields(_vector_field_mutex);
     _vector_fields.push_back(std::move(make_unique<VectorField>()));
     bool ret = (_vector_fields.back())->SetParameters(message, _axes.stokes);
-    std::cout << "DEBUG : object added " << std::endl;
+    std::cout << "DEBUG : object added " << std::endl;*/
 
-    return ret;
+    return true;
 }
 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
@@ -2582,16 +2594,41 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
            return GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
         };
 
-    bool ret=true;
-    for(std::list<std::unique_ptr<VectorField>>::iterator it=_vector_fields.begin();it!=_vector_fields.end();it++){
-       std::cout << "DEBUG : running calculation on object " << std::endl;
-       ret = ret && (*it)->CalculateVectorField(callback, _dims, _z_index, tile_callback);
+    // Currently the same conditions as in VectorField::ClearParameters 
+    // TODO/TBD : can it stay like this ?
+    if( _vector_field_request_message.smoothing_factor() < 1 ){
+        std::cout << "DEBUG : cleared smoothing factor -> nothing to be done" << std::endl;
+        return true;
+    }
+    if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ){
+        auto empty_response =
+            Message::VectorOverlayTileData(_vector_field_request_message.file_id(), _z_index, 
+            _vector_field_request_message.stokes_intensity(), _vector_field_request_message.stokes_angle(), 
+            _vector_field_request_message.compression_type(), _vector_field_request_message.compression_quality());
+        empty_response.set_progress(1.0);
+        callback(empty_response);
+        std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
+        return true;
     }
 
-    // removing all calculators for now :    
     std::unique_lock lock_vector_fields(_vector_field_mutex);
-    _vector_fields.clear();
-    std::cout << "DEBUG : deleted all vector field calculator objects" << std::endl;
+    shared_ptr<VectorField> ptr_vector_field = make_shared<VectorField>();
+    _vector_fields.push_back(ptr_vector_field);
+    lock_vector_fields.unlock();
+    bool ret = ptr_vector_field->SetParameters(_vector_field_request_message, _axes.stokes);
+    std::cout << "DEBUG : object added " << std::endl;
+    
+    
+  
+    ret = ptr_vector_field->CalculateVectorField(callback, _dims, _z_index, tile_callback);;
+    std::cout << "DEBUG : calculation completed" << std::endl;
+
+    // removing all calculators for now :    
+    lock_vector_fields.lock();
+    // TODO : how to nicely remove from container without using pointer comparisons ???
+    _vector_fields.remove_if([&ptr_vector_field](const std::shared_ptr<VectorField>& ptr){ return (ptr == ptr_vector_field);});
+    std::cout << "DEBUG : removed vector field object from the container" << std::endl;
+    lock_vector_fields.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
 
     return ret;
 }

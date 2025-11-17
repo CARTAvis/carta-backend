@@ -9,7 +9,7 @@
 
 namespace carta {
 
-VectorField::VectorField() : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false) {
+VectorField::VectorField() : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
     ClearSettings();
 }
 
@@ -52,6 +52,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     int num_tile_rows = ceil((double)dims.height / tile_size_original);
     int32_t tile_layer = Tile::MipToLayer(_smoothing_factor, dims.width, dims.height, TILE_SIZE, TILE_SIZE);
     tiles.resize(num_tile_rows * num_tile_columns);
+    std::cout << "DEBUG : " << tiles.size() << " , " << num_tile_columns << " , " << num_tile_rows << std::endl;
 
     for (int j = 0; j < num_tile_rows; ++j) {
         for (int i = 0; i < num_tile_columns; ++i) {
@@ -77,8 +78,14 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     std::unordered_map<CARTA::PolarizationType, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
         std::cout << "DEBUG : processing tile " << i << " (" << this << ")" << std::endl;
-//        sleep(1);
-        
+        sleep(1);
+
+        if ( !_is_valid ) {
+            // stop invalidated calculations :
+            std::cout << "DEBUG : VectorField::CalculateVectorField - cancelling ongoing calculation" << std::endl;
+            break;
+        } 
+                
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, dims.width, dims.height, _smoothing_factor);
         int width, height;

@@ -35,6 +35,20 @@ public:
     //        I am not yet sure if this would be thread-safe / correct though ...
     // MUTEX : passed from Frame, which may also need to be changed in case Frame ceased to exist etc (thread-safe)        
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, int z_index, tile_callback_func tile_callback);
+    
+    // check if calculation is still valid :
+    bool IsValid() {
+        return _is_valid;
+    }
+    
+    void Invalidate() {
+       _is_valid = false;
+    }
+    
+    static bool Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 ) {
+       // TODO : add logic to compare requrests
+       return false;
+    }
 
     struct Valid {
         bool operator()(float a, float b) {
@@ -115,6 +129,9 @@ protected:
     bool _calculate_pa;
     bool _current_stokes_as_pi;
     bool _current_stokes_as_pa;
+
+    // indicates if the calculation is valid and should be continued :
+    bool _is_valid;
 };
 
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
