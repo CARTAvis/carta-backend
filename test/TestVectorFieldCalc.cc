@@ -47,12 +47,16 @@ TEST_F(VectorFieldCalcTest, TestStokesI) {
               EXPECT_NEAR( float_data[i] , 1 , 1e-8f);
           }
        };
-       
 
+    std::unordered_map<CARTA::PolarizationType, int> stokes_test_values_map{ {CARTA::PolarizationType::I, 1}, {CARTA::PolarizationType::Q, 2}, {CARTA::PolarizationType::U, 3}, 
+                                                                             {CARTA::PolarizationType::V, 4}, {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 5} 
+                                                                           }; 
+       
     // lambda expression producing tile data (256x256) all set to 1 for Stokes I        
-    auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
+    auto getdata_callback = [&stokes_test_values_map](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
     {
-       data.assign(256*256,1); // generating Stokes I tile 256x256 all values = 1 
+       int value = stokes_test_values_map[CARTA::PolarizationType::I];
+       data.assign(256*256,value); // generating Stokes I tile 256x256 all values = 1 
        width = 256;
        height = 256;              
        
@@ -97,21 +101,15 @@ TEST_F(VectorFieldCalcTest, TestStokesPa) {
               EXPECT_NEAR( float_data[i] , expected_pa , 1e-8f);
           }
        };
-       
 
+    std::unordered_map<CARTA::PolarizationType, int> stokes_test_values_map{ {CARTA::PolarizationType::I, 1}, {CARTA::PolarizationType::Q, 2}, {CARTA::PolarizationType::U, 3}, 
+                                                                             {CARTA::PolarizationType::V, 4}, {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 5} 
+                                                                           }; 
+       
     // lambda expression producing tile data (256x256) all set to the same value, different for Stokes IQUV = (1,2,3,4)       
-    auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
+    auto getdata_callback = [&stokes_test_values_map](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
     {
-       int value = 1;
-       if (stokes_type == CARTA::PolarizationType::Q ){
-          value = 2;
-       }
-       if (stokes_type == CARTA::PolarizationType::U ){
-          value = 3;
-       }
-       if (stokes_type == CARTA::PolarizationType::V ){
-          value = 4;
-       }
+       int value = stokes_test_values_map[stokes_type];
     
        data.assign(256*256,value);
        width = 256;
@@ -160,21 +158,15 @@ TEST_F(VectorFieldCalcTest, TestStokesPi) {
           }                    
        };
        
-       
+
+    std::unordered_map<CARTA::PolarizationType, int> stokes_test_values_map{ {CARTA::PolarizationType::I, 1}, {CARTA::PolarizationType::Q, 2}, {CARTA::PolarizationType::U, 3}, 
+                                                                             {CARTA::PolarizationType::V, 4}, {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 5} 
+                                                                           }; 
+        
     // lambda expression producing tile data (256x256) all set to the same value, different for Stokes IQUV = (1,2,3,4)
-    auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
+    auto getdata_callback = [&stokes_test_values_map](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
     {
-       int value = 1;
-       if (stokes_type == CARTA::PolarizationType::Q ){
-          value = 2;
-       }
-       if (stokes_type == CARTA::PolarizationType::U ){
-          value = 3;
-       }
-       if (stokes_type == CARTA::PolarizationType::V ){
-          value = 4;
-       }
-    
+       int value = stokes_test_values_map[stokes_type];
        data.assign(256*256,value);
        width = 256;
        height = 256;              
