@@ -25,15 +25,9 @@ using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::
 class VectorField {
 public:
     VectorField();
-
-    bool SetParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
-    bool ClearParameters(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int z_index);
     
-    // TODO/TBD : _dims and _z_index are protected in Frame -> hence added as parameters (for now)
-    // TODO/TBD : decide with CurrentStokes() - currently by value so the current value is passed, but if it changes in side the tiles loop in CalculateVectorField
-    //        I should probably pass _stokes_index by const reference here so CurrentStokes() -> _stokes_index and change  VectorField::CalculateVectorField(...int stokes_index ...) to "const int& stokes_index"
-    //        I am not yet sure if this would be thread-safe / correct though ...
-    // MUTEX : passed from Frame, which may also need to be changed in case Frame ceased to exist etc (thread-safe)        
+    VectorField(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
+
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, int z_index, tile_callback_func tile_callback);
     
     // check if calculation is still valid :
@@ -45,10 +39,7 @@ public:
        _is_valid = false;
     }
     
-    static bool Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 ) {
-       // TODO : add logic to compare requrests
-       return false;
-    }
+    static bool Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 );
 
     struct Valid {
         bool operator()(float a, float b) {
@@ -106,7 +97,6 @@ public:
 
 protected:
     void ClearSettings();
-    bool IsEqual(const CARTA::SetVectorOverlayParameters& message);
     void RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
     void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
         std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
@@ -134,7 +124,7 @@ protected:
     bool _is_valid;
 };
 
-void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
+// void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 

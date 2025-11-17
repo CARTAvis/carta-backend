@@ -13,32 +13,13 @@ VectorField::VectorField() : _calculate_pi(false), _calculate_pa(false), _curren
     ClearSettings();
 }
 
-bool VectorField::SetParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) {
-    if (!IsEqual(message)) {
-        RenewParameters(message, stokes_axis);
-        return true;
-    }
-    return false;
+VectorField::VectorField(const CARTA::SetVectorOverlayParameters& message, int stokes_axis)
+    : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
+   ClearSettings();
+   
+   RenewParameters(message, stokes_axis);   
 }
 
-bool VectorField::ClearParameters(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int z_index) {
-    if (_smoothing_factor < 1) {
-        return true;
-    }
-
-    if (_stokes_intensity < 0 && _stokes_angle < 0) {
-        ClearSettings();
-        auto empty_response =
-            Message::VectorOverlayTileData(_file_id, z_index, _stokes_intensity, _stokes_angle, _compression_type, _compression_quality);
-        empty_response.set_progress(1.0);
-        callback(empty_response);
-        return true;
-    }
-    return false;
-}
-
-// TODO/TBD : _dims and _z_index are protected in Frame -> for now passed as parameters is it ok ?
-//            passing Frame by reference as well as there is probably no other way
 bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
                                        DimsInfo& dims,
                                        int z_index,
@@ -78,7 +59,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     std::unordered_map<CARTA::PolarizationType, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
         std::cout << "DEBUG : processing tile " << i << " (" << this << ")" << std::endl;
-        sleep(1);
+//        sleep(1);
 
         if ( !_is_valid ) {
             // stop invalidated calculations :
@@ -196,24 +177,20 @@ void VectorField::ClearSettings() {
     _compression_quality = 0;
 }
 
-bool VectorField::IsEqual(const CARTA::SetVectorOverlayParameters& message) {
-    int file_id = message.file_id();
-    int smoothing_factor = message.smoothing_factor();
-    bool fractional = message.fractional();
-    double threshold = message.threshold();
-    bool debiasing = message.debiasing();
-    double q_error = message.debiasing() ? message.q_error() : 0;
-    double u_error = message.debiasing() ? message.u_error() : 0;
-    int stokes_intensity = message.stokes_intensity();
-    int stokes_angle = message.stokes_angle();
-    CARTA::CompressionType compression_type = message.compression_type();
-    float compression_quality = message.compression_quality();
-    CARTA::PolarizationType threshold_option = message.threshold_option();
 
-    return (file_id == _file_id && smoothing_factor == _smoothing_factor && fractional == _fractional && threshold == _threshold &&
-            debiasing == _debiasing && q_error == _q_error && u_error == _u_error && stokes_intensity == _stokes_intensity &&
-            stokes_angle == _stokes_angle && compression_type == _compression_type && compression_quality == _compression_quality &&
-            threshold_option == _threshold_option);
+// TODO : narrow down these comparisons to make them less strict (more like equivalent than equal) :
+bool VectorField::Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 )
+{
+   return ( message1.file_id() == message2.file_id() &&
+            message1.smoothing_factor() == message2.smoothing_factor() &&
+            message1.fractional() == message2.fractional() &&
+            message1.threshold() == message2.threshold() &&
+            message1.debiasing() == message2.debiasing() &&
+            (message1.debiasing() && message1.q_error() == message2.q_error() && message1.u_error() && message2.u_error()) &&
+            message1.stokes_intensity() == message2.stokes_intensity() &&
+            message1.compression_quality() == message2.compression_quality() &&
+            message1.threshold_option() == message2.threshold_option()
+          );
 }
 
 void VectorField::RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) {

@@ -2533,17 +2533,6 @@ bool Frame::AreEqual(const CARTA::SetVectorOverlayParameters& message_left, cons
 bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
     std::cout << "DEBUG : Frame::SetVectorOverlayParameters called, _axes.stokes = " << _axes.stokes << std::endl;
     
-// NEW TODO : this function only sets the new message and does not create the object !!!    
-    
-    // TODO : probably need to narrow down list of parameters :
-    // currently Clear sets smoothing to 0, Apply changes it back from 0 to whatever is on the form :
-    // so AreEqual is always false !!!
-//    if( AreEqual( _vector_field_request_message, message ) ){       
-//       std::cout << "DEBUG : parameters are the same as previously" << std::endl;
-//    }else{
-//       std::cout << "DEBUG : parameters have changed e.g. " << _vector_field_request_message.smoothing_factor() << " != " << message.smoothing_factor() << std::endl;
-       // TODO : invalidate all calculations and make them stop
-//   }
     if( VectorField::Equivalent(message,_vector_field_request_message) ){
         // requesting the same calculation as before -> no need for this
         return false;
@@ -2554,32 +2543,10 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
 
     _vector_field_request_message = message;
     
-    // TODO - here ?
-    // if parameters changed - invalidate all on-going calculations and safely remove them from the list     
-
-
-// TODO : !!! creation of the object to be moved to Frame::CalculateVectorField
-/*    std::unique_lock lock_vector_fields(_vector_field_mutex);
-    _vector_fields.push_back(std::move(make_unique<VectorField>()));
-    bool ret = (_vector_fields.back())->SetParameters(message, _axes.stokes);
-    std::cout << "DEBUG : object added " << std::endl;*/
-
     return true;
 }
 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    // clear paramaters will not be needed once we create object every time we do calculation
-    // this can also go outsidde for now -> it will go away later !!!
-/*    if( !_vector_field ){
-       _vector_field = make_unique<VectorField>();
-    }
-
-    if (_vector_field->ClearParameters(callback, _z_index)) {
-        return true;
-    }*/
-
-    // Prevent deleting the Frame while this task is not finished yet
-    // TODO/TBD : will we still need this with the vector/queue and VectorField object creation on field calculation request?
     std::shared_lock lock(_active_task_mutex);
 
     auto tile_callback = [this](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
@@ -2611,16 +2578,17 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
         return true;
     }
 
+    shared_ptr<VectorField> ptr_vector_field = make_shared<VectorField>(_vector_field_request_message, _axes.stokes);
+    
     std::unique_lock lock_vector_fields(_vector_field_mutex);
-    shared_ptr<VectorField> ptr_vector_field = make_shared<VectorField>();
     _vector_fields.push_back(ptr_vector_field);
     lock_vector_fields.unlock();
-    bool ret = ptr_vector_field->SetParameters(_vector_field_request_message, _axes.stokes);
+//    bool ret = ptr_vector_field->SetParameters(_vector_field_request_message, _axes.stokes);
     std::cout << "DEBUG : object added " << std::endl;
     
     
   
-    ret = ptr_vector_field->CalculateVectorField(callback, _dims, _z_index, tile_callback);;
+    bool ret = ptr_vector_field->CalculateVectorField(callback, _dims, _z_index, tile_callback);;
     std::cout << "DEBUG : calculation completed" << std::endl;
 
     // removing all calculators for now :    
