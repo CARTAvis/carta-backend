@@ -133,6 +133,9 @@ public :
     
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, int z_index, tile_callback_func tile_callback);
+    
+    // invalidate all VectorFieldCalculators in the list:
+    void Invalidate();
 
 protected:
    // Vector field settings

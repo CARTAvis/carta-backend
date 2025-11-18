@@ -1584,7 +1584,8 @@ void Session::OnStopFitting(const CARTA::StopFitting& stop_fitting) {
 }
 
 void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    if (_frames.count(message.file_id()) && _frames.at(message.file_id())->SetVectorOverlayParameters(message)) {
+    if (_frames.count(message.file_id())) {
+        _frames.at(message.file_id())->SetVectorOverlayParameters(message);
         SendVectorFieldData(message.file_id());
     }
 }

@@ -249,8 +249,20 @@ CARTA::ImageBounds GetImageBounds(const Tile& tile, int image_width, int image_h
     return bounds;
 }
 
+void VectorField::Invalidate() {
+   // lock the object and the list of calculators :
+   std::unique_lock lock_vector_fields(_vector_field_mutex);
+
+   // Invalidate all on-going calculation to stop them :
+   for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
+}
+
+
 bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
     std::cout << "DEBUG : VectorField::SetVectorOverlayParameters called" << std::endl;
+    
+    // lock the object and the list of calculators :
+    std::unique_lock lock_vector_fields(_vector_field_mutex);
     
     if( VectorFieldCalculator::Equivalent(message,_vector_field_request_message) ){
         // requesting the same calculation as before -> no need for this

@@ -216,7 +216,7 @@ public:
     void CloseCachedImage(const std::string& file);
 
     // For vector field setting and calculation
-    bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
