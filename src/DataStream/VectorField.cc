@@ -9,18 +9,18 @@
 
 namespace carta {
 
-VectorField::VectorField() : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
+VectorFieldCalculator::VectorFieldCalculator() : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
     ClearSettings();
 }
 
-VectorField::VectorField(const CARTA::SetVectorOverlayParameters& message, int stokes_axis)
+VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, int stokes_axis)
     : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
    ClearSettings();
    
    RenewParameters(message, stokes_axis);   
 }
 
-bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
+bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
                                        DimsInfo& dims,
                                        int z_index,
                                        tile_callback_func tile_callback)
@@ -63,7 +63,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
 
         if ( !_is_valid ) {
             // stop invalidated calculations :
-            std::cout << "DEBUG : VectorField::CalculateVectorField - cancelling ongoing calculation" << std::endl;
+            std::cout << "DEBUG : VectorFieldCalculator::CalculateVectorField - cancelling ongoing calculation" << std::endl;
             break;
         } 
                 
@@ -163,7 +163,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     return true;
 }
 
-void VectorField::ClearSettings() {
+void VectorFieldCalculator::ClearSettings() {
     _file_id = -1;
     _smoothing_factor = 0;
     _fractional = false;
@@ -179,7 +179,7 @@ void VectorField::ClearSettings() {
 
 
 // TODO : narrow down these comparisons to make them less strict (more like equivalent than equal) :
-bool VectorField::Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 )
+bool VectorFieldCalculator::Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 )
 {
    return ( message1.file_id() == message2.file_id() &&
             message1.smoothing_factor() == message2.smoothing_factor() &&
@@ -193,7 +193,7 @@ bool VectorField::Equivalent( const CARTA::SetVectorOverlayParameters& message1 
           );
 }
 
-void VectorField::RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) {
+void VectorFieldCalculator::RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) {
     _file_id = message.file_id();
     _smoothing_factor = message.smoothing_factor();
     _fractional = message.fractional();
@@ -214,7 +214,7 @@ void VectorField::RenewParameters(const CARTA::SetVectorOverlayParameters& messa
     _current_stokes_as_pa = (_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis;
 }
 
-void VectorField::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width,
+void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width,
     int32_t tile_height, std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality) {
     if (tile) {
         tile->set_x(x);
@@ -248,5 +248,64 @@ CARTA::ImageBounds GetImageBounds(const Tile& tile, int image_width, int image_h
     bounds.set_y_max(std::min(image_height, (tile.y + 1) * tile_size_original));
     return bounds;
 }
+
+bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
+    std::cout << "DEBUG : VectorField::SetVectorOverlayParameters called" << std::endl;
+    
+    if( VectorFieldCalculator::Equivalent(message,_vector_field_request_message) ){
+        // requesting the same calculation as before -> no need for this
+        return false;
+    }
+    
+    // Invalidate all on-going calculation to stop them :
+    for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
+
+    _vector_field_request_message = message;
+    
+    return true;
+}
+
+bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, int z_index, tile_callback_func tile_callback) {
+    // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
+    // TODO/TBD : can it stay like this ?
+    if( _vector_field_request_message.smoothing_factor() < 1 ){
+        std::cout << "DEBUG : cleared smoothing factor -> nothing to be done" << std::endl;
+        return true;
+    }
+    if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ){
+        auto empty_response =
+            Message::VectorOverlayTileData(_vector_field_request_message.file_id(), z_index, 
+            _vector_field_request_message.stokes_intensity(), _vector_field_request_message.stokes_angle(), 
+            _vector_field_request_message.compression_type(), _vector_field_request_message.compression_quality());
+        empty_response.set_progress(1.0);
+        progress_callback(empty_response);
+        std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
+        return true;
+    }
+
+    std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(_vector_field_request_message, axes.stokes);
+
+    std::unique_lock lock_vector_fields(_vector_field_mutex);
+    _vector_fields.push_back(ptr_vector_field);
+    lock_vector_fields.unlock();
+//    bool ret = ptr_vector_field->SetParameters(_vector_field_request_message, _axes.stokes);
+    std::cout << "DEBUG : object added " << std::endl;
+
+
+
+    bool ret = ptr_vector_field->CalculateVectorField(progress_callback, dims, z_index, tile_callback);;
+    std::cout << "DEBUG : calculation completed" << std::endl;
+
+    // removing all calculators for now :    
+    lock_vector_fields.lock();
+    // TODO : how to nicely remove from container without using pointer comparisons ???
+    _vector_fields.remove_if([&ptr_vector_field](const std::shared_ptr<VectorFieldCalculator>& ptr){ return (ptr == ptr_vector_field);});
+    std::cout << "DEBUG : removed vector field object from the container" << std::endl;
+    lock_vector_fields.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
+
+    return ret;
+
+}
+
 
 } // namespace carta

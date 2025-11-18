@@ -220,7 +220,6 @@ public:
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
-    bool AreEqual(const CARTA::SetVectorOverlayParameters& message_left, const CARTA::SetVectorOverlayParameters& message_right);
 
 protected:
     // Validate z and stokes index values
@@ -334,9 +333,7 @@ protected:
     std::unique_ptr<ImageFitter> _image_fitter;
 
     // Vector field settings
-    CARTA::SetVectorOverlayParameters _vector_field_request_message;
-    std::mutex  _vector_field_mutex;
-    std::list<std::shared_ptr<VectorField>> _vector_fields; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
+    VectorField _vector_field;
 };
 
 } // namespace carta

@@ -28,11 +28,11 @@ protected:
 
 // class VectorFieldCalcParamTest : public ::testing::Test, public ImageGenerator {};
 
-class TestVectorField : public VectorField {
+class TestVectorField : public VectorFieldCalculator {
 public:
-   TestVectorField() : VectorField() {}
+   TestVectorField() : VectorFieldCalculator() {}
     void RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis){
-        VectorField::RenewParameters( message, stokes_axis );
+        VectorFieldCalculator::RenewParameters( message, stokes_axis );
      }
 };
 
@@ -50,7 +50,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
        case TestVectorFieldType::TestStokesPi :
           {
-             VectorField::CalcPi calcpi(0.0f,0.0f);
+             VectorFieldCalculator::CalcPi calcpi(0.0f,0.0f);
              expected_value = calcpi(2,3);
              param_message.set_stokes_intensity(1);
           }
@@ -58,7 +58,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
           
        case TestVectorFieldType::TestStokesPa :
           {
-             VectorField::CalcPa calcpa;             
+             VectorFieldCalculator::CalcPa calcpa;             
              expected_value = calcpa(2,3);
              param_message.set_stokes_angle(1);
           }

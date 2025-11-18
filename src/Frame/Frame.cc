@@ -2508,42 +2508,8 @@ bool Frame::GetDownsampledRasterData(
         tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
 }
 
-bool Frame::AreEqual(const CARTA::SetVectorOverlayParameters& message_left, const CARTA::SetVectorOverlayParameters& message_right) {
-    double q_error_left = message_left.debiasing() ? message_left.q_error() : 0;
-    double u_error_left = message_left.debiasing() ? message_left.u_error() : 0;
-
-    double q_error_right = message_right.debiasing() ? message_right.q_error() : 0;
-    double u_error_right = message_right.debiasing() ? message_right.u_error() : 0;
-    
-    return ( message_left.file_id()          == message_right.file_id() && 
-             message_left.smoothing_factor() == message_right.smoothing_factor() &&
-             message_left.fractional()       == message_right.fractional() && 
-             message_left.threshold()        == message_right.threshold() && 
-             message_left.debiasing()        == message_right.debiasing() && 
-             message_left.stokes_intensity() == message_right.stokes_intensity() && 
-             message_left.stokes_angle()     == message_right.stokes_angle() && 
-             message_left.compression_type() == message_right.compression_type() && 
-             message_left.compression_quality() == message_right.compression_quality() && 
-             message_left.threshold_option() == message_right.threshold_option() && 
-             q_error_left == q_error_right && 
-             u_error_left == u_error_right 
-           );
-}
-
 bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    std::cout << "DEBUG : Frame::SetVectorOverlayParameters called, _axes.stokes = " << _axes.stokes << std::endl;
-    
-    if( VectorField::Equivalent(message,_vector_field_request_message) ){
-        // requesting the same calculation as before -> no need for this
-        return false;
-    }
-    
-    // Invalidate all on-going calculation to stop them :
-    for_each(_vector_fields.begin(),_vector_fields.end(),[](shared_ptr<VectorField>& vf){vf->Invalidate();});
-
-    _vector_field_request_message = message;
-    
-    return true;
+    return _vector_field.SetVectorOverlayParameters(message);
 }
 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
@@ -2561,44 +2527,7 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
            return GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
         };
 
-    // Currently the same conditions as in VectorField::ClearParameters 
-    // TODO/TBD : can it stay like this ?
-    if( _vector_field_request_message.smoothing_factor() < 1 ){
-        std::cout << "DEBUG : cleared smoothing factor -> nothing to be done" << std::endl;
-        return true;
-    }
-    if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ){
-        auto empty_response =
-            Message::VectorOverlayTileData(_vector_field_request_message.file_id(), _z_index, 
-            _vector_field_request_message.stokes_intensity(), _vector_field_request_message.stokes_angle(), 
-            _vector_field_request_message.compression_type(), _vector_field_request_message.compression_quality());
-        empty_response.set_progress(1.0);
-        callback(empty_response);
-        std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
-        return true;
-    }
-
-    shared_ptr<VectorField> ptr_vector_field = make_shared<VectorField>(_vector_field_request_message, _axes.stokes);
-    
-    std::unique_lock lock_vector_fields(_vector_field_mutex);
-    _vector_fields.push_back(ptr_vector_field);
-    lock_vector_fields.unlock();
-//    bool ret = ptr_vector_field->SetParameters(_vector_field_request_message, _axes.stokes);
-    std::cout << "DEBUG : object added " << std::endl;
-    
-    
-  
-    bool ret = ptr_vector_field->CalculateVectorField(callback, _dims, _z_index, tile_callback);;
-    std::cout << "DEBUG : calculation completed" << std::endl;
-
-    // removing all calculators for now :    
-    lock_vector_fields.lock();
-    // TODO : how to nicely remove from container without using pointer comparisons ???
-    _vector_fields.remove_if([&ptr_vector_field](const std::shared_ptr<VectorField>& ptr){ return (ptr == ptr_vector_field);});
-    std::cout << "DEBUG : removed vector field object from the container" << std::endl;
-    lock_vector_fields.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
-
-    return ret;
+    return _vector_field.CalculateVectorField(callback, _dims, _axes, _z_index, tile_callback);
 }
 
 } // namespace carta

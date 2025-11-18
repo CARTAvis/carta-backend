@@ -8,6 +8,8 @@
 #define CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 
 #include <shared_mutex>
+#include <memory>
+#include <list>
 
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
@@ -22,11 +24,11 @@ namespace carta {
 
 using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, int, CARTA::PolarizationType, int&, int& )>; // was & 
 
-class VectorField {
+class VectorFieldCalculator {
 public:
-    VectorField();
+    VectorFieldCalculator();
     
-    VectorField(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
+    VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
 
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, int z_index, tile_callback_func tile_callback);
     
@@ -124,7 +126,20 @@ protected:
     bool _is_valid;
 };
 
-// void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
+// This is a manger class managing VectorFieldCalculator objects creation, calculations and cancellations of ongoing calculations
+class VectorField {
+public :
+    VectorField() {};
+    
+    bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, int z_index, tile_callback_func tile_callback);
+
+protected:
+   // Vector field settings
+   CARTA::SetVectorOverlayParameters _vector_field_request_message;
+   std::mutex  _vector_field_mutex;
+   std::list<std::shared_ptr<VectorFieldCalculator>> _vector_fields; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
+};
 
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 
