@@ -66,8 +66,16 @@ bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA:
             break;
         } 
                 
-        auto& tile = tiles[i];
-        auto bounds = GetImageBounds(tile, dims.width, dims.height, _smoothing_factor);
+        Tile& tile = tiles[i];
+        // removed GetImageBounds and moved its body below, dims.width/height are size_t so cast to int() was added below 
+        int tile_size_original = TILE_SIZE * _smoothing_factor;
+        CARTA::ImageBounds bounds;
+        bounds.set_x_min(std::min(std::max(0, tile.x * tile_size_original), int(dims.width)));
+        bounds.set_x_max(std::min(int(dims.width), (tile.x + 1) * tile_size_original));
+        bounds.set_y_min(std::min(std::max(0, tile.y * tile_size_original), int(dims.height)));
+        bounds.set_y_max(std::min(int(dims.height), (tile.y + 1) * tile_size_original));
+
+
         int width, height;
         double progress = (double)(i + 1) / tiles.size();
 
@@ -236,16 +244,6 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
             tile->set_image_data(array.data(), sizeof(float) * array.size());
         }
     }
-}
-
-CARTA::ImageBounds GetImageBounds(const Tile& tile, int image_width, int image_height, int mip) {
-    int tile_size_original = TILE_SIZE * mip;
-    CARTA::ImageBounds bounds;
-    bounds.set_x_min(std::min(std::max(0, tile.x * tile_size_original), image_width));
-    bounds.set_x_max(std::min(image_width, (tile.x + 1) * tile_size_original));
-    bounds.set_y_min(std::min(std::max(0, tile.y * tile_size_original), image_height));
-    bounds.set_y_max(std::min(image_height, (tile.y + 1) * tile_size_original));
-    return bounds;
 }
 
 CARTA::VectorOverlayTileData VectorFieldCalculator::VectorOverlayTileData(int32_t file_id, int32_t channel, int32_t stokes_intensity,

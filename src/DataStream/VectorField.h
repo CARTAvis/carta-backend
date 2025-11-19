@@ -147,7 +147,6 @@ protected:
    std::list<std::shared_ptr<VectorFieldCalculator>> _vector_fields; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
 };
 
-CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 
 } // namespace carta
 
