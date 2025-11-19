@@ -99,7 +99,7 @@ bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA:
 
         // The body of the previous function CalculatePiPa has been moved here:
         auto response =
-            VectorFieldCalculator::VectorOverlayTileData(_file_id, -1, _stokes_intensity, _stokes_angle, _compression_type, _compression_quality);
+            Message::VectorOverlayTileData(_file_id, -1, _stokes_intensity, _stokes_angle, _compression_type, _compression_quality);
         auto* tile_pi = response.add_intensity_tiles();
         auto* tile_pa = response.add_angle_tiles();
 
@@ -246,19 +246,6 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
     }
 }
 
-CARTA::VectorOverlayTileData VectorFieldCalculator::VectorOverlayTileData(int32_t file_id, int32_t channel, int32_t stokes_intensity,
-    int32_t stokes_angle, const CARTA::CompressionType& compression_type, float compression_quality) {
-    CARTA::VectorOverlayTileData message;
-    message.set_file_id(file_id);
-    message.set_channel(channel);
-    message.set_stokes_intensity(stokes_intensity);
-    message.set_stokes_angle(stokes_angle);
-    message.set_compression_type(compression_type);
-    message.set_compression_quality(compression_quality);
-    return message;
-}
-
-
 void VectorField::Invalidate() {
    // lock the object and the list of calculators :
    std::unique_lock lock_vector_fields(_vector_field_mutex);
@@ -296,7 +283,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     }
     if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ){
         auto empty_response =
-            VectorFieldCalculator::VectorOverlayTileData(_vector_field_request_message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
+            Message::VectorOverlayTileData(_vector_field_request_message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
             _vector_field_request_message.stokes_intensity(), _vector_field_request_message.stokes_angle(), 
             _vector_field_request_message.compression_type(), _vector_field_request_message.compression_quality());
         empty_response.set_progress(1.0);

@@ -32,9 +32,6 @@ public:
 
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, tile_callback_func tile_callback);
     
-    static CARTA::VectorOverlayTileData VectorOverlayTileData(int32_t file_id, int32_t channel, int32_t stokes_intensity,
-        int32_t stokes_angle, const CARTA::CompressionType& compression_type, float compression_quality);
-    
     // check if calculation is still valid :
     bool IsValid() {
         return _is_valid;
