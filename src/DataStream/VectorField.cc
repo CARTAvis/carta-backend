@@ -9,15 +9,27 @@
 
 namespace carta {
 
-VectorFieldCalculator::VectorFieldCalculator() : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
-    ClearSettings();
-}
-
 VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, int stokes_axis)
     : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
-   ClearSettings();
-   
-   RenewParameters(message, stokes_axis);   
+    _file_id = message.file_id();
+    _smoothing_factor = message.smoothing_factor();
+    _fractional = message.fractional();
+    _threshold = message.threshold();
+    _debiasing = message.debiasing();
+    _q_error = message.debiasing() ? message.q_error() : 0;
+    _u_error = message.debiasing() ? message.u_error() : 0;
+    _stokes_intensity = message.stokes_intensity();
+    _stokes_angle = message.stokes_angle();
+    _compression_type = message.compression_type();
+    _compression_quality = message.compression_quality();
+    _threshold_option = message.threshold_option();
+
+    bool has_stokes_axis(stokes_axis > -1);
+    _calculate_pi = _stokes_intensity == 1 && has_stokes_axis;
+    _calculate_pa = _stokes_angle == 1 && has_stokes_axis;
+    _current_stokes_as_pi = (_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis;
+    _current_stokes_as_pa = (_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis;
+
 }
 
 bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
@@ -170,21 +182,6 @@ bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA:
     return true;
 }
 
-void VectorFieldCalculator::ClearSettings() {
-    _file_id = -1;
-    _smoothing_factor = 0;
-    _fractional = false;
-    _threshold = DOUBLE_NAN;
-    _debiasing = false;
-    _q_error = 0;
-    _u_error = 0;
-    _stokes_intensity = -1;
-    _stokes_angle = -1;
-    _compression_type = CARTA::CompressionType::NONE;
-    _compression_quality = 0;
-}
-
-
 // TODO : narrow down these comparisons to make them less strict (more like equivalent than equal) :
 bool VectorFieldCalculator::Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 )
 {
@@ -198,27 +195,6 @@ bool VectorFieldCalculator::Equivalent( const CARTA::SetVectorOverlayParameters&
             message1.compression_quality() == message2.compression_quality() &&
             message1.threshold_option() == message2.threshold_option()
           );
-}
-
-void VectorFieldCalculator::RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) {
-    _file_id = message.file_id();
-    _smoothing_factor = message.smoothing_factor();
-    _fractional = message.fractional();
-    _threshold = message.threshold();
-    _debiasing = message.debiasing();
-    _q_error = message.debiasing() ? message.q_error() : 0;
-    _u_error = message.debiasing() ? message.u_error() : 0;
-    _stokes_intensity = message.stokes_intensity();
-    _stokes_angle = message.stokes_angle();
-    _compression_type = message.compression_type();
-    _compression_quality = message.compression_quality();
-    _threshold_option = message.threshold_option();
-
-    bool has_stokes_axis(stokes_axis > -1);
-    _calculate_pi = _stokes_intensity == 1 && has_stokes_axis;
-    _calculate_pa = _stokes_angle == 1 && has_stokes_axis;
-    _current_stokes_as_pi = (_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis;
-    _current_stokes_as_pa = (_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis;
 }
 
 void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width,

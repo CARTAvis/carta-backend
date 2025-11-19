@@ -30,10 +30,7 @@ protected:
 
 class TestVectorField : public VectorFieldCalculator {
 public:
-   TestVectorField() : VectorFieldCalculator() {}
-    void RenewParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis){
-        VectorFieldCalculator::RenewParameters( message, stokes_axis );
-     }
+   TestVectorField(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) : VectorFieldCalculator(message, stokes_axis) {}
 };
 
 
@@ -69,8 +66,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     }
     std::cout << "DEBUG : expected value = " << expected_value << std::endl;
 
-    TestVectorField vectorfield;
-    vectorfield.RenewParameters( param_message, 4 );
+    TestVectorField vectorfield( param_message, 4 );
     
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
     auto callback = [&expected_value,&test_type](CARTA::VectorOverlayTileData& message){
