@@ -101,7 +101,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
                                                                            }; 
        
     // lambda expression producing tile data (256x256) all set to 1 for Stokes I        
-    auto getdata_callback = [&stokes_test_values_map,&test_type](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, int z_index, CARTA::PolarizationType stokes_type, int& width, int& height)
+    auto getdata_callback = [&stokes_test_values_map,&test_type](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
     {             
        int value = stokes_test_values_map[stokes_type]; // seems that Stokes I is passed as Current 
        
@@ -119,7 +119,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     dims.num_channels = 1;
     dims.num_stokes = 4;
     int z_index = 2;
-    vectorfield.CalculateVectorField( callback, dims, z_index, getdata_callback );    
+    vectorfield.CalculateVectorField( callback, dims, getdata_callback );    
 }     
 
 // Instantiate the test suite with the desired enum values

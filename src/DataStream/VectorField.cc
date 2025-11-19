@@ -22,7 +22,6 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
 
 bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
                                        DimsInfo& dims,
-                                       int z_index,
                                        tile_callback_func tile_callback)
 {
     // TODO : Tiles initialisation - this will use some global TilePool object
@@ -74,7 +73,7 @@ bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA:
 
         // Get current stokes data
         if (_current_stokes_as_pi || _current_stokes_as_pa) {
-            if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor, z_index, CARTA::PolarizationType::POLARIZATION_TYPE_NONE, width, height )) { // current_stokes_index,
+            if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor, CARTA::PolarizationType::POLARIZATION_TYPE_NONE, width, height )) { // current_stokes_index,
                 return false;
             }
         }
@@ -84,7 +83,7 @@ bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA:
             for (auto one : stokes_flag) {
                 CARTA::PolarizationType stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !tile_callback(stokes_data[stokes], bounds, _smoothing_factor, z_index, stokes, width, height ) ) { // stokes_indices[stokes].index
+                    !tile_callback(stokes_data[stokes], bounds, _smoothing_factor, stokes, width, height ) ) { // stokes_indices[stokes].index
                     return false;
                 }
             }
@@ -92,7 +91,7 @@ bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA:
 
         // The body of the previous function CalculatePiPa has been moved here:
         auto response =
-            Message::VectorOverlayTileData(_file_id, z_index, _stokes_intensity, _stokes_angle, _compression_type, _compression_quality);
+            Message::VectorOverlayTileData(_file_id, -1, _stokes_intensity, _stokes_angle, _compression_type, _compression_quality);
         auto* tile_pi = response.add_intensity_tiles();
         auto* tile_pa = response.add_angle_tiles();
 
@@ -277,7 +276,7 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
     return true;
 }
 
-bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, int z_index, tile_callback_func tile_callback) {
+bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, tile_callback_func tile_callback) {
     // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
     // TODO/TBD : can it stay like this ?
     if( _vector_field_request_message.smoothing_factor() < 1 ){
@@ -286,7 +285,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
     }
     if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ){
         auto empty_response =
-            Message::VectorOverlayTileData(_vector_field_request_message.file_id(), z_index, 
+            Message::VectorOverlayTileData(_vector_field_request_message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
             _vector_field_request_message.stokes_intensity(), _vector_field_request_message.stokes_angle(), 
             _vector_field_request_message.compression_type(), _vector_field_request_message.compression_quality());
         empty_response.set_progress(1.0);
@@ -305,7 +304,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
 
 
 
-    bool ret = ptr_vector_field->CalculateVectorField(progress_callback, dims, z_index, tile_callback);;
+    bool ret = ptr_vector_field->CalculateVectorField(progress_callback, dims, tile_callback);;
     std::cout << "DEBUG : calculation completed" << std::endl;
 
     // removing all calculators for now :    

@@ -22,7 +22,7 @@
 
 namespace carta {
 
-using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, int, CARTA::PolarizationType, int&, int& )>; // was & 
+using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, CARTA::PolarizationType, int&, int& )>; // was & 
 
 class VectorFieldCalculator {
 public:
@@ -30,7 +30,7 @@ public:
     
     VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
 
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, int z_index, tile_callback_func tile_callback);
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, tile_callback_func tile_callback);
     
     // check if calculation is still valid :
     bool IsValid() {
@@ -132,7 +132,7 @@ public :
     VectorField() {};
     
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, int z_index, tile_callback_func tile_callback);
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, tile_callback_func tile_callback);
     
     // invalidate all VectorFieldCalculators in the list:
     void Invalidate();
