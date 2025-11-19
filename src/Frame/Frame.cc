@@ -2516,17 +2516,18 @@ void Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     std::shared_lock lock(_active_task_mutex);
     int z_index = _z_index;
+    auto strongThis = shared_from_this();
 
-    auto tile_callback = [this,&z_index](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
+    auto tile_callback = [strongThis,&z_index](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
         {                     
-           int stokes_index = this->CurrentStokes();
+           int stokes_index = strongThis->CurrentStokes();
            if( stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE ){
               std::string stokes_name = Stokes::Name( stokes_type );
-              if( !GetStokesTypeIndex( stokes_name.c_str() , stokes_index ) ){
+              if( !strongThis->GetStokesTypeIndex( stokes_name.c_str() , stokes_index ) ){
                   return false;
               }
            }
-           return GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
+           return strongThis->GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
         };
     
     // this callback wrapper is only here to set z_index which is unknown inside VectorField functions (we removed this parameter) 
