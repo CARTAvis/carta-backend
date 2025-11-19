@@ -26,7 +26,7 @@ using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::
 
 class VectorFieldCalculator {
 public:
-    VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, int stokes_axis);
+    VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis);
 
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, tile_callback_func tile_callback);
     
@@ -128,7 +128,7 @@ public :
     VectorField() {};
     
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, tile_callback_func tile_callback);
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback);
     
     // invalidate all VectorFieldCalculators in the list:
     void Invalidate();

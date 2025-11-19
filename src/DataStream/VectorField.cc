@@ -9,7 +9,7 @@
 
 namespace carta {
 
-VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, int stokes_axis)
+VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis )
     : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
     _file_id = message.file_id();
     _smoothing_factor = message.smoothing_factor();
@@ -24,7 +24,7 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
     _compression_quality = message.compression_quality();
     _threshold_option = message.threshold_option();
 
-    bool has_stokes_axis(stokes_axis > -1);
+//    bool has_stokes_axis(stokes_axis > -1);
     _calculate_pi = _stokes_intensity == 1 && has_stokes_axis;
     _calculate_pa = _stokes_angle == 1 && has_stokes_axis;
     _current_stokes_as_pi = (_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis;
@@ -250,7 +250,7 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
     return true;
 }
 
-bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, AxesInfo& axes, tile_callback_func tile_callback) {
+bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback) {
     // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
     // TODO/TBD : can it stay like this ?
     if( _vector_field_request_message.smoothing_factor() < 1 ){
@@ -268,7 +268,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
         return true;
     }
 
-    std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(_vector_field_request_message, axes.stokes);
+    std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(_vector_field_request_message, has_stokes_axis);
 
     std::unique_lock lock_vector_fields(_vector_field_mutex);
     _vector_fields.push_back(ptr_vector_field);
