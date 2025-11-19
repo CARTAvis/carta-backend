@@ -642,18 +642,6 @@ CARTA::ContourImageData Message::ContourImageData(
     return message;
 }
 
-CARTA::VectorOverlayTileData Message::VectorOverlayTileData(int32_t file_id, int32_t channel, int32_t stokes_intensity,
-    int32_t stokes_angle, const CARTA::CompressionType& compression_type, float compression_quality) {
-    CARTA::VectorOverlayTileData message;
-    message.set_file_id(file_id);
-    message.set_channel(channel);
-    message.set_stokes_intensity(stokes_intensity);
-    message.set_stokes_angle(stokes_angle);
-    message.set_compression_type(compression_type);
-    message.set_compression_quality(compression_quality);
-    return message;
-}
-
 CARTA::ErrorData Message::ErrorData(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity) {
     CARTA::ErrorData error_data;
     error_data.set_message(message);
