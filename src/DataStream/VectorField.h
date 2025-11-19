@@ -28,7 +28,7 @@ class VectorFieldCalculator {
 public:
     VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis);
 
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, tile_callback_func tile_callback);
+    bool Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, tile_callback_func tile_callback);
     
     // check if calculation is still valid :
     bool IsValid() {
@@ -128,7 +128,7 @@ public :
     VectorField() {};
     
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback);
+    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback);
     
     // invalidate all VectorFieldCalculators in the list:
     void Invalidate();

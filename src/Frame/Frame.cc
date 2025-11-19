@@ -2538,7 +2538,7 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     };
 
     bool has_stokes_axis(_axes.stokes > -1);
-    return _vector_field.CalculateVectorField(message_callback, _dims, has_stokes_axis, tile_callback);
+    return _vector_field.NewCalculation(message_callback, _dims, has_stokes_axis, tile_callback);
 }
 
 } // namespace carta

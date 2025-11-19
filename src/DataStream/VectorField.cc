@@ -32,9 +32,9 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
 
 }
 
-bool VectorFieldCalculator::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
-                                       DimsInfo& dims,
-                                       tile_callback_func tile_callback)
+bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
+                                      DimsInfo& dims,
+                                      tile_callback_func tile_callback)
 {
     // TODO : Tiles initialisation - this will use some global TilePool object
     // Get tiles
@@ -250,7 +250,7 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
     return true;
 }
 
-bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback) {
+bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback) {
     // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
     // TODO/TBD : can it stay like this ?
     if( _vector_field_request_message.smoothing_factor() < 1 ){
@@ -278,7 +278,7 @@ bool VectorField::CalculateVectorField(const std::function<void(CARTA::VectorOve
 
 
 
-    bool ret = ptr_vector_field->CalculateVectorField(progress_callback, dims, tile_callback);;
+    bool ret = ptr_vector_field->Calculate(progress_callback, dims, tile_callback);;
     std::cout << "DEBUG : calculation completed" << std::endl;
 
     // removing all calculators for now :    
