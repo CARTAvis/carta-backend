@@ -182,21 +182,6 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
     return true;
 }
 
-// TODO : narrow down these comparisons to make them less strict (more like equivalent than equal) :
-bool VectorFieldCalculator::Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 )
-{
-   return ( message1.file_id() == message2.file_id() &&
-            message1.smoothing_factor() == message2.smoothing_factor() &&
-            message1.fractional() == message2.fractional() &&
-            message1.threshold() == message2.threshold() &&
-            message1.debiasing() == message2.debiasing() &&
-            (message1.debiasing() && message1.q_error() == message2.q_error() && message1.u_error() && message2.u_error()) &&
-            message1.stokes_intensity() == message2.stokes_intensity() &&
-            message1.compression_quality() == message2.compression_quality() &&
-            message1.threshold_option() == message2.threshold_option()
-          );
-}
-
 void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width,
     int32_t tile_height, std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality) {
     if (tile) {
@@ -236,15 +221,14 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
     
     // lock the object and the list of calculators :
     std::unique_lock lock_vector_fields(_vector_field_mutex);
-    
-    if( VectorFieldCalculator::Equivalent(message,_vector_field_request_message) ){
+  
+// FUTURE optimisations may required this check and function Equivalent to be back to avoid re-calculation with the same parameters
+//    but for now calculation happens everytime it is called 
+//    if( VectorFieldCalculator::Equivalent(message,_vector_field_request_message) ){
         // requesting the same calculation as before -> no need for this
-        return false;
-    }
+//        return false;
+//    }
     
-    // Invalidate all on-going calculation to stop them :
-    for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
-
     _vector_field_request_message = message;
     
     return true;
@@ -271,6 +255,10 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(_vector_field_request_message, has_stokes_axis);
 
     std::unique_lock lock_vector_fields(_vector_field_mutex);
+
+    // Invalidate all on-going calculation to stop them (moved from VectorField::SetVectorOverlayParameters)
+    for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
+    
     _vector_fields.push_back(ptr_vector_field);
     lock_vector_fields.unlock();
 //    bool ret = ptr_vector_field->SetParameters(_vector_field_request_message, _axes.stokes);

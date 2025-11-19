@@ -39,8 +39,6 @@ public:
        _is_valid = false;
     }
     
-    static bool Equivalent( const CARTA::SetVectorOverlayParameters& message1 , const CARTA::SetVectorOverlayParameters& message2 );
-
     struct Valid {
         bool operator()(float a, float b) {
             return (!std::isnan(a) && !std::isnan(b));
