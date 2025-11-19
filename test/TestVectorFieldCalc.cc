@@ -115,7 +115,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     dims.num_channels = 1;
     dims.num_stokes = 4;
     int z_index = 2;
-    vectorfield.CalculateVectorField( callback, dims, getdata_callback );    
+    vectorfield.Calculate( callback, dims, getdata_callback );    
 }     
 
 // Instantiate the test suite with the desired enum values
