@@ -19,7 +19,7 @@ using namespace carta;
 using ::testing::FloatNear;
 using ::testing::Pointwise;
 
-class PvGeneratorTest : public ::testing::Test, public ImageGenerator {
+class PvGeneratorTest : public ::testing::Test {
 public:
     static void SetPvCut(carta::RegionHandler& region_handler, int file_id, int& region_id, std::vector<float>& endpoints,
         std::shared_ptr<casacore::CoordinateSystem> csys, bool is_annotation = false) {

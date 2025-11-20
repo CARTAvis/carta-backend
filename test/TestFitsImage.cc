@@ -21,7 +21,7 @@ public:
     FRIEND_TEST(FitsImageTest, ExampleFriendTest);
 };
 
-class FitsImageTest : public ::testing::Test, public ImageGenerator {};
+class FitsImageTest : public ::testing::Test {};
 
 TEST_F(FitsImageTest, BasicLoadingTest) {
     auto path_string = (TestRoot() / "data" / "images" / "fits" / "noise_10px_10px.fits");

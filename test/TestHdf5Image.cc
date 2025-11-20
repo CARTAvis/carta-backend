@@ -22,7 +22,7 @@ public:
     FRIEND_TEST(Hdf5ImageTest, ExampleFriendTest);
 };
 
-class Hdf5ImageTest : public ::testing::Test, public ImageGenerator {};
+class Hdf5ImageTest : public ::testing::Test {};
 
 TEST_F(Hdf5ImageTest, BasicLoadingTest) {
     auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5");

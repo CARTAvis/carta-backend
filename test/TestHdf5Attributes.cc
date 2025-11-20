@@ -14,7 +14,7 @@
 
 using namespace carta;
 
-class Hdf5AttributesTest : public ::testing::Test, public ImageGenerator {};
+class Hdf5AttributesTest : public ::testing::Test {};
 
 TEST_F(Hdf5AttributesTest, TestAttributes) {
     auto padded = [](std::string s) { return fmt::format("{:<80}", s); };
