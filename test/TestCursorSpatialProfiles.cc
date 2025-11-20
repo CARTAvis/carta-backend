@@ -17,7 +17,7 @@ using namespace carta;
 using ::testing::FloatNear;
 using ::testing::Pointwise;
 
-class CursorSpatialProfileTest : public ::testing::Test, public ImageGenerator {
+class CursorSpatialProfileTest : public ::testing::Test {
 public:
     static std::tuple<CARTA::SpatialProfile, CARTA::SpatialProfile> GetProfiles(CARTA::SpatialProfileData& data) {
         if (data.profiles(0).coordinate().back() == 'x') {

@@ -116,18 +116,6 @@ private:
     std::vector<bool> _fixed_params;
     CARTA::RegionInfo _fov_info;
 
-    // static std::string GetGeneratedFilePath(std::vector<float> gaussian_model) {
-    //     std::string gaussian_model_string = std::to_string(gaussian_model[0]);
-    //     for (size_t i = 1; i < gaussian_model.size(); i++) {
-    //         gaussian_model_string.append(" ");
-    //         gaussian_model_string.append(i % 6 == 0 ? std::to_string(gaussian_model[i] - 90.0) : std::to_string(gaussian_model[i]));
-    //     }
-
-    //     std::string file_path =
-    //         ImageGenerator::GeneratedFitsImagePath("128 128", fmt::format("--gaussian-model {} -s 0", gaussian_model_string));
-    //     return file_path;
-    // }
-
     void CompareResults(const CARTA::FittingResponse fitting_response, const bool success, const std::string failed_message) {
         if (failed_message.length() == 0) {
             EXPECT_TRUE(success);

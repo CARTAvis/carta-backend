@@ -317,7 +317,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
-    const std::string input = DataPath("settings-good-fields.json");
+    const std::string input = TestRoot() / "data" / "settings" / "settings-good-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     EXPECT_EQ(j.size(), 13);
@@ -338,7 +338,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
     fs::current_path(TestRoot());
-    const std::string input = DataPath("settings-bad-fields.json");
+    const std::string input = TestRoot() / "data" / "settings" / "settings-bad-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
@@ -366,7 +366,7 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
 }
 
 TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
-    const std::string input = DataPath("settings-bad-fields.json");
+    const std::string input = TestRoot() / "data" / "settings" / "settings-bad-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
