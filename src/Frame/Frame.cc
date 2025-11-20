@@ -2517,17 +2517,17 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     std::shared_lock lock(_active_task_mutex);
     int z_index = _z_index;
     auto strong_this = shared_from_this();
+    int current_stokes = CurrentStokes();
 
-    auto tile_callback = [strong_this,&z_index](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
+    auto tile_callback = [strong_this,&z_index,&current_stokes](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
         {                     
-           int stokes_index = strong_this->CurrentStokes();
            if( stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE ){
               std::string stokes_name = Stokes::Name( stokes_type );
-              if( !strong_this->GetStokesTypeIndex( stokes_name.c_str() , stokes_index ) ){
+              if( !strong_this->GetStokesTypeIndex( stokes_name.c_str() , current_stokes ) ){
                   return false;
               }
            }
-           return strong_this->GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
+           return strong_this->GetDownsampledRasterData( data, width, height, z_index, current_stokes, bounds, smoothing_factor );            
         };
     
     // this callback wrapper is only here to set z_index which is unknown inside VectorField functions (we removed this parameter) 
