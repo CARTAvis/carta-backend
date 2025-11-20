@@ -237,10 +237,6 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
 bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback) {
     // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
     // TODO/TBD : can it stay like this ?
-    if( _vector_field_request_message.smoothing_factor() < 1 ){
-        std::cout << "DEBUG : cleared smoothing factor -> nothing to be done" << std::endl;
-        return true;
-    }
     if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ){
         auto empty_response =
             Message::VectorOverlayTileData(_vector_field_request_message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
