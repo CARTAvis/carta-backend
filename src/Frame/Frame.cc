@@ -322,8 +322,8 @@ bool Frame::ZStokesChanged(int z, int stokes) {
 void Frame::WaitForTaskCancellation() {
     _connected = false; // file closed
     StopMomentCalc();
-    _vector_field.Invalidate(); // invalidate all on-going vector field calculations 
-    std::unique_lock lock(GetActiveTaskMutex());
+//    _vector_field.Invalidate(); // invalidate all on-going vector field calculations 
+//    std::unique_lock lock(GetActiveTaskMutex());
 }
 
 bool Frame::IsConnected() {

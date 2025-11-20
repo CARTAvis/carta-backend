@@ -207,6 +207,12 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
     }
 }
 
+VectorField::~VectorField()
+{
+   // invalidate all on-going calculations :
+   Invalidate();
+}
+
 void VectorField::Invalidate() {
    // lock the object and the list of calculators :
    std::unique_lock lock_vector_fields(_vector_field_mutex);
@@ -255,22 +261,24 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // Invalidate all on-going calculation to stop them (moved from VectorField::SetVectorOverlayParameters)
     for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
     
+    // remvoing all objects from the container after they all got invalidated :
+    _vector_fields.clear();
+    
+    // add the new calculator object to the container of ongoing calculations 
     _vector_fields.push_back(ptr_vector_field);
     lock_vector_fields.unlock();
-//    bool ret = ptr_vector_field->SetParameters(_vector_field_request_message, _axes.stokes);
     std::cout << "DEBUG : object added " << std::endl;
 
-
-
+    // start a new calculation of the vector field:
     bool ret = ptr_vector_field->Calculate(progress_callback, dims, tile_callback);;
     std::cout << "DEBUG : calculation completed" << std::endl;
 
     // removing all calculators for now :    
-    lock_vector_fields.lock();
+//    lock_vector_fields.lock();
     // TODO : how to nicely remove from container without using pointer comparisons ???
-    _vector_fields.remove_if([&ptr_vector_field](const std::shared_ptr<VectorFieldCalculator>& ptr){ return (ptr == ptr_vector_field);});
-    std::cout << "DEBUG : removed vector field object from the container" << std::endl;
-    lock_vector_fields.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
+//    _vector_fields.remove_if([&ptr_vector_field](const std::shared_ptr<VectorFieldCalculator>& ptr){ return (ptr == ptr_vector_field);});
+//    std::cout << "DEBUG : removed vector field object from the container" << std::endl;
+//    lock_vector_fields.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
 
     return ret;
 
