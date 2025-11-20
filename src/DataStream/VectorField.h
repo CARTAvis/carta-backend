@@ -123,16 +123,15 @@ protected:
 // This is a manger class managing VectorFieldCalculator objects creation, calculations and cancellations of ongoing calculations
 class VectorField {
 public :
-    VectorField() {};
+    VectorField();
     ~VectorField();
     
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback);
     
 protected:
-   // invalidate all VectorFieldCalculators in the list:
-   void Invalidate();
-
+   // flag indicating that the object is being destroyed 
+   bool _destroyed;
 
    // Vector field settings
    CARTA::SetVectorOverlayParameters _vector_field_request_message;

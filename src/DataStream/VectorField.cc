@@ -207,20 +207,20 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
     }
 }
 
-VectorField::~VectorField()
-{
-   // invalidate all on-going calculations :
-   Invalidate();
+VectorField::VectorField() : _destroyed(false) {
 }
 
-void VectorField::Invalidate() {
+VectorField::~VectorField()
+{
+   _destroyed = true;
+
+   // invalidate all on-going calculations :
    // lock the object and the list of calculators :
    std::unique_lock lock_vector_fields(_vector_field_mutex);
 
    // Invalidate all on-going calculation to stop them :
    for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
 }
-
 
 bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
     std::cout << "DEBUG : VectorField::SetVectorOverlayParameters called" << std::endl;
@@ -243,6 +243,10 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
 bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback) {
     // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
     // TODO/TBD : can it stay like this ?
+    if( _destroyed ) {
+       return false;
+    }
+    
     if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ){
         auto empty_response =
             Message::VectorOverlayTileData(_vector_field_request_message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
@@ -256,6 +260,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
 
     std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(_vector_field_request_message, has_stokes_axis);
 
+    // lock the mutex to invalidate all the calculators :
     std::unique_lock lock_vector_fields(_vector_field_mutex);
 
     // Invalidate all on-going calculation to stop them (moved from VectorField::SetVectorOverlayParameters)
