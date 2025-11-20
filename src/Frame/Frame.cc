@@ -2513,7 +2513,7 @@ void Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
     _vector_field.SetVectorOverlayParameters(message);
 }
 
-bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed /*=false*/ ) {
     std::shared_lock lock(_active_task_mutex);
     int z_index = _z_index;
     auto strong_this = shared_from_this();

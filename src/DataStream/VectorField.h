@@ -127,7 +127,7 @@ public :
     ~VectorField();
     
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
-    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback);
+    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback, bool stokes_changed=false);
     
 protected:
    // flag indicating that the object is being destroyed 

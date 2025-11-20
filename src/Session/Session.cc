@@ -671,7 +671,7 @@ void Session::DeleteFrame(int file_id) {
     }
     if (_channel_map_settings) {
         _channel_map_settings->RemoveFile(file_id);
-    }
+    }    
 }
 
 void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, int animation_id, bool skip_data) {
@@ -2101,8 +2101,11 @@ bool Session::SendVectorFieldData(int file_id) {
             SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, partial_response);
         };
 
+        // TODO : how to set this flag, based on what ?
+        bool stokes_changed = false;
+
         // Do PI/PA calculations
-        if (_frames.at(file_id)->CalculateVectorField(callback)) {
+        if (_frames.at(file_id)->CalculateVectorField(callback),stokes_changed) {
             return true;
         }
         SendLogEvent("Error processing vector field image", {"vector field"}, CARTA::ErrorSeverity::WARNING);

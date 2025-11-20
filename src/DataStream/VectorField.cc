@@ -240,14 +240,15 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
     return true;
 }
 
-bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback) {
+bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, 
+   bool has_stokes_axis, tile_callback_func tile_callback, bool stokes_changed /*=false*/ ) {
     // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
     // TODO/TBD : can it stay like this ?
     if( _destroyed ) {
        return false;
     }
     
-    if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ){
+    if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ) {
         auto empty_response =
             Message::VectorOverlayTileData(_vector_field_request_message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
             _vector_field_request_message.stokes_intensity(), _vector_field_request_message.stokes_angle(), 
@@ -256,6 +257,11 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
         progress_callback(empty_response);
         std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
         return true;
+    }
+    
+    if( stokes_changed && _vector_field_request_message.stokes_intensity() != 0 && _vector_field_request_message.stokes_angle() != 0 ) {
+        // TODO : review this part as I do not fully understand it yet ...
+        return true; 
     }
 
     std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(_vector_field_request_message, has_stokes_axis);
