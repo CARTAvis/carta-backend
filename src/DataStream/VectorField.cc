@@ -207,19 +207,17 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
     }
 }
 
-VectorField::VectorField() : _destroyed(false) {
+VectorField::VectorField() : _stopped(false) {
 }
 
-VectorField::~VectorField()
-{
-   _destroyed = true;
-
-   // invalidate all on-going calculations :
+void VectorField::StopCalculations() {
    // lock the object and the list of calculators :
    std::unique_lock lock_vector_fields(_vector_field_mutex);
 
    // Invalidate all on-going calculation to stop them :
    for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
+   
+   _stopped = true;
 }
 
 bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
@@ -244,7 +242,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
    bool has_stokes_axis, tile_callback_func tile_callback, bool stokes_changed /*=false*/ ) {
     // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
     // TODO/TBD : can it stay like this ?
-    if( _destroyed ) {
+    if( _stopped ) {
        return false;
     }
     

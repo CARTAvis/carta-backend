@@ -124,14 +124,16 @@ protected:
 class VectorField {
 public :
     VectorField();
-    ~VectorField();
     
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback, bool stokes_changed=false);
+
+    // invalidate all VectorFieldCalculators in the list:
+    void StopCalculations();
     
 protected:
    // flag indicating that the object is being destroyed 
-   bool _destroyed;
+   bool _stopped;
 
    // Vector field settings
    CARTA::SetVectorOverlayParameters _vector_field_request_message;
