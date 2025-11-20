@@ -136,15 +136,6 @@ protected:
     bool _current_stokes_as_pa;
 };
 
-/**
- * @brief Computes the tile grid for a given mip level of an image and populates the provided tile vector.
- *
- * @param image_width The width of the image in pixels.
- * @param image_height The height of the image in pixels.
- * @param mip The mip level to generate tiles for.
- * @param tiles Reference to a vector of `Tile` objects that will be filled with the computed tile data.
- *              The vector is resized to fit all required tiles.
- */
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
