@@ -215,15 +215,14 @@ void VectorField::StopCalculations() {
    std::unique_lock lock_vector_fields(_vector_field_mutex);
 
    // Invalidate all on-going calculation to stop them :
-   for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});   
+   for( auto calculator : _vector_fields ) {
+       calculator->Invalidate();
+   }
 }
 
 bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
     std::cout << "DEBUG : VectorField::SetVectorOverlayParameters called" << std::endl;
     
-    // lock the object and the list of calculators :
-    std::unique_lock lock_vector_fields(_vector_field_mutex);
-  
 // FUTURE optimisations may required this check and function Equivalent to be back to avoid re-calculation with the same parameters
 //    but for now calculation happens everytime it is called 
 //    if( VectorFieldCalculator::Equivalent(message,_vector_field_request_message) ){
@@ -237,36 +236,42 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
 }
 
 bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, 
-   bool has_stokes_axis, tile_callback_func tile_callback, bool stokes_changed /*=false*/ ) {
-    // Currently the same conditions as in VectorFieldCalculator::ClearParameters 
-    // TODO/TBD : can it stay like this ?
-    if( _stopped ) {
-       return false;
-    }
+   bool has_stokes_axis, tile_callback_func tile_callback, bool stokes_changed /*=false*/ ) {         
+
+    // making local copy of the message in case it changes as the calculation goes on:    
+    const CARTA::SetVectorOverlayParameters message = _vector_field_request_message;
     
-    if( _vector_field_request_message.stokes_intensity() < 0 && _vector_field_request_message.stokes_angle() < 0 ) {
-        auto empty_response =
-            Message::VectorOverlayTileData(_vector_field_request_message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
-            _vector_field_request_message.stokes_intensity(), _vector_field_request_message.stokes_angle(), 
-            _vector_field_request_message.compression_type(), _vector_field_request_message.compression_quality());
+    if( message.stokes_intensity() < 0 && message.stokes_angle() < 0 ) {
+        /*auto empty_response =
+            Message::VectorOverlayTileData(message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
+            message.stokes_intensity(), message.stokes_angle(), 
+            message.compression_type(), message.compression_quality());
         empty_response.set_progress(1.0);
-        progress_callback(empty_response);
+        progress_callback(empty_response);*/
         std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
         return true;
     }
     
-    if( stokes_changed && _vector_field_request_message.stokes_intensity() != 0 && _vector_field_request_message.stokes_angle() != 0 ) {
+    if( stokes_changed && message.stokes_intensity() != 0 && message.stokes_angle() != 0 ) {
         // TODO : review this part as I do not fully understand it yet ...
         return true; 
     }
 
-    std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(_vector_field_request_message, has_stokes_axis);
+    std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(message, has_stokes_axis);
 
     // lock the mutex to invalidate all the calculators :
     std::unique_lock lock_vector_fields(_vector_field_mutex);
 
+    // this needs to be after this mutes so that if the mutex is locked first in StopCalculation we exit here
+    // or if mutex here is locked first we start new calculation, but it gets invalidated (stoped) when StopCalculation acquires the mutex    
+    if( _stopped ) {
+       return true;
+    }
+
     // Invalidate all on-going calculation to stop them (moved from VectorField::SetVectorOverlayParameters)
-    for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
+    for( auto calculator : _vector_fields ) {
+       calculator->Invalidate();
+    }
     
     // remvoing all objects from the container after they all got invalidated :
     _vector_fields.clear();
