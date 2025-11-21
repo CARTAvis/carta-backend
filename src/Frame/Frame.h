@@ -219,7 +219,7 @@ public:
     void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameter);
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed=false);
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed=false, bool z_changed=false);
 
 protected:
     // Validate z and stokes index values

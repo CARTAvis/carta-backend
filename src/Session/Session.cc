@@ -840,7 +840,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                 // Send Contour data if required
                 SendContourData(file_id);
                 // Send vector field data if required
-                SendVectorFieldData(file_id, stokes_changed);
+                SendVectorFieldData(file_id, stokes_changed, z_changed);
                 bool send_histogram(true);
                 UpdateImageData(file_id, send_histogram, z_changed, stokes_changed);
                 UpdateRegionData(file_id, ALL_REGIONS, z_changed, stokes_changed);
@@ -2102,7 +2102,7 @@ void Session::RegionDataStreams(int file_id, int region_id) {
     }
 }
 
-bool Session::SendVectorFieldData(int file_id, bool stokes_changed/*=false*/) {
+bool Session::SendVectorFieldData(int file_id, bool stokes_changed/*=false*/, bool z_changed/*=false*/) {
     if (_frames.count(file_id) && _frames.at(file_id)->IsValid()) {
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& partial_response) {
@@ -2110,7 +2110,7 @@ bool Session::SendVectorFieldData(int file_id, bool stokes_changed/*=false*/) {
         };
 
         // Do PI/PA calculations
-        if (_frames.at(file_id)->CalculateVectorField(callback),stokes_changed) {
+        if (_frames.at(file_id)->CalculateVectorField(callback), stokes_changed, z_changed) {
             return true;
         }
         SendLogEvent("Error processing vector field image", {"vector field"}, CARTA::ErrorSeverity::WARNING);
@@ -2288,7 +2288,7 @@ void Session::ExecuteAnimationFrameInner(int animation_id) {
                     if (_animation_object->_stop_called) {
                         return;
                     }
-                    SendVectorFieldData(file_id, stokes_changed);
+                    SendVectorFieldData(file_id, stokes_changed, z_changed);
 
                     // Send tile data
                     if (_animation_object->_stop_called) {
@@ -2321,7 +2321,7 @@ void Session::ExecuteAnimationFrameInner(int animation_id) {
                     if (_animation_object->_stop_called) {
                         return;
                     }
-                    SendVectorFieldData(active_file_id, stokes_changed);
+                    SendVectorFieldData(active_file_id, stokes_changed, z_changed);
 
                     // Send tile data
                     if (_animation_object->_stop_called) {

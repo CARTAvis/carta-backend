@@ -2513,7 +2513,7 @@ void Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
     _vector_field.SetVectorOverlayParameters(parameter);
 }
 
-bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed /*=false*/ ) {
+bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
     auto strong_this = shared_from_this();
     int current_stokes = _stokes_index;
     int z_index = _z_index;
@@ -2538,7 +2538,7 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     };
 
     bool has_stokes_axis(_axes.stokes > -1);
-    return _vector_field.NewCalculation(message_callback, _dims, has_stokes_axis, tile_callback);
+    return _vector_field.NewCalculation(message_callback, _dims, has_stokes_axis, tile_callback, stokes_changed, z_changed);
 }
 
 } // namespace carta

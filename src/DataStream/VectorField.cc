@@ -234,7 +234,7 @@ void VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
 }
 
 bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, 
-   bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed /*=false*/ ) {         
+   bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/ ) {         
 
     // making local copy of the message in case it changes as the calculation goes on:    
     auto parameters = _parameters;
@@ -250,8 +250,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
         return true;
     }
 
-// TODO : add !z_changed    
-    if( stokes_changed && parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0 ) {
+    if( !z_changed && stokes_changed && parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0 ) {
         // TODO : review this part as I do not fully understand it yet ...
         return true; 
     }

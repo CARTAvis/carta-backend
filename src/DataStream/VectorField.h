@@ -126,7 +126,8 @@ public :
     VectorField();
     
     void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters);
-    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed=false);
+    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, 
+                        TileCallback tile_callback, bool stokes_changed=false, bool z_changed=false);
 
     // invalidate all VectorFieldCalculators in the list:
     void StopCalculations();
