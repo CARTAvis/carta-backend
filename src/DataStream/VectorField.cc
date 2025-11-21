@@ -208,13 +208,14 @@ VectorField::VectorField() : _stopped(false) {
 }
 
 void VectorField::StopCalculations() {
+   // stop flag set first so that new calculations are not started, then wait for mutex to invalidate all the on-going calculations
+   _stopped = true;
+
    // lock the object and the list of calculators :
    std::unique_lock lock_vector_fields(_vector_field_mutex);
 
    // Invalidate all on-going calculation to stop them :
-   for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});
-   
-   _stopped = true;
+   for_each(_vector_fields.begin(),_vector_fields.end(),[](std::shared_ptr<VectorFieldCalculator>& vf){vf->Invalidate();});   
 }
 
 bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
