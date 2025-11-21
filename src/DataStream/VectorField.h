@@ -22,13 +22,13 @@
 
 namespace carta {
 
-using tile_callback_func = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, CARTA::PolarizationType, int&, int& )>; // was & 
+using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, CARTA::PolarizationType, int&, int& )>; // was & 
 
 class VectorFieldCalculator {
 public:
     VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis);
 
-    bool Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, tile_callback_func tile_callback);
+    bool Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, TileCallback tile_callback);
     
     // check if calculation is still valid :
     bool IsValid() {
@@ -125,8 +125,8 @@ class VectorField {
 public :
     VectorField();
     
-    bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
-    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, tile_callback_func tile_callback, bool stokes_changed=false);
+    void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters);
+    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed=false);
 
     // invalidate all VectorFieldCalculators in the list:
     void StopCalculations();
@@ -136,9 +136,9 @@ protected:
    bool _stopped;
 
    // Vector field settings
-   CARTA::SetVectorOverlayParameters _vector_field_request_message;
-   std::mutex  _vector_field_mutex;
-   std::list<std::shared_ptr<VectorFieldCalculator>> _vector_fields; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
+   CARTA::SetVectorOverlayParameters _parameters;
+   std::mutex  _mutex;
+   std::vector<std::shared_ptr<VectorFieldCalculator>> _calculators; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
 };
 
 

@@ -31,7 +31,7 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
 
 bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
                                       DimsInfo& dims,
-                                      tile_callback_func tile_callback)
+                                      TileCallback tile_callback)
 {
     // TODO : Tiles initialisation - this will use some global TilePool object
     // Get tiles
@@ -212,15 +212,15 @@ void VectorField::StopCalculations() {
    _stopped = true;
 
    // lock the object and the list of calculators :
-   std::unique_lock lock_vector_fields(_vector_field_mutex);
+   std::unique_lock lock_calculators(_mutex);
 
    // Invalidate all on-going calculation to stop them :
-   for( auto calculator : _vector_fields ) {
+   for( auto calculator : _calculators ) {
        calculator->Invalidate();
    }
 }
 
-bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
+void VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters) {
     std::cout << "DEBUG : VectorField::SetVectorOverlayParameters called" << std::endl;
     
 // FUTURE optimisations may required this check and function Equivalent to be back to avoid re-calculation with the same parameters
@@ -230,37 +230,34 @@ bool VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
 //        return false;
 //    }
     
-    _vector_field_request_message = message;
-    
-    return true;
+    _parameters = parameters;
 }
 
 bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, 
-   bool has_stokes_axis, tile_callback_func tile_callback, bool stokes_changed /*=false*/ ) {         
+   bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed /*=false*/ ) {         
 
     // making local copy of the message in case it changes as the calculation goes on:    
-    const CARTA::SetVectorOverlayParameters message = _vector_field_request_message;
+    auto parameters = _parameters;
     
-    if( message.stokes_intensity() < 0 && message.stokes_angle() < 0 ) {
+    if( parameters.stokes_intensity() < 0 && parameters.stokes_angle() < 0 ) {
         /*auto empty_response =
-            Message::VectorOverlayTileData(message.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
-            message.stokes_intensity(), message.stokes_angle(), 
-            message.compression_type(), message.compression_quality());
+            Message::VectorOverlayTileData(parameters.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
+            parameters.stokes_intensity(), parameters.stokes_angle(), 
+            parameters.compression_type(), parameters.compression_quality());
         empty_response.set_progress(1.0);
         progress_callback(empty_response);*/
         std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
         return true;
     }
-    
-    if( stokes_changed && message.stokes_intensity() != 0 && message.stokes_angle() != 0 ) {
+
+// TODO : add !z_changed    
+    if( stokes_changed && parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0 ) {
         // TODO : review this part as I do not fully understand it yet ...
         return true; 
     }
 
-    std::shared_ptr<VectorFieldCalculator> ptr_vector_field = std::make_shared<VectorFieldCalculator>(message, has_stokes_axis);
-
     // lock the mutex to invalidate all the calculators :
-    std::unique_lock lock_vector_fields(_vector_field_mutex);
+    std::unique_lock lock_calculators(_mutex);
 
     // this needs to be after this mutes so that if the mutex is locked first in StopCalculation we exit here
     // or if mutex here is locked first we start new calculation, but it gets invalidated (stoped) when StopCalculation acquires the mutex    
@@ -269,28 +266,31 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     }
 
     // Invalidate all on-going calculation to stop them (moved from VectorField::SetVectorOverlayParameters)
-    for( auto calculator : _vector_fields ) {
+    for( auto calculator : _calculators ) {
        calculator->Invalidate();
     }
     
     // remvoing all objects from the container after they all got invalidated :
-    _vector_fields.clear();
+    _calculators.clear();
+
+    // create new calculator and add to the vector of on-going calculators :    
+    auto calculator = std::make_shared<VectorFieldCalculator>(parameters, has_stokes_axis);
     
     // add the new calculator object to the container of ongoing calculations 
-    _vector_fields.push_back(ptr_vector_field);
-    lock_vector_fields.unlock();
+    _calculators.push_back(calculator);
+    lock_calculators.unlock();
     std::cout << "DEBUG : object added " << std::endl;
 
     // start a new calculation of the vector field:
-    bool ret = ptr_vector_field->Calculate(progress_callback, dims, tile_callback);;
+    bool ret = calculator->Calculate(progress_callback, dims, tile_callback);;
     std::cout << "DEBUG : calculation completed" << std::endl;
 
     // removing all calculators for now :    
-//    lock_vector_fields.lock();
+//    lock_calculators.lock();
     // TODO : how to nicely remove from container without using pointer comparisons ???
-//    _vector_fields.remove_if([&ptr_vector_field](const std::shared_ptr<VectorFieldCalculator>& ptr){ return (ptr == ptr_vector_field);});
+//    _vector_fields.remove_if([&calculator](const std::shared_ptr<VectorFieldCalculator>& ptr){ return (ptr == calculator);});
 //    std::cout << "DEBUG : removed vector field object from the container" << std::endl;
-//    lock_vector_fields.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
+//    lock_calculators.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
 
     return ret;
 

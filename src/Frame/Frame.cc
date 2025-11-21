@@ -2509,17 +2509,18 @@ bool Frame::GetDownsampledRasterData(
         tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
 }
 
-void Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    _vector_field.SetVectorOverlayParameters(message);
+void Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameter) {
+    _vector_field.SetVectorOverlayParameters(parameter);
 }
 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed /*=false*/ ) {
     auto strong_this = shared_from_this();
-    int stokes_index = _stokes_index;
+    int current_stokes = _stokes_index;
     int z_index = _z_index;
 
-    auto tile_callback = [strong_this,&z_index,&stokes_index](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
+    auto tile_callback = [strong_this,&z_index,&current_stokes](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
         {                     
+           int stokes_index = current_stokes;
            if( stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE ){
               std::string stokes_name = Stokes::Name( stokes_type );
               if( !strong_this->GetStokesTypeIndex( stokes_name.c_str() , stokes_index ) ){
