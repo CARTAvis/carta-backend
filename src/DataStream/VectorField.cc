@@ -10,26 +10,23 @@
 namespace carta {
 
 VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis )
-    : _calculate_pi(false), _calculate_pa(false), _current_stokes_as_pi(false), _current_stokes_as_pa(false), _is_valid(true) {
-    _file_id = message.file_id();
-    _smoothing_factor = message.smoothing_factor();
-    _fractional = message.fractional();
-    _threshold = message.threshold();
-    _debiasing = message.debiasing();
-    _q_error = message.debiasing() ? message.q_error() : 0;
-    _u_error = message.debiasing() ? message.u_error() : 0;
-    _stokes_intensity = message.stokes_intensity();
-    _stokes_angle = message.stokes_angle();
-    _compression_type = message.compression_type();
-    _compression_quality = message.compression_quality();
-    _threshold_option = message.threshold_option();
-
-//    bool has_stokes_axis(stokes_axis > -1);
-    _calculate_pi = _stokes_intensity == 1 && has_stokes_axis;
-    _calculate_pa = _stokes_angle == 1 && has_stokes_axis;
-    _current_stokes_as_pi = (_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis;
-    _current_stokes_as_pa = (_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis;
-
+    : _file_id( message.file_id() ), 
+      _smoothing_factor( message.smoothing_factor() ), 
+      _fractional( message.fractional() ), 
+      _threshold( message.threshold() ), 
+      _debiasing( message.debiasing() ), 
+      _q_error( message.debiasing() ? message.q_error() : 0 ),
+      _u_error( message.debiasing() ? message.u_error() : 0 ),
+      _stokes_intensity( message.stokes_intensity() ),
+      _stokes_angle( message.stokes_angle() ),
+      _compression_type( message.compression_type() ),
+      _compression_quality( message.compression_quality() ),
+      _threshold_option( message.threshold_option() ),
+      _calculate_pi( _stokes_intensity == 1 && has_stokes_axis ),
+      _calculate_pa( _stokes_angle == 1 && has_stokes_axis ),
+      _current_stokes_as_pi( (_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis ),
+      _current_stokes_as_pa( (_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis ),
+      _is_valid(true) {
 }
 
 bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
