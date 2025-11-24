@@ -74,7 +74,7 @@
 <!-- Node87 -->
 <g id="Node000087" class="node">
 <title>Node87</title>
-<g id="a_Node000087"><a xlink:href="Tile_8cc.html" target="_top" xlink:title=" ">
+<g id="a_Node000087"><a xlink:href="Tile_8cc.html" target="_top" xlink:title="Provides the Tile struct for encoding and decoding spatial tile coordinates and mipmap layer logic.">
 <polygon fill="white" stroke="#666666" points="1577,-569 1529,-569 1529,-550 1577,-550 1577,-569"/>
 <text text-anchor="middle" x="1553" y="-557" font-family="Helvetica,sans-Serif" font-size="10.00">Tile.cc</text>
 </a>

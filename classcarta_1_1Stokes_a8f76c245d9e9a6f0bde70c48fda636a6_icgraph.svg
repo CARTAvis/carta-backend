@@ -196,7 +196,7 @@ var sectionId = 'dynsection-4';
 <!-- Node11 -->
 <g id="Node000011" class="node">
 <title>Node11</title>
-<g id="a_Node000011"><a xlink:href="classcarta_1_1Frame.html#ab489d663a29fb9d2d6cdc6b09be9651d" target="_top" xlink:title=" ">
+<g id="a_Node000011"><a xlink:href="classcarta_1_1Frame.html#a99d23a98a6fb7dfa96b52347bc8828f7" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="1233,-159.5 1059,-159.5 1059,-140.5 1233,-140.5 1233,-159.5"/>
 <text text-anchor="middle" x="1146" y="-147.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetRasterTileData</text>
 </a>
@@ -335,7 +335,7 @@ var sectionId = 'dynsection-4';
 <!-- Node12 -->
 <g id="Node000012" class="node">
 <title>Node12</title>
-<g id="a_Node000012"><a xlink:href="classcarta_1_1Frame.html#ac8f2427b56e05243415f3e9448a4dfe5" target="_top" xlink:title=" ">
+<g id="a_Node000012"><a xlink:href="classcarta_1_1Frame.html#ac85b1453501c53e497a6a28dfa1eb4ec" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="1000,-172 870,-172 870,-142 1000,-142 1000,-172"/>
 <text text-anchor="start" x="878" y="-160" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::FillRaster</text>
 <text text-anchor="middle" x="935" y="-149" font-family="Helvetica,sans-Serif" font-size="10.00">TileData</text>

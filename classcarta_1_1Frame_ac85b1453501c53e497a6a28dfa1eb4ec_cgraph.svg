@@ -121,7 +121,7 @@ var sectionId = 'dynsection-29';
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="classcarta_1_1Frame.html#ab489d663a29fb9d2d6cdc6b09be9651d" target="_top" xlink:title=" ">
+<g id="a_Node000005"><a xlink:href="classcarta_1_1Frame.html#a99d23a98a6fb7dfa96b52347bc8828f7" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="340,-317 166,-317 166,-298 340,-298 340,-317"/>
 <text text-anchor="middle" x="253" y="-305" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetRasterTileData</text>
 </a>
@@ -211,7 +211,7 @@ var sectionId = 'dynsection-29';
 <!-- Node28 -->
 <g id="Node000028" class="node">
 <title>Node28</title>
-<g id="a_Node000028"><a xlink:href="structcarta_1_1Tile.html#a15de628805a25fcb844b57cfa540d43d" target="_top" xlink:title=" ">
+<g id="a_Node000028"><a xlink:href="structcarta_1_1Tile.html#a15de628805a25fcb844b57cfa540d43d" target="_top" xlink:title="Converts a layer index to the corresponding mipmap size.">
 <polygon fill="white" stroke="#666666" points="517.5,-336 390.5,-336 390.5,-317 517.5,-317 517.5,-336"/>
 <text text-anchor="middle" x="454" y="-324" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Tile::LayerToMip</text>
 </a>
@@ -639,7 +639,7 @@ var sectionId = 'dynsection-29';
 </g>
 <svg viewBox="0 0 15 15" width="100%" height="30px" preserveAspectRatio="xMaxYMin meet">
  <g id="arrow_out" transform="scale(0.3 0.3)">
-  <a xlink:href="classcarta_1_1Frame_ac8f2427b56e05243415f3e9448a4dfe5_cgraph_org.svg" target="_base">
+  <a xlink:href="classcarta_1_1Frame_ac85b1453501c53e497a6a28dfa1eb4ec_cgraph_org.svg" target="_base">
    <rect id="button" ry="5" rx="5" y="6" x="6" height="38" width="38"
         fill="#f2f5e9" fill-opacity="0.5" stroke="#606060" stroke-width="1.0"/>
    <path id="arrow"

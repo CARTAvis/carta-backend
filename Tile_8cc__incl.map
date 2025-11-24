@@ -1,5 +1,5 @@
 <map id="Tile.cc" name="Tile.cc">
-<area shape="rect" id="Node000001" title=" " alt="" coords="94,5,158,31"/>
+<area shape="rect" id="Node000001" title="Provides the Tile struct for encoding and decoding spatial tile coordinates and mipmap layer logic." alt="" coords="94,5,158,31"/>
 <area shape="rect" id="Node000002" href="$Tile_8h.html" title=" " alt="" coords="97,79,155,104"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="129,31,129,65,123,65,123,31"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="5,152,68,177"/>

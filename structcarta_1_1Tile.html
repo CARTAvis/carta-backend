@@ -102,6 +102,9 @@ $(document).ready(function(){initNavTree('structcarta_1_1Tile.html',''); initRes
 </div><!--header-->
 <div class="contents">
 
+<p>Represents a tile in a multi-resolution grid with spatial coordinates and a resolution layer.  
+ <a href="structcarta_1_1Tile.html#details">More...</a></p>
+
 <p><code>#include &lt;Tile.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for carta::Tile:</div>
@@ -112,13 +115,14 @@ Collaboration diagram for carta::Tile:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a6e484d323f893bd21187e1015458c2c5" id="r_a6e484d323f893bd21187e1015458c2c5"><td class="memItemLeft" align="right" valign="top">static int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1Tile.html#a6e484d323f893bd21187e1015458c2c5">Encode</a> (int32_t <a class="el" href="structcarta_1_1Tile.html#a67a4fbb6dc92843e5f1e93d708416060">x</a>, int32_t <a class="el" href="structcarta_1_1Tile.html#a4ca14ba26e5d38bfa01fac417cad11c2">y</a>, int32_t <a class="el" href="structcarta_1_1Tile.html#aaae57d2ac75fcdca52888277e6103d35">layer</a>)</td></tr>
+<tr class="memdesc:a6e484d323f893bd21187e1015458c2c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Encodes tile coordinates and layer into a 32-bit integer.  <br /></td></tr>
 <tr class="separator:a6e484d323f893bd21187e1015458c2c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3bb9a6a862540de876a281145ab80e92" id="r_a3bb9a6a862540de876a281145ab80e92"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structcarta_1_1Tile.html">Tile</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1Tile.html#a3bb9a6a862540de876a281145ab80e92">Decode</a> (int32_t encoded_value)</td></tr>
+<tr class="memdesc:a3bb9a6a862540de876a281145ab80e92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decodes a 32-bit integer into a <a class="el" href="structcarta_1_1Tile.html" title="Represents a tile in a multi-resolution grid with spatial coordinates and a resolution layer.">Tile</a> object.  <br /></td></tr>
 <tr class="separator:a3bb9a6a862540de876a281145ab80e92"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15de628805a25fcb844b57cfa540d43d" id="r_a15de628805a25fcb844b57cfa540d43d"><td class="memItemLeft" align="right" valign="top">static int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1Tile.html#a15de628805a25fcb844b57cfa540d43d">LayerToMip</a> (int32_t <a class="el" href="structcarta_1_1Tile.html#aaae57d2ac75fcdca52888277e6103d35">layer</a>, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height)</td></tr>
+<tr class="memdesc:a15de628805a25fcb844b57cfa540d43d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a layer index to the corresponding mipmap size.  <br /></td></tr>
 <tr class="separator:a15de628805a25fcb844b57cfa540d43d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b28a507483b4f7227d00799e3c475e2" id="r_a4b28a507483b4f7227d00799e3c475e2"><td class="memItemLeft" align="right" valign="top">static int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1Tile.html#a4b28a507483b4f7227d00799e3c475e2">MipToLayer</a> (int32_t mip, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height)</td></tr>
-<tr class="separator:a4b28a507483b4f7227d00799e3c475e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -129,7 +133,10 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:aaae57d2ac75fcdca52888277e6103d35" id="r_aaae57d2ac75fcdca52888277e6103d35"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1Tile.html#aaae57d2ac75fcdca52888277e6103d35">layer</a></td></tr>
 <tr class="separator:aaae57d2ac75fcdca52888277e6103d35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Represents a tile in a multi-resolution grid with spatial coordinates and a resolution layer. </p>
+<p>The <a class="el" href="structcarta_1_1Tile.html" title="Represents a tile in a multi-resolution grid with spatial coordinates and a resolution layer.">Tile</a> struct contains 2D spatial coordinates (x, y) and a resolution layer. It provides methods to encode/decode tile information into/from a 32-bit integer, and convert between resolution layers and mipmap levels. </p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a3bb9a6a862540de876a281145ab80e92" name="a3bb9a6a862540de876a281145ab80e92"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3bb9a6a862540de876a281145ab80e92">&#9670;&#160;</a></span>Decode()</h2>
 
@@ -153,6 +160,15 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Decodes a 32-bit integer into a <a class="el" href="structcarta_1_1Tile.html" title="Represents a tile in a multi-resolution grid with spatial coordinates and a resolution layer.">Tile</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">encoded_value</td><td>The encoded 32-bit integer. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A <a class="el" href="structcarta_1_1Tile.html" title="Represents a tile in a multi-resolution grid with spatial coordinates and a resolution layer.">Tile</a> object with decoded x, y, and layer values. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -200,6 +216,17 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Encodes tile coordinates and layer into a 32-bit integer. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>The X coordinate (must be greater than or equal to 0 and less than 2 to the power of the layer). </td></tr>
+    <tr><td class="paramname">y</td><td>The Y coordinate (must be greater than or equal to 0 and less than 2 to the power of the layer). </td></tr>
+    <tr><td class="paramname">layer</td><td>The layer index (must be between 0 and 12). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Encoded 32-bit integer value, or -1 if input is invalid. </dd></dl>
 
 </div>
 </div>
@@ -254,69 +281,23 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Converts a layer index to the corresponding mipmap size. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">layer</td><td>The layer index to convert. </td></tr>
+    <tr><td class="paramname">image_width</td><td>The width of the full-resolution image. </td></tr>
+    <tr><td class="paramname">image_height</td><td>The height of the full-resolution image. </td></tr>
+    <tr><td class="paramname">tile_width</td><td>The width of a tile in pixels. </td></tr>
+    <tr><td class="paramname">tile_height</td><td>The height of a tile in pixels. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The mip size corresponding to the given layer. </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structcarta_1_1Tile_a15de628805a25fcb844b57cfa540d43d_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
-</div>
-
-</div>
-</div>
-<a id="a4b28a507483b4f7227d00799e3c475e2" name="a4b28a507483b4f7227d00799e3c475e2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4b28a507483b4f7227d00799e3c475e2">&#9670;&#160;</a></span>MipToLayer()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int32_t carta::Tile::MipToLayer </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>mip</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>image_width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>image_height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>tile_width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>tile_height</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structcarta_1_1Tile_a4b28a507483b4f7227d00799e3c475e2_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -333,6 +314,7 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>The resolution layer of the tile. </p>
 
 </div>
 </div>
@@ -347,6 +329,7 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>The X coordinate of the tile. </p>
 
 </div>
 </div>
@@ -361,6 +344,7 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>The Y coordinate of the tile. </p>
 
 </div>
 </div>

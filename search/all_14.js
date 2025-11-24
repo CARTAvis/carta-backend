@@ -28,7 +28,7 @@ var searchData=
   ['threadmanager_25',['ThreadManager',['../classcarta_1_1ThreadManager.html',1,'carta']]],
   ['threadmanager_2ecc_26',['ThreadManager.cc',['../ThreadManager_8cc.html',1,'']]],
   ['threadmanager_2eh_27',['ThreadManager.h',['../ThreadManager_8h.html',1,'']]],
-  ['threshold_28',['threshold',['../classcarta_1_1VectorField.html#ad02102bc99e41d7aaf8a84ea2528ebd4',1,'carta::VectorField::Threshold()'],['../structcarta_1_1VectorField_1_1ThresholdCut.html#ae98cb8f44fef736cbc33b190ab32f11c',1,'carta::VectorField::ThresholdCut::threshold']]],
+  ['threshold_28',['threshold',['../structcarta_1_1VectorField_1_1ThresholdCut.html#ae98cb8f44fef736cbc33b190ab32f11c',1,'carta::VectorField::ThresholdCut::threshold'],['../classcarta_1_1VectorField.html#ad02102bc99e41d7aaf8a84ea2528ebd4',1,'carta::VectorField::Threshold() const']]],
   ['thresholdcut_29',['thresholdcut',['../structcarta_1_1VectorField_1_1ThresholdCut.html',1,'carta::VectorField::ThresholdCut'],['../structcarta_1_1VectorField_1_1ThresholdCut.html#a39ce83d99b4da4a5b3557aed9c48cb5f',1,'carta::VectorField::ThresholdCut::ThresholdCut()']]],
   ['thresholdoption_30',['ThresholdOption',['../classcarta_1_1VectorField.html#a2faca3cba146cb49617095274717ec70',1,'carta::VectorField']]],
   ['tile_31',['Tile',['../structcarta_1_1Tile.html',1,'carta']]],
@@ -70,5 +70,5 @@ var searchData=
   ['trimspaces_67',['TrimSpaces',['../namespacecarta.html#afc4c4afd1d282ad51a05d830059a55df',1,'carta']]],
   ['try_5fpop_68',['try_pop',['../classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d',1,'carta::concurrent_queue']]],
   ['trycast_69',['TryCast',['../classcarta_1_1DataColumn.html#a9ee54f3fb58e28a423fb84418a0c178d',1,'carta::DataColumn']]],
-  ['type_70',['type',['../classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001',1,'carta::Table::Type()'],['../structcarta_1_1EventHeader.html#aee18d56213e8780ddd554870aaae64ed',1,'carta::EventHeader::type'],['../structcarta_1_1RegionState.html#a012fe948493b80db2c45fc6477674346',1,'carta::RegionState::type']]]
+  ['type_70',['type',['../structcarta_1_1EventHeader.html#aee18d56213e8780ddd554870aaae64ed',1,'carta::EventHeader::type'],['../structcarta_1_1RegionState.html#a012fe948493b80db2c45fc6477674346',1,'carta::RegionState::type'],['../classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001',1,'carta::Table::Type()']]]
 ];

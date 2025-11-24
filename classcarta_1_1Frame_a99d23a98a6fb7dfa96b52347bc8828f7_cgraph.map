@@ -6,7 +6,7 @@
 <area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="163,384,333,332,334,337,165,389"/>
 <area shape="rect" id="Node000019" href="$classcarta_1_1Stokes.html#a8f76c245d9e9a6f0bde70c48fda636a6" title="Determines if a given polarization type is a computed polarization." alt="" coords="1584,424,1776,449"/>
 <area shape="poly" id="edge28_Node000001_Node000019" title=" " alt="" coords="184,409,389,443,517,456,647,462,1175,462,1386,456,1570,444,1570,449,1386,461,1175,467,647,467,517,462,388,448,184,415"/>
-<area shape="rect" id="Node000025" href="$structcarta_1_1Tile.html#a15de628805a25fcb844b57cfa540d43d" title=" " alt="" coords="305,503,474,528"/>
+<area shape="rect" id="Node000025" href="$structcarta_1_1Tile.html#a15de628805a25fcb844b57cfa540d43d" title="Converts a layer index to the corresponding mipmap size." alt="" coords="305,503,474,528"/>
 <area shape="poly" id="edge29_Node000001_Node000025" title=" " alt="" coords="146,410,208,444,286,481,329,496,327,501,284,486,206,449,143,415"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1TileCache.html#a33c4defad803515b8b2213511e097044" title="Calculate the key for the chunk that contains the given tile." alt="" coords="548,55,748,80"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="456,101,567,80,568,85,457,107"/>
