@@ -39,7 +39,7 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
     int tile_size_original = TILE_SIZE * _smoothing_factor;
     int num_tile_columns = ceil((double)dims.width / tile_size_original);
     int num_tile_rows = ceil((double)dims.height / tile_size_original);
-    int32_t tile_layer = Tile::MipToLayer(_smoothing_factor, dims.width, dims.height, TILE_SIZE, TILE_SIZE);
+    int32_t tile_layer = -1;
     tiles.resize(num_tile_rows * num_tile_columns);
     std::cout << "DEBUG : " << tiles.size() << " , " << num_tile_columns << " , " << num_tile_rows << std::endl;
 
