@@ -62,11 +62,10 @@ public:
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
-    casacore::IPosition GetShape();
+    casacore::IPosition GetShape(int stokes_index = 0);
     AxesInfo GetAxes();
     DimsInfo GetDims();
-    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem();
-    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(int stokes_index);
+    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(int stokes_index = 0);
     bool FindCoordinateAxes(std::string& message);
 
     // Slice image data (with mask applied)

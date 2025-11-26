@@ -177,8 +177,19 @@ bool FileLoader::IsComplexDataType() {
     return (_data_type == casacore::DataType::TpComplex) || (_data_type == casacore::DataType::TpDComplex);
 }
 
-casacore::IPosition FileLoader::GetShape() {
-    return _image_shape;
+casacore::IPosition FileLoader::GetShape(int stokes_index) {
+    if (!stokes_index) {
+        return _image_shape;
+    }
+
+    casacore::IPosition ipos;
+    auto image = GetStokesImage(stokes_index);
+    if (image) {
+        ipos = image->shape();
+    }
+
+    // TODO: we should fail if we get here. Does anything rely on this default behaviour?
+    return ipos;
 }
 
 AxesInfo FileLoader::GetAxes() {
@@ -189,11 +200,11 @@ DimsInfo FileLoader::GetDims() {
     return _dims;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem() {
-    return _coord_sys;
-}
-
 std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(int stokes_index) {
+    if (!stokes_index) {
+        return _coord_sys;
+    }
+
     CARTA::PolarizationType stokes_type;
 
     if (GetStokesType(stokes_index, stokes_type)) {
@@ -204,6 +215,7 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(int 
         }
     }
 
+    // TODO: we should fail if we get here. Does anything rely on this default behaviour?
     return std::make_shared<casacore::CoordinateSystem>();
 }
 

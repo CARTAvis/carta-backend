@@ -89,12 +89,10 @@ public:
     std::string GetFileName();
 
     // Returns shared ptr to CoordinateSystem
-    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem();
-    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem(int stokes_index);
+    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem(int stokes_index = 0);
 
     // Image/Frame info
-    casacore::IPosition ImageShape();
-    casacore::IPosition ImageShape(int stokes_index);
+    casacore::IPosition ImageShape(int stokes_index = 0);
     DimsInfo Dims();    // struct of all dimensions
     size_t Width();     // length of x axis
     size_t Height();    // length of y axis

@@ -128,25 +128,12 @@ std::string Frame::GetFileName() {
     return filename;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem() {
-    return _loader->GetCoordinateSystem(); // always the original image
-}
-
 std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(int stokes_index) {
     return _loader->GetCoordinateSystem(stokes_index);
 }
 
-casacore::IPosition Frame::ImageShape() {
-    return _image_shape; // always the original image
-}
-
 casacore::IPosition Frame::ImageShape(int stokes_index) {
-    casacore::IPosition ipos;
-    auto image = _loader->GetStokesImage(stokes_index);
-    if (image) {
-        ipos = image->shape();
-    }
-    return ipos;
+    return _loader->GetShape(stokes_index);
 }
 
 AxesInfo Frame::Axes() {
