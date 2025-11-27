@@ -28,16 +28,17 @@ public :
 };*/
 
 CARTA::SetVectorOverlayParameters get_parameters(int intensity=1, int angle=1 ) {    
-   CARTA::SetVectorOverlayParameters message;
-   
+   CARTA::SetVectorOverlayParameters message;   
    message.set_smoothing_factor(2);       
+   
    message.set_stokes_intensity(intensity);
    message.set_stokes_angle(angle);
-   
-   message.set_threshold(0);
-   message.set_threshold_option(CARTA::PolarizationType::I);
-   message.set_fractional(true);
-   
+
+   if( intensity > 0 ){   
+       message.set_threshold(0);
+       message.set_threshold_option(CARTA::PolarizationType::I);
+       message.set_fractional(true);
+   }   
    
    
    return message;   
@@ -71,8 +72,8 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
                                                                              {CARTA::PolarizationType::U, 3}, 
                                                                              {CARTA::PolarizationType::V, 4}
                                                                            }; 
-          
-    TestVectorField vectorfield( test_parameters, false );
+    bool has_stokes_axis = (test_parameters.stokes_angle() > 0);
+    TestVectorField vectorfield( test_parameters, has_stokes_axis );
     
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
     auto callback = [&test_parameters,&stokes_test_values_map](CARTA::VectorOverlayTileData& message){
