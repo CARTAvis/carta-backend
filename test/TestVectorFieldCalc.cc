@@ -11,11 +11,11 @@
 
 using namespace carta;
 
-std::unordered_map<CARTA::PolarizationType, int> stokes_test_values_map{ {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1}, 
-                                                                             {CARTA::PolarizationType::I, 1}, 
+std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{ {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, sqrt(2.0*2.0+3.0*3.0)},  // = sqrt(Q^2 + U^2)
+                                                                             {CARTA::PolarizationType::I, sqrt(2.0*2.0+3.0*3.0)},  // = sqrt(Q^2 + U^2)
                                                                              {CARTA::PolarizationType::Q, 2}, 
                                                                              {CARTA::PolarizationType::U, 3}, 
-                                                                             {CARTA::PolarizationType::V, 4}
+                                                                             {CARTA::PolarizationType::V, 0}
                                                                            }; 
 
 std::tuple<CARTA::SetVectorOverlayParameters,float,float> get_parameters(int intensity=1, int angle=1 ) {    
@@ -37,6 +37,15 @@ std::tuple<CARTA::SetVectorOverlayParameters,float,float> get_parameters(int int
 
    if( angle > 0 ){
       expected_angle     = calcpa( stokes_test_values_map[CARTA::PolarizationType::Q] , stokes_test_values_map[CARTA::PolarizationType::U]);
+   }
+   
+   if( intensity > 0 && angle > 0 ){
+      VectorFieldCalculator::CalcPi calcpi(0,0);
+      float pi = calcpi(  stokes_test_values_map[CARTA::PolarizationType::Q] , stokes_test_values_map[CARTA::PolarizationType::U] );
+   
+      VectorFieldCalculator::CalcFpi calcFpi;      
+      expected_intensity = calcFpi( stokes_test_values_map[CARTA::PolarizationType::I] , pi );
+      //printf("TEST : Expected fpi = %.4f from %.4f / %.4f * 100\n",expected_intensity,pi,stokes_test_values_map[CARTA::PolarizationType::I]);
    }
       
    return {message,expected_intensity,expected_angle};   
@@ -74,7 +83,6 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
           EXPECT_EQ( message.angle_tiles_size(), 1 );
 
           // check intensity tiles :
-          // float expected_intensity = stokes_test_values_map[CARTA::PolarizationType::I];
           const float* float_data = reinterpret_cast<const float*>(message.intensity_tiles(0).image_data().c_str()); // static_cast<const float*>(image_data.c_str());
           int float_size = message.angle_tiles(0).image_data().size()/4;
           
@@ -87,7 +95,6 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
           if( message.angle_tiles_size() > 0 ) {
 // why this is failing when comparing to expected_angle
               VectorFieldCalculator::CalcPa calcpa;
-              // float expected_angle = calcpa( stokes_test_values_map[CARTA::PolarizationType::Q] , stokes_test_values_map[CARTA::PolarizationType::U] );
               float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().c_str());
               float_size = message.angle_tiles(0).image_data().size()/4;
               for(int i=0;i<float_size;i++){
@@ -100,7 +107,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // lambda expression producing tile data (256x256) all set to 1 for Stokes I        
     auto getdata_callback = [&stokes_test_values_map](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
     {             
-       int value = stokes_test_values_map[stokes_type]; // seems that Stokes I is passed as Current 
+       float value = stokes_test_values_map[stokes_type]; // seems that Stokes I is passed as Current 
        std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
        
        data.assign(256*256,value); // generating Stokes I tile 256x256 all values = 1 
@@ -124,7 +131,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 INSTANTIATE_TEST_SUITE_P(
     StokesTests,
     VectorFieldCalcParamTest,
-    ::testing::Values(get_parameters(1,0),get_parameters(0,1)) // TODO : add also parameters to check Pi and Stokes I 
+    ::testing::Values(get_parameters(1,0),get_parameters(0,1),get_parameters(1,1)) // TODO : last test (1,1) still fails, check if these tests make any sense at all ...
 );
 
 

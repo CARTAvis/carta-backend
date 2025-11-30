@@ -123,10 +123,12 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
             if (_current_stokes_as_pi) {
                 FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type,
                     _compression_quality);
+                //printf("FillTileData : _current_stokes_as_pi : %.4f\n",stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][0]);
             }
             if (_current_stokes_as_pa) {
                 FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type,
                     _compression_quality);
+                //printf("FillTileData : _current_stokes_as_pa : %.4f\n",stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][0]);
             }
         }
 
@@ -137,9 +139,11 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
             CalcPi calc_pi(_q_error, _u_error);
             pi.resize(width * height);
             std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(), stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
+            //printf("std::transform calc pi : %.4f\n",pi[0]);
             if (_fractional) { // Calculate fractional PI
                 CalcFpi calc_fpi;
                 std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(), pi.begin(), calc_fpi);
+                //printf("std::transform calc fpi : %.4f\n",pi[0]);
             }
 
             // Set NAN for PI/FPI if stokes I or Plinear (pi) is NAN or below the threshold
@@ -152,6 +156,7 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
             if (_calculate_pi) {
                 FillTileData(
                     tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
+                //printf("FillTileData : _calculate_pi : %.4f\n",pi[0]);    
             }
         }
 
@@ -169,6 +174,7 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
             }
             FillTileData(
                 tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
+            //printf("FillTileData : _calculate_pa : %.4f\n",pa[0]);
         }
 
         // Send response message
@@ -201,6 +207,8 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
         } else {
             tile->set_image_data(array.data(), sizeof(float) * array.size());
         }
+        
+        std::cout << "Test value FillTiledata = " << array[0] << std::endl;
     }
 }
 
