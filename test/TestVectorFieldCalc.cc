@@ -11,42 +11,40 @@
 
 using namespace carta;
 
-/*enum class TestVectorFieldType {
-    TestStokesI,
-    TestStokesPi,
-    TestStokesPa
-};*/
+std::unordered_map<CARTA::PolarizationType, int> stokes_test_values_map{ {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1}, 
+                                                                             {CARTA::PolarizationType::I, 1}, 
+                                                                             {CARTA::PolarizationType::Q, 2}, 
+                                                                             {CARTA::PolarizationType::U, 3}, 
+                                                                             {CARTA::PolarizationType::V, 4}
+                                                                           }; 
 
-/*class SetVectorOverlayParametersTest : public CARTA::SetVectorOverlayParameters {
-public :
-    SetVectorOverlayParametersTest(int intensity=1, int angle=0) : CARTA::SetVectorOverlayParameters() {
-       set_smoothing_factor(2);
-       
-       set_stokes_intensity(intensity);
-       set_stokes_angle(angle);
-    }
-};*/
-
-CARTA::SetVectorOverlayParameters get_parameters(int intensity=1, int angle=1 ) {    
+std::tuple<CARTA::SetVectorOverlayParameters,float,float> get_parameters(int intensity=1, int angle=1 ) {    
    CARTA::SetVectorOverlayParameters message;   
    message.set_smoothing_factor(2);       
    
    message.set_stokes_intensity(intensity);
    message.set_stokes_angle(angle);
-
+   
+   VectorFieldCalculator::CalcPa calcpa;
+   float expected_intensity = stokes_test_values_map[CARTA::PolarizationType::I];
+   float expected_angle     = expected_intensity;
+   
    if( intensity > 0 ){   
        message.set_threshold(0);
        message.set_threshold_option(CARTA::PolarizationType::I);
        message.set_fractional(true);
-   }   
-   
-   
-   return message;   
+   }
+
+   if( angle > 0 ){
+      expected_angle     = calcpa( stokes_test_values_map[CARTA::PolarizationType::Q] , stokes_test_values_map[CARTA::PolarizationType::U]);
+   }
+      
+   return {message,expected_intensity,expected_angle};   
 }
 
 
 // Define the parameterized test fixture
-class VectorFieldCalcParamTest : public ::testing::TestWithParam<CARTA::SetVectorOverlayParameters> {
+class VectorFieldCalcParamTest : public ::testing::TestWithParam<std::tuple<CARTA::SetVectorOverlayParameters,float,float>> {
 public:
     VectorFieldCalcParamTest() {}
      
@@ -64,25 +62,19 @@ public:
 
 TEST_P(VectorFieldCalcParamTest, TestStokes) {
     double expected_value = 1.00;
-    CARTA::SetVectorOverlayParameters test_parameters = GetParam();
+    auto [test_parameters,expected_intensity,expected_angle] = GetParam();
     
-    std::unordered_map<CARTA::PolarizationType, int> stokes_test_values_map{ {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1}, 
-                                                                             {CARTA::PolarizationType::I, 1}, 
-                                                                             {CARTA::PolarizationType::Q, 2}, 
-                                                                             {CARTA::PolarizationType::U, 3}, 
-                                                                             {CARTA::PolarizationType::V, 4}
-                                                                           }; 
     bool has_stokes_axis = (test_parameters.stokes_angle() > 0);
     TestVectorField vectorfield( test_parameters, has_stokes_axis );
     
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
-    auto callback = [&test_parameters,&stokes_test_values_map](CARTA::VectorOverlayTileData& message){
+    auto callback = [&test_parameters,&expected_intensity,&expected_angle,&stokes_test_values_map](CARTA::VectorOverlayTileData& message){
           // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " << message.angle_tiles_size() << std::endl;          
           EXPECT_EQ( message.intensity_tiles_size(), 1 );
           EXPECT_EQ( message.angle_tiles_size(), 1 );
 
           // check intensity tiles :
-          float expected_intensity = stokes_test_values_map[CARTA::PolarizationType::I];
+          // float expected_intensity = stokes_test_values_map[CARTA::PolarizationType::I];
           const float* float_data = reinterpret_cast<const float*>(message.intensity_tiles(0).image_data().c_str()); // static_cast<const float*>(image_data.c_str());
           int float_size = message.angle_tiles(0).image_data().size()/4;
           
@@ -95,11 +87,11 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
           if( message.angle_tiles_size() > 0 ) {
 // why this is failing when comparing to expected_angle
               VectorFieldCalculator::CalcPa calcpa;
-              float expected_angle = calcpa( stokes_test_values_map[CARTA::PolarizationType::Q] , stokes_test_values_map[CARTA::PolarizationType::U] );
+              // float expected_angle = calcpa( stokes_test_values_map[CARTA::PolarizationType::Q] , stokes_test_values_map[CARTA::PolarizationType::U] );
               float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().c_str());
               float_size = message.angle_tiles(0).image_data().size()/4;
               for(int i=0;i<float_size;i++){
-                  EXPECT_NEAR( float_data[i] , expected_intensity, 1e-8f);
+                  EXPECT_NEAR( float_data[i] , expected_angle, 1e-8f);
               }
           }
        };
@@ -132,7 +124,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 INSTANTIATE_TEST_SUITE_P(
     StokesTests,
     VectorFieldCalcParamTest,
-    ::testing::Values(get_parameters(1,0)) // TODO : add also parameters to check Pi and Stokes I 
+    ::testing::Values(get_parameters(1,0),get_parameters(0,1)) // TODO : add also parameters to check Pi and Stokes I 
 );
 
 
