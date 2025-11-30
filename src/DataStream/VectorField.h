@@ -133,13 +133,14 @@ public:
     void StopCalculations();
     
 protected:
-    // flag indicating that the object is being destroyed 
+    // flag indicating that the object is being destroyed
     bool _stopped;
 
     // Vector field settings
     CARTA::SetVectorOverlayParameters _parameters;
-    std::mutex  _mutex;
-    std::vector<std::shared_ptr<VectorFieldCalculator>> _calculators; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
+    std::mutex _mutex;
+    std::vector<std::shared_ptr<VectorFieldCalculator>>
+        _calculators; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
 };
 
 

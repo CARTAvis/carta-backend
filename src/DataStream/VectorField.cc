@@ -252,12 +252,6 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     auto parameters = _parameters;
     
     if (parameters.stokes_intensity() < 0 && parameters.stokes_angle() < 0) {
-        /*auto empty_response =
-            Message::VectorOverlayTileData(parameters.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
-            parameters.stokes_intensity(), parameters.stokes_angle(), 
-            parameters.compression_type(), parameters.compression_quality());
-        empty_response.set_progress(1.0);
-        progress_callback(empty_response);*/
         std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
         return true;
     }

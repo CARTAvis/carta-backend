@@ -658,7 +658,7 @@ void Session::DeleteFrame(int file_id) {
             std::cout << "DEBUG : in Session::DeleteFrame - before WaitForTaskCancellation1" << std::endl;
             frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
             std::cout << "DEBUG : in Session::DeleteFrame - after WaitForTaskCancellation1" << std::endl;
-            frame.second.reset();                    // delete Frame
+            frame.second.reset(); // delete Frame
         }
         _frames.clear();
         _image_channel_mutexes.clear();
@@ -678,7 +678,7 @@ void Session::DeleteFrame(int file_id) {
     if (_channel_map_settings) {
         _channel_map_settings->RemoveFile(file_id);
     }
-    
+
     std::cout << "DEBUG : in Session::DeleteFrame - end of function" << std::endl;
 }
 
