@@ -2513,28 +2513,29 @@ void Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
     _vector_field.SetVectorOverlayParameters(parameter);
 }
 
-bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
+bool Frame::CalculateVectorField(
+    const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
     auto strong_this = shared_from_this();
     int current_stokes = _stokes_index;
     int z_index = _z_index;
 
-    auto tile_callback = [strong_this,&z_index,&current_stokes](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height)
-        {                     
-           int stokes_index = current_stokes;
-           if( stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE ){
-              std::string stokes_name = Stokes::Name( stokes_type );
-              if( !strong_this->GetStokesTypeIndex( stokes_name.c_str() , stokes_index ) ){
-                  return false;
-              }
-           }
-           return strong_this->GetDownsampledRasterData( data, width, height, z_index, stokes_index, bounds, smoothing_factor );            
-        };
+    auto tile_callback = [strong_this, &z_index, &current_stokes](std::vector<float>& data, CARTA::ImageBounds& bounds,
+                             int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height) {
+        int stokes_index = current_stokes;
+        if(stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE){
+            std::string stokes_name = Stokes::Name( stokes_type );
+            if(!strong_this->GetStokesTypeIndex(stokes_name.c_str(), stokes_index)){
+                return false;
+            }
+        }
+        return strong_this->GetDownsampledRasterData(data, width, height, z_index, stokes_index, bounds, smoothing_factor);
+    };
     
     // this callback wrapper is only here to set z_index which is unknown inside VectorField functions (we removed this parameter) 
     // so here is will be set to the local variable z_index 
-    auto message_callback = [&z_index,&callback](CARTA::VectorOverlayTileData& message) {
-       message.set_channel(z_index);
-       callback(message);
+    auto message_callback = [&z_index, &callback](CARTA::VectorOverlayTileData& message) {
+        message.set_channel(z_index);
+        callback(message);
     };
 
     bool has_stokes_axis(_axes.stokes > -1);

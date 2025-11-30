@@ -9,30 +9,27 @@
 
 namespace carta {
 
-VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis )
-    : _file_id( message.file_id() ), 
-      _smoothing_factor( message.smoothing_factor() ), 
-      _fractional( message.fractional() ), 
-      _threshold( message.threshold() ), 
-      _debiasing( message.debiasing() ), 
-      _q_error( message.debiasing() ? message.q_error() : 0 ),
-      _u_error( message.debiasing() ? message.u_error() : 0 ),
-      _stokes_intensity( message.stokes_intensity() ),
-      _stokes_angle( message.stokes_angle() ),
-      _compression_type( message.compression_type() ),
-      _compression_quality( message.compression_quality() ),
-      _threshold_option( message.threshold_option() ),
-      _calculate_pi( _stokes_intensity == 1 && has_stokes_axis ),
-      _calculate_pa( _stokes_angle == 1 && has_stokes_axis ),
-      _current_stokes_as_pi( (_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis ),
-      _current_stokes_as_pa( (_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis ),
-      _is_valid(true) {
-}
+VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis)
+    : _file_id(message.file_id()),
+      _smoothing_factor(message.smoothing_factor()),
+      _fractional(message.fractional()),
+      _threshold(message.threshold()),
+      _debiasing(message.debiasing()),
+      _q_error(message.debiasing() ? message.q_error() : 0),
+      _u_error(message.debiasing() ? message.u_error() : 0),
+      _stokes_intensity(message.stokes_intensity()),
+      _stokes_angle(message.stokes_angle()),
+      _compression_type(message.compression_type()),
+      _compression_quality(message.compression_quality()),
+      _threshold_option(message.threshold_option()),
+      _calculate_pi(_stokes_intensity == 1 && has_stokes_axis),
+      _calculate_pa(_stokes_angle == 1 && has_stokes_axis),
+      _current_stokes_as_pi((_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis),
+      _current_stokes_as_pa((_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis),
+      _is_valid(true) {}
 
-bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback,
-                                      DimsInfo& dims,
-                                      TileCallback tile_callback)
-{
+bool VectorFieldCalculator::Calculate(
+    const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, TileCallback tile_callback) {
     // TODO : Tiles initialisation - this will use some global TilePool object
     // Get tiles
     std::vector<Tile> tiles;
@@ -52,7 +49,8 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
     }
 
     // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
-    std::unordered_map<CARTA::PolarizationType, bool> stokes_flag{ {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, false}, {CARTA::PolarizationType::I, false}, {CARTA::PolarizationType::Q, false}, {CARTA::PolarizationType::U, false}};
+    std::unordered_map<CARTA::PolarizationType, bool> stokes_flag{{CARTA::PolarizationType::POLARIZATION_TYPE_NONE, false},
+        {CARTA::PolarizationType::I, false}, {CARTA::PolarizationType::Q, false}, {CARTA::PolarizationType::U, false}};
 
     // Set stokes flags and get their indices
     bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == CARTA::PolarizationType::I;
@@ -67,16 +65,16 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
     std::unordered_map<CARTA::PolarizationType, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
         std::cout << "DEBUG : processing tile " << i << " (" << this << ")" << std::endl;
-//        sleep(1);
+        // sleep(1);
 
-        if ( !_is_valid ) {
+        if (!_is_valid) {
             // stop invalidated calculations :
             std::cout << "DEBUG : VectorFieldCalculator::CalculateVectorField - cancelling ongoing calculation" << std::endl;
             break;
         } 
                 
         Tile& tile = tiles[i];
-        // removed GetImageBounds and moved its body below, dims.width/height are size_t so cast to int() was added below 
+        // removed GetImageBounds and moved its body below, dims.width/height are size_t so cast to int() was added below
         int tile_size_original = TILE_SIZE * _smoothing_factor;
         CARTA::ImageBounds bounds;
         bounds.set_x_min(std::min(std::max(0, tile.x * tile_size_original), int(dims.width)));
@@ -90,7 +88,8 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
 
         // Get current stokes data
         if (_current_stokes_as_pi || _current_stokes_as_pa) {
-            if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor, CARTA::PolarizationType::POLARIZATION_TYPE_NONE, width, height )) { // current_stokes_index,
+            if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor,
+                    CARTA::PolarizationType::POLARIZATION_TYPE_NONE, width, height)) { // current_stokes_index,
                 return false;
             }
         }
@@ -100,7 +99,7 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
             for (auto one : stokes_flag) {
                 CARTA::PolarizationType stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !tile_callback(stokes_data[stokes], bounds, _smoothing_factor, stokes, width, height ) ) { // stokes_indices[stokes].index
+                    !tile_callback(stokes_data[stokes], bounds, _smoothing_factor, stokes, width, height)) { // stokes_indices[stokes].index
                     return false;
                 }
             }
@@ -118,17 +117,18 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
         // Current stokes data as PI or PA
         if (_current_stokes_as_pi || _current_stokes_as_pa) {
             // Apply a threshold cut
-            std::for_each(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(), stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), threshold_cut);
+            std::for_each(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
+                stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), threshold_cut);
 
             if (_current_stokes_as_pi) {
-                FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type,
-                    _compression_quality);
-                //printf("FillTileData : _current_stokes_as_pi : %.4f\n",stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][0]);
+                FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,
+                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
+                // printf("FillTileData : _current_stokes_as_pi : %.4f\n",stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][0]);
             }
             if (_current_stokes_as_pa) {
-                FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type,
-                    _compression_quality);
-                //printf("FillTileData : _current_stokes_as_pa : %.4f\n",stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][0]);
+                FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,
+                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
+                // printf("FillTileData : _current_stokes_as_pa : %.4f\n",stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][0]);
             }
         }
 
@@ -138,17 +138,20 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
             // Lambda function to calculate PI, errors are applied
             CalcPi calc_pi(_q_error, _u_error);
             pi.resize(width * height);
-            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(), stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
-            //printf("std::transform calc pi : %.4f\n",pi[0]);
+            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
+                stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
+            // printf("std::transform calc pi : %.4f\n",pi[0]);
             if (_fractional) { // Calculate fractional PI
                 CalcFpi calc_fpi;
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(), pi.begin(), calc_fpi);
-                //printf("std::transform calc fpi : %.4f\n",pi[0]);
+                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(),
+                    pi.begin(), calc_fpi);
+                // printf("std::transform calc fpi : %.4f\n",pi[0]);
             }
 
             // Set NAN for PI/FPI if stokes I or Plinear (pi) is NAN or below the threshold
             if (stokes_flag[CARTA::PolarizationType::I] && _threshold_option == CARTA::PolarizationType::I) {
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(), pi.begin(), threshold_cut);
+                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(),
+                    pi.begin(), threshold_cut);
             } else {
                 std::for_each(pi.begin(), pi.end(), threshold_cut);
             }
@@ -156,7 +159,7 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
             if (_calculate_pi) {
                 FillTileData(
                     tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
-                //printf("FillTileData : _calculate_pi : %.4f\n",pi[0]);    
+                // printf("FillTileData : _calculate_pi : %.4f\n",pi[0]);
             }
         }
 
@@ -164,17 +167,19 @@ bool VectorFieldCalculator::Calculate(const std::function<void(CARTA::VectorOver
             std::vector<float> pa;
             pa.resize(width * height);
             CalcPa calc_pa;
-            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(), stokes_data[CARTA::PolarizationType::U].begin(), pa.begin(), calc_pa);
+            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
+                stokes_data[CARTA::PolarizationType::U].begin(), pa.begin(), calc_pa);
 
             // Set NAN for PA if stokes I or Plinear (pi) is NAN or below the threshold
             if (stokes_flag[CARTA::PolarizationType::I] && _threshold_option == CARTA::PolarizationType::I) {
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pa.begin(), pa.begin(), threshold_cut);
+                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pa.begin(),
+                    pa.begin(), threshold_cut);
             } else {
                 std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
             }
             FillTileData(
                 tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
-            //printf("FillTileData : _calculate_pa : %.4f\n",pa[0]);
+            // printf("FillTileData : _calculate_pa : %.4f\n",pa[0]);
         }
 
         // Send response message
@@ -212,42 +217,41 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
     }
 }
 
-VectorField::VectorField() : _stopped(false) {
-}
+VectorField::VectorField() : _stopped(false) {}
 
 void VectorField::StopCalculations() {
-   // stop flag set first so that new calculations are not started, then wait for mutex to invalidate all the on-going calculations
-   _stopped = true;
+    // stop flag set first so that new calculations are not started, then wait for mutex to invalidate all the on-going calculations
+    _stopped = true;
 
-   // lock the object and the list of calculators :
-   std::unique_lock lock_calculators(_mutex);
+    // lock the object and the list of calculators :
+    std::unique_lock lock_calculators(_mutex);
 
-   // Invalidate all on-going calculation to stop them :
-   for( auto calculator : _calculators ) {
-       calculator->Invalidate();
-   }
+    // Invalidate all on-going calculation to stop them :
+    for (auto calculator : _calculators) {
+        calculator->Invalidate();
+    }
 }
 
 void VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters) {
     std::cout << "DEBUG : VectorField::SetVectorOverlayParameters called" << std::endl;
     
-// FUTURE optimisations may required this check and function Equivalent to be back to avoid re-calculation with the same parameters
-//    but for now calculation happens everytime it is called 
-//    if( VectorFieldCalculator::Equivalent(message,_vector_field_request_message) ){
-        // requesting the same calculation as before -> no need for this
-//        return false;
-//    }
+    // FUTURE optimisations may required this check and function Equivalent to be back to avoid re-calculation with the same parameters
+    //    but for now calculation happens everytime it is called
+    //    if( VectorFieldCalculator::Equivalent(message,_vector_field_request_message) ){
+    // requesting the same calculation as before -> no need for this
+    //        return false;
+    //    }
     
     _parameters = parameters;
 }
 
-bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, 
-   bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/ ) {         
+bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims,
+    bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
 
-    // making local copy of the message in case it changes as the calculation goes on:    
+    // making local copy of the message in case it changes as the calculation goes on:
     auto parameters = _parameters;
     
-    if( parameters.stokes_intensity() < 0 && parameters.stokes_angle() < 0 ) {
+    if (parameters.stokes_intensity() < 0 && parameters.stokes_angle() < 0) {
         /*auto empty_response =
             Message::VectorOverlayTileData(parameters.file_id(), -1,  // z_index is set to -1 here, and later over-written in progress_callback callback-wrapper lambda-expression 
             parameters.stokes_intensity(), parameters.stokes_angle(), 
@@ -258,46 +262,46 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
         return true;
     }
 
-    if( !z_changed && stokes_changed && parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0 ) {
+    if (!z_changed && stokes_changed && parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0) {
         // TODO : review this part as I do not fully understand it yet ...
-        return true; 
+        return true;
     }
 
     // lock the mutex to invalidate all the calculators :
     std::unique_lock lock_calculators(_mutex);
 
     // this needs to be after this mutes so that if the mutex is locked first in StopCalculation we exit here
-    // or if mutex here is locked first we start new calculation, but it gets invalidated (stoped) when StopCalculation acquires the mutex    
-    if( _stopped ) {
-       return true;
+    // or if mutex here is locked first we start new calculation, but it gets invalidated (stoped) when StopCalculation acquires the mutex
+    if (_stopped) {
+        return true;
     }
 
     // Invalidate all on-going calculation to stop them (moved from VectorField::SetVectorOverlayParameters)
-    for( auto calculator : _calculators ) {
-       calculator->Invalidate();
+    for (auto calculator : _calculators) {
+        calculator->Invalidate();
     }
     
     // remvoing all objects from the container after they all got invalidated :
     _calculators.clear();
 
-    // create new calculator and add to the vector of on-going calculators :    
+    // create new calculator and add to the vector of on-going calculators :
     auto calculator = std::make_shared<VectorFieldCalculator>(parameters, has_stokes_axis);
     
-    // add the new calculator object to the container of ongoing calculations 
+    // add the new calculator object to the container of ongoing calculations
     _calculators.push_back(calculator);
     lock_calculators.unlock();
     std::cout << "DEBUG : object added " << std::endl;
 
     // start a new calculation of the vector field:
-    bool ret = calculator->Calculate(progress_callback, dims, tile_callback);;
+    bool ret = calculator->Calculate(progress_callback, dims, tile_callback);
     std::cout << "DEBUG : calculation completed" << std::endl;
 
-    // removing all calculators for now :    
-//    lock_calculators.lock();
+    // removing all calculators for now :
+    //    lock_calculators.lock();
     // TODO : how to nicely remove from container without using pointer comparisons ???
-//    _vector_fields.remove_if([&calculator](const std::shared_ptr<VectorFieldCalculator>& ptr){ return (ptr == calculator);});
-//    std::cout << "DEBUG : removed vector field object from the container" << std::endl;
-//    lock_calculators.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
+    //    _vector_fields.remove_if([&calculator](const std::shared_ptr<VectorFieldCalculator>& ptr){ return (ptr == calculator);});
+    //    std::cout << "DEBUG : removed vector field object from the container" << std::endl;
+    //    lock_calculators.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
 
     return ret;
 

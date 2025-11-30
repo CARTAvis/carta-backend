@@ -7,8 +7,8 @@
 #ifndef CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 #define CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 
-#include <shared_mutex>
 #include <memory>
+#include <shared_mutex>
 #include <list>
 
 #include <carta-protobuf/enums.pb.h>
@@ -22,7 +22,7 @@
 
 namespace carta {
 
-using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, CARTA::PolarizationType, int&, int& )>; // was & 
+using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, CARTA::PolarizationType, int&, int&)>; // was &
 
 class VectorFieldCalculator {
 public:
@@ -36,7 +36,7 @@ public:
     }
     
     void Invalidate() {
-       _is_valid = false;
+        _is_valid = false;
     }
     
     struct Valid {
@@ -122,24 +122,24 @@ protected:
 
 // This is a manger class managing VectorFieldCalculator objects creation, calculations and cancellations of ongoing calculations
 class VectorField {
-public :
+public:
     VectorField();
     
     void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters);
-    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis, 
-                        TileCallback tile_callback, bool stokes_changed=false, bool z_changed=false);
+    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis,
+        TileCallback tile_callback, bool stokes_changed = false, bool z_changed = false);
 
     // invalidate all VectorFieldCalculators in the list:
     void StopCalculations();
     
 protected:
-   // flag indicating that the object is being destroyed 
-   bool _stopped;
+    // flag indicating that the object is being destroyed 
+    bool _stopped;
 
-   // Vector field settings
-   CARTA::SetVectorOverlayParameters _parameters;
-   std::mutex  _mutex;
-   std::vector<std::shared_ptr<VectorFieldCalculator>> _calculators; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
+    // Vector field settings
+    CARTA::SetVectorOverlayParameters _parameters;
+    std::mutex  _mutex;
+    std::vector<std::shared_ptr<VectorFieldCalculator>> _calculators; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
 };
 
 

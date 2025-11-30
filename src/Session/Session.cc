@@ -664,7 +664,7 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
-       std::cout << "DEBUG : in Session::DeleteFrame - before WaitForTaskCancellation2" << std::endl;
+        std::cout << "DEBUG : in Session::DeleteFrame - before WaitForTaskCancellation2" << std::endl;
         _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
         std::cout << "DEBUG : in Session::DeleteFrame - after WaitForTaskCancellation2" << std::endl;
         _frames[file_id].reset();
@@ -2102,7 +2102,7 @@ void Session::RegionDataStreams(int file_id, int region_id) {
     }
 }
 
-bool Session::SendVectorFieldData(int file_id, bool stokes_changed/*=false*/, bool z_changed/*=false*/) {
+bool Session::SendVectorFieldData(int file_id, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
     if (_frames.count(file_id) && _frames.at(file_id)->IsValid()) {
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& partial_response) {
