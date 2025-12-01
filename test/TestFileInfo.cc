@@ -246,8 +246,8 @@ TEST_F(FileExtInfoLoaderTest, FitsHistoryEntries) {
     CARTA::FileInfoExtended extended_info;
     CARTA::FileInfo file_info;
     bool support_aips_beam(false);
-    bool success = t_session.FillExtendedFileInfo(extended_info, file_info, FitsImages(), "noise_10px_10px.fits",
-        hdu, support_aips_beam, message, full_name);
+    bool success = t_session.FillExtendedFileInfo(
+        extended_info, file_info, FitsImages(), "noise_10px_10px.fits", hdu, support_aips_beam, message, full_name);
     EXPECT_EQ(success, true);
 
     int num_history_entries = 0;

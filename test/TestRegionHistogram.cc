@@ -62,7 +62,8 @@ public:
 };
 
 TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
-    std::string image_path = FitsImages() / "noise_3d.fits";;
+    std::string image_path = FitsImages() / "noise_3d.fits";
+    ;
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogram(image_path, endpoints, histogram_data);
@@ -86,7 +87,8 @@ TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestFitsAnnotationRegionHistogram) {
-    std::string image_path = FitsImages() / "noise_3d.fits";;
+    std::string image_path = FitsImages() / "noise_3d.fits";
+    ;
     std::vector<float> endpoints = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogram(image_path, endpoints, histogram_data, true);
