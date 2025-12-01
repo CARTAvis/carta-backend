@@ -19,8 +19,8 @@ class Hdf5AttributesTest : public ::testing::Test {};
 TEST_F(Hdf5AttributesTest, TestAttributes) {
     auto padded = [](std::string s) { return fmt::format("{:<80}", s); };
 
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_header.hdf5");
-    Hdf5DataReader reader(path_string);
+    auto path = Hdf5Images() / "10_10_header.hdf5";
+    Hdf5DataReader reader(path);
 
     casacore::Vector<casacore::String> attributes;
     Hdf5Attributes::ReadAttributes(reader.GroupId(), attributes);

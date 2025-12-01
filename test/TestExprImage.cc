@@ -18,9 +18,9 @@ public:
     void GenerateImageExprTimesTwo(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type, bool invalid = false) {
         std::string file_path;
         if (file_type == CARTA::FileType::FITS) {
-            file_path = FileFinder::FitsImagePath(file_name);
+            file_path = FitsImages() / file_name;
         } else if (file_type == CARTA::FileType::HDF5) {
-            file_path = FileFinder::Hdf5ImagePath(file_name);
+            file_path = Hdf5Images() / file_name;
         }
 
         // Image on disk
@@ -85,9 +85,9 @@ public:
     void SaveImageExpr(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type) {
         std::string file_path;
         if (file_type == CARTA::FileType::FITS) {
-            file_path = FileFinder::FitsImagePath(file_name);
+            file_path = FitsImages() / file_name;
         } else if (file_type == CARTA::FileType::HDF5) {
-            file_path = FileFinder::Hdf5ImagePath(file_name);
+            file_path = Hdf5Images() / file_name;
         }
 
         // Use LEL expr to multiply image by 2
@@ -134,15 +134,13 @@ TEST_F(ImageExprTest, ImageExprFails) {
 
 TEST_F(ImageExprTest, ImageExprTwoDirs) {
     // Add images in different directories
-    auto image_path = TestRoot() / "data/images/fits";
-    std::string directory = image_path.string();
     std::string expr = "noise_10px_10px.fits + '../casa/noise_10px_10px.im'";
 
-    std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
+    std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, FitsImages()));
     expr_loader->OpenFile("");
     casacore::IPosition expr_shape(expr_loader->GetShape());
 
-    auto fits_path = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    auto fits_path = FitsImages() / "noise_10px_10px.fits";
     std::shared_ptr<carta::FileLoader> fits_loader(carta::FileLoader::GetLoader(fits_path));
     fits_loader->OpenFile("");
     casacore::IPosition fits_shape(fits_loader->GetShape());

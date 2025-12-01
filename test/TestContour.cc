@@ -16,9 +16,9 @@ public:
     void GenerateContour(std::string filename, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {
         std::string file_path;
         if (file_type == CARTA::FileType::HDF5) {
-            file_path = (TestRoot() / "data" / "images" / "hdf5" / filename);
+            file_path = (Hdf5Images() / filename);
         } else {
-            file_path = (TestRoot() / "data" / "images" / "fits" / filename);
+            file_path = (FitsImages() / filename);
         }
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));

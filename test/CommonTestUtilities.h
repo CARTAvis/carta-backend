@@ -23,15 +23,12 @@ namespace fs = std::filesystem;
 
 fs::path TestRoot();
 fs::path UserDirectory();
-
-class FileFinder {
-public:
-    static std::string FitsImagePath(const std::string& filename);
-    static std::string CasaImagePath(const std::string& filename);
-    static std::string Hdf5ImagePath(const std::string& filename);
-    static std::string FitsTablePath(const std::string& filename);
-    static std::string XmlTablePath(const std::string& filename);
-};
+fs::path ImagesPath();
+fs::path SettingsPath();
+fs::path FitsImages();
+fs::path CasaImages();
+fs::path Hdf5Images();
+fs::path MixImages();
 
 class DataReader {
 public:

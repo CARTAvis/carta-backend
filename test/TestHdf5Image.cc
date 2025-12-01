@@ -25,8 +25,8 @@ public:
 class Hdf5ImageTest : public ::testing::Test {};
 
 TEST_F(Hdf5ImageTest, BasicLoadingTest) {
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10_10_row_column.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     EXPECT_NE(loader.get(), nullptr);
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_NE(frame.get(), nullptr);
@@ -34,17 +34,17 @@ TEST_F(Hdf5ImageTest, BasicLoadingTest) {
 }
 
 TEST_F(Hdf5ImageTest, ExampleFriendTest) {
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5");
+    auto path = Hdf5Images() / "10_10_row_column.hdf5";
     // TestFrame used instead of Frame if access to protected values is required
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
     EXPECT_TRUE(frame->_open_image_error.empty());
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_row_column.hdf5");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10_10_row_column.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -57,8 +57,8 @@ TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_10_row_column.hdf5");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10_10_10_row_column.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -73,8 +73,8 @@ TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_10_1_row_column.hdf5");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10_10_10_1_row_column.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -89,8 +89,8 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_1_10_row_column.hdf5");
-    loader.reset(carta::FileLoader::GetLoader(path_string));
+    path = Hdf5Images() / "10_10_1_10_row_column.hdf5";
+    loader.reset(carta::FileLoader::GetLoader(path));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -106,8 +106,8 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
-    auto path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_5_2_row_column.hdf5");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10_10_5_2_row_column.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -122,8 +122,8 @@ TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path_string = (TestRoot() / "data" / "images" / "hdf5" / "10_10_2_5_row_column.hdf5");
-    loader.reset(carta::FileLoader::GetLoader(path_string));
+    path = Hdf5Images() / "10_10_2_5_row_column.hdf5";
+    loader.reset(carta::FileLoader::GetLoader(path));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 

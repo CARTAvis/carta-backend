@@ -166,25 +166,25 @@ TEST_F(BlockSmoothingTest, TestControl) {
     }
 }
 
-// TEST_F(BlockSmoothingTest, TestSSEAccuracy) {
-//     for (auto nan_fraction : nan_fractions) {
-//         for (auto i = 0; i < NUM_ITERS; i++) {
-//             auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
-//             for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
-//                 auto smoothed_scalar = DownsampleTileScalar(m1, j);
-//                 auto smoothed_sse = DownsampleTileSSE(m1, j);
-//                 Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
-//                 auto sum_error = nansum(abs_diff);
-//                 auto max_error = nanmax(abs_diff);
-//                 EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
-//                 if (std::isfinite(sum_error)) {
-//                     EXPECT_LE(sum_error, MAX_SUM_ERROR);
-//                     EXPECT_LE(max_error, MAX_ABS_ERROR);
-//                 }
-//             }
-//         }
-//     }
-// }
+TEST_F(BlockSmoothingTest, TestSSEAccuracy) {
+    for (auto nan_fraction : nan_fractions) {
+        for (auto i = 0; i < NUM_ITERS; i++) {
+            auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
+            for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
+                auto smoothed_scalar = DownsampleTileScalar(m1, j);
+                auto smoothed_sse = DownsampleTileSSE(m1, j);
+                Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
+                auto sum_error = nansum(abs_diff);
+                auto max_error = nanmax(abs_diff);
+                EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
+                if (std::isfinite(sum_error)) {
+                    EXPECT_LE(sum_error, MAX_SUM_ERROR);
+                    EXPECT_LE(max_error, MAX_ABS_ERROR);
+                }
+            }
+        }
+    }
+}
 
 #ifdef COMPILE_PERFORMANCE_TESTS
 TEST_F(BlockSmoothingTest, TestSSEPerformance) {

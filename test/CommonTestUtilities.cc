@@ -31,24 +31,28 @@ fs::path UserDirectory() {
     return fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
 }
 
-std::string FileFinder::FitsImagePath(const std::string& filename) {
-    return (TestRoot() / "data" / "images" / "fits" / filename).string();
+fs::path ImagesPath() {
+    return TestRoot() / "data" / "images";
 }
 
-std::string FileFinder::CasaImagePath(const std::string& filename) {
-    return (TestRoot() / "data" / "images" / "casa" / filename).string();
+fs::path SettingsPath() {
+    return TestRoot() / "data" / "settings";
 }
 
-std::string FileFinder::Hdf5ImagePath(const std::string& filename) {
-    return (TestRoot() / "data" / "images" / "hdf5" / filename).string();
+fs::path FitsImages() {
+    return TestRoot() / "data" / "images" / "fits";
 }
 
-std::string FileFinder::FitsTablePath(const std::string& filename) {
-    return (TestRoot() / "data" / "tables" / "fits" / filename).string();
+fs::path CasaImages() {
+    return TestRoot() / "data" / "images" / "casa";
 }
 
-std::string FileFinder::XmlTablePath(const std::string& filename) {
-    return (TestRoot() / "data" / "tables" / "xml" / filename).string();
+fs::path Hdf5Images() {
+    return TestRoot() / "data" / "images" / "hdf5";
+}
+
+fs::path MixImages() {
+    return TestRoot() / "data" / "images" / "mix";
 }
 
 float DataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {

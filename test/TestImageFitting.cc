@@ -84,8 +84,8 @@ public:
     }
 
     void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
-        auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        auto path = FitsImages() / "128_128_gaussian_model_one_component.fits";
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
         // TODO: avoid using higher level function region_handler.FitImage
@@ -193,21 +193,21 @@ private:
 };
 
 TEST_F(ImageFittingTest, OneComponentFitting) {
-    auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
+    auto path = FitsImages() / "128_128_gaussian_model_one_component.fits";
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params(6, false);
     fixed_params.push_back(true);
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
-    FitImage(file_path);
+    FitImage(path);
 
     std::vector<float> bad_inital = {1, 64, 64, 20, 0, 0, 135};
     SetInitialValues(bad_inital);
-    FitImage(file_path, "fit did not converge");
+    FitImage(path, "fit did not converge");
 }
 
 TEST_F(ImageFittingTest, ThreeComponentFitting) {
-    auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_three_components.fits");
+    auto file_path = FitsImages() / "128_128_gaussian_model_three_components.fits";
     std::vector<float> gaussian_model = {3, 64, 64, 20, 20, 10, 210, 32, 32, 20, 20, 10, 210, 96, 96, 20, 20, 10, 210};
     std::vector<bool> fixed_params(18, false);
     fixed_params.push_back(true);
@@ -221,7 +221,7 @@ TEST_F(ImageFittingTest, ThreeComponentFitting) {
 }
 
 TEST_F(ImageFittingTest, CenterFixedFitting) {
-    auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
+    auto file_path = FitsImages() / "128_128_gaussian_model_one_component.fits";
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params = {true, true, false, false, false, false, true};
     SetInitialValues(gaussian_model);
@@ -230,12 +230,12 @@ TEST_F(ImageFittingTest, CenterFixedFitting) {
 }
 
 TEST_F(ImageFittingTest, BackgroundUnfixedFitting) {
-    auto file_path = (TestRoot() / "data" / "images" / "fits" / "128_128_gaussian_model_one_component.fits");
+    auto path = FitsImages() / "128_128_gaussian_model_one_component.fits";
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params = {false, false, false, false, false, false, false};
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
-    FitImage(file_path);
+    FitImage(path);
 }
 
 TEST_F(ImageFittingTest, FittingWithFov) {

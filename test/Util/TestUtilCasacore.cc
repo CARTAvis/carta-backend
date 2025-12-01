@@ -143,7 +143,7 @@ TEST(UtilTest, CheckGildasUnit) {
 }
 
 TEST(UtilTest, FolderImageType) {
-    auto pwd = TestRoot() / "data/images";
+    auto pwd = ImagesPath();
     std::string message;
     // Image files are unknown folder image types
     EXPECT_EQ(FolderImageType((pwd / "mix/M17_SWex_unit.fits").string(), message), CARTA::FileType::UNKNOWN);

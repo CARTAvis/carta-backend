@@ -117,20 +117,18 @@ public:
 };
 
 TEST_F(FileListTest, SetTopLevelFolder) {
-    std::string abs_path = (TestRoot() / "data" / "images" / "mix").string();
-
-    auto request1 = Message::FileListRequest(abs_path);
+    auto request1 = Message::FileListRequest(MixImages());
     TestFileList("/", "", request1);
     TestFileList("", "", request1, false);
 
     auto request2 = Message::FileListRequest("data/images/mix");
-    TestFileList(TestRoot().string(), "", request2);
+    TestFileList(TestRoot(), "", request2);
 
     auto request3 = Message::FileListRequest("");
-    TestFileList(abs_path, "", request3);
+    TestFileList(MixImages(), "", request3);
 
     auto request4 = Message::FileListRequest(".");
-    TestFileList(abs_path, "", request4);
+    TestFileList(MixImages(), "", request4);
 
     // Request file list for default top folder "/"
     // 0 image files, > 0 subdirectories
@@ -142,25 +140,25 @@ TEST_F(FileListTest, SetStartingFolder) {
     std::string abs_path = (TestRoot() / "data" / "images" / "mix").string();
 
     auto request1 = Message::FileListRequest("$BASE/data/images/mix");
-    TestFileList("/", TestRoot().string(), request1);
+    TestFileList("/", TestRoot(), request1);
 
     auto request2 = Message::FileListRequest("$BASE");
-    TestFileList(TestRoot().string(), "data/images/mix", request2);
-    TestFileList("/", abs_path, request2);
-    TestFileList("", abs_path, request2, false);
+    TestFileList(TestRoot(), "data/images/mix", request2);
+    TestFileList("/", MixImages(), request2);
+    TestFileList("", MixImages(), request2, false);
 }
 
 TEST_F(FileListTest, AccessFalseFolder) {
     auto request = Message::FileListRequest("$BASE/folder_not_existed");
-    TestFileList(TestRoot().string(), "data/images/mix", request, false);
+    TestFileList(TestRoot(), "data/images/mix", request, false);
 }
 
 TEST_F(FileListTest, AccessForbiddenFolder) {
     auto request1 = Message::FileListRequest("..");
-    TestFileList(TestRoot().string(), "", request1, false);
+    TestFileList(TestRoot(), "", request1, false);
 
     auto request2 = Message::FileListRequest("../../..");
-    TestFileList(TestRoot().string(), "", request2, false);
+    TestFileList(TestRoot(), "", request2, false);
 }
 
 TEST_F(FileListTest, TestFilterModes) {
@@ -175,23 +173,23 @@ TEST_F(FileListTest, TestFilterModes) {
     // Filter mode Content
     // Empty dirs are dirs, ignores empty files and txt file.
     auto request1 = Message::FileListRequest("data/images/mix");
-    auto response = RequestFileList(TestRoot().string(), "", request1);
+    auto response = RequestFileList(TestRoot(), "", request1);
     TestFileListResponse(response, 4, 5);
 
     // Filter mode Extension
     // Empty fits/hdf5 files are images, empty dirs are dirs, ignores other empty files and txt.
     auto request2 = Message::FileListRequest("data/images/mix", CARTA::FileListFilterMode::Extension);
-    response = RequestFileList(TestRoot().string(), "", request2);
+    response = RequestFileList(TestRoot(), "", request2);
     TestFileListResponse(response, 6, 5);
 
     // Filter mode AllFiles
     // All are files or dirs
     auto request3 = Message::FileListRequest("data/images/mix", CARTA::FileListFilterMode::AllFiles);
-    response = RequestFileList(TestRoot().string(), "", request3);
+    response = RequestFileList(TestRoot(), "", request3);
     TestFileListResponse(response, 7, 7, false);
 
     // Filter mode AllFiles with image as directory should have one FileInfo for the image
     auto request4 = Message::FileListRequest("data/images/mix/M17_SWex_unit.image", CARTA::FileListFilterMode::AllFiles);
-    response = RequestFileList(TestRoot().string(), "", request4);
+    response = RequestFileList(TestRoot(), "", request4);
     TestFileListResponse(response, 1, 0);
 }

@@ -16,7 +16,7 @@
 
 using namespace carta;
 
-class MomentTest : public ::testing::Test, public FileFinder {
+class MomentTest : public ::testing::Test {
 public:
     static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, std::vector<float>& data) {
         // Get spectral and stokes indices
@@ -128,7 +128,7 @@ public:
 };
 
 TEST_F(MomentTest, CheckConsistency) {
-    std::string file_path = FitsImagePath("M17_SWex_unittest.fits");
+    std::string file_path = FitsImages() / "M17_SWex_unittest.fits";
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 
@@ -140,7 +140,7 @@ TEST_F(MomentTest, CheckConsistency) {
 }
 
 TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
-    std::string file_path = FitsImagePath("small_perplanebeam.fits");
+    std::string file_path = FitsImages() / "small_perplanebeam.fits";
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 
