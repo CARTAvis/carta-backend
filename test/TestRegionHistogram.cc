@@ -124,7 +124,7 @@ TEST_F(RegionHistogramTest, TestFitsAnnotationRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestStokesRegionHistogram) {
-    std::string image_path = FileFinder::FitsImagePath("noise_4d.fits"); // Stokes I and Q
+    std::string image_path = FitsImages() / "noise_4d.fits"; // Stokes I and Q
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     std::vector<std::string> coordinates{"z", "Iz", "Qz", "Uz", "Plinearz", "PFlinearz", "Panglez"};
     std::unordered_map<std::string, int> expected_stokes{{"z", 0}, {"Iz", 0}, {"Qz", 1}};
@@ -152,8 +152,8 @@ TEST_F(RegionHistogramTest, TestStokesRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestMatchedRegionHistogram) {
-    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
-    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    std::string image_path0 = FitsImages() / "noise_10px_10px.fits";
+    std::string image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogramMatched(image_path0, image_path1, endpoints, histogram_data);
