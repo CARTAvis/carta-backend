@@ -1280,6 +1280,11 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             if (image.contour_settings().levels_size()) {
                 OnSetContourParameters(image.contour_settings(), true);
             }
+
+            // Set vector overlay
+            if (image.vector_overlay_settings().file_id()) {
+                OnSetVectorOverlayParameters(image.vector_overlay_settings(), true);
+            }
         }
     }
 
@@ -1589,8 +1594,8 @@ void Session::OnStopFitting(const CARTA::StopFitting& stop_fitting) {
     }
 }
 
-void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    if (_frames.count(message.file_id()) && _frames.at(message.file_id())->SetVectorOverlayParameters(message)) {
+void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message, bool silent) {
+    if (_frames.count(message.file_id()) && _frames.at(message.file_id())->SetVectorOverlayParameters(message) && !silent) {
         SendVectorFieldData(message.file_id());
     }
 }
