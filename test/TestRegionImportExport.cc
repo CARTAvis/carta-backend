@@ -133,6 +133,43 @@ public:
         }
         return one_string;
     }
+
+    static RegionState GetRegionState(int file_id, CARTA::RegionInfo& region_info) {
+        auto region_type = region_info.region_type();
+        std::vector<CARTA::Point> control_points = {region_info.control_points().begin(), region_info.control_points().end()};
+        auto rotation = region_info.rotation();
+        return RegionState(file_id, region_type, control_points, rotation);
+    }
+
+    static bool RegionsEqual(const RegionState& rs0, const RegionState& rs1, CARTA::FileType region_file_type = CARTA::CRTF) {
+        if (rs0.reference_file_id != rs1.reference_file_id) {
+            return false;
+        }
+        if (rs0.type != rs1.type) {
+            return false;
+        }
+        if (rs0.control_points.size() != rs1.control_points.size()) {
+            return false;
+        }
+        if (std::fabs(rs0.rotation - rs1.rotation) > 1e-5) {
+            return false;
+        }
+
+        for (size_t i = 0; i < rs0.control_points.size(); ++i) {
+            float tolerance(1e-5);
+            if (region_file_type == CARTA::DS9_REG && rs0.type == CARTA::ANNVECTOR && i == 1) {
+                // DS9 vector control point is endpoint converted to length (export) converted to endpoint (import)
+                tolerance = 1e-2;
+            }
+            if (std::fabs(rs0.control_points[i].x() - rs1.control_points[i].x()) > tolerance) {
+                return false;
+            }
+            if (std::fabs(rs0.control_points[i].y() - rs1.control_points[i].y()) > tolerance) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 TEST_F(RegionImportExportTest, TestCrtfPixExportImport) {
@@ -175,8 +212,15 @@ TEST_F(RegionImportExportTest, TestCrtfPixExportImport) {
     bool file_is_filename(false);
     CARTA::ImportRegionAck import_ack0;
     region_handler.ImportRegion(file_id, frame0, CARTA::CRTF, contents_string, file_is_filename, import_ack0);
-    // Check that all regions were imported
+    // Check that all regions were imported correctly and equal original regions
     ASSERT_EQ(import_ack0.regions_size(), num_regions);
+    std::map<int, CARTA::RegionInfo> imported_regions = {import_ack0.regions().begin(), import_ack0.regions().end()};
+    for (auto imported_region : imported_regions) {
+        auto imported_region_id = imported_region.first;
+        auto imported_region_state = GetRegionState(file_id, imported_region.second);
+        auto original_region_state = region_handler.GetRegion(imported_region_id - num_regions)->GetRegionState();
+        ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state));
+    }
 
     // Export all regions in frame1 (matched image)
     file_id = 1;
@@ -232,8 +276,15 @@ TEST_F(RegionImportExportTest, TestCrtfWorldExportImport) {
     bool file_is_filename(false);
     CARTA::ImportRegionAck import_ack0;
     region_handler.ImportRegion(file_id, frame0, CARTA::CRTF, contents_string, file_is_filename, import_ack0);
-    // Check that all regions were imported
+    // Check that all regions were imported correctly and equal original regions
     ASSERT_EQ(import_ack0.regions_size(), num_regions);
+    std::map<int, CARTA::RegionInfo> imported_regions = {import_ack0.regions().begin(), import_ack0.regions().end()};
+    for (auto imported_region : imported_regions) {
+        auto imported_region_id = imported_region.first;
+        auto imported_region_state = GetRegionState(file_id, imported_region.second);
+        auto original_region_state = region_handler.GetRegion(imported_region_id - num_regions)->GetRegionState();
+        ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state));
+    }
 
     // Export all regions in frame1 (matched image)
     file_id = 1;
@@ -289,8 +340,15 @@ TEST_F(RegionImportExportTest, TestDs9PixExportImport) {
     bool file_is_filename(false);
     CARTA::ImportRegionAck import_ack0;
     region_handler.ImportRegion(file_id, frame0, CARTA::DS9_REG, contents_string, file_is_filename, import_ack0);
-    // Check that all regions were imported
+    // Check that all regions were imported correctly and equal original regions
     ASSERT_EQ(import_ack0.regions_size(), num_regions);
+    std::map<int, CARTA::RegionInfo> imported_regions = {import_ack0.regions().begin(), import_ack0.regions().end()};
+    for (auto imported_region : imported_regions) {
+        auto imported_region_id = imported_region.first;
+        auto imported_region_state = GetRegionState(file_id, imported_region.second);
+        auto original_region_state = region_handler.GetRegion(imported_region_id - num_regions)->GetRegionState();
+        ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state, CARTA::DS9_REG));
+    }
 
     // Export all regions in frame1 (matched image)
     file_id = 1;
@@ -346,8 +404,15 @@ TEST_F(RegionImportExportTest, TestDs9WorldExportImport) {
     bool file_is_filename(false);
     CARTA::ImportRegionAck import_ack0;
     region_handler.ImportRegion(file_id, frame0, CARTA::DS9_REG, contents_string, file_is_filename, import_ack0);
-    // Check that all regions were imported
+    // Check that all regions were imported correctly and equal original regions
     ASSERT_EQ(import_ack0.regions_size(), num_regions);
+    std::map<int, CARTA::RegionInfo> imported_regions = {import_ack0.regions().begin(), import_ack0.regions().end()};
+    for (auto imported_region : imported_regions) {
+        auto imported_region_id = imported_region.first;
+        auto imported_region_state = GetRegionState(file_id, imported_region.second);
+        auto original_region_state = region_handler.GetRegion(imported_region_id - num_regions)->GetRegionState();
+        ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state, CARTA::DS9_REG));
+    }
 
     // Export all regions in frame1 (matched image)
     file_id = 1;
