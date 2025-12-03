@@ -74,8 +74,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     TestVectorField vectorfield(test_parameters, has_stokes_axis);
 
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
-    auto callback = [&test_parameters, &expected_intensity, &expected_angle](
-                        CARTA::VectorOverlayTileData& message) {
+    auto callback = [&test_parameters, &expected_intensity, &expected_angle](CARTA::VectorOverlayTileData& message) {
         // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " <<
         // message.angle_tiles_size() << std::endl;
         EXPECT_EQ(message.intensity_tiles_size(), 1);
