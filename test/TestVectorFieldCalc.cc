@@ -74,7 +74,6 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // tie used instead of structured binding due to compilation errors on MacOS (older version of C++ compiler)
     std::tie(test_parameters, expected_intensity, expected_angle) = GetParam();
     // auto [test_parameters, expected_intensity, expected_angle] = GetParam();
-    
 
     bool has_stokes_axis = (test_parameters.stokes_angle() > 0);
     TestVectorField vectorfield(test_parameters, has_stokes_axis);
