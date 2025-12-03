@@ -69,8 +69,12 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // the reason to have local variable is to not capture global variables in lambda expressions (only local variables)
     // as this does not compile on MacOS (fails CI/CD on github)
     std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
-    double expected_value = 1.00;
-    auto [test_parameters, expected_intensity, expected_angle] = GetParam();
+    CARTA::SetVectorOverlayParameters test_parameters;
+    float expected_intensity, expected_angle;
+    // tie used instead of structured binding due to compilation errors on MacOS (older version of C++ compiler)
+    std::tie(test_parameters, expected_intensity, expected_angle) = GetParam();
+    // auto [test_parameters, expected_intensity, expected_angle] = GetParam();
+    
 
     bool has_stokes_axis = (test_parameters.stokes_angle() > 0);
     TestVectorField vectorfield(test_parameters, has_stokes_axis);
