@@ -66,6 +66,7 @@ public:
 };
 
 TEST_P(VectorFieldCalcParamTest, TestStokes) {
+    std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
     double expected_value = 1.00;
     auto [test_parameters, expected_intensity, expected_angle] = GetParam();
 
@@ -73,7 +74,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     TestVectorField vectorfield(test_parameters, has_stokes_axis);
 
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
-    auto callback = [&test_parameters, &expected_intensity, &expected_angle, &stokes_test_values_map](
+    auto callback = [&test_parameters, &expected_intensity, &expected_angle](
                         CARTA::VectorOverlayTileData& message) {
         // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " <<
         // message.angle_tiles_size() << std::endl;
@@ -103,9 +104,9 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     };
 
     // lambda expression producing tile data (256x256) all set to 1 for Stokes I
-    auto getdata_callback = [&stokes_test_values_map](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
+    auto getdata_callback = [&stokes_test_values_map_local](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
                                 CARTA::PolarizationType stokes_type, int& width, int& height) {
-        float value = stokes_test_values_map[stokes_type]; // seems that Stokes I is passed as Current
+        float value = stokes_test_values_map_local[stokes_type]; // seems that Stokes I is passed as Current
         std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
 
         data.assign(256 * 256, value); // generating Stokes I tile 256x256 all values = 1
