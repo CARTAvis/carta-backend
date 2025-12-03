@@ -54,7 +54,7 @@ bool VectorFieldCalculator::Calculate(
 
     // Set stokes flags and get their indices
     bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == CARTA::PolarizationType::I;
-    
+
     // TODO: eliminate this stokes_flag completely - is it really OK ?
     stokes_flag[CARTA::PolarizationType::I] = (_fractional || use_threshold_I);
     stokes_flag[CARTA::PolarizationType::Q] = (_calculate_pi || _calculate_pa);
@@ -71,8 +71,8 @@ bool VectorFieldCalculator::Calculate(
             // stop invalidated calculations :
             std::cout << "DEBUG : VectorFieldCalculator::CalculateVectorField - cancelling ongoing calculation" << std::endl;
             break;
-        } 
-                
+        }
+
         Tile& tile = tiles[i];
         // removed GetImageBounds and moved its body below, dims.width/height are size_t so cast to int() was added below
         int tile_size_original = TILE_SIZE * _smoothing_factor;
@@ -81,7 +81,6 @@ bool VectorFieldCalculator::Calculate(
         bounds.set_x_max(std::min(int(dims.width), (tile.x + 1) * tile_size_original));
         bounds.set_y_min(std::min(std::max(0, tile.y * tile_size_original), int(dims.height)));
         bounds.set_y_max(std::min(int(dims.height), (tile.y + 1) * tile_size_original));
-
 
         int width, height;
         double progress = (double)(i + 1) / tiles.size();
@@ -186,7 +185,7 @@ bool VectorFieldCalculator::Calculate(
         response.set_progress(progress);
         progress_callback(response);
     }
-    
+
     return true;
 }
 
@@ -212,7 +211,6 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
         } else {
             tile->set_image_data(array.data(), sizeof(float) * array.size());
         }
-        
         std::cout << "Test value FillTiledata = " << array[0] << std::endl;
     }
 }
@@ -234,23 +232,21 @@ void VectorField::StopCalculations() {
 
 void VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters) {
     std::cout << "DEBUG : VectorField::SetVectorOverlayParameters called" << std::endl;
-    
+
     // FUTURE optimisations may required this check and function Equivalent to be back to avoid re-calculation with the same parameters
     //    but for now calculation happens everytime it is called
     //    if( VectorFieldCalculator::Equivalent(message,_vector_field_request_message) ){
     // requesting the same calculation as before -> no need for this
     //        return false;
     //    }
-    
     _parameters = parameters;
 }
 
 bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims,
     bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
-
     // making local copy of the message in case it changes as the calculation goes on:
     auto parameters = _parameters;
-    
+
     if (parameters.stokes_intensity() < 0 && parameters.stokes_angle() < 0) {
         std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
         return true;
@@ -274,13 +270,13 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     for (auto calculator : _calculators) {
         calculator->Invalidate();
     }
-    
+
     // remvoing all objects from the container after they all got invalidated :
     _calculators.clear();
 
     // create new calculator and add to the vector of on-going calculators :
     auto calculator = std::make_shared<VectorFieldCalculator>(parameters, has_stokes_axis);
-    
+
     // add the new calculator object to the container of ongoing calculations
     _calculators.push_back(calculator);
     lock_calculators.unlock();
@@ -298,8 +294,6 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     //    lock_calculators.unlock(); // destructor will do it anyway, but just to make it explicilty shown here
 
     return ret;
-
 }
-
 
 } // namespace carta

@@ -7,9 +7,9 @@
 #ifndef CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 #define CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 
+#include <list>
 #include <memory>
 #include <shared_mutex>
-#include <list>
 
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
@@ -29,16 +29,16 @@ public:
     VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis);
 
     bool Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, TileCallback tile_callback);
-    
+
     // check if calculation is still valid :
     bool IsValid() {
         return _is_valid;
     }
-    
+
     void Invalidate() {
         _is_valid = false;
     }
-    
+
     struct Valid {
         bool operator()(float a, float b) {
             return (!std::isnan(a) && !std::isnan(b));
@@ -124,14 +124,14 @@ protected:
 class VectorField {
 public:
     VectorField();
-    
+
     void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters);
     bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis,
         TileCallback tile_callback, bool stokes_changed = false, bool z_changed = false);
 
     // invalidate all VectorFieldCalculators in the list:
     void StopCalculations();
-    
+
 protected:
     // flag indicating that the object is being destroyed
     bool _stopped;
@@ -142,7 +142,6 @@ protected:
     std::vector<std::shared_ptr<VectorFieldCalculator>>
         _calculators; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
 };
-
 
 } // namespace carta
 
