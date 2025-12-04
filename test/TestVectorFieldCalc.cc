@@ -16,7 +16,7 @@ std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
     {CARTA::PolarizationType::I, sqrt(2.0 * 2.0 + 3.0 * 3.0)},                      // = sqrt(Q^2 + U^2)
     {CARTA::PolarizationType::Q, 2}, {CARTA::PolarizationType::U, 3}, {CARTA::PolarizationType::V, 0}};
 
-std::tuple<CARTA::SetVectorOverlayParameters, float, float> get_parameters(int intensity = 1, int angle = 1) {
+std::tuple<CARTA::SetVectorOverlayParameters, float, float> GetParameters(int intensity = 1, int angle = 1) {
     CARTA::SetVectorOverlayParameters message;
     message.set_smoothing_factor(2);
     message.set_stokes_intensity(intensity);
@@ -132,6 +132,6 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
-    ::testing::Values(get_parameters(1, 0), get_parameters(0, 1),
-        get_parameters(1, 1)) // TODO : last test (1,1) still fails, check if these tests make any sense at all ...
+    ::testing::Values(GetParameters(1, 0), GetParameters(0, 1),
+        GetParameters(1, 1)) // TODO : last test (1,1) still fails, check if these tests make any sense at all ...
 );
