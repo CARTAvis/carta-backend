@@ -11,6 +11,8 @@
 
 using namespace carta;
 
+// using testing::Pointwise;
+
 std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
     {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, sqrt(2.0 * 2.0 + 3.0 * 3.0)}, // = sqrt(Q^2 + U^2)
     {CARTA::PolarizationType::I, sqrt(2.0 * 2.0 + 3.0 * 3.0)},                      // = sqrt(Q^2 + U^2)
@@ -58,13 +60,6 @@ protected:
     // You can add setup/teardown logic here if needed
 };
 
-// class VectorFieldCalcParamTest : public ::testing::Test, public ImageGenerator {};
-class TestVectorField : public VectorFieldCalculator {
-public:
-    TestVectorField(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis)
-        : VectorFieldCalculator(message, has_stokes_axis) {}
-};
-
 TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // the reason to have local variable is to not capture global variables in lambda expressions (only local variables)
     // as this does not compile on MacOS (fails CI/CD on github)
@@ -76,7 +71,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // auto [test_parameters, expected_intensity, expected_angle] = GetParam();
 
     bool has_stokes_axis = (test_parameters.stokes_angle() > 0);
-    TestVectorField vectorfield(test_parameters, has_stokes_axis);
+    VectorFieldCalculator vectorfield(test_parameters, has_stokes_axis);
 
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
     auto callback = [&test_parameters, &expected_intensity, &expected_angle](CARTA::VectorOverlayTileData& message) {
@@ -101,6 +96,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
             VectorFieldCalculator::CalcPa calcpa;
             float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().c_str());
             float_size = message.angle_tiles(0).image_data().size() / 4;
+            // HOWTO ??? EXPECT_THAT(pv_data.tovector(), Pointwise(FloatNear(1e-8f), expected_angle));
             for (int i = 0; i < float_size; i++) {
                 EXPECT_NEAR(float_data[i], expected_angle, 1e-8f);
             }
