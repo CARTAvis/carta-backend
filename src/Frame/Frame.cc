@@ -1160,16 +1160,15 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     }
 
     // Get point region spatial profile data with respect to the stokes (key)
-    for (auto& stokes_config : stokes_configs) {
-        int stokes = stokes_config.first;
-        bool is_current_stokes(stokes == CurrentStokes());
+    for (auto& [stokes_index, stokes_config] : stokes_configs) {
+        bool is_current_stokes(stokes_index == CurrentStokes());
         float cursor_value(0.0);
 
         // Get the cursor value with stokes
         if (is_current_stokes) {
             cursor_value = cursor_value_with_current_stokes;
         } else {
-            StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
+            StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes_index);
             const auto N = stokes_slicer.slicer.length().product();
             std::unique_ptr<float[]> data(new float[N]); // zero initialization
             if (GetSlicerData(stokes_slicer, data.get())) {
@@ -1178,14 +1177,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         }
 
         // set message fields
-        auto spatial_profile_message = Message::SpatialProfileData(x, y, CurrentZ(), stokes, cursor_value);
+        auto spatial_profile_message = Message::SpatialProfileData(x, y, CurrentZ(), stokes_index, cursor_value);
 
         // add profiles
         std::vector<float> profile;
         bool write_lock(false);
 
         // for each widget config with the same stokes setting
-        for (auto& spatial_config : stokes_config.second) {
+        for (auto& spatial_config : stokes_config) {
             std::string coordinate(spatial_config.coordinate());
             bool is_x_profile(coordinate.back() == 'x');
             bool is_y_profile(coordinate.back() == 'y');
@@ -1206,7 +1205,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             bool have_profile(false);
             bool downsample(mip >= 2);
 
-            if (downsample && _loader->HasMip(2) && !Stokes::IsComputed(stokes)) { // Use a mipmap dataset to return downsampled data
+            if (downsample && _loader->HasMip(2) && !Stokes::IsComputed(stokes_index)) { // Use a mipmap dataset to return downsampled data
                 while (!_loader->HasMip(mip)) {
                     mip /= 2;
                 }
@@ -1228,7 +1227,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     bounds.set_y_max(end);
                 }
 
-                have_profile = _loader->GetDownsampledRasterData(profile, CurrentZ(), stokes, bounds, mip, _image_mutex);
+                have_profile = _loader->GetDownsampledRasterData(profile, CurrentZ(), stokes_index, bounds, mip, _image_mutex);
             } else {
                 if (downsample) { // Round the endpoints if we're going to decimate
                     // These values will be used to resize the decimated data
@@ -1320,9 +1319,9 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     profile.reserve(end - start);
                     StokesSlicer stokes_slicer;
                     if (is_x_profile) {
-                        stokes_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
+                        stokes_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes_index);
                     } else if (is_y_profile) {
-                        stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
+                        stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes_index);
                     }
 
                     profile.resize(stokes_slicer.slicer.length().product());
