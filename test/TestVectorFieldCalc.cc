@@ -127,5 +127,5 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2), true,
             sqrt(3 * 3 + 4 * 4), 1), // de-biasing with errors in Q and U
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), true,
-            (sqrt(3 * 3 + 4 * 4)/2)*100.00, 1) // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
+            (sqrt(3 * 3 + 4 * 4) / 2) * 100.00, 1) // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
         ));
