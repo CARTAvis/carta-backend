@@ -38,8 +38,10 @@ CARTA::SetVectorOverlayParameters SourceTestMessage(
     return message;
 }
 
+using TestParameters = std::tuple<CARTA::SetVectorOverlayParameters, float, float, bool>;
+
 // Define the parameterized test fixture
-class VectorFieldCalcParamTest : public ::testing::TestWithParam<std::tuple<CARTA::SetVectorOverlayParameters, float, float>> {
+class VectorFieldCalcParamTest : public ::testing::TestWithParam<TestParameters> {
 public:
     VectorFieldCalcParamTest() {}
 
@@ -47,22 +49,14 @@ protected:
     // You can add setup/teardown logic here if needed
 };
 
-/*MATCHER_P(AllElementsEqualTo, value,
-          std::string(negation ? "not all elements are equal to " : "all elements are equal to ") +
-              testing::PrintToString(value)) {
-    return std::all_of(arg.begin(), arg.end(), [&](const auto& elem) {
-        return elem == value;
-    });
-*/
-
 TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // the reason to have local variable is to not capture global variables in lambda expressions (only local variables)
     // as this does not compile on MacOS (fails CI/CD on github)
     std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
-    auto [test_parameters, expected_intensity, expected_angle] = GetParam();
+    auto [test_parameters, expected_intensity, expected_angle, has_stokes_axis] = GetParam();
 
     // TODO : to be added as one more parameter:
-    bool has_stokes_axis = true; // (test_parameters.stokes_angle() > 0);
+    // bool has_stokes_axis = true; // (test_parameters.stokes_angle() > 0);
     VectorFieldCalculator vectorfield(test_parameters, has_stokes_axis);
     std::vector<float> actual_intensity, actual_angle;
 
@@ -119,15 +113,11 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
-    ::testing::Values(std::tuple<CARTA::SetVectorOverlayParameters, float, float>(
-                          SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::CURRENT), 1, 1),
-        std::tuple<CARTA::SetVectorOverlayParameters, float, float>(
-            SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), 1,
-            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA
-        std::tuple<CARTA::SetVectorOverlayParameters, float, float>(
-            SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), sqrt(3 * 3 + 4 * 4),
-            1), // Q=3 and U=4 -> Computed I=Q^2 + U^2
-        std::tuple<CARTA::SetVectorOverlayParameters, float, float>(
-            SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), sqrt(3 * 3 + 4 * 4),
-            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)) // computed PA and Stokes I (as above)
+    ::testing::Values(TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::CURRENT), 1, 1, true),
+        TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), 1,
+            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2), true), // computed PA
+        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), sqrt(3 * 3 + 4 * 4), 1,
+            true), // Q=3 and U=4 -> Computed I=Q^2 + U^2
+        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), sqrt(3 * 3 + 4 * 4),
+            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2), true) // computed PA and Stokes I (as above)
         ));
