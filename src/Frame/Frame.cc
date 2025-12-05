@@ -487,7 +487,7 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
 
 // Tile data
 bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-    CARTA::CompressionType compression_type, float compression_quality, bool is_current_z) {
+    CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error) {
     // Early exit if z or stokes has changed and using current z
     if (is_current_z && ZStokesChanged(z, stokes)) {
         return false;
@@ -511,7 +511,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     std::shared_ptr<std::vector<float>> tile_data_ptr;
     int tile_width;
     int tile_height;
-    if (GetRasterTileData(z, tile_data_ptr, tile, tile_width, tile_height)) {
+    if (GetRasterTileData(z, tile_data_ptr, tile, tile_width, tile_height, error)) {
         size_t tile_image_data_size = sizeof(float) * tile_data_ptr->size(); // tile image data size in bytes
 
         if (is_current_z && ZStokesChanged(z, stokes)) {
@@ -587,8 +587,14 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     return false;
 }
 
-bool Frame::GetRasterTileData(int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height) {
+bool Frame::GetRasterTileData(
+    int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error) {
     int mip = Tile::LayerToMip(tile.layer, _dims.width, _dims.height, TILE_SIZE, TILE_SIZE);
+    if (mip == -1) {
+        spdlog::error("Invalid tile layer {} for image size {}x{}.", tile.layer, _dims.width, _dims.height);
+        error = true;
+        return false;
+    }
     int tile_size_original = TILE_SIZE * mip;
 
     // crop to image size
