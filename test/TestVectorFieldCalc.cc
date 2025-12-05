@@ -33,12 +33,12 @@ CARTA::SetVectorOverlayParameters SourceTestMessage(int intensity = VectorFieldC
     message.set_smoothing_factor(1); // 1 = no downsampling
 
     // TODO : when set to 1e20 or 1000  -> FillTileData fills everything with NaNs !!!??? std::nan here does not compile
-    message.set_threshold(1); // disable threshold , std::nan does not compile !!!
+    message.set_threshold(std::numeric_limits<double>::quiet_NaN()); // disable threshold , std::nan does not compile !!!
 
     return message;
 }
 
-using TestParameters = std::tuple<CARTA::SetVectorOverlayParameters, float, float, bool>;
+using TestParameters = std::tuple<CARTA::SetVectorOverlayParameters, bool, float, float>;
 
 // Define the parameterized test fixture
 class VectorFieldCalcParamTest : public ::testing::TestWithParam<TestParameters> {
@@ -53,41 +53,32 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // the reason to have local variable is to not capture global variables in lambda expressions (only local variables)
     // as this does not compile on MacOS (fails CI/CD on github)
     std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
-    auto [test_parameters, expected_intensity, expected_angle, has_stokes_axis] = GetParam();
+    auto [test_parameters, has_stokes_axis, expected_intensity, expected_angle] = GetParam();
 
     // TODO : to be added as one more parameter:
     // bool has_stokes_axis = true; // (test_parameters.stokes_angle() > 0);
     VectorFieldCalculator vectorfield(test_parameters, has_stokes_axis);
-    std::vector<float> actual_intensity, actual_angle;
+    std::vector<CARTA::VectorOverlayTileData> actual_intensities, actual_angles;
 
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
-    auto callback = [&actual_intensity, &actual_angle](CARTA::VectorOverlayTileData& message) {
+    auto callback = [&actual_intensities, &actual_angles](CARTA::VectorOverlayTileData& message) {
         // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " <<
         // message.angle_tiles_size() << std::endl;
         EXPECT_EQ(message.intensity_tiles_size(), 1);
         EXPECT_EQ(message.angle_tiles_size(), 1);
 
-        // check intensity tiles :
-        const float* float_data = reinterpret_cast<const float*>(
-            message.intensity_tiles(0).image_data().c_str()); // static_cast<const float*>(image_data.c_str());
-        int float_size = message.intensity_tiles(0).image_data().size() / 4;
-        for (int i = 0; i < float_size; i++) {
-            actual_intensity.push_back(float_data[i]);
-        }
+        // copy messages :
+        actual_intensities.push_back(message);
 
         if (message.angle_tiles_size() > 0) {
-            float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().c_str());
-            float_size = message.angle_tiles(0).image_data().size() / 4;
-            for (int i = 0; i < float_size; i++) {
-                actual_angle.push_back(float_data[i]);
-            }
+            actual_angles.push_back(message);
         }
     };
 
     // lambda expression producing tile data (256x256) all set to 1 for Stokes I
-    auto getdata_callback = [&stokes_test_values_map_local](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
+    auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
                                 CARTA::PolarizationType stokes_type, int& width, int& height) {
-        float value = stokes_test_values_map_local[stokes_type]; // seems that Stokes I is passed as Current
+        float value = stokes_test_values_map[stokes_type]; // seems that Stokes I is passed as Current
         // std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
 
         data.assign(256 * 256, value); // generating Stokes I tile 256x256 all values = 1
@@ -106,22 +97,38 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     int z_index = 2;
     vectorfield.Calculate(callback, dims, getdata_callback);
 
-    // TODO - use some other matcher (Each or something) see : https://google.github.io/googletest/reference/matchers.html
-    EXPECT_THAT(actual_intensity, Each(expected_intensity));
-    EXPECT_THAT(actual_angle, Each(expected_angle)); // ??? WARNING/QUESTION : does each use FloatNear or similar Float-like comparison ?
+    std::vector<float> actual_intensity_values, actual_angle_values;
+    for ( auto message : actual_intensities ) {
+        const float* float_data = reinterpret_cast<const float*>(
+                message.intensity_tiles(0).image_data().c_str()); // static_cast<const float*>(image_data.c_str());
+        int float_size = message.intensity_tiles(0).image_data().size() / 4;
+        for (int i = 0; i < float_size; i++) {
+           actual_intensity_values.push_back(float_data[i]);
+        }    
+    }
+
+    for ( auto message : actual_angles ) {
+        const float* float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().c_str());
+        int float_size = message.angle_tiles(0).image_data().size() / 4;
+        for (int i = 0; i < float_size; i++) {
+           actual_angle_values.push_back(float_data[i]);
+        }
+    }
+    
+    EXPECT_THAT(actual_intensity_values, Each(expected_intensity));
+    EXPECT_THAT(actual_angle_values, Each(expected_angle)); // ??? WARNING/QUESTION : does each use FloatNear or similar Float-like comparison ?
 }
 
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
-    ::testing::Values(TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::CURRENT), 1, 1, true),
-        TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), 1,
-            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2), true), // computed PA
-        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), sqrt(3 * 3 + 4 * 4), 1,
-            true), // Q=3 and U=4 -> Computed I=Q^2 + U^2
-        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), sqrt(3 * 3 + 4 * 4),
-            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2), true), // computed PA and Stokes I (as above)
-        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2),
-            sqrt(3 * 3 + 4 * 4), 1, true) // de-biasing with errors in Q and U
+    ::testing::Values(TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::CURRENT), true, 1, 1),
+        TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), true, 1,
+            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA
+        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), true, sqrt(3 * 3 + 4 * 4), 1), // Q=3 and U=4 -> Computed I=Q^2 + U^2
+        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), true, sqrt(3 * 3 + 4 * 4),
+            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA and Stokes I (as above)
+        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2), true,
+            sqrt(3 * 3 + 4 * 4), 1) // de-biasing with errors in Q and U
         // TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), sqrt(3 * 3 + 4 * 4), 1,
         // true) // fractional=true
         ));
