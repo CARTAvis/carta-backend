@@ -125,7 +125,7 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), true, sqrt(3 * 3 + 4 * 4),
             ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA and Stokes I (as above)
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2), true,
-            sqrt(3 * 3 + 4 * 4), 1) // de-biasing with errors in Q and U
-        // TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), sqrt(3 * 3 + 4 * 4), 1,
-        // true) // fractional=true
+            sqrt(3 * 3 + 4 * 4), 1), // de-biasing with errors in Q and U
+        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), true,
+            (sqrt(3 * 3 + 4 * 4)/2)*100.00, 1) // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
         ));
