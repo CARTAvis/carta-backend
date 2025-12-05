@@ -97,26 +97,22 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     int z_index = 2;
     vectorfield.Calculate(callback, dims, getdata_callback);
 
-    std::vector<float> actual_intensity_values, actual_angle_values;
+    // check if intensities are as expected:
     for ( auto message : actual_intensities ) {
         const float* float_data = reinterpret_cast<const float*>(
                 message.intensity_tiles(0).image_data().c_str()); // static_cast<const float*>(image_data.c_str());
         int float_size = message.intensity_tiles(0).image_data().size() / 4;
-        for (int i = 0; i < float_size; i++) {
-           actual_intensity_values.push_back(float_data[i]);
-        }    
+        std::vector<float> actual_intensity_values(float_data, float_data + float_size);
+        EXPECT_THAT(actual_intensity_values, Each(expected_intensity));
     }
 
+    // check if angles are as expected:
     for ( auto message : actual_angles ) {
         const float* float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().c_str());
         int float_size = message.angle_tiles(0).image_data().size() / 4;
-        for (int i = 0; i < float_size; i++) {
-           actual_angle_values.push_back(float_data[i]);
-        }
+        std::vector<float> actual_angle_values(float_data, float_data + float_size);
+        EXPECT_THAT(actual_angle_values, Each(expected_angle));
     }
-    
-    EXPECT_THAT(actual_intensity_values, Each(expected_intensity));
-    EXPECT_THAT(actual_angle_values, Each(expected_angle)); // ??? WARNING/QUESTION : does each use FloatNear or similar Float-like comparison ?
 }
 
 // Instantiate the test suite with the desired enum values
