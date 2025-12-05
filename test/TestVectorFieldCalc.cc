@@ -19,8 +19,8 @@ using ::testing::FloatEq;
 using ::testing::Each;
 
 std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
-    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1},
-    {CARTA::PolarizationType::I, 2},
+    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1 }, // sqrt(3*3+4*4) 
+    {CARTA::PolarizationType::I, 2 },
     {CARTA::PolarizationType::Q, 3},
     {CARTA::PolarizationType::U, 4},
     {CARTA::PolarizationType::V, 5}
@@ -68,7 +68,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     auto [test_parameters, expected_intensity, expected_angle] = GetParam();
 
     // TODO : to be added as one more parameter:
-    bool has_stokes_axis = false; // (test_parameters.stokes_angle() > 0);
+    bool has_stokes_axis = true; // (test_parameters.stokes_angle() > 0);
     VectorFieldCalculator vectorfield(test_parameters, has_stokes_axis);
     
     std::vector<float> actual_intensity, actual_angle;
@@ -137,6 +137,6 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
     //  ((float)(180.0 / M_PI) * std::atan2(3, 4) / 2)
     ::testing::Values( std::tuple<CARTA::SetVectorOverlayParameters, float, float>(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::CURRENT), 1, 1),
-                       std::tuple<CARTA::SetVectorOverlayParameters, float, float>(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), 1, ((float)(180.0 / M_PI) * std::atan2(3, 4) / 2))
+                       std::tuple<CARTA::SetVectorOverlayParameters, float, float>(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), 1, ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2))
     )
 );
