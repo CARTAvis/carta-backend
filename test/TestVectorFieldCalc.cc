@@ -135,8 +135,9 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
-    //  ((float)(180.0 / M_PI) * std::atan2(3, 4) / 2)
     ::testing::Values( std::tuple<CARTA::SetVectorOverlayParameters, float, float>(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::CURRENT), 1, 1),
-                       std::tuple<CARTA::SetVectorOverlayParameters, float, float>(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), 1, ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2))
+                       std::tuple<CARTA::SetVectorOverlayParameters, float, float>(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), 1, ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA 
+                       std::tuple<CARTA::SetVectorOverlayParameters, float, float>(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), sqrt(3*3+4*4), 1), // Q=3 and U=4 -> Computed I=Q^2 + U^2
+                       std::tuple<CARTA::SetVectorOverlayParameters, float, float>(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), sqrt(3*3+4*4), ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2) ) // computed PA and Stokes I (as above)
     )
 );
