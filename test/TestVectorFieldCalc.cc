@@ -98,17 +98,17 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     vectorfield.Calculate(callback, dims, getdata_callback);
 
     // check if intensities are as expected:
-    for ( auto message : actual_intensities ) {
-        const float* float_data = reinterpret_cast<const float*>(
-                message.intensity_tiles(0).image_data().c_str()); // static_cast<const float*>(image_data.c_str());
+    for (auto message : actual_intensities) {
+        const float* float_data = reinterpret_cast<const float*>(message.intensity_tiles(0).image_data().data());
         int float_size = message.intensity_tiles(0).image_data().size() / 4;
         std::vector<float> actual_intensity_values(float_data, float_data + float_size);
         EXPECT_THAT(actual_intensity_values, Each(expected_intensity));
+        // std::cout << "TEST " << actual_intensity_values[0] << " float_size = " << float_size << std::endl;
     }
 
     // check if angles are as expected:
-    for ( auto message : actual_angles ) {
-        const float* float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().c_str());
+    for (auto message : actual_angles) {
+        const float* float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().data());
         int float_size = message.angle_tiles(0).image_data().size() / 4;
         std::vector<float> actual_angle_values(float_data, float_data + float_size);
         EXPECT_THAT(actual_angle_values, Each(expected_angle));
@@ -120,7 +120,8 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
     ::testing::Values(TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::CURRENT), true, 1, 1),
         TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), true, 1,
             ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA
-        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), true, sqrt(3 * 3 + 4 * 4), 1), // Q=3 and U=4 -> Computed I=Q^2 + U^2
+        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), true, sqrt(3 * 3 + 4 * 4),
+            1), // Q=3 and U=4 -> Computed I=Q^2 + U^2
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), true, sqrt(3 * 3 + 4 * 4),
             ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA and Stokes I (as above)
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2), true,
