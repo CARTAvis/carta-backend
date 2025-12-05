@@ -21,8 +21,8 @@ std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
     {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1}, // sqrt(3*3+4*4)
     {CARTA::PolarizationType::I, 2}, {CARTA::PolarizationType::Q, 3}, {CARTA::PolarizationType::U, 4}, {CARTA::PolarizationType::V, 5}};
 
-CARTA::SetVectorOverlayParameters SourceTestMessage(
-    int intensity = 1, int angle = 1, bool fractional = false, int u_error = 0, int q_error = 0) {
+CARTA::SetVectorOverlayParameters SourceTestMessage(int intensity = VectorFieldCalculator::COMPUTED,
+    int angle = VectorFieldCalculator::COMPUTED, bool fractional = false, int u_error = 0, int q_error = 0) {
     CARTA::SetVectorOverlayParameters message;
     message.set_stokes_intensity(intensity);
     message.set_stokes_angle(angle);
@@ -119,5 +119,9 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), sqrt(3 * 3 + 4 * 4), 1,
             true), // Q=3 and U=4 -> Computed I=Q^2 + U^2
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), sqrt(3 * 3 + 4 * 4),
-            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2), true) // computed PA and Stokes I (as above)
+            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2), true), // computed PA and Stokes I (as above)
+        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2), sqrt(3 * 3 + 4 * 4), 1,
+            true) // de-biasing with errors in Q and U
+        //TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), sqrt(3 * 3 + 4 * 4), 1,
+        //    true) // fractional=true
         ));
