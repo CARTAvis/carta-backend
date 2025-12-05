@@ -120,17 +120,17 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     vectorfield.Calculate(callback, dims, getdata_callback);
     
     // TODO - use some other matcher (Each or something) see : https://google.github.io/googletest/reference/matchers.html
-//    EXPECT_THAT( actual_intensity, Each(expected_intensity) );
-//    EXPECT_THAT( actual_angle, Each(expected_angle) ); // ??? WARNING/QUESTION : does each use FloatNear or similar Float-like comparison ?
+    EXPECT_THAT( actual_intensity, Each(expected_intensity) );
+    EXPECT_THAT( actual_angle, Each(expected_angle) ); // ??? WARNING/QUESTION : does each use FloatNear or similar Float-like comparison ?
     
     
     // TODO : I do not trust the above yet : 
-    for (int i = 0; i < actual_intensity.size(); i++) {
+/*    for (int i = 0; i < actual_intensity.size(); i++) {
        EXPECT_NEAR(actual_intensity[i], expected_intensity, 1e-8f);
     }
     for (int i = 0; i < actual_angle.size(); i++) {
        EXPECT_NEAR(actual_angle[i], expected_angle, 1e-8f);
-    }
+    }*/
 }
 
 // Instantiate the test suite with the desired enum values
