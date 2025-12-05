@@ -29,7 +29,6 @@ public:
     enum SOURCE { NONE = -1, CURRENT = 0, COMPUTED = 1 };
     // C++-20 only : using vfs = VectorFieldCalculator::SOURCE;
 
-
     VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis);
 
     bool Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, TileCallback tile_callback);
