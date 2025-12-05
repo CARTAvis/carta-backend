@@ -88,7 +88,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     auto getdata_callback = [&stokes_test_values_map_local](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
                                 CARTA::PolarizationType stokes_type, int& width, int& height) {
         float value = stokes_test_values_map_local[stokes_type]; // seems that Stokes I is passed as Current
-        std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
+        // std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
 
         data.assign(256 * 256, value); // generating Stokes I tile 256x256 all values = 1
         width = 256;

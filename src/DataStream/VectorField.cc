@@ -38,7 +38,7 @@ bool VectorFieldCalculator::Calculate(
     int num_tile_rows = ceil((double)dims.height / tile_size_original);
     int32_t tile_layer = -1;
     tiles.resize(num_tile_rows * num_tile_columns);
-    std::cout << "DEBUG : " << tiles.size() << " , " << num_tile_columns << " , " << num_tile_rows << std::endl;
+    // std::cout << "DEBUG : " << tiles.size() << " , " << num_tile_columns << " , " << num_tile_rows << std::endl;
 
     for (int j = 0; j < num_tile_rows; ++j) {
         for (int i = 0; i < num_tile_columns; ++i) {
@@ -64,7 +64,7 @@ bool VectorFieldCalculator::Calculate(
     // TODO/TBD : make sure this declaration can stay before the loop and shoudn't be inside the loop as originally was. Unit test case ?
     std::unordered_map<CARTA::PolarizationType, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
-        std::cout << "DEBUG : processing tile " << i << " (" << this << ")" << std::endl;
+        // std::cout << "DEBUG : processing tile " << i << " (" << this << ")" << std::endl;
         // sleep(1);
 
         if (!_is_valid) {
@@ -210,9 +210,9 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
             tile->set_image_data(compression_buffer.data(), compressed_size);
         } else {
             tile->set_image_data(array.data(), sizeof(float) * array.size());
-            std::cout << "No compression ???" << std::endl;
+            // std::cout << "No compression ???" << std::endl;
         }
-        std::cout << "Test value FillTiledata = " << array[0] << " compression = " << compression_type << std::endl;
+        // std::cout << "Test value FillTiledata = " << array[0] << " compression = " << compression_type << std::endl;
     }
 }
 
