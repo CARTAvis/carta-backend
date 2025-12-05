@@ -22,10 +22,10 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
       _compression_type(message.compression_type()),
       _compression_quality(message.compression_quality()),
       _threshold_option(message.threshold_option()),
-      _calculate_pi(_stokes_intensity == 1 && has_stokes_axis),
-      _calculate_pa(_stokes_angle == 1 && has_stokes_axis),
-      _current_stokes_as_pi((_stokes_intensity == 0 && has_stokes_axis) || !has_stokes_axis),
-      _current_stokes_as_pa((_stokes_angle == 0 && has_stokes_axis) || !has_stokes_axis),
+      _calculate_pi(_stokes_intensity == COMPUTED && has_stokes_axis),
+      _calculate_pa(_stokes_angle == COMPUTED && has_stokes_axis),
+      _current_stokes_as_pi((_stokes_intensity == CURRENT && has_stokes_axis) || !has_stokes_axis),
+      _current_stokes_as_pa((_stokes_angle == CURRENT && has_stokes_axis) || !has_stokes_axis),
       _is_valid(true) {}
 
 bool VectorFieldCalculator::Calculate(
@@ -210,8 +210,9 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
             tile->set_image_data(compression_buffer.data(), compressed_size);
         } else {
             tile->set_image_data(array.data(), sizeof(float) * array.size());
+            std::cout << "No compression ???" << std::endl;
         }
-        std::cout << "Test value FillTiledata = " << array[0] << std::endl;
+        std::cout << "Test value FillTiledata = " << array[0] << " compression = " << compression_type << std::endl;
     }
 }
 
