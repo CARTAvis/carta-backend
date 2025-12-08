@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed NaN values in FITS image with BLANK header keyword ([#1492](https://github.com/CARTAvis/carta-backend/issues/1492)).
 * Don't reallocate memory for image cache unnecessarily ([#1508](https://github.com/CARTAvis/carta-backend/pull/1508)).
 * Fixed crash in ICD channel map test with ASAN enabled ([#1518](https://github.com/CARTAvis/carta-backend/issues/1518)).
+* Fixed vector overlay not updating after session resume ([#1543](https://github.com/CARTAvis/carta-backend/issues/1543)).
 
 ### Changed
 * Standardized use of float and double NaN (Not a Number) ([#1502](https://github.com/CARTAvis/carta-backend/issues/1502)).
