@@ -220,7 +220,7 @@ public:
      *
      * This functions calls SetVectorOverlayParameters function in the _vector_field member object
      *
-     * @param parameters Protobuf message with parameters of the calculation specified in the front-end
+     * @param parameter Protobuf message with parameters of the calculation specified in the front-end
      */
     void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameter);
 
