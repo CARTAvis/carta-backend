@@ -26,7 +26,7 @@ using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageB
 
 /**
  * @class VectorFieldCalculator
- * @brief Performs calculations required to overlay polarisation vectors on top of a sky image. 
+ * @brief Performs calculations required to overlay polarisation vectors on top of a sky image.
  *
  * This class provides functions to perform all the necessary calculations based on the parameters provided in the protobuf message
  *
@@ -37,33 +37,33 @@ public:
     // C++-20 only : using vfs = VectorFieldCalculator::SOURCE;
 
     /**
-        * @brief Constructs the object
-        *
-        * This constructor takes a protobuf message with parameters and a flag has_stokes_axis
-        * to initialise all the parameters of the calculation
-        *
-        * @param message Parameters of the calculations as specified in the front-end Vector Overlay widget.
-        * @param has_stokes_axis The flag specifying if the image has the Stokes axis (images Q and U).
-    */
+     * @brief Constructs the object
+     *
+     * This constructor takes a protobuf message with parameters and a flag has_stokes_axis
+     * to initialise all the parameters of the calculation
+     *
+     * @param message Parameters of the calculations as specified in the front-end Vector Overlay widget.
+     * @param has_stokes_axis The flag specifying if the image has the Stokes axis (images Q and U).
+     */
     VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis);
 
     /**
-        * @brief Invokes the calculation of the vector overlay 
-        *
-        * This function performs the actual calculations of the overlaid vector field (polarisation)
-        * and returns the tiles containing the generated image via callback function progress_callback
-        *
-        * @param progress_callback The callback function returning the results of the calculation to the caller
-        * @param dims Specifies the dimensions of the images (width and height)
-        * @param tile_callback The callback function providing input images and filling the arrays corresponding to tiles
-        *
-        * @return returns true if calculation is successful. The actual tiles with the resulting image data are send via callback tile_callback 
-    */
+     * @brief Invokes the calculation of the vector overlay
+     *
+     * This function performs the actual calculations of the overlaid vector field (polarisation)
+     * and returns the tiles containing the generated image via callback function progress_callback
+     *
+     * @param progress_callback The callback function returning the results of the calculation to the caller
+     * @param dims Specifies the dimensions of the images (width and height)
+     * @param tile_callback The callback function providing input images and filling the arrays corresponding to tiles
+     *
+     * @return returns true if calculation is successful. The actual tiles with the resulting image data are send via callback tile_callback
+     */
     bool Calculate(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, TileCallback tile_callback);
 
     /**
-        * @brief Verifies if the calculation is still valid (true) or was invalidated by a new request 
-    */
+     * @brief Verifies if the calculation is still valid (true) or was invalidated by a new request
+     */
     bool IsValid() {
         return _is_valid;
     }
@@ -155,9 +155,9 @@ protected:
 
 /**
  * @class VectorField
- * @brief Manages VectorFieldCalculator objects 
+ * @brief Manages VectorFieldCalculator objects
  *
- * This class the calculator objects VectorFieldCalculator and provides functions to set parameters (SetVectorOverlayParameters), 
+ * This class the calculator objects VectorFieldCalculator and provides functions to set parameters (SetVectorOverlayParameters),
  * start new calculation (NewCalculation) and cancel on-going calculation (StopCalculations)
  *
  */
@@ -166,34 +166,37 @@ public:
     VectorField();
 
     /**
-        * @brief Sets the parameters of the calculation as set in the front-end VectorOverlay widget 
-        *
-        * @param parameters Protobuf message with parameters of the calculation specified in the front-end
-    */
+     * @brief Sets the parameters of the calculation as set in the front-end VectorOverlay widget
+     *
+     * @param parameters Protobuf message with parameters of the calculation specified in the front-end
+     */
     void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters);
 
     /**
-        * @brief Starts new calculation of the vector field and invalidates all on-going calculations
-        *
-        * @param progress_callback The callback function returning the results of the calculation to the caller (passed to the VectorFieldCalculator::Calculate function)
-        * @param dims Specifies the dimensions of the images (width and height). Also passed to the VectorFieldCalculator::Calculate function
-        * @param has_stokes_axis A flag specifying if the image has the Stokes axis (i.e. has Q and U images of the sky)
-        * @param tile_callback The callback function providing input images and filling the arrays corresponding to tiles (passed to the VectorFieldCalculator::Calculate function)
-        * @param stokes_changed The flag specifying if the Stokes image has changed (TODO : confirm what it is ?)
-        * @param z_changed The flag specifying if the Z axis has changed (TODO : confirm what it is ?)
-    */    
+     * @brief Starts new calculation of the vector field and invalidates all on-going calculations
+     *
+     * @param progress_callback The callback function returning the results of the calculation to the caller (passed to the
+     * VectorFieldCalculator::Calculate function)
+     * @param dims Specifies the dimensions of the images (width and height). Also passed to the
+     * VectorFieldCalculator::Calculate function
+     * @param has_stokes_axis A flag specifying if the image has the Stokes axis (i.e. has Q and U images of the sky)
+     * @param tile_callback The callback function providing input images and filling the arrays corresponding to tiles (passed to the
+     * VectorFieldCalculator::Calculate function)
+     * @param stokes_changed The flag specifying if the Stokes image has changed (TODO : confirm what it is ?)
+     * @param z_changed The flag specifying if the Z axis has changed (TODO : confirm what it is ?)
+     */
     bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis,
         TileCallback tile_callback, bool stokes_changed = false, bool z_changed = false);
 
     /**
-        * @brief Invalidates all the on-going calculations effectively stopping them.
-    */
+     * @brief Invalidates all the on-going calculations effectively stopping them.
+     */
     void StopCalculations();
 
 protected:
     /**
-        * @brief Flag set by StopCalculations if true all the on-going calcutions have been stopped
-    */
+     * @brief Flag set by StopCalculations if true all the on-going calcutions have been stopped
+     */
     bool _stopped;
 
     // Vector field settings

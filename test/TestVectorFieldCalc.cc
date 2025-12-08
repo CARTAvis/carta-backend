@@ -90,7 +90,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     dims.num_stokes = 4;
     int z_index = 2;
     vectorfield.Calculate(callback, dims, getdata_callback);
-    
+
     // check if intensities are as expected:
     for (auto message : messages) {
         const float* float_data = reinterpret_cast<const float*>(message.intensity_tiles(0).image_data().data());
@@ -120,5 +120,5 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
             sqrt(3 * 3 + 4 * 4), 1), // de-biasing with errors in Q and U
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), true,
             (sqrt(3 * 3 + 4 * 4) / 2) * 100.00, 1) // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
-//        TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::NONE, false), false, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())
+        // TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::NONE, false), false, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())
         ));
