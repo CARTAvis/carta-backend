@@ -228,6 +228,8 @@ public:
         * @brief Performs downsampling of the provided tile/image data
         * 
         * @param data Tile/image data
+        * @param downsampled_width output value of the width after downsampling
+        * @param downsampled_height output value of the height after downsampling
         * @param z  Z axis index (TODO : verify this)
         * @param stokes Stokes axis index (TODO : verify this)
         * @param bounds parameters of the tile 
