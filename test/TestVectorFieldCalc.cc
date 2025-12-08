@@ -100,11 +100,12 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
         std::vector<float> actual_intensity_values(float_data, float_data + float_size);
         EXPECT_THAT(actual_intensity_values, Each(FloatNear(expected_intensity, 1e-5)));
         // std::cout << "TEST intesities : " << actual_intensity_values[0] << " float_size = " << float_size << std::endl;
-        
+
         float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().data());
         float_size = message.angle_tiles(0).image_data().size() / 4;
         std::vector<float> actual_angle_values(float_data, float_data + float_size);
         EXPECT_THAT(actual_angle_values, Each(FloatNear(expected_angle, 1e-5)));
+        // std::cout << "TEST angles : " << actual_angle_values[0] << " float_size = " << float_size << std::endl;
     }
 }
 

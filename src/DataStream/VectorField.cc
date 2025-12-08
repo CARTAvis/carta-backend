@@ -250,12 +250,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // making local copy of the message in case it changes as the calculation goes on:
     auto parameters = _parameters;
 
-    if (parameters.stokes_intensity() < 0 && parameters.stokes_angle() < 0) {
-        std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
-        return true;
-    }
-
-    if (!z_changed && stokes_changed && parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0) {
+    if (!z_changed && stokes_changed && parameters.stokes_intensity() != VectorFieldCalculator::CURRENT && parameters.stokes_angle() != VectorFieldCalculator::CURRENT) {
         // TODO : review this part as I do not fully understand it yet ...
         return true;
     }
@@ -276,6 +271,11 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
 
     // remvoing all objects from the container after they all got invalidated :
     _calculators.clear();
+    
+    if (parameters.stokes_intensity() == VectorFieldCalculator::NONE && parameters.stokes_angle() == VectorFieldCalculator::NONE) {
+        std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
+        return true;
+    }
 
     // create new calculator and add to the vector of on-going calculators :
     auto calculator = std::make_shared<VectorFieldCalculator>(parameters, has_stokes_axis);
