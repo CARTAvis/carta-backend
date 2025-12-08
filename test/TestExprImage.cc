@@ -76,7 +76,6 @@ public:
     }
 
     void SaveImageExpr(const fs::path file_path, const std::string& hdu) {
-
         // Use LEL expr to multiply image by 2
         fs::path fs_path(file_path);
         std::string expr = fs_path.filename().string() + " * 2";

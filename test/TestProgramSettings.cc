@@ -394,18 +394,18 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringEmptyFiles) {
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringSingleFile) {
-    auto file_path = FitsImages() / "noise_3d.fits";  
-    std::vector<std::string> files;  
-    files.push_back(file_path);  
-    auto url_string = carta::HttpServer::GetFileUrlString(files);  
-    EXPECT_EQ(url_string, fmt::format("file={}", SafeStringEscape(file_path))); 
+    auto file_path = FitsImages() / "noise_3d.fits";
+    std::vector<std::string> files;
+    files.push_back(file_path);
+    auto url_string = carta::HttpServer::GetFileUrlString(files);
+    EXPECT_EQ(url_string, fmt::format("file={}", SafeStringEscape(file_path)));
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
-    std::vector<std::string> files;  
-    files.push_back(FitsImages() / "noise_3d.fits");  
-    files.push_back(FitsImages() / "noise_4d.fits");  
-    auto folder = SafeStringEscape(FitsImages());  
+    std::vector<std::string> files;
+    files.push_back(FitsImages() / "noise_3d.fits");
+    files.push_back(FitsImages() / "noise_4d.fits");
+    auto folder = SafeStringEscape(FitsImages());
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder, "noise_3d.fits,noise_4d.fits"));

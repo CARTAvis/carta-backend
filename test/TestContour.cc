@@ -14,7 +14,6 @@
 class ContourTest : public ::testing::Test {
 public:
     void GenerateContour(fs::path file_path, const CARTA::SmoothingMode& smoothing_mode) {
-
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
 
