@@ -24,8 +24,8 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
       _threshold_option(message.threshold_option()),
       _calculate_pi(_stokes_intensity == COMPUTED && has_stokes_axis),
       _calculate_pa(_stokes_angle == COMPUTED && has_stokes_axis),
-      _current_stokes_as_pi((_stokes_intensity == CURRENT && has_stokes_axis) || !has_stokes_axis),
-      _current_stokes_as_pa((_stokes_angle == CURRENT && has_stokes_axis) || !has_stokes_axis),
+      _current_stokes_as_pi((_stokes_intensity == CURRENT && has_stokes_axis) || (_stokes_intensity == COMPUTED && !has_stokes_axis)),
+      _current_stokes_as_pa((_stokes_angle == CURRENT && has_stokes_axis) || (_stokes_angle == COMPUTED && !has_stokes_axis)),
       _is_valid(true) {}
 
 bool VectorFieldCalculator::Calculate(

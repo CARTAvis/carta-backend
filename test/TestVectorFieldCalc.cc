@@ -93,16 +93,28 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
     // check if intensities are as expected:
     for (auto message : messages) {
-        const float* float_data = reinterpret_cast<const float*>(message.intensity_tiles(0).image_data().data());
-        int float_size = message.intensity_tiles(0).image_data().size() / 4;
-        std::vector<float> actual_intensity_values(float_data, float_data + float_size);
-        EXPECT_THAT(actual_intensity_values, Each(FloatNear(expected_intensity, 1e-5)));
+        auto data = message.intensity_tiles(0).image_data();
+        auto float_data = reinterpret_cast<const float*>(data.data());
+        int float_size = data.size() / sizeof(float);
+
+        if (std::isnan(expected_intensity)) {
+            EXPECT_EQ(float_size, 0);
+        } else {
+            std::vector<float> actual_intensity_values(float_data, float_data + float_size);
+            EXPECT_THAT(actual_intensity_values, Each(FloatNear(expected_intensity, 1e-5)));
+        }
         // std::cout << "TEST intesities : " << actual_intensity_values[0] << " float_size = " << float_size << std::endl;
 
-        float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().data());
-        float_size = message.angle_tiles(0).image_data().size() / 4;
-        std::vector<float> actual_angle_values(float_data, float_data + float_size);
-        EXPECT_THAT(actual_angle_values, Each(FloatNear(expected_angle, 1e-5)));
+        data = message.angle_tiles(0).image_data();
+        float_data = reinterpret_cast<const float*>(data.data());
+        float_size = data.size() / sizeof(float);
+
+        if (std::isnan(expected_angle)) {
+            EXPECT_EQ(float_size, 0);
+        } else {
+            std::vector<float> actual_angle_values(float_data, float_data + float_size);
+            EXPECT_THAT(actual_angle_values, Each(FloatNear(expected_angle, 1e-5)));
+        }
         // std::cout << "TEST angles : " << actual_angle_values[0] << " float_size = " << float_size << std::endl;
     }
 }
@@ -119,6 +131,6 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2), true,
             sqrt(3 * 3 + 4 * 4), 1), // de-biasing with errors in Q and U
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), true,
-            (sqrt(3 * 3 + 4 * 4) / 2) * 100.00, 1) // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
-        // TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::NONE, false), false, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())
-        ));
+            (sqrt(3 * 3 + 4 * 4) / 2) * 100.00, 1), // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
+        TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::NONE, false), false,
+            std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())));
