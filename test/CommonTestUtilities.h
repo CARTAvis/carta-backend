@@ -28,7 +28,7 @@ fs::path SettingsPath();
 fs::path FitsImages();
 fs::path CasaImages();
 fs::path Hdf5Images();
-fs::path MixImages();
+fs::path MixedImages();
 
 class DataReader {
 public:

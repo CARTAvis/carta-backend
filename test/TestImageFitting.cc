@@ -56,7 +56,7 @@ public:
         _fov_info.set_rotation(rotation);
     }
 
-    void FitImage(std::string file_path, std::string failed_message = "") {
+    void FitImage(fs::path file_path, std::string failed_message = "") {
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 
@@ -83,9 +83,8 @@ public:
         }
     }
 
-    void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
-        auto path = FitsImages() / "128_128_gaussian_model_one_component.fits";
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
+    void FitImageWithFov(fs::path file_path, int region_id, std::string failed_message = "") {
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
         // TODO: avoid using higher level function region_handler.FitImage
@@ -245,27 +244,24 @@ TEST_F(ImageFittingTest, FittingWithFov) {
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 96, 96}, 10);
-    FitImageWithFov(gaussian_model, 0);
+    FitImageWithFov(FitsImages() / "128_128_gaussian_model_one_component.fits", 0);
 }
 
 TEST_F(ImageFittingTest, IncorrectRegionId) {
-    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
-    FitImageWithFov(gaussian_model, IMAGE_REGION_ID, "region id not found");
-    FitImageWithFov(gaussian_model, 1, "region id not found");
+    FitImageWithFov(FitsImages() / "128_128_gaussian_model_one_component.fits", IMAGE_REGION_ID, "region id not found");
+    FitImageWithFov(FitsImages() / "128_128_gaussian_model_one_component.fits", 1, "region id not found");
 }
 
 TEST_F(ImageFittingTest, IncorrectFov) {
-    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
-    FitImageWithFov(gaussian_model, 0, "failed to set up field of view region");
+    FitImageWithFov(FitsImages() / "128_128_gaussian_model_one_component.fits", 0, "failed to set up field of view region");
 
     SetFov(CARTA::RegionType::LINE, {0, 0, 1, 1}, 0);
-    FitImageWithFov(gaussian_model, 0, "region is outside image or is not closed");
+    FitImageWithFov(FitsImages() / "128_128_gaussian_model_one_component.fits", 0, "region is outside image or is not closed");
 }
 
 TEST_F(ImageFittingTest, FovOutsideImage) {
-    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     SetFov(CARTA::RegionType::RECTANGLE, {-100, -100, 10, 10}, 0);
-    FitImageWithFov(gaussian_model, 0, "region is outside image or is not closed");
+    FitImageWithFov(FitsImages() / "128_128_gaussian_model_one_component.fits", 0, "region is outside image or is not closed");
 }
 
 TEST_F(ImageFittingTest, insufficientData) {
@@ -275,5 +271,5 @@ TEST_F(ImageFittingTest, insufficientData) {
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 2, 2}, 0);
-    FitImageWithFov(gaussian_model, 0, "insufficient data points");
+    FitImageWithFov(FitsImages() / "128_128_gaussian_model_one_component.fits", 0, "insufficient data points");
 }

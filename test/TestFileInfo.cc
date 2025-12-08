@@ -14,7 +14,7 @@
 
 using namespace carta;
 
-static const std::string SAMPLE_FILES_PATH = MixImages();
+static const std::string SAMPLE_FILES_PATH = MixedImages();
 
 class FileInfoLoaderTest : public ::testing::Test {
 public:

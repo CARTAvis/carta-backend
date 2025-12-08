@@ -84,7 +84,7 @@ TEST(IsSubdirectoryTest, SubdirectoryRel) {
     EXPECT_TRUE(IsSubdirectory("./data/images", "./"));
     EXPECT_FALSE(IsSubdirectory("./", "./data/images"));
     EXPECT_TRUE(IsSubdirectory("./data/images", "./data"));
-    EXPECT_FALSE(IsSubdirectory("./data", "./data/data"));
+    EXPECT_FALSE(IsSubdirectory("./data", "./data/images"));
     EXPECT_TRUE(IsSubdirectory("./data/images/fits", "./data/images"));
     EXPECT_FALSE(IsSubdirectory("./data/images/fits", "./data/images/hdf5"));
 }

@@ -15,21 +15,14 @@ using namespace carta;
 
 class ImageExprTest : public ::testing::Test {
 public:
-    void GenerateImageExprTimesTwo(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type, bool invalid = false) {
-        std::string file_path;
-        if (file_type == CARTA::FileType::FITS) {
-            file_path = FitsImages() / file_name;
-        } else if (file_type == CARTA::FileType::HDF5) {
-            file_path = Hdf5Images() / file_name;
-        }
-
+    void GenerateImageExprTimesTwo(const fs::path file_path, const std::string& hdu, bool invalid = false) {
         // Image on disk
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         loader->OpenFile(hdu);
         casacore::IPosition image_shape(loader->GetShape());
 
         std::shared_ptr<DataReader> reader = nullptr;
-        if (file_type == CARTA::FileType::HDF5) {
+        if (file_path.parent_path().parent_path().filename() == "hdf5") {
             reader.reset(new Hdf5DataReader(file_path));
         } else {
             reader.reset(new FitsDataReader(file_path));
@@ -82,13 +75,7 @@ public:
         CmpVectors<float>(image_yprofile, expr_yprofile.tovector());
     }
 
-    void SaveImageExpr(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type) {
-        std::string file_path;
-        if (file_type == CARTA::FileType::FITS) {
-            file_path = FitsImages() / file_name;
-        } else if (file_type == CARTA::FileType::HDF5) {
-            file_path = Hdf5Images() / file_name;
-        }
+    void SaveImageExpr(const fs::path file_path, const std::string& hdu) {
 
         // Use LEL expr to multiply image by 2
         fs::path fs_path(file_path);
@@ -116,20 +103,20 @@ public:
 };
 
 TEST_F(ImageExprTest, FitsImageExprTimesTwo) {
-    GenerateImageExprTimesTwo("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
+    GenerateImageExprTimesTwo(FitsImages() / "noise_10px_10px.fits", "0");
 }
 
 TEST_F(ImageExprTest, Hdf5ImageExprTimesTwo) {
-    GenerateImageExprTimesTwo("noise_10px_10px.hdf5", "", CARTA::FileType::HDF5);
+    GenerateImageExprTimesTwo(Hdf5Images() / "noise_10px_10px.hdf5", "");
 }
 
 TEST_F(ImageExprTest, FitsImageExprSave) {
-    SaveImageExpr("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
+    SaveImageExpr(FitsImages() / "noise_10px_10px.fits", "0");
 }
 
 TEST_F(ImageExprTest, ImageExprFails) {
     // Forms invalid expression
-    ASSERT_THROW(GenerateImageExprTimesTwo("noise_10px_10px.fits", "", CARTA::FileType::FITS, true), casacore::AipsError);
+    ASSERT_THROW(GenerateImageExprTimesTwo(FitsImages() / "noise_10px_10px.fits", "", true), casacore::AipsError);
 }
 
 TEST_F(ImageExprTest, ImageExprTwoDirs) {

@@ -35,10 +35,6 @@ fs::path ImagesPath() {
     return TestRoot() / "data" / "images";
 }
 
-fs::path SettingsPath() {
-    return TestRoot() / "data" / "settings";
-}
-
 fs::path FitsImages() {
     return TestRoot() / "data" / "images" / "fits";
 }
@@ -51,8 +47,8 @@ fs::path Hdf5Images() {
     return TestRoot() / "data" / "images" / "hdf5";
 }
 
-fs::path MixImages() {
-    return TestRoot() / "data" / "images" / "mix";
+fs::path MixedImages() {
+    return ImagesPath() / "mix";
 }
 
 float DataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {

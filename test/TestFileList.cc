@@ -117,7 +117,7 @@ public:
 };
 
 TEST_F(FileListTest, SetTopLevelFolder) {
-    auto request1 = Message::FileListRequest(MixImages());
+    auto request1 = Message::FileListRequest(MixedImages());
     TestFileList("/", "", request1);
     TestFileList("", "", request1, false);
 
@@ -125,10 +125,10 @@ TEST_F(FileListTest, SetTopLevelFolder) {
     TestFileList(TestRoot(), "", request2);
 
     auto request3 = Message::FileListRequest("");
-    TestFileList(MixImages(), "", request3);
+    TestFileList(MixedImages(), "", request3);
 
     auto request4 = Message::FileListRequest(".");
-    TestFileList(MixImages(), "", request4);
+    TestFileList(MixedImages(), "", request4);
 
     // Request file list for default top folder "/"
     // 0 image files, > 0 subdirectories
@@ -144,8 +144,8 @@ TEST_F(FileListTest, SetStartingFolder) {
 
     auto request2 = Message::FileListRequest("$BASE");
     TestFileList(TestRoot(), "data/images/mix", request2);
-    TestFileList("/", MixImages(), request2);
-    TestFileList("", MixImages(), request2, false);
+    TestFileList("/", MixedImages(), request2);
+    TestFileList("", MixedImages(), request2, false);
 }
 
 TEST_F(FileListTest, AccessFalseFolder) {
