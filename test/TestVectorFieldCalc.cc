@@ -50,8 +50,6 @@ protected:
 };
 
 TEST_P(VectorFieldCalcParamTest, TestStokes) {
-    // the reason to have local variable is to not capture global variables in lambda expressions (only local variables)
-    // as this does not compile on MacOS (fails CI/CD on github)
     std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
     auto [test_parameters, has_stokes_axis, expected_intensity, expected_angle] = GetParam();
 
