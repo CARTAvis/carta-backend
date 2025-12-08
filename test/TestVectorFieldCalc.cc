@@ -58,21 +58,17 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // TODO : to be added as one more parameter:
     // bool has_stokes_axis = true; // (test_parameters.stokes_angle() > 0);
     VectorFieldCalculator vectorfield(test_parameters, has_stokes_axis);
-    std::vector<CARTA::VectorOverlayTileData> actual_intensities, actual_angles;
+    std::vector<CARTA::VectorOverlayTileData> messages;
 
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
-    auto callback = [&actual_intensities, &actual_angles](CARTA::VectorOverlayTileData& message) {
+    auto callback = [&messages](CARTA::VectorOverlayTileData& message) {
         // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " <<
         // message.angle_tiles_size() << std::endl;
         EXPECT_EQ(message.intensity_tiles_size(), 1);
         EXPECT_EQ(message.angle_tiles_size(), 1);
 
         // copy messages :
-        actual_intensities.push_back(message);
-
-        if (message.angle_tiles_size() > 0) {
-            actual_angles.push_back(message);
-        }
+        messages.push_back(message);
     };
 
     // lambda expression producing tile data (256x256) all set to 1 for Stokes I
@@ -98,21 +94,17 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     vectorfield.Calculate(callback, dims, getdata_callback);
     
     // check if intensities are as expected:
-    for (auto message : actual_intensities) {
+    for (auto message : messages) {
         const float* float_data = reinterpret_cast<const float*>(message.intensity_tiles(0).image_data().data());
         int float_size = message.intensity_tiles(0).image_data().size() / 4;
         std::vector<float> actual_intensity_values(float_data, float_data + float_size);
         EXPECT_THAT(actual_intensity_values, Each(FloatNear(expected_intensity, 1e-5)));
         // std::cout << "TEST intesities : " << actual_intensity_values[0] << " float_size = " << float_size << std::endl;
-    }
-
-    // check if angles are as expected:
-    for (auto message : actual_angles) {
-        const float* float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().data());
-        int float_size = message.angle_tiles(0).image_data().size() / 4;
+        
+        float_data = reinterpret_cast<const float*>(message.angle_tiles(0).image_data().data());
+        float_size = message.angle_tiles(0).image_data().size() / 4;
         std::vector<float> actual_angle_values(float_data, float_data + float_size);
         EXPECT_THAT(actual_angle_values, Each(FloatNear(expected_angle, 1e-5)));
-        // std::cout << "TEST angles : " << actual_angle_values[0] << " float_size = " << float_size << std::endl;
     }
 }
 
