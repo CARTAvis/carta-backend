@@ -88,6 +88,8 @@ public:
     static CARTA::Point Point(const std::vector<casacore::Quantity>& input, int x_index = 0, int y_index = 1);
     static CARTA::Point Point(const std::vector<double>& input, int x_index = 0, int y_index = 1);
     static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
+    static CARTA::SetRegion SetRegion(
+        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation);
     static CARTA::SetSpectralRequirements SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
     static CARTA::SetSpectralRequirements_SpectralConfig SpectralConfig(const std::string& coordinate);
     static CARTA::StartAnimation StartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame,
@@ -155,13 +157,6 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
-    static CARTA::FileListResponse AddDirectory(
-        CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count = 0);
-    static CARTA::FileInfoExtended AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
-    static CARTA::FileInfoExtended AddComputedEntry(
-        CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);
-    static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
-        std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
     static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& response, std::string coordinate, int start, int end,
         casacore::Float* profile_data, size_t profile_size, int mip);
     static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& message, int32_t file_id, int32_t region_id, int32_t start,

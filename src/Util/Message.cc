@@ -141,6 +141,21 @@ CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CA
     return message;
 }
 
+CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation) {
+    CARTA::SetRegion set_region;
+    set_region.set_file_id(file_id);
+    set_region.set_region_id(region_id);
+    auto* region_info = set_region.mutable_region_info();
+    region_info->set_region_type(region_type);
+    region_info->set_rotation(rotation);
+    for (auto control_point : control_points) {
+        auto* point = region_info->add_control_points();
+        point->set_x(control_point.x());
+        point->set_y(control_point.y());
+    }
+    return set_region;
+}
+
 CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
     CARTA::SetSpectralRequirements set_spectral_requirements;
     set_spectral_requirements.set_file_id(file_id);
@@ -696,47 +711,6 @@ CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const strin
     message.set_rotation_angle(rotation_angle);
     message.set_object(object);
     return message;
-}
-
-CARTA::FileListResponse Message::AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count) {
-    auto* directory_info = response.add_subdirectories();
-    directory_info->set_name(name);
-    directory_info->set_date(date);
-    directory_info->set_item_count(item_count);
-    return response;
-}
-
-CARTA::FileInfoExtended Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
-    auto entry = response.add_computed_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(CARTA::EntryType::STRING);
-    return response;
-}
-
-CARTA::FileInfoExtended Message::AddComputedEntry(
-    CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
-    auto entry = response.add_computed_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(type);
-    entry->set_numeric_value(numeric_value);
-    return response;
-}
-
-CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
-    std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
-    // Set CARTA::RegionInfo
-    CARTA::RegionInfo region_info;
-    region_info.set_region_type(region_type);
-    *region_info.mutable_control_points() = {control_points.begin(), control_points.end()};
-    region_info.set_rotation(region_rotation);
-
-    // Add info and style to import_ack; increment region id for next region
-    (*import_ack.mutable_regions())[region_id] = region_info;
-    (*import_ack.mutable_region_styles())[region_id] = region_style;
-
-    return import_ack;
 }
 
 CARTA::SpatialProfileData Message::AddProfile(CARTA::SpatialProfileData& message, std::string coordinate, int start, int end,
