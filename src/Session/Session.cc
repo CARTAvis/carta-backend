@@ -1282,7 +1282,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             }
 
             // Set vector overlay
-            if (image.vector_overlay_settings().file_id()) {
+            if (image.vector_overlay_settings().stokes_intensity() >= 0 || image.vector_overlay_settings().stokes_angle() >= 0) {
                 OnSetVectorOverlayParameters(image.vector_overlay_settings(), true);
             }
         }
