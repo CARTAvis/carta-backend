@@ -38,7 +38,9 @@ bool VectorFieldCalculator::Calculate(
     int num_tile_rows = ceil((double)dims.height / tile_size_original);
     int32_t tile_layer = -1;
     tiles.resize(num_tile_rows * num_tile_columns);
+
     // std::cout << "DEBUG : " << tiles.size() << " , " << num_tile_columns << " , " << num_tile_rows << std::endl;
+    // printf("DEBUG Calculate flags = %d/%d/%d/%d\n",_calculate_pi,_calculate_pa,_current_stokes_as_pi,_current_stokes_as_pa);
 
     for (int j = 0; j < num_tile_rows; ++j) {
         for (int i = 0; i < num_tile_columns; ++i) {
@@ -261,7 +263,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // lock the mutex to invalidate all the calculators :
     std::unique_lock lock_calculators(_mutex);
 
-    // this needs to be after this mutes so that if the mutex is locked first in StopCalculation we exit here
+    // this needs to be after this mutex so that if the mutex is locked first in StopCalculation we exit here
     // or if mutex here is locked first we start new calculation, but it gets invalidated (stoped) when StopCalculation acquires the mutex
     if (_stopped) {
         return true;
@@ -281,11 +283,11 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // add the new calculator object to the container of ongoing calculations
     _calculators.push_back(calculator);
     lock_calculators.unlock();
-    std::cout << "DEBUG : object added " << std::endl;
+    // std::cout << "DEBUG : object added " << std::endl;
 
     // start a new calculation of the vector field:
     bool ret = calculator->Calculate(progress_callback, dims, tile_callback);
-    std::cout << "DEBUG : calculation completed" << std::endl;
+    // std::cout << "DEBUG : calculation completed" << std::endl;
 
     // removing all calculators for now :
     //    lock_calculators.lock();
