@@ -22,7 +22,7 @@ public:
         casacore::IPosition image_shape(loader->GetShape());
 
         std::shared_ptr<DataReader> reader = nullptr;
-        if (file_path.parent_path().parent_path().filename() == "hdf5") {
+        if (file_path.parent_path().filename() == "hdf5") {
             reader.reset(new Hdf5DataReader(file_path));
         } else {
             reader.reset(new FitsDataReader(file_path));

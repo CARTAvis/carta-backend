@@ -50,7 +50,7 @@ public:
         }
 
         std::shared_ptr<DataReader> reader = nullptr;
-        if (file_path.parent_path().parent_path().filename() == "fits") {
+        if (file_path.parent_path().filename() == "fits") {
             reader.reset(new FitsDataReader(file_path));
         } else {
             reader.reset(new Hdf5DataReader(file_path));
