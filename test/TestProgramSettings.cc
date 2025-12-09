@@ -215,7 +215,7 @@ TEST_F(ProgramSettingsTest, FileImageFromPositional) {
     auto settings = SettingsFromVector({"carta_backend", fits_image_path});
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], fits_image_path);
+    EXPECT_EQ(settings.files[0], fs::relative(fits_image_path));
 }
 
 TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
@@ -224,7 +224,7 @@ TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
     std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], absolute_image_path);
+    EXPECT_EQ(settings.files[0], fs::relative(absolute_image_path));
 }
 
 TEST_F(ProgramSettingsTest, TrimExtraFolders) {
@@ -233,7 +233,7 @@ TEST_F(ProgramSettingsTest, TrimExtraFolders) {
     std::string relative_image_path = "./data/images/fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], absolute_image_path);
+    EXPECT_EQ(settings.files[0], fs::relative(absolute_image_path));
 }
 
 TEST_F(ProgramSettingsTest, FileImageRelativeToTopLevel) {
@@ -260,7 +260,7 @@ TEST_F(ProgramSettingsTest, CasaImageSetFromPositional) {
     auto casa_image_path = CasaImages() / "noise_10px_10px.im";
     auto settings = SettingsFromVector({"carta_backend", casa_image_path});
     EXPECT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], casa_image_path);
+    EXPECT_EQ(settings.files[0], fs::relative(casa_image_path));
 }
 
 TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
@@ -276,9 +276,9 @@ TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
 
     settings = SettingsFromVector({"carta_backend", casa_image_path, fits_image_path, hdf5_image_path});
     ASSERT_EQ(settings.files.size(), 3);
-    EXPECT_EQ(settings.files[0], casa_image_path);
-    EXPECT_EQ(settings.files[1], fits_image_path);
-    EXPECT_EQ(settings.files[2], hdf5_image_path);
+    EXPECT_EQ(settings.files[0], fs::relative(casa_image_path));
+    EXPECT_EQ(settings.files[1], fs::relative(fits_image_path));
+    EXPECT_EQ(settings.files[2], fs::relative(hdf5_image_path));
 }
 
 TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
@@ -319,7 +319,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
-    const std::string input = SettingsPath() / "settings-good-fields.json";
+    auto input = SettingsPath() / "settings-good-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     EXPECT_EQ(j.size(), 13);
@@ -348,7 +348,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
 }
 
 TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
-    const std::string input = SettingsPath() / "settings-good-fields.json";
+    auto input = SettingsPath() / "settings-good-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
@@ -368,7 +368,7 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
 }
 
 TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
-    const std::string input = SettingsPath() / "settings-bad-fields.json";
+    auto input = SettingsPath() / "settings-bad-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
@@ -415,8 +415,8 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
     std::vector<std::string> files;
     files.push_back(FitsImages() / "noise_3d.fits");
     files.push_back(Hdf5Images() / "noise_10px_10px.hdf5");
-    auto folder_fits = SafeStringEscape(FitsImages());
-    auto folder_hdf5 = SafeStringEscape(Hdf5Images());
+    auto folder_fits = SafeStringEscape(fs::relative(FitsImages()));
+    auto folder_hdf5 = SafeStringEscape(fs::relative(Hdf5Images()));
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("files={}{},{}{}", folder_fits, "noise_3d.fits", folder_hdf5, "noise_10px_10px.hdf5"));
