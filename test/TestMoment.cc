@@ -128,25 +128,25 @@ public:
 };
 
 TEST_F(MomentTest, CheckConsistency) {
-    std::string file_path = FitsImages() / "M17_SWex_unittest.fits";
+    auto file_path = FitsImages() / "M17_SWex_unittest.fits";
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 
     if (OpenImage(image, file_path)) {
         GenerateMoments(image, moment_axis);
     } else {
-        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_path);
+        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_path.string());
     }
 }
 
 TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
-    std::string file_path = FitsImages() / "small_perplanebeam.fits";
+    auto file_path = FitsImages() / "small_perplanebeam.fits";
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 
     if (OpenImage(image, file_path)) {
         GenerateMoments(image, moment_axis);
     } else {
-        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_path);
+        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_path.string());
     }
 }

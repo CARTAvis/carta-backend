@@ -50,10 +50,10 @@ public:
         }
 
         std::shared_ptr<DataReader> reader = nullptr;
-        if (file_path.parent_path().parent_path().filename() == "hdf5") {
-            reader.reset(new Hdf5DataReader(file_path));
-        } else {
+        if (file_path.parent_path().parent_path().filename() == "fits") {
             reader.reset(new FitsDataReader(file_path));
+        } else {
+            reader.reset(new Hdf5DataReader(file_path));
         }
 
         for (auto vertices_level : vertices_map) {
@@ -153,6 +153,7 @@ TEST_F(ContourTest, GaussianBlurHdf5FileNaN) {
 TEST_F(ContourTest, BlockAverageHdf5File) {
     GenerateContour(Hdf5Images() / "500_500_image_opts.hdf5", CARTA::SmoothingMode::BlockAverage);
 }
+
 TEST_F(ContourTest, BlockAverageHdf5FileNaN) {
     GenerateContour(Hdf5Images() / "500_500_image_opts.hdf5", CARTA::SmoothingMode::BlockAverage);
 }
