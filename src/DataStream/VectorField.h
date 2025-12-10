@@ -44,7 +44,7 @@ public:
      * @param message Parameters of the calculations as specified in the front-end Vector Overlay widget.
      * @param has_stokes_axis The flag specifying if the image has the Stokes axis (images Q and U).
      */
-    VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis);
+    VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message);
 
     /**
      * @brief Invokes the calculation of the vector overlay
@@ -191,7 +191,7 @@ public:
      * @param stokes_changed The flag specifying if the Stokes image has changed (TODO : confirm what it is ?)
      * @param z_changed The flag specifying if the Z axis has changed (TODO : confirm what it is ?)
      */
-    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, bool has_stokes_axis,
+    bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims,
         TileCallback tile_callback, bool stokes_changed = false, bool z_changed = false);
 
     /**
