@@ -8,9 +8,9 @@
 #include "Util/Message.h"
 
 // temporary before bigger changes:
-#define NONE -1
-#define CURRENT 0
-#define COMPUTED 1 
+#define DEFINE_NONE -1
+#define DEFINE_CURRENT 0
+#define DEFINE_COMPUTED 1 
 
 namespace carta {
 
@@ -28,11 +28,14 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
       _compression_quality(message.compression_quality()),
       _threshold_option(message.threshold_option()),
 // TODO : REMOVE these 4 flags :
-      _calculate_pi(_stokes_intensity == COMPUTED && has_stokes_axis),
-      _calculate_pa(_stokes_angle == COMPUTED && has_stokes_axis),
-      _current_stokes_as_pi((_stokes_intensity == CURRENT && has_stokes_axis) || (_stokes_intensity == COMPUTED && !has_stokes_axis)),
-      _current_stokes_as_pa((_stokes_angle == CURRENT && has_stokes_axis) || (_stokes_angle == COMPUTED && !has_stokes_axis)),
-      _is_valid(true) {}
+      _calculate_pi(_stokes_intensity == DEFINE_COMPUTED && has_stokes_axis),
+      _calculate_pa(_stokes_angle == DEFINE_COMPUTED && has_stokes_axis),
+      _current_stokes_as_pi((_stokes_intensity == DEFINE_CURRENT && has_stokes_axis) || (_stokes_intensity == DEFINE_COMPUTED && !has_stokes_axis)),
+      _current_stokes_as_pa((_stokes_angle == DEFINE_CURRENT && has_stokes_axis) || (_stokes_angle == DEFINE_COMPUTED && !has_stokes_axis)),
+      _is_valid(true),
+      _angle_source(_stokes_angle == -1 ? Source::NONE : _stokes_angle == 0 ? Source::CURRENT : Source::PA),
+      _intensity_source(_stokes_intensity == -1 ? Source::NONE : _stokes_intensity == 0 ? Source::CURRENT : _fractional ? Source::FPI : Source::PI),
+      _threshold_source(std::isnan(_threshold)? Source::NONE : _threshold_option == 0 ? Source::CURRENT : _threshold_option == 1 ? Source::I : _fractional ? Source::FPI : Source::PI) {}
 
 bool VectorFieldCalculator::Calculate(
     const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, TileCallback tile_callback) {
@@ -256,8 +259,8 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // making local copy of the message in case it changes as the calculation goes on:
     auto parameters = _parameters;
 
-    if (!z_changed && stokes_changed && parameters.stokes_intensity() != CURRENT &&
-        parameters.stokes_angle() != CURRENT) {
+    if (!z_changed && stokes_changed && parameters.stokes_intensity() != DEFINE_CURRENT &&
+        parameters.stokes_angle() != DEFINE_CURRENT) {
         // TODO : review this part as I do not fully understand it yet ...
         return true;
     }
@@ -279,7 +282,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // remvoing all objects from the container after they all got invalidated :
     _calculators.clear();
 
-    if (parameters.stokes_intensity() == NONE && parameters.stokes_angle() == NONE) {
+    if (parameters.stokes_intensity() == DEFINE_NONE && parameters.stokes_angle() == DEFINE_NONE) {
         std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
         return true;
     }

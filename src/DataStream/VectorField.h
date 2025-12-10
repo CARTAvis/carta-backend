@@ -71,6 +71,14 @@ public:
         _is_valid = false;
     }
 
+    bool Disabled() {
+       return (_intensity_source == Source::NONE && _angle_source == Source::NONE);
+    }
+    
+    bool UsesCurrent() {
+       return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT || _threshold_source == Source::CURRENT );
+    }
+
     struct Valid {
         bool operator()(float a, float b) {
             return (!std::isnan(a) && !std::isnan(b));
@@ -147,6 +155,11 @@ protected:
     bool _calculate_pa;
     bool _current_stokes_as_pi;
     bool _current_stokes_as_pa;
+    
+    // sources of data:
+    Source _intensity_source;
+    Source _angle_source;
+    Source _threshold_source;
 
     // indicates if the calculation is valid and should be continued :
     bool _is_valid;
