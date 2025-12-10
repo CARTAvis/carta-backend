@@ -192,7 +192,7 @@ TEST_F(ProgramSettingsTest, OverrideDeprecatedBase) {
 TEST_F(ProgramSettingsTest, StartingFolderFromPositional) {
     auto file_path = ImagesPath();
     auto settings = SettingsFromVector({"carta_backend", file_path});
-    EXPECT_EQ(settings.starting_folder, ImagesPath());
+    EXPECT_EQ(settings.starting_folder, file_path);
     EXPECT_TRUE(settings.files.empty());
 }
 
@@ -221,7 +221,7 @@ TEST_F(ProgramSettingsTest, FileImageFromPositional) {
 TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
     auto absolute_image_path = FitsImages() / "noise_10px_10px.fits";
     fs::current_path(TestRoot());
-    std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
+    std::string relative_image_path = fs::relative(absolute_image_path);
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], fs::relative(absolute_image_path, "/"));

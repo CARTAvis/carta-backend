@@ -72,7 +72,7 @@ TEST_F(FitsImageTest, CorrectShape3dImage) {
 }
 
 TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
-    auto path = FitsImages() / "noise_4d.fits";
+    auto path = FitsImages() / "noise_3d_degen.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -81,14 +81,14 @@ TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(shape.size(), 4);
     EXPECT_EQ(shape[0], 10);
     EXPECT_EQ(shape[1], 10);
-    EXPECT_EQ(shape[2], 5);
-    EXPECT_EQ(shape[3], 2);
-    EXPECT_EQ(frame->Depth(), 5);
-    EXPECT_EQ(frame->NumStokes(), 2);
+    EXPECT_EQ(shape[2], 10);
+    EXPECT_EQ(shape[3], 1);
+    EXPECT_EQ(frame->Depth(), 10);
+    EXPECT_EQ(frame->NumStokes(), 1);
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path = FitsImages() / "noise_4d_casa.fits";
+    path = FitsImages() / "noise_3d_degen_casa.fits";
     loader.reset(carta::FileLoader::GetLoader(path));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -97,10 +97,10 @@ TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(shape.size(), 4);
     EXPECT_EQ(shape[0], 10);
     EXPECT_EQ(shape[1], 10);
-    EXPECT_EQ(shape[2], 2);
-    EXPECT_EQ(shape[3], 5);
-    EXPECT_EQ(frame->Depth(), 5);
-    EXPECT_EQ(frame->NumStokes(), 2);
+    EXPECT_EQ(shape[2], 1);
+    EXPECT_EQ(shape[3], 10);
+    EXPECT_EQ(frame->Depth(), 10);
+    EXPECT_EQ(frame->NumStokes(), 1);
     EXPECT_EQ(frame->StokesAxis(), 2);
 }
 

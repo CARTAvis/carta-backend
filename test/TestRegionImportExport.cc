@@ -174,11 +174,11 @@ public:
 
 TEST_F(RegionImportExportTest, TestCrtfPixExportImport) {
     // frame 0
-    std::string image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
     std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
     std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
     // frame 1
-    std::string image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto = Hdf5Images() / "noise_10px_10px.hdf5";
     std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
     std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
@@ -240,11 +240,11 @@ TEST_F(RegionImportExportTest, TestCrtfPixExportImport) {
 
 TEST_F(RegionImportExportTest, TestCrtfWorldExportImport) {
     // frame 0
-    std::string image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
     std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
     std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
     // frame 1
-    std::string image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
     std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
     std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
@@ -304,11 +304,11 @@ TEST_F(RegionImportExportTest, TestCrtfWorldExportImport) {
 
 TEST_F(RegionImportExportTest, TestDs9PixExportImport) {
     // frame 0
-    std::string image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
     std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
     std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
     // frame 1
-    std::string image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
     std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
     std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 
@@ -368,11 +368,11 @@ TEST_F(RegionImportExportTest, TestDs9PixExportImport) {
 
 TEST_F(RegionImportExportTest, TestDs9WorldExportImport) {
     // frame 0
-    std::string image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
     std::shared_ptr<carta::FileLoader> loader0(carta::FileLoader::GetLoader(image_path0));
     std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
     // frame 1
-    std::string image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
     std::shared_ptr<carta::FileLoader> loader1(carta::FileLoader::GetLoader(image_path1));
     std::shared_ptr<Frame> frame1(new Frame(0, loader1, "0"));
 

@@ -62,7 +62,7 @@ public:
 };
 
 TEST_F(RegionStatsTest, TestFitsRegionStats) {
-    std::string image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionStatsData stats_data;
     bool ok = RegionStats(image_path, endpoints, stats_data);
@@ -100,7 +100,7 @@ TEST_F(RegionStatsTest, TestFitsRegionStats) {
 }
 
 TEST_F(RegionStatsTest, TestFitsAnnotationRegionStats) {
-    std::string image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
     CARTA::RegionStatsData stats_data;
     bool ok = RegionStats(image_path, endpoints, stats_data, true);

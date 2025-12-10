@@ -36,15 +36,15 @@ fs::path ImagesPath() {
 }
 
 fs::path FitsImages() {
-    return TestRoot() / "data" / "images" / "fits";
+    return ImagesPath() / "fits";
 }
 
 fs::path CasaImages() {
-    return TestRoot() / "data" / "images" / "casa";
+    return ImagesPath() / "casa";
 }
 
 fs::path Hdf5Images() {
-    return TestRoot() / "data" / "images" / "hdf5";
+    return ImagesPath() / "hdf5";
 }
 
 fs::path MixedImages() {

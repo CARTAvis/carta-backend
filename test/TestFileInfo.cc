@@ -14,13 +14,11 @@
 
 using namespace carta;
 
-static const std::string SAMPLE_FILES_PATH = MixedImages();
-
 class FileInfoLoaderTest : public ::testing::Test {
 public:
     static void CheckFileInfoLoader(
         const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
-        std::string fullname = SAMPLE_FILES_PATH + "/" + request_filename;
+        std::string fullname = MixedImages() / request_filename;
         CARTA::FileInfo file_info;
         file_info.set_name(request_filename);
 
@@ -46,7 +44,7 @@ class FileExtInfoLoaderTest : public ::testing::Test {
 public:
     static void CheckFileExtInfoLoader(
         const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
-        std::string fullname = SAMPLE_FILES_PATH + "/" + request_filename;
+        std::string fullname = MixedImages() / request_filename;
         auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fullname));
         FileExtInfoLoader ext_info_loader(loader);
         bool file_info_ok;
@@ -182,7 +180,7 @@ public:
     TestSession() : Session(nullptr, nullptr, 0, "", nullptr) {}
 
     void TestFileInfo(const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
-        auto request = Message::FileInfoRequest(SAMPLE_FILES_PATH, request_filename, request_hdu);
+        auto request = Message::FileInfoRequest(MixedImages(), request_filename, request_hdu);
         CARTA::FileInfoResponse response;
         auto& file_info = *response.mutable_file_info();
         std::map<std::string, CARTA::FileInfoExtended> extended_info_map;

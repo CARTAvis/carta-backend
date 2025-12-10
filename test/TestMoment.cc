@@ -132,11 +132,8 @@ TEST_F(MomentTest, CheckConsistency) {
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 
-    if (OpenImage(image, file_path)) {
-        GenerateMoments(image, moment_axis);
-    } else {
-        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_path.string());
-    }
+    GenerateMoments(image, moment_axis);
+    spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_path.string());
 }
 
 TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
