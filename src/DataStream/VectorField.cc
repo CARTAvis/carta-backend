@@ -159,17 +159,17 @@ bool VectorFieldCalculator::Calculate(
         }*/        
         
         // MY TRY TO DO ORDER AS IN THE DOCUMENT : order of calculations as in the document :
-        // ??? What does this mean :  Then get I, Q, U
         // Then apply the threshold cut to Q if the threshold source is current or I (using the appropriate source)
         std::vector<float> pa,pi;
         if (_threshold_source == Source::CURRENT || _threshold_source == Source::I ) {
-            std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), stokes_data[CARTA::PolarizationType::Q].begin(),
-                    stokes_data[CARTA::PolarizationType::Q].begin(), threshold_cut);
-                    
-            
-            if (_intensity_source == Source::CURRENT ) {
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), stokes_data[CARTA::PolarizationType::I].begin(),
-                    stokes_data[CARTA::PolarizationType::I].begin(), threshold_cut);    
+            if( _threshold_source == Source::I ) {
+               std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), stokes_data[CARTA::PolarizationType::Q].begin(),
+                       stokes_data[CARTA::PolarizationType::Q].begin(), threshold_cut);
+            }
+                                
+            if (_threshold_source == Source::CURRENT ) {
+                std::transform(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(), stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), stokes_data[CARTA::PolarizationType::Q].begin(),
+                    stokes_data[CARTA::PolarizationType::Q].begin(), threshold_cut);    
             }            
         }
         
