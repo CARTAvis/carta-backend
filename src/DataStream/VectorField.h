@@ -150,13 +150,7 @@ protected:
     float _compression_quality;
     CARTA::PolarizationType _threshold_option;
 
-    // Extra variables to be determined based on the existence of stokes axis
-    bool _calculate_pi;
-    bool _calculate_pa;
-    bool _current_stokes_as_pi;
-    bool _current_stokes_as_pa;
-    
-    // sources of data:
+    // sources of data, possible values: NONE, CURRENT, I, PA, PI, FPI
     Source _intensity_source;
     Source _angle_source;
     Source _threshold_source;

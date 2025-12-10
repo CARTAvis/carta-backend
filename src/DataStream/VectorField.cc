@@ -27,11 +27,6 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
       _compression_type(message.compression_type()),
       _compression_quality(message.compression_quality()),
       _threshold_option(message.threshold_option()),
-// TODO : REMOVE these 4 flags :
-      _calculate_pi(_stokes_intensity == DEFINE_COMPUTED && has_stokes_axis),
-      _calculate_pa(_stokes_angle == DEFINE_COMPUTED && has_stokes_axis),
-      _current_stokes_as_pi((_stokes_intensity == DEFINE_CURRENT && has_stokes_axis) || (_stokes_intensity == DEFINE_COMPUTED && !has_stokes_axis)),
-      _current_stokes_as_pa((_stokes_angle == DEFINE_CURRENT && has_stokes_axis) || (_stokes_angle == DEFINE_COMPUTED && !has_stokes_axis)),
       _is_valid(true),
       _angle_source(_stokes_angle == -1 ? Source::NONE : _stokes_angle == 0 ? Source::CURRENT : Source::PA),
       _intensity_source(_stokes_intensity == -1 ? Source::NONE : _stokes_intensity == 0 ? Source::CURRENT : _fractional ? Source::FPI : Source::PI),
@@ -60,16 +55,16 @@ bool VectorFieldCalculator::Calculate(
     }
 
     // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
-    std::unordered_map<CARTA::PolarizationType, bool> stokes_flag{{CARTA::PolarizationType::POLARIZATION_TYPE_NONE, false},
-        {CARTA::PolarizationType::I, false}, {CARTA::PolarizationType::Q, false}, {CARTA::PolarizationType::U, false}};
+    // std::unordered_map<CARTA::PolarizationType, bool> stokes_flag{{CARTA::PolarizationType::POLARIZATION_TYPE_NONE, false},
+    //     {CARTA::PolarizationType::I, false}, {CARTA::PolarizationType::Q, false}, {CARTA::PolarizationType::U, false}};
 
     // Set stokes flags and get their indices
     bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == CARTA::PolarizationType::I;
 
     // TODO: eliminate this stokes_flag completely - is it really OK ?
-    stokes_flag[CARTA::PolarizationType::I] = (_fractional || use_threshold_I);
-    stokes_flag[CARTA::PolarizationType::Q] = (_calculate_pi || _calculate_pa);
-    stokes_flag[CARTA::PolarizationType::U] = (_calculate_pi || _calculate_pa);
+    // stokes_flag[CARTA::PolarizationType::I] = (_fractional || use_threshold_I);
+    // stokes_flag[CARTA::PolarizationType::Q] = (_calculate_pi || _calculate_pa);
+    // stokes_flag[CARTA::PolarizationType::U] = (_calculate_pi || _calculate_pa);
 
     // Get image tiles data
     // TODO/TBD : make sure this declaration can stay before the loop and shoudn't be inside the loop as originally was. Unit test case ?
@@ -96,16 +91,17 @@ bool VectorFieldCalculator::Calculate(
         int width, height;
         double progress = (double)(i + 1) / tiles.size();
 
+        // TODO : ??? This is a fallback - so should be removed, corrrect ?
         // Get current stokes data
-        if (_current_stokes_as_pi || _current_stokes_as_pa) {
+        /*if (_current_stokes_as_pi || _current_stokes_as_pa) {
             if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor,
                     CARTA::PolarizationType::POLARIZATION_TYPE_NONE, width, height)) { // current_stokes_index,
                 return false;
             }
-        }
+        }*/
 
         // Get stokes data I, Q, or U
-        if (_calculate_pi || _calculate_pa) {
+        /*if (_calculate_pi || _calculate_pa) {
             for (auto one : stokes_flag) {
                 CARTA::PolarizationType stokes = one.first;
                 if (stokes_flag[stokes] &&
@@ -113,7 +109,21 @@ bool VectorFieldCalculator::Calculate(
                     return false;
                 }
             }
+        }*/
+
+        // for now get all of them:
+        if (!tile_callback(stokes_data[CARTA::PolarizationType::I], bounds, _smoothing_factor, CARTA::PolarizationType::I, width, height)) {
+            return false;
         }
+        
+        if (!tile_callback(stokes_data[CARTA::PolarizationType::Q], bounds, _smoothing_factor, CARTA::PolarizationType::Q, width, height)) {
+            return false;
+        }
+        
+        if (!tile_callback(stokes_data[CARTA::PolarizationType::U], bounds, _smoothing_factor, CARTA::PolarizationType::U, width, height)) {
+            return false;
+        }
+        
 
         // The body of the previous function CalculatePiPa has been moved here:
         auto response =
@@ -124,8 +134,9 @@ bool VectorFieldCalculator::Calculate(
         // Threshold cut operator to be applied
         ThresholdCut threshold_cut(_threshold);
 
+        // TODO : ??? This is a fallback - so should be removed, corrrect ?
         // Current stokes data as PI or PA
-        if (_current_stokes_as_pi || _current_stokes_as_pa) {
+        /*if (_current_stokes_as_pi || _current_stokes_as_pa) {
             // Apply a threshold cut
             std::for_each(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
                 stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), threshold_cut);
@@ -140,11 +151,12 @@ bool VectorFieldCalculator::Calculate(
                     stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
                 // printf("FillTileData : _current_stokes_as_pa : %.4f\n",stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][0]);
             }
-        }
+        }*/        
 
         // Calculate PI and PA using stokes data I, Q or U
         std::vector<float> pi;
-        if (_calculate_pi || (_calculate_pa && _threshold_option == CARTA::PolarizationType::Plinear)) {
+        if ((_intensity_source == Source::PI || _intensity_source == Source::FPI) || (_threshold_source == Source::PI || _threshold_source == Source::FPI) || // was calculate_pi
+            (_angle_source == Source::PA && _threshold_option == CARTA::PolarizationType::Plinear)) { // was calculate_pa
             // Lambda function to calculate PI, errors are applied
             CalcPi calc_pi(_q_error, _u_error);
             pi.resize(width * height);
@@ -159,21 +171,21 @@ bool VectorFieldCalculator::Calculate(
             }
 
             // Set NAN for PI/FPI if stokes I or Plinear (pi) is NAN or below the threshold
-            if (stokes_flag[CARTA::PolarizationType::I] && _threshold_option == CARTA::PolarizationType::I) {
+            if (_threshold_option == CARTA::PolarizationType::I) { // was stokes_flag[CARTA::PolarizationType::I]
                 std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(),
                     pi.begin(), threshold_cut);
             } else {
                 std::for_each(pi.begin(), pi.end(), threshold_cut);
             }
 
-            if (_calculate_pi) {
+            if ((_intensity_source == Source::PI || _intensity_source == Source::FPI) || (_threshold_source == Source::PI || _threshold_source == Source::FPI)) { // was calculate_pi
                 FillTileData(
                     tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
                 // printf("FillTileData : _calculate_pi : %.4f\n",pi[0]);
             }
         }
 
-        if (_calculate_pa) {
+        if (_angle_source == Source::PA) { // was calculate_pa
             std::vector<float> pa;
             pa.resize(width * height);
             CalcPa calc_pa;
@@ -181,7 +193,7 @@ bool VectorFieldCalculator::Calculate(
                 stokes_data[CARTA::PolarizationType::U].begin(), pa.begin(), calc_pa);
 
             // Set NAN for PA if stokes I or Plinear (pi) is NAN or below the threshold
-            if (stokes_flag[CARTA::PolarizationType::I] && _threshold_option == CARTA::PolarizationType::I) {
+            if (_threshold_option == CARTA::PolarizationType::I) {
                 std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pa.begin(),
                     pa.begin(), threshold_cut);
             } else {
