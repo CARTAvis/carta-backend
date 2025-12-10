@@ -215,7 +215,7 @@ TEST_F(ProgramSettingsTest, FileImageFromPositional) {
     auto settings = SettingsFromVector({"carta_backend", fits_image_path});
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], fs::relative(fits_image_path));
+    EXPECT_EQ(settings.files[0], fs::relative(fits_image_path, "/"));
 }
 
 TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
@@ -224,7 +224,7 @@ TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
     std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], fs::relative(absolute_image_path));
+    EXPECT_EQ(settings.files[0], fs::relative(absolute_image_path, TestRoot()));
 }
 
 TEST_F(ProgramSettingsTest, TrimExtraFolders) {
