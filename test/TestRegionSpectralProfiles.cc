@@ -35,7 +35,7 @@ public:
         return region_handler.SetRegion(region_id, region_state, csys);
     }
 
-    static bool SpectralProfile(const std::string& image_path, const std::vector<float>& points, CARTA::SpectralProfileData& spectral_data,
+    static bool SpectralProfile(const fs::path& image_path, const std::vector<float>& points, CARTA::SpectralProfileData& spectral_data,
         bool is_annotation = false) {
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -61,7 +61,7 @@ public:
             [&](CARTA::SpectralProfileData profile_data) { spectral_data = profile_data; }, region_id, file_id, false);
     }
 
-    static std::vector<double> GetExpectedMeanProfile(std::string& image_path, int num_channels, CARTA::RegionType type) {
+    static std::vector<double> GetExpectedMeanProfile(fs::path& image_path, int num_channels, CARTA::RegionType type) {
         // Read image for profile for box region blc (0,0) trc (3,3) or point (3,3)
         FitsDataReader reader(image_path);
         std::vector<double> profile;
