@@ -415,8 +415,8 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
     std::vector<std::string> files;
     files.push_back(FitsImages() / "noise_3d.fits");
     files.push_back(Hdf5Images() / "noise_10px_10px.hdf5");
-    auto fits_file = SafeStringEscape(fs::absolute(FitsImages(), "/") / "noise_3d.fits");
-    auto hdf5_file = SafeStringEscape(fs::absolute(Hdf5Images(), "/") / "noise_10px_10px.hdf5");
+    auto fits_file = SafeStringEscape(fs::absolute(FitsImages() / "noise_3d.fits"));
+    auto hdf5_file = SafeStringEscape(fs::absolute(Hdf5Images() / "noise_10px_10px.hdf5"));
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("files={},{}", fits_file, hdf5_file));
