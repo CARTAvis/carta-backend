@@ -112,7 +112,7 @@ bool VectorFieldCalculator::Calculate(
         }*/
 
         // First get the current data
-        if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor, CARTA::PolarizationType::I, width, height)) {
+        if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor, CARTA::PolarizationType::POLARIZATION_TYPE_NONE, width, height)) {
             return false;
         }
 
