@@ -22,7 +22,7 @@ std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
     {CARTA::PolarizationType::I, 2}, {CARTA::PolarizationType::Q, 3}, {CARTA::PolarizationType::U, 4}, {CARTA::PolarizationType::V, 5}};
 
 CARTA::SetVectorOverlayParameters SourceTestMessage(int intensity = VectorFieldCalculator::COMPUTED,
-    int angle = VectorFieldCalculator::COMPUTED, bool fractional = false, int u_error = 0, int q_error = 0) {
+    int angle = VectorFieldCalculator::COMPUTED, bool fractional = false, float u_error = 0, float q_error = 0) {
     CARTA::SetVectorOverlayParameters message;
     message.set_stokes_intensity(intensity);
     message.set_stokes_angle(angle);
@@ -129,7 +129,8 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), true, sqrt(3 * 3 + 4 * 4),
             ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA and Stokes I (as above)
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2), true,
-            sqrt(3 * 3 + 4 * 4), 1), // de-biasing with errors in Q and U
+            ((float)std::sqrt(std::pow(3, 2) + std::pow(4, 2) - (std::pow(0.1, 2) + std::pow(0.2, 2)) / 2.0)), 1 ),
+            // Another way TBC : VectorFieldCalculator::CalcPi(0.1,0.2)(3, 4), 1), // de-biasing with errors in Q and U
         TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), true,
             (sqrt(3 * 3 + 4 * 4) / 2) * 100.00, 1), // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
         TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::NONE, false), false,
