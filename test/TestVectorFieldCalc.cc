@@ -40,7 +40,7 @@ CARTA::SetVectorOverlayParameters SourceTestMessage(int intensity = COMPUTED,
     return message;
 }
 
-using TestParameters = std::tuple<CARTA::SetVectorOverlayParameters, bool, float, float>;
+using TestParameters = std::tuple<CARTA::SetVectorOverlayParameters, float, float>;
 
 // Define the parameterized test fixture
 class VectorFieldCalcParamTest : public ::testing::TestWithParam<TestParameters> {
@@ -53,11 +53,9 @@ protected:
 
 TEST_P(VectorFieldCalcParamTest, TestStokes) {
     std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
-    auto [test_parameters, has_stokes_axis, expected_intensity, expected_angle] = GetParam();
+    auto [test_parameters, expected_intensity, expected_angle] = GetParam();
 
-    // TODO : to be added as one more parameter:
-    // bool has_stokes_axis = true; // (test_parameters.stokes_angle() > 0);
-    VectorFieldCalculator vectorfield(test_parameters, has_stokes_axis);
+    VectorFieldCalculator vectorfield(test_parameters);
     std::vector<CARTA::VectorOverlayTileData> messages;
 
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
@@ -123,17 +121,17 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
-    ::testing::Values(TestParameters(SourceTestMessage(CURRENT, CURRENT), true, 1, 1),
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED), true, 1,
+    ::testing::Values(TestParameters(SourceTestMessage(CURRENT, CURRENT), 1, 1),
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED), 1,
             ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA
-        TestParameters(SourceTestMessage(COMPUTED, CURRENT), true, sqrt(3 * 3 + 4 * 4),
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT), sqrt(3 * 3 + 4 * 4),
             1), // Q=3 and U=4 -> Computed I=Q^2 + U^2
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED), true, sqrt(3 * 3 + 4 * 4),
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED), sqrt(3 * 3 + 4 * 4),
             ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA and Stokes I (as above)
-        TestParameters(SourceTestMessage(COMPUTED, CURRENT, false, 0.1, 0.2), true,
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT, false, 0.1, 0.2), 
             ((float)std::sqrt(std::pow(3, 2) + std::pow(4, 2) - (std::pow(0.1, 2) + std::pow(0.2, 2)) / 2.0)), 1 ),
             // Another way TBC : CalcPi(0.1,0.2)(3, 4), 1), // de-biasing with errors in Q and U
-        TestParameters(SourceTestMessage(COMPUTED, CURRENT, true), true,
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT, true), 
             (sqrt(3 * 3 + 4 * 4) / 2) * 100.00, 1), // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
-        TestParameters(SourceTestMessage(CURRENT, NONE, false), false,
+        TestParameters(SourceTestMessage(CURRENT, NONE, false), 
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())));

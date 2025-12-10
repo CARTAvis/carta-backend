@@ -14,7 +14,7 @@
 
 namespace carta {
 
-VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis)
+VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message)
     : _file_id(message.file_id()),
       _smoothing_factor(message.smoothing_factor()),
       _fractional(message.fractional()),
@@ -256,60 +256,6 @@ bool VectorFieldCalculator::Calculate(
         // Send response message
         response.set_progress(progress);
         progress_callback(response);
-        continue;        
-        
-// ---------------------------------------------------------------------------------------------- OLD CODE FOR REFERENCE ONLY ??? ----------------------------------------------------------------------------------------------
-        // OLD CODE WHERE I CHANGED flags to new enum members : TBD is to use or the above 
-        // Calculate PI and PA using stokes data I, Q or U
-        if ((_intensity_source == Source::PI || _intensity_source == Source::FPI) || (_threshold_source == Source::PI || _threshold_source == Source::FPI) || // was calculate_pi
-            (_angle_source == Source::PA && _threshold_option == CARTA::PolarizationType::Plinear)) { // was calculate_pa
-            // Lambda function to calculate PI, errors are applied
-            CalcPi calc_pi(_q_error, _u_error);
-            pi.resize(width * height);
-            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
-                stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
-            // printf("std::transform calc pi : %.4f\n",pi[0]);
-            if (_fractional) { // Calculate fractional PI
-                CalcFpi calc_fpi;
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(),
-                    pi.begin(), calc_fpi);
-                // printf("std::transform calc fpi : %.4f\n",pi[0]);
-            }
-
-            // Set NAN for PI/FPI if stokes I or Plinear (pi) is NAN or below the threshold
-            if (_threshold_option == CARTA::PolarizationType::I) { // was stokes_flag[CARTA::PolarizationType::I]
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(),
-                    pi.begin(), threshold_cut);
-            } else {
-                std::for_each(pi.begin(), pi.end(), threshold_cut);
-            }
-
-            if ((_intensity_source == Source::PI || _intensity_source == Source::FPI) || (_threshold_source == Source::PI || _threshold_source == Source::FPI)) { // was calculate_pi
-                FillTileData(
-                    tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
-                // printf("FillTileData : _calculate_pi : %.4f\n",pi[0]);
-            }
-        }
-
-        if (_angle_source == Source::PA) { // was calculate_pa
-            std::vector<float> pa;
-            pa.resize(width * height);
-            CalcPa calc_pa;
-            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
-                stokes_data[CARTA::PolarizationType::U].begin(), pa.begin(), calc_pa);
-
-            // Set NAN for PA if stokes I or Plinear (pi) is NAN or below the threshold
-            if (_threshold_option == CARTA::PolarizationType::I) {
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pa.begin(),
-                    pa.begin(), threshold_cut);
-            } else {
-                std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
-            }
-            FillTileData(
-                tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
-            // printf("FillTileData : _calculate_pa : %.4f\n",pa[0]);
-        }
-
     }
 
     return true;
@@ -370,7 +316,7 @@ void VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParame
 }
 
 bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims,
-    bool has_stokes_axis, TileCallback tile_callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
+    TileCallback tile_callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
     // making local copy of the message in case it changes as the calculation goes on:
     auto parameters = _parameters;
     
@@ -403,7 +349,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     }
 
     // create new calculator and add to the vector of on-going calculators :
-    auto calculator = std::make_shared<VectorFieldCalculator>(parameters, has_stokes_axis);
+    auto calculator = std::make_shared<VectorFieldCalculator>(parameters);
 
     // add the new calculator object to the container of ongoing calculations
     _calculators.push_back(calculator);
