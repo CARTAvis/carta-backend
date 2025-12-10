@@ -2544,8 +2544,7 @@ bool Frame::CalculateVectorField(
         callback(message);
     };
 
-    bool has_stokes_axis(_axes.stokes > -1);
-    return _vector_field.NewCalculation(message_callback, _dims, has_stokes_axis, tile_callback, stokes_changed, z_changed);
+    return _vector_field.NewCalculation(message_callback, _dims, tile_callback, stokes_changed, z_changed);
 }
 
 } // namespace carta
