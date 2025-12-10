@@ -244,7 +244,10 @@ bool VectorFieldCalculator::Calculate(
         
         // Now whatever combination of current / pi / pa contains the required angle and intensity data should have the correct threshold applied.
 
-        
+        // Send response message
+        response.set_progress(progress);
+        progress_callback(response);
+        continue;        
         
 // ---------------------------------------------------------------------------------------------- OLD CODE FOR REFERENCE ONLY ??? ----------------------------------------------------------------------------------------------
         // OLD CODE WHERE I CHANGED flags to new enum members : TBD is to use or the above 
@@ -298,9 +301,6 @@ bool VectorFieldCalculator::Calculate(
             // printf("FillTileData : _calculate_pa : %.4f\n",pa[0]);
         }
 
-        // Send response message
-        response.set_progress(progress);
-        progress_callback(response);
     }
 
     return true;
