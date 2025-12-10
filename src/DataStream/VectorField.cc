@@ -157,8 +157,8 @@ bool VectorFieldCalculator::Calculate(
         // MY TRY TO DO ORDER AS IN THE DOCUMENT : order of calculations as in the document :
         // ??? What does this mean :  Then get I, Q, U
         // Then apply the threshold cut to Q if the threshold source is current or I (using the appropriate source)
+        std::vector<float> pa,pi;
         if (_threshold_source == Source::CURRENT || _threshold_source == Source::I ) {
-            std::vector<float> pa;
             std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), stokes_data[CARTA::PolarizationType::Q].begin(),
                     stokes_data[CARTA::PolarizationType::Q].begin(), threshold_cut);
                     
@@ -166,24 +166,60 @@ bool VectorFieldCalculator::Calculate(
             if (_intensity_source == Source::CURRENT ) {
                 std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), stokes_data[CARTA::PolarizationType::I].begin(),
                     stokes_data[CARTA::PolarizationType::I].begin(), threshold_cut);    
-            }        
-            
-            if (_angle_source == Source::CURRENT ) {
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pa.begin(),
-                    pa.begin(), threshold_cut);                            
-            }
+            }            
         }
         
 
         // Then do the PA / PI / FPI calculations
         // this may be parts of the OLD code below (without the threshold parts I believe) 
+        if (_angle_source == Source::PA) {
+            pa.resize(width * height);
+            CalcPa calc_pa;
+            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
+                stokes_data[CARTA::PolarizationType::U].begin(), pa.begin(), calc_pa);                
+        }
+        
+        if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
+            std::vector<float> pi;
+            CalcPi calc_pi(_q_error, _u_error);
+            pi.resize(width * height);
+            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
+                stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
+            
+            if (_intensity_source == Source::FPI) {
+                CalcFpi calc_fpi;
+                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(),
+                    pi.begin(), calc_fpi);
+            }
+        }
+        
         
         // Then apply the threshold cut to the current data, only if the angle or intensity source is current and the threshold source is PI or FPI. 
-        // ???
+        if (_threshold_source == Source::PI || _threshold_source == Source::FPI ) {
+              if (_intensity_source == Source::CURRENT) {
+                  // Bug ??? looks like I may be applying threshold second time here, or maybe not ?
+                  std::transform(pi.begin(), pi.end(), pi.begin(), pi.begin(), threshold_cut);
+              }
+                            
+              if (_angle_source == Source::CURRENT) {
+                  // what is angle source current actually ??? It can only be computed right ?
+                  // std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
+              }
+        }
         
         // Then apply the threshold cut to pa, only if the threshold source is PI or FPI. 
-        
+        if (_threshold_source == Source::PI || _threshold_source == Source::FPI ) {
+            if (_angle_source == Source::PA) {
+               std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
+            }
+        }
+                
         // Then apply the threshold cut to pi, only if the intensity source is PI or FPI and the threshold source is PI or FPI.
+        if (_threshold_source == Source::PI || _threshold_source == Source::FPI ) {
+           if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
+               std::transform(pi.begin(), pi.end(), pi.begin(), pi.begin(), threshold_cut);
+           }
+        }
         
         // Now whatever combination of current / pi / pa contains the required angle and intensity data should have the correct threshold applied.
 
@@ -192,7 +228,6 @@ bool VectorFieldCalculator::Calculate(
 // ---------------------------------------------------------------------------------------------- OLD CODE FOR REFERENCE ONLY ??? ----------------------------------------------------------------------------------------------
         // OLD CODE WHERE I CHANGED flags to new enum members : TBD is to use or the above 
         // Calculate PI and PA using stokes data I, Q or U
-        std::vector<float> pi;
         if ((_intensity_source == Source::PI || _intensity_source == Source::FPI) || (_threshold_source == Source::PI || _threshold_source == Source::FPI) || // was calculate_pi
             (_angle_source == Source::PA && _threshold_option == CARTA::PolarizationType::Plinear)) { // was calculate_pa
             // Lambda function to calculate PI, errors are applied
