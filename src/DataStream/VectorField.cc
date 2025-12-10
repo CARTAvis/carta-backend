@@ -112,7 +112,11 @@ bool VectorFieldCalculator::Calculate(
         }*/
 
         // First get the current data
-        // for now get all of them:
+        if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor, CARTA::PolarizationType::I, width, height)) {
+            return false;
+        }
+
+        // Then get I, Q, U:        
         if (!tile_callback(stokes_data[CARTA::PolarizationType::I], bounds, _smoothing_factor, CARTA::PolarizationType::I, width, height)) {
             return false;
         }
@@ -196,14 +200,9 @@ bool VectorFieldCalculator::Calculate(
         
         // Then apply the threshold cut to the current data, only if the angle or intensity source is current and the threshold source is PI or FPI. 
         if (_threshold_source == Source::PI || _threshold_source == Source::FPI ) {
-              if (_intensity_source == Source::CURRENT) {
+              if (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT) {
                   // Bug ??? looks like I may be applying threshold second time here, or maybe not ?
-                  std::transform(pi.begin(), pi.end(), pi.begin(), pi.begin(), threshold_cut);
-              }
-                            
-              if (_angle_source == Source::CURRENT) {
-                  // what is angle source current actually ??? It can only be computed right ?
-                  // std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
+                  std::transform(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(), stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), pi.begin(), stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(), threshold_cut);
               }
         }
         
@@ -220,6 +219,28 @@ bool VectorFieldCalculator::Calculate(
                std::transform(pi.begin(), pi.end(), pi.begin(), pi.begin(), threshold_cut);
            }
         }
+
+        // FillTileData        
+        if (_intensity_source == Source::CURRENT ) {
+            FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,
+                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
+        }
+        
+        if (_angle_source == Source::CURRENT ) {
+            FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,
+                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);            
+        }
+        
+        if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
+            FillTileData(
+               tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
+        }
+        
+        if (_angle_source == Source::PA ) {
+            FillTileData(
+                tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
+        }
+
         
         // Now whatever combination of current / pi / pa contains the required angle and intensity data should have the correct threshold applied.
 
