@@ -419,5 +419,5 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
     auto hdf5_file = fs::relative(Hdf5Images(), "/") / "noise_10px_10px.hdf5";
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
-    EXPECT_EQ(url_string, "files=" + SafeStringEscape(fmt::format("{},{}", fits_file, hdf5_file)));
+    EXPECT_EQ(url_string, "files=" + SafeStringEscape(fmt::format("{},{}", fits_file.string(), hdf5_file.string())));
 }
