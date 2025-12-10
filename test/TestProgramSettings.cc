@@ -419,6 +419,6 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
     auto folder_hdf5 = SafeStringEscape(fs::relative(Hdf5Images(), "/"));
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
-    EXPECT_EQ(
-        url_string, "files=" + SafeStringEscape(fmt::format("{}/{},{}/{}", folder_fits, "noise_3d.fits", folder_hdf5, "noise_10px_10px.hdf5")));
+    EXPECT_EQ(url_string,
+        "files=" + SafeStringEscape(fmt::format("{}/{},{}/{}", folder_fits, "noise_3d.fits", folder_hdf5, "noise_10px_10px.hdf5")));
 }
