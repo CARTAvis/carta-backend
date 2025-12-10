@@ -184,7 +184,7 @@ bool VectorFieldCalculator::Calculate(
         std::vector<float> pa,pi;
         // Then do the PA / PI / FPI calculations
         // this may be parts of the OLD code below (without the threshold parts I believe) 
-        if (_angle_source == Source::PA) {
+        if (_angle_source == Source::PA || _threshold_source == Source::PA) { // also just in case one day threshold on PA?
             pa.resize(width * height);
             CalcPa calc_pa;
             std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
