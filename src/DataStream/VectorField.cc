@@ -192,7 +192,6 @@ bool VectorFieldCalculator::Calculate(
         }
         
         if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
-            std::vector<float> pi;
             CalcPi calc_pi(_q_error, _u_error);
             pi.resize(width * height);
             std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
@@ -206,7 +205,8 @@ bool VectorFieldCalculator::Calculate(
         }
         
         
-        // Then apply the threshold cut to the current data, only if the angle or intensity source is current and the threshold source is PI or FPI. 
+        // Then apply the threshold cut to the current data, only if the angle or intensity source is current 
+        // and the threshold source is PI or FPI. 
         if (_threshold_source == Source::PI || _threshold_source == Source::FPI ) {
               if (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT) {
                   // Bug ??? looks like I may be applying threshold second time here, or maybe not ?
@@ -217,11 +217,12 @@ bool VectorFieldCalculator::Calculate(
         // Then apply the threshold cut to pa, only if the threshold source is PI or FPI. 
         if (_threshold_source == Source::PI || _threshold_source == Source::FPI ) {
             if (_angle_source == Source::PA) {
-               std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
+               std::transform(pa.begin(), pa.end(), pi.begin(), pa.begin(), threshold_cut);
             }
         }
                 
-        // Then apply the threshold cut to pi, only if the intensity source is PI or FPI and the threshold source is PI or FPI.
+        // Then apply the threshold cut to pi, only if the intensity source is PI or FPI 
+        // and the threshold source is PI or FPI.
         if (_threshold_source == Source::PI || _threshold_source == Source::FPI ) {
            if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
                std::transform(pi.begin(), pi.end(), pi.begin(), pi.begin(), threshold_cut);
