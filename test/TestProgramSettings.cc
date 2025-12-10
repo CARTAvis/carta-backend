@@ -224,7 +224,7 @@ TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
     std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], fs::relative(absolute_image_path, TestRoot()));
+    EXPECT_EQ(settings.files[0], fs::relative(absolute_image_path, "/"));
 }
 
 TEST_F(ProgramSettingsTest, TrimExtraFolders) {
@@ -270,9 +270,9 @@ TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
 
     auto settings = SettingsFromVector({"carta_backend", fits_image_path, casa_image_path, hdf5_image_path});
     ASSERT_EQ(settings.files.size(), 3);
-    EXPECT_EQ(settings.files[0], fits_image_path);
-    EXPECT_EQ(settings.files[1], casa_image_path);
-    EXPECT_EQ(settings.files[2], hdf5_image_path);
+    EXPECT_EQ(settings.files[0], fs::relative(fits_image_path, "/"));
+    EXPECT_EQ(settings.files[1], fs::relative(casa_image_path, "/"));
+    EXPECT_EQ(settings.files[2], fs::relative(hdf5_image_path, "/"));
 
     settings = SettingsFromVector({"carta_backend", casa_image_path, fits_image_path, hdf5_image_path});
     ASSERT_EQ(settings.files.size(), 3);
