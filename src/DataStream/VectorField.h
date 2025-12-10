@@ -33,9 +33,8 @@ using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageB
  */
 class VectorFieldCalculator {
 public:
-    enum SOURCE { NONE = -1, CURRENT = 0, COMPUTED = 1 };
-    // C++-20 only : using vfs = VectorFieldCalculator::SOURCE;
-
+    enum class Source { NONE, CURRENT, I, PA, PI, FPI};
+    
     /**
      * @brief Constructs the object
      *

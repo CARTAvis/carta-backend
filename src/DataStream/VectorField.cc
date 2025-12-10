@@ -7,6 +7,11 @@
 #include "VectorField.h"
 #include "Util/Message.h"
 
+// temporary before bigger changes:
+#define NONE -1
+#define CURRENT 0
+#define COMPUTED 1 
+
 namespace carta {
 
 VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message, bool has_stokes_axis)
@@ -22,6 +27,7 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
       _compression_type(message.compression_type()),
       _compression_quality(message.compression_quality()),
       _threshold_option(message.threshold_option()),
+// TODO : REMOVE these 4 flags :
       _calculate_pi(_stokes_intensity == COMPUTED && has_stokes_axis),
       _calculate_pa(_stokes_angle == COMPUTED && has_stokes_axis),
       _current_stokes_as_pi((_stokes_intensity == CURRENT && has_stokes_axis) || (_stokes_intensity == COMPUTED && !has_stokes_axis)),
@@ -250,8 +256,8 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // making local copy of the message in case it changes as the calculation goes on:
     auto parameters = _parameters;
 
-    if (!z_changed && stokes_changed && parameters.stokes_intensity() != VectorFieldCalculator::CURRENT &&
-        parameters.stokes_angle() != VectorFieldCalculator::CURRENT) {
+    if (!z_changed && stokes_changed && parameters.stokes_intensity() != CURRENT &&
+        parameters.stokes_angle() != CURRENT) {
         // TODO : review this part as I do not fully understand it yet ...
         return true;
     }
@@ -273,7 +279,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // remvoing all objects from the container after they all got invalidated :
     _calculators.clear();
 
-    if (parameters.stokes_intensity() == VectorFieldCalculator::NONE && parameters.stokes_angle() == VectorFieldCalculator::NONE) {
+    if (parameters.stokes_intensity() == NONE && parameters.stokes_angle() == NONE) {
         std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
         return true;
     }

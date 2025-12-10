@@ -17,12 +17,14 @@ using ::testing::Each;
 using ::testing::FloatEq;
 using ::testing::FloatNear;
 
+enum SOURCE { NONE = -1, CURRENT = 0, COMPUTED = 1 };
+
 std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
     {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1}, // sqrt(3*3+4*4)
     {CARTA::PolarizationType::I, 2}, {CARTA::PolarizationType::Q, 3}, {CARTA::PolarizationType::U, 4}, {CARTA::PolarizationType::V, 5}};
 
-CARTA::SetVectorOverlayParameters SourceTestMessage(int intensity = VectorFieldCalculator::COMPUTED,
-    int angle = VectorFieldCalculator::COMPUTED, bool fractional = false, float u_error = 0, float q_error = 0) {
+CARTA::SetVectorOverlayParameters SourceTestMessage(int intensity = COMPUTED,
+    int angle = COMPUTED, bool fractional = false, float u_error = 0, float q_error = 0) {
     CARTA::SetVectorOverlayParameters message;
     message.set_stokes_intensity(intensity);
     message.set_stokes_angle(angle);
@@ -121,17 +123,17 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
-    ::testing::Values(TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::CURRENT), true, 1, 1),
-        TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::COMPUTED), true, 1,
+    ::testing::Values(TestParameters(SourceTestMessage(CURRENT, CURRENT), true, 1, 1),
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED), true, 1,
             ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA
-        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT), true, sqrt(3 * 3 + 4 * 4),
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT), true, sqrt(3 * 3 + 4 * 4),
             1), // Q=3 and U=4 -> Computed I=Q^2 + U^2
-        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::COMPUTED), true, sqrt(3 * 3 + 4 * 4),
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED), true, sqrt(3 * 3 + 4 * 4),
             ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA and Stokes I (as above)
-        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, false, 0.1, 0.2), true,
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT, false, 0.1, 0.2), true,
             ((float)std::sqrt(std::pow(3, 2) + std::pow(4, 2) - (std::pow(0.1, 2) + std::pow(0.2, 2)) / 2.0)), 1 ),
-            // Another way TBC : VectorFieldCalculator::CalcPi(0.1,0.2)(3, 4), 1), // de-biasing with errors in Q and U
-        TestParameters(SourceTestMessage(VectorFieldCalculator::COMPUTED, VectorFieldCalculator::CURRENT, true), true,
+            // Another way TBC : CalcPi(0.1,0.2)(3, 4), 1), // de-biasing with errors in Q and U
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT, true), true,
             (sqrt(3 * 3 + 4 * 4) / 2) * 100.00, 1), // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
-        TestParameters(SourceTestMessage(VectorFieldCalculator::CURRENT, VectorFieldCalculator::NONE, false), false,
+        TestParameters(SourceTestMessage(CURRENT, NONE, false), false,
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())));
