@@ -153,6 +153,9 @@ bool VectorFieldCalculator::Calculate(
             }
         }
         
+        // Then apply the threshold cut to the current data if the angle or intensity source is current and the threshold source is current or I.
+        // this is done later - see below (see around line 205 - at least now, just before FillTileData starts)
+        
         // Then apply the threshold cut to the current data, only if the angle or intensity source is current 
         // and the threshold source is PI or FPI. 
         if (UsesCurrent() ) {
