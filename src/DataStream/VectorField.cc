@@ -225,7 +225,7 @@ bool VectorFieldCalculator::Calculate(
                tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
         }
         
-        if (_angle_source == Source::PA ) {
+        if (_angle_source == Source::PA) {
             FillTileData(
                 tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
         }
