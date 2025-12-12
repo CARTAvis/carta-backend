@@ -62,9 +62,11 @@ SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token
 
 void SessionManager::DeleteSession(uint32_t session_id) {
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
+    uint32_t real_session_id;
     Session* session;
     try {
-        session = _sessions.at(session_id);
+        real_session_id = _real_session_id.at(session_id);
+        session = _sessions.at(real_session_id);
     } catch (const std::out_of_range& e) {
         spdlog::warn("Could not delete session {}: not found!", session_id);
         return;
@@ -82,7 +84,7 @@ void SessionManager::DeleteSession(uint32_t session_id) {
         }
         _real_session_id.erase(session->GetId());
         delete session;
-        _sessions.erase(session_id);
+        _sessions.erase(real_session_id);
     } else {
         spdlog::info("Session {} reference count is not 0 ({}) at this point in DeleteSession", session_id, session->GetRefCount());
     }
