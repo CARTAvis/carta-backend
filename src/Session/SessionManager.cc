@@ -62,14 +62,19 @@ SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token
 
 void SessionManager::DeleteSession(uint32_t session_id) {
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
-    uint32_t real_session_id;
     Session* session;
+
     try {
-        real_session_id = _real_session_id.at(session_id);
-        session = _sessions.at(real_session_id);
+        session = _sessions.at(session_id);
     } catch (const std::out_of_range& e) {
-        spdlog::warn("Could not delete session {}: not found!", session_id);
-        return;
+        try {
+            auto real_id = _real_session_id.at(session_id);
+            session = _sessions.at(real_id);
+            session_id = real_id;
+        } catch (const std::out_of_range& e) {
+            spdlog::warn("Could not delete session {}: not found!", session_id);
+            return;
+        }
     }
 
     spdlog::info("Session {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
@@ -82,11 +87,13 @@ void SessionManager::DeleteSession(uint32_t session_id) {
             Session* ss = ssp.second;
             spdlog::info("\tMap id {}, session id {}, session ptr {}", ssp.first, ss->GetId(), fmt::ptr(ss));
         }
-        _real_session_id.erase(session->GetId());
+        auto internal_id = session->GetId();
         delete session;
-        _sessions.erase(real_session_id);
+        _sessions.erase(session_id);
+        _real_session_id.erase(internal_id);
+
     } else {
-        spdlog::info("Session {} reference count is not 0 ({}) at this point in DeleteSession", session_id, session->GetRefCount());
+        spdlog::info("Session {} reference count is not 0 ({}) at this point in DeleteSession", session->GetId(), session->GetRefCount());
     }
 }
 
