@@ -65,11 +65,9 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _stokes_files_connector(nullptr),
       _channel_map_settings(nullptr),
       _histogram_progress(1.0),
-      _ref_count(0),
       _sync_id(0),
       _animation_id(0),
-      _connected(true),
-      _cursor_settings(this) {
+      _connected(true) {
     auto& settings = ProgramSettings::GetInstance();
     _top_level_folder = settings.top_level_folder;
     _read_only_mode = settings.read_only_mode;
@@ -860,7 +858,6 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
 }
 
 void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) {
-    // Set cursor for image indicated by file_id
     auto file_id(message.file_id());
     if (_frames.count(file_id)) { // reference Frame for Region exists
         if (message.has_spatial_requirements()) {
@@ -923,12 +920,12 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         // Move data streams off main thread by queueing tasks
         if (_region_handler->UpdatePvPreviewRegion(region_id, region_state)) {
             // Update pv preview (if region is pv cut for preview)
-            OnMessageTask* tsk = new PvPreviewUpdateTask(this, ALL_FILES, region_id, preview_region);
+            OnMessageTask* tsk = new PvPreviewUpdateTask(shared_from_this(), ALL_FILES, region_id, preview_region);
             ThreadManager::QueueTask(tsk);
         }
 
         if (!preview_region) {
-            OnMessageTask* tsk = new RegionDataStreamsTask(this, ALL_FILES, region_id);
+            OnMessageTask* tsk = new RegionDataStreamsTask(shared_from_this(), ALL_FILES, region_id);
             ThreadManager::QueueTask(tsk);
         }
     }
@@ -1131,7 +1128,7 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
 
         if (requirements_set) {
             // RESPONSE
-            OnMessageTask* tsk = new SpectralProfileTask(this, file_id, region_id);
+            OnMessageTask* tsk = new SpectralProfileTask(shared_from_this(), file_id, region_id);
             ThreadManager::QueueTask(tsk);
         } else if (region_id != IMAGE_REGION_ID) { // not sure why frontend sends this
             string error = fmt::format("Spectral requirements not valid for region id {}", region_id);
@@ -2473,7 +2470,7 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
     if (_animation_object->_waiting_flow_event) {
         if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
-            OnMessageTask* tsk = new AnimationTask(this);
+            OnMessageTask* tsk = new AnimationTask(shared_from_this());
             ThreadManager::QueueTask(tsk);
         }
     }
@@ -2600,7 +2597,7 @@ void Session::AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t req
         }
     } else {
         // Ensure queued messages are executed
-        OnMessageTask* tsk = new SetImageChannelsTask(this, message.file_id());
+        OnMessageTask* tsk = new SetImageChannelsTask(shared_from_this(), message.file_id());
         ThreadManager::QueueTask(tsk);
     }
 

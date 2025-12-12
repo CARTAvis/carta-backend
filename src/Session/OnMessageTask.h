@@ -26,20 +26,13 @@ private:
     static std::shared_ptr<SessionManager> _session_manager;
 
 protected:
-    Session* _session;
+    std::shared_ptr<Session> _session;
 
 public:
-    OnMessageTask(Session* session) : _session(session) {
-        _session->IncreaseRefCount();
-    }
+    OnMessageTask(std::shared_ptr<Session> session) : _session(session) {}
     virtual ~OnMessageTask() {
-        if (!_session->DecreaseRefCount()) {
-            spdlog::info("({}) Remove Session {} in ~OMT", fmt::ptr(_session), _session->GetId());
-            // Test here since the CARTA test system does not set this shared_ptr for all tests.
-            if (_session_manager) {
-                _session_manager->DeleteSession(_session->GetId());
-            }
-        }
+        spdlog::info("({}) Remove Session {} in ~OMT", fmt::ptr(_session), _session->GetId());
+        _session_manager->DeleteSession(_session->GetId());
         _session = nullptr;
     }
     static void SetSessionManager(shared_ptr<SessionManager>& session_manager) {
@@ -52,7 +45,7 @@ class SetImageChannelsTask : public OnMessageTask {
     void execute() override;
 
 public:
-    SetImageChannelsTask(Session* session, int file_id) : OnMessageTask(session), _file_id(file_id) {}
+    SetImageChannelsTask(std::shared_ptr<Session> session, int file_id) : OnMessageTask(session), _file_id(file_id) {}
 };
 
 class SetCursorTask : public OnMessageTask {
@@ -60,14 +53,14 @@ class SetCursorTask : public OnMessageTask {
     void execute() override;
 
 public:
-    SetCursorTask(Session* session, int file_id) : OnMessageTask(session), _file_id(file_id) {}
+    SetCursorTask(std::shared_ptr<Session> session, int file_id) : OnMessageTask(session), _file_id(file_id) {}
 };
 
 class AnimationTask : public OnMessageTask {
     void execute() override;
 
 public:
-    AnimationTask(Session* session) : OnMessageTask(session) {}
+    AnimationTask(std::shared_ptr<Session> session) : OnMessageTask(session) {}
 };
 
 class StartAnimationTask : public OnMessageTask {
@@ -76,7 +69,7 @@ class StartAnimationTask : public OnMessageTask {
     int _msg_id;
 
 public:
-    StartAnimationTask(Session* session, CARTA::StartAnimation& msg, int id) : OnMessageTask(session) {
+    StartAnimationTask(std::shared_ptr<Session> session, CARTA::StartAnimation& msg, int id) : OnMessageTask(session) {
         _msg = msg;
         _msg_id = id;
     }
@@ -87,7 +80,7 @@ class RegionDataStreamsTask : public OnMessageTask {
     int _file_id, _region_id;
 
 public:
-    RegionDataStreamsTask(Session* session, int file_id, int region_id)
+    RegionDataStreamsTask(std::shared_ptr<Session> session, int file_id, int region_id)
         : OnMessageTask(session), _file_id(file_id), _region_id(region_id) {}
 };
 
@@ -96,7 +89,7 @@ class SpectralProfileTask : public OnMessageTask {
     int _file_id, _region_id;
 
 public:
-    SpectralProfileTask(Session* session, int file_id, int region_id) : OnMessageTask(session), _file_id(file_id), _region_id(region_id) {}
+    SpectralProfileTask(std::shared_ptr<Session> session, int file_id, int region_id) : OnMessageTask(session), _file_id(file_id), _region_id(region_id) {}
 };
 
 class PvPreviewUpdateTask : public OnMessageTask {
@@ -105,7 +98,7 @@ class PvPreviewUpdateTask : public OnMessageTask {
     bool _preview_region;
 
 public:
-    PvPreviewUpdateTask(Session* session, int file_id, int region_id, bool preview_region)
+    PvPreviewUpdateTask(std::shared_ptr<Session> session, int file_id, int region_id, bool preview_region)
         : OnMessageTask(session), _file_id(file_id), _region_id(region_id), _preview_region(preview_region) {}
 };
 

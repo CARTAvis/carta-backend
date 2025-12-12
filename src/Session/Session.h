@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <tuple>
 #include <unordered_map>
@@ -51,7 +52,7 @@ struct PerSocketData {
     string address;
 };
 
-class Session {
+class Session : public std::enable_shared_from_this<Session> {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
         std::shared_ptr<FileListHandler> file_list_handler);
@@ -134,6 +135,12 @@ public:
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _cursor_settings.AddCursorSetting(message, request_id);
     }
+    void SetLatestCursor(int file_id) {
+        auto set_cursor_callback = [&](const CARTA::SetCursor& message, uint32_t request_id) {
+            OnSetCursor(message, request_id);
+        };
+        _cursor_settings.ExecuteOne(file_id, set_cursor_callback);
+    }
     void ImageChannelLock(int file_id) {
         _image_channel_mutexes[file_id].lock();
     }
@@ -150,15 +157,6 @@ public:
     }
     void ImageChannelTaskSetIdle(int file_id) {
         _image_channel_task_active[file_id] = false;
-    }
-    int IncreaseRefCount() {
-        return ++_ref_count;
-    }
-    int DecreaseRefCount() {
-        return --_ref_count;
-    }
-    int GetRefCount() {
-        return _ref_count;
     }
     void WaitForTaskCancellation();
     void ConnectCalled();
@@ -325,7 +323,6 @@ protected:
 
     SessionContext _animation_context;
 
-    std::atomic<int> _ref_count;
     std::atomic<int> _sync_id;
     int _animation_id;
     bool _connected;

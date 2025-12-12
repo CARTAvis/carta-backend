@@ -45,7 +45,7 @@ class GeneralMessageTask : public OnMessageTask {
     uint32_t _request_id;
 
 public:
-    GeneralMessageTask(Session* session, T message, uint32_t request_id)
+    GeneralMessageTask(std::shared_ptr<Session> session, T message, uint32_t request_id)
         : OnMessageTask(session), _message(message), _request_id(request_id) {}
 };
 

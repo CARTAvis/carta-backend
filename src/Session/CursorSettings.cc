@@ -5,9 +5,8 @@
 */
 
 #include "CursorSettings.h"
-#include "Session/Session.h"
 
-CursorSettings::CursorSettings(Session* session) : _session(session) {}
+using namespace carta;
 
 void CursorSettings::AddCursorSetting(const CARTA::SetCursor& message, uint32_t request_id) {
     CursorSettings::cursor_info_t settings = std::make_pair(message, request_id);
@@ -24,21 +23,19 @@ void CursorSettings::AddCursorSetting(const CARTA::SetCursor& message, uint32_t 
     }
 }
 
-bool CursorSettings::ExecuteOne(const std::string& event_name, const uint32_t file_id) {
-    if (event_name.compare("SET_CURSOR") == 0) {
-        bool write_lock(true);
-        queuing_rw_mutex_scoped lock(&_cursor_mutex, write_lock);
-        CursorSettings::cursor_iter cursor_results = _latest_cursor.find(file_id);
-        if (cursor_results != _latest_cursor.end()) {
-            auto cursor_info = cursor_results->second;
-            CARTA::SetCursor message(cursor_info.first);
-            uint32_t request_id(cursor_info.second);
-            _latest_cursor.erase(cursor_results); // remove after retrieve settings
-            lock.release();
-            _session->OnSetCursor(message, request_id);
-            return true;
-        } // if no setting for this file id, do nothing
-    }
+bool CursorSettings::ExecuteOne(const uint32_t file_id, const std::function<void (const CARTA::SetCursor&, uint32_t)>& callback) {
+    bool write_lock(true);
+    queuing_rw_mutex_scoped lock(&_cursor_mutex, write_lock);
+    CursorSettings::cursor_iter cursor_results = _latest_cursor.find(file_id);
+    if (cursor_results != _latest_cursor.end()) {
+        auto cursor_info = cursor_results->second;
+        CARTA::SetCursor message(cursor_info.first);
+        uint32_t request_id(cursor_info.second);
+        _latest_cursor.erase(cursor_results); // remove after retrieve settings
+        lock.release();
+        callback(message, request_id);
+        return true;
+    } // if no setting for this file id, do nothing
     return false;
 }
 

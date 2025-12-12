@@ -21,15 +21,11 @@ class Session;
 
 class CursorSettings {
 public:
-    CursorSettings(Session* session);
-
     void AddCursorSetting(const CARTA::SetCursor& message, uint32_t request_id);
-    // TODO: change to event type
-    bool ExecuteOne(const std::string& event_name, const uint32_t file_id);
+    bool ExecuteOne(const uint32_t file_id, const std::function<void (const CARTA::SetCursor&, uint32_t)>& callback);
     void ClearSettings(const uint32_t file_id);
 
 private:
-    Session* _session;
     queuing_rw_mutex _cursor_mutex;
 
     // pair is <message, requestId)

@@ -28,7 +28,7 @@ void SetImageChannelsTask::execute() {
 }
 
 void SetCursorTask::execute() {
-    _session->_cursor_settings.ExecuteOne("SET_CURSOR", _file_id);
+    _session->SetLatestCursor(_file_id);
 }
 
 void AnimationTask::execute() {

@@ -62,7 +62,7 @@ SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token
 
 void SessionManager::DeleteSession(uint32_t session_id) {
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
-    Session* session;
+    std::shared_ptr<Session> session;
     try {
         session = _sessions.at(session_id);
     } catch (const std::out_of_range& e) {
@@ -74,18 +74,13 @@ void SessionManager::DeleteSession(uint32_t session_id) {
     session->WaitForTaskCancellation();
     session->CloseAllScriptingRequests();
 
-    if (!session->GetRefCount()) {
-        spdlog::info("Sessions in Session Map :");
-        for (const std::pair<uint32_t, Session*>& ssp : _sessions) {
-            Session* ss = ssp.second;
-            spdlog::info("\tMap id {}, session id {}, session ptr {}", ssp.first, ss->GetId(), fmt::ptr(ss));
-        }
-        _real_session_id.erase(session->GetId());
-        delete session;
-        _sessions.erase(session_id);
-    } else {
-        spdlog::info("Session {} reference count is not 0 ({}) at this point in DeleteSession", session_id, session->GetRefCount());
+    spdlog::info("Sessions in Session Map :");
+    for (const std::pair<uint32_t, std::shared_ptr<Session>>& ssp : _sessions) {
+        std::shared_ptr<Session> ss = ssp.second;
+        spdlog::info("\tMap id {}, session id {}, session ptr {}", ssp.first, ss->GetId(), fmt::ptr(ss));
     }
+    _real_session_id.erase(session->GetId());
+    _sessions.erase(session_id);
 }
 
 void SessionManager::OnUpgrade(
@@ -132,8 +127,7 @@ void SessionManager::OnConnect(WSType* ws) {
 
     // create a Session
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
-    _sessions[session_id] = new Session(ws, loop, session_id, address, _file_list_handler);
-    _sessions[session_id]->IncreaseRefCount();
+    _sessions[session_id] = std::make_shared<Session>(ws, loop, session_id, address, _file_list_handler);
 
     spdlog::info("Session {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
 }
@@ -152,7 +146,6 @@ void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message
     // Delete the Session
     try {
         auto session = _sessions.at(session_id);
-        session->DecreaseRefCount();
         DeleteSession(session_id);
     } catch (const std::out_of_range& e) {
         // No session found
@@ -175,7 +168,7 @@ void SessionManager::OnDrain(WSType* ws) {
 
 void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
-    Session* session;
+    std::shared_ptr<Session> session;
     try {
         session = _sessions.at(session_id);
     } catch (const std::out_of_range& e) {
@@ -319,19 +312,19 @@ std::string SessionManager::IPAsText(std::string_view binary) {
     return result;
 }
 
-void SessionManager::RegisterViewerHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::RegisterViewerHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::RegisterViewer>(sv_message);
     auto real_session_id = session->GetId();
     session->OnRegisterViewer(message, head.icd_version, head.request_id);
     _real_session_id[session->GetId()] = real_session_id;
 }
 
-void SessionManager::ResumeSessionHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::ResumeSessionHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::ResumeSession>(sv_message);
     session->OnResumeSession(message, head.request_id);
 };
 
-void SessionManager::SetImageChannelsHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetImageChannelsHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetImageChannels>(sv_message);
     session->ImageChannelLock(message.file_id());
     if (!session->ImageChannelTaskTestAndSet(message.file_id())) {
@@ -343,14 +336,14 @@ void SessionManager::SetImageChannelsHandler(Session* session, std::string_view 
     session->ImageChannelUnlock(message.file_id());
 };
 
-void SessionManager::SetCursorHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetCursorHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetCursor>(sv_message);
     session->AddCursorSetting(message, head.request_id);
     OnMessageTask* tsk = new SetCursorTask(session, message.file_id());
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::SetHistogramRequirementsHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetHistogramRequirementsHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetHistogramRequirements>(sv_message);
     if (message.histograms_size() == 0) {
         session->CancelSetHistRequirements();
@@ -361,34 +354,34 @@ void SessionManager::SetHistogramRequirementsHandler(Session* session, std::stri
     }
 };
 
-void SessionManager::CloseFileHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::CloseFileHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::CloseFile>(sv_message);
     session->OnCloseFile(message);
 };
 
-void SessionManager::StartAnimationHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::StartAnimationHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::StartAnimation>(sv_message);
     session->CancelExistingAnimation();
     OnMessageTask* tsk = new StartAnimationTask(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::StopAnimationHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::StopAnimationHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::StopAnimation>(sv_message);
     session->StopAnimation(message.file_id(), message.end_frame());
 };
 
-void SessionManager::AnimationFlowControlHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::AnimationFlowControlHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::AnimationFlowControl>(sv_message);
     session->HandleAnimationFlowControlEvt(message);
 };
 
-void SessionManager::FileInfoRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::FileInfoRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::FileInfoRequest>(sv_message);
     session->OnFileInfoRequest(message, head.request_id);
 };
 
-void SessionManager::OpenFileHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::OpenFileHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::OpenFile>(sv_message);
     if (!message.lel_expr()) {
         for (auto& session_map : this->_sessions) {
@@ -398,89 +391,89 @@ void SessionManager::OpenFileHandler(Session* session, std::string_view sv_messa
     session->OnOpenFile(message, head.request_id);
 };
 
-void SessionManager::AddRequiredTilesHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::AddRequiredTilesHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::AddRequiredTiles>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::AddRequiredTiles>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::RegionFileInfoRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::RegionFileInfoRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::RegionFileInfoRequest>(sv_message);
     session->OnRegionFileInfoRequest(message, head.request_id);
 };
 
-void SessionManager::ImportRegionHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::ImportRegionHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::ImportRegion>(sv_message);
     session->OnImportRegion(message, head.request_id);
 };
 
-void SessionManager::ExportRegionHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::ExportRegionHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::ExportRegion>(sv_message);
     session->OnExportRegion(message, head.request_id);
 };
 
-void SessionManager::SetContourParametersHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetContourParametersHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetContourParameters>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetContourParameters>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::ScriptingResponseHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::ScriptingResponseHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::ScriptingResponse>(sv_message);
     session->OnScriptingResponse(message, head.request_id);
 };
 
-void SessionManager::SetRegionHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetRegionHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetRegion>(sv_message);
     session->OnSetRegion(message, head.request_id);
 };
 
-void SessionManager::RemoveRegionHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::RemoveRegionHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::RemoveRegion>(sv_message);
     session->OnRemoveRegion(message);
 };
 
-void SessionManager::SetSpectralRequirementsHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetSpectralRequirementsHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetSpectralRequirements>(sv_message);
     session->OnSetSpectralRequirements(message);
 };
 
-void SessionManager::CatalogFileInfoRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::CatalogFileInfoRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::CatalogFileInfoRequest>(sv_message);
     session->OnCatalogFileInfo(message, head.request_id);
 };
 
-void SessionManager::OpenCatalogFileHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::OpenCatalogFileHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::OpenCatalogFile>(sv_message);
     session->OnOpenCatalogFile(message, head.request_id);
 };
 
-void SessionManager::CloseCatalogFileHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::CloseCatalogFileHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::CloseCatalogFile>(sv_message);
     session->OnCloseCatalogFile(message);
 };
 
-void SessionManager::CatalogFilterRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::CatalogFilterRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::CatalogFilterRequest>(sv_message);
     session->OnCatalogFilter(message, head.request_id);
 };
 
-void SessionManager::StopMomentCalcHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::StopMomentCalcHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::StopMomentCalc>(sv_message);
     session->OnStopMomentCalc(message);
 };
 
-void SessionManager::SaveFileHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SaveFileHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SaveFile>(sv_message);
     session->OnSaveFile(message, head.request_id);
 };
 
-void SessionManager::ConcatStokesFilesHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::ConcatStokesFilesHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::ConcatStokesFiles>(sv_message);
     session->OnConcatStokesFiles(message, head.request_id);
 };
 
-void SessionManager::StopFileListHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::StopFileListHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::StopFileList>(sv_message);
     if (message.file_list_type() == CARTA::Image) {
         session->StopImageFileList();
@@ -489,43 +482,43 @@ void SessionManager::StopFileListHandler(Session* session, std::string_view sv_m
     }
 };
 
-void SessionManager::SetSpatialRequirementsHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetSpatialRequirementsHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetSpatialRequirements>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetSpatialRequirements>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::SetStatsRequirementsHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetStatsRequirementsHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetStatsRequirements>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetStatsRequirements>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::MomentRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::MomentRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::MomentRequest>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::MomentRequest>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::FileListRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::FileListRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::FileListRequest>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::FileListRequest>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::RegionListRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::RegionListRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::RegionListRequest>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::RegionListRequest>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::CatalogListRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::CatalogListRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::CatalogListRequest>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::CatalogListRequest>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::PvRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::PvRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::PvRequest>(sv_message);
     if (message.has_preview_settings()) {
         session->StopPvPreviewUpdates(message.preview_settings().preview_id());
@@ -534,44 +527,44 @@ void SessionManager::PvRequestHandler(Session* session, std::string_view sv_mess
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::StopPvCalcHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::StopPvCalcHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::StopPvCalc>(sv_message);
     session->OnStopPvCalc(message);
 };
 
-void SessionManager::FittingRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::FittingRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::FittingRequest>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::FittingRequest>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::SetVectorOverlayParametersHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::SetVectorOverlayParametersHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetVectorOverlayParameters>(sv_message);
     OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetVectorOverlayParameters>(session, message, head.request_id);
     ThreadManager::QueueTask(tsk);
 };
 
-void SessionManager::StopFittingHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::StopFittingHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::StopFitting>(sv_message);
     session->OnStopFitting(message);
 };
 
-void SessionManager::StopPvPreviewHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::StopPvPreviewHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::StopPvPreview>(sv_message);
     session->OnStopPvPreview(message);
 };
 
-void SessionManager::ClosePvPreviewHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::ClosePvPreviewHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::ClosePvPreview>(sv_message);
     session->OnClosePvPreview(message);
 };
 
-void SessionManager::RemoteFileRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::RemoteFileRequestHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::RemoteFileRequest>(sv_message);
     session->OnRemoteFileRequest(message, head.request_id);
 };
 
-void SessionManager::ChannelMapFlowControlHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+void SessionManager::ChannelMapFlowControlHandler(std::shared_ptr<Session> session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::ChannelMapFlowControl>(sv_message);
     session->HandleChannelMapFlowControlEvt(message);
 };
