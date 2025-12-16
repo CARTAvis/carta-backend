@@ -38,11 +38,10 @@ public:
     /**
      * @brief Constructs the object
      *
-     * This constructor takes a protobuf message with parameters and a flag has_stokes_axis
+     * This constructor takes a protobuf message with parameters 
      * to initialise all the parameters of the calculation
      *
      * @param message Parameters of the calculations as specified in the front-end Vector Overlay widget.
-     * @param has_stokes_axis The flag specifying if the image has the Stokes axis (images Q and U).
      */
     VectorFieldCalculator(const CARTA::SetVectorOverlayParameters& message);
 
@@ -185,7 +184,6 @@ public:
      * VectorFieldCalculator::Calculate function)
      * @param dims Specifies the dimensions of the images (width and height). Also passed to the
      * VectorFieldCalculator::Calculate function
-     * @param has_stokes_axis A flag specifying if the image has the Stokes axis (i.e. has Q and U images of the sky)
      * @param tile_callback The callback function providing input images and filling the arrays corresponding to tiles (passed to the
      * VectorFieldCalculator::Calculate function)
      * @param stokes_changed The flag specifying if the Stokes image has changed (TODO : confirm what it is ?)
