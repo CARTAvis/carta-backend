@@ -11,13 +11,13 @@
 
 #include <chrono>
 
-CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags) {
+/*CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags) {
     CARTA::RegisterViewer register_viewer;
     register_viewer.set_session_id(session_id);
     register_viewer.set_api_key(api_key);
     register_viewer.set_client_feature_flags(client_feature_flags);
     return register_viewer;
-}
+}*/
 
 CARTA::CloseFile Message::CloseFile(int32_t file_id) {
     CARTA::CloseFile close_file;
@@ -54,16 +54,16 @@ CARTA::SetImageChannels Message::SetImageChannels(
     return set_image_channels;
 }
 
-CARTA::SetCursor Message::SetCursor(int32_t file_id, float x, float y) {
+/*CARTA::SetCursor Message::SetCursor(int32_t file_id, float x, float y) {
     CARTA::SetCursor set_cursor;
     set_cursor.set_file_id(file_id);
     auto* point = set_cursor.mutable_point();
     point->set_x(x);
     point->set_y(y);
     return set_cursor;
-}
+}*/
 
-CARTA::SetSpatialRequirements Message::SetSpatialRequirements(int32_t file_id, int32_t region_id) {
+/*CARTA::SetSpatialRequirements Message::SetSpatialRequirements(int32_t file_id, int32_t region_id) {
     CARTA::SetSpatialRequirements set_spatial_requirements;
     set_spatial_requirements.set_file_id(file_id);
     set_spatial_requirements.set_region_id(region_id);
@@ -72,9 +72,9 @@ CARTA::SetSpatialRequirements Message::SetSpatialRequirements(int32_t file_id, i
     auto* spatial_requirement_y = set_spatial_requirements.add_spatial_profiles();
     spatial_requirement_y->set_coordinate("y");
     return set_spatial_requirements;
-}
+}*/
 
-CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id) {
+/*CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id) {
     CARTA::SetStatsRequirements set_stats_requirements;
     set_stats_requirements.set_file_id(file_id);
     set_stats_requirements.set_region_id(region_id);
@@ -88,9 +88,9 @@ CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32
     stats_config->add_stats_types(CARTA::StatsType::Min);
     stats_config->add_stats_types(CARTA::StatsType::Max);
     return set_stats_requirements;
-}
+}*/
 
-CARTA::SetHistogramRequirements Message::SetHistogramRequirements(
+/*CARTA::SetHistogramRequirements Message::SetHistogramRequirements(
     int32_t file_id, int32_t region_id, const std::string& coordinate, int32_t channel, int32_t num_bins) {
     CARTA::SetHistogramRequirements set_histogram_requirements;
     set_histogram_requirements.set_file_id(file_id);
@@ -100,7 +100,7 @@ CARTA::SetHistogramRequirements Message::SetHistogramRequirements(
     histograms->set_channel(channel);
     histograms->set_num_bins(num_bins);
     return set_histogram_requirements;
-}
+}*/
 
 CARTA::AddRequiredTiles Message::AddRequiredTiles(
     int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<int32_t>& tiles) {
@@ -149,7 +149,7 @@ CARTA::SetRegion Message::SetRegion(
     return set_region;
 }
 
-CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
+/*CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
     CARTA::SetStatsRequirements set_stats_requirements;
     set_stats_requirements.set_file_id(file_id);
     set_stats_requirements.set_region_id(region_id);
@@ -166,9 +166,9 @@ CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32
     stats_configs->add_stats_types(CARTA::StatsType::Max);
     stats_configs->add_stats_types(CARTA::StatsType::Extrema);
     return set_stats_requirements;
-}
+}*/
 
-CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
+/*CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
     CARTA::SetSpectralRequirements set_spectral_requirements;
     set_spectral_requirements.set_file_id(file_id);
     set_spectral_requirements.set_region_id(region_id);
@@ -185,9 +185,9 @@ CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id,
     spectral_profiles->add_stats_types(CARTA::StatsType::Max);
     spectral_profiles->add_stats_types(CARTA::StatsType::Extrema);
     return set_spectral_requirements;
-}
+}*/
 
-CARTA::StartAnimation Message::StartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame,
+/*CARTA::StartAnimation Message::StartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame,
     std::pair<int32_t, int32_t> start_frame, std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame,
     CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles, int32_t frame_rate) {
     CARTA::StartAnimation start_animation;
@@ -219,9 +219,9 @@ CARTA::StartAnimation Message::StartAnimation(int32_t file_id, std::pair<int32_t
     start_animation.set_frame_rate(frame_rate);
 
     return start_animation;
-}
+}*/
 
-CARTA::AnimationFlowControl Message::AnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame) {
+/*CARTA::AnimationFlowControl Message::AnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame) {
     CARTA::AnimationFlowControl animation_flow_control;
     animation_flow_control.set_file_id(file_id);
     auto* mutable_received_frame = animation_flow_control.mutable_received_frame();
@@ -233,9 +233,9 @@ CARTA::AnimationFlowControl Message::AnimationFlowControl(int32_t file_id, std::
     animation_flow_control.set_timestamp(t_now.time_since_epoch().count());
 
     return animation_flow_control;
-}
+}*/
 
-CARTA::StopAnimation Message::StopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame) {
+/*CARTA::StopAnimation Message::StopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame) {
     CARTA::StopAnimation stop_animation;
     stop_animation.set_file_id(file_id);
     auto* mutable_end_frame = stop_animation.mutable_end_frame();
@@ -243,9 +243,9 @@ CARTA::StopAnimation Message::StopAnimation(int32_t file_id, std::pair<int32_t, 
     mutable_end_frame->set_stokes(end_frame.second);
 
     return stop_animation;
-}
+}*/
 
-CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(
+/*CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(
     std::string coordinate, int32_t start, int32_t end, int32_t mip, int32_t width) {
     CARTA::SetSpatialRequirements_SpatialConfig spatial_config;
     spatial_config.set_coordinate(coordinate);
@@ -254,9 +254,9 @@ CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(
     spatial_config.set_mip(mip);
     spatial_config.set_width(width);
     return spatial_config;
-}
+}*/
 
-CARTA::IntBounds Message::IntBounds(int32_t min, int32_t max) {
+/*CARTA::IntBounds Message::IntBounds(int32_t min, int32_t max) {
     CARTA::IntBounds int_bounds;
     int_bounds.set_min(min);
     int_bounds.set_max(max);
@@ -299,9 +299,9 @@ CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id,
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
     moment_request.set_keep(keep);
     return moment_request;
-}
+}*/
 
-CARTA::ImageProperties Message::ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
+/*CARTA::ImageProperties Message::ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
     CARTA::RenderMode render_mode, int32_t channel, int32_t stokes) {
     CARTA::ImageProperties image_properties;
     image_properties.set_directory(directory);
@@ -334,24 +334,24 @@ CARTA::SetSpectralRequirements_SpectralConfig Message::SpectralConfig(const std:
     spectral_config.set_coordinate(coordinate);
     spectral_config.add_stats_types(CARTA::StatsType::Mean);
     return spectral_config;
-}
+}*/
 
-CARTA::FileListRequest Message::FileListRequest(const std::string& directory, const CARTA::FileListFilterMode filter_mode) {
+/*CARTA::FileListRequest Message::FileListRequest(const std::string& directory, const CARTA::FileListFilterMode filter_mode) {
     CARTA::FileListRequest file_list_request;
     file_list_request.set_directory(directory);
     file_list_request.set_filter_mode(filter_mode);
     return file_list_request;
-}
+}*/
 
-CARTA::FileInfoRequest Message::FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu) {
+/*CARTA::FileInfoRequest Message::FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu) {
     CARTA::FileInfoRequest file_info_request;
     file_info_request.set_directory(directory);
     file_info_request.set_file(file);
     file_info_request.set_hdu(hdu);
     return file_info_request;
-}
+}*/
 
-CARTA::SetContourParameters Message::SetContourParameters(uint32_t file_id, uint32_t ref_file_id, int32_t x_min, int32_t x_max,
+/*CARTA::SetContourParameters Message::SetContourParameters(uint32_t file_id, uint32_t ref_file_id, int32_t x_min, int32_t x_max,
     int32_t y_min, int32_t y_max, const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int32_t smoothing_factor,
     int32_t decimation_factor, int32_t compression_level, int32_t contour_chunk_size) {
     CARTA::SetContourParameters message;
@@ -371,9 +371,9 @@ CARTA::SetContourParameters Message::SetContourParameters(uint32_t file_id, uint
     message.set_compression_level(compression_level);
     message.set_contour_chunk_size(contour_chunk_size);
     return message;
-}
+}*/
 
-CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(uint32_t file_id, uint32_t mip, bool fractional, double threshold,
+/*CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(uint32_t file_id, uint32_t mip, bool fractional, double threshold,
     bool debiasing, double q_error, double u_error, int32_t stokes_intensity, int32_t stokes_angle,
     const CARTA::CompressionType& compression_type, float compression_quality) {
     CARTA::SetVectorOverlayParameters message;
@@ -389,7 +389,7 @@ CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(uint32_t f
     message.set_compression_type(compression_type);
     message.set_compression_quality(compression_quality);
     return message;
-}
+}*/
 
 CARTA::ImageBounds Message::ImageBounds(int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max) {
     CARTA::ImageBounds message;
@@ -445,12 +445,12 @@ CARTA::ScriptingRequest Message::ScriptingRequest(uint32_t scripting_request_id,
     return message;
 }
 
-CARTA::ChannelMapFlowControl Message::ChannelMapFlowControl(int32_t file_id, int32_t received_channel) {
+/*CARTA::ChannelMapFlowControl Message::ChannelMapFlowControl(int32_t file_id, int32_t received_channel) {
     CARTA::ChannelMapFlowControl message;
     message.set_file_id(file_id);
     message.set_received_channel(received_channel);
     return message;
-}
+}*/
 
 carta::EventHeader Message::GetEventHeader(std::string_view message) {
     return *reinterpret_cast<const carta::EventHeader*>(message.data());
@@ -581,7 +581,7 @@ CARTA::MomentProgress Message::MomentProgress(int32_t file_id, float progress) {
     return message;
 }
 
-CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t width, int z_min, int32_t z_max, bool reverse, bool keep) {
+/*CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t width, int z_min, int32_t z_max, bool reverse, bool keep) {
     CARTA::PvRequest message;
     message.set_file_id(file_id);
     message.set_region_id(region_id);
@@ -596,7 +596,7 @@ CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t 
     message.set_reverse(reverse);
     message.set_keep(keep);
     return message;
-}
+}*/
 
 CARTA::PvProgress Message::PvProgress(int32_t file_id, float progress, int32_t preview_id) {
     CARTA::PvProgress message;
@@ -722,7 +722,7 @@ CARTA::ListProgress Message::ListProgress(
     message.set_percentage(percentage);
     return message;
 }
-CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const string& hips, const string& wcs, int32_t width, int32_t height,
+/*CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const string& hips, const string& wcs, int32_t width, int32_t height,
     const string& projection, float fov, float ra, float dec, const string& coordsys, float rotation_angle, const string& object) {
     CARTA::RemoteFileRequest message;
     message.set_file_id(file_id);
@@ -738,7 +738,7 @@ CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const strin
     message.set_rotation_angle(rotation_angle);
     message.set_object(object);
     return message;
-}
+}*/
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
     const std::vector<int32_t>& bins, double mean, double std_dev) {

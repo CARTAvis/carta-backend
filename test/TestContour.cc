@@ -16,6 +16,28 @@ static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";
 
 class ContourTest : public ::testing::Test {
 public:
+    static CARTA::SetContourParameters SetContourParameters(uint32_t file_id, uint32_t ref_file_id, int32_t x_min, int32_t x_max,
+        int32_t y_min, int32_t y_max, const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int32_t smoothing_factor,
+        int32_t decimation_factor, int32_t compression_level, int32_t contour_chunk_size) {
+        CARTA::SetContourParameters message;
+        message.set_file_id(file_id);
+        message.set_reference_file_id(ref_file_id);
+        auto* image_bounds = message.mutable_image_bounds();
+        image_bounds->set_x_min(x_min);
+        image_bounds->set_x_max(x_max);
+        image_bounds->set_y_min(y_min);
+        image_bounds->set_y_max(y_max);
+        for (auto level : levels) {
+            message.add_levels(level);
+        }
+        message.set_smoothing_mode(smoothing_mode);
+        message.set_smoothing_factor(smoothing_factor);
+        message.set_decimation_factor(decimation_factor);
+        message.set_compression_level(compression_level);
+        message.set_contour_chunk_size(contour_chunk_size);
+        return message;
+    }
+
     void GenerateContour(
         int width, int height, std::string image_opts, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {
         std::string image_shape = std::to_string(width) + " " + std::to_string(height);
@@ -31,7 +53,7 @@ public:
 
         spdlog::info("The generated image contains random pixels values with mean = 0 and STD = 1.");
         std::vector<double> levels{0, -1, 1}; // Contour levels
-        auto set_contour_params = Message::SetContourParameters(0, 0, 0, width, 0, height, levels, smoothing_mode, 4, 4, 8, 100000);
+        auto set_contour_params = ContourTest::SetContourParameters(0, 0, 0, width, 0, height, levels, smoothing_mode, 4, 4, 8, 100000);
 
         EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
 
