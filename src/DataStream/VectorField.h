@@ -33,12 +33,12 @@ using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageB
  */
 class VectorFieldCalculator {
 public:
-    enum class Source { NONE, CURRENT, I, PA, PI, FPI};
-    
+    enum class Source { NONE, CURRENT, I, PA, PI, FPI };
+
     /**
      * @brief Constructs the object
      *
-     * This constructor takes a protobuf message with parameters 
+     * This constructor takes a protobuf message with parameters
      * to initialise all the parameters of the calculation
      *
      * @param message Parameters of the calculations as specified in the front-end Vector Overlay widget.
@@ -71,11 +71,11 @@ public:
     }
 
     bool Disabled() {
-       return (_intensity_source == Source::NONE && _angle_source == Source::NONE);
+        return (_intensity_source == Source::NONE && _angle_source == Source::NONE);
     }
-    
+
     bool UsesCurrent() {
-       return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT || _threshold_source == Source::CURRENT );
+        return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT || _threshold_source == Source::CURRENT);
     }
 
     struct Valid {
