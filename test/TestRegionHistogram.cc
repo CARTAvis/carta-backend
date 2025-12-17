@@ -90,7 +90,7 @@ public:
 };
 
 TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogram(image_path, endpoints, histogram_data);
@@ -114,7 +114,7 @@ TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestFitsAnnotationRegionHistogram) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::vector<float> endpoints = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogram(image_path, endpoints, histogram_data, "z", true);
@@ -122,7 +122,7 @@ TEST_F(RegionHistogramTest, TestFitsAnnotationRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestStokesRegionHistogram) {
-    auto image_path = FitsImages() / "noise_4d.fits"; // Stokes I and Q
+    auto image_path = FitsImages() / "10x10x10x10_nan-row-column_nanpct-10.0_seed-0.fits"; // Stokes I and Q
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     std::vector<std::string> coordinates{"z", "Iz", "Qz", "Uz", "Plinearz", "PFlinearz", "Panglez"};
     std::unordered_map<std::string, int> expected_stokes{{"z", 0}, {"Iz", 0}, {"Qz", 1}};
@@ -150,8 +150,8 @@ TEST_F(RegionHistogramTest, TestStokesRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestMatchedRegionHistogram) {
-    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
-    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto image_path0 = FitsImages() / "10x10_nan-row-column_nanpct-10.0_seed-0.fits";
+    auto image_path1 = Hdf5Images() / "10x10_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogramMatched(image_path0, image_path1, endpoints, histogram_data);

@@ -25,7 +25,7 @@ public:
 class Hdf5ImageTest : public ::testing::Test {};
 
 TEST_F(Hdf5ImageTest, BasicLoadingTest) {
-    auto path = Hdf5Images() / "10_10_row_column.hdf5";
+    auto path = Hdf5Images() / "10x10.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     EXPECT_NE(loader.get(), nullptr);
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -34,7 +34,7 @@ TEST_F(Hdf5ImageTest, BasicLoadingTest) {
 }
 
 TEST_F(Hdf5ImageTest, ExampleFriendTest) {
-    auto path = Hdf5Images() / "10_10_row_column.hdf5";
+    auto path = Hdf5Images() / "10x10.hdf5";
     // TestFrame used instead of Frame if access to protected values is required
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
@@ -43,7 +43,7 @@ TEST_F(Hdf5ImageTest, ExampleFriendTest) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
-    auto path = Hdf5Images() / "10_10_row_column.hdf5";
+    auto path = Hdf5Images() / "10x10.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -57,7 +57,7 @@ TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
-    auto path = Hdf5Images() / "10_10_10_row_column.hdf5";
+    auto path = Hdf5Images() / "10x10x10.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -73,7 +73,7 @@ TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
-    auto path = Hdf5Images() / "10_10_10_1_row_column.hdf5";
+    auto path = Hdf5Images() / "10x10x10x1.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -89,7 +89,7 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path = Hdf5Images() / "10_10_1_10_row_column.hdf5";
+    path = Hdf5Images() / "10x10x1x10.hdf5";
     loader.reset(carta::FileLoader::GetLoader(path));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -106,7 +106,7 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
-    auto path = Hdf5Images() / "10_10_5_2_row_column.hdf5";
+    auto path = Hdf5Images() / "10x10x5x2.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -122,7 +122,7 @@ TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path = Hdf5Images() / "10_10_2_5_row_column.hdf5";
+    path = Hdf5Images() / "10x10x2x5.hdf5";
     loader.reset(carta::FileLoader::GetLoader(path));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());

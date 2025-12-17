@@ -211,7 +211,7 @@ TEST_F(ProgramSettingsTest, IgnoreInvalidFile) {
 }
 
 TEST_F(ProgramSettingsTest, FileImageFromPositional) {
-    auto fits_image_path = FitsImages() / "noise_10px_10px.fits";
+    auto fits_image_path = FitsImages() / "10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     auto settings = SettingsFromVector({"carta_backend", fits_image_path});
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     ASSERT_EQ(settings.files.size(), 1);
@@ -219,7 +219,7 @@ TEST_F(ProgramSettingsTest, FileImageFromPositional) {
 }
 
 TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
-    auto absolute_image_path = FitsImages() / "noise_10px_10px.fits";
+    auto absolute_image_path = FitsImages() / "10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     fs::current_path(TestRoot());
     std::string relative_image_path = fs::relative(absolute_image_path);
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
@@ -228,9 +228,9 @@ TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
 }
 
 TEST_F(ProgramSettingsTest, TrimExtraFolders) {
-    auto absolute_image_path = FitsImages() / "noise_10px_10px.fits";
+    auto absolute_image_path = FitsImages() / "10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     fs::current_path(TestRoot());
-    std::string relative_image_path = "./data/images/fits/noise_10px_10px.fits";
+    std::string relative_image_path = "./data/images/fits/10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], fs::relative(absolute_image_path, "/"));
@@ -240,20 +240,20 @@ TEST_F(ProgramSettingsTest, FileImageRelativeToTopLevel) {
     auto top_level_path = ImagesPath();
     fs::current_path(TestRoot());
 
-    std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
+    std::string relative_image_path = "data/images/fits/10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     auto settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
+    EXPECT_EQ(settings.files[0], "fits/10x10_nan-row-column_nanpct-10.0_seed-0.fits");
 
-    relative_image_path = "./data/images/fits/noise_10px_10px.fits";
+    relative_image_path = "./data/images/fits/10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
+    EXPECT_EQ(settings.files[0], "fits/10x10_nan-row-column_nanpct-10.0_seed-0.fits");
 
-    relative_image_path = "../test/data/images/fits/noise_10px_10px.fits";
+    relative_image_path = "../test/data/images/fits/10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
+    EXPECT_EQ(settings.files[0], "fits/10x10_nan-row-column_nanpct-10.0_seed-0.fits");
 }
 
 TEST_F(ProgramSettingsTest, CasaImageSetFromPositional) {
@@ -265,8 +265,8 @@ TEST_F(ProgramSettingsTest, CasaImageSetFromPositional) {
 
 TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
     auto casa_image_path = CasaImages() / "noise_10px_10px.im";
-    auto fits_image_path = FitsImages() / "noise_10px_10px.fits";
-    auto hdf5_image_path = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto fits_image_path = FitsImages() / "10x10_nan-row-column_nanpct-10.0_seed-0.fits";
+    auto hdf5_image_path = Hdf5Images() / "10x10_nan-row-column_nanpct-10.0_seed-0.hdf5";
 
     auto settings = SettingsFromVector({"carta_backend", fits_image_path, casa_image_path, hdf5_image_path});
     ASSERT_EQ(settings.files.size(), 3);
@@ -394,7 +394,7 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringEmptyFiles) {
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringSingleFile) {
-    auto file_path = FitsImages() / "noise_3d.fits";
+    auto file_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::vector<std::string> files;
     files.push_back(file_path);
     auto url_string = carta::HttpServer::GetFileUrlString(files);
@@ -403,20 +403,20 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringSingleFile) {
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
     std::vector<std::string> files;
-    files.push_back(FitsImages() / "noise_3d.fits");
-    files.push_back(FitsImages() / "noise_4d.fits");
+    files.push_back(FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits");
+    files.push_back(FitsImages() / "10x10x10x10_nan-row-column_nanpct-10.0_seed-0.fits");
     auto folder = SafeStringEscape(FitsImages());
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
-    EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder, "noise_3d.fits,noise_4d.fits"));
+    EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder, "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits,10x10x10x10_nan-row-column_nanpct-10.0_seed-0.fits"));
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
     std::vector<std::string> files;
-    files.push_back(FitsImages() / "noise_3d.fits");
-    files.push_back(Hdf5Images() / "noise_10px_10px.hdf5");
-    auto fits_file = SafeStringEscape(fs::absolute(FitsImages() / "noise_3d.fits"));
-    auto hdf5_file = SafeStringEscape(fs::absolute(Hdf5Images() / "noise_10px_10px.hdf5"));
+    files.push_back(FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits");
+    files.push_back(Hdf5Images() / "10x10_nan-row-column_nanpct-10.0_seed-0.hdf5");
+    auto fits_file = SafeStringEscape(fs::absolute(FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits"));
+    auto hdf5_file = SafeStringEscape(fs::absolute(Hdf5Images() / "10x10_nan-row-column_nanpct-10.0_seed-0.hdf5"));
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("files={},{}", fits_file, hdf5_file));

@@ -98,7 +98,7 @@ public:
 };
 
 TEST_F(CursorSpatialProfileTest, SmallFitsProfile) {
-    auto path = FitsImages() / "noise_10px_10px.fits";
+    auto path = FitsImages() / "10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path);
@@ -139,7 +139,7 @@ TEST_F(CursorSpatialProfileTest, SmallFitsProfile) {
 }
 
 TEST_F(CursorSpatialProfileTest, SmallHdf5Profile) {
-    auto path = Hdf5Images() / "10_10_1_10_row_column.hdf5";
+    auto path = Hdf5Images() / "10x10_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -180,7 +180,7 @@ TEST_F(CursorSpatialProfileTest, SmallHdf5Profile) {
 }
 
 TEST_F(CursorSpatialProfileTest, LowResFitsProfile) {
-    auto path = FitsImages() / "noise_10px_10px.fits";
+    auto path = FitsImages() / "130x100_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path);
@@ -215,7 +215,7 @@ TEST_F(CursorSpatialProfileTest, LowResFitsProfile) {
 }
 
 TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
-    auto path = Hdf5Images() / "130_100_row_column.hdf5";
+    auto path = Hdf5Images() / "130x100_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -250,7 +250,7 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
 }
 
 TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
-    auto path = Hdf5Images() / "130_100_row_column.hdf5";
+    auto path = Hdf5Images() / "130x100_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -287,7 +287,7 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
 }
 
 TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
-    auto path = Hdf5Images() / "120_100_row_column.hdf5";
+    auto path = Hdf5Images() / "120x100_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -324,7 +324,7 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
 }
 
 TEST_F(CursorSpatialProfileTest, FullResFitsStartEnd) {
-    auto path = FitsImages() / "noise_10px_10px.fits";
+    auto path = FitsImages() / "400x300_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path);
@@ -336,6 +336,10 @@ TEST_F(CursorSpatialProfileTest, FullResFitsStartEnd) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -359,7 +363,7 @@ TEST_F(CursorSpatialProfileTest, FullResFitsStartEnd) {
 }
 
 TEST_F(CursorSpatialProfileTest, FullResHdf5StartEnd) {
-    auto path = Hdf5Images() / "400_300_row_column.hdf5";
+    auto path = Hdf5Images() / "400x300_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -371,6 +375,10 @@ TEST_F(CursorSpatialProfileTest, FullResHdf5StartEnd) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -394,7 +402,7 @@ TEST_F(CursorSpatialProfileTest, FullResHdf5StartEnd) {
 }
 
 TEST_F(CursorSpatialProfileTest, LowResFitsStartEnd) {
-    auto path = FitsImages() / "noise_10px_10px.fits";
+    auto path = FitsImages() / "400x300_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path);
@@ -406,6 +414,10 @@ TEST_F(CursorSpatialProfileTest, LowResFitsStartEnd) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -431,7 +443,7 @@ TEST_F(CursorSpatialProfileTest, LowResFitsStartEnd) {
 }
 
 TEST_F(CursorSpatialProfileTest, LowResHdf5StartEnd) {
-    auto path = Hdf5Images() / "400_300_row_column.hdf5";
+    auto path = Hdf5Images() / "400x300_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -443,6 +455,10 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5StartEnd) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -474,7 +490,7 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5StartEnd) {
 }
 
 TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullRes) {
-    auto path = Hdf5Images() / "3000_2000_row_column.hdf5";
+    auto path = Hdf5Images() / "3000x2000_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -485,6 +501,10 @@ TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullRes) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -508,7 +528,7 @@ TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullRes) {
 }
 
 TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
-    auto path = Hdf5Images() / "3000_2000_row_column.hdf5";
+    auto path = Hdf5Images() / "3000x2000_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -520,6 +540,10 @@ TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -543,7 +567,7 @@ TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
 }
 
 TEST_F(CursorSpatialProfileTest, FitsChannelChange) {
-    auto path = FitsImages() / "noise_3d.fits";
+    auto path = FitsImages() / "10x10x2_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path);
@@ -556,6 +580,10 @@ TEST_F(CursorSpatialProfileTest, FitsChannelChange) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -586,7 +614,7 @@ TEST_F(CursorSpatialProfileTest, FitsChannelChange) {
 }
 
 TEST_F(CursorSpatialProfileTest, FitsChannelStokesChange) {
-    auto path = FitsImages() / "noise_10px_10px.fits";
+    auto path = FitsImages() / "10x10x2x2_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path);
@@ -605,6 +633,10 @@ TEST_F(CursorSpatialProfileTest, FitsChannelStokesChange) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -635,7 +667,7 @@ TEST_F(CursorSpatialProfileTest, FitsChannelStokesChange) {
 }
 
 TEST_F(CursorSpatialProfileTest, ContiguousHDF5ChannelChange) {
-    auto path = Hdf5Images() / "10_10_2_row_column.hdf5";
+    auto path = Hdf5Images() / "10x10x2_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -648,6 +680,10 @@ TEST_F(CursorSpatialProfileTest, ContiguousHDF5ChannelChange) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -678,7 +714,7 @@ TEST_F(CursorSpatialProfileTest, ContiguousHDF5ChannelChange) {
 }
 
 TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelChange) {
-    auto path = Hdf5Images() / "1000_1000_2_2_row_column.hdf5";
+    auto path = Hdf5Images() / "1000x1000x2_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -691,6 +727,10 @@ TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelChange) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -721,7 +761,7 @@ TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelChange) {
 }
 
 TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
-    auto path = Hdf5Images() / "1000_1000_2_2_row_column.hdf5";
+    auto path = Hdf5Images() / "1000x1000x2x2_nan-row-column_nanpct-10.0_seed-0.hdf5";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path);
@@ -740,6 +780,10 @@ TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    if (data_vec.size() == 0) {
+        GTEST_FAIL();
+    }
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);

@@ -31,7 +31,7 @@ public:
 };
 
 TEST_F(RegionTest, TestSetUpdateRemoveRegion) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -79,7 +79,7 @@ TEST_F(RegionTest, TestSetUpdateRemoveRegion) {
 }
 
 TEST_F(RegionTest, TestReferenceImageRectangleLCRegion) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -105,7 +105,7 @@ TEST_F(RegionTest, TestReferenceImageRectangleLCRegion) {
 }
 
 TEST_F(RegionTest, TestReferenceImageRotboxLCRegion) {
-    auto image_path = FitsImages() / "noise_3d.fits"; // 10x10x10
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits"; // 10x10x10
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -132,7 +132,7 @@ TEST_F(RegionTest, TestReferenceImageRotboxLCRegion) {
 }
 
 TEST_F(RegionTest, TestReferenceImageEllipseLCRegion) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -159,7 +159,7 @@ TEST_F(RegionTest, TestReferenceImageEllipseLCRegion) {
 }
 
 TEST_F(RegionTest, TestReferenceImagePolygonLCRegion) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -186,7 +186,7 @@ TEST_F(RegionTest, TestReferenceImagePolygonLCRegion) {
 }
 
 TEST_F(RegionTest, TestReferenceImagePointRecord) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -222,7 +222,7 @@ TEST_F(RegionTest, TestReferenceImagePointRecord) {
 }
 
 TEST_F(RegionTest, TestReferenceImageLineRecord) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -256,7 +256,7 @@ TEST_F(RegionTest, TestReferenceImageLineRecord) {
 }
 
 TEST_F(RegionTest, TestReferenceImageRectangleRecord) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -302,7 +302,7 @@ TEST_F(RegionTest, TestReferenceImageRectangleRecord) {
 
 TEST_F(RegionTest, TestReferenceImageRotboxRecord) {
     // Record is for unrotated rectangle; RegionState used for angle in export
-    auto image_path = FitsImages() / "noise_3d.fits"; // 10x10x10
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits"; // 10x10x10
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -347,7 +347,7 @@ TEST_F(RegionTest, TestReferenceImageRotboxRecord) {
 }
 
 TEST_F(RegionTest, TestReferenceImageEllipseRecord) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
@@ -379,7 +379,7 @@ TEST_F(RegionTest, TestReferenceImageEllipseRecord) {
 }
 
 TEST_F(RegionTest, TestReferenceImagePolygonRecord) {
-    auto image_path = FitsImages() / "noise_3d.fits";
+    auto image_path = FitsImages() / "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
