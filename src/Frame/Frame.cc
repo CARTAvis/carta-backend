@@ -1371,8 +1371,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             }
 
             if (have_profile) {
-                Message::AddProfile(
-                    spatial_data, config.coordinate(), requested_start, requested_end, profile.data(), profile.size() * sizeof(float), mip);
+                // add SpatialProfile to message
+                auto spatial_profile = spatial_data.add_profiles();
+                spatial_profile->set_coordinate(config.coordinate());
+                // Should these be set to the rounded endpoints if the data is downsampled or decimated?
+                spatial_profile->set_start(requested_start);
+                spatial_profile->set_end(requested_end);
+                spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+                spatial_profile->set_mip(mip);
             }
         }
 
