@@ -76,8 +76,6 @@ public:
         CARTA::CompressionType compression_type = CARTA::CompressionType::NONE, float compression_quality = -1);
     static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);
     static CARTA::SetSpatialRequirements SetSpatialRequirements(int32_t file_id, int32_t region_id);
-    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(
-        std::string coordinate, int32_t start = 0, int32_t end = 0, int32_t mip = 0, int32_t width = 0);
     static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id);
     static CARTA::SetHistogramRequirements SetHistogramRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate = "z",
         int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
@@ -87,14 +85,17 @@ public:
     static CARTA::Point Point(const casacore::Vector<casacore::Double>& input, int x_index = 0, int y_index = 1);
     static CARTA::Point Point(const std::vector<casacore::Quantity>& input, int x_index = 0, int y_index = 1);
     static CARTA::Point Point(const std::vector<double>& input, int x_index = 0, int y_index = 1);
-    static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
+    static CARTA::SetRegion SetRegion(
+        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation);
+    static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
     static CARTA::SetSpectralRequirements SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
-    static CARTA::SetSpectralRequirements_SpectralConfig SpectralConfig(const std::string& coordinate);
     static CARTA::StartAnimation StartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame,
         std::pair<int32_t, int32_t> start_frame, std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame,
         CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles, int32_t frame_rate = 5);
     static CARTA::AnimationFlowControl AnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame);
     static CARTA::StopAnimation StopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame);
+    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(
+        std::string coordinate, int32_t start = 0, int32_t end = 0, int32_t mip = 0, int32_t width = 0);
     static CARTA::IntBounds IntBounds(int32_t min, int32_t max);
     static CARTA::FloatBounds FloatBounds(float min, float max);
     static CARTA::MomentRequest MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
@@ -102,6 +103,7 @@ public:
     static CARTA::ImageProperties ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
         CARTA::RenderMode render_mode, int32_t channel, int32_t stokes);
     static CARTA::ResumeSession ResumeSession(std::vector<CARTA::ImageProperties> images);
+    static CARTA::SetSpectralRequirements_SpectralConfig SpectralConfig(const std::string& coordinate);
     static CARTA::FileListRequest FileListRequest(
         const std::string& directory, const CARTA::FileListFilterMode filter_mode = CARTA::FileListFilterMode::Content);
     static CARTA::FileInfoRequest FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu = "");
@@ -112,6 +114,7 @@ public:
         bool debiasing, double q_error, double u_error, int32_t stokes_intensity, int32_t stokes_angle,
         const CARTA::CompressionType& compression_type, float compression_quality);
     static CARTA::ImageBounds ImageBounds(int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max);
+    static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
     static CARTA::ConcatStokesFiles ConcatStokesFiles(
         int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files);
     static CARTA::DoublePoint DoublePoint(double x, double y);
@@ -120,9 +123,11 @@ public:
     static CARTA::ScriptingRequest ScriptingRequest(uint32_t scripting_request_id, const std::string& target, const std::string& action,
         const std::string& parameters, bool async, const std::string& return_path);
     static CARTA::ChannelMapFlowControl ChannelMapFlowControl(int32_t file_id, int32_t received_channel);
-    static CARTA::SpectralProfileData SpectralProfileData(int32_t stokes, float progress, int32_t file_id = 0, int32_t region_id = 0,
-        const std::string& coordinate = "", const std::vector<CARTA::StatsType>& required_stats = {},
-        const std::map<CARTA::StatsType, std::vector<double>>& spectral_data = {});
+    // Response messages
+    static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
+        std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
+        std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+    static CARTA::SpectralProfileData SpectralProfileData(int32_t stokes, float progress);
     static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
         int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
         CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit);
@@ -160,13 +165,6 @@ public:
     static CARTA::FileInfoExtended AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
     static CARTA::FileInfoExtended AddComputedEntry(
         CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);
-    static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
-        std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
-    static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& response, std::string coordinate, int start, int end,
-        casacore::Float* profile_data, size_t profile_size, int mip);
-    static CARTA::SpatialProfileData AddProfile(CARTA::SpatialProfileData& message, int32_t file_id, int32_t region_id, int32_t start,
-        std::vector<float>& profile, std::string& coordinate, int32_t mip, CARTA::ProfileAxisType axis_type, casacore::Quantity& increment);
-
     // Decode messages
     static carta::EventHeader GetEventHeader(std::string_view message);
 

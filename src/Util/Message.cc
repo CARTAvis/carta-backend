@@ -133,12 +133,39 @@ CARTA::Point Message::Point(const std::vector<double>& input, int x_index, int y
     return Message::Point(input[x_index], input[y_index]);
 }
 
-CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
-    CARTA::SetRegion message;
-    message.set_file_id(file_id);
-    message.set_region_id(region_id);
-    *message.mutable_region_info() = region_info;
-    return message;
+CARTA::SetRegion Message::SetRegion(
+    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation) {
+    CARTA::SetRegion set_region;
+    set_region.set_file_id(file_id);
+    set_region.set_region_id(region_id);
+    auto* region_info = set_region.mutable_region_info();
+    region_info->set_region_type(region_type);
+    region_info->set_rotation(rotation);
+    for (auto control_point : control_points) {
+        auto* point = region_info->add_control_points();
+        point->set_x(control_point.x());
+        point->set_y(control_point.y());
+    }
+    return set_region;
+}
+
+CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
+    CARTA::SetStatsRequirements set_stats_requirements;
+    set_stats_requirements.set_file_id(file_id);
+    set_stats_requirements.set_region_id(region_id);
+    auto* stats_configs = set_stats_requirements.add_stats_configs();
+    stats_configs->set_coordinate(coordinate);
+    stats_configs->add_stats_types(CARTA::StatsType::NumPixels);
+    stats_configs->add_stats_types(CARTA::StatsType::Sum);
+    stats_configs->add_stats_types(CARTA::StatsType::FluxDensity);
+    stats_configs->add_stats_types(CARTA::StatsType::Mean);
+    stats_configs->add_stats_types(CARTA::StatsType::RMS);
+    stats_configs->add_stats_types(CARTA::StatsType::Sigma);
+    stats_configs->add_stats_types(CARTA::StatsType::SumSq);
+    stats_configs->add_stats_types(CARTA::StatsType::Min);
+    stats_configs->add_stats_types(CARTA::StatsType::Max);
+    stats_configs->add_stats_types(CARTA::StatsType::Extrema);
+    return set_stats_requirements;
 }
 
 CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
@@ -373,6 +400,14 @@ CARTA::ImageBounds Message::ImageBounds(int32_t x_min, int32_t x_max, int32_t y_
     return message;
 }
 
+CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
+    CARTA::SetRegion message;
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
+    *message.mutable_region_info() = region_info;
+    return message;
+}
+
 CARTA::ConcatStokesFiles Message::ConcatStokesFiles(
     int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files) {
     CARTA::ConcatStokesFiles message;
@@ -440,9 +475,9 @@ std::vector<char> Message::EncodeMessage(CARTA::EventType event_type, uint32_t e
     return msg;
 }
 
-CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress, int32_t file_id, int32_t region_id,
-    const std::string& coordinate, const std::vector<CARTA::StatsType>& required_stats,
-    const std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
+CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
+    std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
     CARTA::SpectralProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
@@ -459,10 +494,17 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float pr
             double nan_value = DOUBLE_NAN;
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
-            new_profile->set_raw_values_fp64(spectral_data.at(stats_type).data(), spectral_data.at(stats_type).size() * sizeof(double));
+            new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
         }
     }
     return profile_message;
+}
+
+CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress) {
+    CARTA::SpectralProfileData message;
+    message.set_stokes(stokes);
+    message.set_progress(progress);
+    return message;
 }
 
 CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
@@ -722,59 +764,6 @@ CARTA::FileInfoExtended Message::AddComputedEntry(
     entry->set_entry_type(type);
     entry->set_numeric_value(numeric_value);
     return response;
-}
-
-CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
-    std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
-    // Set CARTA::RegionInfo
-    CARTA::RegionInfo region_info;
-    region_info.set_region_type(region_type);
-    *region_info.mutable_control_points() = {control_points.begin(), control_points.end()};
-    region_info.set_rotation(region_rotation);
-
-    // Add info and style to import_ack; increment region id for next region
-    (*import_ack.mutable_regions())[region_id] = region_info;
-    (*import_ack.mutable_region_styles())[region_id] = region_style;
-
-    return import_ack;
-}
-
-CARTA::SpatialProfileData Message::AddProfile(CARTA::SpatialProfileData& message, std::string coordinate, int start, int end,
-    casacore::Float* profile_data, size_t profile_size, int mip) {
-    // add SpatialProfile to message
-    auto spatial_profile = message.add_profiles();
-    spatial_profile->set_coordinate(coordinate);
-    // Should these be set to the rounded endpoints if the data is downsampled or decimated?
-    spatial_profile->set_start(start);
-    spatial_profile->set_end(end);
-    spatial_profile->set_raw_values_fp32(profile_data, profile_size);
-    spatial_profile->set_mip(mip);
-    return message;
-}
-
-CARTA::SpatialProfileData Message::AddProfile(CARTA::SpatialProfileData& message, int32_t file_id, int32_t region_id, int32_t start,
-    std::vector<float>& profile, std::string& coordinate, int32_t mip, CARTA::ProfileAxisType axis_type, casacore::Quantity& increment) {
-    auto profile_size = profile.size();
-    int end = profile_size - 1;
-    float crpix = profile_size / 2;
-    float cdelt = increment.getValue();
-    float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
-    std::string unit = increment.getUnit();
-    message.set_file_id(file_id);
-    message.set_region_id(region_id);
-    auto* spatial_profile = message.add_profiles();
-    spatial_profile->set_start(start);
-    spatial_profile->set_end(end);
-    spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
-    spatial_profile->set_coordinate(coordinate);
-    spatial_profile->set_mip(mip);
-    auto* profile_axis = spatial_profile->mutable_line_axis();
-    profile_axis->set_axis_type(axis_type);
-    profile_axis->set_crpix(crpix);
-    profile_axis->set_crval(crval);
-    profile_axis->set_cdelt(cdelt);
-    profile_axis->set_unit(unit);
-    return message;
 }
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
