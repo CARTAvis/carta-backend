@@ -2016,15 +2016,8 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
 
         profile_ok = GetLineSpatialData(
             file_id, region_id, coordinate, stokes_index, width, [&](std::vector<float>& profile, casacore::Quantity& increment) {
-                auto profile_size = profile.size();
-                int end = profile_size - 1;
-                float crpix = profile_size / 2;
-                float cdelt = increment.getValue();
-                float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
-                std::string unit = increment.getUnit();
-
-                auto profile_message = Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index, value, start, end,
-                    profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
+                auto profile_message = Message::SpatialProfileData(x, y, channel, stokes_index, value);
+                Message::AddProfile(profile_message, file_id, region_id, start, profile, coordinate, mip, axis_type, increment);
                 cb(profile_message);
             });
         spdlog::performance("Fill line spatial profile in {:.3f} ms", t.Elapsed().ms());
