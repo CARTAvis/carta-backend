@@ -63,17 +63,6 @@ CARTA::SetCursor Message::SetCursor(int32_t file_id, float x, float y) {
     return set_cursor;
 }
 
-CARTA::SetSpatialRequirements Message::SetSpatialRequirements(int32_t file_id, int32_t region_id) {
-    CARTA::SetSpatialRequirements set_spatial_requirements;
-    set_spatial_requirements.set_file_id(file_id);
-    set_spatial_requirements.set_region_id(region_id);
-    auto* spatial_requirement_x = set_spatial_requirements.add_spatial_profiles();
-    spatial_requirement_x->set_coordinate("x");
-    auto* spatial_requirement_y = set_spatial_requirements.add_spatial_profiles();
-    spatial_requirement_y->set_coordinate("y");
-    return set_spatial_requirements;
-}
-
 CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id) {
     CARTA::SetStatsRequirements set_stats_requirements;
     set_stats_requirements.set_file_id(file_id);
@@ -133,20 +122,12 @@ CARTA::Point Message::Point(const std::vector<double>& input, int x_index, int y
     return Message::Point(input[x_index], input[y_index]);
 }
 
-CARTA::SetRegion Message::SetRegion(
-    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation) {
-    CARTA::SetRegion set_region;
-    set_region.set_file_id(file_id);
-    set_region.set_region_id(region_id);
-    auto* region_info = set_region.mutable_region_info();
-    region_info->set_region_type(region_type);
-    region_info->set_rotation(rotation);
-    for (auto control_point : control_points) {
-        auto* point = region_info->add_control_points();
-        point->set_x(control_point.x());
-        point->set_y(control_point.y());
-    }
-    return set_region;
+CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
+    CARTA::SetRegion message;
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
+    *message.mutable_region_info() = region_info;
+    return message;
 }
 
 CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
@@ -397,14 +378,6 @@ CARTA::ImageBounds Message::ImageBounds(int32_t x_min, int32_t x_max, int32_t y_
     message.set_x_max(x_max);
     message.set_y_min(y_min);
     message.set_y_max(y_max);
-    return message;
-}
-
-CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
-    CARTA::SetRegion message;
-    message.set_file_id(file_id);
-    message.set_region_id(region_id);
-    *message.mutable_region_info() = region_info;
     return message;
 }
 
@@ -740,30 +713,19 @@ CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const strin
     return message;
 }
 
-CARTA::FileListResponse Message::AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count) {
-    auto* directory_info = response.add_subdirectories();
-    directory_info->set_name(name);
-    directory_info->set_date(date);
-    directory_info->set_item_count(item_count);
-    return response;
-}
+CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
+    std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
+    // Set CARTA::RegionInfo
+    CARTA::RegionInfo region_info;
+    region_info.set_region_type(region_type);
+    *region_info.mutable_control_points() = {control_points.begin(), control_points.end()};
+    region_info.set_rotation(region_rotation);
 
-CARTA::FileInfoExtended Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
-    auto entry = response.add_computed_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(CARTA::EntryType::STRING);
-    return response;
-}
+    // Add info and style to import_ack; increment region id for next region
+    (*import_ack.mutable_regions())[region_id] = region_info;
+    (*import_ack.mutable_region_styles())[region_id] = region_style;
 
-CARTA::FileInfoExtended Message::AddComputedEntry(
-    CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
-    auto entry = response.add_computed_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(type);
-    entry->set_numeric_value(numeric_value);
-    return response;
+    return import_ack;
 }
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,

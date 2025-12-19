@@ -75,7 +75,6 @@ public:
     static CARTA::SetImageChannels SetImageChannels(int32_t file_id, int32_t channel, int32_t stokes,
         CARTA::CompressionType compression_type = CARTA::CompressionType::NONE, float compression_quality = -1);
     static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);
-    static CARTA::SetSpatialRequirements SetSpatialRequirements(int32_t file_id, int32_t region_id);
     static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id);
     static CARTA::SetHistogramRequirements SetHistogramRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate = "z",
         int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
@@ -85,8 +84,7 @@ public:
     static CARTA::Point Point(const casacore::Vector<casacore::Double>& input, int x_index = 0, int y_index = 1);
     static CARTA::Point Point(const std::vector<casacore::Quantity>& input, int x_index = 0, int y_index = 1);
     static CARTA::Point Point(const std::vector<double>& input, int x_index = 0, int y_index = 1);
-    static CARTA::SetRegion SetRegion(
-        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation);
+    static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
     static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
     static CARTA::SetSpectralRequirements SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
     static CARTA::StartAnimation StartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame,
@@ -114,7 +112,6 @@ public:
         bool debiasing, double q_error, double u_error, int32_t stokes_intensity, int32_t stokes_angle,
         const CARTA::CompressionType& compression_type, float compression_quality);
     static CARTA::ImageBounds ImageBounds(int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max);
-    static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
     static CARTA::ConcatStokesFiles ConcatStokesFiles(
         int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files);
     static CARTA::DoublePoint DoublePoint(double x, double y);
@@ -123,7 +120,7 @@ public:
     static CARTA::ScriptingRequest ScriptingRequest(uint32_t scripting_request_id, const std::string& target, const std::string& action,
         const std::string& parameters, bool async, const std::string& return_path);
     static CARTA::ChannelMapFlowControl ChannelMapFlowControl(int32_t file_id, int32_t received_channel);
-    // Response messages
+    /// Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
         std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
         std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
@@ -160,11 +157,8 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
-    static CARTA::FileListResponse AddDirectory(
-        CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count = 0);
-    static CARTA::FileInfoExtended AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
-    static CARTA::FileInfoExtended AddComputedEntry(
-        CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);
+    static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
+        std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
     // Decode messages
     static carta::EventHeader GetEventHeader(std::string_view message);
 
