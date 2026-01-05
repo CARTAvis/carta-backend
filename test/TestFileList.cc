@@ -14,7 +14,8 @@ using namespace carta;
 
 class FileListTest : public ::testing::Test {
 public:
-    static CARTA::FileListRequest FileListRequest(const std::string& directory, const CARTA::FileListFilterMode filter_mode = CARTA::FileListFilterMode::Content) {
+    static CARTA::FileListRequest FileListRequest(
+        const std::string& directory, const CARTA::FileListFilterMode filter_mode = CARTA::FileListFilterMode::Content) {
         CARTA::FileListRequest file_list_request;
         file_list_request.set_directory(directory);
         file_list_request.set_filter_mode(filter_mode);

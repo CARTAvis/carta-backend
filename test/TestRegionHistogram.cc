@@ -18,8 +18,8 @@ using namespace carta;
 
 class RegionHistogramTest : public ::testing::Test {
 public:
-    static CARTA::SetHistogramRequirements SetHistogramRequirements(
-        int32_t file_id, int32_t region_id, const std::string& coordinate = "z", int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE) {
+    static CARTA::SetHistogramRequirements SetHistogramRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate = "z",
+        int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE) {
         CARTA::SetHistogramRequirements set_histogram_requirements;
         set_histogram_requirements.set_file_id(file_id);
         set_histogram_requirements.set_region_id(region_id);

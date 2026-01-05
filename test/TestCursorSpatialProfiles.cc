@@ -116,7 +116,8 @@ TEST_F(CursorSpatialProfileTest, SmallFitsProfile) {
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
     frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
 
@@ -157,7 +158,8 @@ TEST_F(CursorSpatialProfileTest, SmallHdf5Profile) {
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
     frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
 
@@ -492,7 +494,8 @@ TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullRes) {
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
     frame->SetSpatialRequirements(profiles);
     frame->SetCursor(150, 150);
 
@@ -561,7 +564,8 @@ TEST_F(CursorSpatialProfileTest, FitsChannelChange) {
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
     frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
     std::string msg;
@@ -610,7 +614,8 @@ TEST_F(CursorSpatialProfileTest, FitsChannelStokesChange) {
     int stokes(0);                // set stokes channel as "I"
     int spatial_config_stokes(1); // set spatial config coordinate = {"Qx", "Qy"}
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {CursorSpatialProfileTest::SpatialConfig("Qx"), CursorSpatialProfileTest::SpatialConfig("Qy")};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        CursorSpatialProfileTest::SpatialConfig("Qx"), CursorSpatialProfileTest::SpatialConfig("Qy")};
     frame->SetSpatialRequirements(profiles);
     frame->SetCursor(x, y);
     std::string msg;
@@ -653,7 +658,8 @@ TEST_F(CursorSpatialProfileTest, ContiguousHDF5ChannelChange) {
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
     frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
     std::string msg;
@@ -696,7 +702,8 @@ TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelChange) {
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        CursorSpatialProfileTest::SpatialConfig("x"), CursorSpatialProfileTest::SpatialConfig("y")};
     frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
     std::string msg;
@@ -745,7 +752,8 @@ TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
     int stokes(0);                // set stokes channel as "I"
     int spatial_config_stokes(1); // set spatial config coordinate = {"Qx", "Qy"}
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {CursorSpatialProfileTest::SpatialConfig("Qx"), CursorSpatialProfileTest::SpatialConfig("Qy")};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        CursorSpatialProfileTest::SpatialConfig("Qx"), CursorSpatialProfileTest::SpatialConfig("Qy")};
     frame->SetSpatialRequirements(profiles);
     frame->SetCursor(x, y);
     std::string msg;

@@ -32,7 +32,7 @@ public:
         stats_config->add_stats_types(CARTA::StatsType::Max);
         return set_stats_requirements;
     }
-    
+
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, const std::vector<float>& points,
         std::shared_ptr<casacore::CoordinateSystem> csys, bool is_annotation) {
         std::vector<CARTA::Point> control_points;

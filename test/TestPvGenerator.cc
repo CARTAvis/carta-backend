@@ -21,7 +21,8 @@ using ::testing::Pointwise;
 
 class PvGeneratorTest : public ::testing::Test, public ImageGenerator {
 public:
-    static CARTA::PvRequest PvRequest(int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false) {
+    static CARTA::PvRequest PvRequest(
+        int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false) {
         CARTA::PvRequest message;
         message.set_file_id(file_id);
         message.set_region_id(region_id);
