@@ -164,10 +164,10 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 }
 
                 // Cache LCRegion
-                if (lcregion && stokes_source.IsOriginalImage()) {
+                if (stokes_source.IsOriginalImage()) {
                     std::lock_guard<std::mutex> guard(_lcregion_mutex);
                     _lcregion = lcregion;
-                    _lcregion_set = true;
+                    _lcregion_set = true; // attempt was made even if lcregion failed (outside image)
                 }
             }
         } else {
