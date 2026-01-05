@@ -1688,6 +1688,7 @@ bool RegionHandler::GetRegionHistogramData(
             auto* default_histogram = histogram_message.mutable_histograms();
             std::vector<int> histogram_bins(1, 0);
             FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, NAN, NAN);
+            histogram_messages.emplace_back(histogram_message);
             continue;
         }
 
