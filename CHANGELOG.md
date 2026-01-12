@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Don't reallocate memory for image cache unnecessarily ([#1508](https://github.com/CARTAvis/carta-backend/pull/1508)).
 * Fixed crash in ICD channel map test with ASAN enabled ([#1518](https://github.com/CARTAvis/carta-backend/issues/1518)).
 * Fixed fetching of region data for other Stokes ([#1551](https://github.com/CARTAvis/carta-backend/issues/1551)).
+* Fixed deletion of resumed session from message task threads ([#1537](https://github.com/CARTAvis/carta-backend/issues/1537)).
 * Fixed region histogram for image Stokes after computed Stokes ([#1522](https://github.com/CARTAvis/carta-backend/issues/1522)).
 
 ### Changed
