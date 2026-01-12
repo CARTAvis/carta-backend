@@ -408,7 +408,8 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
     auto folder = SafeStringEscape(FitsImages());
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
-    EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder, "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits,10x10x10x10_nan-row-column_nanpct-10.0_seed-0.fits"));
+    EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder,
+                              "10x10x10_nan-row-column_nanpct-10.0_seed-0.fits,10x10x10x10_nan-row-column_nanpct-10.0_seed-0.fits"));
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
