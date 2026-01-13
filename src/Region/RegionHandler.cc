@@ -2084,7 +2084,6 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
         if (rebin_xy == 1 && rebin_z == 1) {
             casacore::Array<float> final_data_array(shape, rebinned_data_ptr->data(), casacore::StorageInitPolicy::SHARE);
             sub_image.get(final_data_array);
-            std::cout << "rebinned_data_ptr data = " << rebinned_data_ptr->data() << std::endl;
         } else {
             Rebin(sub_image, width, height, diff, rebin_xy, rebin_z, rebinned_data_ptr, rebinned_pool, data_pool);
         }
@@ -2143,56 +2142,64 @@ bool RegionHandler::SendRender3DData(int file_id, int region_id, int viewer_id, 
 
 void RegionHandler::Rebin(casacore::SubImage<float> sub_image, int width, int height, int diff, int rebin_xy, int rebin_z, std::shared_ptr<std::vector<float>> rebinned_data_ptr, std::shared_ptr<TilePool> rebinned_pool, std::shared_ptr<TilePool> data_pool) {
 
-    int spectral_axis(sub_image.coordinates().spectralAxisNumber());
-    auto subimage_shape = sub_image.shape();
+    const int spectral_axis = sub_image.coordinates().spectralAxisNumber();
+    const auto subimage_shape = sub_image.shape();
 
-    size_t rebin_width = std::ceil((float)width / (float)rebin_xy);
-    size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
-    size_t rebin_channel_size = rebin_width * rebin_height;
+    const size_t rebin_width  = std::ceil((float)width  / (float)rebin_xy);
+    const size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
+    const size_t rebin_channel_size = rebin_width * rebin_height;
 
-    // std::vector<float> out_vector(rebin_channel_size, 0.0);
-    std::shared_ptr<std::vector<float>> out_vector_ptr = rebinned_pool->Pull();
+    // Accumulation buffer
+    auto accumulation_ptr = rebinned_pool->Pull();
+    // Scratch buffer for smoothed XY data, one slice
+    auto scratch_ptr = data_pool->Pull();
+    float* scratch = scratch_ptr->data();
 
-    for (auto rebin_ichan = 0; rebin_ichan < 4; ++rebin_ichan) {
-        std::shared_ptr<std::vector<float>> smoothed_ptr = rebinned_pool->Pull();
-        float* slice_ptr = rebinned_data_ptr->data() + rebin_channel_size * rebin_ichan;
-        // std::cout << "rebinned_data_ptr data = " << rebinned_data_ptr->data() << std::endl;
+    for (int rebin_ichan = 0; rebin_ichan < 4; ++rebin_ichan) {
 
-        // std::fill(slice_ptr, slice_ptr + rebin_channel_size, 0.0f);
+        float* accumulation_slice_ptr =
+            accumulation_ptr->data() + rebin_channel_size * rebin_ichan;
+        float* rebinned_slice_ptr =
+            rebinned_data_ptr->data() + rebin_channel_size * rebin_ichan;
 
-        for (auto smooth_ichan = 0; smooth_ichan < rebin_z; ++smooth_ichan) {
-            if (rebin_ichan * rebin_z + smooth_ichan > diff - 1) {
+        // reset accumulation for this rebinned channel
+        std::fill(accumulation_slice_ptr, accumulation_slice_ptr + rebin_channel_size, 0.0f);
+        int n_accumulated = 0;
+
+        for (int smooth_ichan = 0; smooth_ichan < rebin_z; ++smooth_ichan) {
+
+            const int chan = rebin_ichan * rebin_z + smooth_ichan;
+            if (chan >= diff) {
                 break;
             }
 
+            // Pull buffer for one full-resolution 2D slice
             auto image_data_ptr = data_pool->Pull();
-
+            // Extract channel data from subimage
             casacore::IPosition start(subimage_shape.size(), 0);
-            start(spectral_axis) = rebin_ichan * rebin_z + smooth_ichan;
+            start(spectral_axis) = chan;
             casacore::IPosition length(subimage_shape);
-            length(spectral_axis) = 1; // this has to be one to get a single slice
-
+            length(spectral_axis) = 1;  // single spectral slice
             casacore::Array<float> image_data_array(length, image_data_ptr->data(), casacore::StorageInitPolicy::SHARE);
-
-            casacore::Slicer channel_slicer(start, length); // gets single slice to be smoothed
-            sub_image.getSlice(image_data_array, channel_slicer, false); // use false if the buffer is preallocated and of the same size.
+            casacore::Slicer channel_slicer(start, length);
+            sub_image.getSlice(image_data_array, channel_slicer, false);
 
             if (rebin_xy > 1) {
-                const float* in_ptr = image_data_ptr->data();
-                BlockSmooth(in_ptr, out_vector_ptr->data(), width, height, rebin_width, rebin_height, 0, 0, rebin_xy); // smooth the single slice
-
+                BlockSmooth(image_data_ptr->data(), scratch, width, height, rebin_width, rebin_height, 0, 0, rebin_xy);
                 // Accumulate rebinned channel data
-                std::transform(slice_ptr, slice_ptr + rebin_channel_size, out_vector_ptr->begin(), slice_ptr, std::plus<float>());
-                // std::transform(slice_ptr, slice_ptr + rebin_channel_size out_vector.begin(), slice_ptr, [](float out_val, float dest_val) {return std::isnan(dest_val) ? out_val : dest_val + out_val; });
-               
-            } else {                
-                std::transform(image_data_ptr->begin(), image_data_ptr->end(), rebinned_data_ptr->data() + rebin_channel_size * rebin_ichan, rebinned_data_ptr->data() + rebin_channel_size * rebin_ichan, std::plus<float>());
-                // std::transform(slice_ptr, slice_ptr + rebin_channel_size, image_data_ptr->begin(), slice_ptr, [](float out_val, float dest_val) {return std::isnan(dest_val) ? out_val : dest_val + out_val; });
+                std::transform(scratch, scratch + rebin_channel_size, accumulation_slice_ptr, accumulation_slice_ptr, std::plus<float>());
+            } else {
+                std::transform(image_data_ptr->data(), image_data_ptr->data() + rebin_channel_size, accumulation_slice_ptr, accumulation_slice_ptr, std::plus<float>());
             }
+            ++n_accumulated;
         }
-        if (rebin_z > 1) {
-            // Get mean for rebin_z
-            std::transform(slice_ptr, slice_ptr + rebin_channel_size, slice_ptr, [rebin_z](float& s) { return s / (float)rebin_z; });
+        // Get mean for rebin_z
+        if (n_accumulated > 0) {
+            const float inv_n = 1.0f / static_cast<float>(n_accumulated);
+            std::transform(accumulation_slice_ptr, accumulation_slice_ptr + rebin_channel_size, rebinned_slice_ptr, [rebin_z](float s) { return s / rebin_z; }); // * inv_n
+        } else {
+            // No data accumulated
+            std::fill(rebinned_slice_ptr, rebinned_slice_ptr + rebin_channel_size, 0.0f);
         }
     }
 }
