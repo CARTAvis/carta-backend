@@ -311,12 +311,6 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // making local copy of the message in case it changes as the calculation goes on:
     auto parameters = _parameters;
 
-    // TODO : review this part it was != CURRENT but I've changed it back to 0 here as we removed the enum NONE=-1, CURRENT=0, COMPUTED=1
-    if (!z_changed && stokes_changed && parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0) {
-        // TODO : review this part as I do not fully understand it yet ...
-        return true;
-    }
-
     // lock the mutex to invalidate all the calculators :
     std::unique_lock lock_calculators(_mutex);
 
@@ -327,21 +321,33 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     }
 
     // Invalidate all on-going calculation to stop them (moved from VectorField::SetVectorOverlayParameters)
-    for (auto calculator : _calculators) {
-        calculator->Invalidate();
+    for (auto calculator_it : _calculators) {
+        calculator_it->Invalidate();
     }
 
     // remvoing all objects from the container after they all got invalidated :
     _calculators.clear();
-
+    
+    // create new calculator and add to the vector of on-going calculators :
+    // this must happen after invalidation of the on-going calculations
+    auto calculator = std::make_shared<VectorFieldCalculator>(parameters);
+    
+    // moved from the start of the function here where we already have calculator object created
+    // TODO/DOUBT: however, now I have a doubt if this is ok now. It can happen that we invalidate all the on-going calculations, but here
+    // we then decide that there is nothing to be done and we just return.
+    // Perhaps these two checks before should remain at the start of the function, but we do not have calculator object created then
+    // so we would have to evalulate UsesCurrent() and Disabled() from the "first principles" as in the constructor of VectorFieldCalculator object.
+    // TBD ...
+    if (!z_changed && stokes_changed && !calculator->UsesCurrent() ) { // was : parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0
+        // TODO : review this part as I do not fully understand it yet ...
+        return true;
+    }
+        
     // TODO : review this part it was != CURRENT but I've changed it back to 0 here as we removed the enum NONE=-1, CURRENT=0, COMPUTED=1
-    if (parameters.stokes_intensity() == -1 && parameters.stokes_angle() == -1) {
+    if ( calculator->Disabled() ) { // was parameters.stokes_intensity() == -1 && parameters.stokes_angle() == -1
         std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
         return true;
     }
-
-    // create new calculator and add to the vector of on-going calculators :
-    auto calculator = std::make_shared<VectorFieldCalculator>(parameters);
 
     // add the new calculator object to the container of ongoing calculations
     _calculators.push_back(calculator);
