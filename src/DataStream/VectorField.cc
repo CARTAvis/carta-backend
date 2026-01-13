@@ -338,7 +338,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     // Perhaps these two checks before should remain at the start of the function, but we do not have calculator object created then
     // so we would have to evalulate UsesCurrent() and Disabled() from the "first principles" as in the constructor of VectorFieldCalculator
     // object. TBD ...
-    if (!z_changed && stokes_changed &&
+    if (stokes_changed && !z_changed &&
         !calculator->UsesCurrent()) { // was : parameters.stokes_intensity() != 0 && parameters.stokes_angle() != 0
         // TODO : review this part as I do not fully understand it yet ...
         return true;
