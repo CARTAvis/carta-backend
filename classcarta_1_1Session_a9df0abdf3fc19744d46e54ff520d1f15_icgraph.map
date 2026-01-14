@@ -1,0 +1,9 @@
+<map id="carta::Session::OnSetVectorOverlayParameters" name="carta::Session::OnSetVectorOverlayParameters">
+<area shape="rect" id="Node000001" title=" " alt="" coords="487,37,688,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1GeneralMessageTask.html#a2b330608ca3ee635977a75325a97691a" title=" " alt="" coords="237,5,439,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="473,45,439,41,439,36,473,40"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="242,69,434,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="473,75,434,80,434,74,473,69"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1SessionManager.html#a53c673a177a1b9892d9d27f86598c0dc" title=" " alt="" coords="5,69,189,109"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="228,92,190,92,190,87,228,87"/>
+</map>

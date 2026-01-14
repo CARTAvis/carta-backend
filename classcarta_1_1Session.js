@@ -80,7 +80,7 @@ var classcarta_1_1Session =
     [ "OnSetSpatialRequirements", "classcarta_1_1Session.html#a390efae381051bcf1f695707222f207f", null ],
     [ "OnSetSpectralRequirements", "classcarta_1_1Session.html#a5dfe97b76414c785e8a35d56659c4148", null ],
     [ "OnSetStatsRequirements", "classcarta_1_1Session.html#aec59964865528b6bc7779eb15688b78a", null ],
-    [ "OnSetVectorOverlayParameters", "classcarta_1_1Session.html#a3f71bbdd1c4727be1e0a6e6ab743af2b", null ],
+    [ "OnSetVectorOverlayParameters", "classcarta_1_1Session.html#a9df0abdf3fc19744d46e54ff520d1f15", null ],
     [ "OnStopFitting", "classcarta_1_1Session.html#a2036089799c3a8f55565548b2c4a3f44", null ],
     [ "OnStopMomentCalc", "classcarta_1_1Session.html#a1f43a433f92f5dc6a28fbdb6c707acd4", null ],
     [ "OnStopPvCalc", "classcarta_1_1Session.html#a94a1bb9a9457b278fd768d729d7e6c2b", null ],

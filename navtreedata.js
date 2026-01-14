@@ -92,7 +92,7 @@ var NAVTREEINDEX =
 "classcarta_1_1PolarizationCalculator.html#a2cb6200df64e7dde3eacf173a97f894c",
 "classcarta_1_1RegionConverter.html#a3cb57550a686487734aa79c4e88d89e2",
 "classcarta_1_1RegionHandler.html#adf0a26d068e926212c682fdf15d367fe",
-"classcarta_1_1Session.html#a5eea7b2378a31e54430f77a6b5d2d623",
+"classcarta_1_1Session.html#a5fd62896cf8474c7b37c27093a24459e",
 "classcarta_1_1SessionManager.html#a3703920a32dfd9602379759b23dd69c5",
 "classcarta_1_1TableController.html#a0247e026291c116084057fab005453ed",
 "classcarta_1_1concurrent__queue.html",

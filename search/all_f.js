@@ -51,7 +51,7 @@ var searchData=
   ['onsetspatialrequirements_48',['OnSetSpatialRequirements',['../classcarta_1_1Session.html#a390efae381051bcf1f695707222f207f',1,'carta::Session']]],
   ['onsetspectralrequirements_49',['OnSetSpectralRequirements',['../classcarta_1_1Session.html#a5dfe97b76414c785e8a35d56659c4148',1,'carta::Session']]],
   ['onsetstatsrequirements_50',['OnSetStatsRequirements',['../classcarta_1_1Session.html#aec59964865528b6bc7779eb15688b78a',1,'carta::Session']]],
-  ['onsetvectoroverlayparameters_51',['OnSetVectorOverlayParameters',['../classcarta_1_1Session.html#a3f71bbdd1c4727be1e0a6e6ab743af2b',1,'carta::Session']]],
+  ['onsetvectoroverlayparameters_51',['OnSetVectorOverlayParameters',['../classcarta_1_1Session.html#a9df0abdf3fc19744d46e54ff520d1f15',1,'carta::Session']]],
   ['onstopfitting_52',['OnStopFitting',['../classcarta_1_1Session.html#a2036089799c3a8f55565548b2c4a3f44',1,'carta::Session']]],
   ['onstopmomentcalc_53',['OnStopMomentCalc',['../classcarta_1_1Session.html#a1f43a433f92f5dc6a28fbdb6c707acd4',1,'carta::Session']]],
   ['onstoppvcalc_54',['OnStopPvCalc',['../classcarta_1_1Session.html#a94a1bb9a9457b278fd768d729d7e6c2b',1,'carta::Session']]],
