@@ -93,7 +93,7 @@ public:
     void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
     void OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id);
     void OnStopFitting(const CARTA::StopFitting& stop_fitting);
-    void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message, bool silent = false);
     void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
     void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
