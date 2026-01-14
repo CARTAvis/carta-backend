@@ -292,6 +292,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionProperties.html">RegionProperties</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Data structure for returning imported region definition and style parameters.  <a href="structcarta_1_1RegionProperties.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionSpatialProfile.html">RegionSpatialProfile</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionSpectralConfig.html">RegionSpectralConfig</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a></td></tr>
@@ -471,6 +473,9 @@ Functions</h2></td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192" id="r_aa3581dda6f86c582d960a381773a4192"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aa3581dda6f86c582d960a381773a4192">applyOptionalArgument</a> (T &amp;val, const string &amp;argument_name, const cxxopts::ParseResult &amp;results)</td></tr>
 <tr class="separator:aa3581dda6f86c582d960a381773a4192"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5bfb75401cfd7c9a7ff703988e6e4b7" id="r_ae5bfb75401cfd7c9a7ff703988e6e4b7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ae5bfb75401cfd7c9a7ff703988e6e4b7">GetImageRegion</a> (std::shared_ptr&lt; <a class="el" href="classcarta_1_1Region.html">Region</a> &gt; region, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; frame, const <a class="el" href="structAxisRange.html">AxisRange</a> &amp;z_range, int stokes_index, std::shared_ptr&lt; casacore::LCRegion &gt; lc_region, casacore::ImageRegion &amp;image_region)</td></tr>
+<tr class="memdesc:ae5bfb75401cfd7c9a7ff703988e6e4b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply <a class="el" href="classcarta_1_1Region.html">Region</a> to image in <a class="el" href="classcarta_1_1Frame.html">Frame</a> in image coordinates.  <br /></td></tr>
+<tr class="separator:ae5bfb75401cfd7c9a7ff703988e6e4b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a69252619dfa7d9664a4517b757f6ca4c" id="r_a69252619dfa7d9664a4517b757f6ca4c"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1RegionImporter.html">RegionImporter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a69252619dfa7d9664a4517b757f6ca4c">GetRegionImporter</a> (CARTA::FileType region_file_type, std::shared_ptr&lt; casacore::CoordinateSystem &gt; image_coord_sys, int file_id, const std::string &amp;region_file, bool file_is_filename)</td></tr>
 <tr class="memdesc:a69252619dfa7d9664a4517b757f6ca4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create and return importer according to region file type.  <br /></td></tr>
 <tr class="separator:a69252619dfa7d9664a4517b757f6ca4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1030,7 +1035,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a96f7cab56516141317895bada342c0b1_icgraph.svg" width="100%" height="424"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a96f7cab56516141317895bada342c0b1_icgraph.svg" width="100%" height="472"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1782,6 +1787,77 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a0adec1994bc7056737b323d34cf9d5e3_icgraph.svg" width="100%" height="482"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="ae5bfb75401cfd7c9a7ff703988e6e4b7" name="ae5bfb75401cfd7c9a7ff703988e6e4b7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae5bfb75401cfd7c9a7ff703988e6e4b7">&#9670;&#160;</a></span>GetImageRegion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::GetImageRegion </td>
+          <td>(</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classcarta_1_1Region.html">Region</a> &gt;&#160;</td>
+          <td class="paramname"><em>region</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt;&#160;</td>
+          <td class="paramname"><em>frame</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structAxisRange.html">AxisRange</a> &amp;&#160;</td>
+          <td class="paramname"><em>z_range</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>stokes_index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td>
+          <td class="paramname"><em>lc_region</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">casacore::ImageRegion &amp;&#160;</td>
+          <td class="paramname"><em>image_region</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Apply <a class="el" href="classcarta_1_1Region.html">Region</a> to image in <a class="el" href="classcarta_1_1Frame.html">Frame</a> in image coordinates. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">region</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> object to apply </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">frame</td><td>Image frame to apply region to </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">z_range</td><td>Z axis range </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stokes_index</td><td><a class="el" href="classcarta_1_1Stokes.html">Stokes</a> axis index </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">lc_region</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> in lattice coordinates </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">image_region</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> in image coordinates </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Whether ImageRegion was created </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_ae5bfb75401cfd7c9a7ff703988e6e4b7_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>

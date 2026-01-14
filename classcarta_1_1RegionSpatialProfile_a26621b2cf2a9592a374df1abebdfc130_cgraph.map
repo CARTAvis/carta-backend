@@ -1,0 +1,13 @@
+<map id="carta::RegionSpatialProfile::GetBoxMeanValue" name="carta::RegionSpatialProfile::GetBoxMeanValue">
+<area shape="rect" id="Node000001" title="Calculate mean value for box region along line." alt="" coords="5,87,200,127"/>
+<area shape="rect" id="Node000002" href="$namespacecarta.html#a96f7cab56516141317895bada342c0b1" title="Calculate basic stats from a float vector using BasicStatsCalculator." alt="" coords="255,45,413,70"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="196,84,260,70,261,76,198,89"/>
+<area shape="rect" id="Node000005" href="$namespacecarta.html#ae5bfb75401cfd7c9a7ff703988e6e4b7" title="Apply Region to image in Frame in image coordinates." alt="" coords="248,94,420,119"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="200,104,234,104,234,109,200,109"/>
+<area shape="rect" id="Node000006" href="$structcarta_1_1RegionState.html#a0530ad49eec4b1decafae42dd786d095" title=" " alt="" coords="263,144,405,184"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="185,124,250,141,249,146,183,129"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1BasicStatsCalculator.html#a884fc3cea2905271fd40a289efda0321" title=" " alt="" coords="468,5,665,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="413,44,454,38,454,43,414,49"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1BasicStatsCalculator.html#a14873f9d84d2abb0fabe85f4b70d0a44" title=" " alt="" coords="468,69,665,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="414,66,454,71,454,76,413,71"/>
+</map>

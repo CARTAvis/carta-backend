@@ -125,6 +125,7 @@ var hierarchy =
       [ "carta::Ds9Importer", "classcarta_1_1Ds9Importer.html", null ]
     ] ],
     [ "carta::RegionProperties", "structcarta_1_1RegionProperties.html", null ],
+    [ "carta::RegionSpatialProfile", "classcarta_1_1RegionSpatialProfile.html", null ],
     [ "carta::RegionSpectralConfig", "structcarta_1_1RegionSpectralConfig.html", null ],
     [ "carta::FileInfo::RegionSpectralStats", "structcarta_1_1FileInfo_1_1RegionSpectralStats.html", null ],
     [ "carta::RegionState", "structcarta_1_1RegionState.html", null ],

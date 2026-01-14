@@ -15,11 +15,13 @@ var searchData=
   ['regionimportexport_2eh_12',['RegionImportExport.h',['../RegionImportExport_8h.html',1,'']]],
   ['regionimportexportutil_2ecc_13',['RegionImportExportUtil.cc',['../RegionImportExportUtil_8cc.html',1,'']]],
   ['regionimportexportutil_2eh_14',['RegionImportExportUtil.h',['../RegionImportExportUtil_8h.html',1,'']]],
-  ['regionstate_2eh_15',['RegionState.h',['../RegionState_8h.html',1,'']]],
-  ['regionstatistics_2ecc_16',['RegionStatistics.cc',['../RegionStatistics_8cc.html',1,'']]],
-  ['regionstatistics_2eh_17',['RegionStatistics.h',['../RegionStatistics_8h.html',1,'']]],
-  ['release_2emd_18',['release.md',['../release_8md.html',1,'']]],
-  ['remotefiles_2ecc_19',['RemoteFiles.cc',['../RemoteFiles_8cc.html',1,'']]],
-  ['remotefiles_2eh_20',['RemoteFiles.h',['../RemoteFiles_8h.html',1,'']]],
-  ['requirementscache_2eh_21',['RequirementsCache.h',['../RequirementsCache_8h.html',1,'']]]
+  ['regionspatialprofile_2ecc_15',['RegionSpatialProfile.cc',['../RegionSpatialProfile_8cc.html',1,'']]],
+  ['regionspatialprofile_2eh_16',['RegionSpatialProfile.h',['../RegionSpatialProfile_8h.html',1,'']]],
+  ['regionstate_2eh_17',['RegionState.h',['../RegionState_8h.html',1,'']]],
+  ['regionstatistics_2ecc_18',['RegionStatistics.cc',['../RegionStatistics_8cc.html',1,'']]],
+  ['regionstatistics_2eh_19',['RegionStatistics.h',['../RegionStatistics_8h.html',1,'']]],
+  ['release_2emd_20',['release.md',['../release_8md.html',1,'']]],
+  ['remotefiles_2ecc_21',['RemoteFiles.cc',['../RemoteFiles_8cc.html',1,'']]],
+  ['remotefiles_2eh_22',['RemoteFiles.h',['../RemoteFiles_8h.html',1,'']]],
+  ['requirementscache_2eh_23',['RequirementsCache.h',['../RequirementsCache_8h.html',1,'']]]
 ];

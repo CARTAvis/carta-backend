@@ -1,0 +1,45 @@
+<map id="carta::RegionHandler::CalculatePvImage" name="carta::RegionHandler::CalculatePvImage">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,611,164,651"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="42,612,40,602,47,592,62,587,85,585,111,588,126,595,123,600,110,593,85,590,63,592,50,597,45,603,47,610"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a9fc8e855f922f23cc072d0706f53c805" title=" " alt="" coords="212,361,412,401"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="102,609,281,409,285,413,106,613"/>
+<area shape="rect" id="Node000014" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="889,525,1048,565"/>
+<area shape="poly" id="edge25_Node000001_Node000014" title=" " alt="" coords="164,638,295,647,466,650,559,645,654,636,749,621,841,598,916,568,918,573,842,603,750,626,655,641,559,651,466,655,295,653,164,643"/>
+<area shape="rect" id="Node000017" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="233,697,391,737"/>
+<area shape="poly" id="edge21_Node000001_Node000017" title=" " alt="" coords="140,649,246,689,244,694,138,654"/>
+<area shape="rect" id="Node000018" href="$classcarta_1_1RegionHandler.html#a0a88beca77cada14a4aba1dbb90b7e5f" title=" " alt="" coords="468,582,627,622"/>
+<area shape="poly" id="edge22_Node000001_Node000018" title=" " alt="" coords="164,624,454,605,454,611,164,629"/>
+<area shape="poly" id="edge3_Node000002_Node000002" title=" " alt="" coords="270,361,267,351,274,342,289,336,312,334,338,337,353,344,350,349,337,342,312,339,290,341,277,346,272,352,275,360"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="467,368,627,393"/>
+<area shape="poly" id="edge4_Node000002_Node000003" title=" " alt="" coords="412,378,454,378,454,383,412,383"/>
+<area shape="rect" id="Node000004" href="$namespacecarta.html#ae5bfb75401cfd7c9a7ff703988e6e4b7" title="Apply Region to image in Frame in image coordinates." alt="" coords="461,417,633,443"/>
+<area shape="poly" id="edge5_Node000002_Node000004" title=" " alt="" coords="409,398,474,412,472,417,407,403"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f" title=" " alt="" coords="478,118,617,158"/>
+<area shape="poly" id="edge6_Node000002_Node000005" title=" " alt="" coords="325,359,379,284,417,239,458,196,500,164,503,168,462,200,421,242,383,287,329,362"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1RegionHandler.html#ab0b3358b46e9265c92310a735aa44156" title=" " alt="" coords="460,467,635,507"/>
+<area shape="poly" id="edge13_Node000002_Node000012" title=" " alt="" coords="353,399,461,452,480,460,478,465,459,456,350,403"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="683,525,841,565"/>
+<area shape="poly" id="edge14_Node000002_Node000013" title=" " alt="" coords="330,399,382,460,419,492,461,517,512,535,566,545,620,549,669,550,669,555,619,555,566,550,511,540,459,522,416,496,379,464,326,403"/>
+<area shape="poly" id="edge20_Node000002_Node000014" title=" " alt="" coords="325,359,347,330,377,296,415,264,459,240,507,224,546,221,587,226,635,239,701,261,749,287,792,320,843,367,877,402,907,441,952,511,947,514,903,444,873,406,839,371,789,324,746,291,699,266,634,245,585,232,546,226,508,230,461,244,418,268,381,300,351,334,329,362"/>
+<area shape="rect" id="Node000015" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="468,254,627,294"/>
+<area shape="poly" id="edge16_Node000002_Node000015" title=" " alt="" coords="349,358,459,304,476,297,478,301,461,308,351,363"/>
+<area shape="rect" id="Node000016" href="$structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58" title=" " alt="" coords="468,319,627,344"/>
+<area shape="poly" id="edge19_Node000002_Node000016" title=" " alt="" coords="407,358,472,344,474,349,409,363"/>
+<area shape="rect" id="Node000006" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title="Determines the image type of a given filename using Casacore." alt="" coords="685,104,839,129"/>
+<area shape="poly" id="edge7_Node000005_Node000006" title=" " alt="" coords="617,128,671,123,672,128,617,134"/>
+<area shape="rect" id="Node000007" href="$File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" title="Checks whether a given file is a compressed FITS file." alt="" coords="693,55,831,80"/>
+<area shape="poly" id="edge8_Node000005_Node000007" title=" " alt="" coords="604,115,682,89,705,81,706,87,684,94,606,120"/>
+<area shape="rect" id="Node000011" href="$File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" title="Checks whether a given filename represents a remote HTTP or HTTPS URL." alt="" coords="695,153,829,179"/>
+<area shape="poly" id="edge12_Node000005_Node000011" title=" " alt="" coords="617,144,681,153,680,158,617,150"/>
+<area shape="rect" id="Node000008" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="901,104,1037,129"/>
+<area shape="poly" id="edge9_Node000007_Node000008" title=" " alt="" coords="816,77,902,98,901,103,815,83"/>
+<area shape="rect" id="Node000009" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="927,5,1011,31"/>
+<area shape="poly" id="edge10_Node000007_Node000009" title=" " alt="" coords="815,52,913,28,914,34,816,57"/>
+<area shape="rect" id="Node000010" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title="Determines if a given magic number corresponds to a gzip&#45;compressed file." alt="" coords="898,55,1039,80"/>
+<area shape="poly" id="edge11_Node000007_Node000010" title=" " alt="" coords="831,65,884,65,884,70,831,70"/>
+<area shape="poly" id="edge15_Node000013_Node000014" title=" " alt="" coords="842,542,876,542,876,547,842,547"/>
+<area shape="poly" id="edge17_Node000015_Node000013" title=" " alt="" coords="619,292,636,304,656,326,666,348,673,371,685,398,746,511,741,514,680,400,668,373,661,350,652,329,633,308,616,296"/>
+<area shape="poly" id="edge18_Node000015_Node000014" title=" " alt="" coords="610,292,636,304,724,356,808,414,935,514,932,518,805,418,721,361,633,308,608,296"/>
+<area shape="poly" id="edge23_Node000018_Node000013" title=" " alt="" coords="622,579,673,566,674,571,624,585"/>
+<area shape="poly" id="edge24_Node000018_Node000014" title=" " alt="" coords="627,596,729,588,841,574,883,565,884,571,842,579,729,594,627,601"/>
+</map>

@@ -1,6 +1,6 @@
 <map id="carta::TileCache::ChunkKey" name="carta::TileCache::ChunkKey">
 <area shape="rect" id="Node000001" title="Calculate the key for the chunk that contains the given tile." alt="" coords="713,38,913,63"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a3d1f8594ec63ae8f16524981c5f21ce2" title=" " alt="" coords="255,5,431,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#ab10e1fa7c331dabd9047c515ad1a7f65" title=" " alt="" coords="255,5,431,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="700,47,431,33,431,27,700,42"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1TileCache.html#a4eda64cc5324f96a16c6b877ab4ce7cc" title="Retrieve a tile from the cache." alt="" coords="507,63,665,89"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="700,66,666,70,665,65,699,61"/>

@@ -1,16 +1,19 @@
 <map id="RegionAnalysis" name="RegionAnalysis">
-<area shape="rect" id="node1" href="dir_0f2fd7bf9cbe4411e4ee6aa33d3a180a.html" title="RegionAnalysis" alt="" coords="93,52,215,77"/>
+<area shape="rect" id="node1" href="dir_0f2fd7bf9cbe4411e4ee6aa33d3a180a.html" title="RegionAnalysis" alt="" coords="133,52,255,77"/>
 <area shape="rect" id="node2" href="dir_08d68200e36948d117cb679b82d752e3.html" title="Cache" alt="" coords="5,125,68,151"/>
-<area shape="poly" id="edge1" href="dir_000013_000000.html" alt="" coords="137,80,69,120,66,116,134,75"/>
-<area shape="rect" id="edge1-headlabel" href="dir_000013_000000.html" title="2" alt="" coords="71,116,80,130"/>
+<area shape="poly" id="edge1" href="dir_000013_000000.html" alt="" coords="170,80,76,122,74,117,168,75"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000013_000000.html" title="3" alt="" coords="78,118,87,133"/>
 <area shape="rect" id="node3" href="dir_3e37c3eecdc42aac03248fab5c81cb58.html" title="Util" alt="" coords="93,125,138,151"/>
-<area shape="poly" id="edge2" href="dir_000013_000021.html" alt="" coords="150,79,130,115,126,112,145,76"/>
-<area shape="rect" id="edge2-headlabel" href="dir_000013_000021.html" title="5" alt="" coords="133,106,142,121"/>
+<area shape="poly" id="edge2" href="dir_000013_000021.html" alt="" coords="183,79,140,118,136,114,180,75"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000013_000021.html" title="7" alt="" coords="143,112,152,127"/>
 <area shape="rect" id="node4" href="dir_7d368d8baac033dda9456cf740143463.html" title="Frame" alt="" coords="163,125,225,151"/>
-<area shape="poly" id="edge3" href="dir_000013_000004.html" alt="" coords="163,76,183,112,178,115,158,79"/>
-<area shape="rect" id="edge3-headlabel" href="dir_000013_000004.html" title="2" alt="" coords="181,98,191,113"/>
-<area shape="rect" id="node5" href="dir_d9b5cabedc73050ebee44a9601fc76bc.html" title="ImageStats" alt="" coords="250,125,346,151"/>
-<area shape="poly" id="edge4" href="dir_000013_000009.html" alt="" coords="178,75,263,117,261,121,176,80"/>
-<area shape="rect" id="edge4-headlabel" href="dir_000013_000009.html" title="1" alt="" coords="257,102,267,117"/>
-<area shape="rect" id="clust1" href="dir_8b2a86062e1b328e66c775d0dfce5a31.html" title="Region" alt="" coords="82,16,226,88"/>
+<area shape="poly" id="edge3" href="dir_000013_000004.html" alt="" coords="197,78,197,112,191,112,191,78"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000013_000004.html" title="3" alt="" coords="198,100,207,114"/>
+<area shape="rect" id="node5" href="dir_ce44ad55c7286bf5a6cd8cf01717cab8.html" title="Logger" alt="" coords="250,125,317,151"/>
+<area shape="poly" id="edge4" href="dir_000013_000010.html" alt="" coords="210,75,260,114,256,119,207,79"/>
+<area shape="rect" id="edge4-headlabel" href="dir_000013_000010.html" title="1" alt="" coords="255,100,264,115"/>
+<area shape="rect" id="node6" href="dir_d9b5cabedc73050ebee44a9601fc76bc.html" title="ImageStats" alt="" coords="341,125,437,151"/>
+<area shape="poly" id="edge5" href="dir_000013_000009.html" alt="" coords="226,75,345,118,343,123,224,80"/>
+<area shape="rect" id="edge5-headlabel" href="dir_000013_000009.html" title="2" alt="" coords="338,104,347,118"/>
+<area shape="rect" id="clust1" href="dir_8b2a86062e1b328e66c775d0dfce5a31.html" title="Region" alt="" coords="122,16,266,88"/>
 </map>

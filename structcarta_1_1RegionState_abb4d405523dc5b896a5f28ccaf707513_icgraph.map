@@ -1,9 +1,9 @@
 <map id="carta::RegionState::IsAnnotation" name="carta::RegionState::IsAnnotation">
-<area shape="rect" id="Node000001" title=" " alt="" coords="525,35,668,75"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1" title=" " alt="" coords="292,5,464,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="511,46,464,39,465,34,512,41"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Region.html#a9557b22b60d93d7d5933c08f3a2e19c2" title=" " alt="" coords="279,70,477,95"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="512,68,478,73,477,67,511,63"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1Region.html#a946ec39c21a09a141d917b553ba56551" title=" " alt="" coords="5,70,231,95"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="265,85,231,85,231,80,265,80"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="500,35,643,75"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionConverter.html#a89824e293ea029863be230ee9136a9c1" title=" " alt="" coords="267,5,439,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="486,46,438,39,439,34,487,41"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1Region.html#a9557b22b60d93d7d5933c08f3a2e19c2" title=" " alt="" coords="253,70,452,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="487,68,452,73,452,67,486,63"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1Region.html#aeba57756538a53c49bde207d14008ac9" title=" " alt="" coords="5,70,205,95"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="240,85,206,85,206,80,240,80"/>
 </map>

@@ -1,0 +1,16 @@
+<map id="carta::RegionSpatialProfile" name="carta::RegionSpatialProfile">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1045,69,1240,94"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="75,22,114,47"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="127,30,251,23,441,17,667,18,783,23,898,32,1001,47,1090,66,1089,71,1000,53,897,37,783,28,666,23,441,22,252,28,128,35"/>
+<area shape="rect" id="Node000004" href="$structcarta_1_1ConfigId.html" title=" " alt="" coords="333,47,449,73"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="128,40,208,55,272,59,332,59,332,65,272,64,208,60,127,45"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="604,47,897,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="911,79,1045,79,1045,84,911,84"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="463,62,604,70,604,75,463,67"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="297,97,484,151"/>
+<area shape="poly" id="edge5_Node000003_Node000005" title=" " alt="" coords="497,109,604,96,604,101,498,114"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="5,104,184,144"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="198,121,297,121,297,127,198,127"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="705,141,797,166"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="810,145,909,133,1021,113,1102,92,1103,97,1022,119,910,138,811,150"/>
+</map>

@@ -1,0 +1,35 @@
+<map id="carta::GetImageRegion" name="carta::GetImageRegion">
+<area shape="rect" id="Node000001" title="Apply Region to image in Frame in image coordinates." alt="" coords="959,229,1131,254"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a18c5dbca7dd3627e96767d039a80009d" title=" " alt="" coords="731,5,890,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1029,217,1011,182,984,139,950,96,909,59,889,48,892,43,912,55,954,93,988,136,1015,179,1034,215"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a9fc8e855f922f23cc072d0706f53c805" title=" " alt="" coords="711,93,911,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1017,222,969,184,909,148,882,136,884,131,912,143,972,180,1020,218"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1RegionHandler.html#a5939c9fed8588472dd9a4fe10f81b919" title=" " alt="" coords="714,157,907,197"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="983,228,884,200,885,195,985,222"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1RegionHandler.html#a409ecbf6d655eab69b1465b819cffb85" title=" " alt="" coords="731,221,890,261"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="945,244,890,244,890,239,945,239"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1RegionHandler.html#a8a692669b14a98aec1f36f2617910138" title=" " alt="" coords="731,285,890,325"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="985,260,885,288,884,283,983,255"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1RegionSpatialProfile.html#a26621b2cf2a9592a374df1abebdfc130" title="Calculate mean value for box region along line." alt="" coords="713,349,908,389"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="1020,265,972,303,912,340,884,352,882,347,909,335,969,298,1017,261"/>
+<area shape="rect" id="Node000012" href="$classcarta_1_1RegionHandler.html#a32e479940a3721ce03fd2fb2076b40d9" title=" " alt="" coords="719,413,902,453"/>
+<area shape="poly" id="edge13_Node000001_Node000012" title=" " alt="" coords="1031,268,984,335,951,372,912,404,890,416,888,411,909,399,947,368,980,332,1027,265"/>
+<area shape="poly" id="edge5_Node000003_Node000003" title=" " alt="" coords="850,82,836,75,811,72,788,74,775,79,770,85,772,92,767,94,765,84,772,74,787,69,811,67,838,70,852,77"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a572070177a99ad38ff8703936776a08b" title=" " alt="" coords="479,61,638,101"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="696,102,638,94,638,89,697,96"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHandler.html#ab556b1d44e6a4ca48fba195023769038" title=" " alt="" coords="465,125,652,165"/>
+<area shape="poly" id="edge6_Node000003_Node000005" title=" " alt="" coords="697,130,653,136,652,131,696,125"/>
+<area shape="poly" id="edge4_Node000004_Node000004" title=" " alt="" coords="601,50,586,43,559,40,535,42,520,47,515,53,518,60,513,62,510,52,517,42,534,37,559,35,587,38,603,45"/>
+<area shape="rect" id="Node000010" href="$classcarta_1_1RegionSpatialProfile.html#a1c06cf53dfa7012cd6ab593c05d5bbb8" title="Calculate profile for line region by approximating as a box region for each pixel." alt="" coords="461,349,656,389"/>
+<area shape="poly" id="edge11_Node000009_Node000010" title=" " alt="" coords="700,372,656,372,656,367,700,367"/>
+<area shape="rect" id="Node000011" href="$classcarta_1_1RegionSpatialProfile.html#a2f833cec5c4b1a03243d007f84efb7fb" title="Add calculated spatial profile for line region to message." alt="" coords="212,349,407,389"/>
+<area shape="poly" id="edge12_Node000010_Node000011" title=" " alt="" coords="448,372,407,372,407,367,448,367"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1RegionHandler.html#adf0a26d068e926212c682fdf15d367fe" title=" " alt="" coords="471,413,646,453"/>
+<area shape="poly" id="edge14_Node000012_Node000013" title=" " alt="" coords="706,436,646,436,646,431,706,431"/>
+<area shape="rect" id="Node000014" href="$classcarta_1_1RegionHandler.html#a19cfaf756e9c68ca6472cdb369b40198" title=" " alt="" coords="455,477,663,517"/>
+<area shape="poly" id="edge15_Node000012_Node000014" title=" " alt="" coords="719,459,639,480,637,475,717,454"/>
+<area shape="rect" id="Node000015" href="$classcarta_1_1RegionHandler.html#a1154ddc668a4a9205dfd08ccc00cf4f1" title=" " alt="" coords="230,477,389,517"/>
+<area shape="poly" id="edge16_Node000014_Node000015" title=" " alt="" coords="441,500,389,500,389,495,441,495"/>
+<area shape="rect" id="Node000016" href="$classcarta_1_1RegionHandler.html#a981ef720799967df543e0b272a17f6cb" title=" " alt="" coords="5,477,164,517"/>
+<area shape="poly" id="edge17_Node000015_Node000016" title=" " alt="" coords="216,500,164,500,164,495,216,495"/>
+</map>

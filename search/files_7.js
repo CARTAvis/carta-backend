@@ -9,6 +9,8 @@ var searchData=
   ['imagemoments_2eh_6',['ImageMoments.h',['../ImageMoments_8h.html',1,'']]],
   ['imagemoments_2etcc_7',['ImageMoments.tcc',['../ImageMoments_8tcc.html',1,'']]],
   ['imageptrloader_2eh_8',['ImagePtrLoader.h',['../ImagePtrLoader_8h.html',1,'']]],
-  ['initialvaluecalculator_2ecc_9',['InitialValueCalculator.cc',['../InitialValueCalculator_8cc.html',1,'']]],
-  ['initialvaluecalculator_2eh_10',['InitialValueCalculator.h',['../InitialValueCalculator_8h.html',1,'']]]
+  ['imageregion_2ecc_9',['ImageRegion.cc',['../ImageRegion_8cc.html',1,'']]],
+  ['imageregion_2eh_10',['ImageRegion.h',['../ImageRegion_8h.html',1,'']]],
+  ['initialvaluecalculator_2ecc_11',['InitialValueCalculator.cc',['../InitialValueCalculator_8cc.html',1,'']]],
+  ['initialvaluecalculator_2eh_12',['InitialValueCalculator.h',['../InitialValueCalculator_8h.html',1,'']]]
 ];

@@ -89,6 +89,7 @@ var annotated_dup =
       [ "RegionHistogramConfig", "structcarta_1_1RegionHistogramConfig.html", "structcarta_1_1RegionHistogramConfig" ],
       [ "RegionImporter", "classcarta_1_1RegionImporter.html", "classcarta_1_1RegionImporter" ],
       [ "RegionProperties", "structcarta_1_1RegionProperties.html", "structcarta_1_1RegionProperties" ],
+      [ "RegionSpatialProfile", "classcarta_1_1RegionSpatialProfile.html", "classcarta_1_1RegionSpatialProfile" ],
       [ "RegionSpectralConfig", "structcarta_1_1RegionSpectralConfig.html", "structcarta_1_1RegionSpectralConfig" ],
       [ "RegionState", "structcarta_1_1RegionState.html", "structcarta_1_1RegionState" ],
       [ "RegionStatistics", "classcarta_1_1RegionStatistics.html", "classcarta_1_1RegionStatistics" ],

@@ -71,13 +71,12 @@ var searchData=
   ['applyfilter_68',['ApplyFilter',['../classcarta_1_1TableController.html#af01e838c5c1e818d6b1ee2bad33dd044',1,'carta::TableController']]],
   ['applyjsonsettings_69',['ApplyJSONSettings',['../structcarta_1_1ProgramSettings.html#af79fed2fb510be1e30123ce5f788b4a7',1,'carta::ProgramSettings']]],
   ['applyoptionalargument_70',['applyOptionalArgument',['../namespacecarta.html#aa3581dda6f86c582d960a381773a4192',1,'carta']]],
-  ['applyregiontofile_71',['applyregiontofile',['../classcarta_1_1RegionHandler.html#aa839bd4075f976babaaa3e2f8d4a4f2f',1,'carta::RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange &amp;z_range, int stokes, std::shared_ptr&lt; casacore::LCRegion &gt; lc_region, StokesRegion &amp;stokes_region)'],['../classcarta_1_1RegionHandler.html#a5c734366cb3b4b307c54a66251dd270c',1,'carta::RegionHandler::ApplyRegionToFile(int region_id, int file_id, const StokesSource &amp;stokes_source=StokesSource(), bool report_error=true)']]],
-  ['applythreadlimit_72',['ApplyThreadLimit',['../classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc',1,'carta::ThreadManager']]],
-  ['asan_20flags_73',['Building with ASAN flags',['../md_docs_2static_2faq.html#autotoc_md1',1,'']]],
-  ['auto_5fbin_5fsize_74',['AUTO_BIN_SIZE',['../Image_8h.html#a0d7c8081a29b46e6a70f0065eda31de2',1,'Image.h']]],
-  ['autobinsize_75',['AutoBinSize',['../classcarta_1_1Frame.html#a54fa0e39d0db24c3f5913668935f69ef',1,'carta::Frame']]],
-  ['availablerows_76',['AvailableRows',['../classcarta_1_1Table.html#ad7fd87f6305aa6321438ac79d34a1b13',1,'carta::Table']]],
-  ['axes_77',['Axes',['../classcarta_1_1Frame.html#aa72016c533484bdcaeefa9cb95df9553',1,'carta::Frame']]],
-  ['axesinfo_78',['axesinfo',['../structAxesInfo.html#aa336889948ea6c4c19d6b59d2c5e5b93',1,'AxesInfo::AxesInfo(const std::vector&lt; int &gt; render, std::vector&lt; int &gt; spatial, int spectral, int z, int stokes)'],['../structAxesInfo.html#a926656b9703a5bee01cc02e9f12824d7',1,'AxesInfo::AxesInfo(const std::vector&lt; int &gt; render, const std::vector&lt; int &gt; spatial, int spectral)'],['../structAxesInfo.html',1,'AxesInfo'],['../structAxesInfo.html#a8c8d3cfa85926250af812828d04fe8da',1,'AxesInfo::AxesInfo()']]],
-  ['axisrange_79',['axisrange',['../structAxisRange.html#afe27315ca30282545d389919e2ad9cd8',1,'AxisRange::AxisRange(int from_, int to_)'],['../structAxisRange.html#a145c438deed0a187f00335a4c3b8d024',1,'AxisRange::AxisRange(int from_and_to_)'],['../structAxisRange.html#a17ff4d17c50573253c06cfba37fa479c',1,'AxisRange::AxisRange()'],['../structAxisRange.html',1,'AxisRange']]]
+  ['applythreadlimit_71',['ApplyThreadLimit',['../classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc',1,'carta::ThreadManager']]],
+  ['asan_20flags_72',['Building with ASAN flags',['../md_docs_2static_2faq.html#autotoc_md1',1,'']]],
+  ['auto_5fbin_5fsize_73',['AUTO_BIN_SIZE',['../Image_8h.html#a0d7c8081a29b46e6a70f0065eda31de2',1,'Image.h']]],
+  ['autobinsize_74',['AutoBinSize',['../classcarta_1_1Frame.html#a54fa0e39d0db24c3f5913668935f69ef',1,'carta::Frame']]],
+  ['availablerows_75',['AvailableRows',['../classcarta_1_1Table.html#ad7fd87f6305aa6321438ac79d34a1b13',1,'carta::Table']]],
+  ['axes_76',['Axes',['../classcarta_1_1Frame.html#aa72016c533484bdcaeefa9cb95df9553',1,'carta::Frame']]],
+  ['axesinfo_77',['axesinfo',['../structAxesInfo.html#a926656b9703a5bee01cc02e9f12824d7',1,'AxesInfo::AxesInfo(const std::vector&lt; int &gt; render, const std::vector&lt; int &gt; spatial, int spectral)'],['../structAxesInfo.html#a8c8d3cfa85926250af812828d04fe8da',1,'AxesInfo::AxesInfo()'],['../structAxesInfo.html',1,'AxesInfo'],['../structAxesInfo.html#aa336889948ea6c4c19d6b59d2c5e5b93',1,'AxesInfo::AxesInfo()']]],
+  ['axisrange_78',['axisrange',['../structAxisRange.html#afe27315ca30282545d389919e2ad9cd8',1,'AxisRange::AxisRange(int from_, int to_)'],['../structAxisRange.html#a145c438deed0a187f00335a4c3b8d024',1,'AxisRange::AxisRange(int from_and_to_)'],['../structAxisRange.html#a17ff4d17c50573253c06cfba37fa479c',1,'AxisRange::AxisRange()'],['../structAxisRange.html',1,'AxisRange']]]
 ];

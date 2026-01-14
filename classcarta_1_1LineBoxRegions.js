@@ -1,7 +1,5 @@
 var classcarta_1_1LineBoxRegions =
 [
-    [ "LineBoxRegions", "classcarta_1_1LineBoxRegions.html#a7e0e5b64d6155af2542eb32f35af5d09", null ],
-    [ "~LineBoxRegions", "classcarta_1_1LineBoxRegions.html#a6c6dbdbc5192974f7844a51bd23725f9", null ],
     [ "AdjustIncrementUnit", "classcarta_1_1LineBoxRegions.html#a011e5e6b552ea4062a03bb383459eb2d", null ],
     [ "CheckLinearOffsets", "classcarta_1_1LineBoxRegions.html#a67e4579a3ef3eb21ae3abd1db415725a", null ],
     [ "FindPointAtTargetSeparation", "classcarta_1_1LineBoxRegions.html#aa1bb79738d6d9bd46aa5907c0493f7be", null ],

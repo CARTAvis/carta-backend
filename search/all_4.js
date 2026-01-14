@@ -27,7 +27,7 @@ var searchData=
   ['deleteframe_24',['DeleteFrame',['../classcarta_1_1Session.html#aab36b319ffe1c796a753ea63b1eee575',1,'carta::Session']]],
   ['deletesession_25',['DeleteSession',['../classcarta_1_1SessionManager.html#a692b5f2bcc6bdc21ce76424e09e50151',1,'carta::SessionManager']]],
   ['deprecated_5foptions_26',['deprecated_options',['../structcarta_1_1ProgramSettings.html#aefe071713ac70beff41353d48328c362',1,'carta::ProgramSettings']]],
-  ['depth_27',['depth',['../classcarta_1_1Frame.html#ad0db7c41f9da68619616cccb059edbb4',1,'carta::Frame::Depth()'],['../structDimsInfo.html#ad5290b27cfc785af3749b6b8b637311e',1,'DimsInfo::depth']]],
+  ['depth_27',['depth',['../structDimsInfo.html#ad5290b27cfc785af3749b6b8b637311e',1,'DimsInfo::depth'],['../classcarta_1_1Frame.html#ad0db7c41f9da68619616cccb059edbb4',1,'carta::Frame::Depth()']]],
   ['dequeue_5fone_5fwriter_28',['dequeue_one_writer',['../classcarta_1_1queuing__rw__mutex.html#af7d20dfc496517e34f93151e4032a9c9',1,'carta::queuing_rw_mutex']]],
   ['description_29',['description',['../classcarta_1_1Column.html#a41e678823a6ef30983a90129d5276d91',1,'carta::Column::description'],['../structcarta_1_1TableParam.html#a6119f45b0539ab409a9b2543bb411f14',1,'carta::TableParam::description'],['../classcarta_1_1Table.html#a06cf1ddd0f75f66b71a0903d3aa45f77',1,'carta::Table::Description()'],['../classcarta_1_1Stokes.html#a4f3f6776d4df43dc430c1aa77d58b0d7',1,'carta::Stokes::Description()']]],
   ['developer_20faq_20and_20tips_30',['Developer FAQ and tips',['../md_docs_2static_2faq.html',1,'']]],

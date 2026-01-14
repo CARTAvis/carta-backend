@@ -1,0 +1,7 @@
+<map id="carta::RegionSpatialProfile::CancelLineProfile" name="carta::RegionSpatialProfile::CancelLineProfile">
+<area shape="rect" id="Node000001" title="Check whether to cancel line profile calculation." alt="" coords="5,5,200,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionSpatialProfile.html#a1c628bafee491476380e0c11e3f2a367" title="Check if configuration exists with input parameters, for line profile cancellation." alt="" coords="248,5,443,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="200,23,234,23,234,28,200,28"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionSpatialProfile.html#a9171c3812822e41a8a1bacc83485fb33" title="Get spatial configurations for file id." alt="" coords="491,5,685,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="443,23,477,23,477,28,443,28"/>
+</map>

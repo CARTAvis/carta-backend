@@ -1,0 +1,13 @@
+<map id="carta::RegionHandler::GetComputedStokesProfiles" name="carta::RegionHandler::GetComputedStokesProfiles">
+<area shape="rect" id="Node000001" title=" " alt="" coords="905,37,1116,77"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a32e479940a3721ce03fd2fb2076b40d9" title=" " alt="" coords="675,37,857,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="892,60,858,60,858,55,892,55"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#adf0a26d068e926212c682fdf15d367fe" title=" " alt="" coords="435,5,610,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="661,46,610,39,610,34,661,41"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#a19cfaf756e9c68ca6472cdb369b40198" title=" " alt="" coords="419,69,627,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="661,74,627,78,627,73,660,69"/>
+<area shape="rect" id="Node000005" href="$classcarta_1_1RegionHandler.html#a1154ddc668a4a9205dfd08ccc00cf4f1" title=" " alt="" coords="212,69,371,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="405,92,371,92,371,87,405,87"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1RegionHandler.html#a981ef720799967df543e0b272a17f6cb" title=" " alt="" coords="5,69,164,109"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="198,92,164,92,164,87,198,87"/>
+</map>

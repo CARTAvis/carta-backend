@@ -7,7 +7,7 @@ var searchData=
   ['leftedge_4',['LeftEdge',['../namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2dacaed7b76497605be385d17f3e7c5e16fd8',1,'carta']]],
   ['levels_5',['levels',['../structcarta_1_1ContourSettings.html#a1c30bfc47e1c132d980d5ccc140aacd8',1,'carta::ContourSettings']]],
   ['line_5fprofile_5fprogress_5finterval_6',['LINE_PROFILE_PROGRESS_INTERVAL',['../RegionHandler_8cc.html#a68e769d15a214d67e8309a9d2528e2bc',1,'RegionHandler.cc']]],
-  ['lineboxregions_7',['lineboxregions',['../classcarta_1_1LineBoxRegions.html',1,'carta::LineBoxRegions'],['../classcarta_1_1LineBoxRegions.html#a7e0e5b64d6155af2542eb32f35af5d09',1,'carta::LineBoxRegions::LineBoxRegions()']]],
+  ['lineboxregions_7',['LineBoxRegions',['../classcarta_1_1LineBoxRegions.html',1,'carta']]],
   ['lineboxregions_2ecc_8',['LineBoxRegions.cc',['../LineBoxRegions_8cc.html',1,'']]],
   ['lineboxregions_2eh_9',['LineBoxRegions.h',['../LineBoxRegions_8h.html',1,'']]],
   ['linemultiapply_10',['LineMultiApply',['../classcarta_1_1ImageMoments.html#aa2a60f2c823ecd9fd19c736c379fbe52',1,'carta::ImageMoments']]],

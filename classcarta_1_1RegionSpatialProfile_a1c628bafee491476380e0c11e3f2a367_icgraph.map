@@ -1,0 +1,9 @@
+<map id="carta::RegionSpatialProfile::HasConfiguration" name="carta::RegionSpatialProfile::HasConfiguration">
+<area shape="rect" id="Node000001" title="Check if configuration exists with input parameters, for line profile cancellation." alt="" coords="733,5,928,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionSpatialProfile.html#a311f010d2864d5ede8e7a18bf8c6d785" title="Check whether to cancel line profile calculation." alt="" coords="491,5,685,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="719,28,686,28,686,23,719,23"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionSpatialProfile.html#a1c06cf53dfa7012cd6ab593c05d5bbb8" title="Calculate profile for line region by approximating as a box region for each pixel." alt="" coords="248,5,443,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="477,28,443,28,443,23,477,23"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1RegionSpatialProfile.html#a2f833cec5c4b1a03243d007f84efb7fb" title="Add calculated spatial profile for line region to message." alt="" coords="5,5,200,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="234,28,200,28,200,23,234,23"/>
+</map>

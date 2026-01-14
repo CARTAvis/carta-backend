@@ -1,10 +1,8 @@
 <map id="carta::RegionHandler::IsLineRegion" name="carta::RegionHandler::IsLineRegion">
-<area shape="rect" id="Node000001" title=" " alt="" coords="247,93,405,133"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a53807aa22abb92b35725054a015e12aa" title=" " alt="" coords="23,29,181,69"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="241,92,172,72,173,67,243,87"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" title=" " alt="" coords="5,93,199,133"/>
-<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="233,116,199,116,199,111,233,111"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1RegionHandler.html#aaa29bac6b3845d7b15ec257a1683e028" title=" " alt="" coords="9,157,195,197"/>
-<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="243,140,173,160,172,155,241,135"/>
-<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="140,18,127,11,102,8,80,10,68,15,63,21,65,28,60,30,58,20,64,10,79,5,102,3,128,6,142,13"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="240,61,399,101"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a572070177a99ad38ff8703936776a08b" title=" " alt="" coords="19,29,178,69"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="226,71,178,63,179,58,227,65"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#afa21461846d5952411c6e6284d962e83" title=" " alt="" coords="5,93,192,133"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="227,97,192,102,192,97,226,92"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="136,18,123,11,99,8,78,10,65,15,60,21,63,28,58,30,55,20,62,10,76,5,99,3,124,6,138,13"/>
 </map>

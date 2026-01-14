@@ -46,9 +46,9 @@
   </g>
 </defs>
 <script type="application/ecmascript">
-var viewWidth = 810;
+var viewWidth = 629;
 var viewHeight = 206;
-var sectionId = 'dynsection-69';
+var sectionId = 'dynsection-62';
 </script>
 <script type="application/ecmascript" xlink:href="svg.min.js"/>
 <svg id="graph" class="graph">
@@ -58,9 +58,9 @@ var sectionId = 'dynsection-69';
 <g id="Node000001" class="node">
 <title>Node1</title>
 <g id="a_Node000001"><a xlink:title=" ">
-<polygon fill="#999999" stroke="#666666" points="802,-102.25 683,-102.25 683,-72.25 802,-72.25 802,-102.25"/>
-<text text-anchor="start" x="691" y="-90.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="742.5" y="-79.25" font-family="Helvetica,sans-Serif" font-size="10.00">::RemoveRegion</text>
+<polygon fill="#999999" stroke="#666666" points="621,-102.25 502,-102.25 502,-72.25 621,-72.25 621,-102.25"/>
+<text text-anchor="start" x="510" y="-90.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="561.5" y="-79.25" font-family="Helvetica,sans-Serif" font-size="10.00">::RemoveRegion</text>
 </a>
 </g>
 </g>
@@ -68,9 +68,9 @@ var sectionId = 'dynsection-69';
 <g id="Node000002" class="node">
 <title>Node2</title>
 <g id="a_Node000002"><a xlink:href="classcarta_1_1RegionHandler.html#a7d419cae3ba9a6b3f2435cde1d6838ee" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="644,-198.25 494,-198.25 494,-168.25 644,-168.25 644,-198.25"/>
-<text text-anchor="start" x="502" y="-186.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="569" y="-175.25" font-family="Helvetica,sans-Serif" font-size="10.00">::CalculatePvPreviewImage</text>
+<polygon fill="white" stroke="#666666" points="463,-198.25 313,-198.25 313,-168.25 463,-168.25 463,-198.25"/>
+<text text-anchor="start" x="321" y="-186.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="388" y="-175.25" font-family="Helvetica,sans-Serif" font-size="10.00">::CalculatePvPreviewImage</text>
 </a>
 </g>
 </g>
@@ -78,8 +78,8 @@ var sectionId = 'dynsection-69';
 <g id="edge1_Node000001_Node000002" class="edge">
 <title>Node1&#45;&gt;Node2</title>
 <g id="a_edge1_Node000001_Node000002"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M717.54,-109.3C699.33,-125.07 673.06,-145.8 647,-159.25 640.53,-162.59 633.51,-165.57 626.43,-168.19"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="720.12,-111.69 725.3,-102.45 715.49,-106.44 720.12,-111.69"/>
+<path fill="none" stroke="#63b8ff" d="M536.54,-109.3C518.33,-125.07 492.06,-145.8 466,-159.25 459.53,-162.59 452.51,-165.57 445.43,-168.19"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="539.12,-111.69 544.3,-102.45 534.49,-106.44 539.12,-111.69"/>
 </a>
 </g>
 </g>
@@ -87,9 +87,9 @@ var sectionId = 'dynsection-69';
 <g id="Node000003" class="node">
 <title>Node3</title>
 <g id="a_Node000003"><a xlink:href="classcarta_1_1RegionHandler.html#a8a692669b14a98aec1f36f2617910138" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="628.5,-150.25 509.5,-150.25 509.5,-120.25 628.5,-120.25 628.5,-150.25"/>
-<text text-anchor="start" x="517.5" y="-138.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="569" y="-127.25" font-family="Helvetica,sans-Serif" font-size="10.00">::FitImage</text>
+<polygon fill="white" stroke="#666666" points="447.5,-150.25 328.5,-150.25 328.5,-120.25 447.5,-120.25 447.5,-150.25"/>
+<text text-anchor="start" x="336.5" y="-138.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="388" y="-127.25" font-family="Helvetica,sans-Serif" font-size="10.00">::FitImage</text>
 </a>
 </g>
 </g>
@@ -97,18 +97,18 @@ var sectionId = 'dynsection-69';
 <g id="edge2_Node000001_Node000003" class="edge">
 <title>Node1&#45;&gt;Node3</title>
 <g id="a_edge2_Node000001_Node000003"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M677.94,-105.04C660.08,-110.04 640.83,-115.43 623.6,-120.25"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="679.02,-108.37 687.71,-102.31 677.13,-101.63 679.02,-108.37"/>
+<path fill="none" stroke="#63b8ff" d="M496.94,-105.04C479.08,-110.04 459.83,-115.43 442.6,-120.25"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="498.02,-108.37 506.71,-102.31 496.13,-101.63 498.02,-108.37"/>
 </a>
 </g>
 </g>
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="classcarta_1_1RegionHandler.html#ab69f418daea6a6ecf8c58ed9434a6242" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="647,-102.25 491,-102.25 491,-72.25 647,-72.25 647,-102.25"/>
-<text text-anchor="start" x="499" y="-90.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="569" y="-79.25" font-family="Helvetica,sans-Serif" font-size="10.00">::GetTemporaryRegionProfile</text>
+<g id="a_Node000004"><a xlink:href="classcarta_1_1RegionHandler.html#a19cfaf756e9c68ca6472cdb369b40198" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="466,-102.25 310,-102.25 310,-72.25 466,-72.25 466,-102.25"/>
+<text text-anchor="start" x="318" y="-90.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="388" y="-79.25" font-family="Helvetica,sans-Serif" font-size="10.00">::GetTemporaryRegionProfile</text>
 </a>
 </g>
 </g>
@@ -116,56 +116,56 @@ var sectionId = 'dynsection-69';
 <g id="edge3_Node000001_Node000004" class="edge">
 <title>Node1&#45;&gt;Node4</title>
 <g id="a_edge3_Node000001_Node000004"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M672.78,-87.25C664.33,-87.25 655.65,-87.25 647.08,-87.25"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="672.96,-90.75 682.96,-87.25 672.96,-83.75 672.96,-90.75"/>
+<path fill="none" stroke="#63b8ff" d="M491.78,-87.25C483.33,-87.25 474.65,-87.25 466.08,-87.25"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="491.96,-90.75 501.96,-87.25 491.96,-83.75 491.96,-90.75"/>
 </a>
 </g>
 </g>
-<!-- Node9 -->
-<g id="Node000009" class="node">
-<title>Node9</title>
-<g id="a_Node000009"><a xlink:href="classcarta_1_1RegionHandler.html#a63f395d4e7fa9500f951598eaab516c7" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="628.5,-54.25 509.5,-54.25 509.5,-24.25 628.5,-24.25 628.5,-54.25"/>
-<text text-anchor="start" x="517.5" y="-42.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="569" y="-31.25" font-family="Helvetica,sans-Serif" font-size="10.00">::RemoveFrame</text>
+<!-- Node7 -->
+<g id="Node000007" class="node">
+<title>Node7</title>
+<g id="a_Node000007"><a xlink:href="classcarta_1_1RegionHandler.html#a63f395d4e7fa9500f951598eaab516c7" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="447.5,-54.25 328.5,-54.25 328.5,-24.25 447.5,-24.25 447.5,-54.25"/>
+<text text-anchor="start" x="336.5" y="-42.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="388" y="-31.25" font-family="Helvetica,sans-Serif" font-size="10.00">::RemoveFrame</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node9 -->
-<g id="edge8_Node000001_Node000009" class="edge">
-<title>Node1&#45;&gt;Node9</title>
-<g id="a_edge8_Node000001_Node000009"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M677.94,-69.46C660.08,-64.46 640.83,-59.08 623.6,-54.26"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="677.13,-72.87 687.71,-72.2 679.02,-66.13 677.13,-72.87"/>
+<!-- Node1&#45;&gt;Node7 -->
+<g id="edge6_Node000001_Node000007" class="edge">
+<title>Node1&#45;&gt;Node7</title>
+<g id="a_edge6_Node000001_Node000007"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M496.94,-69.46C479.08,-64.46 459.83,-59.08 442.6,-54.26"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="496.13,-72.87 506.71,-72.2 498.02,-66.13 496.13,-72.87"/>
 </a>
 </g>
 </g>
-<!-- Node10 -->
-<g id="Node000010" class="node">
-<title>Node10</title>
-<g id="a_Node000010"><a xlink:href="classcarta_1_1RegionHandler.html#ab51161364a45784bb0f864f517d12a3f" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="455,-33.25 336,-33.25 336,-3.25 455,-3.25 455,-33.25"/>
-<text text-anchor="start" x="344" y="-21.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="395.5" y="-10.25" font-family="Helvetica,sans-Serif" font-size="10.00">::~RegionHandler</text>
+<!-- Node8 -->
+<g id="Node000008" class="node">
+<title>Node8</title>
+<g id="a_Node000008"><a xlink:href="classcarta_1_1RegionHandler.html#ab51161364a45784bb0f864f517d12a3f" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="274,-33.25 155,-33.25 155,-3.25 274,-3.25 274,-33.25"/>
+<text text-anchor="start" x="163" y="-21.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="214.5" y="-10.25" font-family="Helvetica,sans-Serif" font-size="10.00">::~RegionHandler</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node10 -->
-<g id="edge10_Node000001_Node000010" class="edge">
-<title>Node1&#45;&gt;Node10</title>
-<g id="a_edge10_Node000001_Node000010"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M720.47,-64.63C702.78,-47.38 675.81,-24.98 647,-15.25 584.05,5.99 507.04,0.82 455.16,-6.81"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="718.39,-67.5 727.92,-72.13 723.36,-62.57 718.39,-67.5"/>
+<!-- Node1&#45;&gt;Node8 -->
+<g id="edge8_Node000001_Node000008" class="edge">
+<title>Node1&#45;&gt;Node8</title>
+<g id="a_edge8_Node000001_Node000008"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M539.47,-64.63C521.78,-47.38 494.81,-24.98 466,-15.25 403.05,5.99 326.04,0.82 274.16,-6.81"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="537.39,-67.5 546.92,-72.13 542.36,-62.57 537.39,-67.5"/>
 </a>
 </g>
 </g>
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="classcarta_1_1RegionHandler.html#acbbfca854da73c657e5257de954b7048" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="455,-102.25 336,-102.25 336,-72.25 455,-72.25 455,-102.25"/>
-<text text-anchor="start" x="344" y="-90.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="395.5" y="-79.25" font-family="Helvetica,sans-Serif" font-size="10.00">::GetLineProfiles</text>
+<g id="a_Node000005"><a xlink:href="classcarta_1_1RegionHandler.html#a1154ddc668a4a9205dfd08ccc00cf4f1" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="274,-102.25 155,-102.25 155,-72.25 274,-72.25 274,-102.25"/>
+<text text-anchor="start" x="163" y="-90.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="214.5" y="-79.25" font-family="Helvetica,sans-Serif" font-size="10.00">::GetLineProfiles</text>
 </a>
 </g>
 </g>
@@ -173,8 +173,8 @@ var sectionId = 'dynsection-69';
 <g id="edge4_Node000004_Node000005" class="edge">
 <title>Node4&#45;&gt;Node5</title>
 <g id="a_edge4_Node000004_Node000005"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M480.62,-87.25C471.96,-87.25 463.31,-87.25 455.05,-87.25"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="480.78,-90.75 490.78,-87.25 480.78,-83.75 480.78,-90.75"/>
+<path fill="none" stroke="#63b8ff" d="M299.62,-87.25C290.96,-87.25 282.31,-87.25 274.05,-87.25"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="299.78,-90.75 309.78,-87.25 299.78,-83.75 299.78,-90.75"/>
 </a>
 </g>
 </g>
@@ -182,9 +182,9 @@ var sectionId = 'dynsection-69';
 <g id="Node000006" class="node">
 <title>Node6</title>
 <g id="a_Node000006"><a xlink:href="classcarta_1_1RegionHandler.html#a981ef720799967df543e0b272a17f6cb" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="300,-126.25 181,-126.25 181,-96.25 300,-96.25 300,-126.25"/>
-<text text-anchor="start" x="189" y="-114.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="240.5" y="-103.25" font-family="Helvetica,sans-Serif" font-size="10.00">::CalculatePvImage</text>
+<polygon fill="white" stroke="#666666" points="119,-102.25 0,-102.25 0,-72.25 119,-72.25 119,-102.25"/>
+<text text-anchor="start" x="8" y="-90.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="59.5" y="-79.25" font-family="Helvetica,sans-Serif" font-size="10.00">::CalculatePvImage</text>
 </a>
 </g>
 </g>
@@ -192,37 +192,8 @@ var sectionId = 'dynsection-69';
 <g id="edge5_Node000005_Node000006" class="edge">
 <title>Node5&#45;&gt;Node6</title>
 <g id="a_edge5_Node000005_Node000006"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M325.79,-98.03C317.2,-99.38 308.47,-100.75 300.06,-102.07"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="326.45,-101.47 335.78,-96.46 325.36,-94.56 326.45,-101.47"/>
-</a>
-</g>
-</g>
-<!-- Node7 -->
-<g id="Node000007" class="node">
-<title>Node7</title>
-<g id="a_Node000007"><a xlink:href="classcarta_1_1RegionHandler.html#ab65206f98fa5024447ab049a91cd4526" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="300,-78.25 181,-78.25 181,-48.25 300,-48.25 300,-78.25"/>
-<text text-anchor="start" x="189" y="-66.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="240.5" y="-55.25" font-family="Helvetica,sans-Serif" font-size="10.00">::GetLineSpatialData</text>
-</a>
-</g>
-</g>
-<!-- Node5&#45;&gt;Node7 -->
-<g id="edge6_Node000005_Node000007" class="edge">
-<title>Node5&#45;&gt;Node7</title>
-<g id="a_edge6_Node000005_Node000007"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M325.79,-76.47C317.2,-75.13 308.47,-73.76 300.06,-72.44"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="325.36,-79.95 335.78,-78.04 326.45,-73.04 325.36,-79.95"/>
-</a>
-</g>
-</g>
-<!-- Node8 -->
-<g id="Node000008" class="node">
-<title>Node8</title>
-<g id="a_Node000008"><a xlink:href="classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="145,-78.25 0,-78.25 0,-48.25 145,-48.25 145,-78.25"/>
-<text text-anchor="start" x="8" y="-66.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="72.5" y="-55.25" font-family="Helvetica,sans-Serif" font-size="10.00">::FillLineSpatialProfileData</text>
+<path fill="none" stroke="#63b8ff" d="M144.51,-87.25C136.01,-87.25 127.38,-87.25 119.06,-87.25"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="144.78,-90.75 154.78,-87.25 144.78,-83.75 144.78,-90.75"/>
 </a>
 </g>
 </g>
@@ -230,17 +201,8 @@ var sectionId = 'dynsection-69';
 <g id="edge7_Node000007_Node000008" class="edge">
 <title>Node7&#45;&gt;Node8</title>
 <g id="a_edge7_Node000007_Node000008"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M170.79,-63.25C162.33,-63.25 153.67,-63.25 145.17,-63.25"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="170.97,-66.75 180.97,-63.25 170.97,-59.75 170.97,-66.75"/>
-</a>
-</g>
-</g>
-<!-- Node9&#45;&gt;Node10 -->
-<g id="edge9_Node000009_Node000010" class="edge">
-<title>Node9&#45;&gt;Node10</title>
-<g id="a_edge9_Node000009_Node000010"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M499.42,-30.86C484.73,-29.06 469.34,-27.17 455.07,-25.42"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="499.11,-34.34 509.46,-32.08 499.96,-27.4 499.11,-34.34"/>
+<path fill="none" stroke="#63b8ff" d="M318.42,-30.86C303.73,-29.06 288.34,-27.17 274.07,-25.42"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="318.11,-34.34 328.46,-32.08 318.96,-27.4 318.11,-34.34"/>
 </a>
 </g>
 </g>

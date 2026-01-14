@@ -1,7 +1,0 @@
-<map id="carta::Frame::GetImageRegion" name="carta::Frame::GetImageRegion">
-<area shape="rect" id="Node000001" title=" " alt="" coords="223,31,444,56"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#aeb6afc8204ae9f00c0517b4f28be32d5" title=" " alt="" coords="5,5,175,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="209,33,175,29,175,24,209,28"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a810937ee7606b48419b7f5d3ded16155" title=" " alt="" coords="7,55,173,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="209,58,174,62,173,56,209,53"/>
-</map>

@@ -9,12 +9,13 @@ var searchData=
   ['regionhistogramconfig_6',['RegionHistogramConfig',['../structcarta_1_1RegionHistogramConfig.html',1,'carta']]],
   ['regionimporter_7',['RegionImporter',['../classcarta_1_1RegionImporter.html',1,'carta']]],
   ['regionproperties_8',['RegionProperties',['../structcarta_1_1RegionProperties.html',1,'carta']]],
-  ['regionspectralconfig_9',['RegionSpectralConfig',['../structcarta_1_1RegionSpectralConfig.html',1,'carta']]],
-  ['regionspectralstats_10',['RegionSpectralStats',['../structcarta_1_1FileInfo_1_1RegionSpectralStats.html',1,'carta::FileInfo']]],
-  ['regionstate_11',['RegionState',['../structcarta_1_1RegionState.html',1,'carta']]],
-  ['regionstatistics_12',['RegionStatistics',['../classcarta_1_1RegionStatistics.html',1,'carta']]],
-  ['regionstatsconfig_13',['RegionStatsConfig',['../structcarta_1_1RegionStatsConfig.html',1,'carta']]],
-  ['regionstatsid_14',['RegionStatsId',['../structcarta_1_1FileInfo_1_1RegionStatsId.html',1,'carta::FileInfo']]],
-  ['requiredtiles_15',['RequiredTiles',['../structcarta_1_1RequiredTiles.html',1,'carta']]],
-  ['resultmsg_16',['ResultMsg',['../structcarta_1_1FileListHandler_1_1ResultMsg.html',1,'carta::FileListHandler']]]
+  ['regionspatialprofile_9',['RegionSpatialProfile',['../classcarta_1_1RegionSpatialProfile.html',1,'carta']]],
+  ['regionspectralconfig_10',['RegionSpectralConfig',['../structcarta_1_1RegionSpectralConfig.html',1,'carta']]],
+  ['regionspectralstats_11',['RegionSpectralStats',['../structcarta_1_1FileInfo_1_1RegionSpectralStats.html',1,'carta::FileInfo']]],
+  ['regionstate_12',['RegionState',['../structcarta_1_1RegionState.html',1,'carta']]],
+  ['regionstatistics_13',['RegionStatistics',['../classcarta_1_1RegionStatistics.html',1,'carta']]],
+  ['regionstatsconfig_14',['RegionStatsConfig',['../structcarta_1_1RegionStatsConfig.html',1,'carta']]],
+  ['regionstatsid_15',['RegionStatsId',['../structcarta_1_1FileInfo_1_1RegionStatsId.html',1,'carta::FileInfo']]],
+  ['requiredtiles_16',['RequiredTiles',['../structcarta_1_1RequiredTiles.html',1,'carta']]],
+  ['resultmsg_17',['ResultMsg',['../structcarta_1_1FileListHandler_1_1ResultMsg.html',1,'carta::FileListHandler']]]
 ];

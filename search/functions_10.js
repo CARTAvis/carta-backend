@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['parameters_0',['parameters',['../classcarta_1_1Table.html#a7e97191238031e92ec7a8b7403f97074',1,'carta::Table::Parameters()'],['../classcarta_1_1PvPreviewCube.html#a20c1cdfb35028362166d761cdb8d0225',1,'carta::PvPreviewCube::parameters()']]],
+  ['parameters_0',['parameters',['../classcarta_1_1PvPreviewCube.html#a20c1cdfb35028362166d761cdb8d0225',1,'carta::PvPreviewCube::parameters()'],['../classcarta_1_1Table.html#a7e97191238031e92ec7a8b7403f97074',1,'carta::Table::Parameters()']]],
   ['parametertoquantity_1',['ParameterToQuantity',['../classcarta_1_1Ds9Importer.html#a9bf6f34606681307634beab92b0389b9',1,'carta::Ds9Importer']]],
   ['parsecmd_2',['ParseCmd',['../classcarta_1_1WebBrowser.html#a215b7b5d07c541e892dd2ff129eb8dae',1,'carta::WebBrowser']]],
   ['parseerror_3',['ParseError',['../classcarta_1_1Table.html#a49b8a4da70de7ff9aa55b78e210c01f6',1,'carta::Table']]],

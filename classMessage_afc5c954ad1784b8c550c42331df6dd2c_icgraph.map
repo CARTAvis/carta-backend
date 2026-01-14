@@ -1,7 +1,7 @@
 <map id="Message::SpatialProfileData" name="Message::SpatialProfileData">
-<area shape="rect" id="Node000001" title=" " alt="" coords="247,45,452,70"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" title=" " alt="" coords="5,5,199,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="237,46,198,40,199,35,238,40"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#a3d1f8594ec63ae8f16524981c5f21ce2" title=" " alt="" coords="14,69,190,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="238,74,191,81,190,75,237,69"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="248,45,453,70"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#ab10e1fa7c331dabd9047c515ad1a7f65" title=" " alt="" coords="15,5,191,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="238,46,191,39,191,34,239,40"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionSpatialProfile.html#a2f833cec5c4b1a03243d007f84efb7fb" title="Add calculated spatial profile for line region to message." alt="" coords="5,69,200,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="239,74,201,79,200,74,238,69"/>
 </map>

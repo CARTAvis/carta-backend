@@ -96,8 +96,6 @@ var classcarta_1_1Session =
     [ "SendRegionStatsData", "classcarta_1_1Session.html#a5fd62896cf8474c7b37c27093a24459e", null ],
     [ "SendScriptingRequest", "classcarta_1_1Session.html#a37dd476efba8d4b38ced034210268745", null ],
     [ "SendSpatialProfileData", "classcarta_1_1Session.html#a120e85ac57a07414f829a228618ab5fe", null ],
-    [ "SendSpatialProfileDataByFileId", "classcarta_1_1Session.html#a85b4eb14c9181087b03046119b117789", null ],
-    [ "SendSpatialProfileDataByRegionId", "classcarta_1_1Session.html#a44647c44e04c9b96638cc87980efbf77", null ],
     [ "SendSpectralProfileData", "classcarta_1_1Session.html#a64e272e7aec6edd051745e773d47c0f2", null ],
     [ "SendVectorFieldData", "classcarta_1_1Session.html#a2535a06bd2e8a13e99c775d895f6024a", null ],
     [ "SetAnimationActive", "classcarta_1_1Session.html#adc48fa2da283f2ece0ae232158891942", null ],

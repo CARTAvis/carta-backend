@@ -138,8 +138,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aa5ba8bd1f2fd72b4de352881ebb28ff8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9891c6276749ba4296f7796c8c32f079" id="r_a9891c6276749ba4296f7796c8c32f079"><td class="memItemLeft" align="right" valign="top">std::shared_mutex &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a9891c6276749ba4296f7796c8c32f079">GetActiveTaskMutex</a> ()</td></tr>
 <tr class="separator:a9891c6276749ba4296f7796c8c32f079"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a946ec39c21a09a141d917b553ba56551" id="r_a946ec39c21a09a141d917b553ba56551"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a946ec39c21a09a141d917b553ba56551">GetImageRegion</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; csys, const casacore::IPosition &amp;shape, const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
-<tr class="separator:a946ec39c21a09a141d917b553ba56551"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeba57756538a53c49bde207d14008ac9" id="r_aeba57756538a53c49bde207d14008ac9"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#aeba57756538a53c49bde207d14008ac9">GetLCRegion</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; image_csys, const casacore::IPosition &amp;image_shape, const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
+<tr class="separator:aeba57756538a53c49bde207d14008ac9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ec0e6a0c65e9bc6ed3b9213831f053f" id="r_a6ec0e6a0c65e9bc6ed3b9213831f053f"><td class="memItemLeft" align="right" valign="top">casacore::ArrayLattice&lt; casacore::Bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a6ec0e6a0c65e9bc6ed3b9213831f053f">GetImageRegionMask</a> (int file_id)</td></tr>
 <tr class="separator:a6ec0e6a0c65e9bc6ed3b9213831f053f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a64c23b1ecd08f94149ea575536e738f7" id="r_a64c23b1ecd08f94149ea575536e738f7"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a64c23b1ecd08f94149ea575536e738f7">GetImageRegionRecord</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; csys, const casacore::IPosition &amp;shape)</td></tr>
@@ -309,7 +309,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a77abe84c6c73dbad663e8255e362a86f_icgraph.svg" width="100%" height="408"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a77abe84c6c73dbad663e8255e362a86f_icgraph.svg" width="100%" height="407"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -443,57 +443,6 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a946ec39c21a09a141d917b553ba56551" name="a946ec39c21a09a141d917b553ba56551"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a946ec39c21a09a141d917b553ba56551">&#9670;&#160;</a></span>GetImageRegion()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt; casacore::LCRegion &gt; Region::GetImageRegion </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>file_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td>
-          <td class="paramname"><em>csys</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const casacore::IPosition &amp;&#160;</td>
-          <td class="paramname"><em>shape</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;&#160;</td>
-          <td class="paramname"><em>stokes_source</em> = <code><a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>()</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>report_error</em> = <code>true</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a946ec39c21a09a141d917b553ba56551_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
-</div>
-
-</div>
-</div>
 <a id="a6ec0e6a0c65e9bc6ed3b9213831f053f" name="a6ec0e6a0c65e9bc6ed3b9213831f053f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6ec0e6a0c65e9bc6ed3b9213831f053f">&#9670;&#160;</a></span>GetImageRegionMask()</h2>
 
@@ -552,6 +501,57 @@ Here is the call graph for this function:</div>
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a64c23b1ecd08f94149ea575536e738f7_cgraph.svg" width="100%" height="470"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="aeba57756538a53c49bde207d14008ac9" name="aeba57756538a53c49bde207d14008ac9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeba57756538a53c49bde207d14008ac9">&#9670;&#160;</a></span>GetLCRegion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; casacore::LCRegion &gt; Region::GetLCRegion </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td>
+          <td class="paramname"><em>image_csys</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const casacore::IPosition &amp;&#160;</td>
+          <td class="paramname"><em>image_shape</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a> &amp;&#160;</td>
+          <td class="paramname"><em>stokes_source</em> = <code><a class="el" href="structcarta_1_1StokesSource.html">StokesSource</a>()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>report_error</em> = <code>true</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_aeba57756538a53c49bde207d14008ac9_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -617,7 +617,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a6df7292ce53d0440835844bf74fee9ae_icgraph.svg" width="470" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a6df7292ce53d0440835844bf74fee9ae_icgraph.svg" width="444" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -652,7 +652,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a9557b22b60d93d7d5933c08f3a2e19c2_icgraph.svg" width="483" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a9557b22b60d93d7d5933c08f3a2e19c2_icgraph.svg" width="458" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -705,7 +705,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a3bcb4285b1e57b69ffe405073361b74c_icgraph.svg" width="100%" height="421"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a3bcb4285b1e57b69ffe405073361b74c_icgraph.svg" width="100%" height="424"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -740,7 +740,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_ada8631223565a6358d5baf1def870471_icgraph.svg" width="468" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_ada8631223565a6358d5baf1def870471_icgraph.svg" width="443" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>

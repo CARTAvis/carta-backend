@@ -1,6 +1,6 @@
 <map id="PointXy::ToIndex" name="PointXy::ToIndex">
 <area shape="rect" id="Node000001" title="Converts floating&#45;point coordinates to integer indices." alt="" coords="417,54,547,79"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#a3d1f8594ec63ae8f16524981c5f21ce2" title=" " alt="" coords="9,5,185,45"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1Frame.html#ab10e1fa7c331dabd9047c515ad1a7f65" title=" " alt="" coords="9,5,185,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="419,53,369,44,274,34,185,29,186,24,275,29,370,39,420,48"/>
 <area shape="rect" id="Node000003" href="$classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101" title=" " alt="" coords="5,79,189,119"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="422,85,370,95,277,102,190,104,190,98,277,97,369,89,421,80"/>
