@@ -32,6 +32,7 @@
 #include "ThreadingManager/Concurrency.h"
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
+#include "Util/Memory.h"
 #include "Util/Message.h"
 
 namespace carta {
@@ -296,8 +297,8 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    long long int _image_cache_size;
-    std::unique_ptr<float[]> _image_cache;
+    size_t _image_cache_size;
+    UniqueAlignedDataPtr<float> _image_cache;
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;       // only one disk access at a time
