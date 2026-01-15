@@ -458,12 +458,12 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
 
     Timer t;
     float* z_data;
+    std::vector<float> z_matrix;
     if (z == _z_index) {
         // Use image cache for current z
         z_data = _image_cache.get();
     } else {
         // Load data for requested z
-        std::vector<float> z_matrix;
         GetZMatrix(z_matrix, z, _stokes_index);
         z_data = z_matrix.data();
     }
