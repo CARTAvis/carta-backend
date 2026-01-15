@@ -278,6 +278,7 @@ set(SOURCE_FILES
         src/Util/Casacore.cc
         src/Util/File.cc
         src/Util/Json.cc
+        src/Util/Memory.cc
         src/Util/Message.cc
         src/Util/Stokes.cc
         src/Util/String.cc
