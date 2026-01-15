@@ -79,7 +79,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     _use_tile_cache = _loader->UseTileCache();
 
-    // load full image cache for loaders that don't use the tile cache and mipmaps
+    // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
     if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
@@ -385,17 +385,23 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
+
+    if (_image_cache == nullptr) {
+        // allocate memory for full image cache
+        _image_cache_size = _dims.width * _dims.height;
+        _image_cache = MakeUniqueAlignedDataPtr<float>(_image_cache_size);
+    }
+
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    _image_cache_size = stokes_slicer.slicer.length().product();
-    _image_cache = std::make_unique<float[]>(_image_cache_size);
+
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
 
     auto dt = t.Elapsed();
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _dims.width, _dims.height, dt.ms(),
-        (float)(_dims.width * _dims.height) / dt.us());
+    spdlog::performance("Load {}x{} image Z {} pol. {} to cache in {:.3f} ms at {:.3f} MPix/s", _dims.width, _dims.height, _z_index,
+        _stokes_index, dt.ms(), (float)(_dims.width * _dims.height) / dt.us());
 
     _image_cache_valid = true;
     return true;
@@ -452,12 +458,12 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
 
     Timer t;
     float* z_data;
+    std::vector<float> z_matrix;
     if (z == _z_index) {
         // Use image cache for current z
         z_data = _image_cache.get();
     } else {
         // Load data for requested z
-        std::vector<float> z_matrix;
         GetZMatrix(z_matrix, z, _stokes_index);
         z_data = z_matrix.data();
     }
@@ -888,7 +894,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
 
         if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
             // calculate histogram from image cache
-            if ((_image_cache_size == 0) && !FillImageCache()) {
+            if ((!_image_cache_valid) && !FillImageCache()) {
                 // cannot calculate
                 return false;
             }
@@ -956,7 +962,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
 
     if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
         // calculate histogram from current image cache
-        if ((_image_cache_size == 0) && !FillImageCache()) {
+        if ((!_image_cache_valid) && !FillImageCache()) {
             return false;
         }
         bool write_lock(false);
@@ -1694,13 +1700,13 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
 
             // Get image data and mask, with image mutex locked
             std::unique_lock<std::mutex> ulock(_image_mutex);
-            casacore::Array<float> tmpdata;
             if (_loader->IsGenerated() || is_computed_stokes) { // For the image in memory
+                casacore::Array<float> tmpdata;
                 sub_image.doGetSlice(tmpdata, slicer);
                 data = tmpdata.tovector();
             } else {
                 data.resize(subimage_shape.product()); // must size correctly before sharing
-                tmpdata = casacore::Array<float>(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+                casacore::Array<float> tmpdata(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
                 sub_image.doGetSlice(tmpdata, slicer);
             }
 
