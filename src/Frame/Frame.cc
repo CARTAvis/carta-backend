@@ -1700,13 +1700,13 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
 
             // Get image data and mask, with image mutex locked
             std::unique_lock<std::mutex> ulock(_image_mutex);
-            casacore::Array<float> tmpdata;
             if (_loader->IsGenerated() || is_computed_stokes) { // For the image in memory
+                casacore::Array<float> tmpdata;
                 sub_image.doGetSlice(tmpdata, slicer);
                 data = tmpdata.tovector();
             } else {
                 data.resize(subimage_shape.product()); // must size correctly before sharing
-                tmpdata = casacore::Array<float>(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+                casacore::Array<float> tmpdata(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
                 sub_image.doGetSlice(tmpdata, slicer);
             }
 
