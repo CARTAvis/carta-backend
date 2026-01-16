@@ -248,25 +248,40 @@ TEST_P(VectorFieldThresholdingTest, TestThresholding) {
 // I think this ok, but can expend further
 INSTANTIATE_TEST_SUITE_P(ThresholdingTests, VectorFieldThresholdingTest,
     ::testing::Values( 
-        // Testing threshold with Current Stokes I, fractional = false, threshold on current Stokes = 4 (see threshold_test_values_map)
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT, 3.9), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Current Stokes above threshold (4>3.9), threshold on CURRENT
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT, 4.1), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Current Stokes below threshold (4<4.1), threshold on CURRENT -> expected value is NaN for both intensity and angle
+        // WARNING : in this test we have CURRENT STOKES = 4 and SOME ACTUALY STOKES = 2 (see threshold_test_values_map above)
+        //           this may not have any sensible physical sense (should be equal or close to equal), but is ok for testing now.
+        //---------------------------------------------------------------- Stokes source = CURRENT ( =4 ):
+        // fractional = false, threshold on current Stokes = 4 (see threshold_test_values_map)
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT, 3.9), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Current Stokes above threshold (4>3.9) -> expected values 4,22.5deg
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT, 4.1), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Current Stokes below threshold (4<4.1) -> expected value NaNs
+
+        // fractional = false, threshold on computed Stokes I = 2 (see threshold_test_values_map)
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 1.99), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Computed stokes above the threshold (2>1.99) -> expected values 4,22.5deg
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 2.01), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Computed stokes above the threshold (2>1.99) -> expected value NaNs
+
+        // fractional = false, threshold on PI = sqrt(1^2+1^2) = sqrt(2) = 1.41 
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 1.40), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Computed PI above the threshold (sqrt(2)>1.4) -> expected values 4,22.5deg
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 1.42), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Computed PI below the threshold (sqrt(2)<1.42) -> expected value NaNs
+
+        // fractional = false, threshold on fPI = sqrt(1^2+1^2)/2 = sqrt(2)/2 = 70.71%
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 69.00), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Computed fPI above the threshold (100% * sqrt(2)/2 > 69) -> expected values 4,22.5deg
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 72.00), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Computed fPI below the threshold (100% * sqrt(2)/2 < 72) -> expected value NaNs
         
-        // Intensity source is computed Stokes I = sqrt(2)
-        // fractional = false, threshold on actual Stokes I (=2 see threshold_test_values_map) without fractional 
+        //---------------------------------------------------------------- Stokes source = COMPUTED ( =sqrt(2) ):
+        // fractional = false, threshold applied to Stokes I (=2 see threshold_test_values_map)
         // see initialisation of _threshold_source _threshold_option == 1 ? Source::I in VectorFieldCalculator constructor
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED, 1.99), sqrt(2), ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ), // Stokes I computed and threshold source is Stokes I = 2 (not fractional) -> above threshold 2 > 1.99
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED, 2.01), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), //  Stokes I coputed and threshold source is Stokes I = 2 (not fractional) -> below threshold 2 < 2.01
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED, 1.99), sqrt(2), ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ), // Stokes I = 2 above the threshold (2 > 1.99) -> expected values sqrt(2),22.5 deg
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED, 2.01), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Stokes I = 2 below the threshold (2 < 2.01) -> expected values NaNs
         
-        // Intensity source is computed Stokes I = sqrt(2)
-        // Testing threshold with PI = sqrt(2), fractional = false, treshold source = PI = 14 -> check threshold against polarised intensity = sqrt(2)
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, PI, 1.40), sqrt(2), ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                 // sqrt(2) > 1.4 -> ok values expected
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, PI, 1.42), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // sqrt(2) < 1.42 -> NaNs expected
-        
-        // Intensity source is computed fractional polarised intensity = sqrt(2)/2 * 100% ~= 70.71%
-        // Testing threshold with fPI = sqrt(2)/2 * 100% ~= 70.71%, fractional = true, treshold source = PI = 14 -> check threshold against fractional polarised intensity ~= 70.71%
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, true, 0, 0, PI, 69.00), (sqrt(2)/2.00)*100.00, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),  // fPI = 70.71% > 69% -> ok values expected
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, true, 0, 0, PI, 72.00), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ) // fPI = 70.71% < 72% -> NaNs expected
+        // fractional = false, treshold source = PI = 14 -> check threshold against polarised intensity = sqrt(2)
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, PI, 1.40), sqrt(2), ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                 // Computed PI = sqrt(2) above the threshold (sqrt(2) > 1.4) -> expected values sqrt(2),22.5 deg
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, PI, 1.42), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Computed PI = sqrt(2) below the threshold (sqrt(2) < 1.42) -> expected values NaNs
+
+        //---------------------------------------------------------------- Stokes source = COMPUTED fractional polarisation = sqrt(2)/2 * 100% ~= 70.71%        
+        // fractional = true, threshold applied to computed fractional polarised intensity = sqrt(2)/2 * 100% ~= 70.71%
+        // treshold source = PI = 14 (see _threshold_source calculation in VectorFieldCalculator constructor) 
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, true, 0, 0, PI, 69.00), (sqrt(2)/2.00)*100.00, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),  // computed fPI = (sqrt(2)/2.00)*100.00 above threshold (70.7 > 69) -> expected values 70.71,22.5 deg
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, true, 0, 0, PI, 72.00), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ) // computed fPI = (sqrt(2)/2.00)*100.00 below threshold (70.7 < 72) -> expected values NaNs
       )       
     ); 
     
