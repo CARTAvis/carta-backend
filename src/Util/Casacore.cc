@@ -32,17 +32,17 @@ casacore::String GetResolvedFilename(
 
     // Check directory
     if (!cc_file.exists()) {
-        message = "Directory " + directory + " does not exist (filename = " + file + ").";
+        message = "Directory " + path.expandedName() + " does not exist.";
     } else if (!cc_file.isReadable()) {
-        message = "Directory " + directory + " is not readable (filename = " + file + ").";
+        message = "Directory " + path.expandedName() + " is not readable.";
     } else {
         // Check file
         path.append(file);
         cc_file = casacore::File(path);
         if (!cc_file.exists()) {
-            message = "File " + file + " does not exist in the directory " + directory + ".";
+            message = "File " + path.expandedName() + " does not exist.";
         } else if (!cc_file.isReadable()) {
-            message = "File " + file + " is not readable in the directory " + directory + ".";
+            message = "File " + path.expandedName() + " is not readable.";
         } else {
             try {
                 resolved_filename = path.resolvedName();
