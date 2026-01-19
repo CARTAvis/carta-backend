@@ -37,10 +37,10 @@ public:
         std::string expr;
         if (invalid) {
             // Use LEL expr with invalid syntax
-            expr = fs_path.filename().string() + " & 2";
+            expr = "'" + fs_path.filename().string() + "' & 2";
         } else {
             // Use LEL expr to multiply image by 2
-            expr = fs_path.filename().string() + " * 2";
+            expr = "'" + fs_path.filename().string() + "' * 2";
         }
 
         std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
@@ -78,7 +78,7 @@ public:
     void SaveImageExpr(const fs::path file_path, const std::string& hdu) {
         // Use LEL expr to multiply image by 2
         fs::path fs_path(file_path);
-        std::string expr = fs_path.filename().string() + " * 2";
+        std::string expr = "\"" + fs_path.filename().string() + "\" * 2";
         std::string directory = fs_path.parent_path().string();
 
         std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
@@ -120,7 +120,7 @@ TEST_F(ImageExprTest, ImageExprFails) {
 
 TEST_F(ImageExprTest, ImageExprTwoDirs) {
     // Add images in different directories
-    std::string expr = "10x10_nan-row-column_nanpct-10.0_seed-0.fits + '../casa/noise_10px_10px.im'";
+    std::string expr = "'10x10_nan-row-column_nanpct-10.0_seed-0.fits' + '../casa/noise_10px_10px.im'";
 
     std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, FitsImages()));
     expr_loader->OpenFile("");
