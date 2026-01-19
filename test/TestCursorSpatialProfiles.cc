@@ -110,6 +110,8 @@ TEST_F(CursorSpatialProfileTest, SmallFitsProfile) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
+    ASSERT_EQ(data_vec.size(), 1);
+
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
         EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
@@ -150,6 +152,8 @@ TEST_F(CursorSpatialProfileTest, SmallHdf5Profile) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -193,6 +197,8 @@ TEST_F(CursorSpatialProfileTest, LowResFitsProfile) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
+    ASSERT_EQ(data_vec.size(), 1);
+
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
 
@@ -227,6 +233,8 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -263,6 +271,8 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
 
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
+
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -301,6 +311,8 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
+    ASSERT_EQ(data_vec.size(), 1);
+
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
 
@@ -337,9 +349,7 @@ TEST_F(CursorSpatialProfileTest, FullResFitsStartEnd) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -376,9 +386,7 @@ TEST_F(CursorSpatialProfileTest, FullResHdf5StartEnd) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -415,9 +423,7 @@ TEST_F(CursorSpatialProfileTest, LowResFitsStartEnd) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -456,9 +462,7 @@ TEST_F(CursorSpatialProfileTest, LowResHdf5StartEnd) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -502,9 +506,7 @@ TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullRes) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -541,9 +543,7 @@ TEST_F(CursorSpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -581,9 +581,7 @@ TEST_F(CursorSpatialProfileTest, FitsChannelChange) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -634,9 +632,7 @@ TEST_F(CursorSpatialProfileTest, FitsChannelStokesChange) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -681,9 +677,7 @@ TEST_F(CursorSpatialProfileTest, ContiguousHDF5ChannelChange) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -728,9 +722,7 @@ TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelChange) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -781,9 +773,7 @@ TEST_F(CursorSpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
     std::vector<CARTA::SpatialProfileData> data_vec;
     frame->FillSpatialProfileData(data_vec);
 
-    if (data_vec.size() == 0) {
-        GTEST_FAIL();
-    }
+    ASSERT_EQ(data_vec.size(), 1);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
