@@ -132,9 +132,9 @@ std::shared_mutex& Region::GetActiveTaskMutex() {
 // *************************************************************************
 // Apply region to image and return LCRegion, mask or Record
 
-std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> csys,
+std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> image_csys,
     const casacore::IPosition& image_shape, const StokesSource& stokes_source, bool report_error) {
-    // Return lattice-coordinate region applied to image and/or computed stokes.
+    // Return lattice-coordinate region applied to image in Frame and/or computed stokes.
     // Returns nullptr if is annotation, is not a closed region (line/polyline), or outside image.
     std::shared_ptr<casacore::LCRegion> lcregion;
 
@@ -162,19 +162,21 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 } catch (const casacore::AipsError& err) {
                     // Region is outside image
                 }
-                _lcregion_set = true;
 
-                // Cache LCRegion
-                if (lcregion && stokes_source.IsOriginalImage()) {
-                    std::lock_guard<std::mutex> guard(_lcregion_mutex);
-                    _lcregion = lcregion;
+                // Cache LCRegion and set flag
+                if (stokes_source.IsOriginalImage()) {
+                    if (lcregion) {
+                        std::lock_guard<std::mutex> guard(_lcregion_mutex);
+                        _lcregion = lcregion;
+                    }
+                    _lcregion_set = true; // attempt was made even if lcregion failed (outside image)
                 }
             }
         } else {
             if (!_region_converter) {
                 _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
             }
-            return _region_converter->GetImageRegion(file_id, csys, image_shape, stokes_source, report_error);
+            return _region_converter->GetImageRegion(file_id, image_csys, image_shape, stokes_source, report_error);
         }
     }
 
