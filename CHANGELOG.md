@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed deletion of resumed session from message task threads ([#1537](https://github.com/CARTAvis/carta-backend/issues/1537)).
 * Fixed region histogram for image Stokes after computed Stokes ([#1522](https://github.com/CARTAvis/carta-backend/issues/1522)).
 * Fixed vector overlay not updating after session resume ([#1543](https://github.com/CARTAvis/carta-backend/issues/1543)).
+* Fixed cursor spatial profiles during animation ([#1558](https://github.com/CARTAvis/carta-backend/issues/1558)).
 
 ### Changed
 * Standardized use of float and double NaN (Not a Number) ([#1502](https://github.com/CARTAvis/carta-backend/issues/1502)).
