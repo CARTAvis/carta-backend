@@ -1910,12 +1910,17 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
         ulock.unlock();
 
         // Get file ids in spatial profile configurations
-        auto config_file_ids = spatial_profile->GetConfigFileIds(file_id);
-        if (config_file_ids.empty()) {
-            continue;
+        std::vector<int> spatial_file_ids;
+        if (file_id > ALL_FILES) {
+            spatial_file_ids.push_back(file_id);
+        } else {
+            spatial_file_ids = spatial_profile->GetConfigFileIds(file_id);
+            if (spatial_file_ids.empty()) {
+                continue;
+            }
         }
 
-        for (int spatial_file_id : config_file_ids) {
+        for (int spatial_file_id : spatial_file_ids) {
             // Get statistics for specific region and file ids (input ids may be ALL)
             if (!RegionFileIdsValid(spatial_region_id, spatial_file_id)) {
                 continue;
