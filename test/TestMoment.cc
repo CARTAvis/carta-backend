@@ -72,6 +72,7 @@ public:
     }
 
     static void GenerateMoments(const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis) {
+        ASSERT_TRUE(image) << "Image must not be null";
         // create casa/carta moments generators
         casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
         casacore::LogIO casa_os(casa_log);
@@ -101,6 +102,8 @@ public:
         casacore::Bool do_temp(true);
         casacore::Bool remove_axis(false);
 
+        ASSERT_LT(moments_axis, image->shape().size()) << "Moment axis out of range for image shape";
+
         // calculate moments with casa moment generator
         casa_image_moments.setMoments(moments);
         casa_image_moments.setMomentAxis(moments_axis);
@@ -121,6 +124,9 @@ public:
             auto casa_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(casa_results[i]);
             auto carta_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(carta_results[i]);
 
+            ASSERT_TRUE(casa_moment_image) << "CASA moment image is null at index " << i;
+            ASSERT_TRUE(carta_moment_image) << "CARTA moment image is null at index " << i;
+
             EXPECT_EQ(casa_moment_image->shape().size(), carta_moment_image->shape().size());
             CompareImageData(casa_moment_image, carta_moment_image);
         }
@@ -129,7 +135,7 @@ public:
 
 TEST_F(MomentTest, CheckConsistency) {
     auto file_path = FitsImages() / "M17_SWex_unittest.fits";
-    std::shared_ptr<casacore::ImageInterface<float>> image;
+    std::shared_ptr<casacore::ImageInterface<float>> image = std::make_shared<casacore::FITSImage>(file_path.string());
     int moment_axis(2);
 
     GenerateMoments(image, moment_axis);
@@ -138,7 +144,7 @@ TEST_F(MomentTest, CheckConsistency) {
 
 TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
     auto file_path = FitsImages() / "small_perplanebeam.fits";
-    std::shared_ptr<casacore::ImageInterface<float>> image;
+    std::shared_ptr<casacore::ImageInterface<float>> image = std::make_shared<casacore::FITSImage>(file_path.string());
     int moment_axis(2);
 
     if (OpenImage(image, file_path)) {

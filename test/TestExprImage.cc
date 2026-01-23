@@ -120,13 +120,13 @@ TEST_F(ImageExprTest, ImageExprFails) {
 
 TEST_F(ImageExprTest, ImageExprTwoDirs) {
     // Add images in different directories
-    std::string expr = "'10x10_nan-row-column_nanpct-10.0_seed-0.fits' + '../casa/noise_10px_10px.im'";
+    std::string expr = "\"noise_10px_10px.fits\" + \"../casa/noise_10px_10px.im\"";
 
     std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, FitsImages()));
     expr_loader->OpenFile("");
     casacore::IPosition expr_shape(expr_loader->GetShape());
 
-    auto fits_path = FitsImages() / "10x10_nan-row-column_nanpct-10.0_seed-0.fits";
+    auto fits_path = FitsImages() / "noise_10px_10px.fits";
     std::shared_ptr<carta::FileLoader> fits_loader(carta::FileLoader::GetLoader(fits_path));
     fits_loader->OpenFile("");
     casacore::IPosition fits_shape(fits_loader->GetShape());
