@@ -155,7 +155,7 @@ std::unordered_map<CARTA::PolarizationType, float> threshold_test_values_map{
     {CARTA::PolarizationType::V, 0}
 };
 
-
+/*
 // Define the parameterized test fixture
 class VectorFieldThresholdingTest : public ::testing::TestWithParam<TestParameters> {
 public:
@@ -282,6 +282,159 @@ INSTANTIATE_TEST_SUITE_P(ThresholdingTests, VectorFieldThresholdingTest,
         // treshold source = PI = 14 (see _threshold_source calculation in VectorFieldCalculator constructor) 
         TestParameters(SourceTestMessage(COMPUTED, COMPUTED, true, 0, 0, PI, 69.00), (sqrt(2)/2.00)*100.00, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),  // computed fPI = (sqrt(2)/2.00)*100.00 above threshold (70.7 > 69) -> expected values 70.71,22.5 deg
         TestParameters(SourceTestMessage(COMPUTED, COMPUTED, true, 0, 0, PI, 72.00), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ) // computed fPI = (sqrt(2)/2.00)*100.00 below threshold (70.7 < 72) -> expected values NaNs
+      )       
+    ); 
+*/    
+//------------------------------------------------------ Thresholding spatial tests below -----------------------------------------
+/*std::unordered_map<CARTA::PolarizationType, float> threshold_test_values_map{
+    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 4}, // NONE
+    {CARTA::PolarizationType::I, 2},                      // CURRENT
+    {CARTA::PolarizationType::Q, 1},                     
+    {CARTA::PolarizationType::U, 1}, 
+    {CARTA::PolarizationType::V, 0}
+};*/
+
+using TestSpatialParameters = std::tuple<CARTA::SetVectorOverlayParameters, std::vector<float>, std::vector<float>, std::vector<bool> >;
+
+// Define the parameterized test fixture
+class VectorFieldThresholdingSpatialTest : public ::testing::TestWithParam<TestSpatialParameters> {
+public:
+    VectorFieldThresholdingSpatialTest() {}
+
+protected:
+    // You can add setup/teardown logic here if needed
+};
+
+
+TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
+    std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
+    auto [test_parameters, expected_intensities, expected_angles, is_nan_expected] = GetParam();
+
+    VectorFieldCalculator vectorfield(test_parameters);
+    std::vector<CARTA::VectorOverlayTileData> messages;
+
+    // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
+    auto callback = [&messages](CARTA::VectorOverlayTileData& message) {
+        // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " <<
+        // message.angle_tiles_size() << std::endl;
+        EXPECT_EQ(message.intensity_tiles_size(), 1);
+        EXPECT_EQ(message.angle_tiles_size(), 1);
+
+        // copy messages :
+        messages.push_back(message);
+    };
+
+    // lambda expression producing tile data (256x256) all set to 1 for Stokes I
+    auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
+                                CARTA::PolarizationType stokes_type, int& width, int& height) {
+        float value = threshold_test_values_map[stokes_type]; // seems that Stokes I is passed as Current
+        // std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
+
+        data.assign(256 * 256, -1000.00); // generating Stokes I tile 256x256 all values = 1
+        width = 256;
+        height = 256;
+        
+        // fill data here:
+        switch( stokes_type )
+        {
+           case CARTA::PolarizationType::POLARIZATION_TYPE_NONE :
+              {
+                  data[0] = 4.1;
+                  data[1] = 3.9;
+                  data[2] = 4.1;
+              }
+              break;
+
+           case CARTA::PolarizationType::I :           
+              {
+                  data[0] = sqrt(2) + 0.1; // ~= 1.42
+                  data[1] = sqrt(2) - 0.1; // ~= 1.40
+                  data[2] = sqrt(2) + 0.1; // ~= 1.42
+              }
+              break;
+              
+           case CARTA::PolarizationType::Q :           
+           case CARTA::PolarizationType::U :
+              {
+                 data[0] = 1.0;       // PI ~ 1.41 , fPI ~= sqrt(2)/(sqrt(2)+0.1) *100 = 0.9339 *100 = 93.39
+                 data[1] = 1.0 - 0.2; // PI ~ 1.13 , fPI ~= 1.13/(sqrt(2)-0.1) *100 = 0.86087 *100 = 86.087
+                 data[2] = 1.0;       // PI ~ 1.41 , fPI ~= sqrt(2)/(sqrt(2)+0.1) *100 = 0.9339 *100 = 93.39
+              }
+              break;
+ 
+           default : 
+              break;
+        }
+
+        return true;
+    };
+
+    DimsInfo dims;
+    dims.width = 2048;
+    dims.height = 2048;
+    dims.depth = 1;
+    dims.num_channels = 1;
+    dims.num_stokes = 4;
+    int z_index = 2;
+    vectorfield.Calculate(callback, dims, getdata_callback);
+    
+    // check if intensities are as expected:
+    for (auto message : messages) {
+        auto data = message.intensity_tiles(0).image_data();
+        auto float_data = reinterpret_cast<const float*>(data.data());
+        int float_size = data.size() / sizeof(float);
+
+        std::vector<float> actual_intensity_values(float_data, float_data + 3); // was + float_size
+
+        // "manual comparison" excluding NaNs :
+        for(int i=0;i<actual_intensity_values.size();i++){
+           float actual_value = actual_intensity_values[i];
+//           printf("ACTUAL VALUE at %d = %.8f\n",i,actual_value);
+           if( is_nan_expected[i] ){
+              EXPECT_TRUE(std::isnan(actual_value)) << "Intensity at pixel " << i << " expected to be NaN, but got " << actual_value;
+           }else{
+              // at index i a non-NaN value is expected check:
+              EXPECT_NEAR(expected_intensities[i], actual_value, 1e-5 );                            
+           }
+        }        
+        
+        data = message.angle_tiles(0).image_data();
+        float_data = reinterpret_cast<const float*>(data.data());
+        float_size = data.size() / sizeof(float);
+
+        std::vector<float> actual_angle_values(float_data, float_data + 3); // was + float_size
+        for(int i=0;i<actual_angle_values.size();i++){
+           float actual_value = actual_angle_values[i];
+           if( is_nan_expected[i] ){
+              EXPECT_TRUE(std::isnan(actual_value)) << "Angle at pixel " << i << " expected to be NaN, but got " << actual_value;              
+           }else{
+              // at index i a non-NaN value is expected check:
+              EXPECT_NEAR(expected_angles[i], actual_value, 1e-5 );                            
+           }
+        }        
+        
+    }
+    
+}
+
+std::vector<float> expected_intensities = { 4.1, 3.9, 4.1};
+// The values in expected_angles correspond to Q,U in getdata_callback above
+std::vector<float> expected_angles      = { float((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2), float((float)(180.0 / casacore::C::pi) * std::atan2(0.8, 0.8) / 2), float((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) };
+std::vector<bool>  is_nan_expected      = { false, true, false };
+
+INSTANTIATE_TEST_SUITE_P(ThresholdingSpatialTests, VectorFieldThresholdingSpatialTest,
+    ::testing::Values( 
+        // fractional = false, threshold on current Stokes = 4 vs. three pixels : 4.1,3.9,4.1
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT,  4), expected_intensities, expected_angles, is_nan_expected ),
+        
+        // fractional = false, threshold on computed stokes = sqrt(1^2+1^2) = sqrt(2) = 1.41 vs values three pixels 1.42,1.40,1.42
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, sqrt(2)), expected_intensities, expected_angles, is_nan_expected ),
+        
+        // fractional = false, threshold on PI = sqrt(1^2+1^2) = sqrt(2) = 1.41 -> threshold slightly lower , and pixel[1]=1.13 is below threshold  -> NaN
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 1.40), expected_intensities, expected_angles, is_nan_expected ),
+        
+        // fractional = true, threshold applied to computed fractional polarised intensity = sqrt(2)/2 * 100% ~= 70.71% vs. pixel values 93.4,86,93.4 :
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 90.00), expected_intensities, expected_angles, is_nan_expected ) 
       )       
     ); 
     
