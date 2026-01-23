@@ -346,7 +346,7 @@ TEST_F(RegionSpatialProfileTest, FitsAnnotationPointProfile) {
 }
 
 TEST_F(RegionSpatialProfileTest, FitsMovePointProfile) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 

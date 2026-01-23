@@ -523,7 +523,7 @@ TEST_F(PvGeneratorTest, FitsPvPolyLine) {
 }
 
 TEST_F(PvGeneratorTest, PvPreview) {
-    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
+    auto image_path = FitsImages() / "noise_3d.fits"; // 10x10x10 image
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     auto csys = frame->CoordinateSystem();
