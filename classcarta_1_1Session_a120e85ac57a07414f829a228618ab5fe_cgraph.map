@@ -1,5 +1,6 @@
 <map id="carta::Session::SendSpatialProfileData" name="carta::Session::SendSpatialProfileData">
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,102,204,142"/>
+<area shape="poly" id="edge11_Node000001_Node000001" title=" " alt="" coords="58,102,55,92,62,83,79,77,105,75,134,78,150,85,148,90,133,83,105,81,80,83,65,87,60,93,63,101"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1Session.html#ae6ff58d2a61d3872bc741f12ed2b91d7" title=" " alt="" coords="271,73,447,113"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="204,108,257,102,257,107,205,113"/>
 <area shape="rect" id="Node000009" href="$classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451" title=" " alt="" coords="252,137,465,163"/>
