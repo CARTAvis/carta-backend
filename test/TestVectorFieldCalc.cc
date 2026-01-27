@@ -147,153 +147,6 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
 
 
 //------------------------------------------------------ Thresholding tests below -----------------------------------------
-std::unordered_map<CARTA::PolarizationType, float> threshold_test_values_map{
-    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 4}, // NONE
-    {CARTA::PolarizationType::I, 2},                      // CURRENT
-    {CARTA::PolarizationType::Q, 1},                     
-    {CARTA::PolarizationType::U, 1}, 
-    {CARTA::PolarizationType::V, 0}
-};
-
-/*
-// Define the parameterized test fixture
-class VectorFieldThresholdingTest : public ::testing::TestWithParam<TestParameters> {
-public:
-    VectorFieldThresholdingTest() {}
-
-protected:
-    // You can add setup/teardown logic here if needed
-};
-
-
-TEST_P(VectorFieldThresholdingTest, TestThresholding) {
-    std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
-    auto [test_parameters, expected_intensity, expected_angle] = GetParam();
-
-    VectorFieldCalculator vectorfield(test_parameters);
-    std::vector<CARTA::VectorOverlayTileData> messages;
-
-    // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
-    auto callback = [&messages](CARTA::VectorOverlayTileData& message) {
-        // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " <<
-        // message.angle_tiles_size() << std::endl;
-        EXPECT_EQ(message.intensity_tiles_size(), 1);
-        EXPECT_EQ(message.angle_tiles_size(), 1);
-
-        // copy messages :
-        messages.push_back(message);
-    };
-
-    // lambda expression producing tile data (256x256) all set to 1 for Stokes I
-    auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
-                                CARTA::PolarizationType stokes_type, int& width, int& height) {
-        float value = threshold_test_values_map[stokes_type]; // seems that Stokes I is passed as Current
-        // std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
-
-        data.assign(256 * 256, value); // generating Stokes I tile 256x256 all values = 1
-        width = 256;
-        height = 256;
-
-        return true;
-    };
-
-    DimsInfo dims;
-    dims.width = 2048;
-    dims.height = 2048;
-    dims.depth = 1;
-    dims.num_channels = 1;
-    dims.num_stokes = 4;
-    int z_index = 2;
-    vectorfield.Calculate(callback, dims, getdata_callback);
-    
-//    auto IsNanMy = [](float value){ return std::isnan(value); };
-
-    // check if intensities are as expected:
-    for (auto message : messages) {
-        auto data = message.intensity_tiles(0).image_data();
-        auto float_data = reinterpret_cast<const float*>(data.data());
-        int float_size = data.size() / sizeof(float);
-
-        std::vector<float> actual_intensity_values(float_data, float_data + float_size);
-        if (std::isnan(expected_intensity)) {
-///            EXPECT_THAT(actual_intensity_values, Each(NanSensitiveDoubleNear(expected_intensity, 1e-5))); 
-            // There seem to be no single-line way to check for NaNs without creating own "matcher" - leaving for later
-            for (float val : actual_intensity_values) {
-               EXPECT_TRUE(std::isnan(val)) << "Expected NaN, but got " << val; // Explicit check
-            } 
-        } else {
-            EXPECT_THAT(actual_intensity_values, Each(FloatNear(expected_intensity, 1e-5)));
-        }
-        // std::cout << "TEST intesities : " << actual_intensity_values[0] << " float_size = " << float_size << std::endl;
-
-        data = message.angle_tiles(0).image_data();
-        float_data = reinterpret_cast<const float*>(data.data());
-        float_size = data.size() / sizeof(float);
-
-        std::vector<float> actual_angle_values(float_data, float_data + float_size);
-        if (std::isnan(expected_angle)) {
-//            EXPECT_THAT(actual_angle_values, Each(NanSensitiveDoubleNear(expected_angle, 1e-5))); 
-           // There seem to be no single-line way to check for NaNs without creating own "matcher" - leaving for later
-           for (float val : actual_angle_values) {
-               EXPECT_TRUE(std::isnan(val)) << "Expected NaN, but got " << val; // Explicit check
-            } 
-        } else {
-            EXPECT_THAT(actual_angle_values, Each(FloatNear(expected_angle, 1e-5))); // or just use NanSensitiveDoubleNear(expected_intensity, 1e-5))
-        }
-        // std::cout << "TEST angles : " << actual_angle_values[0] << " float_size = " << float_size << std::endl;
-    }
-}
-
-// I believe these 8 tests, check all the threshold options, but possible not all combination of threshold and intensity/angle source option.
-// I think this ok, but can expend further
-INSTANTIATE_TEST_SUITE_P(ThresholdingTests, VectorFieldThresholdingTest,
-    ::testing::Values( 
-        // WARNING : in this test we have CURRENT STOKES = 4 and SOME ACTUALY STOKES = 2 (see threshold_test_values_map above)
-        //           this may not have any sensible physical sense (should be equal or close to equal), but is ok for testing now.
-        //---------------------------------------------------------------- Stokes source = CURRENT ( =4 ):
-        // fractional = false, threshold on current Stokes = 4 (see threshold_test_values_map)
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT, 3.9), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Current Stokes above threshold (4>3.9) -> expected values 4,22.5deg
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT, 4.1), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Current Stokes below threshold (4<4.1) -> expected value NaNs
-
-        // fractional = false, threshold on computed Stokes I = 2 (see threshold_test_values_map)
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 1.99), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Computed stokes above the threshold (2>1.99) -> expected values 4,22.5deg
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 2.01), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Computed stokes above the threshold (2>1.99) -> expected value NaNs
-
-        // fractional = false, threshold on PI = sqrt(1^2+1^2) = sqrt(2) = 1.41 
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 1.40), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Computed PI above the threshold (sqrt(2)>1.4) -> expected values 4,22.5deg
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 1.42), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Computed PI below the threshold (sqrt(2)<1.42) -> expected value NaNs
-
-        // fractional = false, threshold on fPI = sqrt(1^2+1^2)/2 = sqrt(2)/2 = 70.71%
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 69.00), 4, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                       // Computed fPI above the threshold (100% * sqrt(2)/2 > 69) -> expected values 4,22.5deg
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 72.00), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Computed fPI below the threshold (100% * sqrt(2)/2 < 72) -> expected value NaNs
-        
-        //---------------------------------------------------------------- Stokes source = COMPUTED ( =sqrt(2) ):
-        // fractional = false, threshold applied to Stokes I (=2 see threshold_test_values_map)
-        // see initialisation of _threshold_source _threshold_option == 1 ? Source::I in VectorFieldCalculator constructor
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED, 1.99), sqrt(2), ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ), // Stokes I = 2 above the threshold (2 > 1.99) -> expected values sqrt(2),22.5 deg
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED, 2.01), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Stokes I = 2 below the threshold (2 < 2.01) -> expected values NaNs
-        
-        // fractional = false, treshold source = PI = 14 -> check threshold against polarised intensity = sqrt(2)
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, PI, 1.40), sqrt(2), ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),                 // Computed PI = sqrt(2) above the threshold (sqrt(2) > 1.4) -> expected values sqrt(2),22.5 deg
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, PI, 1.42), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ), // Computed PI = sqrt(2) below the threshold (sqrt(2) < 1.42) -> expected values NaNs
-
-        //---------------------------------------------------------------- Stokes source = COMPUTED fractional polarisation = sqrt(2)/2 * 100% ~= 70.71%        
-        // fractional = true, threshold applied to computed fractional polarised intensity = sqrt(2)/2 * 100% ~= 70.71%
-        // treshold source = PI = 14 (see _threshold_source calculation in VectorFieldCalculator constructor) 
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, true, 0, 0, PI, 69.00), (sqrt(2)/2.00)*100.00, ((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) ),  // computed fPI = (sqrt(2)/2.00)*100.00 above threshold (70.7 > 69) -> expected values 70.71,22.5 deg
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED, true, 0, 0, PI, 72.00), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() ) // computed fPI = (sqrt(2)/2.00)*100.00 below threshold (70.7 < 72) -> expected values NaNs
-      )       
-    ); 
-*/    
-//------------------------------------------------------ Thresholding spatial tests below -----------------------------------------
-/*std::unordered_map<CARTA::PolarizationType, float> threshold_test_values_map{
-    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 4}, // NONE
-    {CARTA::PolarizationType::I, 2},                      // CURRENT
-    {CARTA::PolarizationType::Q, 1},                     
-    {CARTA::PolarizationType::U, 1}, 
-    {CARTA::PolarizationType::V, 0}
-};*/
-
 using TestSpatialParameters = std::tuple<CARTA::SetVectorOverlayParameters, std::vector<float>, std::vector<float>, std::vector<bool> >;
 
 // Define the parameterized test fixture
@@ -323,14 +176,14 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
         // copy messages :
         messages.push_back(message);
     };
+    
+    // Number of test pixels to agree in the Lambda expression below and later in initialisation of vectors actual_intensity_values and actual_angle_values
+    int number_of_test_pixels = 5;
 
     // lambda expression producing tile data (256x256) all set to 1 for Stokes I
     auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
                                 CARTA::PolarizationType stokes_type, int& width, int& height) {
-        float value = threshold_test_values_map[stokes_type]; // seems that Stokes I is passed as Current
-        // std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
-
-        data.assign(256 * 256, -1000.00); // generating Stokes I tile 256x256 all values = 1
+        data.resize(256 * 256);
         width = 256;
         height = 256;
         
@@ -339,26 +192,32 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
         {
            case CARTA::PolarizationType::POLARIZATION_TYPE_NONE :
               {
-                  data[0] = 4.1;
-                  data[1] = 3.9;
-                  data[2] = 4.1;
+                  data[0] = 0.2;
+                  data[1] = 1.0;
+                  data[2] = 5.0;
+                  data[3] = 25.0;
+                  data[4] = 125.0;
               }
               break;
 
            case CARTA::PolarizationType::I :           
               {
-                  data[0] = sqrt(2) + 0.1; // ~= 1.42
-                  data[1] = sqrt(2) - 0.1; // ~= 1.40
-                  data[2] = sqrt(2) + 0.1; // ~= 1.42
+                  data[0] = 0.2;
+                  data[1] = 1.0;
+                  data[2] = 5.0;
+                  data[3] = 25.0;
+                  data[4] = 125.0;
               }
               break;
               
            case CARTA::PolarizationType::Q :           
            case CARTA::PolarizationType::U :
               {
-                 data[0] = 1.0;       // PI ~ 1.41 , fPI ~= sqrt(2)/(sqrt(2)+0.1) *100 = 0.9339 *100 = 93.39
-                 data[1] = 1.0 - 0.2; // PI ~ 1.13 , fPI ~= 1.13/(sqrt(2)-0.1) *100 = 0.86087 *100 = 86.087
-                 data[2] = 1.0;       // PI ~ 1.41 , fPI ~= sqrt(2)/(sqrt(2)+0.1) *100 = 0.9339 *100 = 93.39
+                  data[0] = 1.1; // I = 1.55
+                  data[1] = 1.2; // I = 1.70
+                  data[2] = 1.3; // I = 1.84                
+                  data[3] = 1.4; // I = 1.98
+                  data[4] = 1.5; // I = 2.12 
               }
               break;
  
@@ -384,7 +243,7 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
         auto float_data = reinterpret_cast<const float*>(data.data());
         int float_size = data.size() / sizeof(float);
 
-        std::vector<float> actual_intensity_values(float_data, float_data + 3); // was + float_size
+        std::vector<float> actual_intensity_values(float_data, float_data + number_of_test_pixels); // was + float_size
 
         // "manual comparison" excluding NaNs :
         for(int i=0;i<actual_intensity_values.size();i++){
@@ -402,7 +261,7 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
         float_data = reinterpret_cast<const float*>(data.data());
         float_size = data.size() / sizeof(float);
 
-        std::vector<float> actual_angle_values(float_data, float_data + 3); // was + float_size
+        std::vector<float> actual_angle_values(float_data, float_data + number_of_test_pixels); // was + float_size
         for(int i=0;i<actual_angle_values.size();i++){
            float actual_value = actual_angle_values[i];
            if( is_nan_expected[i] ){
@@ -417,24 +276,23 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     
 }
 
-std::vector<float> expected_intensities = { 4.1, 3.9, 4.1};
-// The values in expected_angles correspond to Q,U in getdata_callback above
-std::vector<float> expected_angles      = { float((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2), float((float)(180.0 / casacore::C::pi) * std::atan2(0.8, 0.8) / 2), float((float)(180.0 / casacore::C::pi) * std::atan2(1, 1) / 2) };
-std::vector<bool>  is_nan_expected      = { false, true, false };
-
+// expected intensity and angle values for 5 test pixels - based on the values "generated" in the lambda above
+std::vector<float> expected_intensities = { 0.2, 1.0, 5.0, 25.0, 125.0 };
+std::vector<float> expected_angles      = { 22.5, 22.5, 22.5, 22.5, 22.5 }; // Q=U -> angle = (float)(180.0 / casacore::C::pi) * std::atan2(U, Q) / 2) = 45deg/2 = 22.5 deg
+    
 INSTANTIATE_TEST_SUITE_P(ThresholdingSpatialTests, VectorFieldThresholdingSpatialTest,
     ::testing::Values( 
-        // fractional = false, threshold on current Stokes = 4 vs. three pixels : 4.1,3.9,4.1
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT,  4), expected_intensities, expected_angles, is_nan_expected ),
+        // fractional = false, threshold on current Stokes = 2 vs. 5 pixels : 0.2, 1.0, 5.0, 25.0, 125.0 (values from CARTA::PolarizationType::POLARIZATION_TYPE_NONE in Lambda-switch above)
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT,  2.0), expected_intensities, expected_angles, std::vector<bool>{true, true, false, false, false} ), 
+
+        // fractional = false, threshold on computed stokes = 2 vs. Stokes I computed same as CURRENT (values from CARTA::PolarizationType::I in Lambda-switch above)
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 2.0), expected_intensities, expected_angles, std::vector<bool>{true, true, false, false, false} ), 
         
-        // fractional = false, threshold on computed stokes = sqrt(1^2+1^2) = sqrt(2) = 1.41 vs values three pixels 1.42,1.40,1.42
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, sqrt(2)), expected_intensities, expected_angles, is_nan_expected ),
+        // fractional = false, threshold on PI = sqrt(Q^2+U^2) = 1.55, 1.70, 1.84, 1.90, 2.12 for Q,U values from case CARTA::PolarizationType::Q/U in Lambda-switch above
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 2.0), expected_intensities, expected_angles, std::vector<bool>{true, true, true, true, false} ),
         
-        // fractional = false, threshold on PI = sqrt(1^2+1^2) = sqrt(2) = 1.41 -> threshold slightly lower , and pixel[1]=1.13 is below threshold  -> NaN
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 1.40), expected_intensities, expected_angles, is_nan_expected ),
-        
-        // fractional = true, threshold applied to computed fractional polarised intensity = sqrt(2)/2 * 100% ~= 70.71% vs. pixel values 93.4,86,93.4 :
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 90.00), expected_intensities, expected_angles, is_nan_expected ) 
+        // fractional = true, threshold applied to computed fractional polarised intensity = sqrt(Q^2+U^2)/I * 100% = 775, 170, 36.8, 7.6, 1.696 (WARNING : unphysical but fine for testing)
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 2.0), expected_intensities, expected_angles, std::vector<bool>{false, false, false, false, true} )        
       )       
     ); 
     
