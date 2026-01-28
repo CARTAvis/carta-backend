@@ -7,7 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-* Fix empty response to HTTP request with underscores in header names ([#1406](https://github.com/CARTAvis/carta-backend/issues/1406))
+* Fixed linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
+* Fixed NaN values in FITS image with BLANK header keyword ([#1492](https://github.com/CARTAvis/carta-backend/issues/1492)).
+* Don't reallocate memory for image cache unnecessarily ([#1508](https://github.com/CARTAvis/carta-backend/pull/1508)).
+* Fixed crash in ICD channel map test with ASAN enabled ([#1518](https://github.com/CARTAvis/carta-backend/issues/1518)).
+* Fixed fetching of region data for other Stokes ([#1551](https://github.com/CARTAvis/carta-backend/issues/1551)).
+* Fixed deletion of resumed session from message task threads ([#1537](https://github.com/CARTAvis/carta-backend/issues/1537)).
+* Fixed region histogram for image Stokes after computed Stokes ([#1522](https://github.com/CARTAvis/carta-backend/issues/1522)).
+* Fixed vector overlay not updating after session resume ([#1543](https://github.com/CARTAvis/carta-backend/issues/1543)).
+* Fixed cursor/region spatial profiles during animation ([#1558](https://github.com/CARTAvis/carta-backend/issues/1558)).
+
+### Changed
+* Standardized use of float and double NaN (Not a Number) ([#1502](https://github.com/CARTAvis/carta-backend/issues/1502)).
+* Moved region import/export implementation to new subdirectory ([#1505](https://github.com/CARTAvis/carta-backend/issues/1505)).
+* Moved region histogram implementation to analysis subdirectory ([#1509](https://github.com/CARTAvis/carta-backend/issues/1509)).
+* Moved region statistics implementation to analysis subdirectory ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
+* Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
+* Moved region spatial profile implementation to analysis subdirectory ([#1515](https://github.com/CARTAvis/carta-backend/issues/1515)).
+
+## [5.0.2]
+
+### Fixed
+* Fixed bug in region spectral profile with flux density statistic ([#1493](https://github.com/CARTAvis/carta-backend/issues/1493)).
+
+## [5.0.1]
+
+### Fixed
+* Fixed bugs in database validation error handling which caused preferences to be wiped, and corrected preferences schema ([#1485](https://github.com/CARTAvis/carta-backend/issues/1485)).
+
+## [5.0.0]
+
+### Added
+* Add support for generating initial values for multiple Gaussian image fitting ([#2095](https://github.com/CARTAvis/carta-frontend/issues/2095)).
+
+### Fixed
+* Fix empty response to HTTP request with underscores in header names ([#1406](https://github.com/CARTAvis/carta-backend/issues/1406)).
+* Fix scripting being unable to find resumed session ([#1416](https://github.com/CARTAvis/carta-backend/issues/1416)).
+* Fix spatial profile for point region in matched image ([#1405](https://github.com/CARTAvis/carta-backend/issues/1405)).
+* Fix casacore reformatting GILDAS unit ([#1423](https://github.com/CARTAvis/carta-backend/issues/1423)).
+* Fix removing single beam defined in BEAMS table not in headers ([#1432](https://github.com/CARTAvis/carta-backend/issues/1432)).
+* Fix crash when animator is started while PV preview is active ([#1441](https://github.com/CARTAvis/carta-backend/issues/1441)).
+* Fix flux density computation for additional image units including MJy/sr ([#1343](https://github.com/CARTAvis/carta-backend/issues/1343)).
+* Fix occasional duplication of sync IDs in messages during image fitting ([#1466](https://github.com/CARTAvis/carta-backend/issues/1466)).
+* Fix import of regions from top-level directory ([#1403](https://github.com/CARTAvis/carta-backend/issues/1403)).
+* Fix compression artifact issue ([#1447](https://github.com/CARTAvis/carta-backend/issues/1447)).
+* Fix applying vector field threshold ([#1415](https://github.com/CARTAvis/carta-backend/issues/1415) and [#1444](https://github.com/CARTAvis/carta-backend/issues/1444)).
+* Fix slow response to file list by sending basic info only ([#1435](https://github.com/CARTAvis/carta-backend/issues/1435)).
+
+### Changed
+* Bumped uSockets to the latest version while modifying how the uSockets and uWebSockets dependencies are fetched ([#1411](https://github.com/CARTAvis/carta-backend/issues/1411)).
 
 ## [5.0.0-beta.1]
 

@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Columns.h"
+#include "Column.h"
 #include "TableView.h"
 
 #define MAX_HEADER_SIZE (64 * 1024)

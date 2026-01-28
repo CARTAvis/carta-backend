@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 project(carta_backend)
 
 include_directories(src)
@@ -175,6 +175,18 @@ include_directories(${CMAKE_SOURCE_DIR}/third-party/pugixml/src)
 #spdlog
 add_subdirectory(third-party/spdlog)
 
+# JSON schemas
+add_subdirectory(schemas)
+
+# nlohmann/json
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_Install OFF CACHE INTERNAL "")
+add_subdirectory(third-party/nlohmann_json)
+
+# json-schema-validator
+set(nlohmann_json_VERSION "v3.11.3")
+add_subdirectory(third-party/json-schema-validator)
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
@@ -187,6 +199,8 @@ set(LINK_LIBS
         cfitsio
         wcs
         gsl
+        nlohmann_json::nlohmann_json
+        nlohmann_json_schema_validator
         casa_casa
         casa_coordinates
         casa_tables
@@ -225,53 +239,67 @@ set(SOURCE_FILES
         src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc
         src/ImageData/FitsLoader.cc
+        src/ImageData/FitsUtil.cc
         src/ImageData/Hdf5Attributes.cc
         src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
+        src/ImageFitting/ImageFitter.cc
+        src/ImageFitting/InitialValueCalculator.cc
         src/ImageGenerators/MomentGenerator.cc
         src/ImageGenerators/PvGenerator.cc
         src/ImageGenerators/PvPreviewCube.cc
         src/ImageGenerators/PvPreviewCut.cc
         src/ImageStats/Histogram.cc
         src/ImageStats/StatsCalculator.cc
-        src/Logger/Logger.cc
         src/Logger/CartaLogSink.cc
+        src/Logger/Logger.cc
         src/Main/Main.cc
         src/Main/ProgramSettings.cc
         src/Main/WebBrowser.cc
-        src/Region/CrtfImportExport.cc
-        src/Region/Ds9ImportExport.cc
-        src/Region/LineBoxRegions.cc
+        src/Region/ImageRegion.cc
         src/Region/Region.cc
         src/Region/RegionConverter.cc
         src/Region/RegionHandler.cc
-        src/Region/RegionImportExport.cc
+        src/Region/RegionAnalysis/LineBoxRegions.cc
+        src/Region/RegionAnalysis/RegionHistogram.cc
+        src/Region/RegionAnalysis/RegionSpatialProfile.cc
+        src/Region/RegionAnalysis/RegionStatistics.cc
+        src/Region/RegionImportExport/CrtfExporter.cc
+        src/Region/RegionImportExport/CrtfImporter.cc
+        src/Region/RegionImportExport/Ds9Exporter.cc
+        src/Region/RegionImportExport/Ds9Importer.cc
+        src/Region/RegionImportExport/RegionExporter.cc
+        src/Region/RegionImportExport/RegionImporter.cc
+        src/Region/RegionImportExport/RegionImportExportUtil.cc
         src/Session/ChannelMapSettings.cc
         src/Session/CursorSettings.cc
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
         src/Session/SessionManager.cc
-        src/Table/Columns.cc
+        src/Table/Column.cc
         src/Table/Table.cc
         src/Table/TableController.cc
         src/Table/TableView.cc
-        src/ThreadingManager/ThreadingManager.cc
+        src/ThreadManager/ThreadManager.cc
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/Util/App.cc
         src/Util/Casacore.cc
         src/Util/File.cc
+        src/Util/Json.cc
+        src/Util/Memory.cc
         src/Util/Message.cc
+        src/Util/RemoteFiles.cc
         src/Util/Stokes.cc
         src/Util/String.cc
-        src/Util/Token.cc
-        src/ImageFitter/ImageFitter.cc
-        src/Util/RemoteFiles.cc
-        src/Util/RemoteFiles.h)
+        src/Util/Token.cc)
 
 add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
 add_executable(carta_backend ${SOURCE_FILES})
+
+add_dependencies(carta_backend carta-schemas)
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(REMOVE_ITEM LINK_LIBS uuid)
     target_link_libraries(carta_backend uv ${LINK_LIBS})

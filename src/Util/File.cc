@@ -6,12 +6,119 @@
 
 #include "File.h"
 
-#include <spdlog/fmt/fmt.h>
+#include <spdlog/spdlog.h>
 #include <fstream>
 #include <regex>
 
 #include "String.h"
 
+/**
+ * @details This function checks and resolves the given top-level and starting directories.
+ * If default placeholder values ("base" or "root") are found, they are replaced accordingly.
+ * The function verifies that both directories exist and are accessible, and ensures that
+ * the starting directory is a valid subdirectory of the top-level directory.
+ *
+ * @note If `starting_string` is invalid, it is replaced with `top_level_string`.
+ * @note If `starting_string` is not a subdirectory of `top_level_string`, the function logs a critical error and returns `false`.
+ *
+ * @warning If both `top_level_string` and `starting_string` are set to their default placeholders ("base" and "root"),
+ *          the function logs a critical error and returns `false`.
+ */
+bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string) {
+    if (top_level_string == "base" && starting_string == "root") {
+        spdlog::critical("Must set top level or starting directory. Exiting carta.");
+
+        return false;
+    }
+
+    if (top_level_string == "base")
+
+        top_level_string = starting_string;
+
+    if (starting_string == "root")
+
+        starting_string = top_level_string;
+
+    // Check if the top-level directory exists and is accessible
+
+    fs::path top_level_path = fs::weakly_canonical(fs::absolute(fs::path(top_level_string)));
+
+    if (!fs::exists(top_level_path) || !fs::is_directory(top_level_path)) {
+        spdlog::critical("Invalid top level directory, does not exist or is not a readable directory. Exiting carta.");
+
+        return false;
+    }
+
+    top_level_string = top_level_path.string();
+
+    // Check if the starting directory exists and is accessible
+
+    fs::path starting_path = fs::weakly_canonical(fs::absolute(fs::path(starting_string)));
+
+    if (!fs::exists(starting_path) || !fs::is_directory(starting_path)) {
+        spdlog::warn("Invalid starting directory, using the provided top level directory instead.");
+
+        starting_string = top_level_string;
+
+    } else {
+        starting_string = starting_path.string();
+    }
+
+    // Check if starting directory is a subdirectory of the top-level directory
+
+    if (!IsSubdirectory(starting_path, top_level_path)) {
+        spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", starting_string, top_level_string);
+
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @details This function checks if `folder` is a subdirectory of `top_folder` by
+ * resolving both paths to their absolute, weakly canonical forms and then
+ * traversing up the directory hierarchy.
+ *
+ * @warning If `top_folder` is empty, the function will always return `true`.
+ */
+bool IsSubdirectory(std::string folder, std::string top_folder) {
+    auto folder_path = fs::weakly_canonical(fs::absolute(folder));
+
+    auto parent_path = fs::weakly_canonical(fs::absolute(top_folder));
+
+    if (parent_path.empty() || folder_path == parent_path) {
+        return true;
+    }
+
+    auto current_path = folder_path;
+
+    while (current_path.has_parent_path()) {
+        current_path = current_path.parent_path();
+
+        if (current_path == parent_path) {
+            return true;
+        }
+
+        if (current_path == fs::path("/")) {
+            break;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @details This function opens the specified file and reads the first 4 bytes as a `uint32_t` magic number.
+ *
+ * @note
+ * - The function assumes the file's magic number is stored in the first 4 bytes.
+ * - Reads the file in **binary mode** would be safer to avoid unwanted conversions.
+ * - The byte order (endianness) of the magic number depends on the system architecture.
+ *
+ * @warning
+ * - If the file does not exist or is not readable, the function returns `0` without error messages.
+ */
 uint32_t GetMagicNumber(const std::string& filename) {
     uint32_t magic_number = 0;
 
@@ -24,6 +131,11 @@ uint32_t GetMagicNumber(const std::string& filename) {
     return magic_number;
 }
 
+/**
+ * @details This function first determines if the file is gzip-compressed by examining its
+ * magic number. If the file is gzip-compressed, it then checks whether the
+ * original filename (before compression) has a `.fits` extension.
+ */
 bool IsCompressedFits(const std::string& filename) {
     // Check if gzip file, then check .fits extension
     if (IsGzMagicNumber(GetMagicNumber(filename))) {
@@ -35,16 +147,40 @@ bool IsCompressedFits(const std::string& filename) {
     return false;
 }
 
+/**
+ * @details This function uses a regular expression to determine if the provided filename
+ * starts with "http://" or "https://", indicating that it is a remote file
+ * accessible via HTTP.
+ *
+ * @note This function does not verify if the URL is accessible or valid beyond its prefix.
+ */
 bool IsRemoteHttpFile(const std::string& filename) {
     const std::regex is_http_url("^https?://");
     return std::regex_search(filename, is_http_url);
 }
 
+/**
+ * @details This function checks whether the provided 32-bit magic number matches the
+ * gzip file signature (`0x1f8b`). The magic number is formatted as a hexadecimal
+ * string and examined to see if it ends with "8b1f".
+ *
+ * @note This function assumes little-endian byte order for checking the magic number.
+ */
 bool IsGzMagicNumber(uint32_t magic_number) {
     std::string hex_string = fmt::format("{:#x}", magic_number);
     return (hex_string.length() > 4) && (hex_string.substr(hex_string.length() - 4) == "8b1f");
 }
 
+/**
+ * @details This function iterates over the contents of the specified directory and counts
+ * the number of files and subdirectories present. If the directory does not exist
+ * or cannot be accessed, the function returns `-1`.
+ *
+ * @note This function does not distinguish between files and subdirectories; it counts both.
+ *
+ * @warning If the path is invalid or inaccessible, an exception is caught internally,
+ *          and `-1` is returned.
+ */
 int GetNumItems(const std::string& path) {
     try {
         int counter = 0;
@@ -60,6 +196,17 @@ int GetNumItems(const std::string& path) {
 
 // quick alternative to bp::search_path that allows us to remove
 // boost:filesystem dependency
+/**
+ * @details This function retrieves the `PATH` environment variable, splits it into individual
+ * directory paths, and searches for the specified file within those directories.
+ * If the file is found, its full path is returned. If not found or if an error occurs,
+ * an empty `fs::path` is returned.
+ *
+ * @note This function assumes that path entries in `PATH` are separated by colons (`:`),
+ *       which is standard on UNIX-like systems.
+ *
+ * @warning If the `PATH` environment variable is not set, this function may behave unexpectedly.
+ */
 fs::path SearchPath(std::string filename) {
     std::string path(std::getenv("PATH"));
     std::vector<std::string> path_strings;
@@ -79,6 +226,18 @@ fs::path SearchPath(std::string filename) {
     return fs::path();
 }
 
+/**
+ * @details This function attempts to identify the type of an image file either by checking
+ * its magic number (file signature) or examining its file extension. If `check_content`
+ * is set to `true`, the function inspects the file's magic number to classify it as
+ * FITS or HDF5. If `check_content` is `false`, it relies on common file extensions.
+ *
+ * @note When `check_content` is enabled, compressed FITS files (`.fits.gz`) are identified
+ *       by their decompressed filename extension.
+ *
+ * @warning Checking the file content requires reading the file's magic number,
+ *          which may introduce additional I/O overhead.
+ */
 CARTA::FileType GuessImageType(const std::string& path_string, bool check_content) {
     if (check_content) {
         // Guess file type by magic number
@@ -107,6 +266,19 @@ CARTA::FileType GuessImageType(const std::string& path_string, bool check_conten
     return CARTA::UNKNOWN;
 }
 
+/**
+ * @details This function attempts to identify the type of a region file used in astronomical
+ * imaging analysis by either checking its file content or examining its file extension.
+ * If `check_content` is `true`, it reads the first line of the file to identify
+ * known headers (e.g., `#CRTF` or `# Region file format: DS9`). Otherwise, it determines
+ * the file type based on its extension.
+ *
+ * @note CRTF files typically start with `#CRTF`, while DS9 region files may include
+ *       `# Region file format: DS9` as an optional header.
+ *
+ * @warning Checking file content requires reading the first line, which may introduce
+ *          a slight I/O overhead.
+ */
 CARTA::FileType GuessRegionType(const std::string& path_string, bool check_content) {
     if (check_content) {
         // Check beginning of file for CRTF or REG header
@@ -141,6 +313,17 @@ CARTA::FileType GuessRegionType(const std::string& path_string, bool check_conte
     return CARTA::UNKNOWN;
 }
 
+/**
+ * @details This function attempts to classify the type of a catalog table file (e.g., FITS table or VOTable)
+ * either by checking its magic number (if `check_content` is `true`) or, if content checking is
+ * disabled, by inspecting the file extension.
+ *
+ * @note If `check_content` is enabled, the function may attempt to read the file's magic number.
+ *       Ensure the file is accessible to avoid potential I/O errors.
+ *
+ * @warning This function does not validate file integrity; it only determines type based on
+ *          basic signature matching or filename extensions.
+ */
 CARTA::CatalogFileType GuessTableType(const std::string& path_string, bool check_content) {
     if (check_content) {
         uint32_t file_magic_number = GetMagicNumber(path_string);

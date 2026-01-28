@@ -5,7 +5,7 @@
 */
 
 #include "OnMessageTask.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 
 #include <algorithm>
 
@@ -13,7 +13,7 @@ using namespace carta;
 
 std::shared_ptr<SessionManager> OnMessageTask::_session_manager;
 
-OnMessageTask* SetImageChannelsTask::execute() {
+void SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;
 
@@ -25,16 +25,13 @@ OnMessageTask* SetImageChannelsTask::execute() {
     if (tester) {
         _session->ExecuteSetChannelEvt(request_pair);
     }
-
-    return nullptr;
 }
 
-OnMessageTask* SetCursorTask::execute() {
+void SetCursorTask::execute() {
     _session->_cursor_settings.ExecuteOne("SET_CURSOR", _file_id);
-    return nullptr;
 }
 
-OnMessageTask* AnimationTask::execute() {
+void AnimationTask::execute() {
     if (_session->ExecuteAnimationFrame()) {
         if (_session->CalculateAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
             _session->SetWaitingTask(true);
@@ -44,34 +41,29 @@ OnMessageTask* AnimationTask::execute() {
     }
 
     _session->SetAnimationActive(false);
-    return nullptr;
 }
 
-OnMessageTask* StartAnimationTask::execute() {
-    OnMessageTask* tsk;
+void StartAnimationTask::execute() {
     if (_session->AnimationActive()) {
-        tsk = new StartAnimationTask(_session, _msg, _msg_id);
+        ThreadManager::QueueTask(new StartAnimationTask(_session, _msg, _msg_id));
     } else {
         _session->SetAnimationActive(true);
-        _session->BuildAnimationObject(_msg, _msg_id);
-        tsk = new AnimationTask(_session);
+        if (_session->BuildAnimationObject(_msg, _msg_id)) {
+            ThreadManager::QueueTask(new AnimationTask(_session));
+        } else {
+            _session->SetAnimationActive(false);
+        }
     }
-    ThreadManager::QueueTask(tsk);
-
-    return nullptr;
 }
 
-OnMessageTask* RegionDataStreamsTask::execute() {
+void RegionDataStreamsTask::execute() {
     _session->RegionDataStreams(_file_id, _region_id);
-    return nullptr;
 }
 
-OnMessageTask* SpectralProfileTask::execute() {
+void SpectralProfileTask::execute() {
     _session->SendSpectralProfileData(_file_id, _region_id);
-    return nullptr;
 }
 
-OnMessageTask* PvPreviewUpdateTask::execute() {
+void PvPreviewUpdateTask::execute() {
     _session->SendPvPreview(_file_id, _region_id, _preview_region);
-    return nullptr;
 }

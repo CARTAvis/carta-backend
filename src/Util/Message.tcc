@@ -7,12 +7,25 @@
 #ifndef CARTA_SRC_UTIL_MESSAGE_TCC_
 #define CARTA_SRC_UTIL_MESSAGE_TCC_
 
+struct message_parsing_exception : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
 template <typename T>
-T Message::DecodeMessage(std::vector<char>& message) {
+/**
+ * @note This function uses a static_assert to ensure that T has a member function `ParseFromArray`.
+ *       If T does not have this member function, a compilation error will occur.
+ *       The function also throws a parsing exception if the parsing fails.
+ */
+T Message::DecodeMessage(std::string_view sv_message) {
+    const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
+    int event_length = sv_message.length() - sizeof(carta::EventHeader);
+    static_assert(std::is_member_function_pointer<decltype(&T::ParseFromArray)>::value,
+        "T must have a member function ParseFromArray(const void*, int)");
     T decoded_message;
-    char* event_buf = message.data() + sizeof(carta::EventHeader);
-    int event_length = message.size() - sizeof(carta::EventHeader);
-    decoded_message.ParseFromArray(event_buf, event_length);
+    if (!decoded_message.ParseFromArray(event_buf, event_length)) {
+        throw message_parsing_exception("Failed to parse message");
+    }
     return decoded_message;
 }
 

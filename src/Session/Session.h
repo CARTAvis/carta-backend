@@ -34,7 +34,7 @@
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
 #include "Table/TableController.h"
-#include "ThreadingManager/Concurrency.h"
+#include "Util/Concurrency.h"
 #include "Util/Message.h"
 
 #define HISTOGRAM_CANCEL -1.0
@@ -94,7 +94,7 @@ public:
     void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
     void OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id);
     void OnStopFitting(const CARTA::StopFitting& stop_fitting);
-    void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message, bool silent = false);
     void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
     void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
@@ -124,7 +124,7 @@ public:
     void CancelAnimation() {
         _animation_object->CancelExecution();
     }
-    void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
+    bool BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
     void ExecuteAnimationFrameInner(int animation_id);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
@@ -228,6 +228,7 @@ public:
     void SetAnimationActive(bool val) {
         _animation_active = val;
     }
+    void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
 protected:
     // File info for file list (extended info for each hdu_name)
@@ -257,8 +258,6 @@ protected:
     // Send data streams
     bool SendContourData(int file_id, bool ignore_empty = true, int channel = CURRENT_Z);
     bool SendSpatialProfileData(int file_id, int region_id);
-    void SendSpatialProfileDataByFileId(int file_id);
-    void SendSpatialProfileDataByRegionId(int region_id);
     bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
     bool SendRegionStatsData(int file_id, int region_id);
 
@@ -270,7 +269,6 @@ protected:
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = true);
     void SendFileEvent(
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
-    void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     // Channel map cancellation
     bool IsInChannelMapRange(int file_id, int channel);
@@ -331,7 +329,7 @@ protected:
     SessionContext _animation_context;
 
     std::atomic<int> _ref_count;
-    int _sync_id;
+    std::atomic<int> _sync_id;
     int _animation_id;
     bool _connected;
     static volatile int _num_sessions;

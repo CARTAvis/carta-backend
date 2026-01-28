@@ -7,6 +7,7 @@
 #include "Message.h"
 #include "Cache/RequirementsCache.h"
 #include "DataStream/Compression.h"
+#include "Util/Nan.h"
 
 #include <chrono>
 
@@ -89,11 +90,13 @@ CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32
     return set_stats_requirements;
 }
 
-CARTA::SetHistogramRequirements Message::SetHistogramRequirements(int32_t file_id, int32_t region_id, int32_t channel, int32_t num_bins) {
+CARTA::SetHistogramRequirements Message::SetHistogramRequirements(
+    int32_t file_id, int32_t region_id, const std::string& coordinate, int32_t channel, int32_t num_bins) {
     CARTA::SetHistogramRequirements set_histogram_requirements;
     set_histogram_requirements.set_file_id(file_id);
     set_histogram_requirements.set_region_id(region_id);
     auto* histograms = set_histogram_requirements.add_histograms();
+    histograms->set_coordinate(coordinate);
     histograms->set_channel(channel);
     histograms->set_num_bins(num_bins);
     return set_histogram_requirements;
@@ -267,6 +270,7 @@ CARTA::FloatBounds Message::FloatBounds(float min, float max) {
     return float_bounds;
 }
 
+// not used
 CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
     CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range, bool keep) {
     CARTA::MomentRequest moment_request;
@@ -332,9 +336,10 @@ CARTA::SetSpectralRequirements_SpectralConfig Message::SpectralConfig(const std:
     return spectral_config;
 }
 
-CARTA::FileListRequest Message::FileListRequest(const std::string& directory) {
+CARTA::FileListRequest Message::FileListRequest(const std::string& directory, const CARTA::FileListFilterMode filter_mode) {
     CARTA::FileListRequest file_list_request;
     file_list_request.set_directory(directory);
+    file_list_request.set_filter_mode(filter_mode);
     return file_list_request;
 }
 
@@ -447,9 +452,27 @@ CARTA::ChannelMapFlowControl Message::ChannelMapFlowControl(int32_t file_id, int
     return message;
 }
 
-CARTA::EventType Message::EventType(std::vector<char>& message) {
-    carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
-    return static_cast<CARTA::EventType>(head.type);
+carta::EventHeader Message::GetEventHeader(std::string_view message) {
+    return *reinterpret_cast<const carta::EventHeader*>(message.data());
+}
+
+/**
+ * @note This function creates a binary buffer containing a CARTA::EventHeader followed by the serialized protobuf message.
+ * The header includes the event type, protocol version, and event/request ID.
+ */
+std::vector<char> Message::EncodeMessage(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message) {
+    size_t message_length = message.ByteSizeLong();
+    size_t required_size = sizeof(carta::EventHeader) + message_length;
+
+    std::vector<char> msg(required_size);
+    carta::EventHeader* header = reinterpret_cast<carta::EventHeader*>(msg.data());
+    header->type = event_type;
+    header->icd_version = carta::ICD_VERSION;
+    header->request_id = event_id;
+
+    message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
+
+    return msg;
 }
 
 CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
@@ -468,7 +491,7 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = std::nan("");
+            double nan_value = DOUBLE_NAN;
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -786,7 +809,7 @@ void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA:
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = std::nan("");
+                value = DOUBLE_NAN;
             }
         }
 

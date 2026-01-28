@@ -64,7 +64,9 @@ The RPM beta package uses a custom install location in `/opt`, and can be instal
 ### Obtaining the source
 
 This repository includes several dependencies as submodules:
-* [The protocol buffer definitions](carta-protobuf) for communication between the backend and frontend.
+* [µWebSockets](https://github.com/uNetworking/uWebSockets) and its dependency [µSockets](https://github.com/uNetworking/uSockets) for communicating with the frontend
+* [CARTA protocol buffer messages](carta-protobuf) define the interface for this communication
+* [CARTA JSON schemas](schemas) define JSON objects used by CARTA components
 * [cxxopts](https://github.com/jarro2783/cxxopts) for parsing commandline options
 * [nlohmann/json](https://github.com/nlohmann/json) for parsing JSON
 * [pugixml](https://github.com/zeux/pugixml) for parsing XML
@@ -75,20 +77,16 @@ Two submodules are not required for building the main source:
 * [image-generator](https://github.com/idia-astro/image-generator) for creating FITS images (from the unit tests; soon to be deprecated)
 * [Doxygen Awesome](https://github.com/jothepro/doxygen-awesome-css), a Doxygen stylesheet (for generating the developer documentation)
 
-You can fetch the submodule contents when you clone the repository:
-```shell
-git clone --recurse-submodules https://github.com/CARTAvis/carta-backend.git
-cd carta-backend
-```
-
-Alternatively, you can update them after cloning:
+You can fetch the submodule contents after you clone the repository:
 ```shell
 git clone https://github.com/CARTAvis/carta-backend.git
 cd carta-backend
-git submodule update --init --recursive
+git submodule update --init
 ```
 
-If you use `git pull` to update an existing checkout of this repository, make sure that you also use `git submodule update` to fetch the appropriate versions of the submodule code.
+We do not recommend fetching the submodules recursively, as this will cause several large unused nested dependencies to be downloaded.
+
+If you use `git pull` to update an existing checkout of this repository, make sure that you also use `git submodule update --init` to fetch the appropriate versions of the submodule code.
 
 ### External dependencies
 

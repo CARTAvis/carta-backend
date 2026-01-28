@@ -12,8 +12,9 @@
 #include <vector>
 
 #include "../Logger/Logger.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include "ThreadManager/ThreadManager.h"
 #include "Timer/Timer.h"
+#include "Util/Nan.h"
 
 namespace carta {
 
@@ -22,17 +23,14 @@ double NormPdf(double x, double sigma) {
     return exp(-0.5 * x * x / (sigma * sigma)) / sigma;
 }
 
-// get array with gaussian distribution, with mean at the middle of the array
-void MakeKernel(vector<float>& kernel, double sigma) {
+void MakeKernel(std::vector<float>& kernel, double sigma) {
     const int kernel_radius = (kernel.size() - 1) / 2;
     for (int j = 0; j <= kernel_radius; ++j) {
         kernel[kernel_radius + j] = kernel[kernel_radius - j] = NormPdf(j, sigma);
     }
 }
 
-// apply kernel to data
-// the vertical parameter specifies if the kernel is applied in the vertical direction or in the horizontal direction
-bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_data, const int64_t src_width, const int64_t src_height,
+bool RunKernel(const std::vector<float>& kernel, const float* src_data, float* dest_data, const int64_t src_width, const int64_t src_height,
     const int64_t dest_width, const int64_t dest_height, const bool vertical) {
     const int64_t kernel_radius = (kernel.size() - 1) / 2;
 
@@ -119,7 +117,7 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
             for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
                 int64_t src_index = src_x + i * jump_size + src_width * src_y;
                 float val = src_data[src_index];
-                if (!isnan(val)) {
+                if (!std::isnan(val)) {
                     float w = kernel[i + kernel_radius];
                     sum += val * w;
                     weight += w;
@@ -128,7 +126,7 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
             if (weight > 0.0) {
                 sum /= weight;
             } else {
-                sum = NAN;
+                sum = FLOAT_NAN;
             }
             dest_data[dest_index] = sum;
         }
@@ -161,7 +159,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     if (target_buffer_height < 4 * apron_height) {
         target_buffer_height = 4 * apron_height;
     }
-    int64_t buffer_height = min(target_buffer_height, src_height);
+    int64_t buffer_height = std::min(target_buffer_height, src_height);
 
     int64_t line_offset = 0;
     Timer t;
@@ -193,8 +191,8 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         for (int64_t i = 0; i < dest_width; i++) {
             auto src_index = (j + apron_height) * src_width + (i + apron_height);
             auto origVal = src_data[src_index];
-            if (isnan(origVal)) {
-                dest_data[j * dest_width + i] = NAN;
+            if (std::isnan(origVal)) {
+                dest_data[j * dest_width + i] = FLOAT_NAN;
             }
         }
     }
@@ -239,8 +237,8 @@ bool BlockSmoothSSE(const float* src_data, float* dest_data, int64_t src_width, 
             __m128 v1 = _mm_set_ps1(1.0f);
             __m128 count = v0, total = v0;
 
-            int rows_left = min(smoothing_factor, (int)(src_height - image_row));
-            int columns_left = min(smoothing_factor, (int)(src_width - image_col));
+            int rows_left = std::min(smoothing_factor, (int)(src_height - image_row));
+            int columns_left = std::min(smoothing_factor, (int)(src_width - image_col));
             int blocks_left = columns_left / 4;
 
             for (auto row_index = 0; row_index < rows_left; row_index++) {
@@ -277,7 +275,7 @@ bool BlockSmoothSSE(const float* src_data, float* dest_data, int64_t src_width, 
                 }
             }
 
-            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : FLOAT_NAN;
         }
     }
     return true;
@@ -300,8 +298,8 @@ bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, 
 
             __m256 count = v0, total = v0;
 
-            int rows_left = min(smoothing_factor, (int)(src_height - image_row));
-            int columns_left = min(smoothing_factor, (int)(src_width - image_col));
+            int rows_left = std::min(smoothing_factor, (int)(src_height - image_row));
+            int columns_left = std::min(smoothing_factor, (int)(src_width - image_col));
             int blocks_left = columns_left / 8;
 
             for (auto row_index = 0; row_index < rows_left; row_index++) {
@@ -332,7 +330,7 @@ bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, 
                     }
                 }
             }
-            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : FLOAT_NAN;
         }
     }
     return true;
@@ -349,10 +347,10 @@ bool BlockSmoothScalar(const float* src_data, float* dest_data, int64_t src_widt
             float pixel_sum = 0;
             int pixel_count = 0;
             int64_t image_row = y_offset + (j * smoothing_factor);
-            auto rows_left = min(smoothing_factor, (int)(src_height - image_row));
+            auto rows_left = std::min(smoothing_factor, (int)(src_height - image_row));
             for (int64_t pixel_y = 0; pixel_y < rows_left; pixel_y++) {
                 int64_t image_col = x_offset + (i * smoothing_factor);
-                auto cols_left = min(smoothing_factor, (int)(src_width - image_col));
+                auto cols_left = std::min(smoothing_factor, (int)(src_width - image_col));
                 for (int64_t pixel_x = 0; pixel_x < cols_left; pixel_x++) {
                     float pix_val = src_data[(image_row * src_width) + image_col];
                     if (std::isfinite(pix_val)) {
@@ -363,7 +361,7 @@ bool BlockSmoothScalar(const float* src_data, float* dest_data, int64_t src_widt
                 }
                 image_row++;
             }
-            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : FLOAT_NAN;
         }
     }
     return true;

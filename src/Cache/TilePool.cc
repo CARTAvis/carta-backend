@@ -6,6 +6,7 @@
 
 #include "Cache/TilePool.h"
 #include "Util/Image.h"
+#include "Util/Nan.h"
 
 using namespace carta;
 

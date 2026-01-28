@@ -4,10 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 #include <gtest/gtest.h>
-
-#include "Table/Table.h"
-
 #include "CommonTestUtilities.h"
+#include "Table/Table.h"
 
 using namespace carta;
 

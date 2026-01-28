@@ -14,6 +14,7 @@
 #include "DataStream/Smoothing.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
+#include "Util/Nan.h"
 
 #define LOAD_DATA_PROGRESS_INTERVAL 1000
 
@@ -164,7 +165,7 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
 
     // Initialize profile to channels in preview image
     size_t nchan = _preview_image->shape()(_preview_image->coordinates().spectralAxisNumber());
-    profile.resize(nchan, NAN);
+    profile.resize(nchan, FLOAT_NAN);
     std::vector<double> npix_per_chan(nchan, 0.0);
     auto data_shape = _cube_data.shape();
     auto mask_shape = mask.shape();
@@ -173,7 +174,7 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
         double chan_sum(0.0);
         for (size_t ix = 0; ix < box_length[0]; ++ix) {
             for (size_t iy = 0; iy < box_length[1]; ++iy) {
-                // Accumulate if pixel in region (mask=true) and is not NAN or inf
+                // Accumulate if pixel in region (mask=true) and is not NaN or inf
                 if (!mask.getAt(casacore::IPosition(2, ix, iy))) {
                     continue;
                 }
@@ -238,7 +239,7 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
         size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
         size_t rebin_nchan = std::ceil((float)nchan / (float)rebin_z);
         _cube_data.resize(casacore::IPosition(3, rebin_width, rebin_height, rebin_nchan));
-        _cube_data = NAN;
+        _cube_data = FLOAT_NAN;
 
         casacore::IPosition rebin_channel_shape(2, rebin_width, rebin_height);
         size_t rebin_channel_size = rebin_width * rebin_height;

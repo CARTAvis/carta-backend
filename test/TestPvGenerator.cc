@@ -422,30 +422,30 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     CARTA::PvResponse pv_response;
     carta::GeneratedImage pv_image;
     region_handler.CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image);
-    // Check PV image file_id and name
-    int index(0);
+
+    // Check PV image success and name
     EXPECT_TRUE(pv_response.success());
     EXPECT_TRUE(pv_image.name.find("pv.fits") != std::string::npos);
 
-    // Request PV image, keeping the first
+    // Request PV image for same region, keeping the first
     keep = true;
     pv_request = Message::PvRequest(file_id, region_id, width, z_min, z_max, reverse, keep);
     CARTA::PvResponse pv_response2;
     carta::GeneratedImage pv_image2;
     region_handler.CalculatePvImage(pv_request, frame, progress_callback, pv_response2, pv_image2);
-    // Check PV image file_id and name
-    index++;
+    // Check PV image success and name
     EXPECT_TRUE(pv_response2.success());
     EXPECT_TRUE(pv_image2.name.find("pv1.fits") != std::string::npos);
 
-    // Request PV image, replace all and reset index
+    // Move region and request PV image, replacing previous PV images
     keep = false;
+    endpoints = {0.0, 9.0, 9.0, 0.0};
+    SetPvCut(region_handler, file_id, region_id, endpoints, csys);
     pv_request = Message::PvRequest(file_id, region_id, width, z_min, z_max, reverse, keep);
     CARTA::PvResponse pv_response3;
     carta::GeneratedImage pv_image3;
     region_handler.CalculatePvImage(pv_request, frame, progress_callback, pv_response3, pv_image3);
-    // Check PV image file_id and name
-    index = 0;
+    // Check PV image success and name
     EXPECT_TRUE(pv_response3.success());
     EXPECT_TRUE(pv_image3.name.find("pv.fits") != std::string::npos);
 }
@@ -520,4 +520,49 @@ TEST_F(PvGeneratorTest, FitsPvPolyLine) {
     EXPECT_FALSE(pv_response2.success());
     EXPECT_FALSE(pv_response2.cancel());
     EXPECT_EQ(pv_image2.image.get(), nullptr);
+}
+
+TEST_F(PvGeneratorTest, PvPreview) {
+    auto image_path = FileFinder::FitsImagePath("noise_3d.fits"); // 10x10x10 image
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    auto csys = frame->CoordinateSystem();
+
+    // Set line region [0, 0] to [9, 9]
+    carta::RegionHandler region_handler;
+    int file_id(0), region_id(-1);
+    std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
+    SetPvCut(region_handler, file_id, region_id, endpoints, csys);
+
+    // Request PV preview
+    int width(3), z_min(0), z_max(9); // all channels
+    bool reverse(false);
+    auto pv_request = Message::PvRequest(file_id, region_id, width, z_min, z_max, reverse);
+    auto preview_settings = pv_request.mutable_preview_settings();
+    preview_settings->set_preview_id(0);
+    preview_settings->set_region_id(-1); // box region for SubImage to fit in memory, not needed
+    preview_settings->set_rebin_xy(1);
+    preview_settings->set_rebin_z(1);
+    preview_settings->set_compression_type(CARTA::CompressionType::ZFP);
+    preview_settings->set_image_compression_quality(11);
+    preview_settings->set_animation_compression_quality(9);
+
+    auto progress_callback = [&](float progress) {};
+    CARTA::PvResponse pv_response;
+    carta::GeneratedImage pv_image;
+    region_handler.CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image);
+    EXPECT_TRUE(pv_response.success());
+    EXPECT_FALSE(pv_response.cancel());
+    EXPECT_TRUE(pv_response.has_preview_data());
+    auto preview_data = pv_response.preview_data();
+    EXPECT_EQ(preview_data.preview_id(), 0);
+    EXPECT_FALSE(preview_data.has_image_info()); // added afterwards by Session
+    EXPECT_FALSE(preview_data.image_data().empty());
+    EXPECT_FALSE(preview_data.nan_encodings().empty());
+    EXPECT_EQ(preview_data.width(), 13);
+    EXPECT_EQ(preview_data.height(), 10);
+    EXPECT_EQ(preview_data.compression_type(), CARTA::CompressionType::ZFP);
+    EXPECT_EQ(preview_data.compression_quality(), 11);
+    EXPECT_TRUE(preview_data.has_histogram_bounds());
+    EXPECT_TRUE(preview_data.has_histogram());
 }

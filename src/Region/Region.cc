@@ -132,13 +132,13 @@ std::shared_mutex& Region::GetActiveTaskMutex() {
 // *************************************************************************
 // Apply region to image and return LCRegion, mask or Record
 
-std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> csys,
+std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> image_csys,
     const casacore::IPosition& image_shape, const StokesSource& stokes_source, bool report_error) {
-    // Return lattice-coordinate region applied to image and/or computed stokes.
+    // Return lattice-coordinate region applied to image in Frame and/or computed stokes.
     // Returns nullptr if is annotation, is not a closed region (line/polyline), or outside image.
     std::shared_ptr<casacore::LCRegion> lcregion;
 
-    if (IsAnnotation() || IsLineType()) {
+    if (IsAnnotation() || IsLineType() || image_shape.empty()) { // no image shape if invalid stokes
         return lcregion;
     }
 
@@ -147,7 +147,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
 
     if (!lcregion) {
         if (IsInReferenceImage(file_id)) {
-            if (!_lcregion_set) {
+            if (!_lcregion_set || Stokes::IsComputed(stokes_source.stokes)) {
                 // Create LCRegion from TableRecord
                 casacore::TableRecord region_record;
                 if (GetRegionState().IsRotbox()) {
@@ -162,19 +162,21 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 } catch (const casacore::AipsError& err) {
                     // Region is outside image
                 }
-                _lcregion_set = true;
 
-                // Cache LCRegion
-                if (lcregion && stokes_source.IsOriginalImage()) {
-                    std::lock_guard<std::mutex> guard(_lcregion_mutex);
-                    _lcregion = lcregion;
+                // Cache LCRegion and set flag
+                if (stokes_source.IsOriginalImage()) {
+                    if (lcregion) {
+                        std::lock_guard<std::mutex> guard(_lcregion_mutex);
+                        _lcregion = lcregion;
+                    }
+                    _lcregion_set = true; // attempt was made even if lcregion failed (outside image)
                 }
             }
         } else {
             if (!_region_converter) {
                 _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
             }
-            return _region_converter->GetImageRegion(file_id, csys, image_shape, stokes_source, report_error);
+            return _region_converter->GetImageRegion(file_id, image_csys, image_shape, stokes_source, report_error);
         }
     }
 
@@ -401,16 +403,18 @@ void Region::CompleteRegionRecord(casacore::TableRecord& record, const casacore:
         record.define("comment", "");
         record.define("oneRel", false); // control points are 0-based
 
-        casacore::Vector<int> record_shape;
-        if (_region_state.IsPoint()) {
-            // LCBox uses entire image shape
-            record_shape = image_shape.asVector();
-        } else {
-            // Other regions use 2D shape
-            record_shape.resize(2);
-            record_shape(0) = image_shape(0);
-            record_shape(1) = image_shape(1);
+        if (!image_shape.empty()) {
+            casacore::Vector<int> record_shape;
+            if (_region_state.IsPoint()) {
+                // LCBox uses entire image shape
+                record_shape = image_shape.asVector();
+            } else {
+                // Other regions use 2D shape
+                record_shape.resize(2);
+                record_shape(0) = image_shape(0);
+                record_shape(1) = image_shape(1);
+            }
+            record.define("shape", record_shape);
         }
-        record.define("shape", record_shape);
     }
 }
