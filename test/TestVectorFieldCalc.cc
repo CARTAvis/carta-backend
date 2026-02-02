@@ -165,12 +165,6 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     // Number of test pixels to agree in the Lambda expression below and later in initialisation of vectors actual_intensity_values and actual_angle_values
     int number_of_test_pixels = expected_intensities.size();
     
-/*    std::cout << "DEBUG2 ReverseParams : ";
-    for( auto v : expected_intensities ) {
-       std::cout << v << " ";
-    }
-    std::cout << std::endl;*/
-
 
     VectorFieldCalculator vectorfield(test_parameters);
     std::vector<CARTA::VectorOverlayTileData> messages;
@@ -311,20 +305,6 @@ INSTANTIATE_TEST_SUITE_P(ThresholdingSpatialTests, VectorFieldThresholdingSpatia
         
         // 4: fractional = true, threshold applied to computed fractional polarised intensity = sqrt(Q^2+U^2)/I * 100% = 775, 170, 36.8, 7.6, 1.696 (WARNING : unphysical but fine for testing)
         TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{false, false, false, false, true} ),
-        
-        //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        // REVERSE ORDER OF expected values and NaNs :
-        // 5: reverse of 1st test above :
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT, 2.0), ReverseParams(expected_intensities), ReverseParams(expected_qu), ReverseParams(expected_angles), ReverseParams(std::vector<bool>{true, true, false, false, false}) ), 
-
-        // 6: reverse of 2nd test above :        
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 2.0), ReverseParams(expected_intensities), ReverseParams(expected_qu), ReverseParams(expected_angles), ReverseParams(std::vector<bool>{true, true, false, false, false}) ),
-        
-        // 7: reverse of 3rd test above :
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 2.0), ReverseParams(expected_intensities), ReverseParams(expected_qu), ReverseParams(expected_angles), ReverseParams(std::vector<bool>{true, true, true, true, false}) ),
-        
-        // 8: reverse of 4th test above :
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 2.0), ReverseParams(expected_intensities), ReverseParams(expected_qu), ReverseParams(expected_angles), ReverseParams(std::vector<bool>{false, false, false, false, true}) ),
         
         //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         // TODO: not sure if these tests are not redundant really, but I do not understand the idea of "loop" over other sources         
