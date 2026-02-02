@@ -26,7 +26,7 @@ std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
     {CARTA::PolarizationType::I, 2}, {CARTA::PolarizationType::Q, 3}, {CARTA::PolarizationType::U, 4}, {CARTA::PolarizationType::V, 5}};
 
 CARTA::SetVectorOverlayParameters SourceTestMessage(
-    int intensity = COMPUTED, int angle = COMPUTED, bool fractional = false, float u_error = 0, float q_error = 0, int treshold_source = NONE, float threshold = -1) {
+    int intensity = COMPUTED, int angle = COMPUTED, bool fractional = false, float u_error = 0, float q_error = 0, int threshold_source = NONE, float threshold = -1) {
     CARTA::SetVectorOverlayParameters message;
     message.set_stokes_intensity(intensity);
     message.set_stokes_angle(angle);
@@ -38,7 +38,7 @@ CARTA::SetVectorOverlayParameters SourceTestMessage(
 
    
     // TODO : when set to 1e20 or 1000  -> FillTileData fills everything with NaNs !!!??? std::nan here does not compile
-    message.set_threshold_option((CARTA::PolarizationType)treshold_source);
+    message.set_threshold_option((CARTA::PolarizationType)threshold_source);
     if (threshold > 0 ) {
        message.set_threshold(threshold); 
     } else {
@@ -68,11 +68,6 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
     auto callback = [&messages](CARTA::VectorOverlayTileData& message) {
-        // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " <<
-        // message.angle_tiles_size() << std::endl;
-        EXPECT_EQ(message.intensity_tiles_size(), 1);
-        EXPECT_EQ(message.angle_tiles_size(), 1);
-
         // copy messages :
         messages.push_back(message);
     };
@@ -101,6 +96,8 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
     // check if intensities are as expected:
     for (auto message : messages) {
+        // check if there is exactly 1 intensity tile:
+        EXPECT_EQ(message.intensity_tiles_size(), 1);    
         auto data = message.intensity_tiles(0).image_data();
         auto float_data = reinterpret_cast<const float*>(data.data());
         int float_size = data.size() / sizeof(float);
@@ -113,6 +110,8 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
         }
         // std::cout << "TEST intesities : " << actual_intensity_values[0] << " float_size = " << float_size << std::endl;
 
+        // check if there is exactly 1 angle time:
+        EXPECT_EQ(message.angle_tiles_size(), 1);
         data = message.angle_tiles(0).image_data();
         float_data = reinterpret_cast<const float*>(data.data());
         float_size = data.size() / sizeof(float);
@@ -178,11 +177,6 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
 
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
     auto callback = [&messages](CARTA::VectorOverlayTileData& message) {
-        // std::cout << "DEBUG : received a message intensity tile size = " << message.intensity_tiles_size() << " , angle tile size = " <<
-        // message.angle_tiles_size() << std::endl;
-        EXPECT_EQ(message.intensity_tiles_size(), 1);
-        EXPECT_EQ(message.angle_tiles_size(), 1);
-
         // copy messages :
         messages.push_back(message);
     };
@@ -250,6 +244,8 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     
     // check if intensities are as expected:
     for (auto message : messages) {
+        // check if there is exactly 1 intensity tile:
+        EXPECT_EQ(message.intensity_tiles_size(), 1);
         auto data = message.intensity_tiles(0).image_data();
         auto float_data = reinterpret_cast<const float*>(data.data());
         int float_size = data.size() / sizeof(float);
@@ -268,6 +264,8 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
            }
         }        
         
+        // check if there is exactly 1 angle tile:
+        EXPECT_EQ(message.angle_tiles_size(), 1);
         data = message.angle_tiles(0).image_data();
         float_data = reinterpret_cast<const float*>(data.data());
         float_size = data.size() / sizeof(float);
