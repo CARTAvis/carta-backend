@@ -27,7 +27,7 @@ runs:
         cd $ICD_DIR
         for test_file in $(cat ICD_test_stages/${{ inputs.test_stage_name }}.tests); do
           if CI=true npm test "$test_file"; then
-            echo "$test_file 1st attempt"
+            echo "$test_file 1st attempt: PASS"
           else
             echo "Failed: $test_file - retrying ..."
             sleep 3
