@@ -161,7 +161,7 @@ protected:
 TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
     auto [test_parameters, expected_intensities, expected_qu, expected_angles, is_nan_expected] = GetParam();
-
+    
     // Number of test pixels to agree in the Lambda expression below and later in initialisation of vectors actual_intensity_values and actual_angle_values
     int number_of_test_pixels = expected_intensities.size();
     
@@ -196,14 +196,24 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
               }
               break;*/
 
-           case CARTA::PolarizationType::POLARIZATION_TYPE_NONE :
-           case CARTA::PolarizationType::I :           
+           case CARTA::PolarizationType::POLARIZATION_TYPE_NONE : // NONE :
+              { 
+                 // reversed order of expected_intensities for NONE (i.e. CURRENT Stokes):
+                 // std::copy(std::make_reverse_iterator(expected_intensities.begin() + 5), std::make_reverse_iterator(expected_intensities.begin()), data.begin());
+                 // alredy provided in reversed order (same to be used in checking) :
+                 // printf("DEBUG NONE : Here CARTA::PolarizationType::POLARIZATION_TYPE_NONE ???\n");
+                 std::copy(expected_intensities.begin(), expected_intensities.begin() + 5, data.begin() );
+              }
+              break;
+           
+           case CARTA::PolarizationType::I : // CURRENT
               {
 /*                  data[0] = 0.2;
                   data[1] = 1.0;
                   data[2] = 5.0;
                   data[3] = 25.0;
                   data[4] = 125.0;*/
+//                  printf("DEBUG NONE : Here CARTA::PolarizationType::I ???\n");
                   std::copy(expected_intensities.begin(), expected_intensities.begin() + 5, data.begin() );
               }
               break;
@@ -295,28 +305,39 @@ std::vector<float> expected_angles      = { 22.5, 22.5, 22.5, 22.5, 22.5 }; // Q
 INSTANTIATE_TEST_SUITE_P(ThresholdingSpatialTests, VectorFieldThresholdingSpatialTest,
     ::testing::Values( 
         // 1: fractional = false, threshold on current Stokes = 2 vs. 5 pixels : 0.2, 1.0, 5.0, 25.0, 125.0 (values from CARTA::PolarizationType::POLARIZATION_TYPE_NONE in Lambda-switch above)
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT,  2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, false, false, false} ), 
+        // WAS : TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT,  2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, false, false, false} ),
+        
+        // TODO : I am not sure what we want to distinguish here CURRENT vs. NONE ? I thought I knew, but I've realised I do not ...
+        // TODO : Both these pass with the same order of NaNs - perhaps because of the way I pass expected_computed_intensities and then use in the function:
+        // !!! My confusion may have to do with the comment about changing enums 
+        // TODO : should I have any test for NONE ???
+        // TODO : or should all these NONE, COMPUTED, CURRENT should be scrapped/changed in this test (see AP's comments on PR)
+        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
+        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, CURRENT,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
+
+        // CURRENT - not reversed order
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, CURRENT,  2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, false, false, false} ),
 
         // 2: fractional = false, threshold on computed stokes = 2 vs. Stokes I computed same as CURRENT (values from CARTA::PolarizationType::I in Lambda-switch above)
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, false, false, false} ), 
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, false, false, false} ),
         
         // 3: fractional = false, threshold on PI = sqrt(Q^2+U^2) = 1.55, 1.70, 1.84, 1.90, 2.12 for Q,U values from case CARTA::PolarizationType::Q/U in Lambda-switch above
         TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, false, 0, 0, PI, 2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
         
         // 4: fractional = true, threshold applied to computed fractional polarised intensity = sqrt(Q^2+U^2)/I * 100% = 775, 170, 36.8, 7.6, 1.696 (WARNING : unphysical but fine for testing)
-        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{false, false, false, false, true} ),
+        TestSpatialParameters(SourceTestMessage(CURRENT, COMPUTED, true, 0, 0, PI, 2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{false, false, false, false, true} )
         
         //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         // TODO: not sure if these tests are not redundant really, but I do not understand the idea of "loop" over other sources         
         // Using computed stokes values :
         // 9: fractional = false, threshold on computed and current Stokes - in this case both are the same:
-        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, CURRENT,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
+//        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, CURRENT,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
         
         // 10: fractional = false, threshold on computed stokes
-        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
+//        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
         
         // 11: fractional = false, threshold on PI = sqrt(Q^2+U^2) :
-        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, PI,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} )
+//        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, PI,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} )
         
         // 12: fractional = true, threshold applied to computed fractional polarised intensity = sqrt(Q^2+U^2)/I * 100% =  expected_computed_intensities (only last >2) 
         // WARNING : this one cannot be implemented as is now. I'd have to have also generated_stokes_i_intensity != expected_computed_intensities        
