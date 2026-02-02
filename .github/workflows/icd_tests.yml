@@ -1044,4 +1044,3 @@ jobs:
             - Image-Fitting-ICD-Tests: ${{ needs['Image-Fitting-ICD-Tests'].result }}
             - Vector-Overlay-ICD-Tests: ${{ needs['Vector-Overlay-ICD-Tests'].result }}
             - Resume-ICD-Tests: ${{ needs['Resume-ICD-Tests'].result }}
-
