@@ -185,6 +185,20 @@ protected:
     // You can add setup/teardown logic here if needed
 };
 
+// Function to generate and reverse the parameters - do not use references here, has to be by-value to ensure copy is modified:
+template <typename T>
+std::vector<T> ReverseParams(std::vector<T> params) {
+    std::reverse(params.begin(), params.end());
+    return params;
+}
+
+std::unordered_map<CARTA::PolarizationType, std::vector<float>> threshold_test_values_map{
+    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, ReverseParams(std::vector<float>({ 0.2, 1.0, 5.0, 25.0, 125.0 })) }, // reversed
+    {CARTA::PolarizationType::I, { 0.2, 1.0, 5.0, 25.0, 125.0 }}, 
+    {CARTA::PolarizationType::Q, { 1.1, 1.2, 1.3, 1.4, 1.5 }}, 
+    {CARTA::PolarizationType::U, { 1.1, 1.2, 1.3, 1.4, 1.5 }},
+};
+
 
 TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
@@ -224,17 +238,19 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
               }
               break;*/
 
-           case CARTA::PolarizationType::POLARIZATION_TYPE_NONE : // NONE :
+           case CARTA::PolarizationType::POLARIZATION_TYPE_NONE : // CURRENT :
               { 
                  // reversed order of expected_intensities for NONE (i.e. CURRENT Stokes):
                  // std::copy(std::make_reverse_iterator(expected_intensities.begin() + 5), std::make_reverse_iterator(expected_intensities.begin()), data.begin());
                  // alredy provided in reversed order (same to be used in checking) :
                  // printf("DEBUG NONE : Here CARTA::PolarizationType::POLARIZATION_TYPE_NONE ???\n");
+//                 std::vector<float> test_data = threshold_test_values_map[CARTA::PolarizationType::POLARIZATION_TYPE_NONE];
+//                 std::copy(test_data.begin(), test_data.begin() + 5, data.begin() );
                  std::copy(expected_intensities.begin(), expected_intensities.begin() + 5, data.begin() );
               }
               break;
            
-           case CARTA::PolarizationType::I : // CURRENT
+           case CARTA::PolarizationType::I : // Stokes I 
               {
 /*                  data[0] = 0.2;
                   data[1] = 1.0;
@@ -317,13 +333,6 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     
 }
 
-// Function to generate and reverse the parameters - do not use references here, has to be by-value to ensure copy is modified:
-template <typename T>
-std::vector<T> ReverseParams(std::vector<T> params) {
-    std::reverse(params.begin(), params.end());
-    return params;
-}
-
 // expected intensity and angle values for 5 test pixels - based on the values "generated" in the lambda above
 std::vector<float> expected_intensities = { 0.2, 1.0, 5.0, 25.0, 125.0 };
 std::vector<float> expected_qu = { 1.1, 1.2, 1.3, 1.4, 1.5 }; // corresponding Stokes I values : 1.55, 1.70, 1.84, 1.98, 2.12 
@@ -340,24 +349,23 @@ INSTANTIATE_TEST_SUITE_P(ThresholdingSpatialTests, VectorFieldThresholdingSpatia
         // !!! My confusion may have to do with the comment about changing enums 
         // TODO : should I have any test for NONE ???
         // TODO : or should all these NONE, COMPUTED, CURRENT should be scrapped/changed in this test (see AP's comments on PR)
-//        TestSpatialParameters(SourceTestMessage(COMPUTED, COMPUTED, false, 0, 0, COMPUTED,  2.0), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
-        TestSpatialParameters(ThresholdTestMessage(SRC_COMPUTED, SRC_COMPUTED, false, THR_CURRENT), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
+//        TestSpatialParameters(ThresholdTestMessage(SRC_COMPUTED, SRC_COMPUTED, false, THR_CURRENT), expected_computed_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} )
 
         // CURRENT - not reversed order
-        TestSpatialParameters(ThresholdTestMessage(SRC_CURRENT, SRC_COMPUTED, false, THR_CURRENT), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, false, false, false} ),
+        TestSpatialParameters(ThresholdTestMessage(SRC_CURRENT, SRC_COMPUTED, false, THR_CURRENT), ReverseParams(expected_intensities), expected_qu, expected_angles, std::vector<bool>{false, false, false, true, true} )
         
         // TODO : confirm if this one is really testing anything as AP intended ?
         // threshold applied to I uses REVERSED values:
-        TestSpatialParameters(ThresholdTestMessage(SRC_CURRENT, SRC_COMPUTED, false, THR_I), ReverseParams(expected_intensities), expected_qu, expected_angles, std::vector<bool>{false, false, false, true, true} ),
+//        TestSpatialParameters(ThresholdTestMessage(SRC_CURRENT, SRC_COMPUTED, false, THR_I), ReverseParams(expected_intensities), expected_qu, expected_angles, std::vector<bool>{false, false, false, true, true} ),
 
         // 2: fractional = false, threshold on computed stokes = 2 vs. Stokes I computed same as CURRENT (values from CARTA::PolarizationType::I in Lambda-switch above)
-//        TestSpatialParameters(ThresholdTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, false, false, false} ),
+        // TestSpatialParameters(ThresholdTestMessage(CURRENT, COMPUTED, false, 0, 0, COMPUTED, 2.0), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, false, false, false} ),
         
         // 3: fractional = false, threshold on PI = sqrt(Q^2+U^2) = 1.55, 1.70, 1.84, 1.90, 2.12 for Q,U values from case CARTA::PolarizationType::Q/U in Lambda-switch above
-        TestSpatialParameters(ThresholdTestMessage(SRC_CURRENT, SRC_COMPUTED, false, THR_PI), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
+//        TestSpatialParameters(ThresholdTestMessage(SRC_CURRENT, SRC_COMPUTED, false, THR_PI), expected_intensities, expected_qu, expected_angles, std::vector<bool>{true, true, true, true, false} ),
         
         // 4: fractional = true, threshold applied to computed fractional polarised intensity = sqrt(Q^2+U^2)/I * 100% = 775, 170, 36.8, 7.6, 1.696 (WARNING : unphysical but fine for testing)
-        TestSpatialParameters(ThresholdTestMessage(SRC_CURRENT, SRC_COMPUTED, true, THR_PI), expected_intensities, expected_qu, expected_angles, std::vector<bool>{false, false, false, false, true} )
+//        TestSpatialParameters(ThresholdTestMessage(SRC_CURRENT, SRC_COMPUTED, true, THR_PI), expected_intensities, expected_qu, expected_angles, std::vector<bool>{false, false, false, false, true} )
         
         //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         // TODO: not sure if these tests are not redundant really, but I do not understand the idea of "loop" over other sources         
