@@ -28,7 +28,6 @@
 #include "Util/File.h"
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
-#include "Util/Message.h"
 
 using namespace carta;
 
@@ -92,7 +91,6 @@ bool FileExtInfoLoader::FillFileExtInfo(
     // Set name from filename
     fs::path filepath(filename);
     std::string filename_nopath = filepath.filename().string();
-
     auto entry = extended_info.add_computed_entries();
     entry->set_name("Name");
     entry->set_value(filename_nopath);
@@ -179,10 +177,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                             entry->set_entry_type(CARTA::EntryType::STRING);
                         }
                     } else {
-                        auto entry = extended_info.add_computed_entries();
-                        entry->set_name("HDU");
-                        entry->set_value(hdu);
-                        entry->set_entry_type(CARTA::EntryType::STRING);
+                        AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                     }
                 } else if (image_type == "CartaFitsImage") {
                     CartaFitsImage* fits_image = dynamic_cast<CartaFitsImage*>(image.get());

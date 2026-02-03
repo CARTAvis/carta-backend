@@ -1511,7 +1511,7 @@ bool RegionHandler::FillSpectralProfileData(
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
                     report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                         auto profile_message = Message::SpectralProfileData(
-                            stokes_index, progress, config_file_id, config_region_id, coordinate, required_stats, results);
+                            config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
                         cb(profile_message); // send (partial profile) data
                     });
             }
@@ -1910,20 +1910,24 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
         ulock.unlock();
 
         // Get file ids in spatial profile configurations
-        auto config_file_ids = spatial_profile->GetConfigFileIds(file_id);
-        if (config_file_ids.empty()) {
-            continue;
+        std::vector<int> spatial_file_ids;
+        if (file_id > ALL_FILES) {
+            spatial_file_ids.push_back(file_id);
+        } else {
+            spatial_file_ids = spatial_profile->GetConfigFileIds(file_id);
+            if (spatial_file_ids.empty()) {
+                continue;
+            }
         }
 
-        profile_ok = GetLineSpatialData(
-            file_id, region_id, coordinate, stokes_index, width, [&](std::vector<float>& profile, casacore::Quantity& increment) {
-                auto profile_message = Message::SpatialProfileData(x, y, channel, stokes_index, value);
-                Message::AddProfile(profile_message, file_id, region_id, start, profile, coordinate, mip, axis_type, increment);
+        for (int spatial_file_id : spatial_file_ids) {
+            // Get statistics for specific region and file ids (input ids may be ALL)
+            if (!RegionFileIdsValid(spatial_region_id, spatial_file_id)) {
+                continue;
+            }
 
-                cb(profile_message);
-            });
-        spdlog::performance("Fill line spatial profile in {:.3f} ms", t.Elapsed().ms());
-    }
+            auto frame = _frames.at(spatial_file_id);
+            int z = frame->CurrentZ();
 
             std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_configs;
             if (!spatial_profile->GetConfigurations(spatial_file_id, spatial_configs)) {

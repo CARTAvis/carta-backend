@@ -19,7 +19,6 @@
 #include "Timer/ListProgressReporter.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
-#include "Util/Message.h"
 
 #define INVALID_PATH_VALUE \
     { '\0' }
