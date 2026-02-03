@@ -93,7 +93,7 @@ bool FileExtInfoLoader::FillFileExtInfo(
     fs::path filepath(filename);
     std::string filename_nopath = filepath.filename().string();
 
-    Message::AddComputedEntry(extended_info, "Has Name", filename_nopath);
+    Message::AddComputedEntry(extended_info, "Name", filename_nopath);
 
     // Fill header_entries, computed_entries
     bool info_ok(false);
@@ -814,8 +814,9 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         }
 
         if (!reference_pixels.empty()) {
-            Message::AddComputedEntry(extended_info, "Image reference pixels",
-                fmt::format("[{}, {}]", reference_pixels(axes.x) + 1.0, reference_pixels(axes.y) + 1.0));
+            auto name = fmt::format("Image reference pixel");
+            auto value = fmt::format("[{}, {}]", reference_pixels(axes.x) + 1.0, reference_pixels(axes.y) + 1.0);
+            Message::AddComputedEntry(extended_info, name, value);
         }
 
         if (!reference_values.empty() && !axis_units.empty() && !axis_names.empty()) {
@@ -851,7 +852,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
 
         casacore::String brightness_unit(image->units().getName());
         if (!brightness_unit.empty()) {
-            Message::AddComputedEntry(extended_info, "Brightness unit", brightness_unit);
+            Message::AddComputedEntry(extended_info, "Pixel unit", brightness_unit);
         }
 
         if (coord_system.hasDirectionCoordinate()) {
@@ -1484,8 +1485,9 @@ void FileExtInfoLoader::AddCoordRanges(
                 } else if (axis_names(spatial_axes[0]) == "Longitude") {
                     axis_names(spatial_axes[0]) = "LON";
                 }
-                Message::AddComputedEntry(
-                    extended_info, fmt::format("{} range", axis_names(spatial_axes[0])), fmt::format("[{}, {}]", x_start, x_end));
+                auto name = fmt::format("{} range", axis_names(spatial_axes[0]));
+                auto value = fmt::format("[{}, {}]", x_start, x_end);
+                Message::AddComputedEntry(extended_info, name, value);
             }
 
             if (spatial_axes[1] > -1 && spatial_axes[1] < axis_names.size()) {
@@ -1494,8 +1496,9 @@ void FileExtInfoLoader::AddCoordRanges(
                 } else if (axis_names(spatial_axes[1]) == "Latitude") {
                     axis_names(spatial_axes[1]) = "LAT";
                 }
-                Message::AddComputedEntry(
-                    extended_info, fmt::format("{} range", axis_names(spatial_axes[1])), fmt::format("[{}, {}]", y_start, y_end));
+                auto name = fmt::format("{} range", axis_names(spatial_axes[1]));
+                auto value = fmt::format("[{}, {}]", y_start, y_end);
+                Message::AddComputedEntry(extended_info, name, value);
             }
         }
     }

@@ -440,7 +440,7 @@ std::vector<char> Message::EncodeMessage(CARTA::EventType event_type, uint32_t e
     return msg;
 }
 
-CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress, int32_t file_id, int32_t region_id,
+CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
     const std::string& coordinate, const std::vector<CARTA::StatsType>& required_stats,
     const std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
     CARTA::SpectralProfileData profile_message;
@@ -458,8 +458,10 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float pr
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
             double nan_value = DOUBLE_NAN;
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
-        } else {
+        } else if (spectral_data.at(stats_type).empty()) {
             new_profile->set_raw_values_fp64(spectral_data.at(stats_type).data(), spectral_data.at(stats_type).size() * sizeof(double));
+        } else {
+            new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
         }
     }
     return profile_message;
@@ -491,8 +493,11 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t r
     return profile_message;
 }
 
-CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value) {
+CARTA::SpatialProfileData Message::SpatialProfileData(
+    int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel, int32_t stokes, float value) {
     CARTA::SpatialProfileData message;
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
     message.set_x(x);
     message.set_y(y);
     message.set_channel(channel);
@@ -652,6 +657,15 @@ CARTA::ImportRegionAck Message::ImportRegionAck(bool success, const std::string&
     return import_region_ack;
 }
 
+CARTA::RegionInfo Message::AddRegion(
+    CARTA::RegionType region_type, const std::vector<CARTA::Point>& control_points, float rotation = 0.0f) {
+    CARTA::RegionInfo region_info;
+    region_info.set_region_type(region_type);
+    *region_info.mutable_control_points() = {control_points.begin(), control_points.end()};
+    region_info.set_rotation(rotation);
+    return region_info;
+}
+
 CARTA::RegionStatsData Message::RegionStatsData(int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes) {
     CARTA::RegionStatsData message;
     message.set_file_id(file_id);
@@ -706,14 +720,6 @@ CARTA::FileListResponse Message::AddDirectory(CARTA::FileListResponse& response,
     return response;
 }
 
-CARTA::FileInfoExtended Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
-    auto entry = response.add_computed_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(CARTA::EntryType::STRING);
-    return response;
-}
-
 CARTA::FileInfoExtended Message::AddComputedEntry(
     CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
     auto entry = response.add_computed_entries();
@@ -724,27 +730,17 @@ CARTA::FileInfoExtended Message::AddComputedEntry(
     return response;
 }
 
-CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
-    std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
-    // Set CARTA::RegionInfo
-    CARTA::RegionInfo region_info;
-    region_info.set_region_type(region_type);
-    *region_info.mutable_control_points() = {control_points.begin(), control_points.end()};
-    region_info.set_rotation(region_rotation);
-
-    // Add info and style to import_ack; increment region id for next region
-    (*import_ack.mutable_regions())[region_id] = region_info;
-    (*import_ack.mutable_region_styles())[region_id] = region_style;
-
-    return import_ack;
+CARTA::FileInfoExtended Message::AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
+    auto entry = response.add_header_entries();
+    entry->set_name(name);
+    entry->set_value(value);
+    return response;
 }
 
 CARTA::SpatialProfileData Message::AddProfile(CARTA::SpatialProfileData& message, std::string coordinate, int start, int end,
     casacore::Float* profile_data, size_t profile_size, int mip) {
-    // add SpatialProfile to message
     auto spatial_profile = message.add_profiles();
     spatial_profile->set_coordinate(coordinate);
-    // Should these be set to the rounded endpoints if the data is downsampled or decimated?
     spatial_profile->set_start(start);
     spatial_profile->set_end(end);
     spatial_profile->set_raw_values_fp32(profile_data, profile_size);
@@ -752,29 +748,28 @@ CARTA::SpatialProfileData Message::AddProfile(CARTA::SpatialProfileData& message
     return message;
 }
 
-CARTA::SpatialProfileData Message::AddProfile(CARTA::SpatialProfileData& message, int32_t file_id, int32_t region_id, int32_t start,
-    std::vector<float>& profile, std::string& coordinate, int32_t mip, CARTA::ProfileAxisType axis_type, casacore::Quantity& increment) {
-    auto profile_size = profile.size();
-    int end = profile_size - 1;
-    float crpix = profile_size / 2;
-    float cdelt = increment.getValue();
-    float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
-    std::string unit = increment.getUnit();
-    message.set_file_id(file_id);
-    message.set_region_id(region_id);
+CARTA::SpatialProfile& Message::AddProfile(
+    CARTA::SpatialProfileData& message, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip) {
     auto* spatial_profile = message.add_profiles();
     spatial_profile->set_start(start);
     spatial_profile->set_end(end);
     spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
     spatial_profile->set_coordinate(coordinate);
     spatial_profile->set_mip(mip);
-    auto* profile_axis = spatial_profile->mutable_line_axis();
+
+    return *spatial_profile;
+}
+
+CARTA::LineProfileAxis& Message::AddAxis(CARTA::SpatialProfile& spatial_profile, CARTA::ProfileAxisType axis_type, float crpix, float crval,
+    float cdelt, const std::string& unit) {
+    auto* profile_axis = spatial_profile.mutable_line_axis();
     profile_axis->set_axis_type(axis_type);
     profile_axis->set_crpix(crpix);
     profile_axis->set_crval(crval);
     profile_axis->set_cdelt(cdelt);
     profile_axis->set_unit(unit);
-    return message;
+
+    return *profile_axis;
 }
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,

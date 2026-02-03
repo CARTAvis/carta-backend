@@ -195,11 +195,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             _regions[region_id] = std::move(region);
             region_lock.unlock();
 
-            CARTA::RegionInfo region_info;
-            region_info.set_region_type(region_state.type);
-            *region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
-            region_info.set_rotation(region_state.rotation);
-            (*region_info_map)[region_id] = region_info;
+            (*region_info_map)[region_id] = Message::AddRegion(region_state.type, region_state.control_points, region_state.rotation);
             (*region_style_map)[region_id++] = region_style;
             success = true; // if any regions were set
         }
@@ -1584,7 +1580,7 @@ bool RegionHandler::FillSpectralProfileData(
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
                     report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                         auto profile_message = Message::SpectralProfileData(
-                            stokes_index, progress, config_file_id, config_region_id, coordinate, required_stats, results);
+                            config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
                         cb(profile_message); // send (partial profile) data
                     });
             }
@@ -2016,10 +2012,18 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
 
         profile_ok = GetLineSpatialData(
             file_id, region_id, coordinate, stokes_index, width, [&](std::vector<float>& profile, casacore::Quantity& increment) {
-                auto profile_message = Message::SpatialProfileData(x, y, channel, stokes_index, value);
-                Message::AddProfile(profile_message, file_id, region_id, start, profile, coordinate, mip, axis_type, increment);
+                // do calculations
+                auto profile_size = profile.size();
+                int end = profile_size - 1;
+                float crpix = profile_size / 2;
+                float cdelt = increment.getValue();
+                float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
+                std::string unit = increment.getUnit();
+                auto message = Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index, value);
+                auto& profile_msg = Message::AddProfile(message, start, end, profile, coordinate, mip);
+                auto& axis_msg = Message::AddAxis(profile_msg, axis_type, crpix, crval, cdelt, unit);
 
-                cb(profile_message);
+                cb(message);
             });
         spdlog::performance("Fill line spatial profile in {:.3f} ms", t.Elapsed().ms());
     }
