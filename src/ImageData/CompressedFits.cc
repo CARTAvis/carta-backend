@@ -14,6 +14,7 @@
 #include "Timer/Timer.h"
 #include "Util/Casacore.h"
 #include "Util/FileSystem.h"
+#include "Util/Message.h"
 #include "Util/String.h"
 
 #define FITS_BLOCK_SIZE 2880
@@ -390,35 +391,29 @@ void CompressedFits::ParseFitsCard(
 void CompressedFits::AddHeaderEntry(
     casacore::String& keyword, casacore::String& value, casacore::String& comment, CARTA::FileInfoExtended& file_info_ext) {
     // Set CARTA::HeaderEntry fields in FileInfoExtended
-    auto entry = file_info_ext.add_header_entries();
-    entry->set_name(keyword);
-    *entry->mutable_value() = value;
-
+    CARTA::HeaderEntry* entry;
     if (!value.empty()) {
         // Set type, numeric value
         if (value.contains(".")) {
             try {
                 // Set double value
                 double dvalue = std::stod(value);
-                entry->set_numeric_value(dvalue);
-                entry->set_entry_type(CARTA::EntryType::FLOAT);
+                entry = Message::AddHeaderEntry(file_info_ext, keyword, value, CARTA::EntryType::FLOAT, dvalue);
             } catch (std::invalid_argument) {
                 // Set string value only
-                entry->set_entry_type(CARTA::EntryType::STRING);
+                entry = Message::AddHeaderEntry(file_info_ext, keyword, value);
             }
         } else {
             try {
                 // Set int value
                 int ivalue = std::stoi(value);
-                entry->set_numeric_value(ivalue);
-                entry->set_entry_type(CARTA::EntryType::INT);
+                entry = Message::AddHeaderEntry(file_info_ext, keyword, value, CARTA::EntryType::INT, ivalue);
             } catch (std::invalid_argument) {
                 // Set string value only
-                entry->set_entry_type(CARTA::EntryType::STRING);
+                entry = Message::AddHeaderEntry(file_info_ext, keyword, value);
             } catch (std::out_of_range) {
                 long lvalue = std::stol(value);
-                entry->set_numeric_value(lvalue);
-                entry->set_entry_type(CARTA::EntryType::INT);
+                entry = Message::AddHeaderEntry(file_info_ext, keyword, value, CARTA::EntryType::INT, lvalue);
             }
         }
     }

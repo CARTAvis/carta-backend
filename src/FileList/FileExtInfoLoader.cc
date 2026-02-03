@@ -255,8 +255,7 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
         }
 
         if (name.startsWith("HISTORY") || name.startsWith("COMMENT") || name.startsWith("HIERARCH")) {
-            auto entry = extended_info.add_header_entries();
-            entry->set_name(name);
+            Message::AddHeaderEntry(extended_info, name, "");
             continue;
         }
 
@@ -338,15 +337,14 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
         }
 
         // Set name
-        auto entry = extended_info.add_header_entries();
-        entry->set_name(name);
+        CARTA::HeaderEntry* entry;
 
         if (!value.empty()) {
             if (is_string_value) {
-                *entry->mutable_value() = value;
+                entry = Message::AddHeaderEntry(extended_info, name, value);
             } else {
                 // Set numeric value
-                ConvertHeaderValueToNumeric(name, value, entry);
+                entry = AddNumericHeaderEntry(extended_info, name, value);
             }
 
             // Set numeric values for stokes axis in loader
@@ -357,6 +355,8 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
             } else if (name == ("CDELT" + stokes_ctype_num)) {
                 _loader->SetStokesCdelt((int)entry->numeric_value());
             }
+        } else {
+            entry = Message::AddHeaderEntry(extended_info, name, "");
         }
 
         if (!comment.empty()) {
@@ -367,9 +367,7 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
 
     if (!has_specsys && !specsys.empty()) {
         // separated from VELO CTYPE
-        auto entry = extended_info.add_header_entries();
-        entry->set_name("SPECSYS");
-        *entry->mutable_value() = specsys;
+        auto entry = Message::AddHeaderEntry(extended_info, "SPECSYS", specsys);
         entry->set_comment("separated from VELO CTYPE");
     }
 
@@ -383,8 +381,10 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
     }
 }
 
-void FileExtInfoLoader::ConvertHeaderValueToNumeric(const casacore::String& name, casacore::String& value, CARTA::HeaderEntry* entry) {
+CARTA::HeaderEntry* FileExtInfoLoader::AddNumericHeaderEntry(
+    CARTA::FileInfoExtended& extended_info, const casacore::String& name, casacore::String& value) {
     // Convert string value to double, float, or int.  Set as string type if conversion fails.
+    CARTA::HeaderEntry* entry;
     if (value.contains(".")) {
         // Float or double type?
         try {
@@ -396,25 +396,19 @@ void FileExtInfoLoader::ConvertHeaderValueToNumeric(const casacore::String& name
             } else {
                 string_value = fmt::format("{:.12E}", dvalue);
             }
-            *entry->mutable_value() = string_value;
-            entry->set_numeric_value(dvalue);
-            entry->set_entry_type(CARTA::EntryType::FLOAT);
+            entry = Message::AddHeaderEntry(extended_info, name, string_value, CARTA::EntryType::FLOAT, dvalue);
         } catch (std::invalid_argument) {
             // Not a number - set string value only
-            *entry->mutable_value() = value;
-            entry->set_entry_type(CARTA::EntryType::STRING);
+            entry = Message::AddHeaderEntry(extended_info, name, value);
         } catch (std::out_of_range) {
             try {
                 char* endptr(nullptr);
                 long double ldvalue = std::strtold(value.c_str(), &endptr);
 
                 std::string string_value = fmt::format("{:.12E}", ldvalue);
-                *entry->mutable_value() = string_value;
-                entry->set_numeric_value(ldvalue);
-                entry->set_entry_type(CARTA::EntryType::FLOAT);
+                entry = Message::AddHeaderEntry(extended_info, name, string_value, CARTA::EntryType::FLOAT, ldvalue);
             } catch (std::out_of_range) {
-                *entry->mutable_value() = value;
-                entry->set_entry_type(CARTA::EntryType::STRING);
+                entry = Message::AddHeaderEntry(extended_info, name, value);
             }
         }
     } else {
@@ -422,28 +416,23 @@ void FileExtInfoLoader::ConvertHeaderValueToNumeric(const casacore::String& name
         try {
             int ivalue = std::stoi(value);
             std::string string_value = fmt::format("{:d}", ivalue);
-
-            *entry->mutable_value() = value;
-            entry->set_numeric_value(ivalue);
-            entry->set_entry_type(CARTA::EntryType::INT);
+            entry = Message::AddHeaderEntry(extended_info, name, string_value, CARTA::EntryType::INT, ivalue);
         } catch (std::invalid_argument) {
             // Not a number - set string value only
-            *entry->mutable_value() = value;
-            entry->set_entry_type(CARTA::EntryType::STRING);
+            entry = Message::AddHeaderEntry(extended_info, name, value);
         } catch (std::out_of_range) {
             try {
                 // long numeric value
                 long lvalue = std::stol(value);
 
                 std::string string_value = fmt::format("{:d}", lvalue);
-                *entry->mutable_value() = string_value;
-                entry->set_numeric_value(lvalue);
-                entry->set_entry_type(CARTA::EntryType::INT);
+                entry = Message::AddHeaderEntry(extended_info, name, string_value, CARTA::EntryType::INT, lvalue);
             } catch (std::out_of_range) {
-                entry->set_entry_type(CARTA::EntryType::STRING);
+                entry = Message::AddHeaderEntry(extended_info, name, value);
             }
         }
     }
+    return entry;
 }
 
 void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info) {
@@ -498,9 +487,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
         }
 
         // Fill HeaderEntry fields
-        auto header_entry = extended_info.add_header_entries();
-        header_entry->set_name(name);
-        header_entry->set_comment(fkw->comm());
+        CARTA::HeaderEntry* header_entry;
 
         switch (fkw->type()) {
             case casacore::FITS::NOVALUE:
@@ -508,20 +495,14 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
             case casacore::FITS::LOGICAL: {
                 bool value(fkw->asBool());
                 std::string bool_string(value ? "T" : "F");
-
-                *header_entry->mutable_value() = bool_string;
-                header_entry->set_entry_type(CARTA::EntryType::INT);
-                header_entry->set_numeric_value(value);
+                header_entry = Message::AddHeaderEntry(extended_info, name, bool_string, CARTA::EntryType::INT, value);
                 break;
             }
             case casacore::FITS::SHORT:
             case casacore::FITS::LONG: {
                 int value(fkw->asInt());
                 std::string string_value = fmt::format("{:d}", value);
-
-                *header_entry->mutable_value() = string_value;
-                header_entry->set_entry_type(CARTA::EntryType::INT);
-                header_entry->set_numeric_value(value);
+                header_entry = Message::AddHeaderEntry(extended_info, name, string_value, CARTA::EntryType::INT, value);
                 break;
             }
             case casacore::FITS::FLOAT:
@@ -535,9 +516,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                 } else {
                     string_value = fmt::format("{:.12E}", value);
                 }
-                *header_entry->mutable_value() = string_value;
-                header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-                header_entry->set_numeric_value(value);
+                header_entry = Message::AddHeaderEntry(extended_info, name, string_value, CARTA::EntryType::FLOAT, value);
                 break;
             }
             case casacore::FITS::STRING:
@@ -555,45 +534,35 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                         stokes_axis_num = name.back();
                     }
                 }
-
-                *header_entry->mutable_value() = header_string;
-                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                header_entry = Message::AddHeaderEntry(extended_info, name, header_string);
                 break;
             }
             case casacore::FITS::COMPLEX: {
                 casacore::Complex value = fkw->asComplex();
                 std::string string_value = fmt::format("{} + {}i", value.real(), value.imag());
-
-                *header_entry->mutable_value() = string_value;
-                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                header_entry = Message::AddHeaderEntry(extended_info, name, string_value);
                 break;
             }
             case casacore::FITS::ICOMPLEX: {
                 casacore::IComplex value = fkw->asIComplex();
                 std::string string_value = fmt::format("{} + {}i", value.real(), value.imag());
-
-                *header_entry->mutable_value() = string_value;
-                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                header_entry = Message::AddHeaderEntry(extended_info, name, string_value);
                 break;
             }
             case casacore::FITS::DCOMPLEX: {
                 casacore::DComplex value = fkw->asDComplex();
                 std::string string_value = fmt::format("{} + {}i", value.real(), value.imag());
-
-                *header_entry->mutable_value() = string_value;
-                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                header_entry = Message::AddHeaderEntry(extended_info, name, string_value);
                 break;
             }
             default: {
                 casacore::String header_string = fkw->asString();
                 header_string.trim();
-
-                *header_entry->mutable_value() = header_string;
-                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                header_entry = Message::AddHeaderEntry(extended_info, name, header_string);
                 break;
             }
         }
-
+        header_entry->set_comment(fkw->comm());
         fkw = fhi.kw.next(); // get next keyword
     }
 }
@@ -711,19 +680,9 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     int num_dims(shape.size());
     DimsInfo dims(axes, shape);
 
-    extended_info.set_dimensions(num_dims);
-    extended_info.set_width(dims.width);
-    extended_info.set_height(dims.height);
-    extended_info.set_depth(dims.depth);
-    extended_info.set_stokes(dims.num_stokes);
-
-    auto* axes_numbers_info = extended_info.mutable_axes_numbers();
+    Message::SetDimensions(extended_info, num_dims, dims.width, dims.height, dims.depth, dims.num_stokes);
     // Change to 1-based axis indices
-    axes_numbers_info->set_spatial_x(axes.spatial_x + 1);
-    axes_numbers_info->set_spatial_y(axes.spatial_y + 1);
-    axes_numbers_info->set_spectral(axes.spectral + 1);
-    axes_numbers_info->set_stokes(axes.stokes + 1);
-    axes_numbers_info->set_depth(axes.z + 1);
+    Message::AddAxesNumbers(extended_info, axes.spatial_x + 1, axes.spatial_y + 1, axes.spectral + 1, axes.stokes + 1, axes.z + 1);
 
     if (axes_names.empty()) {
         // Set axis names with respect to axis numbers 1~4
@@ -1283,25 +1242,15 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
             double major_deg = major.get("deg").getValue();
             double minor_deg = minor.get("deg").getValue();
 
-            auto header_entry = extended_info.add_header_entries();
-            header_entry->set_name("BMAJ");
-            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            header_entry->set_value(fmt::format("{:E}", major_deg));
-            header_entry->set_numeric_value(major_deg);
+            auto header_entry =
+                Message::AddHeaderEntry(extended_info, "BMAJ", fmt::format("{:E}", major_deg), CARTA::EntryType::FLOAT, major_deg);
             header_entry->set_comment("extracted from HISTORY");
 
-            header_entry = extended_info.add_header_entries();
-            header_entry->set_name("BMIN");
-            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            header_entry->set_value(fmt::format("{:E}", minor_deg));
-            header_entry->set_numeric_value(minor_deg);
+            header_entry =
+                Message::AddHeaderEntry(extended_info, "BMIN", fmt::format("{:E}", minor_deg), CARTA::EntryType::FLOAT, minor_deg);
             header_entry->set_comment("extracted from HISTORY");
 
-            header_entry = extended_info.add_header_entries();
-            header_entry->set_name("BPA");
-            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            header_entry->set_value(fmt::format("{:E}", pa));
-            header_entry->set_numeric_value(pa);
+            header_entry = Message::AddHeaderEntry(extended_info, "BPA", fmt::format("{:E}", pa), CARTA::EntryType::FLOAT, pa);
             header_entry->set_comment("extracted from HISTORY");
         }
     }

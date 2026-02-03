@@ -161,9 +161,14 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
-    static CARTA::FileInfoExtended AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
-    static CARTA::FileInfoExtended AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
+    static CARTA::HeaderEntry* AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
         CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);
+    static CARTA::HeaderEntry* AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
+        CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);
+    static CARTA::FileInfoExtended SetDimensions(
+        CARTA::FileInfoExtended& response, int32_t dimensions, int32_t width, int32_t height, int32_t depth, int32_t stokes);
+    static CARTA::AxesNumbers* AddAxesNumbers(
+        CARTA::FileInfoExtended& response, int32_t spatial_x, int32_t spatial_y, int32_t spectral, int32_t stokes, int32_t depth);
 
     // Decode messages
     static carta::EventHeader GetEventHeader(std::string_view message);
