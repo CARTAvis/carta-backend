@@ -828,7 +828,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                 }
             }
         } else {
-            // Set new channel
+            // Set new channel and/or stokes
             auto z_target = message.channel();
             auto stokes_target = message.stokes();
             bool z_changed(z_target != frame->CurrentZ());
@@ -1789,16 +1789,21 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
     bool data_sent(false);
     std::vector<CARTA::SpatialProfileData> spatial_profile_messages;
 
-    if (_region_handler && (region_id > CURSOR_REGION_ID || region_id == ALL_REGIONS || file_id == ALL_FILES)) {
-        data_sent = _region_handler->FillSpatialProfileData(
-            [&](CARTA::SpatialProfileData spatial_profile_message) {
-                if (spatial_profile_message.profiles_size() > 0) {
-                    auto spatial_file_id = spatial_profile_message.file_id();
-                    SendFileEvent(spatial_file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_message);
-                    data_sent = true;
-                }
-            },
-            file_id, region_id);
+    if (region_id > CURSOR_REGION_ID || region_id == ALL_REGIONS || file_id == ALL_FILES) {
+        if (region_id == ALL_REGIONS || region_id == CURSOR_REGION_ID) {
+            data_sent = SendSpatialProfileData(file_id, CURSOR_REGION_ID);
+        }
+        if (_region_handler) {
+            data_sent |= _region_handler->FillSpatialProfileData(
+                [&](CARTA::SpatialProfileData spatial_profile_message) {
+                    if (spatial_profile_message.profiles_size() > 0) {
+                        auto spatial_file_id = spatial_profile_message.file_id();
+                        SendFileEvent(spatial_file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_message);
+                        data_sent = true;
+                    }
+                },
+                file_id, region_id);
+        }
     } else if (region_id == CURSOR_REGION_ID) {
         // Cursor spatial profile
         if (_frames.find(file_id) != _frames.end()) {
@@ -2049,18 +2054,15 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool z_cha
 
 void Session::UpdateRegionData(int file_id, int region_id, bool z_changed, bool stokes_changed) {
     // Send updated data for user-set regions with requirements when z, stokes, or region changes.
-    if (stokes_changed) {
+    bool image_frame_changed(z_changed || stokes_changed);
+    if (stokes_changed || !image_frame_changed) { // stokes or region changed
         SendSpectralProfileData(file_id, region_id, stokes_changed);
     }
 
-    bool channel_changed(z_changed || stokes_changed);
-    SendRegionHistogramData(file_id, region_id, channel_changed);
+    // Send histogram, stats, and spatial profile if z, stokes, or region changes
+    SendRegionHistogramData(file_id, region_id, image_frame_changed);
     SendRegionStatsData(file_id, region_id);
-
-    if (!channel_changed) { // Region changed, update all
-        SendSpatialProfileData(file_id, region_id);
-        SendSpectralProfileData(file_id, region_id, stokes_changed);
-    }
+    SendSpatialProfileData(file_id, region_id);
 }
 
 void Session::RegionDataStreams(int file_id, int region_id) {
