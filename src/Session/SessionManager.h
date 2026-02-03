@@ -81,6 +81,9 @@ private:
     void CatalogListRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void PvRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void StopPvCalcHandler(Session* session, std::string_view sv_message, const EventHeader& head);
+    void Render3DRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head);
+    void StopRender3DHandler(Session* session, std::string_view sv_message, const EventHeader& head);
+    void CloseRender3DHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void FittingRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void SetVectorOverlayParametersHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void StopFittingHandler(Session* session, std::string_view sv_message, const EventHeader& head);

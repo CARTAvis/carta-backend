@@ -49,6 +49,9 @@ std::unordered_map<CARTA::EventType, SessionManager::MessageHandler> SessionMana
     {CARTA::EventType::REGION_LIST_REQUEST, &SessionManager::RegionListRequestHandler},
     {CARTA::EventType::CATALOG_LIST_REQUEST, &SessionManager::CatalogListRequestHandler},
     {CARTA::EventType::PV_REQUEST, &SessionManager::PvRequestHandler}, {CARTA::EventType::STOP_PV_CALC, &SessionManager::StopPvCalcHandler},
+    {CARTA::EventType::RENDER3D_REQUEST, &SessionManager::Render3DRequestHandler},
+    {CARTA::EventType::STOP_RENDER3D, &SessionManager::StopRender3DHandler},
+    {CARTA::EventType::CLOSE_RENDER3D, &SessionManager::CloseRender3DHandler},
     {CARTA::EventType::FITTING_REQUEST, &SessionManager::FittingRequestHandler},
     {CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS, &SessionManager::SetVectorOverlayParametersHandler},
     {CARTA::EventType::STOP_FITTING, &SessionManager::StopFittingHandler},
@@ -546,6 +549,22 @@ void SessionManager::PvRequestHandler(Session* session, std::string_view sv_mess
 void SessionManager::StopPvCalcHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::StopPvCalc>(sv_message);
     session->OnStopPvCalc(message);
+};
+
+void SessionManager::Render3DRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+    auto message = Message::DecodeMessage<CARTA::Render3DRequest>(sv_message);
+    OnMessageTask* tsk = new GeneralMessageTask<CARTA::Render3DRequest>(session, message, head.request_id);
+    ThreadManager::QueueTask(tsk);
+};
+
+void SessionManager::StopRender3DHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+    auto message = Message::DecodeMessage<CARTA::StopRender3D>(sv_message);
+    session->OnStopRender3D(message);
+};
+
+void SessionManager::CloseRender3DHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+    auto message = Message::DecodeMessage<CARTA::CloseRender3D>(sv_message);
+    session->OnCloseRender3D(message);
 };
 
 void SessionManager::FittingRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
