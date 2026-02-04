@@ -12,7 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Don't reallocate memory for image cache unnecessarily ([#1508](https://github.com/CARTAvis/carta-backend/pull/1508)).
 * Fixed crash in ICD channel map test with ASAN enabled ([#1518](https://github.com/CARTAvis/carta-backend/issues/1518)).
 * Fixed fetching of region data for other Stokes ([#1551](https://github.com/CARTAvis/carta-backend/issues/1551)).
-* Full file path was added to the error message due to non-existing/non-readable file ([#1354](https://github.com/CARTAvis/carta-backend/issues/1354)).
 
 ### Changed
 * Standardized use of float and double NaN (Not a Number) ([#1502](https://github.com/CARTAvis/carta-backend/issues/1502)).
@@ -20,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Moved region histogram implementation to analysis subdirectory ([#1509](https://github.com/CARTAvis/carta-backend/issues/1509)).
 * Moved region statistics implementation to analysis subdirectory ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
 * Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
+* Full file path was added to the error message due to non-existing/non-readable file ([#1354](https://github.com/CARTAvis/carta-backend/issues/1354)).
 
 ## [5.0.2]
 
