@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Moved region histogram implementation to analysis subdirectory ([#1509](https://github.com/CARTAvis/carta-backend/issues/1509)).
 * Moved region statistics implementation to analysis subdirectory ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
 * Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
+* Moved region spatial profile implementation to analysis subdirectory ([#1515](https://github.com/CARTAvis/carta-backend/issues/1515)).
 * Full file path was added to the error message due to non-existing/non-readable file ([#1354](https://github.com/CARTAvis/carta-backend/issues/1354)).
 
 ## [5.0.2]
