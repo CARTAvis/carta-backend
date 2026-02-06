@@ -6,22 +6,17 @@
 
 // LineBoxRegions.h: class to approximate line with width as series of box regions
 
-#ifndef CARTA_SRC_REGION_LINEBOXREGIONS_H_
-#define CARTA_SRC_REGION_LINEBOXREGIONS_H_
+#ifndef CARTA_SRC_REGION_REGIONANALYSIS_LINEBOXREGIONS_H_
+#define CARTA_SRC_REGION_REGIONANALYSIS_LINEBOXREGIONS_H_
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 
-#include <carta-protobuf/defs.pb.h>
-
-#include "Region.h"
+#include "Region/RegionState.h"
 
 namespace carta {
 
 class LineBoxRegions {
 public:
-    LineBoxRegions() = default;
-    ~LineBoxRegions() = default;
-
     bool GetLineBoxRegions(const RegionState& line_region_state, std::shared_ptr<casacore::CoordinateSystem> line_coord_sys, int line_width,
         casacore::Quantity& region_increment, std::vector<RegionState>& region_states, std::string& message);
 
@@ -55,4 +50,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_SRC_REGION_LINEBOXREGIONS_H_
+#endif // CARTA_SRC_REGION_REGIONANALYSIS_LINEBOXREGIONS_H_

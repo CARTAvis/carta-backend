@@ -51,9 +51,9 @@ std::vector<int> RegionHistogram::GetConfigFileIds(int file_id) {
 
 void RegionHistogram::FillHistogramDataParams(
     int file_id, StokesSource& stokes_source, const HistogramConfig& config, CARTA::RegionHistogramData& histogram_data_message) {
-    int stokes(stokes_source.stokes);
+    int stokes_index(stokes_source.stokes);
     int z(stokes_source.z_range.from);
-    histogram_data_message = Message::RegionHistogramData(file_id, _region_id, z, stokes, 1.0, config);
+    histogram_data_message = Message::RegionHistogramData(file_id, _region_id, z, stokes_index, 1.0, config);
 }
 
 void RegionHistogram::AddDefaultHistogram(CARTA::RegionHistogramData& histogram_data_message) {
@@ -77,9 +77,9 @@ bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame>
     int num_bins = GetNumBins(config, frame, image_region); // config setting, or calculated from region shape
 
     // Check cache
-    int stokes = stokes_source.stokes;
+    int stokes_index = stokes_source.stokes;
     int z = stokes_source.z_range.from;
-    CacheId cache_id(file_id, _region_id, stokes, z);
+    CacheId cache_id(file_id, _region_id, stokes_index, z);
     if (AddCachedHistogram(cache_id, config, num_bins, histogram_data_message)) {
         return true;
     }
