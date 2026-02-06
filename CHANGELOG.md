@@ -9,10 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Fixed linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
 * Fixed NaN values in FITS image with BLANK header keyword ([#1492](https://github.com/CARTAvis/carta-backend/issues/1492)).
-* Don't reallocate memory for image cache unnecessarily ([#1508](https://github.com/CARTAvis/carta-backend/pull/1508)).
-* Fixed crash in ICD channel map test with ASAN enabled ([#1518](https://github.com/CARTAvis/carta-backend/issues/1518)).
-* Fixed fetching of region data for other Stokes ([#1551](https://github.com/CARTAvis/carta-backend/issues/1551)).
-* Fixed deletion of resumed session from message task threads ([#1537](https://github.com/CARTAvis/carta-backend/issues/1537)).
 * Fixed region histogram for image Stokes after computed Stokes ([#1522](https://github.com/CARTAvis/carta-backend/issues/1522)).
 * Fixed vector overlay not updating after session resume ([#1543](https://github.com/CARTAvis/carta-backend/issues/1543)).
 * Fixed cursor/region spatial profiles during animation ([#1558](https://github.com/CARTAvis/carta-backend/issues/1558)).
@@ -22,8 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Moved region import/export implementation to new subdirectory ([#1505](https://github.com/CARTAvis/carta-backend/issues/1505)).
 * Moved region histogram implementation to analysis subdirectory ([#1509](https://github.com/CARTAvis/carta-backend/issues/1509)).
 * Moved region statistics implementation to analysis subdirectory ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
-* Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
 * Moved region spatial profile implementation to analysis subdirectory ([#1515](https://github.com/CARTAvis/carta-backend/issues/1515)).
+
+## [5.1.0]
+
+### Fixed
+* Fixed crash in ICD channel map test with ASAN enabled ([#1518](https://github.com/CARTAvis/carta-backend/issues/1518)).
+* Fixed fetching of region data for other Stokes ([#1551](https://github.com/CARTAvis/carta-backend/issues/1551)).
+* Fixed deletion of resumed session from message task threads ([#1537](https://github.com/CARTAvis/carta-backend/issues/1537)).
+* Don't reallocate memory for image cache unnecessarily ([#1508](https://github.com/CARTAvis/carta-backend/pull/1508)).
+
+### Changed
+* Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
 
 ## [5.0.2]
 
