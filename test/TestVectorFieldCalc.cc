@@ -21,7 +21,7 @@ using ::testing::NanSensitiveDoubleNear;
 
 enum SOURCE { NONE = -1, CURRENT = 0, COMPUTED = 1, PI = 14 }; // OTHER is for other threshold value for threshold to use COMPUTED PI ( as PolarizationType::Plinear = 14 )
 
-std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
+std::unordered_map<CARTA::PolarizationType, float> stokes_test_values{
     {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1},
     {CARTA::PolarizationType::I, 2}, {CARTA::PolarizationType::Q, 3}, {CARTA::PolarizationType::U, 4}, {CARTA::PolarizationType::V, 5}};
     
@@ -88,7 +88,6 @@ protected:
 };
 
 TEST_P(VectorFieldCalcParamTest, TestStokes) {
-    std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
     auto [test_parameters, expected_intensity, expected_angle] = GetParam();
 
     VectorFieldCalculator vectorfield(test_parameters);
@@ -103,7 +102,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     // lambda expression producing tile data (256x256) all set to 1 for Stokes I
     auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor,
                                 CARTA::PolarizationType stokes_type, int& width, int& height) {
-        float value = stokes_test_values_map[stokes_type]; // seems that Stokes I is passed as Current
+        float value = stokes_test_values[stokes_type]; // seems that Stokes I is passed as Current
         // std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
 
         data.assign(256 * 256, value); // generating Stokes I tile 256x256 all values = 1
@@ -171,7 +170,7 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
 //------------------------------------------------------ Thresholding tests below -----------------------------------------
 using Pol = CARTA::PolarizationType;
 const int SRC_NONE = -1, SRC_CURRENT = 0, SRC_COMPUTED = 1;
-const Pol THR_CURRENT = Pol::POLARIZATION_TYPE_NONE, THR_I = Pol::I, THR_PI = Pol::Plinear;
+const Pol THR_CURRENT = Pol::POLARIZATION_TYPE_NONE, THR_I = Pol::I, THR_PI = Pol::Plinear, THR_FPI = Pol::PFlinear;
 
 // perhaps make it a class with separate fields and constructor will initialise these fields based on sources of values and thresholds, and fractional ?
 // using TestSpatialParameters2 = std::tuple<CARTA::SetVectorOverlayParameters, std::vector<float>, std::vector<float>, std::vector<float>, std::vector<bool> >;
@@ -200,7 +199,7 @@ CARTA::SetVectorOverlayParameters ThresholdTestMessage(
 }
 
 // Template test values used for data generation and as expected data in verification:
-std::unordered_map<CARTA::PolarizationType, std::vector<float>> threshold_test_values_map{
+std::unordered_map<CARTA::PolarizationType, std::vector<float>> threshold_test_values{
     {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, { 125.0, 25.0, 5.0, 1.0, 0.2}}, // reversed order of Stokes I 
     {CARTA::PolarizationType::I, { 0.2, 1.0, 5.0, 25.0, 125.0 }},                     // Stokes I intensities 
     {CARTA::PolarizationType::Q, { 1.1, 1.2, 1.3, 1.4, 1.5 }},                        // Stokes Q
@@ -208,6 +207,14 @@ std::unordered_map<CARTA::PolarizationType, std::vector<float>> threshold_test_v
     {CARTA::PolarizationType::Plinear, { CalcPi(1.1,1.1), CalcPi(1.2,1.2), CalcPi(1.3,1.3), CalcPi(1.4,1.4), CalcPi(1.5,1.5) }}, // linear polarisation (Pi) =sqrt(Q^2+U^2)
     {CARTA::PolarizationType::PFlinear, {CalcFpi(0.2,1.1,1.1), CalcFpi(1.0,1.2,1.2), CalcFpi(5.0,1.3,1.3), CalcFpi(25.0,1.4,1.4), CalcFpi(125.0,1.5,1.5),}}, // fractional Pi = sqrt(Q^2+U2)/I * 100%
     {CARTA::PolarizationType::Pangle, { CalcPa(1.1,1.1), CalcPa(1.2,1.2), CalcPa(1.3,1.3), CalcPa(1.4,1.4), CalcPa(1.5,1.5) }} // polarisation angle (Pa) 
+};
+
+// bool list of flags showing expected positions of NaNs (true)
+std::unordered_map<Pol, std::vector<bool>> nans{
+   {THR_CURRENT, {false, false, false, true, true}},
+   {THR_I, {true, true, false, false, false}},
+   {THR_PI, {true, true, true, true, false}},
+   {THR_FPI, {false, false, false, false, true}}
 };
 
 class TestSpatialParameters {
@@ -223,39 +230,39 @@ public:
        message = ThresholdTestMessage(intensity_source, angle_source, fractional, threshold_source);
 
        if (intensity_source == SRC_CURRENT) {
-          expected_intensities = threshold_test_values_map[CARTA::PolarizationType::POLARIZATION_TYPE_NONE]; // expected_intensities_current;
+          expected_intensities = threshold_test_values[CARTA::PolarizationType::POLARIZATION_TYPE_NONE]; // expected_intensities_current;
        }else{
           if (intensity_source == SRC_COMPUTED) {
              if (fractional) {
-                expected_intensities = threshold_test_values_map[CARTA::PolarizationType::PFlinear]; // expected_fpi;
+                expected_intensities = threshold_test_values[CARTA::PolarizationType::PFlinear]; // expected_fpi;
              }else{
-                expected_intensities = threshold_test_values_map[CARTA::PolarizationType::Plinear]; // expected_computed_intensities;
+                expected_intensities = threshold_test_values[CARTA::PolarizationType::Plinear]; // expected_computed_intensities;
              }
           }
        }
 
        if (angle_source == SRC_CURRENT) {
-          expected_angles =  threshold_test_values_map[CARTA::PolarizationType::POLARIZATION_TYPE_NONE]; // was expected_intensities_current;
+          expected_angles =  threshold_test_values[CARTA::PolarizationType::POLARIZATION_TYPE_NONE]; // was expected_intensities_current;
        }else{
           if(angle_source == SRC_COMPUTED) {
-             expected_angles = threshold_test_values_map[CARTA::PolarizationType::Pangle];
+             expected_angles = threshold_test_values[CARTA::PolarizationType::Pangle];
           }
        }
        
        switch (threshold_source) {
           case THR_CURRENT:
-             expected_nans = std::vector<bool>{false, false, false, true, true};
+             expected_nans = nans[THR_CURRENT];
              break;
 
           case THR_I:
-             expected_nans = std::vector<bool>{true, true, false, false, false};
+             expected_nans = nans[THR_I];
              break;
              
           case THR_PI:
              if (fractional){
-                expected_nans = std::vector<bool>{false, false, false, false, true};
+                expected_nans = nans[THR_FPI];
              }else{
-                expected_nans = std::vector<bool>{true, true, true, true, false} ;
+                expected_nans = nans[THR_PI];
              }
              break;
              
@@ -277,7 +284,6 @@ protected:
 };
 
 TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
-    std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
 //    auto [test_parameters, expected_intensities, expected_qu, expected_angles, is_nan_expected] = GetParam();
     TestSpatialParameters all_params = GetParam();    
     CARTA::SetVectorOverlayParameters& test_parameters = all_params.message;
@@ -311,14 +317,14 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
         {
            case CARTA::PolarizationType::POLARIZATION_TYPE_NONE : // CURRENT :
               { 
-                 std::vector<float> test_data = threshold_test_values_map[CARTA::PolarizationType::POLARIZATION_TYPE_NONE];
+                 std::vector<float> test_data = threshold_test_values[CARTA::PolarizationType::POLARIZATION_TYPE_NONE];
                  std::copy(test_data.begin(), test_data.begin() + 5, data.begin() );
               }
               break;
            
            case CARTA::PolarizationType::I : // Stokes I 
               {
-                  std::vector<float> test_data = threshold_test_values_map[CARTA::PolarizationType::I];
+                  std::vector<float> test_data = threshold_test_values[CARTA::PolarizationType::I];
                   std::copy(test_data.begin(), test_data.begin() + 5, data.begin() );
               }
               break;
@@ -326,7 +332,7 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
            case CARTA::PolarizationType::Q :           
            case CARTA::PolarizationType::U :
               {
-                  std::vector<float> test_data = threshold_test_values_map[stokes_type];
+                  std::vector<float> test_data = threshold_test_values[stokes_type];
                   std::copy(test_data.begin(), test_data.begin() + 5, data.begin() );
               }
               break;
