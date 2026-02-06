@@ -93,7 +93,7 @@ public:
     void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
     void OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id);
     void OnStopFitting(const CARTA::StopFitting& stop_fitting);
-    void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message, bool silent = false);
     void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
     void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
@@ -253,8 +253,6 @@ protected:
     // Send data streams
     bool SendContourData(int file_id, bool ignore_empty = true, int channel = CURRENT_Z);
     bool SendSpatialProfileData(int file_id, int region_id);
-    void SendSpatialProfileDataByFileId(int file_id);
-    void SendSpatialProfileDataByRegionId(int region_id);
     bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
     bool SendRegionStatsData(int file_id, int region_id);
 

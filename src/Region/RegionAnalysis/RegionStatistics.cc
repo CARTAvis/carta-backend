@@ -46,8 +46,8 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
     StokesRegion& stokes_region, CARTA::RegionStatsData& stats_data_message) {
     bool success(false);
     int z(stokes_region.stokes_source.z_range.from);
-    int stokes(stokes_region.stokes_source.stokes);
-    stats_data_message = Message::RegionStatsData(file_id, _region_id, z, stokes);
+    int stokes_index(stokes_region.stokes_source.stokes);
+    stats_data_message = Message::RegionStatsData(file_id, _region_id, z, stokes_index);
 
     // Set required stats types
     std::vector<CARTA::StatsType> required_stats;
@@ -56,7 +56,7 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
     }
 
     // Check cache
-    CacheId cache_id = CacheId(file_id, _region_id, stokes, z);
+    CacheId cache_id = CacheId(file_id, _region_id, stokes_index, z);
     if (_cache.find(cache_id) != _cache.end()) {
         std::map<CARTA::StatsType, double> stats_results;
         if (_cache[cache_id].GetStats(stats_results)) {
