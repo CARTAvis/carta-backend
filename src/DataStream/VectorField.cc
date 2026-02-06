@@ -319,18 +319,18 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
     if (_stopped) {
         return true;
     }
-    
+
     // create new calculator and add to the vector of on-going calculators :
     // this must happen after invalidation of the on-going calculations
     auto calculator = std::make_shared<VectorFieldCalculator>(parameters);
-    
+
     // moved from the start of the function here where we already have calculator object created
     // TODO/DOUBT: however, now I have a doubt if this is ok now. It can happen that we invalidate all the on-going calculations, but here
     // we then decide that there is nothing to be done and we just return.
     // Perhaps these two checks before should remain at the start of the function, but we do not have calculator object created then
     // so we would have to evalulate UsesCurrent() and Disabled() from the "first principles" as in the constructor of VectorFieldCalculator
     // object. TBD ...
-        
+
     // stokes changed but we are not using current stokes -> we should return now so that we do not do
     // not needed calculations:
     if (stokes_changed && !z_changed &&
@@ -338,7 +338,7 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
         // TODO : review this part as I do not fully understand it yet ...
         return true;
     }
- 
+
     // Invalidate all on-going calculation to stop them (moved from VectorField::SetVectorOverlayParameters)
     for (auto calculator_it : _calculators) {
         calculator_it->Invalidate();
