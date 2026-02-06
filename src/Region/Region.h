@@ -52,7 +52,7 @@ public:
     }
 
     inline bool IsLineType() {
-        // Not enclosed region defined by 2 or more points
+        // Not closed region defined by 2 or more points (includes annotation)
         return GetRegionState().IsLineType();
     }
 
@@ -74,8 +74,8 @@ public:
     std::shared_mutex& GetActiveTaskMutex();
 
     // LCRegion and mask for region applied to image.  Must be a closed region (not line) and not annotation.
-    std::shared_ptr<casacore::LCRegion> GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> csys,
-        const casacore::IPosition& shape, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
+    std::shared_ptr<casacore::LCRegion> GetLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> image_csys,
+        const casacore::IPosition& image_shape, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
 
     // Record for region applied to image, for export.  Not for converting to LCRegion for analytics.
