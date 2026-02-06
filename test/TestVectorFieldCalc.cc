@@ -22,8 +22,36 @@ using ::testing::NanSensitiveDoubleNear;
 enum SOURCE { NONE = -1, CURRENT = 0, COMPUTED = 1, PI = 14 }; // OTHER is for other threshold value for threshold to use COMPUTED PI ( as PolarizationType::Plinear = 14 )
 
 std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map{
-    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1}, // sqrt(3*3+4*4)
+    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, 1},
     {CARTA::PolarizationType::I, 2}, {CARTA::PolarizationType::Q, 3}, {CARTA::PolarizationType::U, 4}, {CARTA::PolarizationType::V, 5}};
+    
+// global functions for calculating position angle (PA), PI and fPI :
+// these functions are copies of functions CalcPi, CalcPa and CalcFpi in VectorField.h
+bool valid(float a, float b){
+   return (!std::isnan(a) && !std::isnan(b));
+}   
+   
+float CalcPi(float q, float u, float q_error=0.00, float u_error=0.00) {
+   if (valid(q,u)) {
+      return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
+   }
+   return FLOAT_NAN;
+}
+
+float CalcFpi(float i, float q, float u, float q_error=0.00, float u_error=0.00) {
+   if (valid(q,u) && valid(i,u)) {
+      float pi = CalcPi(q,u,q_error,u_error);
+      return (valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN);
+   }
+   
+   return FLOAT_NAN;
+
+}
+
+double CalcPa(double q, double u) {   
+   return (valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
+}
+
 
 CARTA::SetVectorOverlayParameters SourceTestMessage(
     int intensity = COMPUTED, int angle = COMPUTED, bool fractional = false, float u_error = 0, float q_error = 0, int threshold_source = NONE, float threshold = -1) {
@@ -129,16 +157,11 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
     ::testing::Values(TestParameters(SourceTestMessage(CURRENT, CURRENT), 1, 1),
-        TestParameters(SourceTestMessage(CURRENT, COMPUTED), 1, ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA
-        TestParameters(SourceTestMessage(COMPUTED, CURRENT), sqrt(3 * 3 + 4 * 4),
-            1), // Q=3 and U=4 -> Computed I=Q^2 + U^2
-        TestParameters(SourceTestMessage(COMPUTED, COMPUTED), sqrt(3 * 3 + 4 * 4),
-            ((float)(180.0 / M_PI) * std::atan2(4, 3) / 2)), // computed PA and Stokes I (as above)
-        TestParameters(SourceTestMessage(COMPUTED, CURRENT, false, 0.1, 0.2),
-            ((float)std::sqrt(std::pow(3, 2) + std::pow(4, 2) - (std::pow(0.1, 2) + std::pow(0.2, 2)) / 2.0)), 1),
-        // Another way TBC : CalcPi(0.1,0.2)(3, 4), 1), // de-biasing with errors in Q and U
-        TestParameters(SourceTestMessage(COMPUTED, CURRENT, true), (sqrt(3 * 3 + 4 * 4) / 2) * 100.00,
-            1), // fractional=true : COMPUTED_STOKES/TEST_STOKES_I*100% = 5/2*100
+        TestParameters(SourceTestMessage(CURRENT, COMPUTED), 1, CalcPa(3,4)), // computed Pa
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT), CalcPi(3,4), 1), // computed Pi
+        TestParameters(SourceTestMessage(COMPUTED, COMPUTED), CalcPi(3,4), CalcPa(3,4)), // computed Pa and Pi
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT, false, 0.1, 0.2), CalcPi(3, 4, 0.1, 0.2), 1), // computed Pi with errors
+        TestParameters(SourceTestMessage(COMPUTED, CURRENT, true), CalcFpi(2,3,4), 1), // computed Fpi 
         TestParameters(SourceTestMessage(CURRENT, NONE, false), 1, std::numeric_limits<double>::quiet_NaN()),
         TestParameters(SourceTestMessage(NONE, CURRENT, false), std::numeric_limits<double>::quiet_NaN(), 1),
         TestParameters(
