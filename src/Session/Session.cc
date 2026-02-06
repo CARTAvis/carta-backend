@@ -1606,7 +1606,7 @@ void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParamete
     if (_frames.count(message.file_id())) {
         _frames.at(message.file_id())->SetVectorOverlayParameters(message);
         if (!silent) {
-           SendVectorFieldData(message.file_id()); 
+            SendVectorFieldData(message.file_id());
         }
     }
 }
