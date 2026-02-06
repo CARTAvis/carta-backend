@@ -257,11 +257,13 @@ set(SOURCE_FILES
         src/Main/Main.cc
         src/Main/ProgramSettings.cc
         src/Main/WebBrowser.cc
-        src/Region/LineBoxRegions.cc
+        src/Region/ImageRegion.cc
         src/Region/Region.cc
         src/Region/RegionConverter.cc
         src/Region/RegionHandler.cc
+        src/Region/RegionAnalysis/LineBoxRegions.cc
         src/Region/RegionAnalysis/RegionHistogram.cc
+        src/Region/RegionAnalysis/RegionSpatialProfile.cc
         src/Region/RegionAnalysis/RegionStatistics.cc
         src/Region/RegionImportExport/CrtfExporter.cc
         src/Region/RegionImportExport/CrtfImporter.cc

@@ -56,7 +56,7 @@ TEST_F(RegionMatchedTest, TestMatchedImageRectangleLCRegion) {
     file_id = 1;
     csys = frame1->CoordinateSystem();
     auto image_shape = frame1->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+    auto lc_region = region->GetLCRegion(file_id, csys, image_shape);
 
     // Check LCRegion
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
@@ -91,7 +91,7 @@ TEST_F(RegionMatchedTest, TestMatchedImageRotboxLCRegion) {
     file_id = 1;
     csys = frame1->CoordinateSystem();
     auto image_shape = frame1->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+    auto lc_region = region->GetLCRegion(file_id, csys, image_shape);
 
     // Check LCRegion
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
@@ -126,7 +126,7 @@ TEST_F(RegionMatchedTest, TestMatchedImageEllipseLCRegion) {
     file_id = 1;
     csys = frame1->CoordinateSystem();
     auto image_shape = frame1->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id, csys, image_shape);
+    auto lc_region = region->GetLCRegion(file_id, csys, image_shape);
 
     // Check LCRegion
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
@@ -161,7 +161,7 @@ TEST_F(RegionMatchedTest, TestMatchedImagePolygonLCRegion) {
     int file_id1(1);
     auto csys1 = frame1->CoordinateSystem();
     auto image_shape = frame1->ImageShape();
-    auto lc_region = region->GetImageRegion(file_id1, csys1, image_shape);
+    auto lc_region = region->GetLCRegion(file_id1, csys1, image_shape);
 
     // Check LCRegion
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
@@ -177,7 +177,7 @@ TEST_F(RegionMatchedTest, TestMatchedImagePolygonLCRegion) {
     region = region_handler.GetRegion(region_id);
     ASSERT_TRUE(region); // shared_ptr<Region>
     // Get Region as 2D LCRegion in frame1
-    lc_region = region->GetImageRegion(file_id1, csys1, image_shape);
+    lc_region = region->GetLCRegion(file_id1, csys1, image_shape);
     ASSERT_TRUE(lc_region); // shared_ptr<casacore::LCRegion>
 }
 
