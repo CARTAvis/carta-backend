@@ -48,7 +48,7 @@ float CalcFpi(float i, float q, float u, float q_error=0.00, float u_error=0.00)
 
 }
 
-double CalcPa(double q, double u) {   
+float CalcPa(double q, double u) {   
    return (valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
 }
 
@@ -199,42 +199,47 @@ CARTA::SetVectorOverlayParameters ThresholdTestMessage(
     return message;
 }
 
-// Function to generate and reverse the parameters - do not use references here, has to be by-value to ensure copy is modified:
-template <typename T>
-std::vector<T> ReverseParams(std::vector<T> params) {
-    std::reverse(params.begin(), params.end());
-    return params;
-}
-
-std::vector<float> expected_computed_intensities = { 1.55563, 1.697056, 1.838477, 1.97989, 2.121320 }; // = sqrt(Q^2+U2)
-std::vector<float> expected_fpi = { 777.81745931,  169.70562748,   36.76955262,    7.91959595, 1.69705627}; // sqrt(Q^2+U2)/I * 100%
-
+// Template test values used for data generation and as expected data in verification:
+std::unordered_map<CARTA::PolarizationType, std::vector<float>> threshold_test_values_map{
+    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, { 125.0, 25.0, 5.0, 1.0, 0.2}}, // reversed order of Stokes I 
+    {CARTA::PolarizationType::I, { 0.2, 1.0, 5.0, 25.0, 125.0 }},                     // Stokes I intensities 
+    {CARTA::PolarizationType::Q, { 1.1, 1.2, 1.3, 1.4, 1.5 }},                        // Stokes Q
+    {CARTA::PolarizationType::U, { 1.1, 1.2, 1.3, 1.4, 1.5 }},                        // Stokes U
+    {CARTA::PolarizationType::Plinear, { CalcPi(1.1,1.1), CalcPi(1.2,1.2), CalcPi(1.3,1.3), CalcPi(1.4,1.4), CalcPi(1.5,1.5) }}, // linear polarisation (Pi) =sqrt(Q^2+U^2)
+    {CARTA::PolarizationType::PFlinear, {CalcFpi(0.2,1.1,1.1), CalcFpi(1.0,1.2,1.2), CalcFpi(5.0,1.3,1.3), CalcFpi(25.0,1.4,1.4), CalcFpi(125.0,1.5,1.5),}}, // fractional Pi = sqrt(Q^2+U2)/I * 100%
+    {CARTA::PolarizationType::Pangle, { CalcPa(1.1,1.1), CalcPa(1.2,1.2), CalcPa(1.3,1.3), CalcPa(1.4,1.4), CalcPa(1.5,1.5) }} // polarisation angle (Pa) 
+};
 
 class TestSpatialParameters {
 public:
     CARTA::SetVectorOverlayParameters message;
-    std::vector<float> expected_intensities = { 0.2, 1.0, 5.0, 25.0, 125.0 };
-    std::vector<float> expected_angles = { 22.5, 22.5, 22.5, 22.5, 22.5 };
-    std::vector<bool>  expected_nans {false, false, false, false, false};
+    std::vector<float> expected_intensities;
+    std::vector<float> expected_intensities_current;
+    std::vector<float> expected_angles;
+    std::vector<bool>  expected_nans;
     
     // TestSpatialParameters(std::tuple<int, int, Pol, bool> params) { int intensity_source = std::get<0>(params);
     TestSpatialParameters( int intensity_source, int angle_source, Pol threshold_source, bool fractional ){
        message = ThresholdTestMessage(intensity_source, angle_source, fractional, threshold_source);
 
        if (intensity_source == SRC_CURRENT) {
-          expected_intensities = ReverseParams(std::vector<float>({ 0.2, 1.0, 5.0, 25.0, 125.0 }));
+          expected_intensities = threshold_test_values_map[CARTA::PolarizationType::POLARIZATION_TYPE_NONE]; // expected_intensities_current;
        }else{
           if (intensity_source == SRC_COMPUTED) {
              if (fractional) {
-                expected_intensities = expected_fpi;
+                expected_intensities = threshold_test_values_map[CARTA::PolarizationType::PFlinear]; // expected_fpi;
              }else{
-                expected_intensities = expected_computed_intensities;
+                expected_intensities = threshold_test_values_map[CARTA::PolarizationType::Plinear]; // expected_computed_intensities;
              }
           }
        }
 
        if (angle_source == SRC_CURRENT) {
-          expected_angles = ReverseParams(std::vector<float>({ 0.2, 1.0, 5.0, 25.0, 125.0 }));
+          expected_angles =  threshold_test_values_map[CARTA::PolarizationType::POLARIZATION_TYPE_NONE]; // was expected_intensities_current;
+       }else{
+          if(angle_source == SRC_COMPUTED) {
+             expected_angles = threshold_test_values_map[CARTA::PolarizationType::Pangle];
+          }
        }
        
        switch (threshold_source) {
@@ -270,14 +275,6 @@ public:
 protected:
     // You can add setup/teardown logic here if needed
 };
-
-std::unordered_map<CARTA::PolarizationType, std::vector<float>> threshold_test_values_map{
-    {CARTA::PolarizationType::POLARIZATION_TYPE_NONE, ReverseParams(std::vector<float>({ 0.2, 1.0, 5.0, 25.0, 125.0 })) }, // reversed
-    {CARTA::PolarizationType::I, { 0.2, 1.0, 5.0, 25.0, 125.0 }}, 
-    {CARTA::PolarizationType::Q, { 1.1, 1.2, 1.3, 1.4, 1.5 }}, 
-    {CARTA::PolarizationType::U, { 1.1, 1.2, 1.3, 1.4, 1.5 }},
-};
-
 
 TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     std::unordered_map<CARTA::PolarizationType, float> stokes_test_values_map_local = stokes_test_values_map;
