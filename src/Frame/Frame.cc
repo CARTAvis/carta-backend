@@ -1373,13 +1373,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
             if (have_profile) {
                 // add SpatialProfile to message
-                auto spatial_profile = spatial_profile_message.add_profiles();
-                spatial_profile->set_coordinate(coordinate);
                 // Should these be set to the rounded endpoints if the data is downsampled or decimated?
-                spatial_profile->set_start(requested_start);
-                spatial_profile->set_end(requested_end);
-                spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
-                spatial_profile->set_mip(mip);
+                auto spatial_profile = Message::AddSpatialProfile(spatial_profile_message, requested_start, requested_end, profile, coordinate, mip);
             }
         }
 
@@ -1465,10 +1460,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
         // Create final profile message for callback
         auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
-        auto spectral_profile = profile_message.add_profiles();
-        spectral_profile->set_coordinate(config.coordinate);
-        // point spectral profiles only have one stats type
-        spectral_profile->set_stats_type(config.all_stats[0]);
+        auto spectral_profile = Message::AddSpectralProfile(profile_message, config.coordinate, config.all_stats[0]);  // point spectral profiles only have one stats type
 
         // Send spectral profile data if cursor inside image
         if (start_cursor.InImage(_dims.width, _dims.height)) {
@@ -1566,9 +1558,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         t_start_profile = t_end_slice;
 
                         auto partial_data = Message::SpectralProfileData(CurrentStokes(), progress);
-                        auto partial_profile = partial_data.add_profiles();
-                        partial_profile->set_stats_type(config.all_stats[0]);
-                        partial_profile->set_coordinate(config.coordinate);
+                        auto partial_profile = Message::AddSpectralProfile(partial_data, config.coordinate, config.all_stats[0]);
                         partial_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                         cb(partial_data);
                     }

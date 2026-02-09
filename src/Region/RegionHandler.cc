@@ -1510,8 +1510,8 @@ bool RegionHandler::FillSpectralProfileData(
                 AxisRange z_range(0, _frames.at(config_file_id)->Depth() - 1); // all channels
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
                     report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                        auto profile_message = Message::SpectralProfileData(
-                            config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
+                        auto profile_message = Message::SpectralProfileData(config_file_id, config_region_id, stokes_index, progress);
+                        Message::AddSpectralProfile(profile_message, coordinate, required_stats, results);
                         cb(profile_message); // send (partial profile) data
                     });
             }
