@@ -1239,19 +1239,17 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
 
         if (is_history_beam) {
             // Append beam header entries in degrees
-            double major_deg = major.get("deg").getValue();
-            double minor_deg = minor.get("deg").getValue();
+            std::map<std::string, double> beam_entries = {  
+                {"BMIN", major.get("deg").getValue()},  
+                {"BMAJ", minor.get("deg").getValue()},
+                {"BPA", pa}
+            };
 
-            auto header_entry =
-                Message::AddHeaderEntry(extended_info, "BMAJ", fmt::format("{:E}", major_deg), CARTA::EntryType::FLOAT, major_deg);
-            header_entry->set_comment("extracted from HISTORY");
-
-            header_entry =
-                Message::AddHeaderEntry(extended_info, "BMIN", fmt::format("{:E}", minor_deg), CARTA::EntryType::FLOAT, minor_deg);
-            header_entry->set_comment("extracted from HISTORY");
-
-            header_entry = Message::AddHeaderEntry(extended_info, "BPA", fmt::format("{:E}", pa), CARTA::EntryType::FLOAT, pa);
-            header_entry->set_comment("extracted from HISTORY");
+            for (auto const& [name, value] : beam_entries) {  
+                auto header_entry =
+                Message::AddHeaderEntry(extended_info, name, fmt::format("{:E}", value), CARTA::EntryType::FLOAT, value);
+                header_entry->set_comment("extracted from HISTORY");
+            } 
         }
     }
 }
