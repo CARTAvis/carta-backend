@@ -555,7 +555,7 @@ TEST_F(PvGeneratorTest, PvPreview) {
     // Request PV preview
     int width(3), z_min(0), z_max(9); // all channels
     bool reverse(false);
-    auto pv_request = Message::PvRequest(file_id, region_id, width, z_min, z_max, reverse);
+    auto pv_request = PvGeneratorTest::PvRequest(file_id, region_id, width, z_min, z_max, reverse);
     auto preview_settings = pv_request.mutable_preview_settings();
     preview_settings->set_preview_id(0);
     preview_settings->set_region_id(-1); // box region for SubImage to fit in memory, not needed
