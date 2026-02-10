@@ -385,7 +385,8 @@ TEST_F(RegionSpatialProfileTest, FitsMovePointProfile) {
 
     // Set spatial requirements
     int start(0), end(0), mip(0), width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
     ok = region_handler.SetSpatialRequirements(region_id, file_id, frame, spatial_reqs);
     ASSERT_TRUE(ok);
 
