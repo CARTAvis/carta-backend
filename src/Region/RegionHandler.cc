@@ -156,23 +156,20 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     try {
         importer = GetRegionImporter(region_file_type, csys, file_id, region_file, file_is_filename);
     } catch (const casacore::AipsError& err) {
-        import_ack.set_success(false);
-        import_ack.set_message("Region import failed: " + err.getMesg());
+        import_ack = Message::ImportRegionAck(false, "Region import failed: " + err.getMesg());
         return;
     }
 
     if (!importer) {
-        import_ack.set_success(false);
-        import_ack.set_message("Region importer failed.");
+        import_ack = Message::ImportRegionAck(false, "Region importer failed.");
         return;
     }
 
     // Get regions and error message from importer
     std::string error;
     auto imported_regions = importer->GetRegions(error);
-    import_ack.set_message(error);
+    import_ack = Message::ImportRegionAck(false, error);
     if (imported_regions.empty()) {
-        import_ack.set_success(false);
         return;
     }
 
@@ -195,10 +192,8 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             _regions[region_id] = std::move(region);
             region_lock.unlock();
 
-            CARTA::RegionInfo region_info;
-            region_info.set_region_type(region_state.type);
+            auto region_info = Message::SetRegionInfo(region_state.type, region_state.rotation);
             *region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
-            region_info.set_rotation(region_state.rotation);
             (*region_info_map)[region_id] = region_info;
             (*region_style_map)[region_id++] = region_style;
             success = true; // if any regions were set
