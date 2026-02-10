@@ -9,6 +9,7 @@
 #include <casacore/casa/OS/File.h>
 
 #include "Logger/Logger.h"
+#include "Util/Message.h"
 
 using namespace carta;
 
@@ -40,8 +41,7 @@ bool RegionExporter::CanExportToFile(const std::string& filename, bool overwrite
         }
     }
     if (!error.empty()) {
-        export_ack.set_success(false);
-        export_ack.set_message(error);
+        Message::ExportRegionAck(export_ack, false, error);
         export_ack.set_overwrite_confirmation_required(need_overwrite_confirmation);
         return false;
     }
@@ -82,8 +82,7 @@ void RegionExporter::ExportRegions(const std::string& filename, std::string& mes
         // Write to file
         success = ExportRegions(filename, message);
     }
-    export_ack.set_success(success);
-    export_ack.set_message(message);
+    Message::ExportRegionAck(export_ack, success, message);
 }
 
 bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,

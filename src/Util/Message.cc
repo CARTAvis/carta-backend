@@ -667,6 +667,13 @@ CARTA::ImportRegionAck Message::ImportRegionAck(bool success, const std::string&
     return import_region_ack;
 }
 
+CARTA::ExportRegionAck Message::ExportRegionAck(bool success, const std::string& message) {
+    CARTA::ExportRegionAck export_region_ack;
+    export_region_ack.set_success(success);
+    export_region_ack.set_message(message);
+    return export_region_ack;
+}
+
 CARTA::RegionStatsData Message::RegionStatsData(int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes) {
     CARTA::RegionStatsData message;
     message.set_file_id(file_id);

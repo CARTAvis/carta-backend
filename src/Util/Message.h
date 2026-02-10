@@ -153,6 +153,7 @@ public:
     static CARTA::RasterTileData RasterTileData(int32_t file_id, int32_t sync_id, int32_t animation_id);
     static CARTA::StartAnimationAck StartAnimationAck(bool success, int32_t animation_id, const std::string& message);
     static CARTA::ImportRegionAck ImportRegionAck(bool success, const std::string& message);
+    static CARTA::ExportRegionAck ExportRegionAck(CARTA::ExportRegionAck export_ack, bool success, const std::string& message);
     static CARTA::RegionStatsData RegionStatsData(int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes);
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(

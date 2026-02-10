@@ -213,8 +213,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Export regions to given filename, or return export file contents in ack
     // Check if any regions to export
     if (region_styles.empty()) {
-        export_ack.set_success(false);
-        export_ack.set_message("Export region failed: no regions requested.");
+        Message::ExportRegionAck(export_ack, false, "Export region failed: no regions requested.");
         return;
     }
 
@@ -225,8 +224,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     bool export_pixel_coords(coord_type == CARTA::CoordinateType::PIXEL);
     if (!export_pixel_coords && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
-        export_ack.set_success(false);
-        export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
+        Message::ExportRegionAck(export_ack, false, "Cannot export regions in world coordinates without direction coordinate.");
         return;
     }
 
