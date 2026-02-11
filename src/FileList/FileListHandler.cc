@@ -183,7 +183,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
             if (cc_file.isReadable() && cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                 casacore::String full_path(cc_file.path().absoluteName());
-                casacore::String name_only = cc_file.path().baseName();
+                std::string name_only = cc_file.path().baseName();
 
                 if (list_all_files) {
                     if (cc_file.isRegular(true)) {
@@ -193,7 +193,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                         info_loader.FillFileInfo(file_info);
                     } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                         Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime());
-                        // skip item count
                     }
                 } else {
                     try {
@@ -214,8 +213,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                             } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
                                        CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN) {
                                 // Add directory: not image type
-                                Message::AddDirectory(
-                                    file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
+                                Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                             }
                         } else {
                             // Image list
@@ -242,8 +240,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                             result_msg = {message, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                                         } else {
                                             // UNKNOWN directories are directories
-                                            Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime(),
-                                                GetNumItems(cc_file.path().absoluteName()));
+                                            Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                                         }
                                         break;
                                     }

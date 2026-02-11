@@ -740,32 +740,6 @@ CARTA::RemoteFileRequest Message::RemoteFileRequest(int32_t file_id, const strin
     return message;
 }
 
-CARTA::FileListResponse Message::AddDirectory(CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count) {
-    auto* directory_info = response.add_subdirectories();
-    directory_info->set_name(name);
-    directory_info->set_date(date);
-    directory_info->set_item_count(item_count);
-    return response;
-}
-
-CARTA::FileInfoExtended Message::AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value) {
-    auto entry = response.add_computed_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(CARTA::EntryType::STRING);
-    return response;
-}
-
-CARTA::FileInfoExtended Message::AddComputedEntry(
-    CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
-    auto entry = response.add_computed_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(type);
-    entry->set_numeric_value(numeric_value);
-    return response;
-}
-
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
     const std::vector<int32_t>& bins, double mean, double std_dev) {
     if (histogram) {
@@ -801,4 +775,12 @@ void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA:
         stats_value->set_stats_type(carta_stats_type);
         stats_value->set_value(value);
     }
+}
+
+CARTA::DirectoryInfo* Message::AddDirectory(CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count) {
+    auto* directory_info = response.add_subdirectories();
+    directory_info->set_name(name);
+    directory_info->set_date(date);
+    directory_info->set_item_count(item_count);
+    return directory_info;
 }

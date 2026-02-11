@@ -123,6 +123,7 @@ public:
     static CARTA::ScriptingRequest ScriptingRequest(uint32_t scripting_request_id, const std::string& target, const std::string& action,
         const std::string& parameters, bool async, const std::string& return_path);
     static CARTA::ChannelMapFlowControl ChannelMapFlowControl(int32_t file_id, int32_t received_channel);
+
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
         std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
@@ -160,11 +161,9 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
-    static CARTA::FileListResponse AddDirectory(
-        CARTA::FileListResponse& response, casacore::String& name, int64_t date, int32_t item_count = 0);
-    static CARTA::FileInfoExtended AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value);
-    static CARTA::FileInfoExtended AddComputedEntry(
-        CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value);
+    static CARTA::DirectoryInfo* AddDirectory(
+        CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count = 0);
+
     // Decode messages
     static carta::EventHeader GetEventHeader(std::string_view message);
 
