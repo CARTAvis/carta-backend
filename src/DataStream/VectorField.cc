@@ -136,79 +136,110 @@ bool VectorFieldCalculator::Calculate(
         // Threshold cut operator to be applied
         ThresholdCut threshold_cut(_threshold);
 
-        // MY TRY TO DO ORDER AS IN THE DOCUMENT : order of calculations as in the document :
-        // Then apply the threshold cut to Q if the threshold source is current or I (using the appropriate source)
+        // New optimised implementation, handling separately each SOURCE case - they should be exclusive:
+        // TODO : cosmietics, potentially change some if-s to switch to make parts of the code explicitly exclusive        
+        // !!! need to change for loops to transform if possible - it has issues when working with 3 vectors 
         std::vector<float> pa, pi;
-        // Then do the PA / PI / FPI calculations
-        // this may be parts of the OLD code below (without the threshold parts I believe)
         if (_angle_source == Source::PA) {
             pa.resize(width * height);
-            CalcPa calc_pa;
-            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
-                stokes_data[CARTA::PolarizationType::U].begin(), pa.begin(), calc_pa);
+            CalcPa calc_pa(_threshold);
+            
+            if (_threshold_source == Source::FPI) {
+               CalcFpi calc_fpi(_q_error, _u_error, _threshold);
+               for(int i=0;i<pa.size();i++){
+                  float fpi = calc_fpi(stokes_data[CARTA::PolarizationType::I][i],stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i]);
+                  pa[i] = calc_pa(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],fpi);
+               }                              
+            }else if (_threshold_source == Source::PI) {
+               CalcPi calc_pi(_q_error, _u_error, _threshold);
+               for(int i=0;i<pa.size();i++){
+                  float pi = calc_pi(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i]);
+                  pa[i] = calc_pa(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],pi);
+               }                                             
+            }else if (_threshold_source == Source::I) {
+              // std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pa.begin(), pa.begin(), threshold_cut);
+              for(int i=0;i<pa.size();i++){
+                 pa[i] = calc_pa(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],stokes_data[CARTA::PolarizationType::I][i]);
+              } 
+            }else if (_threshold_source == Source::CURRENT) {
+                // std::transform(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
+                // stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), pa.begin(), pa.begin(), threshold_cut);
+                for(int i=0;i<pa.size();i++){
+                   pa[i] = calc_pa(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][i]);
+                } 
+            }else{
+               std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
+                   stokes_data[CARTA::PolarizationType::U].begin(), pa.begin(), calc_pa);
+           }
         }
+        
+        if (_intensity_source == Source::PI) {
+           pi.resize(width * height);
+           
+           if (_threshold_source == Source::PI) {
+              CalcPi calc_pi(_q_error, _u_error, _threshold);
+              std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
+              stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
+           }                  
 
-        if (_intensity_source == Source::PI || _intensity_source == Source::FPI || _threshold_source == Source::PI ||
-            _threshold_source == Source::FPI) {
-            CalcPi calc_pi(_q_error, _u_error);
-            pi.resize(width * height);
-            std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
-                stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
-
-            if (_intensity_source == Source::FPI || _threshold_source == Source::FPI) {
-                CalcFpi calc_fpi;
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(),
-                    pi.begin(), calc_fpi);
-            }
+           if (_threshold_source == Source::I) {
+              CalcPi calc_pi(_q_error, _u_error, _threshold);
+              for(int i=0;i<stokes_data[CARTA::PolarizationType::Q].size();i++){
+                 pi[i] = calc_pi(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],stokes_data[CARTA::PolarizationType::I][i],true);
+              }   
+           }
+           
+           if (_threshold_source == Source::CURRENT) {
+              //  std::transform(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
+              //  stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), pi.begin(), pi.begin(), threshold_cut);
+              CalcPi calc_pi(_q_error, _u_error, _threshold);
+              for(int i=0;i<stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].size();i++){
+                 pi[i] = calc_pi(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][i],true);
+              }   
+           }
+        }   
+        
+        if (_intensity_source == Source::FPI) {     
+           pi.resize(width * height);
+           
+           if (_threshold_source == Source::FPI) {
+              CalcFpi calc_fpi(_q_error, _u_error, _threshold); // std::numeric_limits<float>::quiet_NaN());
+              for(int i=0;i<stokes_data[CARTA::PolarizationType::I].size();i++){
+                 pi[i] = calc_fpi(stokes_data[CARTA::PolarizationType::I][i],stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i]);
+              }   
+           }
+           
+           if (_threshold_source == Source::I) {
+              CalcFpi calc_fpi(_q_error, _u_error, _threshold);
+              for(int i=0;i<stokes_data[CARTA::PolarizationType::I].size();i++){
+                 pi[i] = calc_fpi(stokes_data[CARTA::PolarizationType::I][i],stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],stokes_data[CARTA::PolarizationType::I][i],true);
+              }   
+           }
+           
+           if (_threshold_source == Source::CURRENT) {
+              //  std::transform(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
+              //  stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), pi.begin(), pi.begin(), threshold_cut);
+              CalcFpi calc_fpi(_q_error, _u_error, _threshold);
+              for(int i=0;i<stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].size();i++){
+                 pi[i] = calc_fpi(stokes_data[CARTA::PolarizationType::I][i],stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][i],true);
+              }   
+           }   
         }
-
-        // Then apply the threshold cut to the current data if the angle or intensity source is current and the threshold source is current
-        // or I. This is done later - see below (see around line 205 - at least now, just before FillTileData starts)
-        // Then apply the threshold cut to the current data, only if the angle or intensity source is current
-        // and the threshold source is PI or FPI.
-        if (UsesCurrent()) {
-            if (_threshold_source == Source::PI || _threshold_source == Source::FPI) {
-                // Bug ??? looks like I may be applying threshold second time here, or maybe not ?
-                // CONDITION begin,end SOURCE_OF_DATA DESTINATION_OF_DATA :
-                std::transform(pi.begin(), pi.end(), stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
-                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(), threshold_cut);
+        
+// TODO : should be only SourceCurrent !!!        
+        if (UsesCurrent()) { // should be only SourceCurrent !!!
+            if (_threshold_source == Source::FPI) {
+               CalcFpi calc_fpi(_q_error, _u_error, _threshold);
+               for(int i=0;i<stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].size();i++){
+                  stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][i] = calc_fpi(stokes_data[CARTA::PolarizationType::I][i],stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][i],false);
+               }               
             }
-        }
-
-        // Then apply the threshold cut to pa, only if the threshold source is PI or FPI.
-        if (_threshold_source == Source::PI || _threshold_source == Source::FPI) {
-            if (_angle_source == Source::PA) {
-                std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), threshold_cut);
+            if (_threshold_source == Source::PI) {
+               CalcPi calc_pi(_q_error, _u_error, _threshold);
+               for(int i=0;i<stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].size();i++){
+                   stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][i] = calc_pi(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE][i],false);
+               }
             }
-
-            // Then apply the threshold cut to pi, only if the intensity source is PI or FPI
-            // and the threshold source is PI or FPI.
-            if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
-                std::for_each(pi.begin(), pi.end(), threshold_cut);
-            }
-        } else if (_threshold_source == Source::I) {
-            if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pi.begin(),
-                    pi.begin(), threshold_cut);
-            }
-            if (_angle_source == Source::PA) {
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(), pa.begin(),
-                    pa.begin(), threshold_cut);
-            }
-        } else if (_threshold_source == Source::CURRENT) {
-            if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
-                std::transform(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
-                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), pi.begin(), pi.begin(), threshold_cut);
-            }
-            if (_angle_source == Source::PA) {
-                std::transform(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
-                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), pa.begin(), pa.begin(), threshold_cut);
-            }
-        }
-
-        // Then apply the threshold cut to the current data if the angle or intensity source is current and the
-        // threshold source is current or I.
-        if (UsesCurrent()) {
             if (_threshold_source == Source::CURRENT) {
                 std::for_each(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
                     stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), threshold_cut);
@@ -218,8 +249,9 @@ bool VectorFieldCalculator::Calculate(
                     stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
                     stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(), threshold_cut);
             }
-        }
 
+        }
+        
         // FillTileData
         if (_intensity_source == Source::CURRENT) {
             FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,

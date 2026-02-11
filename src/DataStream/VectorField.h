@@ -78,15 +78,8 @@ public:
         return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT || _threshold_source == Source::CURRENT);
     }
 
-    struct Valid {
-        bool operator()(float a, float b) {
-            return (!std::isnan(a) && !std::isnan(b));
-        }
-    };
-
     struct ThresholdCut {
         float threshold;
-        Valid valid;
 
         ThresholdCut(float threshold_) : threshold(threshold_) {}
 
@@ -95,40 +88,131 @@ public:
         }
 
         void operator()(float& data) {
-            if (valid(threshold, data) && data < threshold) {
+            if (!std::isnan(threshold) && !std::isnan(data) && data < threshold) {
                 data = FLOAT_NAN;
             }
         }
     };
 
     struct CalcPi {
-        double q_error;
-        double u_error;
-        Valid valid;
+        const double _error_term;
+        const double _threshold;
 
-        CalcPi(double q_error_, double u_error_) : q_error(q_error_), u_error(u_error_) {}
+        CalcPi(double q_error, double u_error, double threshold) : 
+            _error_term((std::pow(q_error, 2) + std::pow(u_error, 2))/2.0), _threshold(threshold) {}
 
         float operator()(float q, float u) {
-            if (valid(q, u)) {
-                return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
+            if (!std::isnan(q) && !std::isnan(u)) {
+                float pi = (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
+                if( std::isnan(pi) || (!std::isnan(_threshold) && (pi < _threshold)) ) {
+                   return FLOAT_NAN;
+                }
+
+                return pi;
             }
             return FLOAT_NAN;
         }
+
+        float operator()(float q, float u, float v, bool threshold_v) {
+            if ( threshold_v ) {
+               // v is a value to check against the threshold, otherwise it is a return value when threshold is applied to pi (in else):
+               float t = v;
+               if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u)) {
+                  return (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
+               }
+            } else {
+               // v is return value :
+               if (!std::isnan(q) && !std::isnan(u)) {
+                   float pi = (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
+                   if( std::isnan(pi) || (!std::isnan(_threshold) && (pi < _threshold)) ) {
+                      return FLOAT_NAN;
+                   }
+
+                   return v;
+               }
+            }   
+             
+            return FLOAT_NAN;
+        }
+
+/*        float operator()(float q, float u, float t) {
+            if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u)) {
+                return (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
+            }
+            return FLOAT_NAN;
+        }*/
     };
 
+    // TODO : do the same as above !
     struct CalcFpi {
-        Valid valid;
+        const double _error_term;
+        const double _threshold;
 
-        float operator()(float i, float pi) {
-            return (valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN);
+        CalcFpi(double q_error, double u_error, double threshold) : _error_term((std::pow(q_error, 2) + std::pow(u_error, 2))/2.0), _threshold(threshold) {}
+
+    
+        // returns fpi by default or provided value if v >=0 
+        float operator()(float i, float q, float u) {
+            if (!std::isnan(i) && !std::isnan(q) && !std::isnan(u)) {
+               float fpi = (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);
+//               printf("FPI(%.8f,%.8f,%.8f) = %.8f vs. threshold = %.8f\n",i,q,u,fpi,_threshold);
+               if (std::isnan(fpi) || (!std::isnan(_threshold) && (fpi < _threshold))) {
+                  return FLOAT_NAN;
+               }               
+               return fpi;
+            }
+            
+            return FLOAT_NAN;
         }
+
+        // returns provided value:
+        float operator()(float i, float q, float u, float v, bool threshold_v ) {
+            if ( threshold_v ) {
+               // v is a value to check against the threshold, otherwise a return value if threshold is applied to fpi (in else):
+               float t = v;
+               if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u) && !std::isnan(i)) {
+                  return (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);              
+               }              
+            } else {
+               // v is return value:
+               if (!std::isnan(i) && !std::isnan(q) && !std::isnan(u)) {
+                  float fpi = (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);
+                  if (std::isnan(fpi) || (!std::isnan(_threshold) && (fpi < _threshold))) {
+                     return FLOAT_NAN;
+                  }               
+                  return v;
+               }
+            }
+            
+            return FLOAT_NAN;
+        }
+
+        
+/*        float operator()(float i, float q, float u, float t) {
+           if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u) && !std::isnan(i)) {
+              return (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);              
+           }
+           return FLOAT_NAN;
+        }*/
     };
 
     struct CalcPa {
-        Valid valid;
+        const double _threshold;
+
+        CalcPa(double threshold) : _threshold(threshold) {}
 
         float operator()(float q, float u) {
-            return (valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
+            if (!std::isnan(q) && !std::isnan(u)) {
+               return (float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2; // TODO : try to optimise by re-orderign the operations for MINIMUM ERROR !
+            }
+            return FLOAT_NAN;
+        }
+
+        float operator()(float q, float u, float t) {
+            if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u)) {
+               return (float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2; // TODO : try to optimise by re-orderign the operations for MINIMUM ERROR !
+            }
+            return FLOAT_NAN;
         }
     };
 
