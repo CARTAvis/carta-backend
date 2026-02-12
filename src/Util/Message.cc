@@ -662,7 +662,7 @@ CARTA::ErrorData Message::ErrorData(const std::string& message, std::vector<std:
     return error_data;
 }
 
-CARTA::FileInfo Message::FileInfo(const std::string& name, CARTA::FileType type, int64_t size, const std::string& hdu) {
+CARTA::FileInfo Message::FileInfo(const std::string& name, CARTA::FileType type, int64_t size, const std::string& hdu = "") {
     CARTA::FileInfo message;
     message.set_name(name);
     message.set_type(type);

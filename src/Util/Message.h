@@ -161,8 +161,7 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
-    static CARTA::DirectoryInfo* AddDirectory(
-        CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count = 0);
+    static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count = 0);
 
     // Decode messages
     static carta::EventHeader GetEventHeader(std::string_view message);

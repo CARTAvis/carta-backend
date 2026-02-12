@@ -213,7 +213,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                             } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
                                        CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN) {
                                 // Add directory: not image type
-                                Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
+                                Message::AddDirectory(
+                                    file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                             }
                         } else {
                             // Image list
@@ -240,7 +241,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                             result_msg = {message, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                                         } else {
                                             // UNKNOWN directories are directories
-                                            Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
+                                            Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime(),
+                                                GetNumItems(cc_file.path().absoluteName()));
                                         }
                                         break;
                                     }
