@@ -131,20 +131,23 @@ public:
     static CARTA::ChannelMapFlowControl ChannelMapFlowControl(int32_t file_id, int32_t received_channel);
 
     // Response messages
-    //spectral profile data
+    // spectral profile data
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress);
     static CARTA::SpectralProfileData SpectralProfileData(int32_t stokes, float progress);
-    static CARTA::SpectralProfile* AddSpectralProfile(CARTA::SpectralProfileData& profile_data, std::string& coordinate, std::vector<CARTA::StatsType>& stats_type,
-        std::map<CARTA::StatsType, std::vector<double>>& raw_values_fp64);
-    static CARTA::SpectralProfile* AddSpectralProfile(CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type);
+    static CARTA::SpectralProfile* AddSpectralProfile(CARTA::SpectralProfileData& profile_data, std::string& coordinate,
+        std::vector<CARTA::StatsType>& stats_type, std::map<CARTA::StatsType, std::vector<double>>& raw_values_fp64);
+    static CARTA::SpectralProfile* AddSpectralProfile(
+        CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type);
 
     // spatial profile data
     static CARTA::SpatialProfileData SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value);
-    static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
-        int32_t stokes, float value);
-    static CARTA::SpatialProfile* AddSpatialProfile(CARTA::SpatialProfileData& profile_data, int32_t start, int32_t end, std::vector<float>& raw_values_fp32, std::string coordinate, int32_t mip);
-    static CARTA::LineProfileAxis* AddLineProfileAxis(CARTA::SpatialProfile* spatial_profile, CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string unit);
-    
+    static CARTA::SpatialProfileData SpatialProfileData(
+        int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel, int32_t stokes, float value);
+    static CARTA::SpatialProfile* AddSpatialProfile(CARTA::SpatialProfileData& profile_data, int32_t start, int32_t end,
+        std::vector<float>& raw_values_fp32, std::string coordinate, int32_t mip);
+    static CARTA::LineProfileAxis* AddLineProfileAxis(
+        CARTA::SpatialProfile* spatial_profile, CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string unit);
+
     static CARTA::RasterTileSync RasterTileSync(
         int32_t file_id, int32_t channel, int32_t stokes, int32_t sync_id, int32_t animation_id, int32_t tile_count, bool end_sync);
     static CARTA::SetRegionAck SetRegionAck(int32_t region_id, bool success, std::string err_message);

@@ -1374,7 +1374,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             if (have_profile) {
                 // add SpatialProfile to message
                 // Should these be set to the rounded endpoints if the data is downsampled or decimated?
-                auto spatial_profile = Message::AddSpatialProfile(spatial_profile_message, requested_start, requested_end, profile, coordinate, mip);
+                auto spatial_profile =
+                    Message::AddSpatialProfile(spatial_profile_message, requested_start, requested_end, profile, coordinate, mip);
             }
         }
 
@@ -1460,7 +1461,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
         // Create final profile message for callback
         auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
-        auto spectral_profile = Message::AddSpectralProfile(profile_message, config.coordinate, config.all_stats[0]);  // point spectral profiles only have one stats type
+        auto spectral_profile = Message::AddSpectralProfile(
+            profile_message, config.coordinate, config.all_stats[0]); // point spectral profiles only have one stats type
 
         // Send spectral profile data if cursor inside image
         if (start_cursor.InImage(_dims.width, _dims.height)) {
