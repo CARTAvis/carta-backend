@@ -667,7 +667,7 @@ CARTA::ImportRegionAck Message::ImportRegionAck(bool success, const std::string&
     return import_region_ack;
 }
 
-CARTA::RegionInfo Message::SetRegionInfo(CARTA::RegionType& region_type,  float rotation) {
+CARTA::RegionInfo Message::SetRegionInfo(CARTA::RegionType& region_type, float rotation) {
     CARTA::RegionInfo regionInfo;
     regionInfo.set_region_type(region_type);
     regionInfo.set_rotation(rotation);
