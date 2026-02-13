@@ -224,6 +224,23 @@ public:
         }
     };
 
+    // Helper functions for Pi and Fpi calculations on vectors as std::transform does not work on 3 vectors and 
+    // other clean solutions are only available from C++20:
+    // for Fpi:
+    void calc_fpi_arr( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& fpi );
+    void calc_fpi_arr( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
+                       const std::vector<float>& threshold_source, std::vector<float>& fpi);
+    void apply_fpi_threshold( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
+                       const std::vector<float>& data_source, std::vector<float>& out);
+    // for Pi :
+    void calc_pi_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& threshold_source, std::vector<float>& pi);
+    void apply_pi_threshold( const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& data_source, std::vector<float>& out);
+    
+    // for Pa :
+    void calc_pa_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& threshold_source, std::vector<float>& pa);
+    
+    
+
 protected:
     void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
         std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
