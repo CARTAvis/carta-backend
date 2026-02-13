@@ -238,6 +238,8 @@ public:
     
     // for Pa :
     void calc_pa_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& threshold_source, std::vector<float>& pa);
+    void calc_pa_with_fpi_threshold(const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& pa);
+    void calc_pa_with_pi_threshold(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& pa);
     
     
 

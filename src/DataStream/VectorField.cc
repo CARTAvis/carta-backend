@@ -44,14 +44,6 @@ void VectorFieldCalculator::calc_fpi_arr(const std::vector<float>& stokes_i, con
    }   
 }
 
-/*void VectorFieldCalculator::calc_pi_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& pi) {   
-   CalcPi calc_pi(_q_error, _u_error, _threshold);
-
-   for(int i=0;i<stokes_q.size();i++){
-      pi[i] = calc_pi(stokes_q[i], stokes_u[i]);
-   }   
-}*/
-
 void VectorFieldCalculator::calc_pi_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& threshold_source, std::vector<float>& pi) {
    CalcPi calc_pi(_q_error, _u_error, _threshold);
 
@@ -59,7 +51,6 @@ void VectorFieldCalculator::calc_pi_arr(const std::vector<float>& stokes_q, cons
       pi[i] = calc_pi(stokes_q[i], stokes_u[i], threshold_source[i], true);
    }   
 }
-
 
 void VectorFieldCalculator::calc_fpi_arr( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
                                           const std::vector<float>& threshold_source, std::vector<float>& fpi) {
@@ -95,6 +86,27 @@ void VectorFieldCalculator::calc_pa_arr(const std::vector<float>& stokes_q, cons
       pa[i] = calc_pa(stokes_q[i], stokes_u[i], threshold_source[i]);
    }
 }
+
+void VectorFieldCalculator::calc_pa_with_fpi_threshold(const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
+                                                        std::vector<float>& pa) {
+   CalcFpi calc_fpi(_q_error, _u_error, _threshold);
+   CalcPa calc_pa(_threshold);
+   
+   for(int i=0;i<pa.size();i++){
+      float fpi = calc_fpi(stokes_i[i],stokes_q[i],stokes_u[i]);
+      pa[i] = calc_pa(stokes_q[i],stokes_u[i],fpi);
+   }   
+}                                        
+
+void VectorFieldCalculator::calc_pa_with_pi_threshold(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& pa) {
+   CalcPi calc_pi(_q_error, _u_error, _threshold);
+   CalcPa calc_pa(_threshold);
+   
+   for(int i=0;i<pa.size();i++){
+      float pi = calc_pi(stokes_q[i],stokes_u[i]);
+      pa[i] = calc_pa(stokes_q[i],stokes_u[i],pi);
+   }   
+}                                        
 
 
 
@@ -198,29 +210,16 @@ bool VectorFieldCalculator::Calculate(
         // Threshold cut operator to be applied
         ThresholdCut threshold_cut(_threshold);
         
-//        printf("DEBUG : _angle_source = %d, _intensity_source = %d, _threshold_source = %d\n",_angle_source,_intensity_source,_threshold_source);
-
         // New optimised implementation, handling separately each SOURCE case - they should be exclusive:
-        // TODO : cosmietics, potentially change some if-s to switch to make parts of the code explicitly exclusive        
-        // !!! need to change for loops to transform if possible - it has issues when working with 3 vectors 
         std::vector<float> pa, pi;
         if (_angle_source == Source::PA) {
             pa.resize(width * height);
             CalcPa calc_pa(_threshold);
             
             if (_threshold_source == Source::FPI) {
-               CalcFpi calc_fpi(_q_error, _u_error, _threshold);
-               for(int i=0;i<pa.size();i++){
-                  float fpi = calc_fpi(stokes_data[CARTA::PolarizationType::I][i],stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i]);
-                  pa[i] = calc_pa(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],fpi);
-               }                              
-//               calcpa_array(stokes_data[CARTA::PolarizationType::I],stokes_data[CARTA::PolarizationType::Q],stokes_data[CARTA::PolarizationType::U],pa,calc_fpi,_threshold);
+               calc_pa_with_fpi_threshold(stokes_data[CARTA::PolarizationType::I], stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], pa);
             }else if (_threshold_source == Source::PI) {
-               CalcPi calc_pi(_q_error, _u_error, _threshold);
-               for(int i=0;i<pa.size();i++){
-                  float pi = calc_pi(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i]);
-                  pa[i] = calc_pa(stokes_data[CARTA::PolarizationType::Q][i],stokes_data[CARTA::PolarizationType::U][i],pi);
-               }                                             
+               calc_pa_with_pi_threshold(stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], pa);
             }else if (_threshold_source == Source::I) {
               calc_pa_arr(stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::I], pa);
             }else if (_threshold_source == Source::CURRENT) {
