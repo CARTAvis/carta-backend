@@ -77,19 +77,23 @@ public:
     bool UsesCurrent() {
         return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT || _threshold_source == Source::CURRENT);
     }
+    
+    bool SourceCurrent() {
+       return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT);
+    }
 
     struct ThresholdCut {
-        float threshold;
+        const double _threshold;
 
-        ThresholdCut(float threshold_) : threshold(threshold_) {}
+        ThresholdCut(float threshold) : _threshold(threshold) {}
 
         float operator()(float data, float result) {
-            return (std::isnan(data) || (!std::isnan(threshold) && (data < threshold))) ? FLOAT_NAN : result;
+            return (std::isnan(data) || (!std::isnan(_threshold) && (data < _threshold))) ? FLOAT_NAN : result;
         }
 
-        void operator()(float& data) {
-            if (!std::isnan(threshold) && !std::isnan(data) && data < threshold) {
-                data = FLOAT_NAN;
+        void operator()(float& d) {
+            if (!std::isnan(_threshold) && !std::isnan(d) && d < _threshold) {
+                d = FLOAT_NAN;
             }
         }
     };
@@ -116,12 +120,11 @@ public:
         float operator()(float q, float u, float v, bool threshold_v) {
             if ( threshold_v ) {
                // v is a value to check against the threshold, otherwise it is a return value when threshold is applied to pi (in else):
-               float t = v;
-               if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u)) {
+               if (!std::isnan(v) && !std::isnan(_threshold) && (v >= _threshold) && !std::isnan(q) && !std::isnan(u)) {
                   return (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
                }
             } else {
-               // v is return value :
+               // v is a return value when Pi >= threshold (in this case Pi is calculated as a threshold to display another value):
                if (!std::isnan(q) && !std::isnan(u)) {
                    float pi = (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
                    if( std::isnan(pi) || (!std::isnan(_threshold) && (pi < _threshold)) ) {
@@ -155,7 +158,6 @@ public:
         float operator()(float i, float q, float u) {
             if (!std::isnan(i) && !std::isnan(q) && !std::isnan(u)) {
                float fpi = (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);
-//               printf("FPI(%.8f,%.8f,%.8f) = %.8f vs. threshold = %.8f\n",i,q,u,fpi,_threshold);
                if (std::isnan(fpi) || (!std::isnan(_threshold) && (fpi < _threshold))) {
                   return FLOAT_NAN;
                }               
@@ -169,12 +171,18 @@ public:
         float operator()(float i, float q, float u, float v, bool threshold_v ) {
             if ( threshold_v ) {
                // v is a value to check against the threshold, otherwise a return value if threshold is applied to fpi (in else):
-               float t = v;
-               if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u) && !std::isnan(i)) {
-                  return (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);              
+               float fpi = (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);
+               if (std::isnan(_threshold)) {
+                  // ignore threshold if it is NaN
+                  return fpi;
+               }
+               
+               // was also !std::isnan(_threshold) &&
+               if (!std::isnan(v) && (v >= _threshold) && !std::isnan(q) && !std::isnan(u) && !std::isnan(i)) {
+                  return fpi;
                }              
             } else {
-               // v is return value:
+               // v is a return value when fPi >= threshold (in this case fPi is calculated as a threshold to display another value):
                if (!std::isnan(i) && !std::isnan(q) && !std::isnan(u)) {
                   float fpi = (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);
                   if (std::isnan(fpi) || (!std::isnan(_threshold) && (fpi < _threshold))) {

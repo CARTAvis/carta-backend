@@ -129,7 +129,8 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
-    ::testing::Values(TestParameters(SourceTestMessage(SRC_CURRENT, SRC_CURRENT), 1, 1),
+    ::testing::Values(
+        TestParameters(SourceTestMessage(SRC_CURRENT, SRC_CURRENT), 1, 1),
         TestParameters(SourceTestMessage(SRC_CURRENT, SRC_COMPUTED), 1, CalcPa(3, 4)),                            // computed Pa
         TestParameters(SourceTestMessage(SRC_COMPUTED, SRC_CURRENT), CalcPi(3, 4), 1),                            // computed Pi
         TestParameters(SourceTestMessage(SRC_COMPUTED, SRC_COMPUTED), CalcPi(3, 4), CalcPa(3, 4)),                // computed Pa and Pi
@@ -138,7 +139,8 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
         TestParameters(SourceTestMessage(SRC_CURRENT, SRC_NONE, false), 1, std::numeric_limits<double>::quiet_NaN()),
         TestParameters(SourceTestMessage(SRC_NONE, SRC_CURRENT, false), std::numeric_limits<double>::quiet_NaN(), 1),
         TestParameters(SourceTestMessage(SRC_NONE, SRC_NONE, false), std::numeric_limits<double>::quiet_NaN(),
-            std::numeric_limits<double>::quiet_NaN())));
+            std::numeric_limits<double>::quiet_NaN())
+        ));
 
 //------------------------------------------------------ Thresholding tests below -----------------------------------------
 
