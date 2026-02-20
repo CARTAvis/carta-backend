@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Moved region statistics implementation to analysis subdirectory ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
 * Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
 * Moved region spatial profile implementation to analysis subdirectory ([#1515](https://github.com/CARTAvis/carta-backend/issues/1515)).
+* Removed unused protobuf message wrappers ([#1533](https://github.com/CARTAvis/carta-backend/issues/1533)).
 
 ## [5.0.2]
 
