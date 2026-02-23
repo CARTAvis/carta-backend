@@ -408,8 +408,7 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
     auto folder = SafeStringEscape(FitsImages());
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
-    EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder,
-                              "noise_3d.fits"));
+    EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder, "noise_3d.fits"));
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {

@@ -52,8 +52,7 @@ TEST_F(GetResolvedFilenameTest, SymlinkToNonExistentFile) {
 TEST_F(GetResolvedFilenameTest, FileExists) {
     auto pwd = TestRoot();
     std::string message;
-    std::string resolved =
-        GetResolvedFilename(pwd, "data/images/fits", "noise_4d.fits", message);
+    std::string resolved = GetResolvedFilename(pwd, "data/images/fits", "noise_4d.fits", message);
 
     EXPECT_FALSE(resolved.empty());
     EXPECT_TRUE(message.empty());
