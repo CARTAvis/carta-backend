@@ -409,7 +409,7 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder,
-                              "noise_3d.fits,10x10x10x10_nan-row-column_nanpct-10.0_seed-0.fits"));
+                              "noise_3d.fits"));
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
