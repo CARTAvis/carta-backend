@@ -53,7 +53,7 @@ TEST_F(GetResolvedFilenameTest, FileExists) {
     auto pwd = TestRoot();
     std::string message;
     std::string resolved =
-        GetResolvedFilename(pwd.string(), "data/images/fits", "10x10x10x10_nan-row-column_nanpct-10.0_seed-0.fits", message);
+        GetResolvedFilename(pwd, "data/images/fits", "10x10x10x10_nan-row-column_nanpct-10.0_seed-0.fits", message);
 
     EXPECT_FALSE(resolved.empty());
     EXPECT_TRUE(message.empty());
