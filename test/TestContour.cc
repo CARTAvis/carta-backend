@@ -119,35 +119,35 @@ TEST_F(ContourTest, NoSmoothingFitsFile) {
     GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing);
 }
 TEST_F(ContourTest, NoSmoothingFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nan-row-column_nanpct-10.0_seed-0.fits", CARTA::SmoothingMode::NoSmoothing);
+    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing);
 }
 
 TEST_F(ContourTest, GaussianBlurFitsFile) {
     GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur);
 }
 TEST_F(ContourTest, GaussianBlurFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nan-row-column_nanpct-10.0_seed-0.fits", CARTA::SmoothingMode::GaussianBlur);
+    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur);
 }
 
 TEST_F(ContourTest, BlockAverageFitsFile) {
     GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage);
 }
 TEST_F(ContourTest, BlockAverageFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nan-row-column_nanpct-10.0_seed-0.fits", CARTA::SmoothingMode::BlockAverage);
+    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage);
 }
 
 TEST_F(ContourTest, NoSmoothingHdf5File) {
     GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing);
 }
 TEST_F(ContourTest, NoSmoothingHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nan-row-column_nanpct-10.0_seed-0.hdf5", CARTA::SmoothingMode::NoSmoothing);
+    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing);
 }
 
 TEST_F(ContourTest, GaussianBlurHdf5File) {
     GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur);
 }
 TEST_F(ContourTest, GaussianBlurHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nan-row-column_nanpct-10.0_seed-0.hdf5", CARTA::SmoothingMode::GaussianBlur);
+    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur);
 }
 
 TEST_F(ContourTest, BlockAverageHdf5File) {
@@ -155,5 +155,5 @@ TEST_F(ContourTest, BlockAverageHdf5File) {
 }
 
 TEST_F(ContourTest, BlockAverageHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nan-row-column_nanpct-10.0_seed-0.hdf5", CARTA::SmoothingMode::BlockAverage);
+    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage);
 }
