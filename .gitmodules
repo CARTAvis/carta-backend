@@ -13,10 +13,6 @@
 	path = third-party/sse2neon
 	url = https://github.com/DLTcollab/sse2neon.git
 	shallow = true
-[submodule "test/image-generator"]
-	path = third-party/image-generator
-	url = https://github.com/idia-astro/image-generator
-	shallow = true
 [submodule "third-party/pugixml"]
 	path = third-party/pugixml
 	url = https://github.com/zeux/pugixml.git

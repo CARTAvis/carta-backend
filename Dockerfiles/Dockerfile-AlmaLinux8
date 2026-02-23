@@ -13,11 +13,11 @@ RUN \
          wcslib-devel wget zlib-devel libuuid-devel zfp-devel && \
   pip3 install numpy astropy
 
-# Install carta-casacore-devel and fits2idia from the Copr cartavis/carta repository
+# Install carta-casacore-devel from the Copr cartavis/carta repository
 RUN \
   dnf -y install 'dnf-command(copr)' && \
   dnf -y copr enable cartavis/carta && \
-  dnf -y install carta-casacore-devel fits2idia gmock-devel gtest-devel measures-data
+  dnf -y install carta-casacore-devel gmock-devel gtest-devel measures-data
 
 # Forward port so that the webapp can properly access it
 # from outside of the container

@@ -32,8 +32,6 @@ else ()
     message(FATAL_ERROR "Could not find HDF5.")
 endif ()
 
-find_program(CONVERTER, fits2idia)
-
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
