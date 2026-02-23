@@ -653,7 +653,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
         // Always use the full image cache (for now)
         FillImageCache();
     }
-    
+
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;
