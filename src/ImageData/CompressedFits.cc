@@ -392,6 +392,8 @@ void CompressedFits::AddHeaderEntry(
     casacore::String& keyword, casacore::String& value, casacore::String& comment, CARTA::FileInfoExtended& file_info_ext) {
     // Set CARTA::HeaderEntry fields in FileInfoExtended
     CARTA::HeaderEntry* entry;
+    bool value_set(false);
+
     if (!value.empty()) {
         // Set type, numeric value
         if (value.contains(".")) {
@@ -399,23 +401,27 @@ void CompressedFits::AddHeaderEntry(
                 // Set double value
                 double dvalue = std::stod(value);
                 entry = Message::AddHeaderEntry(file_info_ext, keyword, value, CARTA::EntryType::FLOAT, dvalue);
+                value_set = true;
             } catch (std::invalid_argument) {
-                // Set string value only
-                entry = Message::AddHeaderEntry(file_info_ext, keyword, value);
             }
         } else {
             try {
                 // Set int value
                 int ivalue = std::stoi(value);
                 entry = Message::AddHeaderEntry(file_info_ext, keyword, value, CARTA::EntryType::INT, ivalue);
+                value_set = true;
             } catch (std::invalid_argument) {
-                // Set string value only
-                entry = Message::AddHeaderEntry(file_info_ext, keyword, value);
             } catch (std::out_of_range) {
                 long lvalue = std::stol(value);
                 entry = Message::AddHeaderEntry(file_info_ext, keyword, value, CARTA::EntryType::INT, lvalue);
+                value_set = true;
             }
         }
+    }
+
+    if (!value_set) {
+        // Set string value only
+        entry = Message::AddHeaderEntry(file_info_ext, keyword, value);
     }
 
     if (!comment.empty()) {
