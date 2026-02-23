@@ -72,7 +72,7 @@ TEST_F(FitsImageTest, CorrectShape3dImage) {
 }
 
 TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
-    auto path = FitsImages() / "10x10x10_degen.fits";
+    auto path = FitsImages() / "10x10x10x1.fits";
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -88,7 +88,7 @@ TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path = FitsImages() / "10x10x10_degen_casa.fits";
+    path = FitsImages() / "10x10x1x10.fits";
     loader.reset(carta::FileLoader::GetLoader(path));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
