@@ -773,9 +773,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         }
 
         if (!reference_pixels.empty()) {
-            auto name = fmt::format("Image reference pixel");
             auto value = fmt::format("[{}, {}]", reference_pixels(axes.x) + 1.0, reference_pixels(axes.y) + 1.0);
-            Message::AddComputedEntry(extended_info, name, value);
+            Message::AddComputedEntry(extended_info, "Image reference pixels", value);
         }
 
         if (!reference_values.empty() && !axis_units.empty() && !axis_names.empty()) {
