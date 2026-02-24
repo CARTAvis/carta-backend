@@ -8,6 +8,10 @@
 #define CARTA_SRC_UTIL_MESSAGE_H_
 
 #include <carta-protobuf/animation.pb.h>
+#include <carta-protobuf/catalog_file_info.pb.h>
+#include <carta-protobuf/catalog_filter.pb.h>
+#include <carta-protobuf/catalog_list.pb.h>
+#include <carta-protobuf/open_catalog_file.pb.h>
 #include <carta-protobuf/channel_map.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour_image.pb.h>
@@ -162,6 +166,7 @@ public:
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
     static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count = 0);
+    static CARTA::DirectoryInfo* AddDirectory(CARTA::CatalogListResponse& response, std::string name, int64_t date, int32_t item_count = 0);
 
     // Decode messages
     static carta::EventHeader GetEventHeader(std::string_view message);

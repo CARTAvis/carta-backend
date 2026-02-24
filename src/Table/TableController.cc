@@ -12,6 +12,7 @@
 #include "Main/ProgramSettings.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/File.h"
+#include "Util/Message.h"
 
 #if defined(__APPLE__)
 #define st_mtim st_mtimespec
@@ -237,14 +238,10 @@ void TableController::OnFileListRequest(
                     // Try to construct a directory iterator. If it fails, the directory is inaccessible
                     auto test_directory_iterator = fs::directory_iterator(entry);
 
-                    auto directory_info = file_list_response.add_subdirectories();
-                    directory_info->set_name(entry.path().filename().string());
-                    directory_info->set_item_count(GetNumItems(entry.path().string()));
-
-                    // Fill in file time
                     struct stat file_stats;
                     stat(entry.path().c_str(), &file_stats);
-                    directory_info->set_date(file_stats.st_mtim.tv_sec);
+
+                    auto directory_info = Message::AddDirectory(file_list_response, entry.path().filename().string(), static_cast<int64_t>(file_stats.st_mtim.tv_sec), static_cast<int32_t>(GetNumItems(entry.path().string())));
                 } catch (fs::filesystem_error) {
                     // Skip inaccessible folders
                     continue;

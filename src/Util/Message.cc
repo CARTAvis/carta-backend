@@ -784,3 +784,11 @@ CARTA::DirectoryInfo* Message::AddDirectory(CARTA::FileListResponse& response, s
     directory_info->set_item_count(item_count);
     return directory_info;
 }
+
+CARTA::DirectoryInfo* Message::AddDirectory(CARTA::CatalogListResponse& response, std::string name, int64_t date, int32_t item_count) {
+    auto* directory_info = response.add_subdirectories();
+    directory_info->set_name(name);
+    directory_info->set_date(date);
+    directory_info->set_item_count(item_count);
+    return directory_info;
+}
