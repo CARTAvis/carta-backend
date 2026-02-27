@@ -804,3 +804,15 @@ CARTA::CatalogFileInfo* Message::AddFile(CARTA::CatalogListResponse& response, s
     file_info->set_name(name);
     return file_info;
 }
+
+CARTA::RegionListResponse Message::RegionListResponse(CARTA::FileListResponse file_response) {
+    CARTA::RegionListResponse region_response;
+    region_response.set_success(file_response.success());
+    region_response.set_message(file_response.message());
+    region_response.set_directory(file_response.directory());
+    region_response.set_parent(file_response.parent());
+    *region_response.mutable_files() = {file_response.files().begin(), file_response.files().end()};
+    *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
+    region_response.set_cancel(file_response.cancel());
+    return region_response;
+}

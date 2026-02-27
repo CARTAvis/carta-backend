@@ -302,13 +302,7 @@ void FileListHandler::OnRegionListRequest(
     GetFileList(file_response, folder, result_msg, region_request.filter_mode(), true);
 
     // copy to region list message
-    region_response.set_success(file_response.success());
-    region_response.set_message(file_response.message());
-    region_response.set_directory(file_response.directory());
-    region_response.set_parent(file_response.parent());
-    *region_response.mutable_files() = {file_response.files().begin(), file_response.files().end()};
-    *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
-    region_response.set_cancel(file_response.cancel());
+    region_response = Message::RegionListResponse(file_response);
 
     _regionlist_folder = INVALID_PATH_VALUE; // ready for next file list request
 }
