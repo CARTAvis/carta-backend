@@ -135,7 +135,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
         if (carta_file_type != CARTA::FileType::UNKNOWN) {
             // Add image with file info
-            auto& file_info = *file_list_response.add_files();
             // Directory is path above image
             casacore::Path image_path(full_path);
             std::string directory(image_path.dirName());
@@ -146,10 +145,10 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
             file_list_response.set_parent(parent);
             // Image name is base name of image path
             std::string name_only = image_path.baseName();
-            file_info.set_name(name_only);
+            auto file_info = Message::AddFile(file_list_response, name_only);
             // Add file info
             FileInfoLoader info_loader = FileInfoLoader(full_path, carta_file_type);
-            info_loader.FillFileInfo(file_info);
+            info_loader.FillFileInfo(*file_info);
             file_list_response.set_success(true);
             return;
         } else if (!message.empty()) {
@@ -187,10 +186,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
                 if (list_all_files) {
                     if (cc_file.isRegular(true)) {
-                        auto& file_info = *file_list_response.add_files();
-                        file_info.set_name(name_only);
+                        auto file_info = Message::AddFile(file_list_response, name_only);
                         FileInfoLoader info_loader = FileInfoLoader(full_path, CARTA::FileType::UNKNOWN);
-                        info_loader.FillFileInfo(file_info);
+                        info_loader.FillFileInfo(*file_info);
                     } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                         Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime());
                     }
@@ -253,10 +251,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                             }
 
                             if (add_image_file) {
-                                auto& file_info = *file_list_response.add_files();
-                                file_info.set_name(name_only);
+                                auto file_info = Message::AddFile(file_list_response, name_only);
                                 FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
-                                info_loader.FillFileInfo(file_info);
+                                info_loader.FillFileInfo(*file_info);
                             }
                         }
                     } catch (casacore::AipsError& err) {
