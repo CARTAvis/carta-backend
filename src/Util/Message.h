@@ -166,8 +166,9 @@ public:
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
     static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count = 0);
-    static CARTA::DirectoryInfo* AddDirectory(CARTA::CatalogListResponse& response, std::string name, int64_t date, int32_t item_count = 0);
     static CARTA::FileInfo* AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type = CARTA::FileType::UNKNOWN, int64_t size = 0, std::string hdu_list = "", int64_t date = 0);
+    static CARTA::DirectoryInfo* AddDirectory(CARTA::CatalogListResponse& response, std::string name, int64_t date, int32_t item_count = 0);
+    static CARTA::CatalogFileInfo* AddFile(CARTA::CatalogListResponse& response, std::string name, CARTA::CatalogFileType type = CARTA::CatalogFileType::Unknown, int64_t size = 0, std::string description = "", int64_t date = 0);
 
     // Decode messages
     static carta::EventHeader GetEventHeader(std::string_view message);

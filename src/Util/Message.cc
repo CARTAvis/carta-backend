@@ -798,3 +798,9 @@ CARTA::DirectoryInfo* Message::AddDirectory(CARTA::CatalogListResponse& response
     directory_info->set_item_count(item_count);
     return directory_info;
 }
+
+CARTA::CatalogFileInfo* Message::AddFile(CARTA::CatalogListResponse& response, std::string name, CARTA::CatalogFileType type, int64_t size, std::string hdu_list, int64_t date) {
+    auto* file_info = response.add_files();
+    file_info->set_name(name);
+    return file_info;
+}

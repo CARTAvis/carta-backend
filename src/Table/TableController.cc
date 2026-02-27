@@ -252,10 +252,7 @@ void TableController::OnFileListRequest(
                     continue;
                 }
                 // Fill the file info
-                auto file_info = file_list_response.add_files();
-                file_info->set_name(entry.path().filename().string());
-                file_info->set_type(file_type);
-                file_info->set_file_size(fs::file_size(entry));
+                auto file_info = Message::AddFile(file_list_response, entry.path().filename().string(), file_type, fs::file_size(entry));
 
                 // Fill in file time
                 struct stat file_stats;
