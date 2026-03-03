@@ -17,6 +17,25 @@ using namespace carta;
 
 class RegionSpectralProfileTest : public ::testing::Test {
 public:
+    static CARTA::SetSpectralRequirements SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
+        CARTA::SetSpectralRequirements set_spectral_requirements;
+        set_spectral_requirements.set_file_id(file_id);
+        set_spectral_requirements.set_region_id(region_id);
+        auto* spectral_profiles = set_spectral_requirements.add_spectral_profiles();
+        spectral_profiles->set_coordinate(coordinate);
+        spectral_profiles->add_stats_types(CARTA::StatsType::NumPixels);
+        spectral_profiles->add_stats_types(CARTA::StatsType::Sum);
+        spectral_profiles->add_stats_types(CARTA::StatsType::FluxDensity);
+        spectral_profiles->add_stats_types(CARTA::StatsType::Mean);
+        spectral_profiles->add_stats_types(CARTA::StatsType::RMS);
+        spectral_profiles->add_stats_types(CARTA::StatsType::Sigma);
+        spectral_profiles->add_stats_types(CARTA::StatsType::SumSq);
+        spectral_profiles->add_stats_types(CARTA::StatsType::Min);
+        spectral_profiles->add_stats_types(CARTA::StatsType::Max);
+        spectral_profiles->add_stats_types(CARTA::StatsType::Extrema);
+        return set_spectral_requirements;
+    }
+
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, const std::vector<float>& points,
         std::shared_ptr<casacore::CoordinateSystem> csys, bool is_annotation) {
         std::vector<CARTA::Point> control_points;
@@ -49,7 +68,7 @@ public:
         }
 
         // Set spectral requirements (Message requests 10 stats types)
-        auto spectral_req_message = Message::SetSpectralRequirements(file_id, region_id, "z");
+        auto spectral_req_message = SetSpectralRequirements(file_id, region_id, "z");
         std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_requirements = {
             spectral_req_message.spectral_profiles().begin(), spectral_req_message.spectral_profiles().end()};
         if (!region_handler.SetSpectralRequirements(region_id, file_id, frame, spectral_requirements)) {
