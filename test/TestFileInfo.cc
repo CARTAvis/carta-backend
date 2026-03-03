@@ -16,6 +16,14 @@ using namespace carta;
 
 class FileInfoLoaderTest : public ::testing::Test {
 public:
+    static CARTA::FileInfoRequest FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu = "") {
+        CARTA::FileInfoRequest file_info_request;
+        file_info_request.set_directory(directory);
+        file_info_request.set_file(file);
+        file_info_request.set_hdu(hdu);
+        return file_info_request;
+    }
+
     static void CheckFileInfoLoader(
         const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
         std::string fullname = MixedImages() / request_filename;
@@ -180,7 +188,7 @@ public:
     TestSession() : Session(nullptr, nullptr, 0, "", nullptr) {}
 
     void TestFileInfo(const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
-        auto request = Message::FileInfoRequest(MixedImages(), request_filename, request_hdu);
+        auto request = FileInfoLoaderTest::FileInfoRequest(MixedImages(), request_filename, request_hdu);
         CARTA::FileInfoResponse response;
         auto& file_info = *response.mutable_file_info();
         std::map<std::string, CARTA::FileInfoExtended> extended_info_map;

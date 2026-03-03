@@ -45,7 +45,8 @@ private:
         casacore::String& error_string);
     void AddEntriesFromHeaderStrings(
         const casacore::Vector<casacore::String>& headers, const std::string& hdu, CARTA::FileInfoExtended& extended_info);
-    void ConvertHeaderValueToNumeric(const casacore::String& name, casacore::String& value, CARTA::HeaderEntry* entry);
+    CARTA::HeaderEntry* AddNumericHeaderEntry(
+        CARTA::FileInfoExtended& extended_info, const casacore::String& name, casacore::String& value);
     void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info);
 
     // Computed entries

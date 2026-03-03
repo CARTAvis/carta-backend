@@ -32,17 +32,17 @@ casacore::String GetResolvedFilename(
 
     // Check directory
     if (!cc_file.exists()) {
-        message = "Directory " + directory + " does not exist.";
+        message = fmt::format("Directory {} does not exist.", path.expandedName());
     } else if (!cc_file.isReadable()) {
-        message = "Directory " + directory + " is not readable.";
+        message = fmt::format("Directory {} is not readable.", path.expandedName());
     } else {
         // Check file
         path.append(file);
         cc_file = casacore::File(path);
         if (!cc_file.exists()) {
-            message = "File " + file + " does not exist.";
+            message = fmt::format("File {} does not exist.", path.expandedName());
         } else if (!cc_file.isReadable()) {
-            message = "File " + file + " is not readable.";
+            message = fmt::format("File {} is not readable.", path.expandedName());
         } else {
             try {
                 resolved_filename = path.resolvedName();
@@ -52,7 +52,7 @@ casacore::String GetResolvedFilename(
                 if (path.absoluteName().empty()) {
                     resolved_filename = path.expandedName();
                 } else {
-                    message = err.getMesg();
+                    fmt::format("Error resolving file {} : {}", path.expandedName(), err.getMesg());
                 }
             }
         }
