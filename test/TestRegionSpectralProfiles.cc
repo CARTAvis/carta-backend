@@ -54,7 +54,7 @@ public:
         return region_handler.SetRegion(region_id, region_state, csys);
     }
 
-    static bool SpectralProfile(const std::string& image_path, const std::vector<float>& points, CARTA::SpectralProfileData& spectral_data,
+    static bool SpectralProfile(const fs::path& image_path, const std::vector<float>& points, CARTA::SpectralProfileData& spectral_data,
         bool is_annotation = false) {
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -80,7 +80,7 @@ public:
             [&](CARTA::SpectralProfileData profile_data) { spectral_data = profile_data; }, region_id, file_id, false);
     }
 
-    static std::vector<double> GetExpectedMeanProfile(std::string& image_path, int num_channels, CARTA::RegionType type) {
+    static std::vector<double> GetExpectedMeanProfile(fs::path& image_path, int num_channels, CARTA::RegionType type) {
         // Read image for profile for box region blc (0,0) trc (3,3) or point (3,3)
         FitsDataReader reader(image_path);
         std::vector<double> profile;
@@ -104,7 +104,7 @@ public:
 
 TEST_F(RegionSpectralProfileTest, TestPolygonSpectralProfile) {
     // Box described as 4-corner polygon
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     int num_channels = 10;
     std::vector<float> points = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
     CARTA::SpectralProfileData spectral_data;
@@ -140,7 +140,7 @@ TEST_F(RegionSpectralProfileTest, TestPolygonSpectralProfile) {
 }
 
 TEST_F(RegionSpectralProfileTest, TestAnnPolygonSpectralProfile) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> points = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
     CARTA::SpectralProfileData spectral_data;
     bool ok = SpectralProfile(image_path, points, spectral_data, true);
@@ -148,7 +148,7 @@ TEST_F(RegionSpectralProfileTest, TestAnnPolygonSpectralProfile) {
 }
 
 TEST_F(RegionSpectralProfileTest, TestPointSpectralProfile) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     int num_channels = 10;
     std::vector<float> points = {3.0, 3.0};
     CARTA::SpectralProfileData spectral_data;
@@ -184,7 +184,7 @@ TEST_F(RegionSpectralProfileTest, TestPointSpectralProfile) {
 }
 
 TEST_F(RegionSpectralProfileTest, TestAnnPointSpectralProfile) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> points = {3.0, 3.0};
     CARTA::SpectralProfileData spectral_data;
     bool ok = SpectralProfile(image_path, points, spectral_data, true);

@@ -31,59 +31,24 @@ fs::path UserDirectory() {
     return fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
 }
 
-std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params, const std::string& opts) {
-    fs::path root = TestRoot();
-
-    std::string filename = fmt::format("{:x}.fits", std::hash<std::string>{}(params + "/" + opts));
-    fs::path fitspath = (root / "data" / "generated" / filename);
-    std::string fitspath_str = fitspath.string();
-
-    if (!fs::exists(fitspath)) {
-        std::string generator_path = (root / "bin" / "make_image.py").string();
-        std::string fitscmd = fmt::format("{} {} -o {} {}", generator_path, opts, fitspath_str, params);
-        auto result = system(fitscmd.c_str());
-    }
-
-    return fitspath_str;
+fs::path ImagesPath() {
+    return TestRoot() / "data" / "images";
 }
 
-std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params, const std::string& opts) {
-    fs::path root = TestRoot();
-
-    std::string fitspath_str = GeneratedFitsImagePath(params, opts);
-    std::string hdf5path_str = fmt::format("{}.hdf5", fitspath_str);
-    fs::path hdf5path = fs::path(hdf5path_str);
-
-    if (!fs::exists(hdf5path)) {
-        std::string hdf5cmd = fmt::format("fits2idia -o {} {}", hdf5path_str, fitspath_str);
-        auto result = system(hdf5cmd.c_str());
-    }
-
-    return hdf5path_str;
+fs::path FitsImages() {
+    return ImagesPath() / "fits";
 }
 
-std::string FileFinder::DataPath(const std::string& filename) {
-    return (TestRoot() / "data" / filename).string();
+fs::path CasaImages() {
+    return ImagesPath() / "casa";
 }
 
-std::string FileFinder::FitsImagePath(const std::string& filename) {
-    return (TestRoot() / "data" / "images" / "fits" / filename).string();
+fs::path Hdf5Images() {
+    return ImagesPath() / "hdf5";
 }
 
-std::string FileFinder::CasaImagePath(const std::string& filename) {
-    return (TestRoot() / "data" / "images" / "casa" / filename).string();
-}
-
-std::string FileFinder::Hdf5ImagePath(const std::string& filename) {
-    return (TestRoot() / "data" / "images" / "hdf5" / filename).string();
-}
-
-std::string FileFinder::FitsTablePath(const std::string& filename) {
-    return (TestRoot() / "data" / "tables" / "fits" / filename).string();
-}
-
-std::string FileFinder::XmlTablePath(const std::string& filename) {
-    return (TestRoot() / "data" / "tables" / "xml" / filename).string();
+fs::path MixedImages() {
+    return ImagesPath() / "mix";
 }
 
 float DataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {

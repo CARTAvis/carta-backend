@@ -11,9 +11,6 @@
 #include "Util/Message.h"
 #include "src/Frame/Frame.h"
 
-static const std::string IMAGE_OPTS = "-s 0";
-static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";
-
 class ContourTest : public ::testing::Test {
 public:
     static CARTA::SetContourParameters SetContourParameters(uint32_t file_id, uint32_t ref_file_id, int32_t x_min, int32_t x_max,
@@ -38,22 +35,15 @@ public:
         return message;
     }
 
-    void GenerateContour(
-        int width, int height, std::string image_opts, const CARTA::FileType& file_type, const CARTA::SmoothingMode& smoothing_mode) {
-        std::string image_shape = std::to_string(width) + " " + std::to_string(height);
-        std::string file_path;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
-        } else {
-            file_path = ImageGenerator::GeneratedFitsImagePath(image_shape, image_opts);
-        }
-
+    void GenerateContour(fs::path file_path, const CARTA::SmoothingMode& smoothing_mode) {
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
 
         spdlog::info("The generated image contains random pixels values with mean = 0 and STD = 1.");
         std::vector<double> levels{0, -1, 1}; // Contour levels
-        auto set_contour_params = ContourTest::SetContourParameters(0, 0, 0, width, 0, height, levels, smoothing_mode, 4, 4, 8, 100000);
+
+        auto set_contour_params =
+            ContourTest::SetContourParameters(0, 0, 0, frame->Width(), 0, frame->Height(), levels, smoothing_mode, 4, 4, 8, 100000);
 
         EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
 
@@ -83,10 +73,10 @@ public:
         }
 
         std::shared_ptr<DataReader> reader = nullptr;
-        if (file_type == CARTA::FileType::HDF5) {
-            reader.reset(new Hdf5DataReader(file_path));
-        } else {
+        if (file_path.parent_path().filename() == "fits") {
             reader.reset(new FitsDataReader(file_path));
+        } else {
+            reader.reset(new Hdf5DataReader(file_path));
         }
 
         for (auto vertices_level : vertices_map) {
@@ -103,7 +93,7 @@ public:
             for (auto coord : coords) {
                 if (smoothing_mode == CARTA::SmoothingMode::NoSmoothing) {
                     // Only verify vertices coordinate which are calculated from raw pixels, i.e., with no smoothing mode
-                    EXPECT_TRUE(IsVertex(reader, coord.first, coord.second, vertices_level.first, width, height));
+                    EXPECT_TRUE(IsVertex(reader, coord.first, coord.second, vertices_level.first, frame->Width(), frame->Height()));
                 }
                 ++count;
             }
@@ -149,43 +139,44 @@ private:
 };
 
 TEST_F(ContourTest, NoSmoothingFitsFile) {
-    GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::FITS, CARTA::SmoothingMode::NoSmoothing);
+    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing);
 }
 TEST_F(ContourTest, NoSmoothingFitsFileNaN) {
-    GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::FITS, CARTA::SmoothingMode::NoSmoothing);
+    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing);
 }
 
 TEST_F(ContourTest, GaussianBlurFitsFile) {
-    GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::FITS, CARTA::SmoothingMode::GaussianBlur);
+    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur);
 }
 TEST_F(ContourTest, GaussianBlurFitsFileNaN) {
-    GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::FITS, CARTA::SmoothingMode::GaussianBlur);
+    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur);
 }
 
 TEST_F(ContourTest, BlockAverageFitsFile) {
-    GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
+    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage);
 }
 TEST_F(ContourTest, BlockAverageFitsFileNaN) {
-    GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::FITS, CARTA::SmoothingMode::BlockAverage);
+    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage);
 }
 
 TEST_F(ContourTest, NoSmoothingHdf5File) {
-    GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::HDF5, CARTA::SmoothingMode::NoSmoothing);
+    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing);
 }
 TEST_F(ContourTest, NoSmoothingHdf5FileNaN) {
-    GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::HDF5, CARTA::SmoothingMode::NoSmoothing);
+    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing);
 }
 
 TEST_F(ContourTest, GaussianBlurHdf5File) {
-    GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);
+    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur);
 }
 TEST_F(ContourTest, GaussianBlurHdf5FileNaN) {
-    GenerateContour(500, 500, IMAGE_OPTS_NAN, CARTA::FileType::HDF5, CARTA::SmoothingMode::GaussianBlur);
+    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur);
 }
 
 TEST_F(ContourTest, BlockAverageHdf5File) {
-    GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::HDF5, CARTA::SmoothingMode::BlockAverage);
+    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage);
 }
+
 TEST_F(ContourTest, BlockAverageHdf5FileNaN) {
-    GenerateContour(500, 500, IMAGE_OPTS, CARTA::FileType::HDF5, CARTA::SmoothingMode::BlockAverage);
+    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage);
 }
