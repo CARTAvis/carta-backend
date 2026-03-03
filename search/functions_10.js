@@ -34,6 +34,5 @@ var searchData=
   ['pvpreviewcut_31',['PvPreviewCut',['../classcarta_1_1PvPreviewCut.html#a13178f0ba52fb9b188d10e14dc0bcc1e',1,'carta::PvPreviewCut']]],
   ['pvpreviewupdatetask_32',['PvPreviewUpdateTask',['../classcarta_1_1PvPreviewUpdateTask.html#a020420d305a4d4015b96d4914213a49f',1,'carta::PvPreviewUpdateTask']]],
   ['pvprogress_33',['PvProgress',['../classMessage.html#ac34ea433d655711badf7ac0a7a230179',1,'Message']]],
-  ['pvrequest_34',['PvRequest',['../classMessage.html#a0b7f372e72e3c2852fc3c77215e0c95e',1,'Message']]],
-  ['pvrequesthandler_35',['PvRequestHandler',['../classcarta_1_1SessionManager.html#a222f1b36fc1c176d08459fb0e30687ad',1,'carta::SessionManager']]]
+  ['pvrequesthandler_34',['PvRequestHandler',['../classcarta_1_1SessionManager.html#a222f1b36fc1c176d08459fb0e30687ad',1,'carta::SessionManager']]]
 ];

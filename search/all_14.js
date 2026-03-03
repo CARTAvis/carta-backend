@@ -28,7 +28,7 @@ var searchData=
   ['threadmanager_25',['ThreadManager',['../classcarta_1_1ThreadManager.html',1,'carta']]],
   ['threadmanager_2ecc_26',['ThreadManager.cc',['../ThreadManager_8cc.html',1,'']]],
   ['threadmanager_2eh_27',['ThreadManager.h',['../ThreadManager_8h.html',1,'']]],
-  ['threshold_28',['threshold',['../structcarta_1_1VectorField_1_1ThresholdCut.html#ae98cb8f44fef736cbc33b190ab32f11c',1,'carta::VectorField::ThresholdCut::threshold'],['../classcarta_1_1VectorField.html#ad02102bc99e41d7aaf8a84ea2528ebd4',1,'carta::VectorField::Threshold() const']]],
+  ['threshold_28',['threshold',['../classcarta_1_1VectorField.html#ad02102bc99e41d7aaf8a84ea2528ebd4',1,'carta::VectorField::Threshold()'],['../structcarta_1_1VectorField_1_1ThresholdCut.html#ae98cb8f44fef736cbc33b190ab32f11c',1,'carta::VectorField::ThresholdCut::threshold']]],
   ['thresholdcut_29',['thresholdcut',['../structcarta_1_1VectorField_1_1ThresholdCut.html',1,'carta::VectorField::ThresholdCut'],['../structcarta_1_1VectorField_1_1ThresholdCut.html#a39ce83d99b4da4a5b3557aed9c48cb5f',1,'carta::VectorField::ThresholdCut::ThresholdCut()']]],
   ['thresholdoption_30',['ThresholdOption',['../classcarta_1_1VectorField.html#a2faca3cba146cb49617095274717ec70',1,'carta::VectorField']]],
   ['tile_31',['Tile',['../structcarta_1_1Tile.html',1,'carta']]],

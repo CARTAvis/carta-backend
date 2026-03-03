@@ -44,7 +44,6 @@ var searchData=
   ['momentgenerator_2eh_41',['MomentGenerator.h',['../MomentGenerator_8h.html',1,'']]],
   ['momentprogress_42',['MomentProgress',['../classMessage.html#a895725a06f0df4252af255b13aa87546',1,'Message']]],
   ['momentrequesthandler_43',['MomentRequestHandler',['../classcarta_1_1SessionManager.html#a63b272534747a0375fa3b505b0f5dfec',1,'carta::SessionManager']]],
-  ['momentsrequest_44',['MomentsRequest',['../classMessage.html#a6f234b4ef734f525f08e0a4f7197d0a7',1,'Message']]],
-  ['ms_45',['ms',['../structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58',1,'carta::TimeDelta']]],
-  ['mutex_5f_46',['mutex_',['../classspdlog_1_1sinks_1_1carta__sink.html#aec54abf7200855956bded90932b0f703',1,'spdlog::sinks::carta_sink']]]
+  ['ms_44',['ms',['../structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58',1,'carta::TimeDelta']]],
+  ['mutex_5f_45',['mutex_',['../classspdlog_1_1sinks_1_1carta__sink.html#aec54abf7200855956bded90932b0f703',1,'spdlog::sinks::carta_sink']]]
 ];
