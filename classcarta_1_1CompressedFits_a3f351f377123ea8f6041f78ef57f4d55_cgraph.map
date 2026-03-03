@@ -2,8 +2,10 @@
 <area shape="rect" id="Node000001" title=" " alt="" coords="5,37,172,77"/>
 <area shape="rect" id="Node000002" href="$classcarta_1_1CompressedFits.html#a90e27790d73c48808973a18ac42a5d9a" title=" " alt="" coords="220,5,387,45"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="172,42,206,37,207,42,173,48"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1CompressedFits.html#a44ffd0a06a3f94f38e9f714a265f4910" title=" " alt="" coords="220,69,387,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,67,207,72,206,77,172,72"/>
-<area shape="rect" id="Node000004" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="435,77,524,102"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="387,87,421,87,421,92,387,92"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1CompressedFits.html#a44ffd0a06a3f94f38e9f714a265f4910" title=" " alt="" coords="220,69,387,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="173,67,207,72,206,77,172,72"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#a05127fe478a39099a4be2810e9240317" title=" " alt="" coords="435,13,629,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="387,23,421,23,421,28,387,28"/>
+<area shape="rect" id="Node000005" href="$String_8cc.html#a2ae58d8319d2fb200c76f1e0e7951a77" title="Splits a string into parts based on a specified delimiter." alt="" coords="487,77,577,102"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="387,87,473,87,473,92,387,92"/>
 </map>

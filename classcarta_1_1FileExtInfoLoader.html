@@ -131,8 +131,8 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:af7a7a74555418ae24774de6ec75f5d7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a7099a65e803d42d6da0619f83bfd7c" id="r_a9a7099a65e803d42d6da0619f83bfd7c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a9a7099a65e803d42d6da0619f83bfd7c">AddEntriesFromHeaderStrings</a> (const casacore::Vector&lt; casacore::String &gt; &amp;headers, const std::string &amp;hdu, CARTA::FileInfoExtended &amp;extended_info)</td></tr>
 <tr class="separator:a9a7099a65e803d42d6da0619f83bfd7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9569d63b1ec07f806edb9f3469b15fd5" id="r_a9569d63b1ec07f806edb9f3469b15fd5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a9569d63b1ec07f806edb9f3469b15fd5">ConvertHeaderValueToNumeric</a> (const casacore::String &amp;name, casacore::String &amp;value, CARTA::HeaderEntry *entry)</td></tr>
-<tr class="separator:a9569d63b1ec07f806edb9f3469b15fd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2643e77feee7e136712fb06cb43a22d" id="r_ac2643e77feee7e136712fb06cb43a22d"><td class="memItemLeft" align="right" valign="top">CARTA::HeaderEntry *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#ac2643e77feee7e136712fb06cb43a22d">AddNumericHeaderEntry</a> (CARTA::FileInfoExtended &amp;extended_info, const casacore::String &amp;name, casacore::String &amp;value)</td></tr>
+<tr class="separator:ac2643e77feee7e136712fb06cb43a22d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3f73d0fb1820aaf9b2eda5fa8af4465f" id="r_a3f73d0fb1820aaf9b2eda5fa8af4465f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a3f73d0fb1820aaf9b2eda5fa8af4465f">FitsHeaderInfoToHeaderEntries</a> (casacore::ImageFITSHeaderInfo &amp;fhi, CARTA::FileInfoExtended &amp;extended_info)</td></tr>
 <tr class="separator:a3f73d0fb1820aaf9b2eda5fa8af4465f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e5d73b90a01fb2eac64c9e186c99348" id="r_a1e5d73b90a01fb2eac64c9e186c99348"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a1e5d73b90a01fb2eac64c9e186c99348">AddDataTypeEntry</a> (CARTA::FileInfoExtended &amp;extended_info, casacore::DataType data_type, casacore::DataType equivalent_type)</td></tr>
@@ -236,6 +236,11 @@ Private Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_ab2784a1282577569e272b59970176d38_cgraph.svg" width="450" height="86"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 
 </div>
 </div>
@@ -453,6 +458,11 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a02cd16701178cf515aca3f5623537611_cgraph.svg" width="450" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a02cd16701178cf515aca3f5623537611_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
@@ -499,6 +509,11 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a1e5d73b90a01fb2eac64c9e186c99348_cgraph.svg" width="450" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -549,7 +564,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a9a7099a65e803d42d6da0619f83bfd7c_cgraph.svg" width="100%" height="376"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a9a7099a65e803d42d6da0619f83bfd7c_cgraph.svg" width="100%" height="451"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -613,12 +628,64 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a5ec18ae95dc807af08f85854d8d7d240_cgraph.svg" width="439" height="230"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a5ec18ae95dc807af08f85854d8d7d240_cgraph.svg" width="100%" height="491"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a5ec18ae95dc807af08f85854d8d7d240_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="ac2643e77feee7e136712fb06cb43a22d" name="ac2643e77feee7e136712fb06cb43a22d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac2643e77feee7e136712fb06cb43a22d">&#9670;&#160;</a></span>AddNumericHeaderEntry()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::HeaderEntry * FileExtInfoLoader::AddNumericHeaderEntry </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileInfoExtended &amp;&#160;</td>
+          <td class="paramname"><em>extended_info</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const casacore::String &amp;&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">casacore::String &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_ac2643e77feee7e136712fb06cb43a22d_cgraph.svg" width="444" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_ac2643e77feee7e136712fb06cb43a22d_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -668,6 +735,11 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_ab582a4be78221eeeadcff03c7f63dc63_cgraph.svg" width="450" height="135"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -765,53 +837,6 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_adb3998e3b3756d1ee8a2bb91f445c4d7_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
-</div>
-
-</div>
-</div>
-<a id="a9569d63b1ec07f806edb9f3469b15fd5" name="a9569d63b1ec07f806edb9f3469b15fd5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9569d63b1ec07f806edb9f3469b15fd5">&#9670;&#160;</a></span>ConvertHeaderValueToNumeric()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FileExtInfoLoader::ConvertHeaderValueToNumeric </td>
-          <td>(</td>
-          <td class="paramtype">const casacore::String &amp;&#160;</td>
-          <td class="paramname"><em>name</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">casacore::String &amp;&#160;</td>
-          <td class="paramname"><em>value</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">CARTA::HeaderEntry *&#160;</td>
-          <td class="paramname"><em>entry</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a9569d63b1ec07f806edb9f3469b15fd5_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -1036,6 +1061,11 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_a3f73d0fb1820aaf9b2eda5fa8af4465f_cgraph.svg" width="484" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">

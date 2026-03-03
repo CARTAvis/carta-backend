@@ -264,203 +264,203 @@ var sectionId = 'dynsection-96';
 </a>
 </g>
 </g>
-<!-- Node95 -->
-<g id="Node000095" class="node">
-<title>Node95</title>
-<g id="a_Node000095"><a xlink:href="classcarta_1_1Session.html#af5f45b72e3fb7d4ad6fbf32fcc9da912" target="_top" xlink:title=" ">
+<!-- Node99 -->
+<g id="Node000099" class="node">
+<title>Node99</title>
+<g id="a_Node000099"><a xlink:href="classcarta_1_1Session.html#af5f45b72e3fb7d4ad6fbf32fcc9da912" target="_top" xlink:title=" ">
 <polygon fill="#fff0f0" stroke="red" points="1151,-704.5 1008,-704.5 1008,-685.5 1151,-685.5 1151,-704.5"/>
 <text text-anchor="middle" x="1079.5" y="-692.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendEvent</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node95 -->
-<g id="edge75_Node000001_Node000095" class="edge">
-<title>Node1&#45;&gt;Node95</title>
-<g id="a_edge75_Node000001_Node000095"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node99 -->
+<g id="edge75_Node000001_Node000099" class="edge">
+<title>Node1&#45;&gt;Node99</title>
+<g id="a_edge75_Node000001_Node000099"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M144.22,-700.5C223.18,-706.11 354.36,-714 467.5,-714 467.5,-714 467.5,-714 674.5,-714 786.62,-714 916.04,-706.61 997.56,-701.05"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="998.02,-704.52 1007.76,-700.34 997.54,-697.54 998.02,-704.52"/>
 </a>
 </g>
 </g>
-<!-- Node101 -->
-<g id="Node000101" class="node">
-<title>Node101</title>
-<g id="a_Node000101"><a xlink:href="classMessage.html#a9d5199432a1267740c0ae22d436d5e30" target="_top" xlink:title=" ">
+<!-- Node105 -->
+<g id="Node000105" class="node">
+<title>Node105</title>
+<g id="a_Node000105"><a xlink:href="classMessage.html#a9d5199432a1267740c0ae22d436d5e30" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="728,-762.5 619,-762.5 619,-743.5 728,-743.5 728,-762.5"/>
 <text text-anchor="middle" x="673.5" y="-750.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::OpenFile</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node101 -->
-<g id="edge74_Node000001_Node000101" class="edge">
-<title>Node1&#45;&gt;Node101</title>
-<g id="a_edge74_Node000001_Node000101"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node105 -->
+<g id="edge74_Node000001_Node000105" class="edge">
+<title>Node1&#45;&gt;Node105</title>
+<g id="a_edge74_Node000001_Node000105"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M113.32,-710.03C133.12,-716.75 157.51,-724.02 180,-728 331.96,-754.86 514.08,-756.29 608.56,-754.78"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="608.87,-758.28 618.81,-754.6 608.75,-751.28 608.87,-758.28"/>
 </a>
 </g>
 </g>
-<!-- Node118 -->
-<g id="Node000118" class="node">
-<title>Node118</title>
-<g id="a_Node000118"><a xlink:href="classcarta_1_1Session.html#a7da253515534ff383511f00e768635a5" target="_top" xlink:title=" ">
+<!-- Node122 -->
+<g id="Node000122" class="node">
+<title>Node122</title>
+<g id="a_Node000122"><a xlink:href="classcarta_1_1Session.html#a7da253515534ff383511f00e768635a5" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="972,-685.5 787,-685.5 787,-666.5 972,-666.5 972,-685.5"/>
 <text text-anchor="middle" x="879.5" y="-673.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnOpenCatalogFile</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node118 -->
-<g id="edge35_Node000001_Node000118" class="edge">
-<title>Node1&#45;&gt;Node118</title>
-<g id="a_edge35_Node000001_Node000118"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node122 -->
+<g id="edge35_Node000001_Node000122" class="edge">
+<title>Node1&#45;&gt;Node122</title>
+<g id="a_edge35_Node000001_Node000122"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M144.13,-693.32C287.32,-689.94 610.8,-682.31 776.49,-678.41"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="776.77,-681.9 786.69,-678.17 776.61,-674.9 776.77,-681.9"/>
 </a>
 </g>
 </g>
-<!-- Node119 -->
-<g id="Node000119" class="node">
-<title>Node119</title>
-<g id="a_Node000119"><a xlink:href="classcarta_1_1Session.html#a83fe47dca761560cced8837cec8d631c" target="_top" xlink:title=" ">
+<!-- Node123 -->
+<g id="Node000123" class="node">
+<title>Node123</title>
+<g id="a_Node000123"><a xlink:href="classcarta_1_1Session.html#a83fe47dca761560cced8837cec8d631c" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="339.5,-299 181.5,-299 181.5,-269 339.5,-269 339.5,-299"/>
 <text text-anchor="start" x="189.5" y="-287" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnSetContour</text>
 <text text-anchor="middle" x="260.5" y="-276" font-family="Helvetica,sans-Serif" font-size="10.00">Parameters</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node119 -->
-<g id="edge38_Node000001_Node000119" class="edge">
-<title>Node1&#45;&gt;Node119</title>
-<g id="a_edge38_Node000001_Node000119"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node123 -->
+<g id="edge38_Node000001_Node000123" class="edge">
+<title>Node1&#45;&gt;Node123</title>
+<g id="a_edge38_Node000001_Node000123"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M72.37,-679.93C70.86,-622.78 73.32,-417.21 180,-308 180.94,-307.04 181.91,-306.12 182.91,-305.24"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="185.2,-307.9 191.19,-299.16 181.06,-302.26 185.2,-307.9"/>
 </a>
 </g>
 </g>
-<!-- Node124 -->
-<g id="Node000124" class="node">
-<title>Node124</title>
-<g id="a_Node000124"><a xlink:href="classcarta_1_1Session.html#aa076ddc044321ae415f7d1d29df176da" target="_top" xlink:title=" ">
+<!-- Node128 -->
+<g id="Node000128" class="node">
+<title>Node128</title>
+<g id="a_Node000128"><a xlink:href="classcarta_1_1Session.html#aa076ddc044321ae415f7d1d29df176da" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="544.5,-229.5 392.5,-229.5 392.5,-210.5 544.5,-210.5 544.5,-229.5"/>
 <text text-anchor="middle" x="468.5" y="-217.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnSetCursor</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node124 -->
-<g id="edge41_Node000001_Node000124" class="edge">
-<title>Node1&#45;&gt;Node124</title>
-<g id="a_edge41_Node000001_Node000124"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node128 -->
+<g id="edge41_Node000001_Node000128" class="edge">
+<title>Node1&#45;&gt;Node128</title>
+<g id="a_edge41_Node000001_Node000128"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M73.56,-679.75C76.22,-630.32 91.6,-473.19 180,-394 234.76,-344.94 287.37,-406.29 341,-356 381,-318.5 336.34,-274.79 377,-238 378.97,-236.21 381.07,-234.58 383.28,-233.09"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="385.23,-236.01 392.21,-228.04 381.78,-229.92 385.23,-236.01"/>
 </a>
 </g>
 </g>
-<!-- Node127 -->
-<g id="Node000127" class="node">
-<title>Node127</title>
-<g id="a_Node000127"><a xlink:href="classcarta_1_1Session.html#af5f49139f41c92e209aee736bb1cd260" target="_top" xlink:title=" ">
+<!-- Node131 -->
+<g id="Node000131" class="node">
+<title>Node131</title>
+<g id="a_Node000131"><a xlink:href="classcarta_1_1Session.html#af5f49139f41c92e209aee736bb1cd260" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="336,-433 185,-433 185,-403 336,-403 336,-433"/>
 <text text-anchor="start" x="193" y="-421" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnSetImage</text>
 <text text-anchor="middle" x="260.5" y="-410" font-family="Helvetica,sans-Serif" font-size="10.00">Channels</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node127 -->
-<g id="edge47_Node000001_Node000127" class="edge">
-<title>Node1&#45;&gt;Node127</title>
-<g id="a_edge47_Node000001_Node000127"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node131 -->
+<g id="edge47_Node000001_Node000131" class="edge">
+<title>Node1&#45;&gt;Node131</title>
+<g id="a_edge47_Node000001_Node000131"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M83.29,-679.71C114.18,-633.84 206.24,-497.11 243.54,-441.71"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="246.56,-443.49 249.24,-433.24 240.75,-439.58 246.56,-443.49"/>
-</a>
-</g>
-</g>
-<!-- Node141 -->
-<g id="Node000141" class="node">
-<title>Node141</title>
-<g id="a_Node000141"><a xlink:href="classcarta_1_1Session.html#a0be4f9fed44a55d06ade047901083710" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="337.5,-250.5 183.5,-250.5 183.5,-231.5 337.5,-231.5 337.5,-250.5"/>
-<text text-anchor="middle" x="260.5" y="-238.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnSetRegion</text>
-</a>
-</g>
-</g>
-<!-- Node1&#45;&gt;Node141 -->
-<g id="edge68_Node000001_Node000141" class="edge">
-<title>Node1&#45;&gt;Node141</title>
-<g id="a_edge68_Node000001_Node000141"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M74.65,-679.66C82.47,-609.68 118.07,-321.53 180,-260 181.43,-258.57 182.96,-257.25 184.55,-256.02"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="186.5,-258.92 193.06,-250.6 182.74,-253.02 186.5,-258.92"/>
-</a>
-</g>
-</g>
-<!-- Node144 -->
-<g id="Node000144" class="node">
-<title>Node144</title>
-<g id="a_Node000144"><a xlink:href="classcarta_1_1Session.html#a9df0abdf3fc19744d46e54ff520d1f15" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="336,-347 185,-347 185,-317 336,-317 336,-347"/>
-<text text-anchor="start" x="193" y="-335" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnSetVector</text>
-<text text-anchor="middle" x="260.5" y="-324" font-family="Helvetica,sans-Serif" font-size="10.00">OverlayParameters</text>
-</a>
-</g>
-</g>
-<!-- Node1&#45;&gt;Node144 -->
-<g id="edge72_Node000001_Node000144" class="edge">
-<title>Node1&#45;&gt;Node144</title>
-<g id="a_edge72_Node000001_Node000144"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M73.36,-679.67C75.41,-627.61 89.08,-455.61 180,-361 183.03,-357.84 186.44,-355.03 190.09,-352.52"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="192.2,-355.33 198.99,-347.19 188.61,-349.32 192.2,-355.33"/>
 </a>
 </g>
 </g>
 <!-- Node145 -->
 <g id="Node000145" class="node">
 <title>Node145</title>
-<g id="a_Node000145"><a xlink:href="classMessage.html#a1ddbaf9748774ff4043ed66c89e40fff" target="_top" xlink:title=" ">
+<g id="a_Node000145"><a xlink:href="classcarta_1_1Session.html#a0be4f9fed44a55d06ade047901083710" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="337.5,-250.5 183.5,-250.5 183.5,-231.5 337.5,-231.5 337.5,-250.5"/>
+<text text-anchor="middle" x="260.5" y="-238.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnSetRegion</text>
+</a>
+</g>
+</g>
+<!-- Node1&#45;&gt;Node145 -->
+<g id="edge68_Node000001_Node000145" class="edge">
+<title>Node1&#45;&gt;Node145</title>
+<g id="a_edge68_Node000001_Node000145"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M74.65,-679.66C82.47,-609.68 118.07,-321.53 180,-260 181.43,-258.57 182.96,-257.25 184.55,-256.02"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="186.5,-258.92 193.06,-250.6 182.74,-253.02 186.5,-258.92"/>
+</a>
+</g>
+</g>
+<!-- Node148 -->
+<g id="Node000148" class="node">
+<title>Node148</title>
+<g id="a_Node000148"><a xlink:href="classcarta_1_1Session.html#a9df0abdf3fc19744d46e54ff520d1f15" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="336,-347 185,-347 185,-317 336,-317 336,-347"/>
+<text text-anchor="start" x="193" y="-335" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnSetVector</text>
+<text text-anchor="middle" x="260.5" y="-324" font-family="Helvetica,sans-Serif" font-size="10.00">OverlayParameters</text>
+</a>
+</g>
+</g>
+<!-- Node1&#45;&gt;Node148 -->
+<g id="edge72_Node000001_Node000148" class="edge">
+<title>Node1&#45;&gt;Node148</title>
+<g id="a_edge72_Node000001_Node000148"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M73.36,-679.67C75.41,-627.61 89.08,-455.61 180,-361 183.03,-357.84 186.44,-355.03 190.09,-352.52"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="192.2,-355.33 198.99,-347.19 188.61,-349.32 192.2,-355.33"/>
+</a>
+</g>
+</g>
+<!-- Node149 -->
+<g id="Node000149" class="node">
+<title>Node149</title>
+<g id="a_Node000149"><a xlink:href="classMessage.html#a1ddbaf9748774ff4043ed66c89e40fff" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="339.5,-213.5 181.5,-213.5 181.5,-194.5 339.5,-194.5 339.5,-213.5"/>
 <text text-anchor="middle" x="260.5" y="-201.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::SetImageChannels</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node145 -->
-<g id="edge76_Node000001_Node000145" class="edge">
-<title>Node1&#45;&gt;Node145</title>
-<g id="a_edge76_Node000001_Node000145"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node149 -->
+<g id="edge76_Node000001_Node000149" class="edge">
+<title>Node1&#45;&gt;Node149</title>
+<g id="a_edge76_Node000001_Node000149"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M74.29,-679.81C80.84,-606.4 112.73,-289.28 180,-222 180.93,-221.07 181.89,-220.19 182.89,-219.34"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="184.89,-222.22 191.14,-213.66 180.92,-216.45 184.89,-222.22"/>
 </a>
 </g>
 </g>
-<!-- Node146 -->
-<g id="Node000146" class="node">
-<title>Node146</title>
-<g id="a_Node000146"><a xlink:href="classMessage.html#a916c7171fc85a251d96cbe4d3d6e7dbe" target="_top" xlink:title=" ">
+<!-- Node150 -->
+<g id="Node000150" class="node">
+<title>Node150</title>
+<g id="a_Node000150"><a xlink:href="classMessage.html#a916c7171fc85a251d96cbe4d3d6e7dbe" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="318.5,-176.5 202.5,-176.5 202.5,-157.5 318.5,-157.5 318.5,-176.5"/>
 <text text-anchor="middle" x="260.5" y="-164.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::SetRegion</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node146 -->
-<g id="edge77_Node000001_Node000146" class="edge">
-<title>Node1&#45;&gt;Node146</title>
-<g id="a_edge77_Node000001_Node000146"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node150 -->
+<g id="edge77_Node000001_Node000150" class="edge">
+<title>Node1&#45;&gt;Node150</title>
+<g id="a_edge77_Node000001_Node000150"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M74.02,-679.92C79.49,-603.34 107.89,-258.26 180,-185 183.75,-181.19 188.13,-178.11 192.86,-175.63"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="194.52,-178.73 202.33,-171.57 191.76,-172.29 194.52,-178.73"/>
 </a>
 </g>
 </g>
-<!-- Node147 -->
-<g id="Node000147" class="node">
-<title>Node147</title>
-<g id="a_Node000147"><a xlink:href="classcarta_1_1Session.html#a7f682c7e48eada830bf9ed4a27ced3ae" target="_top" xlink:title=" ">
+<!-- Node151 -->
+<g id="Node000151" class="node">
+<title>Node151</title>
+<g id="a_Node000151"><a xlink:href="classcarta_1_1Session.html#a7f682c7e48eada830bf9ed4a27ced3ae" target="_top" xlink:title=" ">
 <polygon fill="#fff0f0" stroke="red" points="335,-139 186,-139 186,-109 335,-109 335,-139"/>
 <text text-anchor="start" x="194" y="-127" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::WaitForTask</text>
 <text text-anchor="middle" x="260.5" y="-116" font-family="Helvetica,sans-Serif" font-size="10.00">Cancellation</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node147 -->
-<g id="edge78_Node000001_Node000147" class="edge">
-<title>Node1&#45;&gt;Node147</title>
-<g id="a_edge78_Node000001_Node000147"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node151 -->
+<g id="edge78_Node000001_Node000151" class="edge">
+<title>Node1&#45;&gt;Node151</title>
+<g id="a_edge78_Node000001_Node000151"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M73.89,-680C78.88,-600.59 105.91,-229.89 180,-148 180.77,-147.14 181.58,-146.32 182.41,-145.52"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="184.85,-148.06 190.53,-139.11 180.51,-142.56 184.85,-148.06"/>
 </a>
@@ -550,10 +550,10 @@ var sectionId = 'dynsection-96';
 </a>
 </g>
 </g>
-<!-- Node15&#45;&gt;Node95 -->
-<g id="edge34_Node000015_Node000095" class="edge">
-<title>Node15&#45;&gt;Node95</title>
-<g id="a_edge34_Node000015_Node000095"><a xlink:title=" ">
+<!-- Node15&#45;&gt;Node99 -->
+<g id="edge34_Node000015_Node000099" class="edge">
+<title>Node15&#45;&gt;Node99</title>
+<g id="a_edge34_Node000015_Node000099"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M323.22,-848.16C329.49,-850.93 335.55,-854.18 341,-858 362.55,-873.09 353.41,-893.35 377,-905 449.93,-941 481.27,-925.4 560,-905 577.72,-900.41 579.45,-892.81 596,-885 757.58,-808.71 958.63,-736.51 1040.83,-707.91"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="1042.18,-711.15 1050.49,-704.57 1039.89,-704.54 1042.18,-711.15"/>
 </a>
@@ -614,615 +614,615 @@ var sectionId = 'dynsection-96';
 </a>
 </g>
 </g>
-<!-- Node88 -->
-<g id="Node000088" class="node">
-<title>Node88</title>
-<g id="a_Node000088"><a xlink:href="classcarta_1_1LoaderCache.html#a341be9f1278d337b6e7a0a347de474c1" target="_top" xlink:title=" ">
+<!-- Node92 -->
+<g id="Node000092" class="node">
+<title>Node92</title>
+<g id="a_Node000092"><a xlink:href="classcarta_1_1LoaderCache.html#a341be9f1278d337b6e7a0a347de474c1" target="_top" xlink:title=" ">
 <polygon fill="#fff0f0" stroke="red" points="946.5,-1002.5 812.5,-1002.5 812.5,-983.5 946.5,-983.5 946.5,-1002.5"/>
 <text text-anchor="middle" x="879.5" y="-990.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::LoaderCache::Get</text>
 </a>
 </g>
 </g>
-<!-- Node16&#45;&gt;Node88 -->
-<g id="edge25_Node000016_Node000088" class="edge">
-<title>Node16&#45;&gt;Node88</title>
-<g id="a_edge25_Node000016_Node000088"><a xlink:title=" ">
+<!-- Node16&#45;&gt;Node92 -->
+<g id="edge25_Node000016_Node000092" class="edge">
+<title>Node16&#45;&gt;Node92</title>
+<g id="a_edge25_Node000016_Node000092"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M507.15,-971.54C524.63,-977.35 544.83,-986.18 560,-999 583.17,-1018.58 569.49,-1042.25 596,-1057 683.71,-1105.79 806.36,-1039.61 856.16,-1008.07"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="858.09,-1010.99 864.59,-1002.61 854.29,-1005.11 858.09,-1010.99"/>
-</a>
-</g>
-</g>
-<!-- Node93 -->
-<g id="Node000093" class="node">
-<title>Node93</title>
-<g id="a_Node000093"><a xlink:href="classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451" target="_top" xlink:title=" ">
-<polygon fill="#fff0f0" stroke="red" points="959.5,-502.5 799.5,-502.5 799.5,-483.5 959.5,-483.5 959.5,-502.5"/>
-<text text-anchor="middle" x="879.5" y="-490.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendLogEvent</text>
-</a>
-</g>
-</g>
-<!-- Node16&#45;&gt;Node93 -->
-<g id="edge31_Node000016_Node000093" class="edge">
-<title>Node16&#45;&gt;Node93</title>
-<g id="a_edge31_Node000016_Node000093"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M484.43,-952.3C507.83,-937.24 554.74,-907.61 596,-885 663.28,-848.13 703.09,-868.92 751,-809 794.08,-755.12 762.04,-722.32 787,-658 808.92,-601.51 846.94,-540.51 866.34,-511.01"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="869.32,-512.85 871.95,-502.58 863.49,-508.97 869.32,-512.85"/>
-</a>
-</g>
-</g>
-<!-- Node16&#45;&gt;Node95 -->
-<g id="edge30_Node000016_Node000095" class="edge">
-<title>Node16&#45;&gt;Node95</title>
-<g id="a_edge30_Node000016_Node000095"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M510.67,-971.57C527.63,-977.22 546.45,-985.91 560,-999 588.04,-1026.09 563.26,-1057.83 596,-1079 738.54,-1171.17 850.2,-1130.23 972,-1012 1058.93,-927.62 1074.9,-770.2 1077.84,-714.86"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="1081.34,-714.8 1078.29,-704.66 1074.35,-714.5 1081.34,-714.8"/>
-</a>
-</g>
-</g>
-<!-- Node60 -->
-<g id="Node000060" class="node">
-<title>Node60</title>
-<g id="a_Node000060"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
-<polygon fill="white" stroke="#666666" points="735.5,-1047.5 611.5,-1047.5 611.5,-1028.5 735.5,-1028.5 735.5,-1047.5"/>
-<text text-anchor="middle" x="673.5" y="-1035.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
-</a>
-</g>
-</g>
-<!-- Node16&#45;&gt;Node60 -->
-<g id="edge26_Node000016_Node000060" class="edge">
-<title>Node16&#45;&gt;Node60</title>
-<g id="a_edge26_Node000016_Node000060"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M495.21,-971.57C513.52,-978.61 538.58,-988.71 560,-999 576.5,-1006.92 578.97,-1012.29 596,-1019 602.33,-1021.49 609.09,-1023.74 615.87,-1025.73"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="615.2,-1029.18 625.77,-1028.47 617.07,-1022.43 615.2,-1029.18"/>
-</a>
-</g>
-</g>
-<!-- Node16&#45;&gt;Node101 -->
-<g id="edge28_Node000016_Node000101" class="edge">
-<title>Node16&#45;&gt;Node101</title>
-<g id="a_edge28_Node000016_Node000101"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M494.27,-952.48C514.84,-943.33 543.33,-927.55 560,-905 596.4,-855.75 552.25,-814.85 596,-772 599.97,-768.11 604.61,-764.98 609.6,-762.46"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="611.04,-765.65 618.9,-758.55 608.33,-759.2 611.04,-765.65"/>
-</a>
-</g>
-</g>
-<!-- Node102 -->
-<g id="Node000102" class="node">
-<title>Node102</title>
-<g id="a_Node000102"><a xlink:href="classcarta_1_1LoaderCache.html#a850302c370dc52cc1784d85b88a03e77" target="_top" xlink:title=" ">
-<polygon fill="#fff0f0" stroke="red" points="728.5,-1010 618.5,-1010 618.5,-980 728.5,-980 728.5,-1010"/>
-<text text-anchor="start" x="626.5" y="-998" font-family="Helvetica,sans-Serif" font-size="10.00">carta::LoaderCache</text>
-<text text-anchor="middle" x="673.5" y="-987" font-family="Helvetica,sans-Serif" font-size="10.00">::Remove</text>
-</a>
-</g>
-</g>
-<!-- Node16&#45;&gt;Node102 -->
-<g id="edge29_Node000016_Node000102" class="edge">
-<title>Node16&#45;&gt;Node102</title>
-<g id="a_edge29_Node000016_Node000102"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M527.94,-971.5C553.07,-975.59 582.52,-980.37 608.26,-984.56"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="607.86,-988.04 618.29,-986.19 608.98,-981.13 607.86,-988.04"/>
-</a>
-</g>
-</g>
-<!-- Node103 -->
-<g id="Node000103" class="node">
-<title>Node103</title>
-<g id="a_Node000103"><a xlink:href="classcarta_1_1Session.html#a36ede4133a5424416c8e085af6387fee" target="_top" xlink:title=" ">
-<polygon fill="#fff0f0" stroke="red" points="748,-486 599,-486 599,-456 748,-456 748,-486"/>
-<text text-anchor="start" x="607" y="-474" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendRegion</text>
-<text text-anchor="middle" x="673.5" y="-463" font-family="Helvetica,sans-Serif" font-size="10.00">HistogramData</text>
-</a>
-</g>
-</g>
-<!-- Node16&#45;&gt;Node103 -->
-<g id="edge32_Node000016_Node000103" class="edge">
-<title>Node16&#45;&gt;Node103</title>
-<g id="a_edge32_Node000016_Node000103"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M496.87,-952.38C517.83,-943.5 545.52,-928.14 560,-905 637.35,-781.45 544.22,-715.26 596,-579 608.39,-546.39 633,-514.47 650.97,-493.89"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="653.68,-496.11 657.73,-486.32 648.46,-491.45 653.68,-496.11"/>
-</a>
-</g>
-</g>
-<!-- Node18&#45;&gt;Node88 -->
-<g id="edge19_Node000018_Node000088" class="edge">
-<title>Node18&#45;&gt;Node88</title>
-<g id="a_edge19_Node000018_Node000088"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M723.37,-924.02C732.62,-927.13 742.16,-930.52 751,-934 786.02,-947.77 825.14,-966.37 850.7,-978.98"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="849.28,-982.18 859.79,-983.5 852.39,-975.92 849.28,-982.18"/>
-</a>
-</g>
-</g>
-<!-- Node18&#45;&gt;Node93 -->
-<g id="edge20_Node000018_Node000093" class="edge">
-<title>Node18&#45;&gt;Node93</title>
-<g id="a_edge20_Node000018_Node000093"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M734.29,-893.79C740.63,-890.14 746.42,-885.61 751,-880 814.21,-802.57 754.28,-752.45 787,-658 806.74,-601.03 845.4,-540.68 865.57,-511.26"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="868.58,-513.05 871.42,-502.84 862.84,-509.06 868.58,-513.05"/>
-</a>
-</g>
-</g>
-<!-- Node93&#45;&gt;Node95 -->
-<g id="edge21_Node000093_Node000095" class="edge">
-<title>Node93&#45;&gt;Node95</title>
-<g id="a_edge21_Node000093_Node000095"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M890.05,-502.74C921.48,-534.81 1021.97,-637.32 1061.9,-678.07"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="1059.55,-680.66 1069.05,-685.35 1064.55,-675.76 1059.55,-680.66"/>
-</a>
-</g>
-</g>
-<!-- Node96 -->
-<g id="Node000096" class="node">
-<title>Node96</title>
-<g id="a_Node000096"><a xlink:href="classMessage.html#ad7554f7b047d88c0106266229a2f7f74" target="_top" xlink:title="Encodes a protobuf message with a CARTA event header for transmission.">
-<polygon fill="white" stroke="#666666" points="1346,-741.5 1201,-741.5 1201,-722.5 1346,-722.5 1346,-741.5"/>
-<text text-anchor="middle" x="1273.5" y="-729.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::EncodeMessage</text>
-</a>
-</g>
-</g>
-<!-- Node95&#45;&gt;Node96 -->
-<g id="edge22_Node000095_Node000096" class="edge">
-<title>Node95&#45;&gt;Node96</title>
-<g id="a_edge22_Node000095_Node000096"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M1129.94,-704.53C1155.27,-709.41 1186.29,-715.39 1212.92,-720.52"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="1212.41,-723.98 1222.89,-722.44 1213.73,-717.11 1212.41,-723.98"/>
 </a>
 </g>
 </g>
 <!-- Node97 -->
 <g id="Node000097" class="node">
 <title>Node97</title>
-<g id="a_Node000097"><a xlink:href="namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" target="_top" xlink:title=" ">
+<g id="a_Node000097"><a xlink:href="classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451" target="_top" xlink:title=" ">
+<polygon fill="#fff0f0" stroke="red" points="959.5,-502.5 799.5,-502.5 799.5,-483.5 959.5,-483.5 959.5,-502.5"/>
+<text text-anchor="middle" x="879.5" y="-490.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendLogEvent</text>
+</a>
+</g>
+</g>
+<!-- Node16&#45;&gt;Node97 -->
+<g id="edge31_Node000016_Node000097" class="edge">
+<title>Node16&#45;&gt;Node97</title>
+<g id="a_edge31_Node000016_Node000097"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M484.43,-952.3C507.83,-937.24 554.74,-907.61 596,-885 663.28,-848.13 703.09,-868.92 751,-809 794.08,-755.12 762.04,-722.32 787,-658 808.92,-601.51 846.94,-540.51 866.34,-511.01"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="869.32,-512.85 871.95,-502.58 863.49,-508.97 869.32,-512.85"/>
+</a>
+</g>
+</g>
+<!-- Node16&#45;&gt;Node99 -->
+<g id="edge30_Node000016_Node000099" class="edge">
+<title>Node16&#45;&gt;Node99</title>
+<g id="a_edge30_Node000016_Node000099"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M510.67,-971.57C527.63,-977.22 546.45,-985.91 560,-999 588.04,-1026.09 563.26,-1057.83 596,-1079 738.54,-1171.17 850.2,-1130.23 972,-1012 1058.93,-927.62 1074.9,-770.2 1077.84,-714.86"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="1081.34,-714.8 1078.29,-704.66 1074.35,-714.5 1081.34,-714.8"/>
+</a>
+</g>
+</g>
+<!-- Node64 -->
+<g id="Node000064" class="node">
+<title>Node64</title>
+<g id="a_Node000064"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
+<polygon fill="white" stroke="#666666" points="735.5,-1047.5 611.5,-1047.5 611.5,-1028.5 735.5,-1028.5 735.5,-1047.5"/>
+<text text-anchor="middle" x="673.5" y="-1035.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
+</a>
+</g>
+</g>
+<!-- Node16&#45;&gt;Node64 -->
+<g id="edge26_Node000016_Node000064" class="edge">
+<title>Node16&#45;&gt;Node64</title>
+<g id="a_edge26_Node000016_Node000064"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M495.21,-971.57C513.52,-978.61 538.58,-988.71 560,-999 576.5,-1006.92 578.97,-1012.29 596,-1019 602.33,-1021.49 609.09,-1023.74 615.87,-1025.73"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="615.2,-1029.18 625.77,-1028.47 617.07,-1022.43 615.2,-1029.18"/>
+</a>
+</g>
+</g>
+<!-- Node16&#45;&gt;Node105 -->
+<g id="edge28_Node000016_Node000105" class="edge">
+<title>Node16&#45;&gt;Node105</title>
+<g id="a_edge28_Node000016_Node000105"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M494.27,-952.48C514.84,-943.33 543.33,-927.55 560,-905 596.4,-855.75 552.25,-814.85 596,-772 599.97,-768.11 604.61,-764.98 609.6,-762.46"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="611.04,-765.65 618.9,-758.55 608.33,-759.2 611.04,-765.65"/>
+</a>
+</g>
+</g>
+<!-- Node106 -->
+<g id="Node000106" class="node">
+<title>Node106</title>
+<g id="a_Node000106"><a xlink:href="classcarta_1_1LoaderCache.html#a850302c370dc52cc1784d85b88a03e77" target="_top" xlink:title=" ">
+<polygon fill="#fff0f0" stroke="red" points="728.5,-1010 618.5,-1010 618.5,-980 728.5,-980 728.5,-1010"/>
+<text text-anchor="start" x="626.5" y="-998" font-family="Helvetica,sans-Serif" font-size="10.00">carta::LoaderCache</text>
+<text text-anchor="middle" x="673.5" y="-987" font-family="Helvetica,sans-Serif" font-size="10.00">::Remove</text>
+</a>
+</g>
+</g>
+<!-- Node16&#45;&gt;Node106 -->
+<g id="edge29_Node000016_Node000106" class="edge">
+<title>Node16&#45;&gt;Node106</title>
+<g id="a_edge29_Node000016_Node000106"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M527.94,-971.5C553.07,-975.59 582.52,-980.37 608.26,-984.56"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="607.86,-988.04 618.29,-986.19 608.98,-981.13 607.86,-988.04"/>
+</a>
+</g>
+</g>
+<!-- Node107 -->
+<g id="Node000107" class="node">
+<title>Node107</title>
+<g id="a_Node000107"><a xlink:href="classcarta_1_1Session.html#a36ede4133a5424416c8e085af6387fee" target="_top" xlink:title=" ">
+<polygon fill="#fff0f0" stroke="red" points="748,-486 599,-486 599,-456 748,-456 748,-486"/>
+<text text-anchor="start" x="607" y="-474" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendRegion</text>
+<text text-anchor="middle" x="673.5" y="-463" font-family="Helvetica,sans-Serif" font-size="10.00">HistogramData</text>
+</a>
+</g>
+</g>
+<!-- Node16&#45;&gt;Node107 -->
+<g id="edge32_Node000016_Node000107" class="edge">
+<title>Node16&#45;&gt;Node107</title>
+<g id="a_edge32_Node000016_Node000107"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M496.87,-952.38C517.83,-943.5 545.52,-928.14 560,-905 637.35,-781.45 544.22,-715.26 596,-579 608.39,-546.39 633,-514.47 650.97,-493.89"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="653.68,-496.11 657.73,-486.32 648.46,-491.45 653.68,-496.11"/>
+</a>
+</g>
+</g>
+<!-- Node18&#45;&gt;Node92 -->
+<g id="edge19_Node000018_Node000092" class="edge">
+<title>Node18&#45;&gt;Node92</title>
+<g id="a_edge19_Node000018_Node000092"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M723.37,-924.02C732.62,-927.13 742.16,-930.52 751,-934 786.02,-947.77 825.14,-966.37 850.7,-978.98"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="849.28,-982.18 859.79,-983.5 852.39,-975.92 849.28,-982.18"/>
+</a>
+</g>
+</g>
+<!-- Node18&#45;&gt;Node97 -->
+<g id="edge20_Node000018_Node000097" class="edge">
+<title>Node18&#45;&gt;Node97</title>
+<g id="a_edge20_Node000018_Node000097"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M734.29,-893.79C740.63,-890.14 746.42,-885.61 751,-880 814.21,-802.57 754.28,-752.45 787,-658 806.74,-601.03 845.4,-540.68 865.57,-511.26"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="868.58,-513.05 871.42,-502.84 862.84,-509.06 868.58,-513.05"/>
+</a>
+</g>
+</g>
+<!-- Node97&#45;&gt;Node99 -->
+<g id="edge21_Node000097_Node000099" class="edge">
+<title>Node97&#45;&gt;Node99</title>
+<g id="a_edge21_Node000097_Node000099"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M890.05,-502.74C921.48,-534.81 1021.97,-637.32 1061.9,-678.07"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="1059.55,-680.66 1069.05,-685.35 1064.55,-675.76 1059.55,-680.66"/>
+</a>
+</g>
+</g>
+<!-- Node100 -->
+<g id="Node000100" class="node">
+<title>Node100</title>
+<g id="a_Node000100"><a xlink:href="classMessage.html#ad7554f7b047d88c0106266229a2f7f74" target="_top" xlink:title="Encodes a protobuf message with a CARTA event header for transmission.">
+<polygon fill="white" stroke="#666666" points="1346,-741.5 1201,-741.5 1201,-722.5 1346,-722.5 1346,-741.5"/>
+<text text-anchor="middle" x="1273.5" y="-729.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::EncodeMessage</text>
+</a>
+</g>
+</g>
+<!-- Node99&#45;&gt;Node100 -->
+<g id="edge22_Node000099_Node000100" class="edge">
+<title>Node99&#45;&gt;Node100</title>
+<g id="a_edge22_Node000099_Node000100"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M1129.94,-704.53C1155.27,-709.41 1186.29,-715.39 1212.92,-720.52"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="1212.41,-723.98 1222.89,-722.44 1213.73,-717.11 1212.41,-723.98"/>
+</a>
+</g>
+</g>
+<!-- Node101 -->
+<g id="Node000101" class="node">
+<title>Node101</title>
+<g id="a_Node000101"><a xlink:href="namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" target="_top" xlink:title=" ">
 <polygon fill="#fff0f0" stroke="red" points="1360,-704.5 1187,-704.5 1187,-685.5 1360,-685.5 1360,-704.5"/>
 <text text-anchor="middle" x="1273.5" y="-692.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::logger::LogSentEventType</text>
 </a>
 </g>
 </g>
-<!-- Node95&#45;&gt;Node97 -->
-<g id="edge23_Node000095_Node000097" class="edge">
-<title>Node95&#45;&gt;Node97</title>
-<g id="a_edge23_Node000095_Node000097"><a xlink:title=" ">
+<!-- Node99&#45;&gt;Node101 -->
+<g id="edge23_Node000099_Node000101" class="edge">
+<title>Node99&#45;&gt;Node101</title>
+<g id="a_edge23_Node000099_Node000101"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M1151.18,-695C1159.55,-695 1168.21,-695 1176.86,-695"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="1176.99,-698.5 1186.99,-695 1176.99,-691.5 1176.99,-698.5"/>
 </a>
 </g>
 </g>
-<!-- Node99 -->
-<g id="Node000099" class="node">
-<title>Node99</title>
-<g id="a_Node000099"><a xlink:href="classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" target="_top" xlink:title=" ">
+<!-- Node103 -->
+<g id="Node000103" class="node">
+<title>Node103</title>
+<g id="a_Node000103"><a xlink:href="classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="1340.5,-667 1206.5,-667 1206.5,-637 1340.5,-637 1340.5,-667"/>
 <text text-anchor="start" x="1214.5" y="-655" font-family="Helvetica,sans-Serif" font-size="10.00">carta::concurrent_queue</text>
 <text text-anchor="middle" x="1273.5" y="-644" font-family="Helvetica,sans-Serif" font-size="10.00">::push</text>
 </a>
 </g>
 </g>
-<!-- Node95&#45;&gt;Node99 -->
-<g id="edge24_Node000095_Node000099" class="edge">
-<title>Node95&#45;&gt;Node99</title>
-<g id="a_edge24_Node000095_Node000099"><a xlink:title=" ">
+<!-- Node99&#45;&gt;Node103 -->
+<g id="edge24_Node000099_Node000103" class="edge">
+<title>Node99&#45;&gt;Node103</title>
+<g id="a_edge24_Node000099_Node000103"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M1123.11,-685.46C1144.67,-680.63 1171.48,-674.62 1196.43,-669.04"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="1197.25,-672.44 1206.24,-666.84 1195.72,-665.61 1197.25,-672.44"/>
 </a>
 </g>
 </g>
-<!-- Node103&#45;&gt;Node93 -->
-<g id="edge33_Node000103_Node000093" class="edge">
-<title>Node103&#45;&gt;Node93</title>
-<g id="a_edge33_Node000103_Node000093"><a xlink:title=" ">
+<!-- Node107&#45;&gt;Node97 -->
+<g id="edge33_Node000107_Node000097" class="edge">
+<title>Node107&#45;&gt;Node97</title>
+<g id="a_edge33_Node000107_Node000097"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M748.15,-478.94C761.56,-480.39 775.68,-481.91 789.47,-483.4"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="789.13,-486.88 799.45,-484.47 789.88,-479.92 789.13,-486.88"/>
 </a>
 </g>
 </g>
-<!-- Node118&#45;&gt;Node95 -->
-<g id="edge36_Node000118_Node000095" class="edge">
-<title>Node118&#45;&gt;Node95</title>
-<g id="a_edge36_Node000118_Node000095"><a xlink:title=" ">
+<!-- Node122&#45;&gt;Node99 -->
+<g id="edge36_Node000122_Node000099" class="edge">
+<title>Node122&#45;&gt;Node99</title>
+<g id="a_edge36_Node000122_Node000099"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M972.25,-684.8C980.74,-685.62 989.3,-686.44 997.68,-687.24"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="997.5,-690.74 1007.79,-688.21 998.17,-683.78 997.5,-690.74"/>
 </a>
 </g>
 </g>
-<!-- Node120 -->
-<g id="Node000120" class="node">
-<title>Node120</title>
-<g id="a_Node000120"><a xlink:href="classcarta_1_1Session.html#a7347c9a4f9337fcc6460709028c3ce64" target="_top" xlink:title=" ">
+<!-- Node124 -->
+<g id="Node000124" class="node">
+<title>Node124</title>
+<g id="a_Node000124"><a xlink:href="classcarta_1_1Session.html#a7347c9a4f9337fcc6460709028c3ce64" target="_top" xlink:title=" ">
 <polygon fill="#fff0f0" stroke="red" points="556.5,-143.5 380.5,-143.5 380.5,-124.5 556.5,-124.5 556.5,-143.5"/>
 <text text-anchor="middle" x="468.5" y="-131.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendContourData</text>
 </a>
 </g>
 </g>
-<!-- Node119&#45;&gt;Node120 -->
-<g id="edge39_Node000119_Node000120" class="edge">
-<title>Node119&#45;&gt;Node120</title>
-<g id="a_edge39_Node000119_Node000120"><a xlink:title=" ">
+<!-- Node123&#45;&gt;Node124 -->
+<g id="edge39_Node000123_Node000124" class="edge">
+<title>Node123&#45;&gt;Node124</title>
+<g id="a_edge39_Node000123_Node000124"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M327.71,-268.85C332.55,-266.1 337.07,-262.84 341,-259 376.58,-224.22 339.76,-186 377,-153 378.71,-151.49 380.51,-150.08 382.38,-148.78"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="384.17,-151.79 391.01,-143.7 380.62,-145.75 384.17,-151.79"/>
 </a>
 </g>
 </g>
-<!-- Node120&#45;&gt;Node93 -->
-<g id="edge40_Node000120_Node000093" class="edge">
-<title>Node120&#45;&gt;Node93</title>
-<g id="a_edge40_Node000120_Node000093"><a xlink:title=" ">
+<!-- Node124&#45;&gt;Node97 -->
+<g id="edge40_Node000124_Node000097" class="edge">
+<title>Node124&#45;&gt;Node97</title>
+<g id="a_edge40_Node000124_Node000097"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M511.53,-124.48C571.15,-113.57 680.81,-103.35 751,-156 856.79,-235.35 874.81,-413.46 877.87,-473.11"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="874.39,-473.55 878.31,-483.39 881.38,-473.25 874.39,-473.55"/>
 </a>
 </g>
 </g>
-<!-- Node124&#45;&gt;Node93 -->
-<g id="edge42_Node000124_Node000093" class="edge">
-<title>Node124&#45;&gt;Node93</title>
-<g id="a_edge42_Node000124_Node000093"><a xlink:title=" ">
+<!-- Node128&#45;&gt;Node97 -->
+<g id="edge42_Node000128_Node000097" class="edge">
+<title>Node128&#45;&gt;Node97</title>
+<g id="a_edge42_Node000128_Node000097"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M513.5,-210.47C572.77,-200.23 679.09,-191.22 751,-239 835.26,-294.99 866.34,-424.22 875.37,-473.46"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="871.94,-474.18 877.09,-483.44 878.84,-472.99 871.94,-474.18"/>
-</a>
-</g>
-</g>
-<!-- Node125 -->
-<g id="Node000125" class="node">
-<title>Node125</title>
-<g id="a_Node000125"><a xlink:href="classcarta_1_1Session.html#a120e85ac57a07414f829a228618ab5fe" target="_top" xlink:title=" ">
-<polygon fill="#fff0f0" stroke="red" points="748,-278 599,-278 599,-248 748,-248 748,-278"/>
-<text text-anchor="start" x="607" y="-266" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendSpatial</text>
-<text text-anchor="middle" x="673.5" y="-255" font-family="Helvetica,sans-Serif" font-size="10.00">ProfileData</text>
-</a>
-</g>
-</g>
-<!-- Node124&#45;&gt;Node125 -->
-<g id="edge43_Node000124_Node000125" class="edge">
-<title>Node124&#45;&gt;Node125</title>
-<g id="a_edge43_Node000124_Node000125"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M518.39,-229.52C531.88,-232.2 546.52,-235.16 560,-238 571.62,-240.45 583.91,-243.1 595.92,-245.74"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="595.41,-249.21 605.93,-247.95 596.92,-242.38 595.41,-249.21"/>
-</a>
-</g>
-</g>
-<!-- Node126 -->
-<g id="Node000126" class="node">
-<title>Node126</title>
-<g id="a_Node000126"><a xlink:href="classcarta_1_1Session.html#a64e272e7aec6edd051745e773d47c0f2" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="751,-344 596,-344 596,-314 751,-314 751,-344"/>
-<text text-anchor="start" x="604" y="-332" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendSpectral</text>
-<text text-anchor="middle" x="673.5" y="-321" font-family="Helvetica,sans-Serif" font-size="10.00">ProfileData</text>
-</a>
-</g>
-</g>
-<!-- Node124&#45;&gt;Node126 -->
-<g id="edge46_Node000124_Node000126" class="edge">
-<title>Node124&#45;&gt;Node126</title>
-<g id="a_edge46_Node000124_Node000126"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M544.86,-229.43C550.24,-231.75 555.36,-234.57 560,-238 587.17,-258.11 569.95,-283.46 596,-305 597.57,-306.3 599.21,-307.52 600.9,-308.69"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="599.42,-311.87 609.8,-313.96 602.98,-305.85 599.42,-311.87"/>
-</a>
-</g>
-</g>
-<!-- Node125&#45;&gt;Node93 -->
-<g id="edge44_Node000125_Node000093" class="edge">
-<title>Node125&#45;&gt;Node93</title>
-<g id="a_edge44_Node000125_Node000093"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M709.89,-278.03C723.68,-284.96 739.01,-294.09 751,-305 807.51,-356.44 851.53,-437.73 869.58,-474.2"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="866.45,-475.77 873.97,-483.24 872.75,-472.71 866.45,-475.77"/>
-</a>
-</g>
-</g>
-<!-- Node125&#45;&gt;Node125 -->
-<g id="edge45_Node000125_Node000125" class="edge">
-<title>Node125&#45;&gt;Node125</title>
-<g id="a_edge45_Node000125_Node000125"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M637.64,-278.28C629.67,-287.41 641.62,-296 673.5,-296 692.43,-296 704.33,-292.97 709.21,-288.6"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="712.71,-288.33 709.36,-278.28 705.71,-288.22 712.71,-288.33"/>
-</a>
-</g>
-</g>
-<!-- Node127&#45;&gt;Node93 -->
-<g id="edge57_Node000127_Node000093" class="edge">
-<title>Node127&#45;&gt;Node93</title>
-<g id="a_edge57_Node000127_Node000093"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M277.47,-433.22C298.38,-452 337.1,-482.92 377,-495 530.97,-541.62 723.93,-519.9 819.39,-504.21"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="820.14,-507.63 829.43,-502.52 818.98,-500.72 820.14,-507.63"/>
-</a>
-</g>
-</g>
-<!-- Node127&#45;&gt;Node120 -->
-<g id="edge56_Node000127_Node000120" class="edge">
-<title>Node127&#45;&gt;Node120</title>
-<g id="a_edge56_Node000127_Node000120"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M290.21,-402.87C307.69,-392.14 328.9,-376.09 341,-356 388.27,-277.5 313.23,-218.8 377,-153 378.23,-151.73 379.52,-150.54 380.86,-149.41"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="382.87,-152.28 389.1,-143.71 378.89,-146.53 382.87,-152.28"/>
-</a>
-</g>
-</g>
-<!-- Node128 -->
-<g id="Node000128" class="node">
-<title>Node128</title>
-<g id="a_Node000128"><a xlink:href="classMessage.html#a8f3f50d7c76224f6c11eb8f074a47259" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="544.5,-448.5 392.5,-448.5 392.5,-429.5 544.5,-429.5 544.5,-448.5"/>
-<text text-anchor="middle" x="468.5" y="-436.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::AddRequiredTiles</text>
-</a>
-</g>
-</g>
-<!-- Node127&#45;&gt;Node128 -->
-<g id="edge48_Node000127_Node000128" class="edge">
-<title>Node127&#45;&gt;Node128</title>
-<g id="a_edge48_Node000127_Node000128"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M336.16,-425.61C351.18,-427.14 367.07,-428.76 382.41,-430.33"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="382.1,-433.81 392.4,-431.34 382.81,-426.85 382.1,-433.81"/>
 </a>
 </g>
 </g>
 <!-- Node129 -->
 <g id="Node000129" class="node">
 <title>Node129</title>
-<g id="a_Node000129"><a xlink:href="classcarta_1_1Session.html#a0ac74e2204905d2e0b437a09b8164382" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="534.5,-411 402.5,-411 402.5,-381 534.5,-381 534.5,-411"/>
-<text text-anchor="start" x="410.5" y="-399" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::GetValid</text>
-<text text-anchor="middle" x="468.5" y="-388" font-family="Helvetica,sans-Serif" font-size="10.00">ChannelMapTiles</text>
+<g id="a_Node000129"><a xlink:href="classcarta_1_1Session.html#a120e85ac57a07414f829a228618ab5fe" target="_top" xlink:title=" ">
+<polygon fill="#fff0f0" stroke="red" points="748,-278 599,-278 599,-248 748,-248 748,-278"/>
+<text text-anchor="start" x="607" y="-266" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendSpatial</text>
+<text text-anchor="middle" x="673.5" y="-255" font-family="Helvetica,sans-Serif" font-size="10.00">ProfileData</text>
 </a>
 </g>
 </g>
-<!-- Node127&#45;&gt;Node129 -->
-<g id="edge49_Node000127_Node000129" class="edge">
-<title>Node127&#45;&gt;Node129</title>
-<g id="a_edge49_Node000127_Node000129"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M336.16,-410.03C354.43,-408.08 373.98,-405.99 392.27,-404.03"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="392.72,-407.51 402.29,-402.96 391.97,-400.55 392.72,-407.51"/>
+<!-- Node128&#45;&gt;Node129 -->
+<g id="edge43_Node000128_Node000129" class="edge">
+<title>Node128&#45;&gt;Node129</title>
+<g id="a_edge43_Node000128_Node000129"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M518.39,-229.52C531.88,-232.2 546.52,-235.16 560,-238 571.62,-240.45 583.91,-243.1 595.92,-245.74"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="595.41,-249.21 605.93,-247.95 596.92,-242.38 595.41,-249.21"/>
 </a>
 </g>
 </g>
 <!-- Node130 -->
 <g id="Node000130" class="node">
 <title>Node130</title>
-<g id="a_Node000130"><a xlink:href="classcarta_1_1Session.html#a474b86bbed51663926112f8c3b80a396" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="535.5,-363 401.5,-363 401.5,-333 535.5,-333 535.5,-363"/>
-<text text-anchor="start" x="409.5" y="-351" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::HasValid</text>
-<text text-anchor="middle" x="468.5" y="-340" font-family="Helvetica,sans-Serif" font-size="10.00">ChannelMapTiles</text>
+<g id="a_Node000130"><a xlink:href="classcarta_1_1Session.html#a64e272e7aec6edd051745e773d47c0f2" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="751,-344 596,-344 596,-314 751,-314 751,-344"/>
+<text text-anchor="start" x="604" y="-332" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendSpectral</text>
+<text text-anchor="middle" x="673.5" y="-321" font-family="Helvetica,sans-Serif" font-size="10.00">ProfileData</text>
 </a>
 </g>
 </g>
-<!-- Node127&#45;&gt;Node130 -->
-<g id="edge50_Node000127_Node000130" class="edge">
-<title>Node127&#45;&gt;Node130</title>
-<g id="a_edge50_Node000127_Node000130"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M305.1,-402.91C316.84,-398.62 329.48,-393.81 341,-389 357.33,-382.18 360.38,-378.07 377,-372 382.81,-369.88 388.9,-367.86 395.04,-365.95"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="396.14,-369.27 404.72,-363.06 394.14,-362.57 396.14,-369.27"/>
+<!-- Node128&#45;&gt;Node130 -->
+<g id="edge46_Node000128_Node000130" class="edge">
+<title>Node128&#45;&gt;Node130</title>
+<g id="a_edge46_Node000128_Node000130"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M544.86,-229.43C550.24,-231.75 555.36,-234.57 560,-238 587.17,-258.11 569.95,-283.46 596,-305 597.57,-306.3 599.21,-307.52 600.9,-308.69"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="599.42,-311.87 609.8,-313.96 602.98,-305.85 599.42,-311.87"/>
 </a>
 </g>
 </g>
-<!-- Node131 -->
-<g id="Node000131" class="node">
-<title>Node131</title>
-<g id="a_Node000131"><a xlink:href="classcarta_1_1Session.html#a0489a2ddda6953f33c6ffaf93c52f1bf" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="542.5,-315 394.5,-315 394.5,-285 542.5,-285 542.5,-315"/>
-<text text-anchor="start" x="402.5" y="-303" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::IsInChannel</text>
-<text text-anchor="middle" x="468.5" y="-292" font-family="Helvetica,sans-Serif" font-size="10.00">MapRange</text>
+<!-- Node129&#45;&gt;Node97 -->
+<g id="edge44_Node000129_Node000097" class="edge">
+<title>Node129&#45;&gt;Node97</title>
+<g id="a_edge44_Node000129_Node000097"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M709.89,-278.03C723.68,-284.96 739.01,-294.09 751,-305 807.51,-356.44 851.53,-437.73 869.58,-474.2"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="866.45,-475.77 873.97,-483.24 872.75,-472.71 866.45,-475.77"/>
 </a>
 </g>
 </g>
-<!-- Node127&#45;&gt;Node131 -->
-<g id="edge51_Node000127_Node000131" class="edge">
-<title>Node127&#45;&gt;Node131</title>
-<g id="a_edge51_Node000127_Node000131"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M318.57,-402.92C326.64,-399.21 334.41,-394.63 341,-389 366.1,-367.54 350.95,-344.3 377,-324 379.63,-321.95 382.42,-320.08 385.32,-318.36"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="387.08,-321.39 394.34,-313.68 383.85,-315.18 387.08,-321.39"/>
+<!-- Node129&#45;&gt;Node129 -->
+<g id="edge45_Node000129_Node000129" class="edge">
+<title>Node129&#45;&gt;Node129</title>
+<g id="a_edge45_Node000129_Node000129"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M637.64,-278.28C629.67,-287.41 641.62,-296 673.5,-296 692.43,-296 704.33,-292.97 709.21,-288.6"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="712.71,-288.33 709.36,-278.28 705.71,-288.22 712.71,-288.33"/>
+</a>
+</g>
+</g>
+<!-- Node131&#45;&gt;Node97 -->
+<g id="edge57_Node000131_Node000097" class="edge">
+<title>Node131&#45;&gt;Node97</title>
+<g id="a_edge57_Node000131_Node000097"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M277.47,-433.22C298.38,-452 337.1,-482.92 377,-495 530.97,-541.62 723.93,-519.9 819.39,-504.21"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="820.14,-507.63 829.43,-502.52 818.98,-500.72 820.14,-507.63"/>
+</a>
+</g>
+</g>
+<!-- Node131&#45;&gt;Node124 -->
+<g id="edge56_Node000131_Node000124" class="edge">
+<title>Node131&#45;&gt;Node124</title>
+<g id="a_edge56_Node000131_Node000124"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M290.21,-402.87C307.69,-392.14 328.9,-376.09 341,-356 388.27,-277.5 313.23,-218.8 377,-153 378.23,-151.73 379.52,-150.54 380.86,-149.41"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="382.87,-152.28 389.1,-143.71 378.89,-146.53 382.87,-152.28"/>
 </a>
 </g>
 </g>
 <!-- Node132 -->
 <g id="Node000132" class="node">
 <title>Node132</title>
-<g id="a_Node000132"><a xlink:href="classcarta_1_1Session.html#a8ccc0be97ed2f62a4d267fc6f66b7110" target="_top" xlink:title=" ">
+<g id="a_Node000132"><a xlink:href="classMessage.html#a8f3f50d7c76224f6c11eb8f074a47259" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="544.5,-448.5 392.5,-448.5 392.5,-429.5 544.5,-429.5 544.5,-448.5"/>
+<text text-anchor="middle" x="468.5" y="-436.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::AddRequiredTiles</text>
+</a>
+</g>
+</g>
+<!-- Node131&#45;&gt;Node132 -->
+<g id="edge48_Node000131_Node000132" class="edge">
+<title>Node131&#45;&gt;Node132</title>
+<g id="a_edge48_Node000131_Node000132"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M336.16,-425.61C351.18,-427.14 367.07,-428.76 382.41,-430.33"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="382.1,-433.81 392.4,-431.34 382.81,-426.85 382.1,-433.81"/>
+</a>
+</g>
+</g>
+<!-- Node133 -->
+<g id="Node000133" class="node">
+<title>Node133</title>
+<g id="a_Node000133"><a xlink:href="classcarta_1_1Session.html#a0ac74e2204905d2e0b437a09b8164382" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="534.5,-411 402.5,-411 402.5,-381 534.5,-381 534.5,-411"/>
+<text text-anchor="start" x="410.5" y="-399" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::GetValid</text>
+<text text-anchor="middle" x="468.5" y="-388" font-family="Helvetica,sans-Serif" font-size="10.00">ChannelMapTiles</text>
+</a>
+</g>
+</g>
+<!-- Node131&#45;&gt;Node133 -->
+<g id="edge49_Node000131_Node000133" class="edge">
+<title>Node131&#45;&gt;Node133</title>
+<g id="a_edge49_Node000131_Node000133"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M336.16,-410.03C354.43,-408.08 373.98,-405.99 392.27,-404.03"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="392.72,-407.51 402.29,-402.96 391.97,-400.55 392.72,-407.51"/>
+</a>
+</g>
+</g>
+<!-- Node134 -->
+<g id="Node000134" class="node">
+<title>Node134</title>
+<g id="a_Node000134"><a xlink:href="classcarta_1_1Session.html#a474b86bbed51663926112f8c3b80a396" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="535.5,-363 401.5,-363 401.5,-333 535.5,-333 535.5,-363"/>
+<text text-anchor="start" x="409.5" y="-351" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::HasValid</text>
+<text text-anchor="middle" x="468.5" y="-340" font-family="Helvetica,sans-Serif" font-size="10.00">ChannelMapTiles</text>
+</a>
+</g>
+</g>
+<!-- Node131&#45;&gt;Node134 -->
+<g id="edge50_Node000131_Node000134" class="edge">
+<title>Node131&#45;&gt;Node134</title>
+<g id="a_edge50_Node000131_Node000134"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M305.1,-402.91C316.84,-398.62 329.48,-393.81 341,-389 357.33,-382.18 360.38,-378.07 377,-372 382.81,-369.88 388.9,-367.86 395.04,-365.95"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="396.14,-369.27 404.72,-363.06 394.14,-362.57 396.14,-369.27"/>
+</a>
+</g>
+</g>
+<!-- Node135 -->
+<g id="Node000135" class="node">
+<title>Node135</title>
+<g id="a_Node000135"><a xlink:href="classcarta_1_1Session.html#a0489a2ddda6953f33c6ffaf93c52f1bf" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="542.5,-315 394.5,-315 394.5,-285 542.5,-285 542.5,-315"/>
+<text text-anchor="start" x="402.5" y="-303" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::IsInChannel</text>
+<text text-anchor="middle" x="468.5" y="-292" font-family="Helvetica,sans-Serif" font-size="10.00">MapRange</text>
+</a>
+</g>
+</g>
+<!-- Node131&#45;&gt;Node135 -->
+<g id="edge51_Node000131_Node000135" class="edge">
+<title>Node131&#45;&gt;Node135</title>
+<g id="a_edge51_Node000131_Node000135"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M318.57,-402.92C326.64,-399.21 334.41,-394.63 341,-389 366.1,-367.54 350.95,-344.3 377,-324 379.63,-321.95 382.42,-320.08 385.32,-318.36"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="387.08,-321.39 394.34,-313.68 383.85,-315.18 387.08,-321.39"/>
+</a>
+</g>
+</g>
+<!-- Node136 -->
+<g id="Node000136" class="node">
+<title>Node136</title>
+<g id="a_Node000136"><a xlink:href="classcarta_1_1Session.html#a8ccc0be97ed2f62a4d267fc6f66b7110" target="_top" xlink:title=" ">
 <polygon fill="#fff0f0" stroke="red" points="552,-572 385,-572 385,-542 552,-542 552,-572"/>
 <text text-anchor="start" x="393" y="-560" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnAddRequired</text>
 <text text-anchor="middle" x="468.5" y="-549" font-family="Helvetica,sans-Serif" font-size="10.00">Tiles</text>
 </a>
 </g>
 </g>
-<!-- Node127&#45;&gt;Node132 -->
-<g id="edge52_Node000127_Node000132" class="edge">
-<title>Node127&#45;&gt;Node132</title>
-<g id="a_edge52_Node000127_Node000132"><a xlink:title=" ">
+<!-- Node131&#45;&gt;Node136 -->
+<g id="edge52_Node000131_Node000136" class="edge">
+<title>Node131&#45;&gt;Node136</title>
+<g id="a_edge52_Node000131_Node000136"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M273.37,-433.04C292.69,-456.55 333.18,-502 377,-528 383.58,-531.91 390.76,-535.35 398.08,-538.37"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="396.83,-541.64 407.42,-541.97 399.35,-535.11 396.83,-541.64"/>
 </a>
 </g>
 </g>
-<!-- Node137 -->
-<g id="Node000137" class="node">
-<title>Node137</title>
-<g id="a_Node000137"><a xlink:href="classcarta_1_1Session.html#a2535a06bd2e8a13e99c775d895f6024a" target="_top" xlink:title=" ">
+<!-- Node141 -->
+<g id="Node000141" class="node">
+<title>Node141</title>
+<g id="a_Node000141"><a xlink:href="classcarta_1_1Session.html#a2535a06bd2e8a13e99c775d895f6024a" target="_top" xlink:title=" ">
 <polygon fill="#fff0f0" stroke="red" points="541.5,-192 395.5,-192 395.5,-162 541.5,-162 541.5,-192"/>
 <text text-anchor="start" x="403.5" y="-180" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendVector</text>
 <text text-anchor="middle" x="468.5" y="-169" font-family="Helvetica,sans-Serif" font-size="10.00">FieldData</text>
 </a>
 </g>
 </g>
-<!-- Node127&#45;&gt;Node137 -->
-<g id="edge58_Node000127_Node000137" class="edge">
-<title>Node127&#45;&gt;Node137</title>
-<g id="a_edge58_Node000127_Node000137"><a xlink:title=" ">
+<!-- Node131&#45;&gt;Node141 -->
+<g id="edge58_Node000131_Node000141" class="edge">
+<title>Node131&#45;&gt;Node141</title>
+<g id="a_edge58_Node000131_Node000141"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M289.47,-402.89C306.87,-392.07 328.28,-375.91 341,-356 379.06,-296.39 327.77,-251.78 377,-201 379.85,-198.06 383.01,-195.47 386.39,-193.19"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="388.3,-196.13 395.22,-188.12 384.81,-190.06 388.3,-196.13"/>
-</a>
-</g>
-</g>
-<!-- Node138 -->
-<g id="Node000138" class="node">
-<title>Node138</title>
-<g id="a_Node000138"><a xlink:href="classcarta_1_1Session.html#aef4b334b4727ea531b229d242c3108b2" target="_top" xlink:title=" ">
-<polygon fill="#fff0f0" stroke="red" points="558.5,-266.5 378.5,-266.5 378.5,-247.5 558.5,-247.5 558.5,-266.5"/>
-<text text-anchor="middle" x="468.5" y="-254.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::UpdateImageData</text>
-</a>
-</g>
-</g>
-<!-- Node127&#45;&gt;Node138 -->
-<g id="edge60_Node000127_Node000138" class="edge">
-<title>Node127&#45;&gt;Node138</title>
-<g id="a_edge60_Node000127_Node000138"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M322.02,-402.81C329.04,-399.15 335.61,-394.62 341,-389 377.49,-350.97 337.89,-311.33 377,-276 378.69,-274.47 380.48,-273.05 382.34,-271.74"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="384.14,-274.74 390.93,-266.61 380.55,-268.73 384.14,-274.74"/>
-</a>
-</g>
-</g>
-<!-- Node140 -->
-<g id="Node000140" class="node">
-<title>Node140</title>
-<g id="a_Node000140"><a xlink:href="classcarta_1_1Session.html#ac86d5f7886628a9429955f05426f25ab" target="_top" xlink:title=" ">
-<polygon fill="#fff0f0" stroke="red" points="560,-485.5 377,-485.5 377,-466.5 560,-466.5 560,-485.5"/>
-<text text-anchor="middle" x="468.5" y="-473.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::UpdateRegionData</text>
-</a>
-</g>
-</g>
-<!-- Node127&#45;&gt;Node140 -->
-<g id="edge64_Node000127_Node000140" class="edge">
-<title>Node127&#45;&gt;Node140</title>
-<g id="a_edge64_Node000127_Node000140"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M300.64,-433.05C322.81,-441.2 351.19,-451 377,-458 385.43,-460.29 394.36,-462.41 403.22,-464.35"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="402.63,-467.8 413.14,-466.45 404.08,-460.95 402.63,-467.8"/>
-</a>
-</g>
-</g>
-<!-- Node132&#45;&gt;Node7 -->
-<g id="edge53_Node000132_Node000007" class="edge">
-<title>Node132&#45;&gt;Node7</title>
-<g id="a_edge53_Node000132_Node000007"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M498.01,-572.11C523.25,-585.05 561.35,-603.51 596,-616 603.89,-618.84 612.37,-621.47 620.71,-623.82"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="619.83,-627.21 630.39,-626.45 621.66,-620.45 619.83,-627.21"/>
-</a>
-</g>
-</g>
-<!-- Node132&#45;&gt;Node10 -->
-<g id="edge54_Node000132_Node000010" class="edge">
-<title>Node132&#45;&gt;Node10</title>
-<g id="a_edge54_Node000132_Node000010"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M545.67,-572.01C568.39,-576.49 592.93,-581.32 614.31,-585.53"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="613.72,-588.99 624.21,-587.49 615.08,-582.12 613.72,-588.99"/>
-</a>
-</g>
-</g>
-<!-- Node132&#45;&gt;Node93 -->
-<g id="edge55_Node000132_Node000093" class="edge">
-<title>Node132&#45;&gt;Node93</title>
-<g id="a_edge55_Node000132_Node000093"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M552.24,-552.09C608.6,-547.86 684.72,-540.42 751,-528 781.04,-522.37 814.33,-513.13 839.35,-505.55"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="840.66,-508.81 849.2,-502.53 838.61,-502.12 840.66,-508.81"/>
-</a>
-</g>
-</g>
-<!-- Node137&#45;&gt;Node93 -->
-<g id="edge59_Node000137_Node000093" class="edge">
-<title>Node137&#45;&gt;Node93</title>
-<g id="a_edge59_Node000137_Node000093"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M541.7,-163.44C603.06,-156.08 690.55,-155.86 751,-199 845.49,-266.43 870.65,-419.26 876.73,-473.47"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="873.25,-473.89 877.75,-483.48 880.21,-473.18 873.25,-473.89"/>
-</a>
-</g>
-</g>
-<!-- Node138&#45;&gt;Node103 -->
-<g id="edge61_Node000138_Node000103" class="edge">
-<title>Node138&#45;&gt;Node103</title>
-<g id="a_edge61_Node000138_Node000103"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M544.21,-266.62C549.86,-269.13 555.22,-272.21 560,-276 589.61,-299.47 577.68,-319.96 596,-353 614.79,-386.89 639.69,-424.12 655.9,-447.51"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="653.06,-449.57 661.65,-455.77 658.8,-445.56 653.06,-449.57"/>
-</a>
-</g>
-</g>
-<!-- Node138&#45;&gt;Node125 -->
-<g id="edge62_Node000138_Node000125" class="edge">
-<title>Node138&#45;&gt;Node125</title>
-<g id="a_edge62_Node000138_Node000125"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M558.54,-259.63C568.5,-259.93 578.63,-260.23 588.52,-260.52"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="588.64,-264.02 598.73,-260.82 588.84,-257.03 588.64,-264.02"/>
-</a>
-</g>
-</g>
-<!-- Node138&#45;&gt;Node126 -->
-<g id="edge63_Node000138_Node000126" class="edge">
-<title>Node138&#45;&gt;Node126</title>
-<g id="a_edge63_Node000138_Node000126"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M534.03,-266.62C542.98,-269.08 551.88,-272.15 560,-276 578.57,-284.8 577.88,-295.31 596,-305 599.33,-306.78 602.8,-308.45 606.37,-310.02"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="605.36,-313.38 615.94,-313.92 608,-306.9 605.36,-313.38"/>
-</a>
-</g>
-</g>
-<!-- Node140&#45;&gt;Node103 -->
-<g id="edge65_Node000140_Node000103" class="edge">
-<title>Node140&#45;&gt;Node103</title>
-<g id="a_edge65_Node000140_Node000103"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M560.02,-473.77C569.57,-473.54 579.25,-473.3 588.72,-473.06"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="588.98,-476.56 598.89,-472.81 588.81,-469.56 588.98,-476.56"/>
-</a>
-</g>
-</g>
-<!-- Node140&#45;&gt;Node125 -->
-<g id="edge66_Node000140_Node000125" class="edge">
-<title>Node140&#45;&gt;Node125</title>
-<g id="a_edge66_Node000140_Node000125"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M548.48,-466.49C552.65,-464.14 556.54,-461.34 560,-458 610.25,-409.47 553.73,-360.62 596,-305 602.74,-296.13 611.91,-288.9 621.57,-283.08"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="623.46,-286.04 630.52,-278.14 620.07,-279.91 623.46,-286.04"/>
-</a>
-</g>
-</g>
-<!-- Node140&#45;&gt;Node126 -->
-<g id="edge67_Node000140_Node000126" class="edge">
-<title>Node140&#45;&gt;Node126</title>
-<g id="a_edge67_Node000140_Node000126"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M541.29,-466.36C547.83,-464.12 554.18,-461.37 560,-458 604.32,-432.33 639.95,-382.76 658.51,-353.1"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="661.7,-354.58 663.92,-344.22 655.73,-350.94 661.7,-354.58"/>
-</a>
-</g>
-</g>
-<!-- Node141&#45;&gt;Node95 -->
-<g id="edge70_Node000141_Node000095" class="edge">
-<title>Node141&#45;&gt;Node95</title>
-<g id="a_edge70_Node000141_Node000095"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M326.83,-231.42C331.99,-228.93 336.81,-225.83 341,-222 378.04,-188.15 336.46,-144.56 377,-115 444.16,-66.04 678.54,-71.28 751,-112 977.16,-239.09 1058.03,-588.54 1074.93,-675.3"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="1071.54,-676.18 1076.83,-685.36 1078.42,-674.88 1071.54,-676.18"/>
 </a>
 </g>
 </g>
 <!-- Node142 -->
 <g id="Node000142" class="node">
 <title>Node142</title>
-<g id="a_Node000142"><a xlink:href="classcarta_1_1ThreadManager.html#af82ce2e6799b3efd3cef9fbadb962328" target="_top" xlink:title=" ">
+<g id="a_Node000142"><a xlink:href="classcarta_1_1Session.html#aef4b334b4727ea531b229d242c3108b2" target="_top" xlink:title=" ">
+<polygon fill="#fff0f0" stroke="red" points="558.5,-266.5 378.5,-266.5 378.5,-247.5 558.5,-247.5 558.5,-266.5"/>
+<text text-anchor="middle" x="468.5" y="-254.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::UpdateImageData</text>
+</a>
+</g>
+</g>
+<!-- Node131&#45;&gt;Node142 -->
+<g id="edge60_Node000131_Node000142" class="edge">
+<title>Node131&#45;&gt;Node142</title>
+<g id="a_edge60_Node000131_Node000142"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M322.02,-402.81C329.04,-399.15 335.61,-394.62 341,-389 377.49,-350.97 337.89,-311.33 377,-276 378.69,-274.47 380.48,-273.05 382.34,-271.74"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="384.14,-274.74 390.93,-266.61 380.55,-268.73 384.14,-274.74"/>
+</a>
+</g>
+</g>
+<!-- Node144 -->
+<g id="Node000144" class="node">
+<title>Node144</title>
+<g id="a_Node000144"><a xlink:href="classcarta_1_1Session.html#ac86d5f7886628a9429955f05426f25ab" target="_top" xlink:title=" ">
+<polygon fill="#fff0f0" stroke="red" points="560,-485.5 377,-485.5 377,-466.5 560,-466.5 560,-485.5"/>
+<text text-anchor="middle" x="468.5" y="-473.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::UpdateRegionData</text>
+</a>
+</g>
+</g>
+<!-- Node131&#45;&gt;Node144 -->
+<g id="edge64_Node000131_Node000144" class="edge">
+<title>Node131&#45;&gt;Node144</title>
+<g id="a_edge64_Node000131_Node000144"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M300.64,-433.05C322.81,-441.2 351.19,-451 377,-458 385.43,-460.29 394.36,-462.41 403.22,-464.35"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="402.63,-467.8 413.14,-466.45 404.08,-460.95 402.63,-467.8"/>
+</a>
+</g>
+</g>
+<!-- Node136&#45;&gt;Node7 -->
+<g id="edge53_Node000136_Node000007" class="edge">
+<title>Node136&#45;&gt;Node7</title>
+<g id="a_edge53_Node000136_Node000007"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M498.01,-572.11C523.25,-585.05 561.35,-603.51 596,-616 603.89,-618.84 612.37,-621.47 620.71,-623.82"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="619.83,-627.21 630.39,-626.45 621.66,-620.45 619.83,-627.21"/>
+</a>
+</g>
+</g>
+<!-- Node136&#45;&gt;Node10 -->
+<g id="edge54_Node000136_Node000010" class="edge">
+<title>Node136&#45;&gt;Node10</title>
+<g id="a_edge54_Node000136_Node000010"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M545.67,-572.01C568.39,-576.49 592.93,-581.32 614.31,-585.53"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="613.72,-588.99 624.21,-587.49 615.08,-582.12 613.72,-588.99"/>
+</a>
+</g>
+</g>
+<!-- Node136&#45;&gt;Node97 -->
+<g id="edge55_Node000136_Node000097" class="edge">
+<title>Node136&#45;&gt;Node97</title>
+<g id="a_edge55_Node000136_Node000097"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M552.24,-552.09C608.6,-547.86 684.72,-540.42 751,-528 781.04,-522.37 814.33,-513.13 839.35,-505.55"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="840.66,-508.81 849.2,-502.53 838.61,-502.12 840.66,-508.81"/>
+</a>
+</g>
+</g>
+<!-- Node141&#45;&gt;Node97 -->
+<g id="edge59_Node000141_Node000097" class="edge">
+<title>Node141&#45;&gt;Node97</title>
+<g id="a_edge59_Node000141_Node000097"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M541.7,-163.44C603.06,-156.08 690.55,-155.86 751,-199 845.49,-266.43 870.65,-419.26 876.73,-473.47"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="873.25,-473.89 877.75,-483.48 880.21,-473.18 873.25,-473.89"/>
+</a>
+</g>
+</g>
+<!-- Node142&#45;&gt;Node107 -->
+<g id="edge61_Node000142_Node000107" class="edge">
+<title>Node142&#45;&gt;Node107</title>
+<g id="a_edge61_Node000142_Node000107"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M544.21,-266.62C549.86,-269.13 555.22,-272.21 560,-276 589.61,-299.47 577.68,-319.96 596,-353 614.79,-386.89 639.69,-424.12 655.9,-447.51"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="653.06,-449.57 661.65,-455.77 658.8,-445.56 653.06,-449.57"/>
+</a>
+</g>
+</g>
+<!-- Node142&#45;&gt;Node129 -->
+<g id="edge62_Node000142_Node000129" class="edge">
+<title>Node142&#45;&gt;Node129</title>
+<g id="a_edge62_Node000142_Node000129"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M558.54,-259.63C568.5,-259.93 578.63,-260.23 588.52,-260.52"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="588.64,-264.02 598.73,-260.82 588.84,-257.03 588.64,-264.02"/>
+</a>
+</g>
+</g>
+<!-- Node142&#45;&gt;Node130 -->
+<g id="edge63_Node000142_Node000130" class="edge">
+<title>Node142&#45;&gt;Node130</title>
+<g id="a_edge63_Node000142_Node000130"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M534.03,-266.62C542.98,-269.08 551.88,-272.15 560,-276 578.57,-284.8 577.88,-295.31 596,-305 599.33,-306.78 602.8,-308.45 606.37,-310.02"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="605.36,-313.38 615.94,-313.92 608,-306.9 605.36,-313.38"/>
+</a>
+</g>
+</g>
+<!-- Node144&#45;&gt;Node107 -->
+<g id="edge65_Node000144_Node000107" class="edge">
+<title>Node144&#45;&gt;Node107</title>
+<g id="a_edge65_Node000144_Node000107"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M560.02,-473.77C569.57,-473.54 579.25,-473.3 588.72,-473.06"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="588.98,-476.56 598.89,-472.81 588.81,-469.56 588.98,-476.56"/>
+</a>
+</g>
+</g>
+<!-- Node144&#45;&gt;Node129 -->
+<g id="edge66_Node000144_Node000129" class="edge">
+<title>Node144&#45;&gt;Node129</title>
+<g id="a_edge66_Node000144_Node000129"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M548.48,-466.49C552.65,-464.14 556.54,-461.34 560,-458 610.25,-409.47 553.73,-360.62 596,-305 602.74,-296.13 611.91,-288.9 621.57,-283.08"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="623.46,-286.04 630.52,-278.14 620.07,-279.91 623.46,-286.04"/>
+</a>
+</g>
+</g>
+<!-- Node144&#45;&gt;Node130 -->
+<g id="edge67_Node000144_Node000130" class="edge">
+<title>Node144&#45;&gt;Node130</title>
+<g id="a_edge67_Node000144_Node000130"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M541.29,-466.36C547.83,-464.12 554.18,-461.37 560,-458 604.32,-432.33 639.95,-382.76 658.51,-353.1"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="661.7,-354.58 663.92,-344.22 655.73,-350.94 661.7,-354.58"/>
+</a>
+</g>
+</g>
+<!-- Node145&#45;&gt;Node99 -->
+<g id="edge70_Node000145_Node000099" class="edge">
+<title>Node145&#45;&gt;Node99</title>
+<g id="a_edge70_Node000145_Node000099"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M326.83,-231.42C331.99,-228.93 336.81,-225.83 341,-222 378.04,-188.15 336.46,-144.56 377,-115 444.16,-66.04 678.54,-71.28 751,-112 977.16,-239.09 1058.03,-588.54 1074.93,-675.3"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="1071.54,-676.18 1076.83,-685.36 1078.42,-674.88 1071.54,-676.18"/>
+</a>
+</g>
+</g>
+<!-- Node146 -->
+<g id="Node000146" class="node">
+<title>Node146</title>
+<g id="a_Node000146"><a xlink:href="classcarta_1_1ThreadManager.html#af82ce2e6799b3efd3cef9fbadb962328" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="530.5,-30 406.5,-30 406.5,0 530.5,0 530.5,-30"/>
 <text text-anchor="start" x="414.5" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ThreadManager</text>
 <text text-anchor="middle" x="468.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::QueueTask</text>
 </a>
 </g>
 </g>
-<!-- Node141&#45;&gt;Node142 -->
-<g id="edge69_Node000141_Node000142" class="edge">
-<title>Node141&#45;&gt;Node142</title>
-<g id="a_edge69_Node000141_Node000142"><a xlink:title=" ">
+<!-- Node145&#45;&gt;Node146 -->
+<g id="edge69_Node000145_Node000146" class="edge">
+<title>Node145&#45;&gt;Node146</title>
+<g id="a_edge69_Node000145_Node000146"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M328.51,-231.39C333.12,-228.88 337.36,-225.79 341,-222 398.42,-162.22 320.32,-99.49 377,-39 382.55,-33.08 389.37,-28.55 396.77,-25.11"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="398.38,-28.23 406.39,-21.29 395.8,-21.73 398.38,-28.23"/>
 </a>
 </g>
 </g>
-<!-- Node143 -->
-<g id="Node000143" class="node">
-<title>Node143</title>
-<g id="a_Node000143"><a xlink:href="classMessage.html#a75d7d86b23309ae2a94359dc64e923a0" target="_top" xlink:title=" ">
+<!-- Node147 -->
+<g id="Node000147" class="node">
+<title>Node147</title>
+<g id="a_Node000147"><a xlink:href="classMessage.html#a75d7d86b23309ae2a94359dc64e923a0" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="535.5,-67.5 401.5,-67.5 401.5,-48.5 535.5,-48.5 535.5,-67.5"/>
 <text text-anchor="middle" x="468.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::SetRegionAck</text>
 </a>
 </g>
 </g>
-<!-- Node141&#45;&gt;Node143 -->
-<g id="edge71_Node000141_Node000143" class="edge">
-<title>Node141&#45;&gt;Node143</title>
-<g id="a_edge71_Node000141_Node000143"><a xlink:title=" ">
+<!-- Node145&#45;&gt;Node147 -->
+<g id="edge71_Node000145_Node000147" class="edge">
+<title>Node145&#45;&gt;Node147</title>
+<g id="a_edge71_Node000145_Node000147"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M327.9,-231.36C332.7,-228.86 337.15,-225.78 341,-222 386.82,-176.96 331.74,-127.6 377,-82 381.33,-77.64 386.35,-74.04 391.77,-71.08"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="393.63,-74.07 401.21,-66.67 390.67,-67.73 393.63,-74.07"/>
 </a>
 </g>
 </g>
-<!-- Node144&#45;&gt;Node137 -->
-<g id="edge73_Node000144_Node000137" class="edge">
-<title>Node144&#45;&gt;Node137</title>
-<g id="a_edge73_Node000144_Node000137"><a xlink:title=" ">
+<!-- Node148&#45;&gt;Node141 -->
+<g id="edge73_Node000148_Node000141" class="edge">
+<title>Node148&#45;&gt;Node141</title>
+<g id="a_edge73_Node000148_Node000141"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M329.22,-316.85C333.49,-314.34 337.48,-311.41 341,-308 377.03,-273.08 340.38,-235.3 377,-201 379.92,-198.27 383.11,-195.83 386.5,-193.67"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="388.21,-196.73 395.29,-188.84 384.84,-190.6 388.21,-196.73"/>
 </a>

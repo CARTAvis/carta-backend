@@ -2,6 +2,9 @@ var classMessage =
 [
     [ "Message", "classMessage.html#a4fc4f717b634e66070366cb7722d7761", null ],
     [ "~Message", "classMessage.html#a072b42f0fb513679105c65ed1ef266e9", null ],
+    [ "AddAxesNumbers", "classMessage.html#acc08f038aac5b66ab354b7910b9dfe5c", null ],
+    [ "AddComputedEntry", "classMessage.html#aad5de672550d68135329a1ea136c6a17", null ],
+    [ "AddHeaderEntry", "classMessage.html#a05127fe478a39099a4be2810e9240317", null ],
     [ "AddRequiredTiles", "classMessage.html#a8f3f50d7c76224f6c11eb8f074a47259", null ],
     [ "Beam", "classMessage.html#a50066c9b8734724d4be0ced5e2143dfd", null ],
     [ "CloseFile", "classMessage.html#acfdc04d3a74a1759ad075074bf2c19b1", null ],
@@ -31,6 +34,7 @@ var classMessage =
     [ "RegionStatsData", "classMessage.html#a1641ebe3a971aa233d8621a1abe0bd76", null ],
     [ "RegisterViewerAck", "classMessage.html#a8c590c77e9f0326e09ac0af465b58a86", null ],
     [ "ScriptingRequest", "classMessage.html#a60da007fe3902ca53c342359ad9e29a0", null ],
+    [ "SetDimensions", "classMessage.html#a3e6ef484d8d2026c2d7c5381ac7ece1e", null ],
     [ "SetImageChannels", "classMessage.html#a1ddbaf9748774ff4043ed66c89e40fff", null ],
     [ "SetRegion", "classMessage.html#a916c7171fc85a251d96cbe4d3d6e7dbe", null ],
     [ "SetRegion", "classMessage.html#a9cd958593df60d02c3300fdbef012a81", null ],

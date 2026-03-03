@@ -178,6 +178,14 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a50066c9b8734724d4be0ced5e2143dfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a03594461e68b148a3398fbaad3d651a7" id="r_a03594461e68b148a3398fbaad3d651a7"><td class="memItemLeft" align="right" valign="top">static CARTA::ListProgress&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a03594461e68b148a3398fbaad3d651a7">ListProgress</a> (const CARTA::FileListType &amp;file_list_type, int32_t total_count, int32_t checked_count, float percentage)</td></tr>
 <tr class="separator:a03594461e68b148a3398fbaad3d651a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05127fe478a39099a4be2810e9240317" id="r_a05127fe478a39099a4be2810e9240317"><td class="memItemLeft" align="right" valign="top">static CARTA::HeaderEntry *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a05127fe478a39099a4be2810e9240317">AddHeaderEntry</a> (CARTA::FileInfoExtended &amp;response, std::string name, const std::string &amp;value, CARTA::EntryType type=CARTA::EntryType::STRING, double numeric_value=0.0)</td></tr>
+<tr class="separator:a05127fe478a39099a4be2810e9240317"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad5de672550d68135329a1ea136c6a17" id="r_aad5de672550d68135329a1ea136c6a17"><td class="memItemLeft" align="right" valign="top">static CARTA::HeaderEntry *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#aad5de672550d68135329a1ea136c6a17">AddComputedEntry</a> (CARTA::FileInfoExtended &amp;response, std::string name, const std::string &amp;value, CARTA::EntryType type=CARTA::EntryType::STRING, double numeric_value=0.0)</td></tr>
+<tr class="separator:aad5de672550d68135329a1ea136c6a17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e6ef484d8d2026c2d7c5381ac7ece1e" id="r_a3e6ef484d8d2026c2d7c5381ac7ece1e"><td class="memItemLeft" align="right" valign="top">static CARTA::FileInfoExtended&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a3e6ef484d8d2026c2d7c5381ac7ece1e">SetDimensions</a> (CARTA::FileInfoExtended &amp;response, int32_t dimensions, int32_t width, int32_t height, int32_t depth, int32_t stokes)</td></tr>
+<tr class="separator:a3e6ef484d8d2026c2d7c5381ac7ece1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc08f038aac5b66ab354b7910b9dfe5c" id="r_acc08f038aac5b66ab354b7910b9dfe5c"><td class="memItemLeft" align="right" valign="top">static CARTA::AxesNumbers *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#acc08f038aac5b66ab354b7910b9dfe5c">AddAxesNumbers</a> (CARTA::FileInfoExtended &amp;response, int32_t spatial_x, int32_t spatial_y, int32_t spectral, int32_t stokes, int32_t depth)</td></tr>
+<tr class="separator:acc08f038aac5b66ab354b7910b9dfe5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0784bcc9c31f5081ebe4a12da031f2eb" id="r_a0784bcc9c31f5081ebe4a12da031f2eb"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structcarta_1_1EventHeader.html">carta::EventHeader</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a0784bcc9c31f5081ebe4a12da031f2eb">GetEventHeader</a> (std::string_view message)</td></tr>
 <tr class="separator:a0784bcc9c31f5081ebe4a12da031f2eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2d981a1cec15972f98b2fe2ec5716ae6" id="r_a2d981a1cec15972f98b2fe2ec5716ae6"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
@@ -252,6 +260,189 @@ Here is the call graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="acc08f038aac5b66ab354b7910b9dfe5c" name="acc08f038aac5b66ab354b7910b9dfe5c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acc08f038aac5b66ab354b7910b9dfe5c">&#9670;&#160;</a></span>AddAxesNumbers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::AxesNumbers * Message::AddAxesNumbers </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileInfoExtended &amp;&#160;</td>
+          <td class="paramname"><em>response</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>spatial_x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>spatial_y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>spectral</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>stokes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>depth</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_acc08f038aac5b66ab354b7910b9dfe5c_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="aad5de672550d68135329a1ea136c6a17" name="aad5de672550d68135329a1ea136c6a17"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aad5de672550d68135329a1ea136c6a17">&#9670;&#160;</a></span>AddComputedEntry()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::HeaderEntry * Message::AddComputedEntry </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileInfoExtended &amp;&#160;</td>
+          <td class="paramname"><em>response</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::EntryType&#160;</td>
+          <td class="paramname"><em>type</em> = <code>CARTA::EntryType::STRING</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>numeric_value</em> = <code>0.0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_aad5de672550d68135329a1ea136c6a17_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a05127fe478a39099a4be2810e9240317" name="a05127fe478a39099a4be2810e9240317"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a05127fe478a39099a4be2810e9240317">&#9670;&#160;</a></span>AddHeaderEntry()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::HeaderEntry * Message::AddHeaderEntry </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileInfoExtended &amp;&#160;</td>
+          <td class="paramname"><em>response</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::EntryType&#160;</td>
+          <td class="paramname"><em>type</em> = <code>CARTA::EntryType::STRING</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>numeric_value</em> = <code>0.0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a05127fe478a39099a4be2810e9240317_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
 <a id="a8f3f50d7c76224f6c11eb8f074a47259" name="a8f3f50d7c76224f6c11eb8f074a47259"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8f3f50d7c76224f6c11eb8f074a47259">&#9670;&#160;</a></span>AddRequiredTiles()</h2>
 
@@ -1708,6 +1899,71 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_a60da007fe3902ca53c342359ad9e29a0_icgraph.svg" width="430" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a3e6ef484d8d2026c2d7c5381ac7ece1e" name="a3e6ef484d8d2026c2d7c5381ac7ece1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e6ef484d8d2026c2d7c5381ac7ece1e">&#9670;&#160;</a></span>SetDimensions()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::FileInfoExtended Message::SetDimensions </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileInfoExtended &amp;&#160;</td>
+          <td class="paramname"><em>response</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>dimensions</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>depth</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>stokes</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a3e6ef484d8d2026c2d7c5381ac7ece1e_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>

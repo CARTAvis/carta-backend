@@ -1,11 +1,16 @@
 <map id="carta::FileExtInfoLoader::AddEntriesFromHeaderStrings" name="carta::FileExtInfoLoader::AddEntriesFromHeaderStrings">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,35,231,75"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1FileExtInfoLoader.html#a9569d63b1ec07f806edb9f3469b15fd5" title=" " alt="" coords="279,5,512,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="231,40,265,36,265,42,231,45"/>
-<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="337,70,453,95"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="231,63,324,73,323,78,231,69"/>
-<area shape="rect" id="Node000004" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title="Check if input unit string is in the format used by the GILDAS CLASS software." alt="" coords="560,70,661,95"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="454,80,546,80,546,85,454,85"/>
-<area shape="rect" id="Node000005" href="$Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" title=" " alt="" coords="709,70,831,95"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="662,80,696,80,696,85,662,85"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,78,231,118"/>
+<area shape="rect" id="Node000002" href="$classMessage.html#aad5de672550d68135329a1ea136c6a17" title=" " alt="" coords="279,5,493,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="185,75,329,32,330,37,187,80"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#a05127fe478a39099a4be2810e9240317" title=" " alt="" coords="541,85,736,111"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="231,92,279,91,493,91,528,92,528,97,493,97,279,97,231,98"/>
+<area shape="rect" id="Node000004" href="$classcarta_1_1FileExtInfoLoader.html#ac2643e77feee7e136712fb06cb43a22d" title=" " alt="" coords="291,106,481,146"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="231,107,277,112,277,117,230,112"/>
+<area shape="rect" id="Node000005" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title="Normalizes a given unit string to conform to standard Casacore unit conventions (case&#45;sensitive)." alt="" coords="328,171,444,196"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="169,116,279,155,315,165,314,170,278,161,167,121"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="481,113,527,108,528,113,482,118"/>
+<area shape="rect" id="Node000006" href="$Casacore_8cc.html#af1417964e00800b515ec0913adaa1957" title="Check if input unit string is in the format used by the GILDAS CLASS software." alt="" coords="588,171,689,196"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="444,181,574,181,574,186,444,186"/>
+<area shape="rect" id="Node000007" href="$Casacore_8cc.html#a8bd36af5b1f82b7ccee35f089787ec99" title=" " alt="" coords="784,171,905,196"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="690,181,770,181,770,186,690,186"/>
 </map>
