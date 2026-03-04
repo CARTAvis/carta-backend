@@ -125,8 +125,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:affc8afa6f9fdad45fa0fbab2799771b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5fe3207948cae3f05df3069e43423fc4" id="r_a5fe3207948cae3f05df3069e43423fc4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaHdf5Image.html#a5fe3207948cae3f05df3069e43423fc4">~CartaHdf5Image</a> () override</td></tr>
 <tr class="separator:a5fe3207948cae3f05df3069e43423fc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa163d9cdc235a1e8b1c70679b6538feb" id="r_aa163d9cdc235a1e8b1c70679b6538feb"><td class="memItemLeft" align="right" valign="top">const casacore::CountedPtr&lt; casacore::HDF5Group &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaHdf5Image.html#aa163d9cdc235a1e8b1c70679b6538feb">Group</a> () const</td></tr>
-<tr class="separator:aa163d9cdc235a1e8b1c70679b6538feb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0d473c2d07c35cb98b8e3cd628c320f" id="r_ae0d473c2d07c35cb98b8e3cd628c320f"><td class="memItemLeft" align="right" valign="top">const std::shared_ptr&lt; casacore::HDF5Group &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaHdf5Image.html#ae0d473c2d07c35cb98b8e3cd628c320f">Group</a> () const</td></tr>
+<tr class="separator:ae0d473c2d07c35cb98b8e3cd628c320f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a36320cf7bcee416c6f244b348daa3ad1" id="r_a36320cf7bcee416c6f244b348daa3ad1"><td class="memItemLeft" align="right" valign="top">const casacore::HDF5Lattice&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaHdf5Image.html#a36320cf7bcee416c6f244b348daa3ad1">Lattice</a> ()</td></tr>
 <tr class="separator:a36320cf7bcee416c6f244b348daa3ad1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b2bf2a7e21d217a9f7ef05b5d701f2e" id="r_a3b2bf2a7e21d217a9f7ef05b5d701f2e"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaHdf5Image.html#a3b2bf2a7e21d217a9f7ef05b5d701f2e">imageType</a> () const override</td></tr>
@@ -180,8 +180,8 @@ Private Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-methods" name="pri-static-methods"></a>
 Static Private Member Functions</h2></td></tr>
-<tr class="memitem:a2f14df286bd8afbbac8ce80b1c56ef51" id="r_a2f14df286bd8afbbac8ce80b1c56ef51"><td class="memItemLeft" align="right" valign="top">static const casacore::CountedPtr&lt; casacore::HDF5File &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaHdf5Image.html#a2f14df286bd8afbbac8ce80b1c56ef51">GetHdf5File</a> (void *image)</td></tr>
-<tr class="separator:a2f14df286bd8afbbac8ce80b1c56ef51"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63daac7a2b11ae185a3a754e464a3e04" id="r_a63daac7a2b11ae185a3a754e464a3e04"><td class="memItemLeft" align="right" valign="top">static const std::shared_ptr&lt; casacore::HDF5File &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaHdf5Image.html#a63daac7a2b11ae185a3a754e464a3e04">GetHdf5File</a> (void *image)</td></tr>
+<tr class="separator:a63daac7a2b11ae185a3a754e464a3e04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -508,8 +508,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a2f14df286bd8afbbac8ce80b1c56ef51" name="a2f14df286bd8afbbac8ce80b1c56ef51"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2f14df286bd8afbbac8ce80b1c56ef51">&#9670;&#160;</a></span>GetHdf5File()</h2>
+<a id="a63daac7a2b11ae185a3a754e464a3e04" name="a63daac7a2b11ae185a3a754e464a3e04"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a63daac7a2b11ae185a3a754e464a3e04">&#9670;&#160;</a></span>GetHdf5File()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -518,7 +518,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static const casacore::CountedPtr&lt; casacore::HDF5File &gt; &amp; carta::CartaHdf5Image::GetHdf5File </td>
+          <td class="memname">static const std::shared_ptr&lt; casacore::HDF5File &gt; &amp; carta::CartaHdf5Image::GetHdf5File </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>image</em></td><td>)</td>
@@ -559,8 +559,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aa163d9cdc235a1e8b1c70679b6538feb" name="aa163d9cdc235a1e8b1c70679b6538feb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa163d9cdc235a1e8b1c70679b6538feb">&#9670;&#160;</a></span>Group()</h2>
+<a id="ae0d473c2d07c35cb98b8e3cd628c320f" name="ae0d473c2d07c35cb98b8e3cd628c320f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae0d473c2d07c35cb98b8e3cd628c320f">&#9670;&#160;</a></span>Group()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -569,7 +569,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const casacore::CountedPtr&lt; casacore::HDF5Group &gt; carta::CartaHdf5Image::Group </td>
+          <td class="memname">const std::shared_ptr&lt; casacore::HDF5Group &gt; carta::CartaHdf5Image::Group </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -584,7 +584,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaHdf5Image_aa163d9cdc235a1e8b1c70679b6538feb_icgraph.svg" width="416" height="307"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaHdf5Image_ae0d473c2d07c35cb98b8e3cd628c320f_icgraph.svg" width="416" height="307"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
