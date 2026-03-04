@@ -8,6 +8,8 @@
 
 #include "FileExtInfoLoader.h"
 
+#include <cmath>
+
 #include <fitsio.h>
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/fmt/ostr.h>
@@ -1213,7 +1215,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         if (casacore::MDirection::getType(frame_type, frame) || casacore::MDirection::getType(frame_type, radesys)) {
             auto xform = compressed_fits->GetTransformMatrix();
             auto proj_type = casacore::Projection::type(projection);
-            auto to_rad = casacore::C::pi / 180.0;
+            auto to_rad = M_PI / 180.0;
             casacore::DirectionCoordinate dir_coord(frame_type, proj_type, disp1_crval * to_rad, disp2_crval * to_rad, disp1_cdelt * to_rad,
                 disp2_cdelt * to_rad, xform, disp1_crpix - 1, disp2_crpix - 1);
             casacore::Vector<casacore::String> units(2);

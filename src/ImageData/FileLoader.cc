@@ -124,7 +124,7 @@ FileLoader::ImagePtr FileLoader::GetImage(bool check_data_type) {
 
 void FileLoader::CloseImageIfUpdated() {
     // Close image if updated when only the loader owns
-    if (_image.unique() && ImageUpdated()) {
+    if (_image.use_count() == 1 && ImageUpdated()) {
         _image->tempClose();
     }
 }

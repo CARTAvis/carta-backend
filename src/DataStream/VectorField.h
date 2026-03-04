@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 #define CARTA_SRC_DATASTREAM_VECTORFIELD_H_
 
+#include <cmath>
+
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
 #include <casacore/casa/BasicSL/Constants.h>
@@ -111,7 +113,7 @@ protected:
         Valid valid;
 
         float operator()(float q, float u) {
-            return (valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
+            return (valid(q, u) ? ((float)(180.0 / M_PI) * std::atan2(u, q) / 2) : FLOAT_NAN);
         }
     };
 
