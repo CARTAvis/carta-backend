@@ -5,6 +5,7 @@ on:
     branches:
       - dev
       - release/*
+      - '**'  # 允許所有分支 push 觸發 CI
   pull_request:
 jobs:
 
