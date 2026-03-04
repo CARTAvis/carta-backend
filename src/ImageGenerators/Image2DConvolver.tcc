@@ -10,6 +10,8 @@
 #ifndef CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_TCC_
 #define CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_TCC_
 
+#include <cmath>
+
 #include "../Logger/Logger.h"
 #include "Util/Casacore.h"
 
@@ -689,7 +691,7 @@ casacore::IPosition Image2DConvolver<T>::_shapeOfKernel(const casacore::VectorKe
 template <class T>
 uInt Image2DConvolver<T>::_sizeOfGaussian(const casacore::Double width, const casacore::Double nSigma) const {
     // +/- 5 sigma is a volume error of less than 6e-5%
-    casacore::Double sigma = width / sqrt(casacore::Double(8.0) * C::ln2);
+    casacore::Double sigma = width / sqrt(casacore::Double(8.0) * M_LN2);
     return (casacore::Int(nSigma * sigma + 0.5) + 1) * 2;
 }
 
@@ -728,7 +730,7 @@ void Image2DConvolver<T>::_fillGaussian(Double& maxVal, Double& volume, casacore
     casacore::uInt n1 = pixels.shape()(0);
     casacore::uInt n2 = pixels.shape()(1);
     AlwaysAssert(n1 == n2, casacore::AipsError);
-    positionAngle += C::pi_2; // +y -> -x
+    positionAngle += M_PI_2; // +y -> -x
     casacore::Gaussian2D<Double> g2d(height, xCentre, yCentre, majorAxis, ratio, positionAngle);
     maxVal = -1.0e30;
     volume = 0.0;

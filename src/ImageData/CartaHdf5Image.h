@@ -36,7 +36,7 @@ public:
     // Register the open function in casacore::ImageOpener
     static void RegisterOpenFunction();
 
-    inline const casacore::CountedPtr<casacore::HDF5Group> Group() const {
+    inline const std::shared_ptr<casacore::HDF5Group> Group() const {
         return _lattice.group();
     };
     inline const casacore::HDF5Lattice<float> Lattice() {
@@ -69,7 +69,7 @@ public:
 
 private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
-    inline static const casacore::CountedPtr<casacore::HDF5File>& GetHdf5File(void* image) {
+    inline static const std::shared_ptr<casacore::HDF5File>& GetHdf5File(void* image) {
         CartaHdf5Image* im = static_cast<CartaHdf5Image*>(image);
         return im->_lattice.file();
     }

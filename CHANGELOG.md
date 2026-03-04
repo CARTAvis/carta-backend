@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
+* Updated for compatibility with latest carta-casacore using CASA 6.7.2 ([#1499](https://github.com/CARTAvis/carta-backend/issues/1499)).
 
 ## [5.0.2]
 
