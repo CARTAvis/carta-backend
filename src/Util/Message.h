@@ -68,7 +68,6 @@ class Message {
 
 public:
     // Request messages
-    static CARTA::RegisterViewer RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags);
     static CARTA::CloseFile CloseFile(int32_t file_id);
     static CARTA::OpenFile OpenFile(std::string directory, std::string file, bool lel_expr, std::string hdu, int32_t file_id,
         bool support_aips_beam, CARTA::RenderMode render_mode = CARTA::RenderMode::RASTER);
@@ -111,6 +110,8 @@ public:
     static CARTA::SetVectorOverlayParameters SetVectorOverlayParameters(uint32_t file_id, uint32_t mip, bool fractional, double threshold,
         bool debiasing, double q_error, double u_error, int32_t stokes_intensity, int32_t stokes_angle,
         const CARTA::CompressionType& compression_type, float compression_quality);
+    static CARTA::SetRegion SetRegion(
+        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation);
     static CARTA::ImageBounds ImageBounds(int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max);
     static CARTA::ConcatStokesFiles ConcatStokesFiles(
         int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files);
@@ -135,12 +136,7 @@ public:
     static CARTA::RegisterViewerAck RegisterViewerAck(
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
-    static CARTA::PvRequest PvRequest(
-        int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false);
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress, int32_t preview_id = 0);
-    static CARTA::RemoteFileRequest RemoteFileRequest(int32_t file_id, const std::string& hips, const std::string& wcs, int32_t width,
-        int32_t height, const std::string& projection, float fov, float ra, float dec, const std::string& coordsys, float rotation_angle,
-        const std::string& object);
     static CARTA::FittingProgress FittingProgress(int32_t file_id, float progress);
     static CARTA::RegionHistogramData RegionHistogramData(
         int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress, const carta::HistogramConfig& hist_config);
@@ -161,6 +157,15 @@ public:
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
     static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
         std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
+    static CARTA::HeaderEntry* AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
+        CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);
+    static CARTA::HeaderEntry* AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
+        CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);
+    static CARTA::FileInfoExtended SetDimensions(
+        CARTA::FileInfoExtended& response, int32_t dimensions, int32_t width, int32_t height, int32_t depth, int32_t stokes);
+    static CARTA::AxesNumbers* AddAxesNumbers(
+        CARTA::FileInfoExtended& response, int32_t spatial_x, int32_t spatial_y, int32_t spectral, int32_t stokes, int32_t depth);
+
     // Decode messages
     static carta::EventHeader GetEventHeader(std::string_view message);
 

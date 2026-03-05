@@ -17,6 +17,22 @@ using namespace carta;
 
 class RegionStatsTest : public ::testing::Test {
 public:
+    static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id) {
+        CARTA::SetStatsRequirements set_stats_requirements;
+        set_stats_requirements.set_file_id(file_id);
+        set_stats_requirements.set_region_id(region_id);
+        auto* stats_config = set_stats_requirements.add_stats_configs();
+        stats_config->add_stats_types(CARTA::StatsType::NumPixels);
+        stats_config->add_stats_types(CARTA::StatsType::Sum);
+        stats_config->add_stats_types(CARTA::StatsType::Mean);
+        stats_config->add_stats_types(CARTA::StatsType::RMS);
+        stats_config->add_stats_types(CARTA::StatsType::Sigma);
+        stats_config->add_stats_types(CARTA::StatsType::SumSq);
+        stats_config->add_stats_types(CARTA::StatsType::Min);
+        stats_config->add_stats_types(CARTA::StatsType::Max);
+        return set_stats_requirements;
+    }
+
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, const std::vector<float>& points,
         std::shared_ptr<casacore::CoordinateSystem> csys, bool is_annotation) {
         std::vector<CARTA::Point> control_points;
@@ -48,7 +64,7 @@ public:
         }
 
         // Set stats requirements
-        auto stats_req_message = Message::SetStatsRequirements(file_id, region_id);
+        auto stats_req_message = SetStatsRequirements(file_id, region_id);
         std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs = {
             stats_req_message.stats_configs().begin(), stats_req_message.stats_configs().end()};
         if (!region_handler.SetStatsRequirements(region_id, file_id, frame, stats_configs)) {
@@ -62,7 +78,7 @@ public:
 };
 
 TEST_F(RegionStatsTest, TestFitsRegionStats) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionStatsData stats_data;
     bool ok = RegionStats(image_path, endpoints, stats_data);
@@ -100,7 +116,7 @@ TEST_F(RegionStatsTest, TestFitsRegionStats) {
 }
 
 TEST_F(RegionStatsTest, TestFitsAnnotationRegionStats) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
     CARTA::RegionStatsData stats_data;
     bool ok = RegionStats(image_path, endpoints, stats_data, true);

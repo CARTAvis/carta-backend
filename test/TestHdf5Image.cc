@@ -22,11 +22,11 @@ public:
     FRIEND_TEST(Hdf5ImageTest, ExampleFriendTest);
 };
 
-class Hdf5ImageTest : public ::testing::Test, public ImageGenerator {};
+class Hdf5ImageTest : public ::testing::Test {};
 
 TEST_F(Hdf5ImageTest, BasicLoadingTest) {
-    auto path_string = GeneratedHdf5ImagePath("10 10");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10x10.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     EXPECT_NE(loader.get(), nullptr);
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_NE(frame.get(), nullptr);
@@ -34,17 +34,17 @@ TEST_F(Hdf5ImageTest, BasicLoadingTest) {
 }
 
 TEST_F(Hdf5ImageTest, ExampleFriendTest) {
-    auto path_string = GeneratedHdf5ImagePath("10 10");
+    auto path = Hdf5Images() / "10x10.hdf5";
     // TestFrame used instead of Frame if access to protected values is required
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
     EXPECT_TRUE(frame->_open_image_error.empty());
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
-    auto path_string = GeneratedHdf5ImagePath("10 10");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10x10.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -57,8 +57,8 @@ TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
-    auto path_string = GeneratedHdf5ImagePath("10 10 10");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10x10x10.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -73,8 +73,8 @@ TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
-    auto path_string = GeneratedHdf5ImagePath("10 10 10 1");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10x10x10x1.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -89,8 +89,8 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path_string = GeneratedHdf5ImagePath("10 10 1 10");
-    loader.reset(carta::FileLoader::GetLoader(path_string));
+    path = Hdf5Images() / "10x10x1x10.hdf5";
+    loader.reset(carta::FileLoader::GetLoader(path));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -106,8 +106,8 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
-    auto path_string = GeneratedHdf5ImagePath("10 10 5 2");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    auto path = Hdf5Images() / "10x10x5x2.hdf5";
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -122,8 +122,8 @@ TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path_string = GeneratedHdf5ImagePath("10 10 2 5");
-    loader.reset(carta::FileLoader::GetLoader(path_string));
+    path = Hdf5Images() / "10x10x2x5.hdf5";
+    loader.reset(carta::FileLoader::GetLoader(path));
     frame.reset(new Frame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
 
