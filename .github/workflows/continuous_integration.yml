@@ -36,10 +36,15 @@ jobs:
     needs: format-check
     container: carta/backend-builder-ubuntu-noble
     steps:
+      - name: Clear hooks from workspace before checkout
+        run: |
+          rm .git/hooks/*
+
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-            submodules: true
+          submodules: true
+          lfs: true
 
       - name: Fix ownership
         run: |
@@ -137,10 +142,15 @@ jobs:
     runs-on: [self-hosted, macOS-15-M1, CI]
     needs: format-check
     steps:
+      - name: Clear hooks from workspace before checkout
+        run: |
+          rm .git/hooks/*
+
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-            submodules: true
+          submodules: true
+          lfs: true
 
       - name: System information
         shell: bash
@@ -192,10 +202,15 @@ jobs:
     needs: format-check
     container: carta/backend-builder-almalinux-9
     steps:
+      - name: Clear hooks from workspace before checkout
+        run: |
+          rm .git/hooks/*
+
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-            submodules: true
+          submodules: true
+          lfs: true
 
       - name: Fix ownership
         run: |

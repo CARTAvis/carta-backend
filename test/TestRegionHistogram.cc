@@ -18,6 +18,18 @@ using namespace carta;
 
 class RegionHistogramTest : public ::testing::Test {
 public:
+    static CARTA::SetHistogramRequirements SetHistogramRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate = "z",
+        int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE) {
+        CARTA::SetHistogramRequirements set_histogram_requirements;
+        set_histogram_requirements.set_file_id(file_id);
+        set_histogram_requirements.set_region_id(region_id);
+        auto* histograms = set_histogram_requirements.add_histograms();
+        histograms->set_coordinate(coordinate);
+        histograms->set_channel(channel);
+        histograms->set_num_bins(num_bins);
+        return set_histogram_requirements;
+    }
+
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, const std::vector<float>& points,
         std::shared_ptr<casacore::CoordinateSystem> csys, bool is_annotation) {
         std::vector<CARTA::Point> control_points;
@@ -49,7 +61,7 @@ public:
         }
 
         // Set histogram requirements
-        auto histogram_req_message = Message::SetHistogramRequirements(file_id, region_id, coordinate);
+        auto histogram_req_message = SetHistogramRequirements(file_id, region_id, coordinate);
         std::vector<CARTA::HistogramConfig> histogram_configs = {
             histogram_req_message.histograms().begin(), histogram_req_message.histograms().end()};
         if (!region_handler.SetHistogramRequirements(region_id, file_id, frame, histogram_configs)) {
@@ -77,7 +89,7 @@ public:
         }
         // Set histogram requirements for region in image1
         file_id = 1;
-        auto histogram_req_message = Message::SetHistogramRequirements(file_id, region_id);
+        auto histogram_req_message = SetHistogramRequirements(file_id, region_id);
         std::vector<CARTA::HistogramConfig> histogram_configs = {
             histogram_req_message.histograms().begin(), histogram_req_message.histograms().end()};
         if (!region_handler.SetHistogramRequirements(region_id, file_id, frame1, histogram_configs)) {
@@ -90,7 +102,7 @@ public:
 };
 
 TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogram(image_path, endpoints, histogram_data);
@@ -114,7 +126,7 @@ TEST_F(RegionHistogramTest, TestFitsRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestFitsAnnotationRegionHistogram) {
-    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogram(image_path, endpoints, histogram_data, "z", true);
@@ -122,7 +134,7 @@ TEST_F(RegionHistogramTest, TestFitsAnnotationRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestStokesRegionHistogram) {
-    std::string image_path = FileFinder::FitsImagePath("noise_4d.fits"); // Stokes I and Q
+    auto image_path = FitsImages() / "noise_4d.fits"; // Stokes I and Q
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     std::vector<std::string> coordinates{"z", "Iz", "Qz", "Uz", "Plinearz", "PFlinearz", "Panglez"};
     std::unordered_map<std::string, int> expected_stokes{{"z", 0}, {"Iz", 0}, {"Qz", 1}};
@@ -150,8 +162,8 @@ TEST_F(RegionHistogramTest, TestStokesRegionHistogram) {
 }
 
 TEST_F(RegionHistogramTest, TestMatchedRegionHistogram) {
-    std::string image_path0 = FileFinder::FitsImagePath("noise_10px_10px.fits");
-    std::string image_path1 = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
     std::vector<float> endpoints = {1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 4.0, 1.0};
     CARTA::RegionHistogramData histogram_data;
     bool ok = RegionHistogramMatched(image_path0, image_path1, endpoints, histogram_data);

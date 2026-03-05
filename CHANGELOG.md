@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [6.0.0-beta.1]
 
 ### Fixed
 * Fixed linker error during unit test build on some platforms ([#1481](https://github.com/CARTAvis/carta-backend/issues/1481)).
@@ -18,7 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Moved region import/export implementation to new subdirectory ([#1505](https://github.com/CARTAvis/carta-backend/issues/1505)).
 * Moved region histogram implementation to analysis subdirectory ([#1509](https://github.com/CARTAvis/carta-backend/issues/1509)).
 * Moved region statistics implementation to analysis subdirectory ([#1512](https://github.com/CARTAvis/carta-backend/issues/1512)).
+* Full file path was added to the error message due to non-existing/non-readable file ([#1354](https://github.com/CARTAvis/carta-backend/issues/1354)).
 * Moved region spatial profile implementation to analysis subdirectory ([#1515](https://github.com/CARTAvis/carta-backend/issues/1515)).
+* Removed runtime image generation from unit tests ([#1489](https://github.com/CARTAvis/carta-backend/pull/1489)).
+* Removed unused protobuf message wrappers ([#1533](https://github.com/CARTAvis/carta-backend/issues/1533)).
 
 ## [5.1.0]
 
@@ -30,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * Excluded image cache data from core dumps on supported platforms ([#1506](https://github.com/CARTAvis/carta-backend/pull/1506)).
+* Updated for compatibility with latest carta-casacore using CASA 6.7.2 ([#1499](https://github.com/CARTAvis/carta-backend/issues/1499)).
 
 ## [5.0.2]
 

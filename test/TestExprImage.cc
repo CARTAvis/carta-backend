@@ -15,21 +15,14 @@ using namespace carta;
 
 class ImageExprTest : public ::testing::Test {
 public:
-    void GenerateImageExprTimesTwo(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type, bool invalid = false) {
-        std::string file_path;
-        if (file_type == CARTA::FileType::FITS) {
-            file_path = FileFinder::FitsImagePath(file_name);
-        } else if (file_type == CARTA::FileType::HDF5) {
-            file_path = FileFinder::Hdf5ImagePath(file_name);
-        }
-
+    void GenerateImageExprTimesTwo(const fs::path file_path, const std::string& hdu, bool invalid = false) {
         // Image on disk
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         loader->OpenFile(hdu);
         casacore::IPosition image_shape(loader->GetShape());
 
         std::shared_ptr<DataReader> reader = nullptr;
-        if (file_type == CARTA::FileType::HDF5) {
+        if (file_path.parent_path().filename() == "hdf5") {
             reader.reset(new Hdf5DataReader(file_path));
         } else {
             reader.reset(new FitsDataReader(file_path));
@@ -44,10 +37,10 @@ public:
         std::string expr;
         if (invalid) {
             // Use LEL expr with invalid syntax
-            expr = fs_path.filename().string() + " & 2";
+            expr = "'" + fs_path.filename().string() + "' & 2";
         } else {
             // Use LEL expr to multiply image by 2
-            expr = fs_path.filename().string() + " * 2";
+            expr = "'" + fs_path.filename().string() + "' * 2";
         }
 
         std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
@@ -82,17 +75,10 @@ public:
         CmpVectors<float>(image_yprofile, expr_yprofile.tovector());
     }
 
-    void SaveImageExpr(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type) {
-        std::string file_path;
-        if (file_type == CARTA::FileType::FITS) {
-            file_path = FileFinder::FitsImagePath(file_name);
-        } else if (file_type == CARTA::FileType::HDF5) {
-            file_path = FileFinder::Hdf5ImagePath(file_name);
-        }
-
+    void SaveImageExpr(const fs::path file_path, const std::string& hdu) {
         // Use LEL expr to multiply image by 2
         fs::path fs_path(file_path);
-        std::string expr = fs_path.filename().string() + " * 2";
+        std::string expr = "\"" + fs_path.filename().string() + "\" * 2";
         std::string directory = fs_path.parent_path().string();
 
         std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
@@ -116,33 +102,31 @@ public:
 };
 
 TEST_F(ImageExprTest, FitsImageExprTimesTwo) {
-    GenerateImageExprTimesTwo("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
+    GenerateImageExprTimesTwo(FitsImages() / "noise_10px_10px.fits", "0");
 }
 
 TEST_F(ImageExprTest, Hdf5ImageExprTimesTwo) {
-    GenerateImageExprTimesTwo("noise_10px_10px.hdf5", "", CARTA::FileType::HDF5);
+    GenerateImageExprTimesTwo(Hdf5Images() / "noise_10px_10px.hdf5", "");
 }
 
 TEST_F(ImageExprTest, FitsImageExprSave) {
-    SaveImageExpr("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
+    SaveImageExpr(FitsImages() / "noise_10px_10px.fits", "0");
 }
 
 TEST_F(ImageExprTest, ImageExprFails) {
     // Forms invalid expression
-    ASSERT_THROW(GenerateImageExprTimesTwo("noise_10px_10px.fits", "", CARTA::FileType::FITS, true), casacore::AipsError);
+    ASSERT_THROW(GenerateImageExprTimesTwo(FitsImages() / "noise_10px_10px.fits", "", true), casacore::AipsError);
 }
 
 TEST_F(ImageExprTest, ImageExprTwoDirs) {
     // Add images in different directories
-    auto image_path = TestRoot() / "data/images/fits";
-    std::string directory = image_path.string();
-    std::string expr = "noise_10px_10px.fits + '../casa/noise_10px_10px.im'";
+    std::string expr = "\"noise_10px_10px.fits\" + \"../casa/noise_10px_10px.im\"";
 
-    std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
+    std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, FitsImages()));
     expr_loader->OpenFile("");
     casacore::IPosition expr_shape(expr_loader->GetShape());
 
-    auto fits_path = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    auto fits_path = FitsImages() / "noise_10px_10px.fits";
     std::shared_ptr<carta::FileLoader> fits_loader(carta::FileLoader::GetLoader(fits_path));
     fits_loader->OpenFile("");
     casacore::IPosition fits_shape(fits_loader->GetShape());
