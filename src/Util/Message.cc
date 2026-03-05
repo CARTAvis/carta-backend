@@ -480,7 +480,7 @@ CARTA::RegionListResponse Message::RegionListResponse(CARTA::FileListResponse fi
     return region_response;
 }
 CARTA::HeaderEntry* Message::AddComputedEntry(
-    CARTA::FileInfoExtended & response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
+    CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
     auto entry = response.add_computed_entries();
     entry->set_name(name);
     entry->set_value(value);
@@ -490,7 +490,7 @@ CARTA::HeaderEntry* Message::AddComputedEntry(
 }
 
 CARTA::HeaderEntry* Message::AddHeaderEntry(
-    CARTA::FileInfoExtended & response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
+    CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
     auto entry = response.add_header_entries();
     entry->set_name(name);
     entry->set_value(value);
@@ -500,7 +500,7 @@ CARTA::HeaderEntry* Message::AddHeaderEntry(
 }
 
 CARTA::FileInfoExtended Message::SetDimensions(
-    CARTA::FileInfoExtended & response, int32_t dimensions, int32_t width, int32_t height, int32_t depth, int32_t stokes) {
+    CARTA::FileInfoExtended& response, int32_t dimensions, int32_t width, int32_t height, int32_t depth, int32_t stokes) {
     response.set_dimensions(dimensions);
     response.set_width(width);
     response.set_height(height);
@@ -510,7 +510,7 @@ CARTA::FileInfoExtended Message::SetDimensions(
 }
 
 CARTA::AxesNumbers* Message::AddAxesNumbers(
-    CARTA::FileInfoExtended & response, int32_t spatial_x, int32_t spatial_y, int32_t spectral, int32_t stokes, int32_t depth) {
+    CARTA::FileInfoExtended& response, int32_t spatial_x, int32_t spatial_y, int32_t spectral, int32_t stokes, int32_t depth) {
     auto* axes_numbers_info = response.mutable_axes_numbers();
     axes_numbers_info->set_spatial_x(spatial_x);
     axes_numbers_info->set_spatial_y(spatial_y);
