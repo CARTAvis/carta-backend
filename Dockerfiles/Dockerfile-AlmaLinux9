@@ -13,12 +13,12 @@ RUN \
          wget zlib-devel libuuid-devel && \
   pip3 install numpy astropy
 
-# Install carta-casacore-devel and fits2idia from the Copr cartavis/carta repository
+# Install carta-casacore-devel from the Copr cartavis/carta repository
 # (Also install wcslib-devel and zfp-devel as those packages are not yet available from official AlmaLinux 9 repositories)
 RUN \
   dnf -y install 'dnf-command(copr)' && \
   dnf -y copr enable cartavis/carta && \
-  dnf -y install carta-casacore-devel fits2idia measures-data wcslib-devel zfp-devel
+  dnf -y install carta-casacore-devel measures-data wcslib-devel zfp-devel
 
 # To work on Jenkins
 RUN \
