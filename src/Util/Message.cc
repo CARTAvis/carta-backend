@@ -478,43 +478,43 @@ CARTA::RegionListResponse Message::RegionListResponse(CARTA::FileListResponse fi
     *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
     region_response.set_cancel(file_response.cancel());
     return region_response;
-CARTA::HeaderEntry* Message::AddComputedEntry(
-    CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
-    auto entry = response.add_computed_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(type);
-    entry->set_numeric_value(numeric_value);
-    return entry;
-}
+    CARTA::HeaderEntry* Message::AddComputedEntry(
+        CARTA::FileInfoExtended & response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
+        auto entry = response.add_computed_entries();
+        entry->set_name(name);
+        entry->set_value(value);
+        entry->set_entry_type(type);
+        entry->set_numeric_value(numeric_value);
+        return entry;
+    }
 
-CARTA::HeaderEntry* Message::AddHeaderEntry(
-    CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
-    auto entry = response.add_header_entries();
-    entry->set_name(name);
-    entry->set_value(value);
-    entry->set_entry_type(type);
-    entry->set_numeric_value(numeric_value);
-    return entry;
-}
+    CARTA::HeaderEntry* Message::AddHeaderEntry(
+        CARTA::FileInfoExtended & response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
+        auto entry = response.add_header_entries();
+        entry->set_name(name);
+        entry->set_value(value);
+        entry->set_entry_type(type);
+        entry->set_numeric_value(numeric_value);
+        return entry;
+    }
 
-CARTA::FileInfoExtended Message::SetDimensions(
-    CARTA::FileInfoExtended& response, int32_t dimensions, int32_t width, int32_t height, int32_t depth, int32_t stokes) {
-    response.set_dimensions(dimensions);
-    response.set_width(width);
-    response.set_height(height);
-    response.set_depth(depth);
-    response.set_stokes(stokes);
-    return response;
-}
+    CARTA::FileInfoExtended Message::SetDimensions(
+        CARTA::FileInfoExtended & response, int32_t dimensions, int32_t width, int32_t height, int32_t depth, int32_t stokes) {
+        response.set_dimensions(dimensions);
+        response.set_width(width);
+        response.set_height(height);
+        response.set_depth(depth);
+        response.set_stokes(stokes);
+        return response;
+    }
 
-CARTA::AxesNumbers* Message::AddAxesNumbers(
-    CARTA::FileInfoExtended& response, int32_t spatial_x, int32_t spatial_y, int32_t spectral, int32_t stokes, int32_t depth) {
-    auto* axes_numbers_info = response.mutable_axes_numbers();
-    axes_numbers_info->set_spatial_x(spatial_x);
-    axes_numbers_info->set_spatial_y(spatial_y);
-    axes_numbers_info->set_spectral(spectral);
-    axes_numbers_info->set_stokes(stokes);
-    axes_numbers_info->set_depth(depth);
-    return axes_numbers_info;
-}
+    CARTA::AxesNumbers* Message::AddAxesNumbers(
+        CARTA::FileInfoExtended & response, int32_t spatial_x, int32_t spatial_y, int32_t spectral, int32_t stokes, int32_t depth) {
+        auto* axes_numbers_info = response.mutable_axes_numbers();
+        axes_numbers_info->set_spatial_x(spatial_x);
+        axes_numbers_info->set_spatial_y(spatial_y);
+        axes_numbers_info->set_spectral(spectral);
+        axes_numbers_info->set_stokes(stokes);
+        axes_numbers_info->set_depth(depth);
+        return axes_numbers_info;
+    }
