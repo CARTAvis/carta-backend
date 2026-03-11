@@ -1,7 +1,8 @@
 name: ICD tests
 on:
-  schedule:
-    - cron: '0 0 * * *' # UTC time
+  push:
+    branches:
+      - '**'  # trigger by pushing to any branch
 env:
   ICD_RXJS_BRANCH_NAME: dev
 
