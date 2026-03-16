@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['welcome_20to_20the_20carta_20backend_20documentation_0',['Welcome to the CARTA backend documentation',['../index.html',1,'']]]
+  ['upgrade_20checklist_0',['Carta-casacore upgrade checklist',['../md_docs_2static_2casacore.html',1,'']]]
 ];

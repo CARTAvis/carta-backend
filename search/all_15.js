@@ -17,13 +17,14 @@ var searchData=
   ['updatepvpreviewregion_14',['UpdatePvPreviewRegion',['../classcarta_1_1RegionHandler.html#ab87a5350ff52c5da3dd49533e4cd39b8',1,'carta::RegionHandler']]],
   ['updateregion_15',['UpdateRegion',['../classcarta_1_1Region.html#a49cb8010edef8b404b28c21591458b68',1,'carta::Region']]],
   ['updateregiondata_16',['UpdateRegionData',['../classcarta_1_1Session.html#ac86d5f7886628a9429955f05426f25ab',1,'carta::Session']]],
-  ['us_17',['us',['../structcarta_1_1TimeDelta.html#a2cc2c64715140bada3160a3ca890b1a8',1,'carta::TimeDelta']]],
-  ['useapproximatepolygon_18',['UseApproximatePolygon',['../classcarta_1_1RegionConverter.html#ad8cf08a897e85eb0bfc23ef07c8cebe5',1,'carta::RegionConverter']]],
-  ['useloaderspectraldata_19',['UseLoaderSpectralData',['../classcarta_1_1Frame.html#aa5835d1a307093ce5d75ab0aec98f5c5',1,'carta::Frame']]],
-  ['user_5fdirectory_20',['user_directory',['../structcarta_1_1ProgramSettings.html#a8c6eb022e0fd7ea678672911f21012f7',1,'carta::ProgramSettings']]],
-  ['user_5fsettings_5fjson_5fexists_21',['user_settings_json_exists',['../structcarta_1_1ProgramSettings.html#ada065e7f7ffd32d0ff0bf815c14ba9f0',1,'carta::ProgramSettings']]],
-  ['useregionspectraldata_22',['useregionspectraldata',['../classcarta_1_1FileLoader.html#a5b9332a18c0ff362c8f7371017974408',1,'carta::FileLoader::UseRegionSpectralData()'],['../classcarta_1_1Hdf5Loader.html#a3e977a2be894479c4e26a88bbd4d6dfc',1,'carta::Hdf5Loader::UseRegionSpectralData()']]],
-  ['usetilecache_23',['usetilecache',['../classcarta_1_1FileLoader.html#a7c599d031a7fd5402902ab943f55338e',1,'carta::FileLoader::UseTileCache()'],['../classcarta_1_1Hdf5Loader.html#a00c1f69879b1c2d59bbd902e93c70f31',1,'carta::Hdf5Loader::UseTileCache()']]],
-  ['util_2eh_24',['Util.h',['../Util_8h.html',1,'']]],
-  ['utype_5ft_25',['utype_t',['../structcarta_1_1EnumClassHash.html#ad3d70e8b43be01d6a19b1b5b551f46cf',1,'carta::EnumClassHash']]]
+  ['upgrade_20checklist_17',['Carta-casacore upgrade checklist',['../md_docs_2static_2casacore.html',1,'']]],
+  ['us_18',['us',['../structcarta_1_1TimeDelta.html#a2cc2c64715140bada3160a3ca890b1a8',1,'carta::TimeDelta']]],
+  ['useapproximatepolygon_19',['UseApproximatePolygon',['../classcarta_1_1RegionConverter.html#ad8cf08a897e85eb0bfc23ef07c8cebe5',1,'carta::RegionConverter']]],
+  ['useloaderspectraldata_20',['UseLoaderSpectralData',['../classcarta_1_1Frame.html#aa5835d1a307093ce5d75ab0aec98f5c5',1,'carta::Frame']]],
+  ['user_5fdirectory_21',['user_directory',['../structcarta_1_1ProgramSettings.html#a8c6eb022e0fd7ea678672911f21012f7',1,'carta::ProgramSettings']]],
+  ['user_5fsettings_5fjson_5fexists_22',['user_settings_json_exists',['../structcarta_1_1ProgramSettings.html#ada065e7f7ffd32d0ff0bf815c14ba9f0',1,'carta::ProgramSettings']]],
+  ['useregionspectraldata_23',['useregionspectraldata',['../classcarta_1_1Hdf5Loader.html#a3e977a2be894479c4e26a88bbd4d6dfc',1,'carta::Hdf5Loader::UseRegionSpectralData()'],['../classcarta_1_1FileLoader.html#a5b9332a18c0ff362c8f7371017974408',1,'carta::FileLoader::UseRegionSpectralData(const casacore::IPosition &amp;region_shape, std::mutex &amp;image_mutex)']]],
+  ['usetilecache_24',['usetilecache',['../classcarta_1_1FileLoader.html#a7c599d031a7fd5402902ab943f55338e',1,'carta::FileLoader::UseTileCache()'],['../classcarta_1_1Hdf5Loader.html#a00c1f69879b1c2d59bbd902e93c70f31',1,'carta::Hdf5Loader::UseTileCache()']]],
+  ['util_2eh_25',['Util.h',['../Util_8h.html',1,'']]],
+  ['utype_5ft_26',['utype_t',['../structcarta_1_1EnumClassHash.html#ad3d70e8b43be01d6a19b1b5b551f46cf',1,'carta::EnumClassHash']]]
 ];

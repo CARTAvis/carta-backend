@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>CARTA Backend: Related Pages</title>
+<title>CARTA Backend: Carta-casacore upgrade checklist</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <link rel="icon" href="cartaviewer.png" type="image/png" />
 <script type="text/javascript" src="jquery.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
-$(document).ready(function(){initNavTree('pages.html',''); initResizable(); });
+$(document).ready(function(){initNavTree('md_docs_2static_2casacore.html',''); initResizable(); });
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -93,18 +93,28 @@ $(document).ready(function(){initNavTree('pages.html',''); initResizable(); });
 </div>
 </div>
 
-<div class="header">
-  <div class="headertitle"><div class="title">Related Pages</div></div>
+<div><div class="header">
+  <div class="headertitle"><div class="title">Carta-casacore upgrade checklist</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock">Here is a list of all related documentation pages:</div><div class="directory">
-<table class="directory">
-<tr id="row_0_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><a class="el" href="md_docs_2static_2casacore.html" target="_self">Carta-casacore upgrade checklist</a></td><td class="desc"></td></tr>
-<tr id="row_1_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><a class="el" href="md_docs_2static_2faq.html" target="_self">Developer FAQ and tips</a></td><td class="desc"></td></tr>
-<tr id="row_2_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><a class="el" href="md_docs_2static_2release.html" target="_self">Release checklist</a></td><td class="desc"></td></tr>
-</table>
-</div><!-- directory -->
-</div><!-- contents -->
+<div class="textblock"><p><code>carta-casacore</code> upgrades should be synchronised with <a class="el" href="namespaceCARTA.html">CARTA</a> releases, so that existing backend packages don't have to be rebuilt.</p>
+<ol type="1">
+<li>Create a <code>carta-casacore</code> PR and a corresponding <code>carta-backend</code> PR.</li>
+<li>Update the <code>casa6</code> submodule and its nested <code>casa6/casatools/casacore</code> submodule.</li>
+<li>Carefully compare the root <code>CMakeLists.txt</code> file to <code>casa6/casatools/casacore/CMakeLists.txt</code> and merge in any required changes (at least the project version and the <code>SOVERSION</code>). We have removed some irrelevant conditional sections, changed some default variable values, modified some paths because of the relative location of the file, and added elements such as the custom imageanalysis build. Apart from that, the files should be kept in sync as far as possible.</li>
+<li>Check the <code>casa6</code> submodule's git tags to get the CASA version. Update the SOVERSION comment in <code>imageanalysis/CMakeLists.txt</code> and bump the <code>CASA_PROJECT_SOVERSION</code> if the minor version has changed. Other changes to this file should typically not be required, as sources and headers are found dynamically with a glob.</li>
+<li>Test building <code>carta-casacore</code>, and make any required changes.</li>
+<li>Test building the backend against the new <code>carta-casacore</code>, and make any required changes.</li>
+<li>Merge the <code>carta-casacore</code> PR.</li>
+<li>Build the <code>carta-casacore</code> packages and upload them to the testing repositories.</li>
+<li>Update CI to use these packages.</li>
+<li>Confirm that the backend PR passes tests with the updated CI.</li>
+<li>Merge the backend PR.</li>
+<li>Merge <code>dev</code> into all open PRs, and proceed with the release.</li>
+<li>When the release is complete, make sure that CI is configured to use the preview repositories. </li>
+</ol>
+</div></div><!-- contents -->
+</div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->

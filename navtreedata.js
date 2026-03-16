@@ -26,6 +26,7 @@ var NAVTREE =
 [
   [ "CARTA Backend", "index.html", [
     [ "Welcome to the CARTA backend documentation", "index.html", "index" ],
+    [ "Carta-casacore upgrade checklist", "md_docs_2static_2casacore.html", null ],
     [ "Developer FAQ and tips", "md_docs_2static_2faq.html", [
       [ "Building and running unit tests", "md_docs_2static_2faq.html#autotoc_md0", null ],
       [ "Building with ASAN flags", "md_docs_2static_2faq.html#autotoc_md1", null ],
@@ -96,10 +97,10 @@ var NAVTREEINDEX =
 "classcarta_1_1SessionManager.html#a6069680ecd3c9b67b288d12c2a721b11",
 "classcarta_1_1TableController.html#a5bdc7306475a622a9957430692853b6e",
 "classcarta_1_1queuing__rw__mutex.html#a0c2331425fda539271288468819487a4",
-"namespacecarta.html#ad6ee0598c9f0b17590e94238a0d495eb",
-"structcarta_1_1EventHeader.html#a9bb4c82e4037a66997a6e4a17aaaa4b3",
-"structcarta_1_1ProgramSettings.html#a3d95a3072052a718598c2a1830550970",
-"structcarta_1_1TableViewCache.html#a3e22292b01ba5344031a367f4f0f94ec"
+"namespacecarta.html#ad170096e224b353fb6640af99aa07cd2",
+"structcarta_1_1EventHeader.html#a2c7db1be4d006cc7e9513ef3cd48039f",
+"structcarta_1_1ProgramSettings.html#a3cf6f38321c0e0439b745db850cd94e8",
+"structcarta_1_1TableViewCache.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
