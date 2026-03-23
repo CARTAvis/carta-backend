@@ -5,155 +5,151 @@
 */
 
 #include <gtest/gtest.h>
+#include <fstream>
+#include <map>
+#include <sstream>
+#include <tuple>
 
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
 #include "Util/Message.h"
 #include "src/Frame/Frame.h"
 
-class ContourTest : public ::testing::Test {
+struct ContourParams {
+    fs::path image_file;
+    CARTA::SmoothingMode mode;
+    std::vector<fs::path> contour_vertices_files;
+};
+
+class ContourTest : public ::testing::TestWithParam<ContourParams> {
 public:
-    void GenerateContour(fs::path file_path, const CARTA::SmoothingMode& smoothing_mode) {
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-
-        spdlog::info("The generated image contains random pixels values with mean = 0 and STD = 1.");
-        std::vector<double> levels{0, -1, 1}; // Contour levels
-        auto set_contour_params =
-            Message::SetContourParameters(0, 0, 0, frame->Width(), 0, frame->Height(), levels, smoothing_mode, 4, 4, 8, 100000);
-
-        EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
-
-        std::unordered_map<double, double> progresses;
-        std::unordered_map<double, std::vector<float>> vertices_map;
-        // Initialize vertices map with requested contour levels
-        for (auto level : levels) {
-            vertices_map[level] = {};
-        }
-
-        auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
-            std::unique_lock<std::mutex> ulock(_callback_mutex);
-            if (vertices_map.count(level)) {
-                vertices_map[level].insert(vertices_map[level].end(), vertices.begin(), vertices.end());
-            }
-            progresses[level] = progress;
-            ulock.unlock();
-        };
-        EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
-
-        // Check the number of resulting contour levels
-        EXPECT_EQ(progresses.size(), levels.size());
-
-        // Check are contour progresses completely for all contour levels
-        for (auto progress : progresses) {
-            EXPECT_DOUBLE_EQ(progress.second, 1);
-        }
-
-        std::shared_ptr<DataReader> reader = nullptr;
-        if (file_path.parent_path().filename() == "fits") {
-            reader.reset(new FitsDataReader(file_path));
-        } else {
-            reader.reset(new Hdf5DataReader(file_path));
-        }
-
-        for (auto vertices_level : vertices_map) {
-            // Fill in vertices coordinates
-            std::vector<std::pair<double, double>> coords;
-            for (int i = 0; i < vertices_level.second.size() / 2; ++i) {
-                double x = vertices_level.second[i * 2];
-                double y = vertices_level.second[i * 2 + 1];
-                coords.emplace_back(std::make_pair(x, y));
+    std::map<double, std::vector<std::pair<double, double>>> LoadVertices(const std::vector<fs::path>& files) {
+        std::map<double, std::vector<std::pair<double, double>>> expected;
+        for (const auto& file : files) {
+            std::ifstream ifs(file);
+            if (!ifs.is_open()) {
+                throw std::runtime_error("Cannot open expected vertices file: " + file.string());
             }
 
-            // Check are they real vertices
-            int count(0);
-            for (auto coord : coords) {
-                if (smoothing_mode == CARTA::SmoothingMode::NoSmoothing) {
-                    // Only verify vertices coordinate which are calculated from raw pixels, i.e., with no smoothing mode
-                    EXPECT_TRUE(IsVertex(reader, coord.first, coord.second, vertices_level.first, frame->Width(), frame->Height()));
+            std::string filename = file.filename().string();
+            size_t level_pos = filename.find("level_");
+            if (level_pos == std::string::npos) {
+                throw std::runtime_error("Cannot parse level from filename: " + filename);
+            }
+            size_t start = level_pos + 6; // "level_" is 6 chars
+            size_t end = filename.find(".txt", start);
+            if (end == std::string::npos) {
+                end = filename.size();
+            }
+            double current_level = std::stod(filename.substr(start, end - start));
+
+            std::string line;
+            while (std::getline(ifs, line)) {
+                line.erase(0, line.find_first_not_of(" \t\r\n"));
+                line.erase(line.find_last_not_of(" \t\r\n") + 1);
+
+                if (line.empty() || line[0] == '#') {
+                    continue; // Skip empty lines and comments
                 }
-                ++count;
-            }
-            spdlog::info("For contour level {}, number of vertices is {}", vertices_level.first, count);
-        }
-    }
 
-    bool IsVertex(const std::shared_ptr<DataReader>& reader, double x, double y, double level, int width, int height) {
-        // Shift to pixel coordinate
-        x -= 0.5;
-        y -= 0.5;
-        int pt_x = (int)floor(x);
-        int pt_y = (int)floor(y);
-
-        if (!InImage(pt_x, pt_y, width, height)) {
-            return false;
-        }
-
-        double pt1_pix = (double)(reader->ReadPointXY(pt_x, pt_y));
-        pt1_pix = std::isnan(pt1_pix) ? -std::numeric_limits<float>::max() : pt1_pix;
-
-        auto is_vertex = [&](int x, int y) {
-            if (InImage(x, y, width, height)) {
-                double pt2_pix = (double)(reader->ReadPointXY(x, y));
-                pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-                if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                    return true;
+                double x, y;
+                std::istringstream iss(line);
+                if (iss >> x >> y) {
+                    expected[current_level].emplace_back(x, y);
                 }
             }
-            return false;
-        };
-
-        return (is_vertex(pt_x - 1, pt_y - 1) || is_vertex(pt_x, pt_y - 1) || is_vertex(pt_x - 1, pt_y) || is_vertex(pt_x + 1, pt_y + 1) ||
-                is_vertex(pt_x, pt_y + 1) || is_vertex(pt_x + 1, pt_y) || is_vertex(pt_x - 1, pt_y + 1) || is_vertex(pt_x + 1, pt_y - 1));
+        }
+        return expected;
     }
 
-    bool InImage(int x, int y, int width, int height) {
-        return (0 <= x && x < width && 0 <= y && y < height);
-    }
-
-private:
+protected:
     std::mutex _callback_mutex;
 };
 
-TEST_F(ContourTest, NoSmoothingFitsFile) {
-    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing);
-}
-TEST_F(ContourTest, NoSmoothingFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing);
+TEST_P(ContourTest, VerifyVertices) {
+    const auto& params = GetParam();
+
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(params.image_file));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+
+    std::vector<double> levels{0, -1, 1};
+    auto set_contour_params =
+        Message::SetContourParameters(0, 0, 0, frame->Width(), 0, frame->Height(), levels, params.mode, 4, 4, 8, 100000);
+
+    EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
+
+    std::unordered_map<double, std::vector<float>> generated_vertices;
+    for (auto level : levels) {
+        generated_vertices[level] = {};
+    }
+
+    auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
+        std::unique_lock<std::mutex> lock(_callback_mutex);
+        if (generated_vertices.count(level)) {
+            generated_vertices[level].insert(generated_vertices[level].end(), vertices.begin(), vertices.end());
+        }
+    };
+
+    EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
+
+    auto expected = LoadVertices(params.contour_vertices_files);
+
+    for (auto& [level, gen_verts] : generated_vertices) {
+        std::vector<std::pair<double, double>> gen_coords;
+        for (size_t i = 0; i < gen_verts.size() / 2; ++i) {
+            gen_coords.emplace_back(gen_verts[i * 2], gen_verts[i * 2 + 1]);
+        }
+
+        EXPECT_EQ(expected[level].size(), gen_coords.size()) << "Vertex count mismatch for level " << level;
+
+        const double tolerance = 0.01;  // Allow small floating-point differences
+        for (size_t i = 0; i < std::min(expected[level].size(), gen_coords.size()); ++i) {
+            EXPECT_NEAR(expected[level][i].first, gen_coords[i].first, tolerance)
+                << "X coordinate mismatch at vertex " << i << " for level " << level;
+            EXPECT_NEAR(expected[level][i].second, gen_coords[i].second, tolerance)
+                << "Y coordinate mismatch at vertex " << i << " for level " << level;
+        }
+
+        spdlog::info("Level {}: {} vertices verified", level, gen_coords.size());
+    }
 }
 
-TEST_F(ContourTest, GaussianBlurFitsFile) {
-    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur);
-}
-TEST_F(ContourTest, GaussianBlurFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur);
-}
-
-TEST_F(ContourTest, BlockAverageFitsFile) {
-    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage);
-}
-TEST_F(ContourTest, BlockAverageFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage);
-}
-
-TEST_F(ContourTest, NoSmoothingHdf5File) {
-    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing);
-}
-TEST_F(ContourTest, NoSmoothingHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing);
-}
-
-TEST_F(ContourTest, GaussianBlurHdf5File) {
-    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur);
-}
-TEST_F(ContourTest, GaussianBlurHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur);
-}
-
-TEST_F(ContourTest, BlockAverageHdf5File) {
-    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage);
-}
-
-TEST_F(ContourTest, BlockAverageHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage);
-}
+INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
+    ::testing::Values(
+        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing,
+            {ContourData() / "500x500_contours/level_0.txt", ContourData() / "500x500_contours/level_-1.txt",
+                ContourData() / "500x500_contours/level_1.txt"}},
+        ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing,
+            {ContourData() / "500x500_nans_contours/level_0.txt", ContourData() / "500x500_nans_contours/level_-1.txt",
+                ContourData() / "500x500_nans_contours/level_1.txt"}},
+        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur,
+            {ContourData() / "500x500_gaussian_contours/level_0.txt", ContourData() / "500x500_gaussian_contours/level_-1.txt",
+                ContourData() / "500x500_gaussian_contours/level_1.txt"}},
+        ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur,
+            {ContourData() / "500x500_nans_gaussian_contours/level_0.txt", ContourData() / "500x500_nans_gaussian_contours/level_-1.txt",
+                ContourData() / "500x500_nans_gaussian_contours/level_1.txt"}},
+        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage,
+            {ContourData() / "500x500_block_contours/level_0.txt", ContourData() / "500x500_block_contours/level_-1.txt",
+                ContourData() / "500x500_block_contours/level_1.txt"}},
+        ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage,
+            {ContourData() / "500x500_nans_block_contours/level_0.txt", ContourData() / "500x500_nans_block_contours/level_-1.txt",
+                ContourData() / "500x500_nans_block_contours/level_1.txt"}},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing,
+            {ContourData() / "500x500_hdf5_contours/level_0.txt", ContourData() / "500x500_hdf5_contours/level_-1.txt",
+                ContourData() / "500x500_hdf5_contours/level_1.txt"}},
+        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing,
+            {ContourData() / "500x500_nans_hdf5_contours/level_0.txt", ContourData() / "500x500_nans_hdf5_contours/level_-1.txt",
+                ContourData() / "500x500_nans_hdf5_contours/level_1.txt"}},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur,
+            {ContourData() / "500x500_hdf5_gaussian_contours/level_0.txt", ContourData() / "500x500_hdf5_gaussian_contours/level_-1.txt",
+                ContourData() / "500x500_hdf5_gaussian_contours/level_1.txt"}},
+        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur,
+            {ContourData() / "500x500_nans_hdf5_gaussian_contours/level_0.txt", ContourData() / "500x500_nans_hdf5_gaussian_contours/level_-1.txt",
+                ContourData() / "500x500_nans_hdf5_gaussian_contours/level_1.txt"}},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage,
+            {ContourData() / "500x500_hdf5_block_contours/level_0.txt", ContourData() / "500x500_hdf5_block_contours/level_-1.txt",
+                ContourData() / "500x500_hdf5_block_contours/level_1.txt"}},
+        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage,
+            {ContourData() / "500x500_nans_hdf5_block_contours/level_0.txt", ContourData() / "500x500_nans_hdf5_block_contours/level_-1.txt",
+                ContourData() / "500x500_nans_hdf5_block_contours/level_1.txt"}}
+    ));

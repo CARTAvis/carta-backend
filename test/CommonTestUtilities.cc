@@ -51,6 +51,10 @@ fs::path MixedImages() {
     return ImagesPath() / "mix";
 }
 
+fs::path ContourData() {
+    return TestRoot() / "data" / "contours";
+}
+
 float DataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {
     return ReadRegion({x, y, channel, stokes}, {x + 1, y + 1, channel + 1, stokes + 1})[0];
 }
