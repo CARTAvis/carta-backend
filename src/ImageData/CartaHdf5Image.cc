@@ -30,7 +30,7 @@ CartaHdf5Image::CartaHdf5Image(
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
       _pixel_mask(nullptr),
       _mask_spec(mask_spec),
-      _lattice(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(filename)), array_name, hdu) {
+      _lattice(std::shared_ptr<casacore::HDF5File>(new casacore::HDF5File(filename)), array_name, hdu) {
     _shape = _lattice.shape();
     _pixel_mask = new casacore::ArrayLattice<bool>();
     SetUpImage();
@@ -170,7 +170,7 @@ void CartaHdf5Image::SetUpImage() {
     try {
         // convert header entries to FITS header strings
         // Convert specified Hdf5 attributes to FITS-format strings.
-        casacore::CountedPtr<casacore::HDF5Group> hdf5_group(_lattice.group());
+        std::shared_ptr<casacore::HDF5Group> hdf5_group(_lattice.group());
         Hdf5Attributes::ReadAttributes(hdf5_group.get()->getHid(), _fits_header_strings);
         if (!_fits_header_strings.empty()) {
             // extract HDF5 headers for MiscInfo

@@ -26,38 +26,42 @@ We provide packages of the backend and all required dependencies for recent Ubun
 
 The packages install a launcher which allows CARTA to be started from the desktop environment's menu.
 
-The beta package saves user configuration to `.carta-beta` rather than `.carta`.
-
 ### Ubuntu
+
+To install the latest beta version of the backend only:
+
+```shell
+sudo add-apt-repository ppa:cartavis-team/carta-preview
+sudo apt-get update
+sudo apt-get install carta-backend
+```
+
+To install the latest *stable release* version of the backend only:
 
 ```shell
 sudo add-apt-repository ppa:cartavis-team/carta
 sudo apt-get update
-
-# install the latest beta version of the backend only
-sudo apt-get install carta-backend-beta
-
-# OR install the latest stable release version of the backend only
 sudo apt-get install carta-backend
 ```
 
-The beta and stable Ubuntu packages use the same install locations, and only one can be installed at a time.
-
 ### AlmaLinux (and equivalents)
+To install the latest beta version of the backend only:
+
+```shell
+sudo dnf install epel-release
+sudo dnf install 'dnf-command(copr)'
+sudo dnf copr enable cartavis/carta-preview
+sudo dnf install carta-backend
+```
+
+To install the latest *stable release* version of the backend only:
 
 ```shell
 sudo dnf install epel-release
 sudo dnf install 'dnf-command(copr)'
 sudo dnf copr enable cartavis/carta
-
-# install the latest beta version of the backend only
-sudo dnf install carta-backend-beta
-
-# install the latest stable release version of the backend only
 sudo dnf install carta-backend
 ```
-
-The RPM beta package uses a custom install location in `/opt`, and can be installed in parallel with the stable package.
 
 ## Building the development version from source
 

@@ -9,6 +9,7 @@
 #include "RegionHandler.h"
 
 #include <chrono>
+#include <cmath>
 
 #include <casacore/casa/math.h>
 
@@ -1910,12 +1911,17 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
         ulock.unlock();
 
         // Get file ids in spatial profile configurations
-        auto config_file_ids = spatial_profile->GetConfigFileIds(file_id);
-        if (config_file_ids.empty()) {
-            continue;
+        std::vector<int> spatial_file_ids;
+        if (file_id > ALL_FILES) {
+            spatial_file_ids.push_back(file_id);
+        } else {
+            spatial_file_ids = spatial_profile->GetConfigFileIds(file_id);
+            if (spatial_file_ids.empty()) {
+                continue;
+            }
         }
 
-        for (int spatial_file_id : config_file_ids) {
+        for (int spatial_file_id : spatial_file_ids) {
             // Get statistics for specific region and file ids (input ids may be ALL)
             if (!RegionFileIdsValid(spatial_region_id, spatial_file_id)) {
                 continue;
@@ -2207,7 +2213,7 @@ void RegionHandler::GetStokesPflinear(
 }
 
 void RegionHandler::GetStokesPangle(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pangle) {
-    auto calc_pa = [&](double q, double u) { return (180.0 / casacore::C::pi) * atan2(u, q) / 2; };
+    auto calc_pa = [&](double q, double u) { return (180.0 / M_PI) * atan2(u, q) / 2; };
 
     CombineStokes(profiles_pangle, profiles_q, profiles_u, calc_pa);
 }

@@ -17,6 +17,17 @@ using namespace carta;
 
 class RegionSpatialProfileTest : public ::testing::Test {
 public:
+    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(
+        std::string coordinate, int32_t start = 0, int32_t end = 0, int32_t mip = 0, int32_t width = 0) {
+        CARTA::SetSpatialRequirements_SpatialConfig spatial_config;
+        spatial_config.set_coordinate(coordinate);
+        spatial_config.set_start(start);
+        spatial_config.set_end(end);
+        spatial_config.set_mip(mip);
+        spatial_config.set_width(width);
+        return spatial_config;
+    }
+
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, const std::vector<float>& points,
         std::shared_ptr<casacore::CoordinateSystem> csys, bool is_annotation) {
         std::vector<CARTA::Point> control_points;
@@ -104,7 +115,8 @@ public:
         auto image_path = FitsImages() / "noise_3d.fits";
         std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
         int start(0), end(0), mip(0);
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+            RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
         CARTA::SpatialProfileData spatial_profile_message;
 
         if (expected_width_range) {
@@ -133,7 +145,8 @@ TEST_F(RegionSpatialProfileTest, TestSpatialRequirements) {
 
     // Set spatial requirements
     int start(0), end(0), mip(0), width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
     ok = region_handler.SetSpatialRequirements(region_id, file_id, frame, spatial_reqs);
     ASSERT_TRUE(ok);
 
@@ -152,7 +165,8 @@ TEST_F(RegionSpatialProfileTest, FitsLineProfile) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
     int start(0), end(0), mip(0), width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool ok = RegionSpatialProfile(image_path, endpoints, spatial_reqs, spatial_profile_message);
@@ -165,7 +179,8 @@ TEST_F(RegionSpatialProfileTest, Hdf5LineProfile) {
     auto image_path = Hdf5Images() / "noise_10px_10px.hdf5";
     std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
     int start(0), end(0), mip(0), width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool ok = RegionSpatialProfile(image_path, endpoints, spatial_reqs, spatial_profile_message);
@@ -178,7 +193,8 @@ TEST_F(RegionSpatialProfileTest, FitsHorizontalCutProfile) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {9.0, 5.0, 1.0, 5.0}; // Set line region at y=5
     int start(0), end(0), mip(0), width(1);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool ok = RegionSpatialProfile(image_path, endpoints, spatial_reqs, spatial_profile_message);
@@ -202,7 +218,8 @@ TEST_F(RegionSpatialProfileTest, FitsVerticalCutProfile) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {5.0, 9.0, 5.0, 1.0}; // Set line region at x=5
     int start(0), end(0), mip(0), width(1);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("y", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("y", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool ok = RegionSpatialProfile(image_path, endpoints, spatial_reqs, spatial_profile_message);
@@ -226,7 +243,8 @@ TEST_F(RegionSpatialProfileTest, FitsPolylineProfile) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {1.0, 1.0, 9.0, 1.0, 9.0, 5.0};
     int start(0), end(0), mip(0), width(1);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool ok = RegionSpatialProfile(image_path, endpoints, spatial_reqs, spatial_profile_message);
@@ -263,7 +281,8 @@ TEST_F(RegionSpatialProfileTest, FitsAnnotationLineProfile) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
     int start(0), end(0), mip(0), width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool is_annotation(true);
@@ -276,7 +295,8 @@ TEST_F(RegionSpatialProfileTest, FitsPointProfile) {
     std::vector<float> endpoints = {0.0, 0.0};
     int start(0), end(0), mip(0), width(1);
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
-        Message::SpatialConfig("x", start, end, mip, width), Message::SpatialConfig("y", start, end, mip, width)};
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width),
+        RegionSpatialProfileTest::SpatialConfig("y", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool ok = RegionSpatialProfile(image_path, endpoints, spatial_reqs, spatial_profile_message);
@@ -300,7 +320,8 @@ TEST_F(RegionSpatialProfileTest, Hdf5PointProfile) {
     auto image_path = Hdf5Images() / "noise_10px_10px.hdf5";
     std::vector<float> points = {0.0, 0.0};
     int start(0), end(0), mip(0), width(1);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool ok = RegionSpatialProfile(image_path, points, spatial_reqs, spatial_profile_message);
@@ -324,7 +345,8 @@ TEST_F(RegionSpatialProfileTest, FitsPointProfileOutsideImage) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {-2.0, -2.0};
     int start(0), end(0), mip(0), width(1);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool ok = RegionSpatialProfile(image_path, endpoints, spatial_reqs, spatial_profile_message);
@@ -336,7 +358,8 @@ TEST_F(RegionSpatialProfileTest, FitsAnnotationPointProfile) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> point = {0.0, 0.0};
     int start(0), end(0), mip(0), width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
 
     CARTA::SpatialProfileData spatial_profile_message;
     bool is_annotation(true);
@@ -361,7 +384,8 @@ TEST_F(RegionSpatialProfileTest, FitsMovePointProfile) {
 
     // Set spatial requirements
     int start(0), end(0), mip(0), width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {
+        RegionSpatialProfileTest::SpatialConfig("x", start, end, mip, width)};
     ok = region_handler.SetSpatialRequirements(region_id, file_id, frame, spatial_reqs);
     ASSERT_TRUE(ok);
 
