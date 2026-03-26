@@ -370,7 +370,34 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
         // Get data slice with mask applied.
         // Apply slicer to image first to get appropriate cursor, and use read-only iterator
         casacore::SubImage<float> subimage(*image, slicer);
-        casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
+        
+        // 2. Create a memory-resident copy (TempImage)
+        // This forces a SINGLE clean read from the ADIOS/MGARD source
+        casacore::TempImage<float> memImage(subimage.shape(), subimage.coordinates());
+        
+        // reference to actual image either memImage for the lattice_iter constructor later
+        MaskedLattice<float>* actual_image = &subimage;
+
+        if( image_type == "ADIOSImage" ) {
+           // 1. Get the TOTAL data from the image first (since we know this works!)
+           casacore::Array<float> globalData = image->get(false);
+           
+           // 4. CRITICAL: Slice the 'globalData' Array in memory, NOT the file
+           // This uses casacore::Array's operator() which is a pure RAM operation
+           casacore::Array<float> ramSlice = globalData(slicer.start(), slicer.end());
+           
+           // 5. Put that RAM slice into your memImage
+           memImage.put(ramSlice);
+           
+           // change the reference to memImage
+           actual_image = &memImage;
+        }
+        
+        // 4. Now use memImage for your printf AND your iterator
+        printf("MEM IMAGE (FIXED?) VALUE: %.8f\n", memImage.get(0).data()[0]);
+
+        // casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
+        casacore::RO_MaskedLatticeIterator<float> lattice_iter(*actual_image);
 
         for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
             casacore::Array<float> cursor_data = lattice_iter.cursor();
