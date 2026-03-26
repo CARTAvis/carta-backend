@@ -12,11 +12,11 @@ RUN \
     libtool libxml2-dev libxslt1-dev libzstd-dev pkg-config protobuf-compiler \
     python3-numpy python3-astropy software-properties-common unzip wcslib-dev wget uuid-dev
 
-# Get carta dependencies carta-casacore, fits2idia, and zfp from the cartavis-team PPA
+# Get carta-casacore and zfp dependencies from the cartavis-team/carta-preview PPA
 RUN \
-  add-apt-repository -y ppa:cartavis-team/carta && \
+  add-apt-repository -y ppa:cartavis-team/carta-preview && \
   apt-get update && \
-  apt-get -y install carta-casacore-dev fits2idia libzfp-dev
+  apt-get -y install carta-casacore-dev libzfp-dev
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
