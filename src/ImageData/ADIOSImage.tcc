@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#ifdef USE_ADIOS // to enable ADIOS support in CMakeLists.txt
 #ifndef CARTA_SRC_IMAGEDATA_ADIOSIMAGE_TCC_
 #define CARTA_SRC_IMAGEDATA_ADIOSIMAGE_TCC_
 
@@ -523,3 +524,4 @@ casacore::Lattice<casacore::Bool>& ADIOSImage<T>::pixelMask() {
     return *regionPtr_p;
 }
 #endif // CARTA_SRC_IMAGEDATA_ADIOSIMAGE_TCC_
+#endif // USE_ADIOS

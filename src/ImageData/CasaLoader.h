@@ -18,7 +18,10 @@
 #include <casacore/casa/OS/File.h>
 #include <casacore/tables/Tables/Table.h>
 
+// to enable ADIOS support in CMakeLists.txt
+#ifdef USE_ADIOS
 #include "ADIOSImage.h"
+#endif
 #include "FileLoader.h"
 
 namespace carta {
@@ -36,6 +39,7 @@ private:
 
 CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
 
+#ifdef USE_ADIOS
 bool CasaLoader::isAdios2FormatSafe(const casacore::String& path) {
     // 1. Basic check: Is it even a directory?
     casacore::Directory dir(path);
@@ -77,6 +81,7 @@ bool CasaLoader::isAdios2Format(const casacore::String& path) {
     }
     return false;
 }
+#endif
 
 void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
     if (!_image) {
@@ -94,37 +99,29 @@ void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
         bool converted(false);
 
         try {
+#ifdef USE_ADIOS        
             bool isADIOS = isAdios2Format(_filename);
             // this logic should really be at a lower level in some CASA function that can read both formats:
+            std::cout << "DEBUG : filename " << _filename << " isAdios = " << isADIOS << std::endl;
             if (isADIOS) {
-                _image.reset(new ADIOSImage<float>(_filename));
-                // int blc=0,trc=0;
+                _image.reset(new ADIOSImage<float>(_filename));                
+                /* test code to show values:
                 casacore::IPosition imageShape = _image->shape();
                 int ndim = imageShape.nelements();
 
                 // Create BLC and TRC with the correct number of dimensions
                 casacore::IPosition blc(ndim, 0);
                 casacore::IPosition trc(ndim, 0); // 0 ok
-                // const casacore::IPosition blc(0,0,0,0),trc(0,0,0,0);
                 const casacore::Slicer slicer(blc, trc, casacore::Slicer::endIsLast);
-                // casacore::Array<float> tempSlice(_image->getSlice(slicer).shape(), static_cast<float>(0.0));
-                // printf("TEST VALUE = %.8f\n",tempSlice[0]);
                 casacore::Array<float> tempSlice = _image->getSlice(casacore::Slicer(blc, trc, casacore::Slicer::endIsLast));
 
                 std::cout << "Value at origin: " << tempSlice(casacore::IPosition(tempSlice.ndim(), 0)) << std::endl;
 
-                // 3. Alternatively, print the entire Array object (Casacore has a built-in logger)
                 std::cout << "Full slice contents: " << tempSlice << std::endl;
 
                 // Define the specific coordinate
                 // Assuming a 2D image. If 4D, use casacore::IPosition(4, 158, 172, 0, 0)
                 int x = 158, y = 172;
-                // casacore::IPosition pos(2, x, y);
-
-                // Retrieve the single value
-                // float pixelValue = _image->getAt(pos);
-                // std::cout << "Value at (" << x << "," << y << ") = " << pixelValue << std::endl;
-
                 casacore::IPosition coord(ndim, 0);
                 coord(0) = x; // X
                 coord(1) = y; // Y
@@ -135,11 +132,15 @@ void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
 
                 // Accessing the result (the array is size 1, so index is 0)
                 std::cout << "Value via Slicer: " << pixelArray(casacore::IPosition(ndim, 0)) << std::endl;
+                */
             } else {
                 _image.reset(new casacore::PagedImage<float>(_filename));
             }
-            printf("DEBUG : read image %s using ADIOSImage<float> class, isADIOS=%d\n", _filename.c_str(), isADIOS);
-            fflush(stdout);
+//            printf("DEBUG : read image %s using ADIOSImage<float> class, isADIOS=%d\n", _filename.c_str(), isADIOS);
+//            fflush(stdout);
+#else
+            _image.reset(new casacore::PagedImage<float>(_filename));
+#endif
         } catch (const casacore::AipsError& err) {
             printf("EXCEPTION CAUGHT !!!\n");
             if (err.getMesg().startsWith("Invalid Table data type")) {
