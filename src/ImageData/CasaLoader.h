@@ -99,12 +99,12 @@ void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
         bool converted(false);
 
         try {
-#ifdef USE_ADIOS        
+#ifdef USE_ADIOS
             bool isADIOS = isAdios2Format(_filename);
             // this logic should really be at a lower level in some CASA function that can read both formats:
             std::cout << "DEBUG : filename " << _filename << " isAdios = " << isADIOS << std::endl;
             if (isADIOS) {
-                _image.reset(new ADIOSImage<float>(_filename));                
+                _image.reset(new ADIOSImage<float>(_filename));
                 /* test code to show values:
                 casacore::IPosition imageShape = _image->shape();
                 int ndim = imageShape.nelements();
