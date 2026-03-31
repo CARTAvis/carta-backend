@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifdef USE_ADIOS // to enable ADIOS support in CMakeLists.txt 
+#ifdef USE_ADIOS // to enable ADIOS support in CMakeLists.txt
 #ifndef CARTA_SRC_IMAGEDATA_ADIOSIMAGE_H_
 #define CARTA_SRC_IMAGEDATA_ADIOSIMAGE_H_
 
@@ -143,4 +143,4 @@ public:
 #include "ADIOSImage.tcc"
 
 #endif // CARTA_SRC_IMAGEDATA_ADIOSIMAGE_H_
-#endif // USE_ADIOS 
+#endif // CARTA_SRC_IMAGEDATA_ADIOSIMAGE_H_

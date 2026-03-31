@@ -524,4 +524,4 @@ casacore::Lattice<casacore::Bool>& ADIOSImage<T>::pixelMask() {
     return *regionPtr_p;
 }
 #endif // CARTA_SRC_IMAGEDATA_ADIOSIMAGE_TCC_
-#endif // USE_ADIOS
+#endif // CARTA_SRC_IMAGEDATA_ADIOSIMAGE_TCC_
