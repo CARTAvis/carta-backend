@@ -176,15 +176,20 @@ bool VectorFieldCalculator::Calculate(
               T = stokes_data[current];
               break;
         }*/
+        
+        if( _angle_source == Source::PA ){
+           pa.resize(width * height); 
+        }
 
-        // calculate PI 
         if(_threshold_source == Source::PI || _threshold_source == Source::FPI || _intensity_source == Source::PI || _intensity_source == Source::FPI ){
            stokes_data[pi_key].resize(width * height);
 
            // there is a bit of code duplication below, but it makes the code easier to understand and follow and 
            // also in the current way we avoid more conditionals inside the loops, which may make it a bit faster (probably negligible though)
            if( _threshold_source == Source::PI || _threshold_source == Source::FPI ) {
+              // handle all cases when _threshold_source is PI or FPI here 
               for(int i=0;i<Q.size();i++){
+                  // threshold applied to PI or FPI itself :
                   if( !std::isnan(Q[i]) && !std::isnan(U[i]) ){
                      pi[i] = calc_pi(Q[i],U[i]);
                      if( _fractional ){
@@ -202,8 +207,19 @@ bool VectorFieldCalculator::Calculate(
                      pi[i] = FLOAT_NAN;
                   }
                   
-                  // TODO : potential optimisation would be to apply threshold to everything else here : PA, CURRENT -> otherwise second pass over the data is required later 
-                  //                   
+                  // threshold on PI or FPI applied to other quantities so that it is all done in a single pass here:
+                  if( _angle_source == Source::PA ){
+                     if( !std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold ) ){
+                        pa[i] = calc_pa(Q[i],U[i]);
+                     }else{
+                        pa[i] = FLOAT_NAN;
+                     }
+                  }
+                  if( _intensity_source == Source::CURRENT || _angle_source == Source::CURRENT ){
+                     if( !std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold) ){
+                        C[i] = FLOAT_NAN;
+                     }
+                  }
                }
            }else{ 
                if( _intensity_source == Source::PI || _intensity_source == Source::FPI ) {
@@ -226,31 +242,33 @@ bool VectorFieldCalculator::Calculate(
         }
 
         // calculate angle and apply required threshold:
-        if( _angle_source == Source::PA ){
-           pa.resize(width * height); 
-           for(int i=0;i<Q.size();i++){
-              if( !std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold ) ){
-                 pa[i] = calc_pa(Q[i],U[i]);
-              }else{
-                 pa[i] = FLOAT_NAN;
+        if( _threshold_source != Source::PI && _threshold_source != Source::FPI ) {
+           // cases when _threshold_source = PI or FPI have been handled earlier in a single pass calculating and applying PI/FPI to the data
+           // here only cases of other thresholded values or no-threshold case
+           if( _angle_source == Source::PA ){
+              for(int i=0;i<Q.size();i++){
+                 if( !std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold ) ){
+                    pa[i] = calc_pa(Q[i],U[i]);
+                 }else{
+                    pa[i] = FLOAT_NAN;
+                 }
               }
            }
-        }
         
-        if( _intensity_source == Source::CURRENT || _angle_source == Source::CURRENT ){
-        //   apply threshold cut to the CURRENT data :
-        //   2 cases :
-           if( _threshold_source == Source::CURRENT ){
-              for(int i=0;i<C.size();i++){
-                 if( !std::isnan(C[i]) && !std::isnan(_threshold) && C[i] < _threshold ){
-                    C[i] = FLOAT_NAN;
-                 }
-              }   
-           }else{
-              // something else is the threshold :
-              for(int i=0;i<C.size();i++){
-                 if( !std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold) ){
-                    C[i] = FLOAT_NAN;
+           if( _intensity_source == Source::CURRENT || _angle_source == Source::CURRENT ){
+              //   apply threshold cut to the CURRENT data :
+              if( _threshold_source == Source::CURRENT ){
+                 for(int i=0;i<C.size();i++){
+                    if( !std::isnan(C[i]) && !std::isnan(_threshold) && C[i] < _threshold ){
+                       C[i] = FLOAT_NAN;
+                    }
+                 }   
+              }else{
+                 // something else is the threshold :
+                 for(int i=0;i<C.size();i++){
+                    if( !std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold) ){
+                       C[i] = FLOAT_NAN;
+                    }
                  }
               }
            }
