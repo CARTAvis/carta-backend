@@ -36,80 +36,6 @@ VectorFieldCalculator::VectorFieldCalculator(const CARTA::SetVectorOverlayParame
                         : _fractional            ? Source::FPI
                                                  : Source::PI) {}
 
-void VectorFieldCalculator::calc_fpi_arr(const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& fpi) {   
-   CalcFpi calc_fpi(_q_error, _u_error, _threshold);
-
-   for(int i=0;i<stokes_i.size();i++){
-      fpi[i] = calc_fpi(stokes_i[i], stokes_q[i], stokes_u[i]);
-   }   
-}
-
-void VectorFieldCalculator::calc_pi_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& threshold_source, std::vector<float>& pi) {
-   CalcPi calc_pi(_q_error, _u_error, _threshold);
-
-   for(int i=0;i<stokes_q.size();i++){
-      pi[i] = calc_pi(stokes_q[i], stokes_u[i], threshold_source[i], true);
-   }   
-}
-
-void VectorFieldCalculator::calc_fpi_arr( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
-                                          const std::vector<float>& threshold_source, std::vector<float>& fpi) {
-   CalcFpi calc_fpi(_q_error, _u_error, _threshold);
-
-   for(int i=0;i<stokes_i.size();i++){
-      fpi[i] = calc_fpi(stokes_i[i], stokes_q[i], stokes_u[i], threshold_source[i], true);
-   }   
-}
-
-void VectorFieldCalculator::apply_fpi_threshold( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
-                                                const std::vector<float>& data_source, std::vector<float>& out) {
-   CalcFpi calc_fpi(_q_error, _u_error, _threshold);
-
-   for(int i=0;i<stokes_i.size();i++){
-      out[i] = calc_fpi(stokes_i[i], stokes_q[i], stokes_u[i], data_source[i], false);
-   }   
-}
-
-void VectorFieldCalculator::apply_pi_threshold( const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
-                                                const std::vector<float>& data_source, std::vector<float>& out) {
-   CalcPi calc_pi(_q_error, _u_error, _threshold);
-
-   for(int i=0;i<stokes_q.size();i++){
-      out[i] = calc_pi(stokes_q[i], stokes_u[i], data_source[i], false);
-   }   
-}
-
-void VectorFieldCalculator::calc_pa_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& threshold_source, std::vector<float>& pa) {
-   CalcPa calc_pa(_threshold);
-
-   for(int i=0;i<pa.size();i++){
-      pa[i] = calc_pa(stokes_q[i], stokes_u[i], threshold_source[i]);
-   }
-}
-
-void VectorFieldCalculator::calc_pa_with_fpi_threshold(const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
-                                                        std::vector<float>& pa) {
-   CalcFpi calc_fpi(_q_error, _u_error, _threshold);
-   CalcPa calc_pa(_threshold);
-   
-   for(int i=0;i<pa.size();i++){
-      float fpi = calc_fpi(stokes_i[i],stokes_q[i],stokes_u[i]);
-      pa[i] = calc_pa(stokes_q[i],stokes_u[i],fpi);
-   }   
-}                                        
-
-void VectorFieldCalculator::calc_pa_with_pi_threshold(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& pa) {
-   CalcPi calc_pi(_q_error, _u_error, _threshold);
-   CalcPa calc_pa(_threshold);
-   
-   for(int i=0;i<pa.size();i++){
-      float pi = calc_pi(stokes_q[i],stokes_u[i]);
-      pa[i] = calc_pa(stokes_q[i],stokes_u[i],pi);
-   }   
-}                                        
-
-
-
 bool VectorFieldCalculator::Calculate(
     const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims, TileCallback tile_callback) {
     // TODO : Tiles initialisation - this will use some global TilePool object
@@ -133,20 +59,20 @@ bool VectorFieldCalculator::Calculate(
     }
 
     // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
-    // std::unordered_map<CARTA::PolarizationType, bool> stokes_flag{{CARTA::PolarizationType::POLARIZATION_TYPE_NONE, false},
-    //     {CARTA::PolarizationType::I, false}, {CARTA::PolarizationType::Q, false}, {CARTA::PolarizationType::U, false}};
+    // std::unordered_map<Pol, bool> stokes_flag{{Pol::POLARIZATION_TYPE_NONE, false},
+    //     {Pol::I, false}, {Pol::Q, false}, {Pol::U, false}};
 
     // Set stokes flags and get their indices
-    bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == CARTA::PolarizationType::I;
+    bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == Pol::I;
 
     // TODO: eliminate this stokes_flag completely - is it really OK ?
-    // stokes_flag[CARTA::PolarizationType::I] = (_fractional || use_threshold_I);
-    // stokes_flag[CARTA::PolarizationType::Q] = (_calculate_pi || _calculate_pa);
-    // stokes_flag[CARTA::PolarizationType::U] = (_calculate_pi || _calculate_pa);
+    // stokes_flag[Pol::I] = (_fractional || use_threshold_I);
+    // stokes_flag[Pol::Q] = (_calculate_pi || _calculate_pa);
+    // stokes_flag[Pol::U] = (_calculate_pi || _calculate_pa);
 
     // Get image tiles data
     // TODO/TBD : make sure this declaration can stay before the loop and shoudn't be inside the loop as originally was. Unit test case ?
-    std::unordered_map<CARTA::PolarizationType, std::vector<float>> stokes_data;
+    std::unordered_map<Pol, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
         // std::cout << "DEBUG : processing tile " << i << " (" << this << ")" << std::endl;
         // sleep(1);
@@ -171,8 +97,8 @@ bool VectorFieldCalculator::Calculate(
 
         // First get the current data
         if (UsesCurrent()) {
-            if (!tile_callback(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor,
-                    CARTA::PolarizationType::POLARIZATION_TYPE_NONE, width, height)) {
+            if (!tile_callback(stokes_data[Pol::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor,
+                    Pol::POLARIZATION_TYPE_NONE, width, height)) {
                 return false;
             }
         }
@@ -182,7 +108,7 @@ bool VectorFieldCalculator::Calculate(
         bool uses_I{_intensity_source == Source::FPI || _threshold_source == Source::FPI || _threshold_source == Source::I};
         if (uses_I) {
             if (!tile_callback(
-                    stokes_data[CARTA::PolarizationType::I], bounds, _smoothing_factor, CARTA::PolarizationType::I, width, height)) {
+                    stokes_data[Pol::I], bounds, _smoothing_factor, Pol::I, width, height)) {
                 return false;
             }
         }
@@ -191,12 +117,12 @@ bool VectorFieldCalculator::Calculate(
                      _threshold_source == Source::PI || _threshold_source == Source::FPI};
         if (uses_QU) {
             if (!tile_callback(
-                    stokes_data[CARTA::PolarizationType::Q], bounds, _smoothing_factor, CARTA::PolarizationType::Q, width, height)) {
+                    stokes_data[Pol::Q], bounds, _smoothing_factor, Pol::Q, width, height)) {
                 return false;
             }
 
             if (!tile_callback(
-                    stokes_data[CARTA::PolarizationType::U], bounds, _smoothing_factor, CARTA::PolarizationType::U, width, height)) {
+                    stokes_data[Pol::U], bounds, _smoothing_factor, Pol::U, width, height)) {
                 return false;
             }
         }
@@ -207,89 +133,138 @@ bool VectorFieldCalculator::Calculate(
         auto* tile_pi = response.add_intensity_tiles();
         auto* tile_pa = response.add_angle_tiles();
 
-        // Threshold cut operator to be applied
-        ThresholdCut threshold_cut(_threshold);
-        
-        // New optimised implementation, handling separately each SOURCE case - they should be exclusive:
-        std::vector<float> pa, pi;
-        if (_angle_source == Source::PA) {
-            pa.resize(width * height);
-            CalcPa calc_pa(_threshold);
-            
-            if (_threshold_source == Source::FPI) {
-               calc_pa_with_fpi_threshold(stokes_data[CARTA::PolarizationType::I], stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], pa);
-            }else if (_threshold_source == Source::PI) {
-               calc_pa_with_pi_threshold(stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], pa);
-            }else if (_threshold_source == Source::I) {
-              calc_pa_arr(stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::I], pa);
-            }else if (_threshold_source == Source::CURRENT) {
-                calc_pa_arr(stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], pa);
-            }else{
-               std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(),
-                   stokes_data[CARTA::PolarizationType::U].begin(), pa.begin(), calc_pa);
-           }
-        }
-        
-        if (_intensity_source == Source::PI) {
-           pi.resize(width * height);
-           CalcPi calc_pi(_q_error, _u_error, _threshold);
+        std::function<float(float, float)> calc_pi;
+        const double _error_term = (std::pow(_q_error, 2) + std::pow(_u_error, 2))/2.0;
+        calc_pi = [&] (float q, float u) {return std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);}; // TODO : check if this can be optimised for the case _error_term=0.00
+        Pol pi_key{(_fractional ? Pol::PFlinear : Pol::Plinear)};
+        auto calc_pa = [&] (float q, float u) {return (float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2;};
+        Pol current{Pol::POLARIZATION_TYPE_NONE};
+        auto& Q = stokes_data[Pol::Q];
+        auto& U = stokes_data[Pol::U];        
+        auto& I = stokes_data[Pol::I];
+        auto& C = stokes_data[current];
+        auto& pi = stokes_data[pi_key];        
+        auto& pa = stokes_data[Pol::Pangle];
+//      TBD : keeping the tertiary operator code here in case we prefer this one than switch which is a bit long-ish   
+        auto& T  = ( _threshold_source == Source::PI ? stokes_data[Pol::Plinear] :  // change to switch statement 
+                     _threshold_source == Source::FPI ? stokes_data[Pol::PFlinear] :
+                     _threshold_source == Source::I ? stokes_data[Pol::I] :
+                     _threshold_source == Source::CURRENT ? stokes_data[current] : stokes_data[current] // TODO: check what to put as threshold source as default (or nothing matches)
+                    );
+                    
+// switch crashes on one of the tests not sure why because everything looks perfectly fine and the same as tertiary operator code above which works fine ...
+/*        auto& T = stokes_data[current]; // in C++ reference has to be initialised when declared;
+        switch( _threshold_source ) {
+           case Source::PI :
+              T = stokes_data[Pol::Plinear];
+              break;
            
-           if (_threshold_source == Source::PI) {
-              std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(), stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
-           }else if (_threshold_source == Source::I) {
-              calc_pi_arr(stokes_data[CARTA::PolarizationType::Q],stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::I], pi);
-           }else if (_threshold_source == Source::CURRENT) {
-              calc_pi_arr(stokes_data[CARTA::PolarizationType::Q],stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], pi);
-           }else{
-              // no threshold source (or NONE)
-              std::transform(stokes_data[CARTA::PolarizationType::Q].begin(), stokes_data[CARTA::PolarizationType::Q].end(), stokes_data[CARTA::PolarizationType::U].begin(), pi.begin(), calc_pi);
-           }
-        }   
-        
-        if (_intensity_source == Source::FPI) {     
-           pi.resize(width * height);
-           
-           if (_threshold_source == Source::FPI) {
-              calc_fpi_arr(stokes_data[CARTA::PolarizationType::I], stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], pi);
-           }else if (_threshold_source == Source::I) {
-              calc_fpi_arr(stokes_data[CARTA::PolarizationType::I], stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::I], pi);
-           }else if (_threshold_source == Source::CURRENT) {
-              // applying threshold from CURRENT data:
-              calc_fpi_arr(stokes_data[CARTA::PolarizationType::I], stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], pi);
-           }else{
-              // threshold = NONE (i.e. no threshold applied):
-              calc_fpi_arr(stokes_data[CARTA::PolarizationType::I], stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], pi);
-           }
-        }
-        
-        if (SourceCurrent()) {
-            if (_threshold_source == Source::FPI) {
-               apply_fpi_threshold(stokes_data[CARTA::PolarizationType::I], stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE]);
-            }
-            if (_threshold_source == Source::PI) {
-               apply_pi_threshold(stokes_data[CARTA::PolarizationType::Q], stokes_data[CARTA::PolarizationType::U], stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE]);
-            }
-            if (_threshold_source == Source::CURRENT) {
-                std::for_each(stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
-                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].end(), threshold_cut);
-            }
-            if (_threshold_source == Source::I) {
-                std::transform(stokes_data[CARTA::PolarizationType::I].begin(), stokes_data[CARTA::PolarizationType::I].end(),
-                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(),
-                    stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE].begin(), threshold_cut);
-            }
+           case Source::FPI :
+              T = stokes_data[Pol::PFlinear];
+              break;
+          
+           case Source::I :
+              T = stokes_data[Pol::I];
+              break;
+              
+           case Source::CURRENT :
+              T = stokes_data[current];                                                              
+              break;
+              
+           default :
+              // means _threshold_source = NONE -> no threshold set keep going (T initialised but won't be used)
+              T = stokes_data[current];
+              break;
+        }*/
 
+        // calculate PI 
+        if(_threshold_source == Source::PI || _threshold_source == Source::FPI || _intensity_source == Source::PI || _intensity_source == Source::FPI ){
+           stokes_data[pi_key].resize(width * height);
+
+           // there is a bit of code duplication below, but it makes the code easier to understand and follow and 
+           // also in the current way we avoid more conditionals inside the loops, which may make it a bit faster (probably negligible though)
+           if( _threshold_source == Source::PI || _threshold_source == Source::FPI ) {
+              for(int i=0;i<Q.size();i++){
+                  if( !std::isnan(Q[i]) && !std::isnan(U[i]) ){
+                     pi[i] = calc_pi(Q[i],U[i]);
+                     if( _fractional ){
+                        if( !std::isnan(I[i])){
+                           pi[i] = (float)(100.0 * (pi[i] / I[i]));
+                        }else{
+                           pi[i] = FLOAT_NAN;
+                        }
+                     }
+                   
+                     if( !std::isnan(_threshold) && pi[i] < _threshold ){
+                        pi[i] = FLOAT_NAN;
+                     }                     
+                  }else{
+                     pi[i] = FLOAT_NAN;
+                  }
+                  
+                  // TODO : potential optimisation would be to apply threshold to everything else here : PA, CURRENT -> otherwise second pass over the data is required later 
+                  //                   
+               }
+           }else{ 
+               if( _intensity_source == Source::PI || _intensity_source == Source::FPI ) {
+                  for(int i=0;i<Q.size();i++){
+                    if( !std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold ) ){
+                        pi[i] = calc_pi(Q[i],U[i]);
+                        if( _fractional ){
+                           if( !std::isnan(I[i])){
+                              pi[i] = (float)(100.0 * (pi[i] / I[i]));
+                           }else{
+                              pi[i] = FLOAT_NAN;
+                           }
+                        }
+                    }else{
+                       pi[i] = FLOAT_NAN;
+                    }
+                  }
+               }
+           }
+        }
+
+        // calculate angle and apply required threshold:
+        if( _angle_source == Source::PA ){
+           pa.resize(width * height); 
+           for(int i=0;i<Q.size();i++){
+              if( !std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold ) ){
+                 pa[i] = calc_pa(Q[i],U[i]);
+              }else{
+                 pa[i] = FLOAT_NAN;
+              }
+           }
+        }
+        
+        if( _intensity_source == Source::CURRENT || _angle_source == Source::CURRENT ){
+        //   apply threshold cut to the CURRENT data :
+        //   2 cases :
+           if( _threshold_source == Source::CURRENT ){
+              for(int i=0;i<C.size();i++){
+                 if( !std::isnan(C[i]) && !std::isnan(_threshold) && C[i] < _threshold ){
+                    C[i] = FLOAT_NAN;
+                 }
+              }   
+           }else{
+              // something else is the threshold :
+              for(int i=0;i<C.size();i++){
+                 if( !std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold) ){
+                    C[i] = FLOAT_NAN;
+                 }
+              }
+           }
         }
         
         // FillTileData
         if (_intensity_source == Source::CURRENT) {
             FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,
-                stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
+                stokes_data[Pol::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
         }
 
         if (_angle_source == Source::CURRENT) {
             FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,
-                stokes_data[CARTA::PolarizationType::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
+                stokes_data[Pol::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
         }
 
         if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {

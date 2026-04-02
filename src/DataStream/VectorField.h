@@ -22,7 +22,8 @@
 
 namespace carta {
 
-using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, CARTA::PolarizationType, int&, int&)>; // was &
+using Pol = CARTA::PolarizationType;
+using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, Pol, int&, int&)>; // was &
 
 /**
  * @class VectorFieldCalculator
@@ -50,6 +51,11 @@ public:
      *
      * This function performs the actual calculations of the overlaid vector field (polarisation)
      * and returns the tiles containing the generated image via callback function progress_callback
+     * The calculation has been highly optimised so that only a single or maximum two passes through the data is performed to 
+     * calculate the requested values (e.g. PI, FPI or PA) and quantities needed to apply the threshold.
+     * There is a little bit of code duplication below, but it makes the code easier to understand and follow and 
+     * also in the current way we avoid more conditionals inside the loops, which may make it a bit faster (may be negligible though)
+
      *
      * @param progress_callback The callback function returning the results of the calculation to the caller
      * @param dims Specifies the dimensions of the images (width and height)
@@ -82,166 +88,6 @@ public:
        return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT);
     }
 
-    struct ThresholdCut {
-        const double _threshold;
-
-        ThresholdCut(float threshold) : _threshold(threshold) {}
-
-        float operator()(float data, float result) {
-            return (std::isnan(data) || (!std::isnan(_threshold) && (data < _threshold))) ? FLOAT_NAN : result;
-        }
-
-        void operator()(float& d) {
-            if (!std::isnan(_threshold) && !std::isnan(d) && d < _threshold) {
-                d = FLOAT_NAN;
-            }
-        }
-    };
-
-    struct CalcPi {
-        const double _error_term;
-        const double _threshold;
-
-        CalcPi(double q_error, double u_error, double threshold) : 
-            _error_term((std::pow(q_error, 2) + std::pow(u_error, 2))/2.0), _threshold(threshold) {}
-
-        float operator()(float q, float u) {
-            if (!std::isnan(q) && !std::isnan(u)) {
-                float pi = (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
-                if( std::isnan(pi) || (!std::isnan(_threshold) && (pi < _threshold)) ) {
-                   return FLOAT_NAN;
-                }
-
-                return pi;
-            }
-            return FLOAT_NAN;
-        }
-
-        float operator()(float q, float u, float v, bool threshold_v) {
-            if ( threshold_v ) {
-               // v is a value to check against the threshold, otherwise it is a return value when threshold is applied to pi (in else):
-               if (!std::isnan(v) && !std::isnan(_threshold) && (v >= _threshold) && !std::isnan(q) && !std::isnan(u)) {
-                  return (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
-               }
-            } else {
-               // v is a return value when Pi >= threshold (in this case Pi is calculated as a threshold to display another value):
-               if (!std::isnan(q) && !std::isnan(u)) {
-                   float pi = (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
-                   if( std::isnan(pi) || (!std::isnan(_threshold) && (pi < _threshold)) ) {
-                      return FLOAT_NAN;
-                   }
-
-                   return v;
-               }
-            }   
-             
-            return FLOAT_NAN;
-        }
-
-/*        float operator()(float q, float u, float t) {
-            if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u)) {
-                return (float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
-            }
-            return FLOAT_NAN;
-        }*/
-    };
-
-    // TODO : do the same as above !
-    struct CalcFpi {
-        const double _error_term;
-        const double _threshold;
-
-        CalcFpi(double q_error, double u_error, double threshold) : _error_term((std::pow(q_error, 2) + std::pow(u_error, 2))/2.0), _threshold(threshold) {}
-
-    
-        // returns fpi by default or provided value if v >=0 
-        float operator()(float i, float q, float u) {
-            if (!std::isnan(i) && !std::isnan(q) && !std::isnan(u)) {
-               float fpi = (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);
-               if (std::isnan(fpi) || (!std::isnan(_threshold) && (fpi < _threshold))) {
-                  return FLOAT_NAN;
-               }               
-               return fpi;
-            }
-            
-            return FLOAT_NAN;
-        }
-
-        // returns provided value:
-        float operator()(float i, float q, float u, float v, bool threshold_v ) {
-            if ( threshold_v ) {
-               // v is a value to check against the threshold, otherwise a return value if threshold is applied to fpi (in else):
-               float fpi = (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);
-               if (std::isnan(_threshold)) {
-                  // ignore threshold if it is NaN
-                  return fpi;
-               }
-               
-               // was also !std::isnan(_threshold) &&
-               if (!std::isnan(v) && (v >= _threshold) && !std::isnan(q) && !std::isnan(u) && !std::isnan(i)) {
-                  return fpi;
-               }              
-            } else {
-               // v is a return value when fPi >= threshold (in this case fPi is calculated as a threshold to display another value):
-               if (!std::isnan(i) && !std::isnan(q) && !std::isnan(u)) {
-                  float fpi = (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);
-                  if (std::isnan(fpi) || (!std::isnan(_threshold) && (fpi < _threshold))) {
-                     return FLOAT_NAN;
-                  }               
-                  return v;
-               }
-            }
-            
-            return FLOAT_NAN;
-        }
-
-        
-/*        float operator()(float i, float q, float u, float t) {
-           if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u) && !std::isnan(i)) {
-              return (float)(100.0 * std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term) / i);              
-           }
-           return FLOAT_NAN;
-        }*/
-    };
-
-    struct CalcPa {
-        const double _threshold;
-
-        CalcPa(double threshold) : _threshold(threshold) {}
-
-        float operator()(float q, float u) {
-            if (!std::isnan(q) && !std::isnan(u)) {
-               return (float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2; // TODO : try to optimise by re-orderign the operations for MINIMUM ERROR !
-            }
-            return FLOAT_NAN;
-        }
-
-        float operator()(float q, float u, float t) {
-            if (!std::isnan(t) && !std::isnan(_threshold) && (t >= _threshold) && !std::isnan(q) && !std::isnan(u)) {
-               return (float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2; // TODO : try to optimise by re-orderign the operations for MINIMUM ERROR !
-            }
-            return FLOAT_NAN;
-        }
-    };
-
-    // Helper functions for Pi and Fpi calculations on vectors as std::transform does not work on 3 vectors and 
-    // other clean solutions are only available from C++20:
-    // for Fpi:
-    void calc_fpi_arr( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& fpi );
-    void calc_fpi_arr( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
-                       const std::vector<float>& threshold_source, std::vector<float>& fpi);
-    void apply_fpi_threshold( const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, 
-                       const std::vector<float>& data_source, std::vector<float>& out);
-    // for Pi :
-    void calc_pi_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& threshold_source, std::vector<float>& pi);
-    void apply_pi_threshold( const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& data_source, std::vector<float>& out);
-    
-    // for Pa :
-    void calc_pa_arr(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, const std::vector<float>& threshold_source, std::vector<float>& pa);
-    void calc_pa_with_fpi_threshold(const std::vector<float>& stokes_i, const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& pa);
-    void calc_pa_with_pi_threshold(const std::vector<float>& stokes_q, const std::vector<float>& stokes_u, std::vector<float>& pa);
-    
-    
 
 protected:
     void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
@@ -258,7 +104,7 @@ protected:
     int _stokes_angle;
     CARTA::CompressionType _compression_type;
     float _compression_quality;
-    CARTA::PolarizationType _threshold_option;
+    Pol _threshold_option;
 
     // sources of data, possible values: NONE, CURRENT, I, PA, PI, FPI
     Source _intensity_source;
