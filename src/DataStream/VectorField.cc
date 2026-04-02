@@ -97,8 +97,8 @@ bool VectorFieldCalculator::Calculate(
 
         // First get the current data
         if (UsesCurrent()) {
-            if (!tile_callback(stokes_data[Pol::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor,
-                    Pol::POLARIZATION_TYPE_NONE, width, height)) {
+            if (!tile_callback(
+                    stokes_data[Pol::POLARIZATION_TYPE_NONE], bounds, _smoothing_factor, Pol::POLARIZATION_TYPE_NONE, width, height)) {
                 return false;
             }
         }
@@ -107,8 +107,7 @@ bool VectorFieldCalculator::Calculate(
         // never explicitly requesting Source::I for intensity (would rather be Source::CURRENT) :
         bool uses_I{_intensity_source == Source::FPI || _threshold_source == Source::FPI || _threshold_source == Source::I};
         if (uses_I) {
-            if (!tile_callback(
-                    stokes_data[Pol::I], bounds, _smoothing_factor, Pol::I, width, height)) {
+            if (!tile_callback(stokes_data[Pol::I], bounds, _smoothing_factor, Pol::I, width, height)) {
                 return false;
             }
         }
@@ -116,13 +115,11 @@ bool VectorFieldCalculator::Calculate(
         bool uses_QU{_angle_source == Source::PA || _intensity_source == Source::PI || _intensity_source == Source::FPI ||
                      _threshold_source == Source::PI || _threshold_source == Source::FPI};
         if (uses_QU) {
-            if (!tile_callback(
-                    stokes_data[Pol::Q], bounds, _smoothing_factor, Pol::Q, width, height)) {
+            if (!tile_callback(stokes_data[Pol::Q], bounds, _smoothing_factor, Pol::Q, width, height)) {
                 return false;
             }
 
-            if (!tile_callback(
-                    stokes_data[Pol::U], bounds, _smoothing_factor, Pol::U, width, height)) {
+            if (!tile_callback(stokes_data[Pol::U], bounds, _smoothing_factor, Pol::U, width, height)) {
                 return false;
             }
         }
@@ -134,155 +131,162 @@ bool VectorFieldCalculator::Calculate(
         auto* tile_pa = response.add_angle_tiles();
 
         std::function<float(float, float)> calc_pi;
-        const double _error_term = (std::pow(_q_error, 2) + std::pow(_u_error, 2))/2.0;
-        calc_pi = [&] (float q, float u) {return std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);}; // TODO : check if this can be optimised for the case _error_term=0.00
+        const double _error_term = (std::pow(_q_error, 2) + std::pow(_u_error, 2)) / 2.0;
+        calc_pi = [&](float q, float u) {
+            return std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
+        }; // TODO : check if this can be optimised for the case _error_term=0.00
         Pol pi_key{(_fractional ? Pol::PFlinear : Pol::Plinear)};
-        auto calc_pa = [&] (float q, float u) {return (float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2;};
+        auto calc_pa = [&](float q, float u) { return (float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2; };
         Pol current{Pol::POLARIZATION_TYPE_NONE};
         auto& Q = stokes_data[Pol::Q];
-        auto& U = stokes_data[Pol::U];        
+        auto& U = stokes_data[Pol::U];
         auto& I = stokes_data[Pol::I];
         auto& C = stokes_data[current];
-        auto& pi = stokes_data[pi_key];        
+        auto& pi = stokes_data[pi_key];
         auto& pa = stokes_data[Pol::Pangle];
-//      TBD : keeping the tertiary operator code here in case we prefer this one than switch which is a bit long-ish   
-        auto& T  = ( _threshold_source == Source::PI ? stokes_data[Pol::Plinear] :  // change to switch statement 
-                     _threshold_source == Source::FPI ? stokes_data[Pol::PFlinear] :
-                     _threshold_source == Source::I ? stokes_data[Pol::I] :
-                     _threshold_source == Source::CURRENT ? stokes_data[current] : stokes_data[current] // TODO: check what to put as threshold source as default (or nothing matches)
-                    );
-                    
-// switch crashes on one of the tests not sure why because everything looks perfectly fine and the same as tertiary operator code above which works fine ...
-/*        auto& T = stokes_data[current]; // in C++ reference has to be initialised when declared;
-        switch( _threshold_source ) {
-           case Source::PI :
-              T = stokes_data[Pol::Plinear];
-              break;
-           
-           case Source::FPI :
-              T = stokes_data[Pol::PFlinear];
-              break;
-          
-           case Source::I :
-              T = stokes_data[Pol::I];
-              break;
-              
-           case Source::CURRENT :
-              T = stokes_data[current];                                                              
-              break;
-              
-           default :
-              // means _threshold_source = NONE -> no threshold set keep going (T initialised but won't be used)
-              T = stokes_data[current];
-              break;
-        }*/
-        
-        if( _angle_source == Source::PA ){
-           pa.resize(width * height); 
+        //      TBD : keeping the tertiary operator code here in case we prefer this one than switch which is a bit long-ish
+        auto& T = (_threshold_source == Source::PI ? stokes_data[Pol::Plinear] : // change to switch statement
+                       _threshold_source == Source::FPI ? stokes_data[Pol::PFlinear]
+                   : _threshold_source == Source::I     ? stokes_data[Pol::I]
+                   : _threshold_source == Source::CURRENT
+                       ? stokes_data[current]
+                       : stokes_data[current] // TODO: check what to put as threshold source as default (or nothing matches)
+        );
+
+        // switch crashes on one of the tests not sure why because everything looks perfectly fine and the same as tertiary operator code
+        // above which works fine ...
+        /*        auto& T = stokes_data[current]; // in C++ reference has to be initialised when declared;
+                switch( _threshold_source ) {
+                   case Source::PI :
+                      T = stokes_data[Pol::Plinear];
+                      break;
+
+                   case Source::FPI :
+                      T = stokes_data[Pol::PFlinear];
+                      break;
+
+                   case Source::I :
+                      T = stokes_data[Pol::I];
+                      break;
+
+                   case Source::CURRENT :
+                      T = stokes_data[current];
+                      break;
+
+                   default :
+                      // means _threshold_source = NONE -> no threshold set keep going (T initialised but won't be used)
+                      T = stokes_data[current];
+                      break;
+                }*/
+
+        if (_angle_source == Source::PA) {
+            pa.resize(width * height);
         }
 
-        if(_threshold_source == Source::PI || _threshold_source == Source::FPI || _intensity_source == Source::PI || _intensity_source == Source::FPI ){
-           stokes_data[pi_key].resize(width * height);
+        if (_threshold_source == Source::PI || _threshold_source == Source::FPI || _intensity_source == Source::PI ||
+            _intensity_source == Source::FPI) {
+            stokes_data[pi_key].resize(width * height);
 
-           // there is a bit of code duplication below, but it makes the code easier to understand and follow and 
-           // also in the current way we avoid more conditionals inside the loops, which may make it a bit faster (probably negligible though)
-           if( _threshold_source == Source::PI || _threshold_source == Source::FPI ) {
-              // handle all cases when _threshold_source is PI or FPI here 
-              for(int i=0;i<Q.size();i++){
-                  // threshold applied to PI or FPI itself :
-                  if( !std::isnan(Q[i]) && !std::isnan(U[i]) ){
-                     pi[i] = calc_pi(Q[i],U[i]);
-                     if( _fractional ){
-                        if( !std::isnan(I[i])){
-                           pi[i] = (float)(100.0 * (pi[i] / I[i]));
-                        }else{
-                           pi[i] = FLOAT_NAN;
+            // there is a bit of code duplication below, but it makes the code easier to understand and follow and
+            // also in the current way we avoid more conditionals inside the loops, which may make it a bit faster (probably negligible
+            // though)
+            if (_threshold_source == Source::PI || _threshold_source == Source::FPI) {
+                // handle all cases when _threshold_source is PI or FPI here
+                for (int i = 0; i < Q.size(); i++) {
+                    // threshold applied to PI or FPI itself :
+                    if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
+                        pi[i] = calc_pi(Q[i], U[i]);
+                        if (_fractional) {
+                            if (!std::isnan(I[i])) {
+                                pi[i] = (float)(100.0 * (pi[i] / I[i]));
+                            } else {
+                                pi[i] = FLOAT_NAN;
+                            }
                         }
-                     }
-                   
-                     if( !std::isnan(_threshold) && pi[i] < _threshold ){
+
+                        if (!std::isnan(_threshold) && pi[i] < _threshold) {
+                            pi[i] = FLOAT_NAN;
+                        }
+                    } else {
                         pi[i] = FLOAT_NAN;
-                     }                     
-                  }else{
-                     pi[i] = FLOAT_NAN;
-                  }
-                  
-                  // threshold on PI or FPI applied to other quantities so that it is all done in a single pass here:
-                  if( _angle_source == Source::PA ){
-                     if( !std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold ) ){
-                        pa[i] = calc_pa(Q[i],U[i]);
-                     }else{
-                        pa[i] = FLOAT_NAN;
-                     }
-                  }
-                  if( _intensity_source == Source::CURRENT || _angle_source == Source::CURRENT ){
-                     if( !std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold) ){
-                        C[i] = FLOAT_NAN;
-                     }
-                  }
-               }
-           }else{ 
-               if( _intensity_source == Source::PI || _intensity_source == Source::FPI ) {
-                  for(int i=0;i<Q.size();i++){
-                    if( !std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold ) ){
-                        pi[i] = calc_pi(Q[i],U[i]);
-                        if( _fractional ){
-                           if( !std::isnan(I[i])){
-                              pi[i] = (float)(100.0 * (pi[i] / I[i]));
-                           }else{
-                              pi[i] = FLOAT_NAN;
-                           }
-                        }
-                    }else{
-                       pi[i] = FLOAT_NAN;
                     }
-                  }
-               }
-           }
+
+                    // threshold on PI or FPI applied to other quantities so that it is all done in a single pass here:
+                    if (_angle_source == Source::PA) {
+                        if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
+                            pa[i] = calc_pa(Q[i], U[i]);
+                        } else {
+                            pa[i] = FLOAT_NAN;
+                        }
+                    }
+                    if (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT) {
+                        if (!std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold)) {
+                            C[i] = FLOAT_NAN;
+                        }
+                    }
+                }
+            } else {
+                if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
+                    for (int i = 0; i < Q.size(); i++) {
+                        if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
+                            pi[i] = calc_pi(Q[i], U[i]);
+                            if (_fractional) {
+                                if (!std::isnan(I[i])) {
+                                    pi[i] = (float)(100.0 * (pi[i] / I[i]));
+                                } else {
+                                    pi[i] = FLOAT_NAN;
+                                }
+                            }
+                        } else {
+                            pi[i] = FLOAT_NAN;
+                        }
+                    }
+                }
+            }
         }
 
         // calculate angle and apply required threshold:
-        if( _threshold_source != Source::PI && _threshold_source != Source::FPI ) {
-           // cases when _threshold_source = PI or FPI have been handled earlier in a single pass calculating and applying PI/FPI to the data
-           // here only cases of other thresholded values or no-threshold case
-           if( _angle_source == Source::PA ){
-              for(int i=0;i<Q.size();i++){
-                 if( !std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold ) ){
-                    pa[i] = calc_pa(Q[i],U[i]);
-                 }else{
-                    pa[i] = FLOAT_NAN;
-                 }
-              }
-           }
-        
-           if( _intensity_source == Source::CURRENT || _angle_source == Source::CURRENT ){
-              //   apply threshold cut to the CURRENT data :
-              if( _threshold_source == Source::CURRENT ){
-                 for(int i=0;i<C.size();i++){
-                    if( !std::isnan(C[i]) && !std::isnan(_threshold) && C[i] < _threshold ){
-                       C[i] = FLOAT_NAN;
+        if (_threshold_source != Source::PI && _threshold_source != Source::FPI) {
+            // cases when _threshold_source = PI or FPI have been handled earlier in a single pass calculating and applying PI/FPI to the
+            // data here only cases of other thresholded values or no-threshold case
+            if (_angle_source == Source::PA) {
+                for (int i = 0; i < Q.size(); i++) {
+                    if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
+                        pa[i] = calc_pa(Q[i], U[i]);
+                    } else {
+                        pa[i] = FLOAT_NAN;
                     }
-                 }   
-              }else{
-                 // something else is the threshold :
-                 for(int i=0;i<C.size();i++){
-                    if( !std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold) ){
-                       C[i] = FLOAT_NAN;
+                }
+            }
+
+            if (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT) {
+                //   apply threshold cut to the CURRENT data :
+                if (_threshold_source == Source::CURRENT) {
+                    for (int i = 0; i < C.size(); i++) {
+                        if (!std::isnan(C[i]) && !std::isnan(_threshold) && C[i] < _threshold) {
+                            C[i] = FLOAT_NAN;
+                        }
                     }
-                 }
-              }
-           }
+                } else {
+                    // something else is the threshold :
+                    for (int i = 0; i < C.size(); i++) {
+                        if (!std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold)) {
+                            C[i] = FLOAT_NAN;
+                        }
+                    }
+                }
+            }
         }
-        
+
         // FillTileData
         if (_intensity_source == Source::CURRENT) {
-            FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,
-                stokes_data[Pol::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
+            FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[Pol::POLARIZATION_TYPE_NONE],
+                _compression_type, _compression_quality);
         }
 
         if (_angle_source == Source::CURRENT) {
-            FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height,
-                stokes_data[Pol::POLARIZATION_TYPE_NONE], _compression_type, _compression_quality);
+            FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[Pol::POLARIZATION_TYPE_NONE],
+                _compression_type, _compression_quality);
         }
 
         if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {

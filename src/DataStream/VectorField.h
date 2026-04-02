@@ -51,10 +51,10 @@ public:
      *
      * This function performs the actual calculations of the overlaid vector field (polarisation)
      * and returns the tiles containing the generated image via callback function progress_callback
-     * The calculation has been highly optimised so that only a single pass through the data is performed to 
+     * The calculation has been highly optimised so that only a single pass through the data is performed to
      * calculate the requested values (e.g. PI, FPI or PA) and quantities needed to apply the threshold.
      * There is a little bit of code duplication below, but they are required to make a single pass through the data
-     * They also make the code easier to understand and follow and this way we avoid more conditionals inside the loops, 
+     * They also make the code easier to understand and follow and this way we avoid more conditionals inside the loops,
      * which may make it a bit faster (may be negligible though)
 
      *
@@ -84,11 +84,10 @@ public:
     bool UsesCurrent() {
         return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT || _threshold_source == Source::CURRENT);
     }
-    
-    bool SourceCurrent() {
-       return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT);
-    }
 
+    bool SourceCurrent() {
+        return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT);
+    }
 
 protected:
     void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
