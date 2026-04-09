@@ -14,13 +14,13 @@
 
 using namespace carta;
 
-class Hdf5AttributesTest : public ::testing::Test, public ImageGenerator {};
+class Hdf5AttributesTest : public ::testing::Test {};
 
 TEST_F(Hdf5AttributesTest, TestAttributes) {
     auto padded = [](std::string s) { return fmt::format("{:<80}", s); };
 
-    auto path_string = GeneratedHdf5ImagePath(fmt::format("10 10 -H '{}'", padded("BSCALE  = 1.0")));
-    Hdf5DataReader reader(path_string);
+    auto path = Hdf5Images() / "10x10_header.hdf5";
+    Hdf5DataReader reader(path);
 
     casacore::Vector<casacore::String> attributes;
     Hdf5Attributes::ReadAttributes(reader.GroupId(), attributes);

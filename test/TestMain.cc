@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include <filesystem>
+
 #include <gtest/gtest.h>
 #include <omp.h>
 #include <cxxopts/cxxopts.hpp>
