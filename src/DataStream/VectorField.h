@@ -53,9 +53,9 @@ public:
      * and returns the tiles containing the generated image via callback function progress_callback
      * The calculation has been highly optimised so that only a single pass through the data is performed to
      * calculate the requested values (e.g. PI, FPI or PA) and quantities needed to apply the threshold.
-     * There is a little bit of code duplication below, but they are required to make a single pass through the data
-     * They also make the code easier to understand and follow and this way we avoid more conditionals inside the loops,
-     * which may make it a bit faster (may be negligible though)
+     * There is a little bit of code duplication (certain loops), but they are required to make a single pass through the data.
+     * They also make the code easier to understand and follow by avoid complex conditionals inside the loops,
+     * which may make it a bit faster (most likely negligible though).
 
      *
      * @param progress_callback The callback function returning the results of the calculation to the caller

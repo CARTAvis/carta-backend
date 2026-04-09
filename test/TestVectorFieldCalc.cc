@@ -129,8 +129,7 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
 
 // Instantiate the test suite with the desired enum values
 INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
-    ::testing::Values(
-        TestParameters(SourceTestMessage(SRC_CURRENT, SRC_CURRENT), 1, 1),
+    ::testing::Values(TestParameters(SourceTestMessage(SRC_CURRENT, SRC_CURRENT), 1, 1),
         TestParameters(SourceTestMessage(SRC_CURRENT, SRC_COMPUTED), 1, CalcPa(3, 4)),                            // computed Pa
         TestParameters(SourceTestMessage(SRC_COMPUTED, SRC_CURRENT), CalcPi(3, 4), 1),                            // computed Pi
         TestParameters(SourceTestMessage(SRC_COMPUTED, SRC_COMPUTED), CalcPi(3, 4), CalcPa(3, 4)),                // computed Pa and Pi
@@ -139,8 +138,7 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
         TestParameters(SourceTestMessage(SRC_CURRENT, SRC_NONE, false), 1, std::numeric_limits<double>::quiet_NaN()),
         TestParameters(SourceTestMessage(SRC_NONE, SRC_CURRENT, false), std::numeric_limits<double>::quiet_NaN(), 1),
         TestParameters(SourceTestMessage(SRC_NONE, SRC_NONE, false), std::numeric_limits<double>::quiet_NaN(),
-            std::numeric_limits<double>::quiet_NaN())
-        ));
+            std::numeric_limits<double>::quiet_NaN())));
 
 //------------------------------------------------------ Thresholding tests below -----------------------------------------
 
@@ -269,7 +267,7 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
     auto callback = [&messages](CARTA::VectorOverlayTileData& message) {
         // copy messages :
-//        printf("DEBUG : filling message ...\n");
+        //        printf("DEBUG : filling message ...\n");
         messages.push_back(message);
     };
 
@@ -294,14 +292,14 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     int z_index = 2;
     vectorfield.Calculate(callback, dims, getdata_callback);
 
-// TODO : this check is commented for now as the test intensity=SRC_NONE and angle=SRC_NONE fails when I have it uncommented.
-//        seems that messages are always present even if both sources = SRC_NONE. However, they have no data for angle and intensity    
-//        So, the check on data.size=0 passess ok.
-//    if (expected_intensities.size() == 0 && expected_angles.size() == 0 ) {
-       // when both sources angle and intensity = SRC_NONE -> no expected angles nor intensities.
-       // we do not expect any messages at all:
-//       EXPECT_EQ(messages.size(), 0);
-//    }
+    // TODO : this check is commented for now as the test intensity=SRC_NONE and angle=SRC_NONE fails when I have it uncommented.
+    //        seems that messages are always present even if both sources = SRC_NONE. However, they have no data for angle and intensity
+    //        So, the check on data.size=0 passess ok.
+    //    if (expected_intensities.size() == 0 && expected_angles.size() == 0 ) {
+    // when both sources angle and intensity = SRC_NONE -> no expected angles nor intensities.
+    // we do not expect any messages at all:
+    //       EXPECT_EQ(messages.size(), 0);
+    //    }
 
     // check if intensities are as expected:
     for (auto message : messages) {
@@ -312,46 +310,45 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
         int float_size = data.size() / sizeof(float);
 
         if (expected_intensities.size() == 0) {
-           // intensity source is NONE -> message is there but no data for intensities and hence nothing else to check:
-           EXPECT_EQ(float_size, 0); // no data expected for intensities when intensity source = SRC_NONE
+            // intensity source is NONE -> message is there but no data for intensities and hence nothing else to check:
+            EXPECT_EQ(float_size, 0); // no data expected for intensities when intensity source = SRC_NONE
         } else {
-           std::vector<float> actual_intensity_values(float_data, float_data + number_of_test_pixels); // was + float_size
-           // "manual comparison" excluding NaNs :
-           for (int i = 0; i < actual_intensity_values.size(); i++) {
-               float actual_value = actual_intensity_values[i];
-               if (is_nan_expected[i]) {
-                  EXPECT_TRUE(std::isnan(actual_value)) << "Intensity at pixel " << i << " expected to be NaN, but got " << actual_value;
-               } else {
-                   // at index i a non-NaN value is expected check:
-                   EXPECT_NEAR(expected_intensities[i], actual_value, 1e-4);
-               }
-           }
+            std::vector<float> actual_intensity_values(float_data, float_data + number_of_test_pixels); // was + float_size
+            // "manual comparison" excluding NaNs :
+            for (int i = 0; i < actual_intensity_values.size(); i++) {
+                float actual_value = actual_intensity_values[i];
+                if (is_nan_expected[i]) {
+                    EXPECT_TRUE(std::isnan(actual_value)) << "Intensity at pixel " << i << " expected to be NaN, but got " << actual_value;
+                } else {
+                    // at index i a non-NaN value is expected check:
+                    EXPECT_NEAR(expected_intensities[i], actual_value, 1e-4);
+                }
+            }
         }
-
 
         // common for both paths (angle = SRC_NONE and angle != SRC_NONE):
         EXPECT_EQ(message.angle_tiles_size(), 1);
         data = message.angle_tiles(0).image_data();
         float_data = reinterpret_cast<const float*>(data.data());
-        float_size = data.size() / sizeof(float);      
-        
-        if (expected_angles.size() == 0) { 
-           // angle source is NONE -> message is there but no data for angles and hence nothing else to check:
-           EXPECT_EQ(float_size, 0); // no data expected for angles when angle source = SRC_NONE
+        float_size = data.size() / sizeof(float);
+
+        if (expected_angles.size() == 0) {
+            // angle source is NONE -> message is there but no data for angles and hence nothing else to check:
+            EXPECT_EQ(float_size, 0); // no data expected for angles when angle source = SRC_NONE
         } else {
-           // check if there is exactly 1 angle tile:
-           std::vector<float> actual_angle_values(float_data, float_data + number_of_test_pixels); // was + float_size
-           for (int i = 0; i < actual_angle_values.size(); i++) {
-               float actual_value = actual_angle_values[i];
-               if (is_nan_expected[i]) {
-                   EXPECT_TRUE(std::isnan(actual_value)) << "Angle at pixel " << i << " expected to be NaN, but got " << actual_value;
-               } else {
-                   // at index i a non-NaN value is expected check:
-                   EXPECT_NEAR(expected_angles[i], actual_value, 1e-4);
-               }
-           }
-       }
-    }   
+            // check if there is exactly 1 angle tile:
+            std::vector<float> actual_angle_values(float_data, float_data + number_of_test_pixels); // was + float_size
+            for (int i = 0; i < actual_angle_values.size(); i++) {
+                float actual_value = actual_angle_values[i];
+                if (is_nan_expected[i]) {
+                    EXPECT_TRUE(std::isnan(actual_value)) << "Angle at pixel " << i << " expected to be NaN, but got " << actual_value;
+                } else {
+                    // at index i a non-NaN value is expected check:
+                    EXPECT_NEAR(expected_angles[i], actual_value, 1e-4);
+                }
+            }
+        }
+    }
 }
 
 /* TODO/FUTURE :
@@ -380,8 +377,8 @@ std::vector<TestSpatialParameters> GenerateThresholdTestParameterCombinations() 
     std::vector<TestSpatialParameters> results;
 
     for (int intensity : {SRC_NONE, SRC_CURRENT, SRC_COMPUTED}) {
-        for (int angle :
-            {SRC_COMPUTED, SRC_CURRENT, SRC_NONE}) { // SRC_CURRENT - this one does not work with angle not sure how it could work, actually ...
+        for (int angle : {SRC_COMPUTED, SRC_CURRENT,
+                 SRC_NONE}) { // SRC_CURRENT - this one does not work with angle not sure how it could work, actually ...
             for (Pol threshold : {STOKES_CURRENT, Pol::I, STOKES_PI}) {
                 for (bool fractional : {false, true}) {
                     // results.push_back(TestSpatialParameters(std::make_tuple(intensity, angle, threshold, fractional)));
