@@ -47,9 +47,6 @@ bool VectorFieldCalculator::Calculate(
     int32_t tile_layer = -1;
     tiles.resize(num_tile_rows * num_tile_columns);
 
-    // std::cout << "DEBUG : " << tiles.size() << " , " << num_tile_columns << " , " << num_tile_rows << std::endl;
-    // printf("DEBUG Calculate flags = %d/%d/%d/%d\n",_calculate_pi,_calculate_pa,_current_stokes_as_pi,_current_stokes_as_pa);
-
     for (int j = 0; j < num_tile_rows; ++j) {
         for (int i = 0; i < num_tile_columns; ++i) {
             tiles[j * num_tile_columns + i].x = i;
@@ -58,28 +55,16 @@ bool VectorFieldCalculator::Calculate(
         }
     }
 
-    // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
-    // std::unordered_map<Pol, bool> stokes_flag{{Pol::POLARIZATION_TYPE_NONE, false},
-    //     {Pol::I, false}, {Pol::Q, false}, {Pol::U, false}};
-
     // Set stokes flags and get their indices
     bool use_threshold_I = !std::isnan(_threshold) && _threshold_option == Pol::I;
-
-    // TODO: eliminate this stokes_flag completely - is it really OK ?
-    // stokes_flag[Pol::I] = (_fractional || use_threshold_I);
-    // stokes_flag[Pol::Q] = (_calculate_pi || _calculate_pa);
-    // stokes_flag[Pol::U] = (_calculate_pi || _calculate_pa);
 
     // Get image tiles data
     // TODO/TBD : make sure this declaration can stay before the loop and shoudn't be inside the loop as originally was. Unit test case ?
     std::unordered_map<Pol, std::vector<float>> stokes_data;
     for (int i = 0; i < tiles.size(); ++i) {
-        // std::cout << "DEBUG : processing tile " << i << " (" << this << ")" << std::endl;
-        // sleep(1);
-
         if (!_is_valid) {
             // stop invalidated calculations :
-            std::cout << "DEBUG : VectorFieldCalculator::CalculateVectorField - cancelling ongoing calculation" << std::endl;
+            spdlog::debug("VectorFieldCalculator::CalculateVectorField - cancelling ongoing calculation.");
             break;
         }
 
@@ -136,7 +121,7 @@ bool VectorFieldCalculator::Calculate(
             return std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
         }; // TODO : check if this can be optimised for the case _error_term=0.00
         Pol pi_key{(_fractional ? Pol::PFlinear : Pol::Plinear)};
-        auto calc_pa = [&](float q, float u) { return (float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2; };
+        auto calc_pa = [&](float q, float u) { return (float)(180.0 / M_PI) * std::atan2(u, q) / 2; };
         Pol current{Pol::POLARIZATION_TYPE_NONE};
         auto& Q = stokes_data[Pol::Q];
         auto& U = stokes_data[Pol::U];
@@ -331,9 +316,7 @@ void VectorFieldCalculator::FillTileData(CARTA::TileData* tile, int32_t x, int32
             tile->set_image_data(compression_buffer.data(), compressed_size);
         } else {
             tile->set_image_data(array.data(), sizeof(float) * array.size());
-            // std::cout << "No compression ???" << std::endl;
         }
-        // std::cout << "Test value FillTiledata = " << array[0] << " compression = " << compression_type << std::endl;
     }
 }
 
@@ -353,7 +336,7 @@ void VectorField::StopCalculations() {
 }
 
 void VectorField::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameters) {
-    std::cout << "DEBUG : VectorField::SetVectorOverlayParameters called" << std::endl;
+    spdlog::debug("VectorField::SetVectorOverlayParameters called");
 
     // FUTURE optimisations may required this check and function Equivalent to be back to avoid re-calculation with the same parameters
     //    but for now calculation happens everytime it is called
@@ -407,18 +390,16 @@ bool VectorField::NewCalculation(const std::function<void(CARTA::VectorOverlayTi
 
     // TODO : review this part it was != CURRENT but I've changed it back to 0 here as we removed the enum NONE=-1, CURRENT=0, COMPUTED=1
     if (calculator->Disabled()) { // was parameters.stokes_intensity() == -1 && parameters.stokes_angle() == -1
-        std::cout << "DEBUG : cleared stokes intensity and angle -> nothing to be done" << std::endl;
+        spdlog::debug("Cleared stokes intensity and angle -> nothing to be done.");
         return true;
     }
 
     // add the new calculator object to the container of ongoing calculations
     _calculators.push_back(calculator);
     lock_calculators.unlock();
-    // std::cout << "DEBUG : object added " << std::endl;
 
     // start a new calculation of the vector field:
     bool ret = calculator->Calculate(progress_callback, dims, tile_callback);
-    // std::cout << "DEBUG : calculation completed" << std::endl;
 
     // removing all calculators for now :
     //    lock_calculators.lock();
