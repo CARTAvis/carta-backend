@@ -32,7 +32,7 @@ float CalcFpi(float i, float q, float u, float q_error = 0.00, float u_error = 0
 }
 
 float CalcPa(double q, double u) {
-    return ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2);
+    return ((float)(180.0 / M_PI) * std::atan2(u, q) / 2);
 }
 
 CARTA::SetVectorOverlayParameters SourceTestMessage(int intensity = SRC_COMPUTED, int angle = SRC_COMPUTED, bool fractional = false,
@@ -77,7 +77,6 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
     auto getdata_callback = [](std::vector<float>& data, CARTA::ImageBounds& bounds, int smoothing_factor, Pol stokes_type, int& width,
                                 int& height) {
         float value = stokes_test_values[stokes_type]; // seems that Stokes I is passed as Current
-        // std::cout << "DEBUG : getdata_callback stokes = " << stokes_type << " value = " << value << std::endl;
 
         data.assign(256 * 256, value); // generating Stokes I tile 256x256 all values = 1
         width = 256;
@@ -109,7 +108,6 @@ TEST_P(VectorFieldCalcParamTest, TestStokes) {
             std::vector<float> actual_intensity_values(float_data, float_data + float_size);
             EXPECT_THAT(actual_intensity_values, ::testing::Each(::testing::FloatNear(expected_intensity, 1e-5)));
         }
-        // std::cout << "TEST intesities : " << actual_intensity_values[0] << " float_size = " << float_size << std::endl;
 
         // check if there is exactly 1 angle time:
         EXPECT_EQ(message.angle_tiles_size(), 1);
@@ -141,10 +139,6 @@ INSTANTIATE_TEST_SUITE_P(StokesTests, VectorFieldCalcParamTest,
             std::numeric_limits<double>::quiet_NaN())));
 
 //------------------------------------------------------ Thresholding tests below -----------------------------------------
-
-// perhaps make it a class with separate fields and constructor will initialise these fields based on sources of values and thresholds, and
-// fractional ? using TestSpatialParameters2 = std::tuple<CARTA::SetVectorOverlayParameters, std::vector<float>, std::vector<float>,
-// std::vector<float>, std::vector<bool> >;
 
 CARTA::SetVectorOverlayParameters ThresholdTestMessage(
     int intensity = SRC_COMPUTED, int angle = SRC_COMPUTED, bool fractional = false, Pol threshold_source = STOKES_CURRENT) {
@@ -250,7 +244,6 @@ protected:
 };
 
 TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
-    //    auto [test_parameters, expected_intensities, expected_qu, expected_angles, is_nan_expected] = GetParam();
     TestSpatialParameters all_params = GetParam();
     CARTA::SetVectorOverlayParameters& test_parameters = all_params.message;
     std::vector<float>& expected_intensities = all_params.expected_intensities;
@@ -267,7 +260,6 @@ TEST_P(VectorFieldThresholdingSpatialTest, TestThresholdingSpatial) {
     // lambda expression receiving tile data (messege as sent to front-end) and checking if all values = 1 (as expected for Stokes I)
     auto callback = [&messages](CARTA::VectorOverlayTileData& message) {
         // copy messages :
-        //        printf("DEBUG : filling message ...\n");
         messages.push_back(message);
     };
 
