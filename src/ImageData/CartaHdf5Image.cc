@@ -78,8 +78,7 @@ casacore::Bool CartaHdf5Image::ok() const {
 }
 
 casacore::Bool CartaHdf5Image::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
-    bool ok = _lattice.doGetSlice(buffer, section);
-    return ok;
+    return _lattice.doGetSlice(buffer, section);
 }
 
 void CartaHdf5Image::doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride) {
