@@ -78,7 +78,8 @@ casacore::Bool CartaHdf5Image::ok() const {
 }
 
 casacore::Bool CartaHdf5Image::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
-    return _lattice.doGetSlice(buffer, section);
+    bool ok = _lattice.doGetSlice(buffer, section);
+    return ok;
 }
 
 void CartaHdf5Image::doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride) {
@@ -207,7 +208,7 @@ void CartaHdf5Image::SetUpImage() {
             casacore::LogIO log(sink);
             unsigned int which_rep(0);
             casacore::IPosition image_shape(shape());
-            bool drop_stokes(true);
+            bool drop_stokes(false); // need csys shape to match lattice shape
             casacore::CoordinateSystem coordinate_system = casacore::ImageFITSConverter::getCoordinateSystem(
                 stokes_fits_value, unused_headers_rec, _fits_header_strings, log, which_rep, image_shape, drop_stokes);
             setCoordinateInfo(coordinate_system);

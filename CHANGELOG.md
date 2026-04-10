@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* Fixed coordinate axes error opening HDF5 image ([#1594](https://github.com/CARTAvis/carta-backend/issues/1594)).
+
 ## [6.0.0-beta.1]
 
 ### Fixed
