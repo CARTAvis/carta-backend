@@ -85,10 +85,6 @@ public:
         return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT || _threshold_source == Source::CURRENT);
     }
 
-    bool SourceCurrent() {
-        return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT);
-    }
-
 protected:
     void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
         std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
