@@ -238,11 +238,24 @@ bool VectorFieldCalculator::Calculate(
             // cases when _threshold_source = PI or FPI have been handled earlier in a single pass calculating and applying PI/FPI to the
             // data here only cases of other thresholded values or no-threshold case
             if (_angle_source == Source::PA) {
-                for (int i = 0; i < Q.size(); i++) {
-                    if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
-                        pa[i] = calc_pa(Q[i], U[i]);
-                    } else {
-                        pa[i] = FLOAT_NAN;
+                if (_threshold_source == Source::CURRENT || _threshold_source == Source::I) {
+                    // in this case we know that _threshold != NaN -> no need to check:
+                    // (std::isnan(_threshold) || T[i] >= _threshold)
+                    for (int i = 0; i < Q.size(); i++) {
+                        if (!std::isnan(Q[i]) && !std::isnan(U[i]) && T[i] >= _threshold) {
+                            pa[i] = calc_pa(Q[i], U[i]);
+                        } else {
+                            pa[i] = FLOAT_NAN;
+                        }
+                    }
+                } else {
+                    // case when _threshold_source == Source::NONE, i.e. no threshold check at all:
+                    for (int i = 0; i < Q.size(); i++) {
+                        if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
+                            pa[i] = calc_pa(Q[i], U[i]);
+                        } else {
+                            pa[i] = FLOAT_NAN;
+                        }
                     }
                 }
             }
