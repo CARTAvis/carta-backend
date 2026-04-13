@@ -166,6 +166,7 @@ bool VectorFieldCalculator::Calculate(
             pa.resize(width * height);
         }
 
+        // if _threshold_source is any of these, it is != Source::NONE -> _threshold != NaN (see constructor code above)
         if (_threshold_source == Source::PI || _threshold_source == Source::FPI || _intensity_source == Source::PI ||
             _intensity_source == Source::FPI) {
             pi.resize(width * height);
@@ -187,7 +188,9 @@ bool VectorFieldCalculator::Calculate(
                             }
                         }
 
-                        if (!std::isnan(_threshold) && pi[i] < _threshold) {
+                        // no need to check if_threshold != NaN because we are in if _threshold_source != Source::NONE (above)
+                        // which implies _threshold != NaN (see constructor code above)
+                        if (pi[i] < _threshold) {
                             pi[i] = FLOAT_NAN;
                         }
                     } else {
@@ -203,7 +206,9 @@ bool VectorFieldCalculator::Calculate(
                         }
                     }
                     if (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT) {
-                        if (!std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold)) {
+                        // no need to check if_threshold != NaN because we are in if _threshold_source = Source::PI or FPI
+                        // i.e. != NONE which implies _threshold != NaN (see constructor code above)
+                        if (!std::isnan(C[i]) && (std::isnan(T[i]) || T[i] < _threshold)) {
                             C[i] = FLOAT_NAN;
                         }
                     }
