@@ -262,29 +262,17 @@ bool VectorFieldCalculator::Calculate(
         }
 
         // FillTileData
-        if (_intensity_source == Source::CURRENT) {
-            FillTileData(tile_intensity, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[Pol::POLARIZATION_TYPE_NONE],
+        if (_intensity_source != Source::NONE) {
+            auto& intensity_data = (_intensity_source == Source::CURRENT ? stokes_data[Pol::POLARIZATION_TYPE_NONE] : pi );
+            FillTileData(tile_intensity, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, intensity_data,
                 _compression_type, _compression_quality);
         }
-
-        if (_angle_source == Source::CURRENT) {
-            FillTileData(tile_angle, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[Pol::POLARIZATION_TYPE_NONE],
-                _compression_type, _compression_quality);
+        
+        if (_angle_source != Source::NONE) {
+            auto& angle_data = (_angle_source == Source::CURRENT ? stokes_data[Pol::POLARIZATION_TYPE_NONE] : pa);
+            FillTileData(tile_angle, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, angle_data, _compression_type, _compression_quality);
         }
-
-        if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
-            FillTileData(
-                tile_intensity, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
-        }
-
-        if (_angle_source == Source::PA) {
-            FillTileData(
-                tile_angle, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
-        }
-
-        // Now whatever combination of current / pi / pa contains the required angle and intensity data should have the correct threshold
-        // applied.
-
+        
         // Send response message
         response.set_progress(progress);
         progress_callback(response);
