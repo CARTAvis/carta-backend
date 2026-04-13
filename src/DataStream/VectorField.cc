@@ -127,7 +127,8 @@ bool VectorFieldCalculator::Calculate(
         auto& C = stokes_data[current];
         auto& pi = stokes_data[pi_key];
         auto& pa = stokes_data[Pol::Pangle];
-        //      TBD : keeping the tertiary operator code here in case we prefer this one than switch which is a bit long-ish
+        // not using switch because of : "In C++, references cannot be rebound (reseated) once they are initialized."
+        // so auto& T = something, and then later T = something_else; will just call assignment operator (not change of reference)
         auto& T = (_threshold_source == Source::PI ? stokes_data[Pol::Plinear] : // change to switch statement
                        _threshold_source == Source::FPI ? stokes_data[Pol::PFlinear]
                    : _threshold_source == Source::I     ? stokes_data[Pol::I]
@@ -135,32 +136,6 @@ bool VectorFieldCalculator::Calculate(
                        ? stokes_data[current]
                        : stokes_data[current] // TODO: check what to put as threshold source as default (or nothing matches)
         );
-
-        // switch crashes on one of the tests not sure why because everything looks perfectly fine and the same as tertiary operator code
-        // above which works fine ...
-        /*        auto& T = stokes_data[current]; // in C++ reference has to be initialised when declared;
-                switch( _threshold_source ) {
-                   case Source::PI :
-                      T = stokes_data[Pol::Plinear];
-                      break;
-
-                   case Source::FPI :
-                      T = stokes_data[Pol::PFlinear];
-                      break;
-
-                   case Source::I :
-                      T = stokes_data[Pol::I];
-                      break;
-
-                   case Source::CURRENT :
-                      T = stokes_data[current];
-                      break;
-
-                   default :
-                      // means _threshold_source = NONE -> no threshold set keep going (T initialised but won't be used)
-                      T = stokes_data[current];
-                      break;
-                }*/
 
         if (_angle_source == Source::PA) {
             pa.resize(width * height);
