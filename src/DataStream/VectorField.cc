@@ -261,17 +261,25 @@ bool VectorFieldCalculator::Calculate(
             }
 
             if (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT) {
+                // in this if _threshold_source can be : CURRENT, I or NONE and we split these cases 
+                // into 3 separate if-s to have very specific looks and avoid unnecessary isnan(_threshold)
+                // checks whenever possible.
+                //
                 //   apply threshold cut to the CURRENT data :
                 if (_threshold_source == Source::CURRENT) {
                     for (int i = 0; i < C.size(); i++) {
-                        if (!std::isnan(C[i]) && !std::isnan(_threshold) && C[i] < _threshold) {
+                        // no need for !std::isnan(_threshold) here as we know that _threshold != NaN 
+                        // because _threshold_source == Source::CURRENT (see constructor settings)
+                        if (!std::isnan(C[i]) && C[i] < _threshold) {
                             C[i] = FLOAT_NAN;
                         }
                     }
-                } else {
-                    // something else is the threshold :
+                } else { // no need to check _threshold_source == Source::I as this is the only one left
+                         // if _threshold_source == Source::NONE then nothing needs to be done
                     for (int i = 0; i < C.size(); i++) {
-                        if (!std::isnan(C[i]) && !std::isnan(_threshold) && (std::isnan(T[i]) || T[i] < _threshold)) {
+                        // no need for !std::isnan(_threshold) here as we know that _threshold != NaN
+                        // because _threshold_source == Source::I (see constructor settings)
+                        if (!std::isnan(C[i]) && (std::isnan(T[i]) || T[i] < _threshold)) {
                             C[i] = FLOAT_NAN;
                         }
                     }
