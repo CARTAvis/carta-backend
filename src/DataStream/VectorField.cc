@@ -110,8 +110,8 @@ bool VectorFieldCalculator::Calculate(
         // The body of the previous function CalculatePiPa has been moved here:
         auto response =
             Message::VectorOverlayTileData(_file_id, -1, _stokes_intensity, _stokes_angle, _compression_type, _compression_quality);
-        auto* tile_pi = response.add_intensity_tiles();
-        auto* tile_pa = response.add_angle_tiles();
+        auto* tile_intensity = response.add_intensity_tiles();
+        auto* tile_angle = response.add_angle_tiles();
 
         std::function<float(float, float)> calc_pi;
         const double _error_term = (std::pow(_q_error, 2) + std::pow(_u_error, 2)) / 2.0;
@@ -263,23 +263,23 @@ bool VectorFieldCalculator::Calculate(
 
         // FillTileData
         if (_intensity_source == Source::CURRENT) {
-            FillTileData(tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[Pol::POLARIZATION_TYPE_NONE],
+            FillTileData(tile_intensity, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[Pol::POLARIZATION_TYPE_NONE],
                 _compression_type, _compression_quality);
         }
 
         if (_angle_source == Source::CURRENT) {
-            FillTileData(tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[Pol::POLARIZATION_TYPE_NONE],
+            FillTileData(tile_angle, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, stokes_data[Pol::POLARIZATION_TYPE_NONE],
                 _compression_type, _compression_quality);
         }
 
         if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
             FillTileData(
-                tile_pi, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
+                tile_intensity, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pi, _compression_type, _compression_quality);
         }
 
         if (_angle_source == Source::PA) {
             FillTileData(
-                tile_pa, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
+                tile_angle, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, pa, _compression_type, _compression_quality);
         }
 
         // Now whatever combination of current / pi / pa contains the required angle and intensity data should have the correct threshold
