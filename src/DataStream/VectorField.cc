@@ -217,22 +217,40 @@ bool VectorFieldCalculator::Calculate(
                 }
             } else {
                 if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
-                    // TODO : this can also be split into 2 separate loops with _threshold_source != NONE else :
-                    for (int i = 0; i < Q.size(); i++) {
-                        if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
-                            pi[i] = calc_pi(Q[i], U[i]);
-                            if (_fractional) {
-                                if (!std::isnan(I[i])) {
-                                    pi[i] = (float)(100.0 * (pi[i] / I[i]));
-                                } else {
-                                    pi[i] = FLOAT_NAN;
+                    // There is a bit of code duplication in the if/else below, but this is to 
+                    // remove threshold checks in the case _threshold_source == Source::NONE :
+                    if(_threshold_source != Source::NONE) {
+                        for (int i = 0; i < Q.size(); i++) {
+                            if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
+                                pi[i] = calc_pi(Q[i], U[i]);
+                                if (_fractional) {
+                                    if (!std::isnan(I[i])) {
+                                        pi[i] = (float)(100.0 * (pi[i] / I[i]));
+                                    } else {
+                                        pi[i] = FLOAT_NAN;
+                                    }
                                 }
+                            } else {
+                                pi[i] = FLOAT_NAN;
                             }
-                        } else {
-                            pi[i] = FLOAT_NAN;
+                        }
+                    } else { // _threshold_source == Source::NONE -> no need to check thresholds:
+                        for (int i = 0; i < Q.size(); i++) {
+                            if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
+                                pi[i] = calc_pi(Q[i], U[i]);
+                                if (_fractional) {
+                                    if (!std::isnan(I[i])) {
+                                        pi[i] = (float)(100.0 * (pi[i] / I[i]));
+                                    } else {
+                                        pi[i] = FLOAT_NAN;
+                                    }
+                                }
+                            } else {
+                                pi[i] = FLOAT_NAN;
+                            }
                         }
                     }
-                }
+                }                    
             }
         }
 
