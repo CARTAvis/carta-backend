@@ -199,7 +199,9 @@ bool VectorFieldCalculator::Calculate(
 
                     // threshold on PI or FPI applied to other quantities so that it is all done in a single pass here:
                     if (_angle_source == Source::PA) {
-                        if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
+                        // because _threshold_source == Source::PI or FPI we do not need to have
+                        // (std::isnan(_threshold) || T[i] >= _threshold) as this is not the case (_threshold != NaN)
+                        if (!std::isnan(Q[i]) && !std::isnan(U[i]) && T[i] >= _threshold) {
                             pa[i] = calc_pa(Q[i], U[i]);
                         } else {
                             pa[i] = FLOAT_NAN;
@@ -215,6 +217,7 @@ bool VectorFieldCalculator::Calculate(
                 }
             } else {
                 if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
+                    // TODO : this can also be split into 2 separate loops with _threshold_source != NONE else :
                     for (int i = 0; i < Q.size(); i++) {
                         if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
                             pi[i] = calc_pi(Q[i], U[i]);
