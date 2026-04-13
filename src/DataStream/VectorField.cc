@@ -90,16 +90,14 @@ bool VectorFieldCalculator::Calculate(
 
         // Then get I, Q, U:
         // never explicitly requesting Source::I for intensity (would rather be Source::CURRENT) :
-        bool uses_I{_intensity_source == Source::FPI || _threshold_source == Source::FPI || _threshold_source == Source::I};
-        if (uses_I) {
+        if ( _intensity_source == Source::FPI || _threshold_source == Source::FPI || _threshold_source == Source::I ) {
             if (!tile_callback(stokes_data[Pol::I], bounds, _smoothing_factor, Pol::I, width, height)) {
                 return false;
             }
         }
 
-        bool uses_QU{_angle_source == Source::PA || _intensity_source == Source::PI || _intensity_source == Source::FPI ||
-                     _threshold_source == Source::PI || _threshold_source == Source::FPI};
-        if (uses_QU) {
+        if ( _angle_source == Source::PA || _intensity_source == Source::PI || _intensity_source == Source::FPI ||
+             _threshold_source == Source::PI || _threshold_source == Source::FPI ) {
             if (!tile_callback(stokes_data[Pol::Q], bounds, _smoothing_factor, Pol::Q, width, height)) {
                 return false;
             }
@@ -170,7 +168,7 @@ bool VectorFieldCalculator::Calculate(
 
         if (_threshold_source == Source::PI || _threshold_source == Source::FPI || _intensity_source == Source::PI ||
             _intensity_source == Source::FPI) {
-            stokes_data[pi_key].resize(width * height);
+            pi.resize(width * height);
 
             // there is a bit of code duplication below, but it makes the code easier to understand and follow and
             // also in the current way we avoid more conditionals inside the loops, which may make it a bit faster (probably negligible
