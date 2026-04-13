@@ -90,14 +90,14 @@ bool VectorFieldCalculator::Calculate(
 
         // Then get I, Q, U:
         // never explicitly requesting Source::I for intensity (would rather be Source::CURRENT) :
-        if ( _intensity_source == Source::FPI || _threshold_source == Source::FPI || _threshold_source == Source::I ) {
+        if (_intensity_source == Source::FPI || _threshold_source == Source::FPI || _threshold_source == Source::I) {
             if (!tile_callback(stokes_data[Pol::I], bounds, _smoothing_factor, Pol::I, width, height)) {
                 return false;
             }
         }
 
-        if ( _angle_source == Source::PA || _intensity_source == Source::PI || _intensity_source == Source::FPI ||
-             _threshold_source == Source::PI || _threshold_source == Source::FPI ) {
+        if (_angle_source == Source::PA || _intensity_source == Source::PI || _intensity_source == Source::FPI ||
+            _threshold_source == Source::PI || _threshold_source == Source::FPI) {
             if (!tile_callback(stokes_data[Pol::Q], bounds, _smoothing_factor, Pol::Q, width, height)) {
                 return false;
             }
@@ -217,9 +217,9 @@ bool VectorFieldCalculator::Calculate(
                 }
             } else {
                 if (_intensity_source == Source::PI || _intensity_source == Source::FPI) {
-                    // There is a bit of code duplication in the if/else below, but this is to 
+                    // There is a bit of code duplication in the if/else below, but this is to
                     // remove threshold checks in the case _threshold_source == Source::NONE :
-                    if(_threshold_source != Source::NONE) {
+                    if (_threshold_source != Source::NONE) {
                         for (int i = 0; i < Q.size(); i++) {
                             if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
                                 pi[i] = calc_pi(Q[i], U[i]);
@@ -250,7 +250,7 @@ bool VectorFieldCalculator::Calculate(
                             }
                         }
                     }
-                }                    
+                }
             }
         }
 
@@ -282,14 +282,14 @@ bool VectorFieldCalculator::Calculate(
             }
 
             if (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT) {
-                // in this if _threshold_source can be : CURRENT, I or NONE and we split these cases 
+                // in this if _threshold_source can be : CURRENT, I or NONE and we split these cases
                 // into 3 separate if-s to have very specific looks and avoid unnecessary isnan(_threshold)
                 // checks whenever possible.
                 //
                 //   apply threshold cut to the CURRENT data :
                 if (_threshold_source == Source::CURRENT) {
                     for (int i = 0; i < C.size(); i++) {
-                        // no need for !std::isnan(_threshold) here as we know that _threshold != NaN 
+                        // no need for !std::isnan(_threshold) here as we know that _threshold != NaN
                         // because _threshold_source == Source::CURRENT (see constructor settings)
                         if (!std::isnan(C[i]) && C[i] < _threshold) {
                             C[i] = FLOAT_NAN;
@@ -310,16 +310,17 @@ bool VectorFieldCalculator::Calculate(
 
         // FillTileData
         if (_intensity_source != Source::NONE) {
-            auto& intensity_data = (_intensity_source == Source::CURRENT ? stokes_data[Pol::POLARIZATION_TYPE_NONE] : pi );
-            FillTileData(tile_intensity, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, intensity_data,
-                _compression_type, _compression_quality);
+            auto& intensity_data = (_intensity_source == Source::CURRENT ? stokes_data[Pol::POLARIZATION_TYPE_NONE] : pi);
+            FillTileData(tile_intensity, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, intensity_data, _compression_type,
+                _compression_quality);
         }
-        
+
         if (_angle_source != Source::NONE) {
             auto& angle_data = (_angle_source == Source::CURRENT ? stokes_data[Pol::POLARIZATION_TYPE_NONE] : pa);
-            FillTileData(tile_angle, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, angle_data, _compression_type, _compression_quality);
+            FillTileData(tile_angle, tile.x, tile.y, tile.layer, _smoothing_factor, width, height, angle_data, _compression_type,
+                _compression_quality);
         }
-        
+
         // Send response message
         response.set_progress(progress);
         progress_callback(response);
