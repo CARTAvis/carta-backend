@@ -128,13 +128,13 @@ void InitLogger() {
 }
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (!log_protocol_messages) return;
+    if (!log_protocol_messages)
+        return;
 
     auto& throttler = inbound_throttlers[event_type];
     auto event_name = CARTA::EventType_Name(event_type);
 
-    if (event_type == CARTA::EventType::OPEN_FILE || 
-        event_type == CARTA::EventType::REGISTER_VIEWER ||
+    if (event_type == CARTA::EventType::OPEN_FILE || event_type == CARTA::EventType::REGISTER_VIEWER ||
         event_type == CARTA::EventType::CLOSE_FILE) {
         spdlog::info("[protocol] <== {}", event_name);
         return;
@@ -147,7 +147,8 @@ void LogReceivedEventType(const CARTA::EventType& event_type) {
 }
 
 void LogSentEventType(const CARTA::EventType& event_type) {
-    if (!log_protocol_messages) return;
+    if (!log_protocol_messages)
+        return;
 
     auto& throttler = outbound_throttlers[event_type];
     auto event_name = CARTA::EventType_Name(event_type);

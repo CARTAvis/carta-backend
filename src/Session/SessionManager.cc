@@ -209,13 +209,12 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
 
         if (event_type == CARTA::EventType::OPEN_FILE) {
             CARTA::OpenFile open_msg;
-            
+
             auto payload_ptr = sv_message.data() + sizeof(EventHeader);
             auto payload_len = sv_message.length() - sizeof(EventHeader);
 
             if (open_msg.ParseFromArray(payload_ptr, payload_len)) {
-                spdlog::info("[Session {}] User is opening file: {}/{}", 
-                            session_id, open_msg.directory(), open_msg.file());
+                spdlog::info("[Session {}] User is opening file: {}/{}", session_id, open_msg.directory(), open_msg.file());
             }
         }
 
