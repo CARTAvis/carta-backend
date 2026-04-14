@@ -270,7 +270,7 @@ bool VectorFieldCalculator::Calculate(
                             C[i] = FLOAT_NAN;
                         }
                     }
-                } else { // no need to check _threshold_source == Source::I as this is the only one left
+                } else if (_threshold_source == Source::I) {
                          // if _threshold_source == Source::NONE then nothing needs to be done
                     for (int i = 0; i < C.size(); i++) {
                         // no need for !std::isnan(_threshold) here as we know that _threshold != NaN
