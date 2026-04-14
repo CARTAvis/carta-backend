@@ -196,7 +196,8 @@ bool VectorFieldCalculator::Calculate(
                     // remove threshold checks in the case _threshold_source == Source::NONE :
                     if (_threshold_source != Source::NONE) {
                         for (int i = 0; i < Q.size(); i++) {
-                            if (!std::isnan(Q[i]) && !std::isnan(U[i]) && (std::isnan(_threshold) || T[i] >= _threshold)) {
+                            // _threshold != NaN because _threshold_source != Source::NONE in the if above
+                            if (!std::isnan(Q[i]) && !std::isnan(U[i]) && T[i] >= _threshold) {
                                 pi[i] = calc_pi(Q[i], U[i]);
                                 if (_fractional) {
                                     if (!std::isnan(I[i])) {
