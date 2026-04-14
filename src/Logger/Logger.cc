@@ -15,6 +15,17 @@ namespace logger {
 
 static bool log_protocol_messages(false);
 
+struct Throttler {
+    uint64_t count = 0;
+    bool should_log(uint32_t first_n, uint32_t every_m) {
+        count++;
+        return (count <= first_n || count % every_m == 0);
+    }
+};
+
+static std::unordered_map<CARTA::EventType, Throttler> inbound_throttlers;
+static std::unordered_map<CARTA::EventType, Throttler> outbound_throttlers;
+
 void InitLogger() {
     // Copy parameters from the global settings
     auto& settings = ProgramSettings::GetInstance();
@@ -117,24 +128,33 @@ void InitLogger() {
 }
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (log_protocol_messages) {
-        auto event_name = CARTA::EventType_Name(event_type);
-        if (!event_name.empty()) {
-            spdlog::debug("[protocol] <== {}", event_name);
-        } else {
-            spdlog::debug("[protocol] <== unknown event type: {}!", event_type);
-        }
+    if (!log_protocol_messages) return;
+
+    auto& throttler = inbound_throttlers[event_type];
+    auto event_name = CARTA::EventType_Name(event_type);
+
+    if (event_type == CARTA::EventType::OPEN_FILE || 
+        event_type == CARTA::EventType::REGISTER_VIEWER ||
+        event_type == CARTA::EventType::CLOSE_FILE) {
+        spdlog::info("[protocol] <== {}", event_name);
+        return;
+    }
+
+    if (throttler.should_log(5, 100)) {
+        std::string suffix = (throttler.count > 5) ? fmt::format(" (Total: {})", throttler.count) : "";
+        spdlog::debug("[protocol] <== {}{}", event_name, suffix);
     }
 }
 
 void LogSentEventType(const CARTA::EventType& event_type) {
-    if (log_protocol_messages) {
-        auto event_name = CARTA::EventType_Name(event_type);
-        if (!event_name.empty()) {
-            spdlog::debug("[protocol] ==> {}", event_name);
-        } else {
-            spdlog::debug("[protocol] ==> unknown event type: {}!", event_type);
-        }
+    if (!log_protocol_messages) return;
+
+    auto& throttler = outbound_throttlers[event_type];
+    auto event_name = CARTA::EventType_Name(event_type);
+
+    if (throttler.should_log(5, 100)) {
+        std::string suffix = (throttler.count > 5) ? fmt::format(" (Total: {})", throttler.count) : "";
+        spdlog::debug("[protocol] ==> {}{}", event_name, suffix);
     }
 }
 
