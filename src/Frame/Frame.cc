@@ -1590,14 +1590,14 @@ bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes_ind
     }
 }
 
-casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region, int stokes_index) {
+casacore::IPosition Frame::GetRegionShape(const casacore::ImageRegion& region, int stokes_index) {
     // Returns image shape with a region applied
     auto coord_sys = CoordinateSystem(stokes_index);
     casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys.get(), ImageShape(stokes_index));
     return lattice_region.shape();
 }
 
-bool Frame::GetRegionSubImage(const casacore::LattRegionHolder& region, int stokes_index, casacore::SubImage<float>& sub_image) {
+bool Frame::GetRegionSubImage(const casacore::ImageRegion& region, int stokes_index, casacore::SubImage<float>& sub_image) {
     std::lock_guard<std::mutex> ulock(_image_mutex);
     return _loader->GetSubImage(region, stokes_index, sub_image);
 }
@@ -1725,7 +1725,7 @@ bool Frame::GetSlicerData(const casacore::Slicer& slicer, int stokes_index, floa
     return data_ok;
 }
 
-bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, int stokes_index, const std::vector<CARTA::StatsType>& required_stats,
+bool Frame::GetRegionStats(const casacore::ImageRegion& region, int stokes_index, const std::vector<CARTA::StatsType>& required_stats,
     bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
