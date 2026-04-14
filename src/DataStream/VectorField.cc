@@ -113,11 +113,6 @@ bool VectorFieldCalculator::Calculate(
         auto* tile_intensity = response.add_intensity_tiles();
         auto* tile_angle = response.add_angle_tiles();
 
-        std::function<float(float, float)> calc_pi;
-        const double _error_term = (std::pow(_q_error, 2) + std::pow(_u_error, 2)) / 2.0;
-        calc_pi = [&](float q, float u) {
-            return std::sqrt(std::pow(q, 2) + std::pow(u, 2) - _error_term);
-        }; // TODO : check if this can be optimised for the case _error_term=0.00
         Pol pi_key{(_fractional ? Pol::PFlinear : Pol::Plinear)};
         auto calc_pa = [&](float q, float u) { return (float)(180.0 / M_PI) * std::atan2(u, q) / 2; };
         Pol current{Pol::POLARIZATION_TYPE_NONE};
@@ -127,6 +122,33 @@ bool VectorFieldCalculator::Calculate(
         auto& C = stokes_data[current];
         auto& pi = stokes_data[pi_key];
         auto& pa = stokes_data[Pol::Pangle];
+        
+        std::function<void(int)> calc_pi;
+        const double _error_term = (std::pow(_q_error, 2) + std::pow(_u_error, 2)) / 2.0;
+        if(_fractional) {
+           calc_pi = [&](int i) {
+              if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
+                 pi[i] = std::sqrt(std::pow(Q[i], 2) + std::pow(U[i], 2) - _error_term);
+                 if (!std::isnan(I[i])) {
+                     pi[i] = (float)(100.0 * (pi[i] / I[i]));
+                 } else {
+                     pi[i] = FLOAT_NAN;
+                 }
+              } else {
+                 pi[i] = FLOAT_NAN;
+              }
+           };
+        } else {
+           calc_pi = [&](int i) {
+              if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
+                 pi[i] = std::sqrt(std::pow(Q[i], 2) + std::pow(U[i], 2) - _error_term);
+              } else {
+                 pi[i] = FLOAT_NAN;
+              }
+           };
+        }
+        
+        
         // not using switch because of : "In C++, references cannot be rebound (reseated) once they are initialized."
         // so auto& T = something, and then later T = something_else; will just call assignment operator (not change of reference)
         auto& T = (_threshold_source == Source::PI ? stokes_data[Pol::Plinear] : // change to switch statement
@@ -153,22 +175,8 @@ bool VectorFieldCalculator::Calculate(
                 // handle all cases when _threshold_source is PI or FPI here
                 for (int i = 0; i < Q.size(); i++) {
                     // threshold applied to PI or FPI itself :
-                    if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
-                        pi[i] = calc_pi(Q[i], U[i]);
-                        if (_fractional) {
-                            if (!std::isnan(I[i])) {
-                                pi[i] = (float)(100.0 * (pi[i] / I[i]));
-                            } else {
-                                pi[i] = FLOAT_NAN;
-                            }
-                        }
-
-                        // no need to check if_threshold != NaN because we are in if _threshold_source != Source::NONE (above)
-                        // which implies _threshold != NaN (see constructor code above)
-                        if (pi[i] < _threshold) {
-                            pi[i] = FLOAT_NAN;
-                        }
-                    } else {
+                    calc_pi(i);
+                    if (pi[i] < _threshold) {
                         pi[i] = FLOAT_NAN;
                     }
 
@@ -196,34 +204,14 @@ bool VectorFieldCalculator::Calculate(
                     // remove threshold checks in the case _threshold_source == Source::NONE :
                     if (_threshold_source != Source::NONE) {
                         for (int i = 0; i < Q.size(); i++) {
-                            // _threshold != NaN because _threshold_source != Source::NONE in the if above
-                            if (!std::isnan(Q[i]) && !std::isnan(U[i]) && T[i] >= _threshold) {
-                                pi[i] = calc_pi(Q[i], U[i]);
-                                if (_fractional) {
-                                    if (!std::isnan(I[i])) {
-                                        pi[i] = (float)(100.0 * (pi[i] / I[i]));
-                                    } else {
-                                        pi[i] = FLOAT_NAN;
-                                    }
-                                }
-                            } else {
+                            calc_pi(i);
+                            if( T[i] < _threshold) { // _threshold != NaN because _threshold_source != Source::NONE in the if above
                                 pi[i] = FLOAT_NAN;
                             }
                         }
                     } else { // _threshold_source == Source::NONE -> no need to check thresholds:
-                        for (int i = 0; i < Q.size(); i++) {
-                            if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
-                                pi[i] = calc_pi(Q[i], U[i]);
-                                if (_fractional) {
-                                    if (!std::isnan(I[i])) {
-                                        pi[i] = (float)(100.0 * (pi[i] / I[i]));
-                                    } else {
-                                        pi[i] = FLOAT_NAN;
-                                    }
-                                }
-                            } else {
-                                pi[i] = FLOAT_NAN;
-                            }
+                        for (int i = 0; i < Q.size(); i++) {                            
+                            calc_pi(i);
                         }
                     }
                 }
