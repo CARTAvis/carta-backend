@@ -27,7 +27,7 @@ std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const 
         // Create the loader -- don't block while doing this
         std::shared_ptr<FileLoader> loader_ptr;
         guard.unlock();
-        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename, directory));
+        loader_ptr = FileLoader::GetLoader(filename, directory);
         guard.lock();
 
         // Check if the loader was added in the meantime
