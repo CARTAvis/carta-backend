@@ -122,33 +122,32 @@ bool VectorFieldCalculator::Calculate(
         auto& C = stokes_data[current];
         auto& pi = stokes_data[pi_key];
         auto& pa = stokes_data[Pol::Pangle];
-        
+
         std::function<void(int)> calc_pi;
         const double _error_term = (std::pow(_q_error, 2) + std::pow(_u_error, 2)) / 2.0;
-        if(_fractional) {
-           calc_pi = [&](int i) {
-              if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
-                 pi[i] = std::sqrt(std::pow(Q[i], 2) + std::pow(U[i], 2) - _error_term);
-                 if (!std::isnan(I[i])) {
-                     pi[i] = (float)(100.0 * (pi[i] / I[i]));
-                 } else {
-                     pi[i] = FLOAT_NAN;
-                 }
-              } else {
-                 pi[i] = FLOAT_NAN;
-              }
-           };
+        if (_fractional) {
+            calc_pi = [&](int i) {
+                if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
+                    pi[i] = std::sqrt(std::pow(Q[i], 2) + std::pow(U[i], 2) - _error_term);
+                    if (!std::isnan(I[i])) {
+                        pi[i] = (float)(100.0 * (pi[i] / I[i]));
+                    } else {
+                        pi[i] = FLOAT_NAN;
+                    }
+                } else {
+                    pi[i] = FLOAT_NAN;
+                }
+            };
         } else {
-           calc_pi = [&](int i) {
-              if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
-                 pi[i] = std::sqrt(std::pow(Q[i], 2) + std::pow(U[i], 2) - _error_term);
-              } else {
-                 pi[i] = FLOAT_NAN;
-              }
-           };
+            calc_pi = [&](int i) {
+                if (!std::isnan(Q[i]) && !std::isnan(U[i])) {
+                    pi[i] = std::sqrt(std::pow(Q[i], 2) + std::pow(U[i], 2) - _error_term);
+                } else {
+                    pi[i] = FLOAT_NAN;
+                }
+            };
         }
-        
-        
+
         // not using switch because of : "In C++, references cannot be rebound (reseated) once they are initialized."
         // so auto& T = something, and then later T = something_else; will just call assignment operator (not change of reference)
         auto& T = (_threshold_source == Source::PI ? stokes_data[Pol::Plinear] : // change to switch statement
@@ -205,12 +204,12 @@ bool VectorFieldCalculator::Calculate(
                     if (_threshold_source != Source::NONE) {
                         for (int i = 0; i < Q.size(); i++) {
                             calc_pi(i);
-                            if( T[i] < _threshold) { // _threshold != NaN because _threshold_source != Source::NONE in the if above
+                            if (T[i] < _threshold) { // _threshold != NaN because _threshold_source != Source::NONE in the if above
                                 pi[i] = FLOAT_NAN;
                             }
                         }
                     } else { // _threshold_source == Source::NONE -> no need to check thresholds:
-                        for (int i = 0; i < Q.size(); i++) {                            
+                        for (int i = 0; i < Q.size(); i++) {
                             calc_pi(i);
                         }
                     }
@@ -260,7 +259,7 @@ bool VectorFieldCalculator::Calculate(
                         }
                     }
                 } else if (_threshold_source == Source::I) {
-                         // if _threshold_source == Source::NONE then nothing needs to be done
+                    // if _threshold_source == Source::NONE then nothing needs to be done
                     for (int i = 0; i < C.size(); i++) {
                         // no need for !std::isnan(_threshold) here as we know that _threshold != NaN
                         // because _threshold_source == Source::I (see constructor settings)
