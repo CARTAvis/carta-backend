@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* Refactored loader factory to return smart pointers to loaders ([#1597](https://github.com/CARTAvis/carta-backend/pull/1597)).
+
 ## [6.0.0-beta.1]
 
 ### Fixed
