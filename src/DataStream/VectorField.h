@@ -22,7 +22,11 @@
 
 namespace carta {
 
+/// @brief Mostly for cosmetics and make the code more compact instead of using the full protobuf name of the enum
 using Pol = CARTA::PolarizationType;
+
+/// @brief Type of the callback function passed to VectorFieldCalculator::Calculate in order to fill the data array
+///        returned to the front-end in the protobuf message
 using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageBounds&, int, Pol, int&, int&)>; // was &
 
 /**
@@ -34,6 +38,7 @@ using TileCallback = const std::function<bool(std::vector<float>&, CARTA::ImageB
  */
 class VectorFieldCalculator {
 public:
+    /// @brief Enum defining all possible sources of data for Vector Field calculation and thresholding
     enum class Source { NONE, CURRENT, I, PA, PI, FPI };
 
     /**
@@ -73,14 +78,23 @@ public:
         return _is_valid;
     }
 
+    /**
+     * @brief Invalidates on-going calculation and results in stopping it
+     */
     void Invalidate() {
         _is_valid = false;
     }
 
+    /**
+     * @brief Checks if Vector Field calculation is disabled (does not need to be performed)
+     */
     bool Disabled() {
         return (_intensity_source == Source::NONE && _angle_source == Source::NONE);
     }
 
+    /**
+     * @brief Checks if Vector Field calculation uses CURRENT as a source for intensity, angle or threshold
+     */
     bool UsesCurrent() {
         return (_intensity_source == Source::CURRENT || _angle_source == Source::CURRENT || _threshold_source == Source::CURRENT);
     }
@@ -89,26 +103,31 @@ protected:
     void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
         std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
 
-    int _file_id;
-    int _smoothing_factor;
-    bool _fractional;
-    double _threshold;
-    bool _debiasing;
-    double _q_error;
-    double _u_error;
-    int _stokes_intensity;
-    int _stokes_angle;
-    CARTA::CompressionType _compression_type;
-    float _compression_quality;
-    Pol _threshold_option;
+    /// @name Parameters of the requested Vector Field calculation copied from the protobuf message
+    /// These parameters are passed from the Vector Field calculation widget in the front-end
+    /// @{
+    int _file_id;                             ///< ID of the file
+    int _smoothing_factor;                    ///< smoothing factor as defined in
+    bool _fractional;                         ///< calculate fractional polarised intensity
+    double _threshold;                        ///< a value of threshold to be applied (NaN means no thresholding)
+    bool _debiasing;                          ///< whether debiasing should be applied
+    double _q_error;                          ///< value of the Q polarisation error
+    double _u_error;                          ///< value of the U polarisation error
+    int _stokes_intensity;                    ///< specifies the sources of Stokes intensity
+    int _stokes_angle;                        ///< specifies the source of polarisation angle
+    CARTA::CompressionType _compression_type; ///< type of compression algorithm
+    float _compression_quality;               ///< compression quality
+    Pol _threshold_option;                    ///< specifies polarisation to which threshold should be applied
+    /// @}
 
-    // sources of data, possible values: NONE, CURRENT, I, PA, PI, FPI
-    Source _intensity_source;
-    Source _angle_source;
-    Source _threshold_source;
+    /// @brief These properities specify the sources data data
+    ///
+    /// Possible values are: NONE, CURRENT, I, PA, PI, FPI
+    Source _intensity_source; ///< source of data for intensity
+    Source _angle_source;     ///< source of data for angle
+    Source _threshold_source; ///< source of data for the threshold
 
-    // indicates if the calculation is valid and should be continued :
-    bool _is_valid;
+    bool _is_valid; ///< indicates if the calculation is valid and should be continued
 };
 
 /**
@@ -139,8 +158,8 @@ public:
      * VectorFieldCalculator::Calculate function
      * @param tile_callback The callback function providing input images and filling the arrays corresponding to tiles (passed to the
      * VectorFieldCalculator::Calculate function)
-     * @param stokes_changed The flag specifying if the Stokes image has changed (TODO : confirm what it is ?)
-     * @param z_changed The flag specifying if the Z axis has changed (TODO : confirm what it is ?)
+     * @param stokes_changed The flag specifying if the Stokes image has changed
+     * @param z_changed The flag specifying if the Z axis has changed
      */
     bool NewCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& progress_callback, DimsInfo& dims,
         TileCallback tile_callback, bool stokes_changed = false, bool z_changed = false);
@@ -156,11 +175,16 @@ protected:
      */
     bool _stopped;
 
-    // Vector field settings
+    /// @brief Parameters of vector field calculation as passed from the front end in a protobuf message
     CARTA::SetVectorOverlayParameters _parameters;
-    std::mutex _mutex;
-    std::vector<std::shared_ptr<VectorFieldCalculator>>
-        _calculators; // TBD/TODO : list or vector - depends if we need to delete elements in the middle (list may be better for this)
+
+    /// @name Objects for Vector Field Calculator
+    /// Objects controlling the on-going Vector Field calculations
+    /// @{
+    std::mutex _mutex;                                                ///< Mutex preventing from changing _calculators in the same time
+    std::vector<std::shared_ptr<VectorFieldCalculator>> _calculators; ///< vector of Vector field calculator objects
+                                                                      ///< to perform multiple calculations in parallel
+    /// @}
 };
 
 } // namespace carta
