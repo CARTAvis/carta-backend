@@ -179,9 +179,7 @@ protected:
 
     // Storage for the stokes type vs. stokes index
     std::map<CARTA::PolarizationType, int> _stokes_indices;
-    std::map<CARTA::PolarizationType, int> _deduced_stokes_indices;
     std::map<int, CARTA::PolarizationType> _stokes_types;
-    std::map<int, CARTA::PolarizationType> _deduced_stokes_types;
 
     // To be moved into refactored polarization calculator
     std::unordered_set<CARTA::PolarizationType> _computable_polarizations;

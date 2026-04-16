@@ -1604,8 +1604,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
             auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
                 int tmp_stokes_index;
-                return (
-                    frame->GetCoordinateStokesIndex(tmp_coordinate, tmp_stokes_index) && get_stokes_profiles_data(tmp_results, tmp_stokes_index));
+                return (frame->GetCoordinateStokesIndex(tmp_coordinate, tmp_stokes_index) &&
+                        get_stokes_profiles_data(tmp_results, tmp_stokes_index));
             };
 
             if (Stokes::IsComputed(stokes_index)) { // For computed stokes

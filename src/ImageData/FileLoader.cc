@@ -302,8 +302,6 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
 
     size_t num_stokes = DimsInfo::FromAxis(stokes_axis, _image_shape);
 
-    std::vector<CARTA::PolarizationType> available_stokes;
-
     // map polarization types to indices and vice versa
     if (_stokes_cdelt != 0) {
         for (int i = 0; i < num_stokes; ++i) {
@@ -313,20 +311,23 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
                 auto stokes_type = static_cast<CARTA::PolarizationType>(stokes_value);
                 _stokes_indices[stokes_type] = i;
                 _stokes_types[i] = stokes_type;
-                available_stokes.push_back(stokes_type);
             }
         }
     } else {
         for (int i = 0; i < num_stokes; ++i) {
             auto stokes_type = static_cast<CARTA::PolarizationType>(i + 1);
-            _deduced_stokes_indices[stokes_type] = i;
-            _deduced_stokes_types[i] = stokes_type;
-            available_stokes.push_back(stokes_type);
+            _stokes_indices[stokes_type] = i;
+            _stokes_types[i] = stokes_type;
         }
     }
 
     // Determine computable polarizations
-    for (auto& computed_type : Stokes::Computable(available_stokes)) {
+    std::vector<CARTA::PolarizationType> available_stokes;
+    for (const auto& [stokes_type, _] : _stokes_indices) {
+        available_stokes.push_back(stokes_type);
+    }
+
+    for (const auto& computed_type : Stokes::Computable(available_stokes)) {
         _computable_polarizations.insert(computed_type);
     }
 
@@ -945,14 +946,8 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
         stokes_index = _stokes_indices.at(stokes_type);
         return true;
     } catch (const std::out_of_range& e) {
-        try {
-            stokes_index = _deduced_stokes_indices.at(stokes_type);
-            spdlog::warn("Could not get polarization index from header. Assuming {} index is {}.", Stokes::Name(stokes_type), stokes_index);
-            return true;
-        } catch (const std::out_of_range& e) {
-            spdlog::warn("Could not get or deduce index for polarization {}.", Stokes::Name(stokes_type));
-            return false;
-        }
+        spdlog::warn("Could not get or deduce index for polarization {}.", Stokes::Name(stokes_type));
+        return false;
     }
 }
 
@@ -974,15 +969,8 @@ bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType&
         stokes_type = _stokes_types.at(stokes_index);
         return true;
     } catch (const std::out_of_range& e) {
-        try {
-            stokes_type = _deduced_stokes_types.at(stokes_index);
-            spdlog::warn(
-                "Could not get polarization type from header. Assuming type of index {} is {}.", stokes_index, Stokes::Name(stokes_type));
-            return true;
-        } catch (const std::out_of_range& e) {
-            spdlog::warn("Could not get or deduce polarization type for index {}.", stokes_index);
-            return false;
-        }
+        spdlog::warn("Could not get or deduce polarization type for index {}.", stokes_index);
+        return false;
     }
 }
 
