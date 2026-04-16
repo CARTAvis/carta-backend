@@ -50,13 +50,8 @@ PolCalc::PolarizationCalculator(std::weak_ptr<FileLoader> loader_w) {
     // Get the components
     std::vector<Pol> components;
 
-    // Use mapping from loader or deduce indices in order
-    std::map<Pol, int> indices = loader->GetStokesIndices();
-    if (indices.empty()) {
-        indices = loader->GetDeducedStokesIndices();
-    }
-
-    for (const auto& [pol, idx] : indices) {
+    // Use mapping from loader
+    for (const auto& [pol, idx] : loader->GetStokesIndices()) {
         components.push_back(pol);
         start(stokes_axis) = idx;
         end(stokes_axis) = idx;

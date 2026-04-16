@@ -110,9 +110,6 @@ public:
     const std::map<CARTA::PolarizationType, int>& GetStokesIndices() {
         return _stokes_indices;
     };
-    const std::map<CARTA::PolarizationType, int>& GetDeducedStokesIndices() {
-        return _deduced_stokes_indices;
-    };
 
     // Modify time changed
     bool ImageUpdated();
@@ -168,9 +165,7 @@ protected:
 
     // Storage for the stokes type vs. stokes index
     std::map<CARTA::PolarizationType, int> _stokes_indices;
-    std::map<CARTA::PolarizationType, int> _deduced_stokes_indices;
     std::map<int, CARTA::PolarizationType> _stokes_types;
-    std::map<int, CARTA::PolarizationType> _deduced_stokes_types;
     float _stokes_crval;
     float _stokes_crpix;
     int _stokes_cdelt;
