@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* Refactored mapping of Stokes types to indices ([#1598](https://github.com/CARTAvis/carta-backend/pull/1598)).
+
 ## [6.0.0-beta.1]
 
 ### Fixed
