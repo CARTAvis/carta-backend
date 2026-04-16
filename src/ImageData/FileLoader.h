@@ -184,7 +184,7 @@ protected:
     std::map<int, CARTA::PolarizationType> _deduced_stokes_types;
 
     // To be moved into refactored polarization calculator
-    std::unordered_set<CARTA::PolarizationType> _available_polarizations;
+    std::unordered_set<CARTA::PolarizationType> _computable_polarizations;
 
     float _stokes_crval;
     float _stokes_crpix;

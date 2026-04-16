@@ -327,7 +327,7 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
 
     // Determine computable polarizations
     for (auto& computed_type : Stokes::Computable(available_stokes)) {
-        _available_polarizations.insert(computed_type);
+        _computable_polarizations.insert(computed_type);
     }
 
     return true;
@@ -929,7 +929,7 @@ double FileLoader::CalculateBeamArea() {
 
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
     // Computed type which is available for this image
-    if (_available_polarizations.count(stokes_type)) {
+    if (_computable_polarizations.count(stokes_type)) {
         stokes_index = stokes_type;
         return true;
     }
@@ -959,7 +959,7 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
 bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type) {
     if (Stokes::IsComputed(stokes_index)) {
         // Computed type which is available for this image
-        if (_available_polarizations.count((CARTA::PolarizationType)stokes_index)) {
+        if (_computable_polarizations.count((CARTA::PolarizationType)stokes_index)) {
             stokes_type = Stokes::Get(stokes_index);
             return true;
         }
