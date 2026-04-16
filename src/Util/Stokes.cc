@@ -146,7 +146,7 @@ std::vector<Stokes::Pol> Stokes::Computable(const std::vector<Pol>& components) 
     std::vector<Pol> computable;
 
     for (auto& [computed, required] : _components) {
-        if (std::includes(required.begin(), required.end(), available.begin(), available.end())) {
+        if (std::includes(available.begin(), available.end(), required.begin(), required.end())) {
             computable.push_back(computed);
         }
     }
