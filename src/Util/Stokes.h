@@ -19,30 +19,33 @@ namespace carta {
 
 class Stokes {
 public:
+    using Pol = CARTA::PolarizationType;
+    using CasaPol = casacore::Stokes::StokesTypes;
+
     /**
      * @brief Retrieves the corresponding CARTA polarization type from an integer value.
      *
-     * @param value The integer representation of a `CARTA::PolarizationType`.
-     * @return The corresponding `CARTA::PolarizationType` if valid, otherwise `POLARIZATION_TYPE_NONE`.
+     * @param value The integer representation of a CARTA polarization type.
+     * @return The corresponding CARTA polarization type if valid, otherwise `POLARIZATION_TYPE_NONE`.
      */
-    static CARTA::PolarizationType Get(int value);
+    static Pol Get(int value);
 
     /**
      * @brief Retrieves the corresponding CARTA polarization type from a string name.
      *
-     * @param name The string representation of a `CARTA::PolarizationType`.
-     * @return The corresponding `CARTA::PolarizationType` if parsing is successful, otherwise `POLARIZATION_TYPE_NONE`.
+     * @param name The string representation of a CARTA polarization type.
+     * @return The corresponding CARTA polarization type if parsing is successful, otherwise `POLARIZATION_TYPE_NONE`.
      */
-    static CARTA::PolarizationType Get(std::string name);
+    static Pol Get(std::string name);
 
     /**
      * @brief Converts a CARTA polarization type to the corresponding CASA Stokes type.
      *
-     * @param type The `CARTA::PolarizationType` to convert.
-     * @return The corresponding `casacore::Stokes::StokesTypes` value.
+     * @param type The CARTA polarization type to convert.
+     * @return The corresponding CASA Stokes type.
      * @throws std::out_of_range If the provided type is not found in the mapping.
      */
-    static casacore::Stokes::StokesTypes ToCasa(CARTA::PolarizationType type);
+    static CasaPol ToCasa(Pol type);
 
     /**
      * @brief Converts a FITS Stokes parameter value to its corresponding internal representation.
@@ -59,7 +62,7 @@ public:
      * @param[in] type The polarization type to retrieve the name for.
      * @return The string representation of the given polarization type.
      */
-    static std::string Name(CARTA::PolarizationType type);
+    static std::string Name(Pol type);
 
     /**
      * @brief Retrieves a descriptive string for a given CARTA polarization type.
@@ -67,27 +70,45 @@ public:
      * @param[in] type The polarization type for which to retrieve a description.
      * @return A descriptive string for the given polarization type.
      */
-    static std::string Description(CARTA::PolarizationType type);
+    static std::string Description(Pol type);
 
     /**
      * @brief Determines if a given polarization type is a computed polarization.
      *
-     * @param[in] value The integer representation of a `CARTA::PolarizationType`.
+     * @param[in] value The integer representation of a CARTA polarization type.
      * @return `true` if the value corresponds to a computed polarization type, otherwise `false`.
      */
     static bool IsComputed(int value);
 
-    // TODO move FITS mappings here too
+    /** @brief Retrieves the component polarizations required to calculate the given computed polarization.
+     *
+     * @param[in] type The computed polarization type.
+     * @return A vector of the required component polarizations.
+     */
+    static std::vector<Pol> Components(const Pol type);
+
+    /** @brief Retrieves the polarizations which may be computed from the given component polarizations.
+     *
+     * @param[in] components A vector of the available component polarizations.
+     * @return A sorted vector of the computable polarizations.
+     */
+    static std::vector<Pol> Computable(const std::vector<Pol>& components);
+
 protected:
+    /**
+     * @brief Maps computed polarization types to the component polarizations required to calculate them.
+     */
+    static std::map<Pol, std::vector<Pol>> _components;
+
     /**
      * @brief Maps CARTA polarization types to CASA Stokes types.
      */
-    static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> _to_casa;
+    static std::unordered_map<Pol, CasaPol> _to_casa;
 
     /**
      * @brief Provides human-readable descriptions for CARTA polarization types.
      */
-    static std::unordered_map<CARTA::PolarizationType, std::string> _description;
+    static std::unordered_map<Pol, std::string> _description;
 };
 
 // The struct StokesSource is used to tell the file loader to get the original image interface, or get the computed stokes image interface.

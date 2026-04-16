@@ -257,50 +257,54 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
         _axes = AxesInfo(render_axes, spatial_axes, spectral_axis);
         // Keep depth and num_stokes defaults of 1
         _dims = DimsInfo(_axes, _image_shape);
-        return true;
-    }
+    } else {
+        // Cope with incomplete/invalid headers for 3D, 4D images
+        bool no_spectral(spectral_axis < 0), no_stokes(stokes_axis < 0);
+        if ((no_spectral && no_stokes) && (_num_dims == 3)) {
+            // assume third is spectral with no stokes
+            spectral_axis = 2;
+        }
 
-    // Cope with incomplete/invalid headers for 3D, 4D images
-    bool no_spectral(spectral_axis < 0), no_stokes(stokes_axis < 0);
-    if ((no_spectral && no_stokes) && (_num_dims == 3)) {
-        // assume third is spectral with no stokes
-        spectral_axis = 2;
-    }
+        if ((no_spectral || no_stokes) && (_num_dims == 4)) {
+            if (no_spectral && !no_stokes) { // stokes is known
+                spectral_axis = (stokes_axis == 3 ? 2 : 3);
+            } else if (!no_spectral && no_stokes) { // spectral is known
+                stokes_axis = (spectral_axis == 3 ? 2 : 3);
+            } else { // neither is known
+                // guess by shape (max 4 stokes)
+                if (_image_shape(2) > 4) {
+                    spectral_axis = 2;
+                    stokes_axis = 3;
+                } else if (_image_shape(3) > 4) {
+                    spectral_axis = 3;
+                    stokes_axis = 2;
+                }
 
-    if ((no_spectral || no_stokes) && (_num_dims == 4)) {
-        if (no_spectral && !no_stokes) { // stokes is known
-            spectral_axis = (stokes_axis == 3 ? 2 : 3);
-        } else if (!no_spectral && no_stokes) { // spectral is known
-            stokes_axis = (spectral_axis == 3 ? 2 : 3);
-        } else { // neither is known
-            // guess by shape (max 4 stokes)
-            if (_image_shape(2) > 4) {
-                spectral_axis = 2;
-                stokes_axis = 3;
-            } else if (_image_shape(3) > 4) {
-                spectral_axis = 3;
-                stokes_axis = 2;
-            }
-
-            if ((spectral_axis < 0) && (stokes_axis < 0)) {
-                // could not guess, assume [spectral, stokes]
-                spectral_axis = 2;
-                stokes_axis = 3;
+                if ((spectral_axis < 0) && (stokes_axis < 0)) {
+                    // could not guess, assume [spectral, stokes]
+                    spectral_axis = 2;
+                    stokes_axis = 3;
+                }
             }
         }
-    }
 
-    // Z axis is non-render axis that is not stokes (if any)
-    for (size_t i = 0; i < _num_dims; ++i) {
-        if ((i != render_axes[0]) && (i != render_axes[1]) && (i != stokes_axis)) {
-            z_axis = i;
-            break;
+        // Z axis is non-render axis that is not stokes (if any)
+        for (size_t i = 0; i < _num_dims; ++i) {
+            if ((i != render_axes[0]) && (i != render_axes[1]) && (i != stokes_axis)) {
+                z_axis = i;
+                break;
+            }
         }
+
+        _axes = AxesInfo(render_axes, spatial_axes, spectral_axis, z_axis, stokes_axis);
+        _dims = DimsInfo(_axes, _image_shape);
     }
 
     size_t num_stokes = DimsInfo::FromAxis(stokes_axis, _image_shape);
 
-    // save stokes types with respect to the stokes index
+    std::vector<CARTA::PolarizationType> available_stokes;
+
+    // map polarization types to indices and vice versa
     if (_stokes_cdelt != 0) {
         for (int i = 0; i < num_stokes; ++i) {
             int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
@@ -309,12 +313,22 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
                 auto stokes_type = static_cast<CARTA::PolarizationType>(stokes_value);
                 _stokes_indices[stokes_type] = i;
                 _stokes_types[i] = stokes_type;
+                available_stokes.push_back(stokes_type);
             }
+        }
+    } else {
+        for (int i = 0; i < num_stokes; ++i) {
+            auto stokes_type = static_cast<CARTA::PolarizationType>(i + 1);
+            _deduced_stokes_indices[stokes_type] = i;
+            _deduced_stokes_types[i] = stokes_type;
+            available_stokes.push_back(stokes_type);
         }
     }
 
-    _axes = AxesInfo(render_axes, spatial_axes, spectral_axis, z_axis, stokes_axis);
-    _dims = DimsInfo(_axes, _image_shape);
+    // Determine computable polarizations
+    for (auto& computed_type : Stokes::Computable(available_stokes)) {
+        _available_polarizations.insert(computed_type);
+    }
 
     return true;
 }
@@ -914,20 +928,61 @@ double FileLoader::CalculateBeamArea() {
 }
 
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
+    // Computed type which is available for this image
+    if (_available_polarizations.count(stokes_type)) {
+        stokes_index = stokes_type;
+        return true;
+    }
+
+    // Invalid computed type
+    if (Stokes::IsComputed(stokes_type)) {
+        spdlog::warn("Computed polarization {} is not available in this image.", Stokes::Name(stokes_type));
+        return false;
+    }
+
+    // Basic type
     try {
         stokes_index = _stokes_indices.at(stokes_type);
         return true;
     } catch (const std::out_of_range& e) {
-        return false;
+        try {
+            stokes_index = _deduced_stokes_indices.at(stokes_type);
+            spdlog::warn("Could not get polarization index from header. Assuming {} index is {}.", Stokes::Name(stokes_type), stokes_index);
+            return true;
+        } catch (const std::out_of_range& e) {
+            spdlog::warn("Could not get or deduce index for polarization {}.", Stokes::Name(stokes_type));
+            return false;
+        }
     }
 }
 
 bool FileLoader::GetStokesType(const int& stokes_index, CARTA::PolarizationType& stokes_type) {
+    if (Stokes::IsComputed(stokes_index)) {
+        // Computed type which is available for this image
+        if (_available_polarizations.count((CARTA::PolarizationType)stokes_index)) {
+            stokes_type = Stokes::Get(stokes_index);
+            return true;
+        }
+
+        // Invalid computed type
+        spdlog::warn("Computed polarization {} is not available in this image.", Stokes::Name(Stokes::Get(stokes_index)));
+        return false;
+    }
+
+    // Basic type
     try {
         stokes_type = _stokes_types.at(stokes_index);
         return true;
     } catch (const std::out_of_range& e) {
-        return false;
+        try {
+            stokes_type = _deduced_stokes_types.at(stokes_index);
+            spdlog::warn(
+                "Could not get polarization type from header. Assuming type of index {} is {}.", stokes_index, Stokes::Name(stokes_type));
+            return true;
+        } catch (const std::out_of_range& e) {
+            spdlog::warn("Could not get or deduce polarization type for index {}.", stokes_index);
+            return false;
+        }
     }
 }
 
