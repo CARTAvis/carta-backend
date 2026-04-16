@@ -368,11 +368,11 @@ void Frame::InvalidateImageCache() {
     _image_cache_valid = false;
 }
 
-void Frame::GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes) {
+void Frame::GetZSlice(std::vector<float>& data, size_t z, size_t stokes) {
     // fill matrix for given z and stokes
     casacore::Slicer slicer = GetImageSlicer(AxisRange(z), stokes);
-    z_slice.resize(slicer.length().product());
-    GetSlicerData(slicer, stokes, z_slice.data());
+    data.resize(slicer.length().product());
+    GetSlicerData(slicer, stokes, data.data());
 }
 
 // ****************************************************
@@ -1698,7 +1698,7 @@ bool Frame::GetSlicerData(const casacore::Slicer& slicer, int stokes_index, floa
         auto slicer_start = slicer.start();
         auto slicer_end = slicer.end();
 
-        // Adjust cache shape and slicer for single channel and stokes
+        // Adjust cache shape and slicer for single Z and Stokes
         if (_axes.z >= 0) {
             cache_shape(_axes.z) = 1;
             slicer_start(_axes.z) = 0;
@@ -2002,12 +2002,12 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         try {
             if (region) {
                 auto latt_region_holder = LattRegionHolder(image_region->cloneRegion());
-                auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, latt_region_holder);
+                auto sub_image_slicer = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, latt_region_holder);
 
-                _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image);
+                _loader->GetSubImage(sub_image_slicer, latt_region_holder, sub_image);
             } else {
-                auto slice_sub_image = GetExportImageSlicer(save_file_msg, image_shape);
-                _loader->GetSubImage(slice_sub_image, CurrentStokes(), sub_image);
+                auto sub_image_slicer = GetExportImageSlicer(save_file_msg, image_shape);
+                _loader->GetSubImage(sub_image_slicer, CurrentStokes(), sub_image);
             }
 
             // If keep degenerated axes
