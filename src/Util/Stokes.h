@@ -17,10 +17,18 @@
 
 namespace carta {
 
+/**
+ * @brief An enumeration of FITS polarizations that we support.
+ * @details In future we may extend this to all nonstandard types supported by CASA.
+ *
+ */
+enum FitsPolarizationType : int { I = 1, Q = 2, U = 3, V = 4, RR = -1, LL = -2, RL = -3, LR = -4, XX = -5, YY = -6, XY = -7, YX = -8 };
+
 class Stokes {
 public:
     using Pol = CARTA::PolarizationType;
     using CasaPol = casacore::Stokes::StokesTypes;
+    using FitsPol = FitsPolarizationType;
 
     /**
      * @brief Retrieves the corresponding CARTA polarization type from an integer value.
@@ -39,22 +47,31 @@ public:
     static Pol Get(std::string name);
 
     /**
-     * @brief Converts a CARTA polarization type to the corresponding CASA Stokes type.
+     * @brief Converts a CARTA polarization type to the corresponding CASA polarization type.
      *
      * @param type The CARTA polarization type to convert.
-     * @return The corresponding CASA Stokes type.
+     * @return The corresponding CASA polarization type.
      * @throws std::out_of_range If the provided type is not found in the mapping.
      */
     static CasaPol ToCasa(Pol type);
 
     /**
-     * @brief Converts a FITS Stokes parameter value to its corresponding internal representation.
+     * @brief Converts a CARTA polarization type to the corresponding FITS polarization type.
      *
-     * @param[in] in_stokes_value The input FITS Stokes parameter value.
-     * @param[out] out_stokes_value The converted Stokes parameter value.
-     * @return `true` if the conversion was successful, `false` if the input value is invalid.
+     * @param type The CARTA polarization type to convert.
+     * @return The corresponding FITS polarization type.
+     * @throws std::out_of_range If the provided type is not found in the mapping.
      */
-    static bool ConvertFits(const int& in_stokes_value, int& out_stokes_value);
+    static FitsPol ToFits(Pol type);
+
+    /**
+     * @brief Converts an integer representing a FITS polarization type to the corresponding CARTA polarization type.
+     *
+     * @param type The input type to convert. This is an integer because we cannot guarantee that the input type is supported or valid.
+     * @return The corresponding CARTA polarization type.
+     * @throws std::out_of_range If the provided type is invalid.
+     */
+    static Pol FromFits(int type);
 
     /**
      * @brief Retrieves the name of a given CARTA polarization type.
@@ -101,9 +118,19 @@ protected:
     static std::map<Pol, std::vector<Pol>> _components;
 
     /**
-     * @brief Maps CARTA polarization types to CASA Stokes types.
+     * @brief Maps CARTA polarization types to CASA polarization types.
      */
     static std::unordered_map<Pol, CasaPol> _to_casa;
+
+    /**
+     * @brief Maps CARTA polarization types to FITS polarization types.
+     */
+    static std::unordered_map<Pol, FitsPol> _to_fits;
+
+    /**
+     * @brief Maps FITS polarization types to CARTA polarization types.
+     */
+    static std::unordered_map<FitsPol, Pol> _from_fits;
 
     /**
      * @brief Provides human-readable descriptions for CARTA polarization types.

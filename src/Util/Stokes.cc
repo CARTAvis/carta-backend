@@ -5,11 +5,14 @@
 */
 
 #include "Stokes.h"
+#include "Collections.h"
+
+#include <spdlog/fmt/fmt.h>
 
 using namespace carta;
 
 /** @details This map stores the component polarizations required to calculate each computed polarization type. It is used to determine
- * whether a polarization can be computed from the polarizations available in an image file. The map is ordered so that Stokes::Computable
+ * whether a polarization can be computed from the polarizations available in an image file. The map is ordered so that `Stokes::Computable`
  * does not have to sort its output.
  */
 std::map<Stokes::Pol, std::vector<Stokes::Pol>> Stokes::_components{{Pol::Ptotal, {Pol::Q, Pol::U, Pol::V}},
@@ -18,14 +21,28 @@ std::map<Stokes::Pol, std::vector<Stokes::Pol>> Stokes::_components{{Pol::Ptotal
 
 /**
  * @details This unordered map provides a conversion between the CARTA polarization type
- * enumeration and the corresponding CASA Stokes type enumeration.
- * It is used to translate polarization representations between the two frameworks.
+ * enumeration and the corresponding CASA polarization type enumeration. It is used by `Stokes::ToCasa`.
  */
 std::unordered_map<Stokes::Pol, Stokes::CasaPol> Stokes::_to_casa{{Pol::POLARIZATION_TYPE_NONE, CasaPol::Undefined}, {Pol::I, CasaPol::I},
     {Pol::Q, CasaPol::Q}, {Pol::U, CasaPol::U}, {Pol::V, CasaPol::V}, {Pol::RR, CasaPol::RR}, {Pol::LL, CasaPol::LL},
     {Pol::RL, CasaPol::RL}, {Pol::LR, CasaPol::LR}, {Pol::XX, CasaPol::XX}, {Pol::YY, CasaPol::YY}, {Pol::XY, CasaPol::XY},
     {Pol::YX, CasaPol::YX}, {Pol::Ptotal, CasaPol::Ptotal}, {Pol::Plinear, CasaPol::Plinear}, {Pol::PFtotal, CasaPol::PFtotal},
     {Pol::PFlinear, CasaPol::PFlinear}, {Pol::Pangle, CasaPol::Pangle}};
+
+/**
+ * @details This unordered map provides a conversion between the CARTA polarization type
+ * enumeration and the corresponding FITS polarization type enumeration. It is used by `Stokes::ToFits`.
+ */
+std::unordered_map<Stokes::Pol, Stokes::FitsPol> Stokes::_to_fits{{Pol::I, FitsPol::I}, {Pol::Q, FitsPol::Q}, {Pol::U, FitsPol::U},
+    {Pol::V, FitsPol::V}, {Pol::RR, FitsPol::RR}, {Pol::LL, FitsPol::LL}, {Pol::RL, FitsPol::RL}, {Pol::LR, FitsPol::LR},
+    {Pol::XX, FitsPol::XX}, {Pol::YY, FitsPol::YY}, {Pol::XY, FitsPol::XY}, {Pol::YX, FitsPol::YX}};
+
+/**
+ * @details This unordered map provides a conversion between the FITS polarization type
+ * enumeration and the corresponding CARTA polarization type enumeration. It is used by `Stokes::FromFits`.
+ */
+std::unordered_map<Stokes::FitsPol, Stokes::Pol> Stokes::_from_fits =
+    InvertedMap<std::unordered_map<Stokes::Pol, Stokes::FitsPol>, std::unordered_map<Stokes::FitsPol, Stokes::Pol>>(Stokes::_to_fits);
 
 /**
  * @details This unordered map associates each CARTA polarization type enumeration value
@@ -61,7 +78,7 @@ Stokes::Pol Stokes::Get(std::string name) {
 }
 
 /**
- * @details This function maps a CARTA polarization type to its equivalent CASA Stokes type
+ * @details This function maps a CARTA polarization type to its equivalent CASA polarization type
  * using a predefined lookup table. If the provided type is not found in the mapping,
  * an `std::out_of_range` exception may be thrown.
  */
@@ -70,24 +87,26 @@ Stokes::CasaPol Stokes::ToCasa(Pol type) {
 }
 
 /**
- * @details This function maps a FITS Stokes parameter to a valid internal Stokes value.
- * It supports conversion of standard Stokes parameters (1 to 4) and
- * circular/linear polarization parameters (5 to 12 and -1 to -8).
- *
- * @note Valid FITS Stokes values:
- *       - `1` to `4` (directly assigned)
- *       - `5` to `12` and `-1` to `-8` (converted using `out_stokes_value = -in_stokes_value + 4`)
+ * @details This function maps a CARTA polarization type to the corresponding FITS polarization type using a predefined lookup table. It
+ * currently only supports standard FITS polarizations (the Stokes parameters IQUV, the linear polarizations RR LL RL LR, and the circular
+ * polarizations XX YY XY YX).
+ * @todo In future this function should support all nonstandard polarizations supported by CASA.
  */
-bool Stokes::ConvertFits(const int& in_stokes_value, int& out_stokes_value) {
-    if (in_stokes_value >= 1 && in_stokes_value <= 4) {
-        out_stokes_value = in_stokes_value;
-        return true;
-    } else if ((in_stokes_value >= 4 && in_stokes_value <= 12) || (in_stokes_value <= -1 && in_stokes_value >= -8)) {
-        // convert between [5, 6, ..., 12] and [-1, -2, ..., -8]
-        out_stokes_value = -in_stokes_value + 4;
-        return true;
+Stokes::FitsPol Stokes::ToFits(Pol type) {
+    return _to_fits.at(type);
+}
+
+/**
+ * @details This function maps an integer representing a FITS polarization type to the corresponding CARTA polarization type. It currently
+ * only supports integer values of standard FITS polarizations (the Stokes parameters 1 to 4, the linear polarizations -1 to -4, and the
+ * circular polarizations -5 to -8).
+ * @todo In future this function should support all nonstandard polarizations supported by CASA.
+ */
+Stokes::Pol Stokes::FromFits(int type) {
+    if (type >= 1 && type <= 4 || type <= -1 && type >= -8) {
+        return _from_fits.at(static_cast<FitsPol>(type));
     }
-    return false;
+    throw std::out_of_range(fmt::format("Invalid or unsupported FITS polarization type: {}", type));
 }
 
 /**

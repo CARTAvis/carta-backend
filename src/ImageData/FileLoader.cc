@@ -306,12 +306,17 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
     if (_stokes_cdelt != 0) {
         for (int i = 0; i < num_stokes; ++i) {
             int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
-            int stokes_value;
-            if (Stokes::ConvertFits(stokes_fits_value, stokes_value)) {
-                auto stokes_type = static_cast<CARTA::PolarizationType>(stokes_value);
-                _stokes_indices[stokes_type] = i;
-                _stokes_types[i] = stokes_type;
+            CARTA::PolarizationType stokes_type(CARTA::PolarizationType::POLARIZATION_TYPE_NONE);
+            try {
+                stokes_type = Stokes::FromFits(stokes_fits_value);
+            } catch (const std::out_of_range& e) {
+                if (num_stokes > 1) {
+                    message = "Non-standard polarizations are currently unsupported in images with multiple polarizations.";
+                    return false;
+                }
             }
+            _stokes_indices[stokes_type] = i;
+            _stokes_types[i] = stokes_type;
         }
     } else {
         for (int i = 0; i < num_stokes; ++i) {
