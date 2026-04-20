@@ -18,12 +18,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -152,12 +155,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -196,7 +202,7 @@ jobs:
           cd protobuf
           ./build_proto.sh
           cd ../src/test
-          perl -p -i -e 's/3002/5555/' config.json
+          perl -p -i -e 's/3002/${{ matrix.port }}/' config.json
 
       - name: Prepare ICD-RxJS (Linux)
         if: matrix.os == 'linux'
@@ -225,12 +231,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -259,6 +268,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'file_browser'
       # Linux steps    
       - name: File Browser ICD tests
@@ -281,12 +291,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -315,6 +328,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'animator'
       # Linux steps
       - name: Animator ICD tests
@@ -337,12 +351,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -371,6 +388,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'region_statistics'
       # Linux steps
       - name: Region-Statistics ICD tests
@@ -393,12 +411,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -427,6 +448,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'region_manipulation'
       # Linux steps
       - name: Region Manipulation ICD tests
@@ -449,12 +471,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -483,6 +508,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'cube_histogram'
       # Linux steps
       - name: Cube Histogram ICD tests
@@ -505,12 +531,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -539,6 +568,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'pv_generator'
       # Linux steps
       - name: PV Generator ICD tests
@@ -561,12 +591,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -595,6 +628,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'raster_tiles'
       # Linux steps
       - name: Raster Tiles ICD tests
@@ -617,12 +651,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -651,6 +688,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'catalog'
       # Linux steps
       - name: Catalog ICD tests
@@ -673,12 +711,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -707,6 +748,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'moment'
       # Linux steps
       - name: Moment ICD tests
@@ -729,12 +771,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -763,6 +808,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'match'
       # Linux steps
       - name: Match ICD tests
@@ -785,12 +831,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -819,6 +868,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'close_file'
       # Linux steps
       - name: Close File ICD tests
@@ -841,12 +891,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -875,6 +928,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'image_fitting'
       # Linux steps
       - name: Image Fitting ICD tests
@@ -897,12 +951,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -931,6 +988,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'vector_overlay'
       # Linux steps
       - name: Vector Overlay ICD tests
@@ -953,12 +1011,15 @@ jobs:
           - os_version: macOS-13
             os: macos
             runner: [macOS-13, ICD]
+            port: 9007
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
+            port: 9008
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+            port: 9009
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -987,6 +1048,7 @@ jobs:
         if: matrix.os == 'macos'
         uses: ./source/.github/actions/run-macos
         with:
+          port: ${{ matrix.port }}
           test_stage_name: 'resume'
       # Linux steps
       - name: Resume ICD tests

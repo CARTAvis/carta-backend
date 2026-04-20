@@ -1,6 +1,9 @@
 name: 'Run ICD tests on macOS'
 description: 'Start the carta_backend, run the ICD tests, and stop the carta_backend'
 inputs:
+  port:
+    description: 'Port for the carta_backend'
+    required: true
   test_stage_name:
     description: 'ICD test stage'
     required: true
@@ -16,7 +19,7 @@ runs:
         LSAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan-leaks.supp \
         ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
         ./carta_backend /images --top_level_folder /images \
-        --port 5555 \
+        --port ${{ inputs.port }} \
         --omp_threads=4 --debug_no_auth --no_frontend --no_database --verbosity=5 &
         echo "CARTA_BACKEND_PID=$!" >> $GITHUB_ENV
       shell: bash
