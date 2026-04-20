@@ -8,10 +8,10 @@
 
 #include "Main/ProgramSettings.h"
 
-#include <string>
-#include <functional>
 #include <yaml-cpp/yaml.h>
+#include <functional>
 #include <regex>
+#include <string>
 
 namespace carta {
 namespace logger {
@@ -25,15 +25,12 @@ static std::mutex registry_mutex;
 static std::unordered_map<CARTA::EventType, uint64_t> inbound_counts;
 static std::unordered_map<CARTA::EventType, uint64_t> outbound_counts;
 
-
 LogAction createNoOpLogger() {
     return [](const std::string& name, uint64_t& count, const std::string& dir) {};
 }
 
 LogAction createNormalLogger() {
-    return [](const std::string& name, uint64_t& count, const std::string& arrow) {
-        spdlog::debug("[protocol] {} {}", arrow, name);
-    };
+    return [](const std::string& name, uint64_t& count, const std::string& arrow) { spdlog::debug("[protocol] {} {}", arrow, name); };
 }
 
 LogAction createThrottledLogger(uint32_t first_n, uint32_t every_m) {
@@ -68,18 +65,15 @@ void BuildRegistry() {
                 std::regex pattern(rule["match"].as<std::string>());
                 if (std::regex_match(name, pattern)) {
                     std::string action = rule["action"].as<std::string>();
-                    
+
                     if (action == "throttle") {
-                        registry[event_type] = createThrottledLogger(
-                            rule["first_n"].as<uint32_t>(), 
-                            rule["every_m"].as<uint32_t>()
-                        );
+                        registry[event_type] = createThrottledLogger(rule["first_n"].as<uint32_t>(), rule["every_m"].as<uint32_t>());
                     } else if (action == "none") {
                         registry[event_type] = createNoOpLogger();
                     }
-                    
+
                     matched = true;
-                    break; 
+                    break;
                 }
             }
         }
@@ -194,9 +188,9 @@ void InitLogger() {
 
 void ExecuteLog(CARTA::EventType type, uint64_t& count, const std::string& arrow) {
     std::lock_guard<std::mutex> lock(registry_mutex);
-    
+
     count++; // Increments the specific map passed in
-    
+
     auto it = registry.find(type);
     if (it != registry.end()) {
         it->second(CARTA::EventType_Name(type), count, arrow);
@@ -204,12 +198,14 @@ void ExecuteLog(CARTA::EventType type, uint64_t& count, const std::string& arrow
 }
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (!log_protocol_messages) return;
+    if (!log_protocol_messages)
+        return;
     ExecuteLog(event_type, inbound_counts[event_type], "<==");
 }
 
 void LogSentEventType(const CARTA::EventType& event_type) {
-    if (!log_protocol_messages) return;
+    if (!log_protocol_messages)
+        return;
     ExecuteLog(event_type, outbound_counts[event_type], "==>");
 }
 
