@@ -9,24 +9,89 @@
 #include "Main/ProgramSettings.h"
 
 #include <string>
+#include <functional>
+#include <yaml-cpp/yaml.h>
+#include <regex>
 
 namespace carta {
 namespace logger {
 
 static bool log_protocol_messages(false);
 
-struct Throttler {
-    uint64_t count = 0;
-    bool should_log(uint32_t first_n, uint32_t every_m) {
-        count++;
-        return (count <= first_n || count % every_m == 0);
+using LogAction = std::function<void(const std::string& name, uint64_t& count, const std::string& dir)>;
+
+static std::unordered_map<CARTA::EventType, LogAction> registry;
+static std::mutex registry_mutex;
+static std::unordered_map<CARTA::EventType, uint64_t> inbound_counts;
+static std::unordered_map<CARTA::EventType, uint64_t> outbound_counts;
+
+
+LogAction createNoOpLogger() {
+    return [](const std::string& name, uint64_t& count, const std::string& dir) {};
+}
+
+LogAction createNormalLogger() {
+    return [](const std::string& name, uint64_t& count, const std::string& arrow) {
+        spdlog::debug("[protocol] {} {}", arrow, name);
+    };
+}
+
+LogAction createThrottledLogger(uint32_t first_n, uint32_t every_m) {
+    return [first_n, every_m](const std::string& name, uint64_t& count, const std::string& dir) {
+        if (count <= first_n || count % every_m == 0) {
+            std::string suffix = (count > first_n) ? fmt::format(" (Total: {})", count) : "";
+            spdlog::debug("[protocol] {} {}{}", dir, name, suffix);
+        }
+    };
+}
+
+void BuildRegistry() {
+    YAML::Node config;
+    try {
+        config = YAML::LoadFile("logging_rules.yaml");
+    } catch (const std::exception& e) {
+        spdlog::error("Config load failed: {}. All events set to 'normal'.", e.what());
     }
-};
 
-static std::unordered_map<CARTA::EventType, Throttler> inbound_throttlers;
-static std::unordered_map<CARTA::EventType, Throttler> outbound_throttlers;
+    auto rules = config["rules"];
+    auto* descriptor = CARTA::EventType_descriptor();
 
+    for (int i = 0; i < descriptor->value_count(); ++i) {
+        auto* value = descriptor->value(i);
+        auto event_type = static_cast<CARTA::EventType>(value->number());
+        std::string name = value->name();
+
+        bool matched = false;
+
+        if (config["rules"]) {
+            for (auto rule : rules) {
+                std::regex pattern(rule["match"].as<std::string>());
+                if (std::regex_match(name, pattern)) {
+                    std::string action = rule["action"].as<std::string>();
+                    
+                    if (action == "throttle") {
+                        registry[event_type] = createThrottledLogger(
+                            rule["first_n"].as<uint32_t>(), 
+                            rule["every_m"].as<uint32_t>()
+                        );
+                    } else if (action == "none") {
+                        registry[event_type] = createNoOpLogger();
+                    }
+                    
+                    matched = true;
+                    break; 
+                }
+            }
+        }
+
+        if (!matched || !registry.count(event_type)) {
+            registry[event_type] = createNormalLogger();
+        }
+    }
+}
 void InitLogger() {
+    BuildRegistry();
+
     // Copy parameters from the global settings
     auto& settings = ProgramSettings::GetInstance();
     log_protocol_messages = settings.log_protocol_messages;
@@ -127,36 +192,25 @@ void InitLogger() {
     spdlog::flush_every(std::chrono::seconds(3));
 }
 
-void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (!log_protocol_messages)
-        return;
-
-    auto& throttler = inbound_throttlers[event_type];
-    auto event_name = CARTA::EventType_Name(event_type);
-
-    if (event_type == CARTA::EventType::OPEN_FILE || event_type == CARTA::EventType::REGISTER_VIEWER ||
-        event_type == CARTA::EventType::CLOSE_FILE) {
-        spdlog::info("[protocol] <== {}", event_name);
-        return;
-    }
-
-    if (throttler.should_log(5, 100)) {
-        std::string suffix = (throttler.count > 5) ? fmt::format(" (Total: {})", throttler.count) : "";
-        spdlog::debug("[protocol] <== {}{}", event_name, suffix);
+void ExecuteLog(CARTA::EventType type, uint64_t& count, const std::string& arrow) {
+    std::lock_guard<std::mutex> lock(registry_mutex);
+    
+    count++; // Increments the specific map passed in
+    
+    auto it = registry.find(type);
+    if (it != registry.end()) {
+        it->second(CARTA::EventType_Name(type), count, arrow);
     }
 }
 
+void LogReceivedEventType(const CARTA::EventType& event_type) {
+    if (!log_protocol_messages) return;
+    ExecuteLog(event_type, inbound_counts[event_type], "<==");
+}
+
 void LogSentEventType(const CARTA::EventType& event_type) {
-    if (!log_protocol_messages)
-        return;
-
-    auto& throttler = outbound_throttlers[event_type];
-    auto event_name = CARTA::EventType_Name(event_type);
-
-    if (throttler.should_log(5, 100)) {
-        std::string suffix = (throttler.count > 5) ? fmt::format(" (Total: {})", throttler.count) : "";
-        spdlog::debug("[protocol] ==> {}{}", event_name, suffix);
-    }
+    if (!log_protocol_messages) return;
+    ExecuteLog(event_type, outbound_counts[event_type], "==>");
 }
 
 void FlushLogFile() {

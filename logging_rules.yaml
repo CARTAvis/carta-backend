@@ -1,0 +1,22 @@
+# CARTA Protocol Throttling Rules
+# Note: Rules are checked in order; first match wins.
+
+rules:
+  # High-volume streaming data (Outbound)
+  - match: ".*TILE_DATA|SPATIAL_PROFILE_DATA"
+    action: "throttle"
+    first_n: 3
+    every_m: 500
+
+  # High-frequency UI/State updates (Inbound)
+  - match: "SET_CURSOR|SET_SPATIAL_REQUIREMENTS"
+    action: "throttle"
+    first_n: 5
+    every_m: 100
+
+  # Noisy keep-alive/pings (Either)
+  - match: "EVENT_LOOP_.*"
+    action: "none"
+
+# Default for everything else (like OPEN_FILE, etc)
+default_action: "normal"
