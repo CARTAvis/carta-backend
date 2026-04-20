@@ -8,6 +8,7 @@
 #define CARTA_SRC_MAIN_PROGRAMSETTINGS_H_
 
 #include <iostream>
+#include <regex>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -30,6 +31,7 @@
 #endif
 
 namespace carta {
+
 struct ProgramSettings {
     static ProgramSettings& GetInstance() {
         static ProgramSettings settings;
@@ -61,6 +63,8 @@ struct ProgramSettings {
     bool no_log = false;
     bool log_performance = false;
     bool log_protocol_messages = false;
+    std::string log_config_path;
+    nlohmann::json log_config_data;
     int verbosity = 4;
     int wait_time = -1;
     int init_wait_time = -1;

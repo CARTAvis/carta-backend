@@ -138,6 +138,8 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
         ("log_performance", "enable performance debug logs", cxxopts::value<bool>())
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
+        ("log_config_json", "Path to a custom JSON configuration file", 
+         cxxopts::value<std::string>(log_config_path))
         ("no_frontend", "disable built-in HTTP frontend interface", cxxopts::value<bool>())
         ("no_database", "disable built-in HTTP database interface", cxxopts::value<bool>())
         ("http_url_prefix", "custom URL prefix for HTTP server", cxxopts::value<string>(), "")
@@ -169,9 +171,25 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
 
     options.positional_help("<file or folder to open>");
     options.parse_positional("files");
-    auto result = options.parse(argc, argv);
 
-    std::string log_levels(R"(
+    if (!log_config_path.empty()) {
+        std::ifstream inputFile(log_config_path);
+        if (inputFile.is_open()) {
+            try {
+                inputFile >> log_config_data;
+                std::cout << "Successfully loaded custom config from: " << log_config_path << std::endl;
+            } catch (const nlohmann::json::parse_error& e) {
+                std::cerr << "Error parsing JSON file: " << e.what() << std::endl;
+            }
+        } else {
+            std::cerr << "Could not open file: " << log_config_path << std::endl;
+        }
+    }
+}
+
+auto result = options.parse(argc, argv);
+
+std::string log_levels(R"(
  0   off
  1   critical
  2   error
@@ -179,7 +197,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
  4   info
  5   debug)");
 
-    std::string extra = fmt::format(R"(
+std::string extra = fmt::format(R"(
 By default the CARTA backend uses the current directory as the starting data 
 folder, and uses the root of the filesystem (/) as the top-level data folder. If 
 a custom top-level folder is set with 'top_level_folder', the backend will be 
@@ -235,115 +253,115 @@ saving regions or generated images).
 'no_user_config' and 'no_system_config' may be used to ignore the user and 
 global configuration files, respectively.
 )",
-        CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
+    CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
 
-    for (const auto& [name, msg] : deprecated_options) {
-        if (result.count(name)) {
-            AddDeprecationWarning(name, "commandline parameters");
-        }
+for (const auto& [name, msg] : deprecated_options) {
+    if (result.count(name)) {
+        AddDeprecationWarning(name, "commandline parameters");
     }
+}
 
-    if (result.count("version")) {
-        std::cout << VERSION_ID << std::endl;
-        version = true;
-        return;
-    } else if (result.count("help")) {
-        std::cout << options.help() << extra;
-        help = true;
-        return;
-    }
+if (result.count("version")) {
+    std::cout << VERSION_ID << std::endl;
+    version = true;
+    return;
+} else if (result.count("help")) {
+    std::cout << options.help() << extra;
+    help = true;
+    return;
+}
 
-    verbosity = result["verbosity"].as<int>();
-    no_log = result["no_log"].as<bool>();
-    log_performance = result["log_performance"].as<bool>();
-    log_protocol_messages = result["log_protocol_messages"].as<bool>();
+verbosity = result["verbosity"].as<int>();
+no_log = result["no_log"].as<bool>();
+log_performance = result["log_performance"].as<bool>();
+log_protocol_messages = result["log_protocol_messages"].as<bool>();
 
-    no_http = result["no_http"].as<bool>(); // deprecated
-    no_database = result["no_database"].as<bool>();
-    no_frontend = result["no_frontend"].as<bool>();
-    debug_no_auth = result["debug_no_auth"].as<bool>();
-    no_runtime_config = result["no_runtime_config"].as<bool>();
-    controller_deployment = result["controller_deployment"].as<bool>();
-    no_browser = result["no_browser"].as<bool>();
-    read_only_mode = result["read_only_mode"].as<bool>();
-    enable_scripting = result["enable_scripting"].as<bool>();
+no_http = result["no_http"].as<bool>(); // deprecated
+no_database = result["no_database"].as<bool>();
+no_frontend = result["no_frontend"].as<bool>();
+debug_no_auth = result["debug_no_auth"].as<bool>();
+no_runtime_config = result["no_runtime_config"].as<bool>();
+controller_deployment = result["controller_deployment"].as<bool>();
+no_browser = result["no_browser"].as<bool>();
+read_only_mode = result["read_only_mode"].as<bool>();
+enable_scripting = result["enable_scripting"].as<bool>();
 
-    no_user_config = result.count("no_user_config") != 0;
-    no_system_config = result.count("no_system_config") != 0;
+no_user_config = result.count("no_user_config") != 0;
+no_system_config = result.count("no_system_config") != 0;
 
-    applyOptionalArgument(top_level_folder, "root", result);
-    // Override deprecated "root" argument
-    applyOptionalArgument(top_level_folder, "top_level_folder", result);
+applyOptionalArgument(top_level_folder, "root", result);
+// Override deprecated "root" argument
+applyOptionalArgument(top_level_folder, "top_level_folder", result);
 
-    applyOptionalArgument(frontend_folder, "frontend_folder", result);
-    applyOptionalArgument(host, "host", result);
-    applyOptionalArgument(port, "port", result);
+applyOptionalArgument(frontend_folder, "frontend_folder", result);
+applyOptionalArgument(host, "host", result);
+applyOptionalArgument(port, "port", result);
 
-    applyOptionalArgument(http_url_prefix, "http_url_prefix", result);
+applyOptionalArgument(http_url_prefix, "http_url_prefix", result);
 
-    applyOptionalArgument(omp_thread_count, "omp_threads", result);
-    applyOptionalArgument(wait_time, "exit_timeout", result);
-    applyOptionalArgument(init_wait_time, "initial_timeout", result);
+applyOptionalArgument(omp_thread_count, "omp_threads", result);
+applyOptionalArgument(wait_time, "exit_timeout", result);
+applyOptionalArgument(init_wait_time, "initial_timeout", result);
 
-    applyOptionalArgument(idle_session_wait_time, "idle_timeout", result);
+applyOptionalArgument(idle_session_wait_time, "idle_timeout", result);
 
-    applyOptionalArgument(browser, "browser", result);
+applyOptionalArgument(browser, "browser", result);
 
-    // base will be overridden by the positional argument if it exists and is a folder
-    applyOptionalArgument(starting_folder, "base", result);
+// base will be overridden by the positional argument if it exists and is a folder
+applyOptionalArgument(starting_folder, "base", result);
 
-    for (const auto& arg : positional_arguments) {
-        fs::path p(arg);
-        std::error_code error_code;
-        if (fs::exists(p, error_code)) {
-            if (fs::is_directory(p, error_code)) {
-                auto image_type = casacore::ImageOpener::imageType(p.string());
-                if (image_type == casacore::ImageOpener::AIPSPP || image_type == casacore::ImageOpener::MIRIAD ||
-                    image_type == casacore::ImageOpener::IMAGECONCAT || image_type == casacore::ImageOpener::IMAGEEXPR ||
-                    image_type == casacore::ImageOpener::COMPLISTIMAGE) {
-                    file_paths.push_back(p);
-                } else {
-                    starting_folder = p.string();
-                    // Exit loop after first folder has been found and remove all existing files
-                    file_paths.clear();
-                    break;
-                }
-            } else if (!fs::is_regular_file(p, error_code)) {
-                // Ignore invalid files
+for (const auto& arg : positional_arguments) {
+    fs::path p(arg);
+    std::error_code error_code;
+    if (fs::exists(p, error_code)) {
+        if (fs::is_directory(p, error_code)) {
+            auto image_type = casacore::ImageOpener::imageType(p.string());
+            if (image_type == casacore::ImageOpener::AIPSPP || image_type == casacore::ImageOpener::MIRIAD ||
+                image_type == casacore::ImageOpener::IMAGECONCAT || image_type == casacore::ImageOpener::IMAGEEXPR ||
+                image_type == casacore::ImageOpener::COMPLISTIMAGE) {
+                file_paths.push_back(p);
+            } else {
+                starting_folder = p.string();
+                // Exit loop after first folder has been found and remove all existing files
                 file_paths.clear();
                 break;
-            } else {
-                file_paths.push_back(p);
             }
-        } else {
+        } else if (!fs::is_regular_file(p, error_code)) {
             // Ignore invalid files
             file_paths.clear();
+            break;
+        } else {
+            file_paths.push_back(p);
         }
+    } else {
+        // Ignore invalid files
+        file_paths.clear();
     }
+}
 
-    // produce JSON for overridding system and user configuration;
-    // Options here need to match all options available for system and user settings
-    command_line_settings = json({}); // needs to have empty JSON at least in case of no command line options
-    for (const auto& [key, elem] : int_keys_map) {
-        if (result.count(key)) {
-            command_line_settings[key] = result[key].as<int>();
-        }
+// produce JSON for overridding system and user configuration;
+// Options here need to match all options available for system and user settings
+command_line_settings = json({}); // needs to have empty JSON at least in case of no command line options
+for (const auto& [key, elem] : int_keys_map) {
+    if (result.count(key)) {
+        command_line_settings[key] = result[key].as<int>();
     }
-    for (const auto& [key, elem] : bool_keys_map) {
-        if (result.count(key)) {
-            command_line_settings[key] = result[key].as<bool>();
-        }
+}
+for (const auto& [key, elem] : bool_keys_map) {
+    if (result.count(key)) {
+        command_line_settings[key] = result[key].as<bool>();
     }
-    for (const auto& [key, elem] : strings_keys_map) {
-        if (result.count(key)) {
-            command_line_settings[key] = result[key].as<std::string>();
-        }
+}
+for (const auto& [key, elem] : strings_keys_map) {
+    if (result.count(key)) {
+        command_line_settings[key] = result[key].as<std::string>();
     }
-    for (const auto& [key, elem] : vector_int_keys_map) {
-        if (result.count(key)) {
-            command_line_settings[key] = result[key].as<std::vector<int>>();
-        }
+}
+for (const auto& [key, elem] : vector_int_keys_map) {
+    if (result.count(key)) {
+        command_line_settings[key] = result[key].as<std::vector<int>>();
     }
+}
 }
 
 void ProgramSettings::ApplyJSONSettings() {

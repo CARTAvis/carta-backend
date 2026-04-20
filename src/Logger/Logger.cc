@@ -8,8 +8,8 @@
 
 #include "Main/ProgramSettings.h"
 
-#include <yaml-cpp/yaml.h>
 #include <functional>
+#include <nlohmann/json.hpp>
 #include <regex>
 #include <string>
 
@@ -43,31 +43,26 @@ LogAction createThrottledLogger(uint32_t first_n, uint32_t every_m) {
 }
 
 void BuildRegistry() {
-    YAML::Node config;
-    try {
-        config = YAML::LoadFile("logging_rules.yaml");
-    } catch (const std::exception& e) {
-        spdlog::error("Config load failed: {}. All events set to 'normal'.", e.what());
-    }
+    auto& settings = ProgramSettings::GetInstance();
 
-    auto rules = config["rules"];
     auto* descriptor = CARTA::EventType_descriptor();
 
-    for (int i = 0; i < descriptor->value_count(); ++i) {
-        auto* value = descriptor->value(i);
-        auto event_type = static_cast<CARTA::EventType>(value->number());
-        std::string name = value->name();
+    if (settings.log_config_data.contains("rules") && settings.log_config_data["rules"].is_array()) {
+        for (int i = 0; i < descriptor->value_count(); ++i) {
+            auto* value = descriptor->value(i);
+            auto event_type = static_cast<CARTA::EventType>(value->number());
+            std::string name = value->name();
 
-        bool matched = false;
+            bool matched = false;
 
-        if (config["rules"]) {
-            for (auto rule : rules) {
-                std::regex pattern(rule["match"].as<std::string>());
+            for (const auto& rule : settings.log_config_data["rules"]) {
+                std::regex pattern(rule.value("match", ""));
+
                 if (std::regex_match(name, pattern)) {
-                    std::string action = rule["action"].as<std::string>();
+                    std::string action = rule.value("action", "normal");
 
                     if (action == "throttle") {
-                        registry[event_type] = createThrottledLogger(rule["first_n"].as<uint32_t>(), rule["every_m"].as<uint32_t>());
+                        registry[event_type] = createThrottledLogger(rule.value("first_n", 5), rule.value("every_m", 100));
                     } else if (action == "none") {
                         registry[event_type] = createNoOpLogger();
                     }
@@ -76,13 +71,14 @@ void BuildRegistry() {
                     break;
                 }
             }
-        }
 
-        if (!matched || !registry.count(event_type)) {
-            registry[event_type] = createNormalLogger();
+            if (!matched) {
+                registry[event_type] = createNormalLogger();
+            }
         }
     }
 }
+
 void InitLogger() {
     BuildRegistry();
 
