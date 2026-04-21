@@ -24,8 +24,25 @@ runs:
         echo "CARTA_BACKEND_PID=$!" >> $GITHUB_ENV
       shell: bash
 
+    - name: Wait for carta-backend to be ready
+      run: |
+        PORT=${{ inputs.port }}
+        for i in {1..30}; do
+          if nc -z 127.0.0.1 "$PORT"; then
+            echo "Backend is up on port $PORT (attempt $i)"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "Backend failed to start on port $PORT"
+        tail -50 ~/.carta/log/carta.log || true
+        exit 1
+      shell: bash
+
     - name: ICD tests
       run: |
+        SRC_DIR=$GITHUB_WORKSPACE/source
+        BUILD_DIR=$GITHUB_WORKSPACE/build
         ICD_DIR=$GITHUB_WORKSPACE/ICD-RxJS
         cd $ICD_DIR
         for test_file in $(cat ICD_test_stages/${{ inputs.test_stage_name }}.tests); do
@@ -33,7 +50,29 @@ runs:
             echo "$test_file 1st attempt: PASS"
           else
             echo "Failed: $test_file - retrying ..."
-            sleep 3
+            if ! pgrep carta_backend > /dev/null; then
+              echo "Backend has crashed, restarting before retry ..."
+              tail -50 ~/.carta/log/carta.log || true
+              cd $BUILD_DIR
+              ASAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan.supp \
+              LSAN_OPTIONS=suppressions=$SRC_DIR/debug/asan/myasan-leaks.supp \
+              ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+              ./carta_backend /images --top_level_folder /images \
+              --port ${{ inputs.port }} \
+              --omp_threads=4 --debug_no_auth --no_frontend --no_database --verbosity=5 &
+              echo "CARTA_BACKEND_PID=$!" >> $GITHUB_ENV
+              PORT=${{ inputs.port }}
+              for i in {1..30}; do
+                if nc -z 127.0.0.1 "$PORT"; then
+                  echo "Backend restarted on port $PORT (attempt $i)"
+                  break
+                fi
+                sleep 1
+              done
+              cd $ICD_DIR
+            else
+              sleep 3
+            fi
             CI=true npm test "$test_file"
           fi
           sleep 3 && pgrep carta_backend
