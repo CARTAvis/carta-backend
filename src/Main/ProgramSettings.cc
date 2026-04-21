@@ -172,20 +172,6 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
     options.positional_help("<file or folder to open>");
     options.parse_positional("files");
 
-    if (!log_config_path.empty()) {
-        std::ifstream inputFile(log_config_path);
-        if (inputFile.is_open()) {
-            try {
-                inputFile >> log_config_data;
-                std::cout << "Successfully loaded custom config from: " << log_config_path << std::endl;
-            } catch (const nlohmann::json::parse_error& e) {
-                std::cerr << "Error parsing JSON file: " << e.what() << std::endl;
-            }
-        } else {
-            std::cerr << "Could not open file: " << log_config_path << std::endl;
-        }
-    }
-
     auto result = options.parse(argc, argv);
 
     std::string log_levels(R"(

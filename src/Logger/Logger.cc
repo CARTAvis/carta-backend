@@ -8,6 +8,7 @@
 
 #include "Main/ProgramSettings.h"
 
+#include <fstream>
 #include <functional>
 #include <nlohmann/json.hpp>
 #include <regex>
@@ -44,8 +45,21 @@ LogAction createThrottledLogger(uint32_t first_n, uint32_t every_m) {
 
 void BuildRegistry() {
     auto& settings = ProgramSettings::GetInstance();
-
     auto* descriptor = CARTA::EventType_descriptor();
+
+    if (!settings.log_config_path.empty()) {
+        std::ifstream inputFile(settings.log_config_path);
+        if (inputFile.is_open()) {
+            try {
+                inputFile >> settings.log_config_data;
+                spdlog::info("Successfully loaded custom config from: {}", settings.log_config_path);
+            } catch (const nlohmann::json::parse_error& e) {
+                spdlog::info("Error parsing JSON file: {}", e.what());
+            }
+        } else {
+            spdlog::debug("Could not open file: {}", settings.log_config_path);
+        }
+    }
 
     if (settings.log_config_data.contains("rules") && settings.log_config_data["rules"].is_array()) {
         for (int i = 0; i < descriptor->value_count(); ++i) {
