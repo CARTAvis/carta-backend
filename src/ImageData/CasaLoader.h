@@ -115,6 +115,8 @@ void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
                 const casacore::Slicer slicer(blc, trc, casacore::Slicer::endIsLast);
                 casacore::Array<float> tempSlice = _image->getSlice(casacore::Slicer(blc, trc, casacore::Slicer::endIsLast));
 
+                std::cout << "DEBUG : ndim = " << ndim << "tempSlice.ndim() = " << tempSlice.ndim() << std::endl;
+
                 std::cout << "Value at origin: " << tempSlice(casacore::IPosition(tempSlice.ndim(), 0)) << std::endl;
 
                 std::cout << "Full slice contents: " << tempSlice << std::endl;
@@ -123,6 +125,8 @@ void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
                 // Assuming a 2D image. If 4D, use casacore::IPosition(4, 158, 172, 0, 0)
                 int x = 158, y = 172;
                 casacore::IPosition coord(ndim, 0);
+                x = 0;
+                y = 0;
                 coord(0) = x; // X
                 coord(1) = y; // Y
                 // Set other dimensions (Stokes, Freq) to 0 if they exist

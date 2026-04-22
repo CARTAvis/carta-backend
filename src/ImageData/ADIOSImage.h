@@ -81,6 +81,8 @@ public:
 
     virtual casacore::Bool doGetSlice(casacore::Array<T>& buffer, const casacore::Slicer& theSlice);
 
+    virtual casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& theSlice);
+
     virtual void doPutSlice(const casacore::Array<T>& sourceBuffer, const casacore::IPosition& where, const casacore::IPosition& stride);
 
     virtual const casacore::LatticeRegion* getRegionPtr() const;
@@ -112,6 +114,7 @@ private:
     void reopenRW();
 
     casacore::ArrayColumn<T> map_p;
+    casacore::ArrayColumn<bool> mask_p;
     casacore::Table tab_p;
     casacore::LatticeRegion* regionPtr_p;
     casacore::uInt row_p;

@@ -104,6 +104,7 @@ ADIOSImage<T>::ADIOSImage(
     : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)), regionPtr_p(0) {
     tab_p = casacore::Table(filename, casacore::Table::TableOption::Old);
     map_p = casacore::ArrayColumn<T>(tab_p, "map");
+    mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
     row_p = rowNumber;
     config = configname;
     attach_logtable();
@@ -119,6 +120,7 @@ ADIOSImage<T>::ADIOSImage(askapparallel::AskapParallel& comms, const casacore::S
     adios_comm = comms.interGroupCommIndex();
     tab_p = casacore::Table(filename, casacore::Table::TableOption::Old);
     map_p = casacore::ArrayColumn<T>(tab_p, "map");
+    mask_p = casacore::ArrayColumn<T>(tab_p, "mask");
     row_p = rowNumber;
     config = configname;
     restoreAll(tab_p.keywordSet());
@@ -127,7 +129,8 @@ ADIOSImage<T>::ADIOSImage(askapparallel::AskapParallel& comms, const casacore::S
 #endif
 
 template <class T>
-ADIOSImage<T>::ADIOSImage(const ADIOSImage<T>& other) : casacore::ImageInterface<T>(other), map_p(other.map_p), regionPtr_p(0) {
+ADIOSImage<T>::ADIOSImage(const ADIOSImage<T>& other)
+    : casacore::ImageInterface<T>(other), map_p(other.map_p), mask_p(other.mask_p), regionPtr_p(0) {
     if (other.regionPtr_p != 0) {
         regionPtr_p = new casacore::LatticeRegion(*other.regionPtr_p);
     }
@@ -142,6 +145,8 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
     casacore::TableDesc description;
     // PJE - why are we adding a hard-coded string???
     description.addColumn(casacore::ArrayColumnDesc<T>("map", casacore::String("version 4.0"), latShape, casacore::ColumnDesc::FixedShape));
+    description.addColumn(
+        casacore::ArrayColumnDesc<T>("mask", casacore::String("version 4.0"), latShape, casacore::ColumnDesc::FixedShape));
 
     casacore::SetupNewTable newtab(filename, description, casacore::Table::New);
 
@@ -158,11 +163,18 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
         // with default engine type and parameters
 #ifdef ADIOS2_USE_MPI
         // if mpi then using MPI_COMM_SELF for writing
-        casacore::Adios2StMan stman(adios_comm, "", {}, {{}}, {{{"Variable", "map"}, {}, {}}});
+        // casacore::Adios2StMan stman(adios_comm, "", {}, {{}}, {{{"Variable", "map"}, {}, {}}});
+        casacore::Adios2StMan stman(adios_comm, "", {}, {{}, {}}, // Added a second empty block to match the two columns
+            {{{"Variable", "map"}, {}, {}}, {{"Variable", "mask"}, {}, {}}});
         newtab.bindColumn("map", stman);
+        newtab.bindColumn("mask", stman);
 #else
-        casacore::Adios2StMan stman("", {}, {{}}, {{{"Variable", "map"}, {}, {}}});
+        // casacore::Adios2StMan stman("", {}, {{}}, {{{"Variable", "map"}, {}, {}}});
+        casacore::Adios2StMan stman("", {}, {{}, {}}, // Added a second empty block to match the two columns
+            {{{"Variable", "map"}, {}, {}}, {{"Variable", "mask"}, {}, {}}});
+
         newtab.bindColumn("map", stman);
+        newtab.bindColumn("mask", stman);
 #endif
     } else {
         // invoke configuration based call
@@ -171,9 +183,11 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
 #ifdef ADIOS2_USE_MPI
         casacore::Adios2StMan stman(adios_comm, config, from_config);
         newtab.bindColumn("map", stman);
+        newtab.bindColumn("mask", stman);
 #else
         casacore::Adios2StMan stman(config, from_config);
         newtab.bindColumn("map", stman);
+        newtab.bindColumn("mask", stman);
 #endif
     }
 
@@ -185,6 +199,8 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
     casacore::Table tab(newtab);
 #endif
     tab_p = tab;
+
+    // MAP :
     casacore::ArrayColumn<T> arrayCol(tab_p, "map");
     const casacore::uInt rows = tab_p.nrow();
     if ((rowNumber + 1) > rows) {
@@ -194,6 +210,17 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
         }
     }
     map_p = arrayCol;
+
+    // MASK :
+    casacore::ArrayColumn<T> arrayColMask(tab_p, "mask");
+    rows = tab_p.nrow();
+    if ((rowNumber + 1) > rows) {
+        tab_p.addRow(rowNumber - rows + 1);
+        for (casacore::rownr_t row = rows; row <= rowNumber - rows; row++) {
+            arrayColMask.setShape(row, latShape);
+        }
+    }
+    mask_p = arrayColMask;
 }
 
 template <class T>
@@ -432,6 +459,12 @@ casacore::Bool ADIOSImage<T>::doGetSlice(casacore::Array<T>& buffer, const casac
 }
 
 template <class T>
+casacore::Bool ADIOSImage<T>::doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& theSlice) {
+    mask_p.getSlice(row_p, theSlice, buffer, casacore::True);
+    return casacore::False;
+}
+
+template <class T>
 void ADIOSImage<T>::doPutSlice(
     const casacore::Array<T>& sourceBuffer, const casacore::IPosition& where, const casacore::IPosition& stride) {
     const casacore::uInt arrDim = sourceBuffer.ndim();
@@ -466,6 +499,7 @@ void ADIOSImage<T>::resize(const casacore::TiledShape& newShape) {
     }
     casacore::IPosition tileShape = newShape.tileShape();
     map_p.setShape(row_p, newShape.shape(), tileShape);
+    mask_p.setShape(row_p, newShape.shape(), tileShape);
 }
 
 template <class T>
@@ -478,12 +512,14 @@ void ADIOSImage<T>::reopenRW() {
     if (!tab_p.isWritable()) {
         tab_p.reopenRW();
         map_p = casacore::ArrayColumn<T>(tab_p, "map");
+        mask_p = casacore::ArrayColumn<T>(tab_p, "mask");
     }
 }
 
 template <class T>
 void ADIOSImage<T>::reopenColumn() {
     map_p = casacore::ArrayColumn<T>(tab_p, "map");
+    mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
 }
 
 template <class T>
