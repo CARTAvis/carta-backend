@@ -105,7 +105,7 @@ void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
             std::cout << "DEBUG : filename " << _filename << " isAdios = " << isADIOS << std::endl;
             if (isADIOS) {
                 _image.reset(new ADIOSImage<float>(_filename));
-                /* test code to show values:
+                // test code to show values:
                 casacore::IPosition imageShape = _image->shape();
                 int ndim = imageShape.nelements();
 
@@ -135,8 +135,7 @@ void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
                 casacore::Array<float> pixelArray = _image->getSlice(singlePixelSlicer);
 
                 // Accessing the result (the array is size 1, so index is 0)
-                std::cout << "Value via Slicer: " << pixelArray(casacore::IPosition(ndim, 0)) << std::endl;
-                */
+                std::cout << "Value via Slicer: " << pixelArray(casacore::IPosition(ndim, 0)) << std::endl;                
             } else {
                 _image.reset(new casacore::PagedImage<float>(_filename));
             }
