@@ -64,7 +64,6 @@ struct ProgramSettings {
     bool log_performance = false;
     bool log_protocol_messages = false;
     std::string log_config_path;
-    nlohmann::json log_config_data;
     int verbosity = 4;
     int wait_time = -1;
     int init_wait_time = -1;

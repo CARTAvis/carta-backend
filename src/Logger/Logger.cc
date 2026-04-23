@@ -47,11 +47,13 @@ void BuildRegistry() {
     auto& settings = ProgramSettings::GetInstance();
     auto* descriptor = CARTA::EventType_descriptor();
 
+    nlohmann::json config_data;
+
     if (!settings.log_config_path.empty()) {
         std::ifstream inputFile(settings.log_config_path);
         if (inputFile.is_open()) {
             try {
-                inputFile >> settings.log_config_data;
+                inputFile >> config_data;
                 spdlog::info("Successfully loaded custom config from: {}", settings.log_config_path);
             } catch (const nlohmann::json::parse_error& e) {
                 spdlog::info("Error parsing JSON file: {}", e.what());
@@ -61,7 +63,7 @@ void BuildRegistry() {
         }
     }
 
-    if (settings.log_config_data.contains("rules") && settings.log_config_data["rules"].is_array()) {
+    if (config_data.contains("rules") && config_data["rules"].is_array()) {
         for (int i = 0; i < descriptor->value_count(); ++i) {
             auto* value = descriptor->value(i);
             auto event_type = static_cast<CARTA::EventType>(value->number());
@@ -69,7 +71,7 @@ void BuildRegistry() {
 
             bool matched = false;
 
-            for (const auto& rule : settings.log_config_data["rules"]) {
+            for (const auto& rule : config_data["rules"]) {
                 std::regex pattern(rule.value("match", ""));
 
                 if (std::regex_match(name, pattern)) {
