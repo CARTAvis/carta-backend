@@ -454,12 +454,14 @@ casacore::Bool ADIOSImage<T>::ok() const {
 
 template <class T>
 casacore::Bool ADIOSImage<T>::doGetSlice(casacore::Array<T>& buffer, const casacore::Slicer& theSlice) {
+    printf("DEBUG : ADIOSImage<T>::doGetSlice row_p = %d\n", row_p);
     map_p.getSlice(row_p, theSlice, buffer, casacore::True);
     return casacore::False;
 }
 
 template <class T>
 casacore::Bool ADIOSImage<T>::doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& theSlice) {
+    printf("DEBUG : ADIOSImage<T>::doGetMaskSlice row_p = %d\n", row_p);
     mask_p.getSlice(row_p, theSlice, buffer, casacore::True);
     return casacore::False;
 }
