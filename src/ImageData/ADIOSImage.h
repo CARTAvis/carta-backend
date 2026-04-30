@@ -114,7 +114,7 @@ private:
     void reopenRW();
 
     casacore::ArrayColumn<T> map_p;
-    casacore::ArrayColumn<bool> mask_p;
+    casacore::ArrayColumn<bool> mask_p; // bool
     casacore::Table tab_p;
     casacore::LatticeRegion* regionPtr_p;
     casacore::uInt row_p;

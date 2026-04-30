@@ -120,7 +120,7 @@ ADIOSImage<T>::ADIOSImage(askapparallel::AskapParallel& comms, const casacore::S
     adios_comm = comms.interGroupCommIndex();
     tab_p = casacore::Table(filename, casacore::Table::TableOption::Old);
     map_p = casacore::ArrayColumn<T>(tab_p, "map");
-    mask_p = casacore::ArrayColumn<T>(tab_p, "mask");
+    mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
     row_p = rowNumber;
     config = configname;
     restoreAll(tab_p.keywordSet());
@@ -146,7 +146,7 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
     // PJE - why are we adding a hard-coded string???
     description.addColumn(casacore::ArrayColumnDesc<T>("map", casacore::String("version 4.0"), latShape, casacore::ColumnDesc::FixedShape));
     description.addColumn(
-        casacore::ArrayColumnDesc<T>("mask", casacore::String("version 4.0"), latShape, casacore::ColumnDesc::FixedShape));
+        casacore::ArrayColumnDesc<bool>("mask", casacore::String("version 4.0"), latShape, casacore::ColumnDesc::FixedShape));
 
     casacore::SetupNewTable newtab(filename, description, casacore::Table::New);
 
@@ -212,7 +212,7 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
     map_p = arrayCol;
 
     // MASK :
-    casacore::ArrayColumn<T> arrayColMask(tab_p, "mask");
+    casacore::ArrayColumn<bool> arrayColMask(tab_p, "mask");
     rows = tab_p.nrow();
     if ((rowNumber + 1) > rows) {
         tab_p.addRow(rowNumber - rows + 1);
@@ -454,14 +454,12 @@ casacore::Bool ADIOSImage<T>::ok() const {
 
 template <class T>
 casacore::Bool ADIOSImage<T>::doGetSlice(casacore::Array<T>& buffer, const casacore::Slicer& theSlice) {
-    printf("DEBUG : ADIOSImage<T>::doGetSlice row_p = %d\n", row_p);
     map_p.getSlice(row_p, theSlice, buffer, casacore::True);
     return casacore::False;
 }
 
 template <class T>
 casacore::Bool ADIOSImage<T>::doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& theSlice) {
-    printf("DEBUG : ADIOSImage<T>::doGetMaskSlice row_p = %d\n", row_p);
     mask_p.getSlice(row_p, theSlice, buffer, casacore::True);
     return casacore::False;
 }
@@ -514,7 +512,7 @@ void ADIOSImage<T>::reopenRW() {
     if (!tab_p.isWritable()) {
         tab_p.reopenRW();
         map_p = casacore::ArrayColumn<T>(tab_p, "map");
-        mask_p = casacore::ArrayColumn<T>(tab_p, "mask");
+        mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
     }
 }
 
