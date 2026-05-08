@@ -102,7 +102,7 @@ TEST_P(ContourTest, VerifyVertices) {
 
         EXPECT_EQ(expected[level].size(), gen_coords.size()) << "Vertex count mismatch for level " << level;
 
-        const double tolerance = 0.01;  // Allow small floating-point differences
+        const double tolerance = 0.01; // Allow small floating-point differences
         for (size_t i = 0; i < std::min(expected[level].size(), gen_coords.size()); ++i) {
             EXPECT_NEAR(expected[level][i].first, gen_coords[i].first, tolerance)
                 << "X coordinate mismatch at vertex " << i << " for level " << level;
@@ -115,10 +115,9 @@ TEST_P(ContourTest, VerifyVertices) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
-    ::testing::Values(
-        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing,
-            {ContourData() / "500x500_contours/level_0.txt", ContourData() / "500x500_contours/level_-1.txt",
-                ContourData() / "500x500_contours/level_1.txt"}},
+    ::testing::Values(ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing,
+                          {ContourData() / "500x500_contours/level_0.txt", ContourData() / "500x500_contours/level_-1.txt",
+                              ContourData() / "500x500_contours/level_1.txt"}},
         ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing,
             {ContourData() / "500x500_nans_contours/level_0.txt", ContourData() / "500x500_nans_contours/level_-1.txt",
                 ContourData() / "500x500_nans_contours/level_1.txt"}},
@@ -144,12 +143,13 @@ INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
             {ContourData() / "500x500_hdf5_gaussian_contours/level_0.txt", ContourData() / "500x500_hdf5_gaussian_contours/level_-1.txt",
                 ContourData() / "500x500_hdf5_gaussian_contours/level_1.txt"}},
         ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur,
-            {ContourData() / "500x500_nans_hdf5_gaussian_contours/level_0.txt", ContourData() / "500x500_nans_hdf5_gaussian_contours/level_-1.txt",
+            {ContourData() / "500x500_nans_hdf5_gaussian_contours/level_0.txt",
+                ContourData() / "500x500_nans_hdf5_gaussian_contours/level_-1.txt",
                 ContourData() / "500x500_nans_hdf5_gaussian_contours/level_1.txt"}},
         ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage,
             {ContourData() / "500x500_hdf5_block_contours/level_0.txt", ContourData() / "500x500_hdf5_block_contours/level_-1.txt",
                 ContourData() / "500x500_hdf5_block_contours/level_1.txt"}},
         ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage,
-            {ContourData() / "500x500_nans_hdf5_block_contours/level_0.txt", ContourData() / "500x500_nans_hdf5_block_contours/level_-1.txt",
-                ContourData() / "500x500_nans_hdf5_block_contours/level_1.txt"}}
-    ));
+            {ContourData() / "500x500_nans_hdf5_block_contours/level_0.txt",
+                ContourData() / "500x500_nans_hdf5_block_contours/level_-1.txt",
+                ContourData() / "500x500_nans_hdf5_block_contours/level_1.txt"}}));
