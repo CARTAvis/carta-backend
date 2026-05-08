@@ -79,7 +79,7 @@ TEST_P(ContourTest, VerifyVertices) {
     auto* bounds = set_contour_params.mutable_image_bounds();
     bounds->set_x_min(0);
     bounds->set_x_max(frame->Width());
-    bounds->set_y_min(0); 
+    bounds->set_y_min(0);
     bounds->set_y_max(frame->Height());
     *set_contour_params.mutable_levels() = {levels.begin(), levels.end()};
     set_contour_params.set_smoothing_mode(params.mode);
