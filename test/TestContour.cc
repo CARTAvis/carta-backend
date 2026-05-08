@@ -73,8 +73,20 @@ TEST_P(ContourTest, VerifyVertices) {
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
 
     std::vector<double> levels{0, -1, 1};
-    auto set_contour_params =
-        Message::SetContourParameters(0, 0, 0, frame->Width(), 0, frame->Height(), levels, params.mode, 4, 4, 8, 100000);
+    CARTA::SetContourParameters set_contour_params;
+    set_contour_params.set_file_id(0);
+    set_contour_params.set_reference_file_id(0);
+    auto* bounds = set_contour_params.mutable_image_bounds();
+    bounds->set_x_min(0);
+    bounds->set_x_max(frame->Width());
+    bounds->set_y_min(0); 
+    bounds->set_y_max(frame->Height());
+    *set_contour_params.mutable_levels() = {levels.begin(), levels.end()};
+    set_contour_params.set_smoothing_mode(params.mode);
+    set_contour_params.set_smoothing_factor(4);
+    set_contour_params.set_decimation_factor(4);
+    set_contour_params.set_compression_level(8);
+    set_contour_params.set_contour_chunk_size(100000);
 
     EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
 
