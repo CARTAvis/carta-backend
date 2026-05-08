@@ -4,9 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <filesystem>
 #include <gtest/gtest.h>
 #include <omp.h>
+#include <filesystem>
 
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
@@ -36,13 +36,13 @@ int main(int argc, char** argv) {
     if (home) {
         settings.user_directory = fs::path(home) / CARTA_USER_FOLDER_PREFIX;
     }
-    
+
     logger::InitLogger();
 
     int result = RUN_ALL_TESTS();
 
     ThreadManager::ExitEventHandlingThreads();
     logger::FlushLogFile();
-    
+
     return result;
 }
