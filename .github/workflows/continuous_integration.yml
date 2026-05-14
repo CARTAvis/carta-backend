@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Clear hooks from workspace before checkout
         run: |
-          rm .git/hooks/*
+          if [ -d .git/hooks ]; then rm .git/hooks/*; fi
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -144,7 +144,7 @@ jobs:
     steps:
       - name: Clear hooks from workspace before checkout
         run: |
-          rm .git/hooks/*
+          if [ -d .git/hooks ]; then rm .git/hooks/*; fi
 
       - name: Checkout
         uses: actions/checkout@v4
