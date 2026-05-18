@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* Fixed error opening HDF5 image with degenerate undefined Stokes axis ([#1594](https://github.com/CARTAvis/carta-backend/issues/1594)).
+
 ### Changed
 * Refactored loader factory to return smart pointers to loaders ([#1597](https://github.com/CARTAvis/carta-backend/pull/1597)).
 

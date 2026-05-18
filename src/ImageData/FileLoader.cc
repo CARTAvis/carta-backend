@@ -216,7 +216,7 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
     }
 
     if (_coord_sys->nPixelAxes() != _num_dims) {
-        message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
+        message = "Error loading image: number of coordinate pixel axes does not match image shape.";
         return false;
     }
 
