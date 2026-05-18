@@ -94,8 +94,8 @@ public:
     // Response messages
     // spectral profile data
     static CARTA::SpectralProfileData SpectralProfileData(int32_t stokes, float progress, int32_t file_id = 0, int32_t region_id = 0);
-    static CARTA::SpectralProfile* AddProfile(CARTA::SpectralProfileData& profile_data, std::string& coordinate,
-        CARTA::StatsType& stats_type, std::vector<double>& values);
+    static CARTA::SpectralProfile* AddProfile(
+        CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type, std::vector<double>& values);
     static CARTA::SpectralProfile* AddProfile(
         CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type, std::vector<float>& values);
 

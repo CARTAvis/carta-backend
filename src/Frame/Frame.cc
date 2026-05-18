@@ -1470,11 +1470,9 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             int xy_count(1);
             if (!Stokes::IsComputed(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
                                                    (start_cursor.y + 0.5), xy_count, _image_mutex)) {
-                                                    
                 // Send final profile message with loaded data
                 auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
-                Message::AddProfile(
-                    profile_message, config.coordinate, config.all_stats[0], spectral_data);
+                Message::AddProfile(profile_message, config.coordinate, config.all_stats[0], spectral_data);
 
                 cb(profile_message);
             } else {
@@ -1553,9 +1551,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     if (progress >= 1.0) {
                         // send final profile message
                         auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
-                        Message::AddProfile(
-                            profile_message, config.coordinate, config.all_stats[0], spectral_data);
-                        
+                        Message::AddProfile(profile_message, config.coordinate, config.all_stats[0], spectral_data);
+
                         cb(profile_message);
                     } else if (dt_profile > dt_partial_update) {
                         // reset profile timer and send partial profile message
@@ -1563,7 +1560,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                         auto profile_message = Message::SpectralProfileData(CurrentStokes(), progress);
                         Message::AddProfile(profile_message, config.coordinate, config.all_stats[0], spectral_data);
-                        
+
                         cb(profile_message);
                     }
                 }

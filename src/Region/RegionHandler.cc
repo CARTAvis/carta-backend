@@ -1522,7 +1522,7 @@ bool RegionHandler::FillSpectralProfileData(
                                 Message::AddProfile(profile_message, coordinate, stats_type, results[stats_type]);
                             }
                         }
-                        
+
                         cb(profile_message); // send (partial profile) data
                     });
             }
