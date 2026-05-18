@@ -1512,7 +1512,17 @@ bool RegionHandler::FillSpectralProfileData(
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
                     report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                         auto profile_message = Message::SpectralProfileData(config_file_id, config_region_id, stokes_index, progress);
-                        Message::AddSpectralProfile(profile_message, coordinate, required_stats, results);
+
+                        std::vector<double> nan_value = {DOUBLE_NAN};
+
+                        for (auto stats_type : required_stats) {
+                            if (results.find(stats_type) == results.end()) { // stat not provided
+                                Message::AddProfile(profile_message, coordinate, stats_type, nan_value);
+                            } else {
+                                Message::AddProfile(profile_message, coordinate, stats_type, results[stats_type]);
+                            }
+                        }
+                        
                         cb(profile_message); // send (partial profile) data
                     });
             }

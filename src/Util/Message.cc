@@ -170,7 +170,7 @@ std::vector<char> Message::EncodeMessage(CARTA::EventType event_type, uint32_t e
     return msg;
 }
 
-CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress) {
+CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress, int32_t file_id, int32_t region_id) {
     CARTA::SpectralProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
@@ -180,40 +180,29 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
     return profile_message;
 }
 
-CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress) {
-    CARTA::SpectralProfileData message;
-    message.set_stokes(stokes);
-    message.set_progress(progress);
-    return message;
+CARTA::SpectralProfile* Message::AddProfile(CARTA::SpectralProfileData& profile_data, std::string& coordinate,
+    CARTA::StatsType& stats_type, std::vector<double>& values) {
+    // one SpectralProfile per stats type
+    auto* profile = profile_data.add_profiles();
+    profile->set_coordinate(coordinate);
+    profile->set_stats_type(stats_type);
+    profile->set_raw_values_fp64(values.data(), values.size() * sizeof(double));
+
+    return profile;
 }
 
-CARTA::SpectralProfile* Message::AddSpectralProfile(CARTA::SpectralProfileData& profile_data, std::string& coordinate,
-    std::vector<CARTA::StatsType>& stats_type, std::map<CARTA::StatsType, std::vector<double>>& raw_values_fp64) {
-    for (auto stats_type : stats_type) {
-        // one SpectralProfile per stats type
-        auto* new_profile = profile_data.add_profiles();
-        new_profile->set_coordinate(coordinate);
-        new_profile->set_stats_type(stats_type);
+CARTA::SpectralProfile* Message::AddProfile(
+    CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type, std::vector<float>& values) {
+    auto* profile = profile_data.add_profiles();
+    profile->set_coordinate(coordinate);
+    profile->set_stats_type(stats_type);
+    profile->set_raw_values_fp32(values.data(), values.size() * sizeof(float));
 
-        if (raw_values_fp64.find(stats_type) == raw_values_fp64.end()) { // stat not provided
-            double nan_value = DOUBLE_NAN;
-            new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
-        } else {
-            new_profile->set_raw_values_fp64(raw_values_fp64[stats_type].data(), raw_values_fp64[stats_type].size() * sizeof(double));
-        }
-    }
-}
-
-CARTA::SpectralProfile* Message::AddSpectralProfile(
-    CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type) {
-    auto* new_profile = profile_data.add_profiles();
-    new_profile->set_coordinate(coordinate);
-    new_profile->set_stats_type(stats_type);
-    return new_profile;
+    return profile;
 }
 
 CARTA::SpatialProfileData Message::SpatialProfileData(
-    int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel, int32_t stokes, float value) {
+    int32_t x, int32_t y, int32_t channel, int32_t stokes, float value, int32_t file_id, int32_t region_id) {
     CARTA::SpatialProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
@@ -225,38 +214,28 @@ CARTA::SpatialProfileData Message::SpatialProfileData(
     return profile_message;
 }
 
-CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value) {
-    CARTA::SpatialProfileData message;
-    message.set_x(x);
-    message.set_y(y);
-    message.set_channel(channel);
-    message.set_stokes(stokes);
-    message.set_value(value);
-    return message;
-}
+CARTA::SpatialProfile* Message::AddProfile(CARTA::SpatialProfileData& profile_message, int32_t start, int32_t end,
+    std::vector<float>& values, std::string coordinate, int32_t mip) {
+    auto profile = profile_message.add_profiles();
+    profile->set_start(start);
+    profile->set_end(end);
+    profile->set_raw_values_fp32(values.data(), values.size() * sizeof(float));
+    profile->set_coordinate(coordinate);
+    profile->set_mip(mip);
 
-CARTA::SpatialProfile* Message::AddSpatialProfile(CARTA::SpatialProfileData& response, int32_t start, int32_t end,
-    std::vector<float>& raw_values_fp32, std::string coordinate, int32_t mip) {
-    auto spatial_profile = response.add_profiles();
-    spatial_profile->set_start(start);
-    spatial_profile->set_end(end);
-    spatial_profile->set_raw_values_fp32(raw_values_fp32.data(), raw_values_fp32.size() * sizeof(float));
-    spatial_profile->set_coordinate(coordinate);
-    spatial_profile->set_mip(mip);
-
-    return spatial_profile;
+    return profile;
 }
 
 CARTA::LineProfileAxis* Message::AddLineProfileAxis(
     CARTA::SpatialProfile* spatial_profile, CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string unit) {
-    auto line_profile_axis = spatial_profile->mutable_line_axis();
-    line_profile_axis->set_axis_type(axis_type);
-    line_profile_axis->set_crpix(crpix);
-    line_profile_axis->set_crval(crval);
-    line_profile_axis->set_cdelt(cdelt);
-    line_profile_axis->set_unit(unit);
+    auto axis = spatial_profile->mutable_line_axis();
+    axis->set_axis_type(axis_type);
+    axis->set_crpix(crpix);
+    axis->set_crval(crval);
+    axis->set_cdelt(cdelt);
+    axis->set_unit(unit);
 
-    return line_profile_axis;
+    return axis;
 }
 
 CARTA::RasterTileSync Message::RasterTileSync(
