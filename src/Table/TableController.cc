@@ -242,7 +242,7 @@ void TableController::OnFileListRequest(
                     stat(entry.path().c_str(), &file_stats);
 
                     auto directory_info = Message::AddDirectory(file_list_response, entry.path().filename().string(),
-                        static_cast<int64_t>(file_stats.st_mtim.tv_sec), static_cast<int32_t>(GetNumItems(entry.path().string())));
+                        file_stats.st_mtim.tv_sec, GetNumItems(entry.path().string()));
                 } catch (fs::filesystem_error) {
                     // Skip inaccessible folders
                     continue;

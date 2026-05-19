@@ -438,7 +438,7 @@ void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA:
     }
 }
 
-CARTA::DirectoryInfo* Message::AddDirectory(CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count) {
+CARTA::DirectoryInfo* Message::AddDirectory(CARTA::FileListResponse& response, const std::string& name, time_t date, int item_count) {
     auto* directory_info = response.add_subdirectories();
     directory_info->set_name(name);
     directory_info->set_date(date);
@@ -453,7 +453,7 @@ CARTA::FileInfo* Message::AddFile(
     return file_info;
 }
 
-CARTA::DirectoryInfo* Message::AddDirectory(CARTA::CatalogListResponse& response, std::string name, int64_t date, int32_t item_count) {
+CARTA::DirectoryInfo* Message::AddDirectory(CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count) {
     auto* directory_info = response.add_subdirectories();
     directory_info->set_name(name);
     directory_info->set_date(date);

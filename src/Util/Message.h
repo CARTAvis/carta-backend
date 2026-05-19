@@ -45,6 +45,7 @@
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
 #include <carta-protobuf/vector_overlay_tile.pb.h>
+#include <ctime>
 
 #include <casacore/casa/Quanta/Quantum.h>
 
@@ -128,10 +129,10 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
-    static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, std::string& name, int64_t date, int32_t item_count = 0);
+    static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::FileInfo* AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type = CARTA::FileType::UNKNOWN,
         int64_t size = 0, std::string hdu_list = "", int64_t date = 0);
-    static CARTA::DirectoryInfo* AddDirectory(CARTA::CatalogListResponse& response, std::string name, int64_t date, int32_t item_count = 0);
+    static CARTA::DirectoryInfo* AddDirectory(CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::CatalogFileInfo* AddFile(CARTA::CatalogListResponse& response, std::string name,
         CARTA::CatalogFileType type = CARTA::CatalogFileType::Unknown, int64_t size = 0, std::string description = "", int64_t date = 0);
     static CARTA::RegionListResponse RegionListResponse(CARTA::FileListResponse file_response);
