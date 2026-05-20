@@ -33,8 +33,7 @@ public:
         return ss.str();
     }
 
-    std::map<double, std::vector<std::pair<double, double>>> LoadVertices(const fs::path& dir,
-                                                                          const std::vector<double>& levels) {
+    std::map<double, std::vector<std::pair<double, double>>> LoadVertices(const fs::path& dir, const std::vector<double>& levels) {
         std::map<double, std::vector<std::pair<double, double>>> expected;
         for (double level : levels) {
             fs::path file = dir / ("level_" + LevelToString(level) + ".txt");
@@ -128,28 +127,19 @@ TEST_P(ContourTest, VerifyVertices) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
-    ::testing::Values(ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing,
-                          ContourData() / "500x500_contours"},
-        ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing,
-            ContourData() / "500x500_nans_contours"},
-        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur,
-            ContourData() / "500x500_gaussian_contours"},
-        ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur,
-            ContourData() / "500x500_nans_gaussian_contours"},
-        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage,
-            ContourData() / "500x500_block_contours"},
-        ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage,
-            ContourData() / "500x500_nans_block_contours"},
-        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing,
-            ContourData() / "500x500_hdf5_contours"},
-        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing,
-            ContourData() / "500x500_nans_hdf5_contours"},
-        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur,
-            ContourData() / "500x500_hdf5_gaussian_contours"},
-        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur,
-            ContourData() / "500x500_nans_hdf5_gaussian_contours"},
-        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage,
-            ContourData() / "500x500_hdf5_block_contours"},
-        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage,
-            ContourData() / "500x500_nans_hdf5_block_contours"}
-));
+    ::testing::Values(ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_contours"},
+        ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_nans_contours"},
+        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_gaussian_contours"},
+        ContourParams{
+            FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_nans_gaussian_contours"},
+        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_block_contours"},
+        ContourParams{
+            FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_nans_block_contours"},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_hdf5_contours"},
+        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_nans_hdf5_contours"},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_hdf5_gaussian_contours"},
+        ContourParams{
+            Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_nans_hdf5_gaussian_contours"},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_hdf5_block_contours"},
+        ContourParams{
+            Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_nans_hdf5_block_contours"}));
