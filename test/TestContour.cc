@@ -5,6 +5,7 @@
 */
 
 #include <gtest/gtest.h>
+#include <cmath>
 #include <fstream>
 #include <map>
 #include <sstream>
@@ -18,30 +19,29 @@
 struct ContourParams {
     fs::path image_file;
     CARTA::SmoothingMode mode;
-    std::vector<fs::path> contour_vertices_files;
+    fs::path contour_vertices_dir;
 };
 
 class ContourTest : public ::testing::TestWithParam<ContourParams> {
 public:
-    std::map<double, std::vector<std::pair<double, double>>> LoadVertices(const std::vector<fs::path>& files) {
+    static std::string LevelToString(double level) {
+        if (std::floor(level) == level) {
+            return std::to_string(static_cast<int>(level));
+        }
+        std::ostringstream ss;
+        ss << level;
+        return ss.str();
+    }
+
+    std::map<double, std::vector<std::pair<double, double>>> LoadVertices(const fs::path& dir,
+                                                                          const std::vector<double>& levels) {
         std::map<double, std::vector<std::pair<double, double>>> expected;
-        for (const auto& file : files) {
+        for (double level : levels) {
+            fs::path file = dir / ("level_" + LevelToString(level) + ".txt");
             std::ifstream ifs(file);
             if (!ifs.is_open()) {
                 throw std::runtime_error("Cannot open expected vertices file: " + file.string());
             }
-
-            std::string filename = file.filename().string();
-            size_t level_pos = filename.find("level_");
-            if (level_pos == std::string::npos) {
-                throw std::runtime_error("Cannot parse level from filename: " + filename);
-            }
-            size_t start = level_pos + 6; // "level_" is 6 chars
-            size_t end = filename.find(".txt", start);
-            if (end == std::string::npos) {
-                end = filename.size();
-            }
-            double current_level = std::stod(filename.substr(start, end - start));
 
             std::string line;
             while (std::getline(ifs, line)) {
@@ -55,7 +55,7 @@ public:
                 double x, y;
                 std::istringstream iss(line);
                 if (iss >> x >> y) {
-                    expected[current_level].emplace_back(x, y);
+                    expected[level].emplace_back(x, y);
                 }
             }
         }
@@ -104,9 +104,10 @@ TEST_P(ContourTest, VerifyVertices) {
 
     EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
 
-    auto expected = LoadVertices(params.contour_vertices_files);
+    auto expected = LoadVertices(params.contour_vertices_dir, levels);
 
-    for (auto& [level, gen_verts] : generated_vertices) {
+    for (double level : levels) {
+        auto& gen_verts = generated_vertices[level];
         std::vector<std::pair<double, double>> gen_coords;
         for (size_t i = 0; i < gen_verts.size() / 2; ++i) {
             gen_coords.emplace_back(gen_verts[i * 2], gen_verts[i * 2 + 1]);
@@ -128,40 +129,27 @@ TEST_P(ContourTest, VerifyVertices) {
 
 INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
     ::testing::Values(ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing,
-                          {ContourData() / "500x500_contours/level_0.txt", ContourData() / "500x500_contours/level_-1.txt",
-                              ContourData() / "500x500_contours/level_1.txt"}},
+                          ContourData() / "500x500_contours"},
         ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing,
-            {ContourData() / "500x500_nans_contours/level_0.txt", ContourData() / "500x500_nans_contours/level_-1.txt",
-                ContourData() / "500x500_nans_contours/level_1.txt"}},
+            ContourData() / "500x500_nans_contours"},
         ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur,
-            {ContourData() / "500x500_gaussian_contours/level_0.txt", ContourData() / "500x500_gaussian_contours/level_-1.txt",
-                ContourData() / "500x500_gaussian_contours/level_1.txt"}},
+            ContourData() / "500x500_gaussian_contours"},
         ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur,
-            {ContourData() / "500x500_nans_gaussian_contours/level_0.txt", ContourData() / "500x500_nans_gaussian_contours/level_-1.txt",
-                ContourData() / "500x500_nans_gaussian_contours/level_1.txt"}},
+            ContourData() / "500x500_nans_gaussian_contours"},
         ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage,
-            {ContourData() / "500x500_block_contours/level_0.txt", ContourData() / "500x500_block_contours/level_-1.txt",
-                ContourData() / "500x500_block_contours/level_1.txt"}},
+            ContourData() / "500x500_block_contours"},
         ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage,
-            {ContourData() / "500x500_nans_block_contours/level_0.txt", ContourData() / "500x500_nans_block_contours/level_-1.txt",
-                ContourData() / "500x500_nans_block_contours/level_1.txt"}},
+            ContourData() / "500x500_nans_block_contours"},
         ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing,
-            {ContourData() / "500x500_hdf5_contours/level_0.txt", ContourData() / "500x500_hdf5_contours/level_-1.txt",
-                ContourData() / "500x500_hdf5_contours/level_1.txt"}},
+            ContourData() / "500x500_hdf5_contours"},
         ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing,
-            {ContourData() / "500x500_nans_hdf5_contours/level_0.txt", ContourData() / "500x500_nans_hdf5_contours/level_-1.txt",
-                ContourData() / "500x500_nans_hdf5_contours/level_1.txt"}},
+            ContourData() / "500x500_nans_hdf5_contours"},
         ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur,
-            {ContourData() / "500x500_hdf5_gaussian_contours/level_0.txt", ContourData() / "500x500_hdf5_gaussian_contours/level_-1.txt",
-                ContourData() / "500x500_hdf5_gaussian_contours/level_1.txt"}},
+            ContourData() / "500x500_hdf5_gaussian_contours"},
         ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur,
-            {ContourData() / "500x500_nans_hdf5_gaussian_contours/level_0.txt",
-                ContourData() / "500x500_nans_hdf5_gaussian_contours/level_-1.txt",
-                ContourData() / "500x500_nans_hdf5_gaussian_contours/level_1.txt"}},
+            ContourData() / "500x500_nans_hdf5_gaussian_contours"},
         ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage,
-            {ContourData() / "500x500_hdf5_block_contours/level_0.txt", ContourData() / "500x500_hdf5_block_contours/level_-1.txt",
-                ContourData() / "500x500_hdf5_block_contours/level_1.txt"}},
+            ContourData() / "500x500_hdf5_block_contours"},
         ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage,
-            {ContourData() / "500x500_nans_hdf5_block_contours/level_0.txt",
-                ContourData() / "500x500_nans_hdf5_block_contours/level_-1.txt",
-                ContourData() / "500x500_nans_hdf5_block_contours/level_1.txt"}}));
+            ContourData() / "500x500_nans_hdf5_block_contours"}
+));
