@@ -46,43 +46,6 @@ CARTA::SetImageChannels Message::SetImageChannels(
     return set_image_channels;
 }
 
-CARTA::SetCursor Message::SetCursor(int32_t file_id, float x, float y) {
-    CARTA::SetCursor set_cursor;
-    set_cursor.set_file_id(file_id);
-    auto* point = set_cursor.mutable_point();
-    point->set_x(x);
-    point->set_y(y);
-    return set_cursor;
-}
-
-CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id) {
-    CARTA::SetStatsRequirements set_stats_requirements;
-    set_stats_requirements.set_file_id(file_id);
-    set_stats_requirements.set_region_id(region_id);
-    auto* stats_config = set_stats_requirements.add_stats_configs();
-    stats_config->add_stats_types(CARTA::StatsType::NumPixels);
-    stats_config->add_stats_types(CARTA::StatsType::Sum);
-    stats_config->add_stats_types(CARTA::StatsType::Mean);
-    stats_config->add_stats_types(CARTA::StatsType::RMS);
-    stats_config->add_stats_types(CARTA::StatsType::Sigma);
-    stats_config->add_stats_types(CARTA::StatsType::SumSq);
-    stats_config->add_stats_types(CARTA::StatsType::Min);
-    stats_config->add_stats_types(CARTA::StatsType::Max);
-    return set_stats_requirements;
-}
-
-CARTA::SetHistogramRequirements Message::SetHistogramRequirements(
-    int32_t file_id, int32_t region_id, const std::string& coordinate, int32_t channel, int32_t num_bins) {
-    CARTA::SetHistogramRequirements set_histogram_requirements;
-    set_histogram_requirements.set_file_id(file_id);
-    set_histogram_requirements.set_region_id(region_id);
-    auto* histograms = set_histogram_requirements.add_histograms();
-    histograms->set_coordinate(coordinate);
-    histograms->set_channel(channel);
-    histograms->set_num_bins(num_bins);
-    return set_histogram_requirements;
-}
-
 CARTA::AddRequiredTiles Message::AddRequiredTiles(
     int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<int32_t>& tiles) {
     CARTA::AddRequiredTiles add_required_tiles;
@@ -436,16 +399,15 @@ CARTA::ListProgress Message::ListProgress(
 }
 
 CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
-    std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style) {
+    std::vector<CARTA::Point> control_points, float rotation, CARTA::RegionStyle style) {
     // Set CARTA::RegionInfo
     CARTA::RegionInfo region_info;
     region_info.set_region_type(region_type);
     *region_info.mutable_control_points() = {control_points.begin(), control_points.end()};
-    region_info.set_rotation(region_rotation);
+    region_info.set_rotation(rotation);
 
-    // Add info and style to import_ack; increment region id for next region
     (*import_ack.mutable_regions())[region_id] = region_info;
-    (*import_ack.mutable_region_styles())[region_id] = region_style;
+    (*import_ack.mutable_region_styles())[region_id] = style;
 
     return import_ack;
 }

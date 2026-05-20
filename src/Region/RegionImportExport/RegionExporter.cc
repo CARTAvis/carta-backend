@@ -41,7 +41,8 @@ bool RegionExporter::CanExportToFile(const std::string& filename, bool overwrite
         }
     }
     if (!error.empty()) {
-        Message::ExportRegionAck(export_ack, false, error);
+        export_ack.set_success(false);
+        export_ack.set_message(error);
         export_ack.set_overwrite_confirmation_required(need_overwrite_confirmation);
         return false;
     }

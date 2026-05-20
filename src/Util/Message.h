@@ -73,7 +73,6 @@ public:
         bool support_aips_beam, CARTA::RenderMode render_mode = CARTA::RenderMode::RASTER);
     static CARTA::SetImageChannels SetImageChannels(int32_t file_id, int32_t channel, int32_t stokes,
         CARTA::CompressionType compression_type = CARTA::CompressionType::NONE, float compression_quality = -1);
-    static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);
     static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id);
     static CARTA::SetHistogramRequirements SetHistogramRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate = "z",
         int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
