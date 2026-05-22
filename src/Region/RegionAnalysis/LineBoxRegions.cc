@@ -160,6 +160,7 @@ bool LineBoxRegions::GetFixedPixelRegions(const RegionState& line_region_state, 
                 increment = sqrt((xlength * xlength) + (ylength * ylength));
             } else if (!CheckLinearOffsets(box_centers, line_coord_sys, increment)) {
                 spdlog::debug("Fixed pixel offsets not linear");
+                region_states.clear();
                 return false;
             }
 
