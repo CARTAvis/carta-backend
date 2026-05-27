@@ -77,10 +77,7 @@ public:
 
                 coordinates.reserve(coordinates.size() + num_coordinates);
                 for (size_t i = 0; i < num_coordinates; ++i) {
-                    coordinates.emplace_back(
-                        static_cast<double>(float_data[i * 2]),
-                        static_cast<double>(float_data[i * 2 + 1])
-                    );
+                    coordinates.emplace_back(static_cast<double>(float_data[i * 2]), static_cast<double>(float_data[i * 2 + 1]));
                 }
             }
         }
@@ -136,16 +133,16 @@ public:
     }
 
     std::map<double, std::vector<std::pair<double, double>>> LoadVertices(const fs::path& dir, const std::vector<double>& levels) {
-    std::map<double, std::vector<std::pair<double, double>>> expected;
-    for (double level : levels) {
-        fs::path bin_file = dir / ("level_" + LevelToString(level) + ".bin");
-        
-        expected[level] = ReadBinaryContours(bin_file.string());
-        
-        spdlog::info("Successfully loaded binary contours: {}", bin_file.string());
+        std::map<double, std::vector<std::pair<double, double>>> expected;
+        for (double level : levels) {
+            fs::path bin_file = dir / ("level_" + LevelToString(level) + ".bin");
+
+            expected[level] = ReadBinaryContours(bin_file.string());
+
+            spdlog::info("Successfully loaded binary contours: {}", bin_file.string());
+        }
+        return expected;
     }
-    return expected;
-}
 
 protected:
     std::mutex _callback_mutex;
@@ -214,8 +211,8 @@ TEST_P(ContourTest, VerifyVertices) {
 
 INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
     ::testing::Values(
-        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_contours"}
-        ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_nans_contours"},
+        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_contours"} ContourParams{
+            FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_nans_contours"},
         ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_gaussian_contours"},
         ContourParams{
             FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_nans_gaussian_contours"},
@@ -229,5 +226,4 @@ INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
             Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_nans_gaussian_contours"},
         ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_block_contours"},
         ContourParams{
-            Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_nans_block_contours"}
-        ));
+            Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_nans_block_contours"}));
