@@ -33,33 +33,119 @@ public:
         return ss.str();
     }
 
-    std::map<double, std::vector<std::pair<double, double>>> LoadVertices(const fs::path& dir, const std::vector<double>& levels) {
-        std::map<double, std::vector<std::pair<double, double>>> expected;
-        for (double level : levels) {
-            fs::path file = dir / ("level_" + LevelToString(level) + ".txt");
-            std::ifstream ifs(file);
-            if (!ifs.is_open()) {
-                throw std::runtime_error("Cannot open expected vertices file: " + file.string());
+    static std::vector<std::pair<double, double>> ReadBinaryContours(const std::string& file_path) {
+        std::ifstream file(file_path, std::ios::binary);
+        if (!file.is_open()) {
+            throw std::runtime_error("Cannot open binary contour file: " + file_path);
+        }
+
+        std::vector<std::pair<double, double>> coordinates;
+        while (true) {
+            char magic[4];
+            file.read(magic, 4);
+            if (file.gcount() == 0 && file.eof()) {
+                break; // finished reading all segments
+            }
+            if (file.gcount() != 4 || std::string(magic, 4) != "CTRN") {
+                throw std::runtime_error("Invalid binary file: magic number mismatch (expected 'CTRN')");
             }
 
-            std::string line;
-            while (std::getline(ifs, line)) {
-                line.erase(0, line.find_first_not_of(" \t\r\n"));
-                line.erase(line.find_last_not_of(" \t\r\n") + 1);
+            uint32_t version;
+            file.read(reinterpret_cast<char*>(&version), sizeof(uint32_t));
+            if (!file.good() || version != 1) {
+                throw std::runtime_error("Unsupported binary format version: " + std::to_string(version));
+            }
 
-                if (line.empty() || line[0] == '#') {
-                    continue; // Skip empty lines and comments
+            uint32_t num_coordinates;
+            file.read(reinterpret_cast<char*>(&num_coordinates), sizeof(uint32_t));
+            if (!file.good()) {
+                throw std::runtime_error("Cannot read coordinate count from header");
+            }
+
+            char reserved[4];
+            file.read(reserved, 4);
+            if (!file.good()) {
+                throw std::runtime_error("Cannot read reserved header bytes");
+            }
+
+            std::vector<float> float_data(num_coordinates * 2);
+            if (num_coordinates > 0) {
+                file.read(reinterpret_cast<char*>(float_data.data()), float_data.size() * sizeof(float));
+                if (!file.good()) {
+                    throw std::runtime_error("Cannot read coordinate data from file");
                 }
 
-                double x, y;
-                std::istringstream iss(line);
-                if (iss >> x >> y) {
-                    expected[level].emplace_back(x, y);
+                coordinates.reserve(coordinates.size() + num_coordinates);
+                for (size_t i = 0; i < num_coordinates; ++i) {
+                    coordinates.emplace_back(
+                        static_cast<double>(float_data[i * 2]),
+                        static_cast<double>(float_data[i * 2 + 1])
+                    );
                 }
             }
         }
-        return expected;
+
+        return coordinates;
     }
+
+    static int ValidateBinaryContours(const std::string& file_path) {
+        std::ifstream file(file_path, std::ios::binary);
+        if (!file.is_open()) {
+            return -1;
+        }
+
+        int total_coordinates = 0;
+        while (true) {
+            char magic[4];
+            file.read(magic, 4);
+            if (file.gcount() == 0 && file.eof()) {
+                break;
+            }
+            if (file.gcount() != 4 || std::string(magic, 4) != "CTRN") {
+                return -1;
+            }
+
+            uint32_t version;
+            file.read(reinterpret_cast<char*>(&version), sizeof(uint32_t));
+            if (!file.good() || version != 1) {
+                return -1;
+            }
+
+            uint32_t num_coordinates;
+            file.read(reinterpret_cast<char*>(&num_coordinates), sizeof(uint32_t));
+            if (!file.good()) {
+                return -1;
+            }
+
+            char reserved[4];
+            file.read(reserved, 4);
+            if (!file.good()) {
+                return -1;
+            }
+
+            if (num_coordinates > 0) {
+                file.seekg(static_cast<std::streamoff>(num_coordinates) * 2 * sizeof(float), std::ios::cur);
+                if (!file.good()) {
+                    return -1;
+                }
+                total_coordinates += static_cast<int>(num_coordinates);
+            }
+        }
+
+        return total_coordinates;
+    }
+
+    std::map<double, std::vector<std::pair<double, double>>> LoadVertices(const fs::path& dir, const std::vector<double>& levels) {
+    std::map<double, std::vector<std::pair<double, double>>> expected;
+    for (double level : levels) {
+        fs::path bin_file = dir / ("level_" + LevelToString(level) + ".bin");
+        
+        expected[level] = ReadBinaryContours(bin_file.string());
+        
+        spdlog::info("Successfully loaded binary contours: {}", bin_file.string());
+    }
+    return expected;
+}
 
 protected:
     std::mutex _callback_mutex;
@@ -127,7 +213,8 @@ TEST_P(ContourTest, VerifyVertices) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
-    ::testing::Values(ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_contours"},
+    ::testing::Values(
+        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_contours"}
         ContourParams{FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_nans_contours"},
         ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_gaussian_contours"},
         ContourParams{
@@ -135,11 +222,12 @@ INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
         ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_block_contours"},
         ContourParams{
             FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_nans_block_contours"},
-        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_hdf5_contours"},
-        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_nans_hdf5_contours"},
-        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_hdf5_gaussian_contours"},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_contours"},
+        ContourParams{Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_nans_contours"},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_gaussian_contours"},
         ContourParams{
-            Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_nans_hdf5_gaussian_contours"},
-        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_hdf5_block_contours"},
+            Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_nans_gaussian_contours"},
+        ContourParams{Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_block_contours"},
         ContourParams{
-            Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_nans_hdf5_block_contours"}));
+            Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage, ContourData() / "500x500_nans_block_contours"}
+        ));
