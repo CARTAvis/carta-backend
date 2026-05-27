@@ -211,7 +211,8 @@ TEST_P(ContourTest, VerifyVertices) {
 
 INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
     ::testing::Values(
-        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_contours"} ContourParams{
+        ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_contours"},
+        ContourParams{
             FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing, ContourData() / "500x500_nans_contours"},
         ContourParams{FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur, ContourData() / "500x500_gaussian_contours"},
         ContourParams{
