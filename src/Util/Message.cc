@@ -182,7 +182,6 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float pr
 
 CARTA::SpectralProfile* Message::AddProfile(
     CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type, std::vector<double>& values) {
-    // one SpectralProfile per stats type
     auto* profile = profile_data.add_profiles();
     profile->set_coordinate(coordinate);
     profile->set_stats_type(stats_type);
