@@ -189,8 +189,8 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             _regions[region_id] = std::move(region);
             region_lock.unlock();
 
-            Message::AddImportedRegion(import_ack, region_id, props.state.type,
-                props.state.control_points, props.state.rotation, props.style);
+            Message::AddImportedRegion(
+                import_ack, region_id, props.state.type, props.state.control_points, props.state.rotation, props.style);
             region_id += 1;
 
             success = true; // if any regions were set
