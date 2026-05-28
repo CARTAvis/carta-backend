@@ -452,7 +452,7 @@ CARTA::FileInfo* Message::AddFile(
     file_info->set_name(name);
     file_info->set_type(type);
     file_info->set_size(size);
-    file_info->set_hdu_list(hdu_list);
+    file_info->add_hdu_list(hdu_list);
     file_info->set_date(date);
     return file_info;
 }
