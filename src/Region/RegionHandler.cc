@@ -161,14 +161,15 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     if (!importer) {
-        import_ack = Message::ImportRegionAck(false, "Region importer failed.");
+        import_ack.set_success(false);
+        import_ack.set_message("Region importer failed.");
         return;
     }
 
     // Get regions and error message from importer
     std::string error;
     auto imported_regions = importer->GetRegions(error);
-    import_ack = Message::ImportRegionAck(false, error);
+    import_ack.set_message(error);
     if (imported_regions.empty()) {
         return;
     }
@@ -189,7 +190,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             region_lock.unlock();
 
             Message::AddImportedRegion(import_ack, region_id, props.state.type,
-                {props.state.control_points.begin(), props.state.control_points.end()}, props.state.rotation, props.style);
+                props.state.control_points, props.state.rotation, props.style);
             region_id += 1;
 
             success = true; // if any regions were set
@@ -204,7 +205,8 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Export regions to given filename, or return export file contents in ack
     // Check if any regions to export
     if (region_styles.empty()) {
-        Message::ExportRegionAck(export_ack, false, "Export region failed: no regions requested.");
+        export_ack.set_success(false);
+        export_ack.set_message("Export region failed: no regions requested.");
         return;
     }
 
@@ -215,7 +217,8 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     bool export_pixel_coords(coord_type == CARTA::CoordinateType::PIXEL);
     if (!export_pixel_coords && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
-        Message::ExportRegionAck(export_ack, false, "Cannot export regions in world coordinates without direction coordinate.");
+        export_ack.set_success(false);
+        export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
         return;
     }
 

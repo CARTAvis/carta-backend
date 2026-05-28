@@ -356,19 +356,6 @@ CARTA::ImportRegionAck Message::ImportRegionAck(bool success, const std::string&
     return import_region_ack;
 }
 
-CARTA::RegionInfo Message::SetRegionInfo(CARTA::RegionType& region_type, float rotation) {
-    CARTA::RegionInfo regionInfo;
-    regionInfo.set_region_type(region_type);
-    regionInfo.set_rotation(rotation);
-    return regionInfo;
-}
-
-CARTA::ExportRegionAck Message::ExportRegionAck(CARTA::ExportRegionAck& export_region_ack, bool success, const std::string& message) {
-    export_region_ack.set_success(success);
-    export_region_ack.set_message(message);
-    return export_region_ack;
-}
-
 CARTA::RegionStatsData Message::RegionStatsData(int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes) {
     CARTA::RegionStatsData message;
     message.set_file_id(file_id);
@@ -399,7 +386,7 @@ CARTA::ListProgress Message::ListProgress(
 }
 
 CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
-    std::vector<CARTA::Point> control_points, float rotation, CARTA::RegionStyle style) {
+    std::vector<CARTA::Point>& control_points, float rotation, CARTA::RegionStyle style) {
     // Set CARTA::RegionInfo
     CARTA::RegionInfo region_info;
     region_info.set_region_type(region_type);

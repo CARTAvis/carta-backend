@@ -83,7 +83,8 @@ void RegionExporter::ExportRegions(const std::string& filename, std::string& mes
         // Write to file
         success = ExportRegions(filename, message);
     }
-    Message::ExportRegionAck(export_ack, success, message);
+    export_ack.set_success(success);
+    export_ack.set_message(message);
 }
 
 bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,

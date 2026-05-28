@@ -73,9 +73,6 @@ public:
         bool support_aips_beam, CARTA::RenderMode render_mode = CARTA::RenderMode::RASTER);
     static CARTA::SetImageChannels SetImageChannels(int32_t file_id, int32_t channel, int32_t stokes,
         CARTA::CompressionType compression_type = CARTA::CompressionType::NONE, float compression_quality = -1);
-    static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id);
-    static CARTA::SetHistogramRequirements SetHistogramRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate = "z",
-        int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
     static CARTA::AddRequiredTiles AddRequiredTiles(
         int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<int32_t>& tiles);
     static CARTA::Point Point(float x, float y);
@@ -91,7 +88,6 @@ public:
         const CARTA::DoublePoint& center, double amp, const CARTA::DoublePoint& fwhm, double pa);
     static CARTA::ScriptingRequest ScriptingRequest(uint32_t scripting_request_id, const std::string& target, const std::string& action,
         const std::string& parameters, bool async, const std::string& return_path);
-    static CARTA::ChannelMapFlowControl ChannelMapFlowControl(int32_t file_id, int32_t received_channel);
     /// Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
         std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
@@ -120,14 +116,12 @@ public:
     static CARTA::RasterTileData RasterTileData(int32_t file_id, int32_t sync_id, int32_t animation_id);
     static CARTA::StartAnimationAck StartAnimationAck(bool success, int32_t animation_id, const std::string& message);
     static CARTA::ImportRegionAck ImportRegionAck(bool success, const std::string& message);
-    static CARTA::RegionInfo SetRegionInfo(CARTA::RegionType& region_type, float rotation);
-    static CARTA::ExportRegionAck ExportRegionAck(CARTA::ExportRegionAck& export_region_ack, bool success, const std::string& message);
     static CARTA::RegionStatsData RegionStatsData(int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes);
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
     static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
-        std::vector<CARTA::Point> control_points, float region_rotation, CARTA::RegionStyle region_style);
+        std::vector<CARTA::Point>& control_points, float region_rotation, CARTA::RegionStyle region_style);
     static CARTA::HeaderEntry* AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
         CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);
     static CARTA::HeaderEntry* AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,

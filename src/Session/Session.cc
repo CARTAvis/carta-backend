@@ -1012,7 +1012,8 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
             string error = "Exporting region is not allowed in read-only mode";
             spdlog::error(error);
             SendLogEvent(error, {"Export region"}, CARTA::ErrorSeverity::ERROR);
-            Message::ExportRegionAck(export_ack, false, error);
+            export_ack.set_success(false);
+            export_ack.set_message(error);
         } else {
             // Export filename (optional, for server-side export)
             std::string directory(message.directory()), filename(message.file());
