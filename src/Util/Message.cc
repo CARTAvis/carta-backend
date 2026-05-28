@@ -450,6 +450,10 @@ CARTA::FileInfo* Message::AddFile(
     CARTA::FileListResponse& response, std::string name, CARTA::FileType type, int64_t size, std::string hdu_list, int64_t date) {
     auto* file_info = response.add_files();
     file_info->set_name(name);
+    file_info->set_type(type);
+    file_info->set_size(size);
+    file_info->set_hdu_list(hdu_list);
+    file_info->set_date(date);
     return file_info;
 }
 
@@ -465,6 +469,10 @@ CARTA::CatalogFileInfo* Message::AddFile(
     CARTA::CatalogListResponse& response, std::string name, CARTA::CatalogFileType type, int64_t size, std::string hdu_list, int64_t date) {
     auto* file_info = response.add_files();
     file_info->set_name(name);
+    file_info->set_type(type);
+    file_info->set_file_size(size);
+    file_info->set_description(hdu_list);
+    file_info->set_date(date);
     return file_info;
 }
 

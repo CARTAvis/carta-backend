@@ -241,8 +241,8 @@ void TableController::OnFileListRequest(
                     struct stat file_stats;
                     stat(entry.path().c_str(), &file_stats);
 
-                    auto directory_info = Message::AddDirectory(file_list_response, entry.path().filename().string(),
-                        file_stats.st_mtim.tv_sec, GetNumItems(entry.path().string()));
+                    Message::AddDirectory(file_list_response, entry.path().filename().string(), file_stats.st_mtim.tv_sec,
+                        GetNumItems(entry.path().string()));
                 } catch (fs::filesystem_error) {
                     // Skip inaccessible folders
                     continue;
@@ -252,13 +252,14 @@ void TableController::OnFileListRequest(
                 if (file_type == CARTA::Unknown && file_list_request.filter_mode() != CARTA::FileListFilterMode::AllFiles) {
                     continue;
                 }
-                // Fill the file info
-                auto file_info = Message::AddFile(file_list_response, entry.path().filename().string(), file_type, fs::file_size(entry));
 
                 // Fill in file time
                 struct stat file_stats;
                 stat(entry.path().c_str(), &file_stats);
                 file_info->set_date(file_stats.st_mtim.tv_sec);
+
+                // Fill the file info
+                auto file_info = Message::AddFile(file_list_response, entry.path().filename().string(), file_type, fs::file_size(entry));
             }
 
             // update the progress and get the difference between the current time and start time
