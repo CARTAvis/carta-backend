@@ -1,5 +1,6 @@
 name: ICD tests
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * *' # UTC time
 env:
@@ -15,15 +16,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -46,7 +47,7 @@ jobs:
             port: 9005
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: source
 
@@ -85,6 +86,7 @@ jobs:
         if: matrix.os == 'macos' && matrix.os_version != 'macOS-14'
         shell: bash
         run: |
+          export Protobuf_ROOT="/opt/homebrew/opt/protobuf@21"
           SRC_DIR=$GITHUB_WORKSPACE/source
           BUILD_DIR=$GITHUB_WORKSPACE/build
           cd $SRC_DIR && git submodule update --init
@@ -149,15 +151,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -181,7 +183,7 @@ jobs:
     needs: Build
     steps:
       - name: Checkout ICD-RxJS repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: CARTAvis/ICD-RxJS
           ref: ${{ env.ICD_RXJS_BRANCH_NAME }}
@@ -222,15 +224,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -251,8 +253,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: Prepare-ICD-RxJS
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.file_browser_animator_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: File Browser ICD tests
@@ -278,15 +280,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -307,8 +309,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [File-Browser-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.file_browser_animator_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Animator ICD tests
@@ -334,15 +336,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -363,8 +365,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Animator-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.region_statistics_manipulation_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Region-Statistics ICD tests
@@ -390,15 +392,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -419,8 +421,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Region-Statistics-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.region_statistics_manipulation_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Region Manipulation ICD tests
@@ -446,15 +448,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -475,8 +477,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Region-Manipulation-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.cube_histogram_pv_generator_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Cube Histogram ICD tests
@@ -502,15 +504,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -531,8 +533,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Cube-Histogram-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.cube_histogram_pv_generator_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: PV Generator ICD tests
@@ -558,15 +560,15 @@ jobs:
       fail-fast: false
       matrix:  
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -587,8 +589,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [PV-Generator-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.raster_tiles_catalog_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Raster Tiles ICD tests
@@ -614,15 +616,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -643,8 +645,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Raster-Tiles-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.raster_tiles_catalog_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Catalog ICD tests
@@ -670,15 +672,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -699,8 +701,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Catalog-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.moment_match_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Moment ICD tests
@@ -726,15 +728,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -755,8 +757,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Moment-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.moment_match_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Match ICD tests
@@ -782,15 +784,15 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -811,8 +813,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Match-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.close_files_image_fitting_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Close File ICD tests
@@ -838,15 +840,15 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -867,8 +869,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Close-File-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.close_files_image_fitting_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Image Fitting ICD tests
@@ -894,15 +896,15 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -923,8 +925,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Image-Fitting-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.vector_overlay_resume_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Vector Overlay ICD tests
@@ -950,15 +952,15 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - os_version: macOS-13
-            os: macos
-            runner: [macOS-13, ICD]
           - os_version: macOS-14
             os: macos
             runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
+          - os_version: macOS-26
+            os: macos
+            runner: [macOS-26, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -979,8 +981,8 @@ jobs:
             runner: [self-hosted, Linux, Apptainer, ICD5]
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
-    needs: [Vector-Overlay-ICD-Tests, Prepare-ICD-RxJS]
-    if: always()
+    needs: [Build, Prepare-ICD-RxJS]
+    if: ${{ github.event.inputs.vector_overlay_resume_icd_tests == 'true' }}
     steps:
       # macOS steps
       - name: Resume ICD tests
