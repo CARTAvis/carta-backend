@@ -254,7 +254,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.file_browser_animator_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: File Browser ICD tests
@@ -310,7 +310,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.file_browser_animator_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Animator ICD tests
@@ -366,7 +366,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.region_statistics_manipulation_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Region-Statistics ICD tests
@@ -422,7 +422,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.region_statistics_manipulation_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Region Manipulation ICD tests
@@ -478,7 +478,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.cube_histogram_pv_generator_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Cube Histogram ICD tests
@@ -534,7 +534,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.cube_histogram_pv_generator_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: PV Generator ICD tests
@@ -590,7 +590,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.raster_tiles_catalog_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Raster Tiles ICD tests
@@ -646,7 +646,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.raster_tiles_catalog_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Catalog ICD tests
@@ -702,7 +702,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.moment_match_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Moment ICD tests
@@ -758,7 +758,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.moment_match_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Match ICD tests
@@ -814,7 +814,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.close_files_image_fitting_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Close File ICD tests
@@ -870,7 +870,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.close_files_image_fitting_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Image Fitting ICD tests
@@ -926,7 +926,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.vector_overlay_resume_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Vector Overlay ICD tests
@@ -982,7 +982,7 @@ jobs:
             image: /opt/apptainer/almalinux9-mar2026.sif
             port: 9005
     needs: [Build, Prepare-ICD-RxJS]
-    if: ${{ github.event.inputs.vector_overlay_resume_icd_tests == 'true' }}
+    if: always()
     steps:
       # macOS steps
       - name: Resume ICD tests
