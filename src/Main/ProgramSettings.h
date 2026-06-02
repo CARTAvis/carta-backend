@@ -17,6 +17,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Logger/Logger.h"
+#include "Logger/ProtocolLogger.h"
 #include "Util/FileSystem.h"
 
 #define OMP_THREAD_COUNT -1
@@ -135,7 +136,9 @@ struct ProgramSettings {
     nlohmann::json JSONSettingsFromFile(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
     void PushFilePaths();
+    void LoadLoggingRules();
 
+    std::vector<LoggingRule> logging_rules;
     std::vector<std::string> warning_msgs;
     std::vector<std::string> debug_msgs;
     void FlushMessages() {

@@ -205,22 +205,10 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             return;
         }
 
-        logger::LogReceivedEventType(event_type);
-
-        if (event_type == CARTA::EventType::OPEN_FILE) {
-            CARTA::OpenFile open_msg;
-
-            auto payload_ptr = sv_message.data() + sizeof(EventHeader);
-            auto payload_len = sv_message.length() - sizeof(EventHeader);
-
-            if (open_msg.ParseFromArray(payload_ptr, payload_len)) {
-                spdlog::info("[Session {}] User is opening file: {}/{}", session_id, open_msg.directory(), open_msg.file());
-            }
-        }
+        ProtocolLogger::Instance().LogEvent(event_type, ProtocolLogger::RECEIVE);
 
         MessageHandler handler;
         try {
-            // log message
             handler = _message_handlers.at(event_type);
         } catch (const std::out_of_range& e) {
             std::string error = fmt::format("Handler not found for event type: {}", CARTA::EventType_Name(event_type));

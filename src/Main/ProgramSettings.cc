@@ -34,6 +34,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     }
     ApplyCommandLineSettings(argc, argv);
     ApplyJSONSettings();
+    LoadLoggingRules();
     // Push files after all settings are applied
     PushFilePaths();
 
@@ -175,69 +176,69 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
     auto result = options.parse(argc, argv);
 
     std::string log_levels(R"(
-    0   off
-    1   critical
-    2   error
-    3   warning
-    4   info
-    5   debug)");
+0   off
+1   critical
+2   error
+3   warning
+4   info
+5   debug)");
 
     std::string extra = fmt::format(R"(
-    By default the CARTA backend uses the current directory as the starting data 
-    folder, and uses the root of the filesystem (/) as the top-level data folder. If 
-    a custom top-level folder is set with 'top_level_folder', the backend will be 
-    restricted from accessing files outside this directory. Positional parameters 
-    may be used to set a different starting directory or to open files on startup.
+By default the CARTA backend uses the current directory as the starting data 
+folder, and uses the root of the filesystem (/) as the top-level data folder. If 
+a custom top-level folder is set with 'top_level_folder', the backend will be 
+restricted from accessing files outside this directory. Positional parameters 
+may be used to set a different starting directory or to open files on startup.
 
-    A built-in HTTP server is enabled by default. It serves the CARTA frontend and 
-    provides an interface to the CARTA database. These features can be disabled with
-    'no_frontend' and 'no_database', for example if the CARTA backend is being 
-    invoked by the CARTA controller, which manages access to the frontend and 
-    database independently. The HTTP server also provides a scripting interface, but
-    this must be enabled explicitly with 'enable_scripting'. A custom prefix for all
-    HTTP server URLs may be set with 'http_url_prefix' (leading and trailing slashes
-    will be stripped, except for a single leading slash).
+A built-in HTTP server is enabled by default. It serves the CARTA frontend and 
+provides an interface to the CARTA database. These features can be disabled with
+'no_frontend' and 'no_database', for example if the CARTA backend is being 
+invoked by the CARTA controller, which manages access to the frontend and 
+database independently. The HTTP server also provides a scripting interface, but
+this must be enabled explicitly with 'enable_scripting'. A custom prefix for all
+HTTP server URLs may be set with 'http_url_prefix' (leading and trailing slashes
+will be stripped, except for a single leading slash).
 
-    Frontend files are served from '{}' (relative to the location of the backend 
-    executable). A custom frontend location may be specified with 'frontend_folder'. 
-    By default the backend listens for HTTP and WebSocket connections on all 
-    available interfaces, and automatically selects the first available port 
-    starting from {}. 'host' may be used to restrict the backend to a specific 
-    interface. 'port' may be used to set a specific port or to provide a range of 
-    allowed ports.
+Frontend files are served from '{}' (relative to the location of the backend 
+executable). A custom frontend location may be specified with 'frontend_folder'. 
+By default the backend listens for HTTP and WebSocket connections on all 
+available interfaces, and automatically selects the first available port 
+starting from {}. 'host' may be used to restrict the backend to a specific 
+interface. 'port' may be used to set a specific port or to provide a range of 
+allowed ports.
 
-    On startup the backend prints out a URL which can be used to launch the 
-    frontend, and tries to open this URL in the default browser. It's possible to 
-    disable this attempt completely with 'no_browser', or to provide a custom 
-    browser command with 'browser'. 'no_browser' takes precedence. The custom 
-    browser command may contain the placeholder CARTA_URL, which will be replaced by 
-    the frontend URL. If the placeholder is omitted, the URL will be appended to the 
-    end.
+On startup the backend prints out a URL which can be used to launch the 
+frontend, and tries to open this URL in the default browser. It's possible to 
+disable this attempt completely with 'no_browser', or to provide a custom 
+browser command with 'browser'. 'no_browser' takes precedence. The custom 
+browser command may contain the placeholder CARTA_URL, which will be replaced by 
+the frontend URL. If the placeholder is omitted, the URL will be appended to the 
+end.
 
-    By default the number of OpenMP threads is automatically set to the detected 
-    number of logical cores. A fixed number may be set with 'omp_threads'.
+By default the number of OpenMP threads is automatically set to the detected 
+number of logical cores. A fixed number may be set with 'omp_threads'.
 
-    Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
-    in the user's home directory. Logging to the file can be disabled with 'no_log'. 
-    The log level is set with 'verbosity'. Possible log levels are:{}
+Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
+in the user's home directory. Logging to the file can be disabled with 'no_log'. 
+The log level is set with 'verbosity'. Possible log levels are:{}
 
-    Performance and protocol message logging is disabled by default, but can be 
-    enabled with 'log_performance' and 'log_protocol_messages'. 'verbosity' takes 
-    precedence: the additional log messages will only be visible if the level is set
-    to 5 (debug). Performance logs are written to a separate log file, 
-    '{}/log/performance.log'.
+Performance and protocol message logging is disabled by default, but can be 
+enabled with 'log_performance' and 'log_protocol_messages'. 'verbosity' takes 
+precedence: the additional log messages will only be visible if the level is set
+to 5 (debug). Performance logs are written to a separate log file, 
+'{}/log/performance.log'.
 
-    The 'exit_timeout' and 'initial_timeout' options are provided to shut the 
-    backend down automatically if it is idle (if no clients are connected). 
-    'idle_timeout' allows the backend to kill frontend sessions that are idle (no 
-    longer sending messages to the backend).
-        
-    Enabling 'read_only_mode' prevents the backend from writing data (for example, 
-    saving regions or generated images).
-        
-    'no_user_config' and 'no_system_config' may be used to ignore the user and 
-    global configuration files, respectively.
-    )",
+The 'exit_timeout' and 'initial_timeout' options are provided to shut the 
+backend down automatically if it is idle (if no clients are connected). 
+'idle_timeout' allows the backend to kill frontend sessions that are idle (no 
+longer sending messages to the backend).
+    
+Enabling 'read_only_mode' prevents the backend from writing data (for example, 
+saving regions or generated images).
+    
+'no_user_config' and 'no_system_config' may be used to ignore the user and 
+global configuration files, respectively.
+)",
         CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
 
     for (const auto& [name, msg] : deprecated_options) {
@@ -390,6 +391,41 @@ void ProgramSettings::PushFilePaths() {
 void ProgramSettings::AddDeprecationWarning(const std::string& option, std::string where) {
     auto message = deprecated_options.at(option);
     warning_msgs.push_back(fmt::format("Option {} found in {} is deprecated. {}", option, where, message));
+}
+
+void ProgramSettings::LoadLoggingRules() {
+    const std::string filename = "protocol_logging_rules.json";
+    fs::path system_path = "/etc/carta/" + filename;
+    fs::path user_path = user_directory / filename;
+
+    nlohmann::json merged_config;
+    bool found_any_config = false;
+
+    auto try_load = [&](const fs::path& p) {
+        if (fs::exists(p)) {
+            auto j = JSONSettingsFromFile(p.string());
+            if (j.contains("rules")) {
+                if (!found_any_config) {
+                    merged_config = j;
+                } else {
+                    merged_config["rules"].insert(merged_config["rules"].end(), j["rules"].begin(), j["rules"].end());
+                }
+                found_any_config = true;
+            }
+        }
+    };
+
+    try_load(system_path);
+    try_load(user_path);
+
+    if (found_any_config) {
+        for (const auto& item : merged_config["rules"]) {
+            logging_rules.push_back(
+                {item.value("match", ".*"), item.value("action", "normal"), item.value("first_n", -1), item.value("every_m", -1)});
+        }
+    } else {
+        logging_rules = ProtocolLogger::GetDefaultRules();
+    }
 }
 
 } // namespace carta

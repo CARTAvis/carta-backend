@@ -19,85 +19,7 @@ namespace logger {
 
 static bool log_protocol_messages(false);
 
-using LogAction = std::function<void(const std::string& name, uint64_t& count, const std::string& dir)>;
-
-static std::unordered_map<CARTA::EventType, LogAction> registry;
-static std::mutex registry_mutex;
-static std::unordered_map<CARTA::EventType, uint64_t> inbound_counts;
-static std::unordered_map<CARTA::EventType, uint64_t> outbound_counts;
-
-LogAction createNoOpLogger() {
-    return [](const std::string& name, uint64_t& count, const std::string& dir) {};
-}
-
-LogAction createNormalLogger() {
-    return [](const std::string& name, uint64_t& count, const std::string& arrow) { spdlog::debug("[protocol] {} {}", arrow, name); };
-}
-
-LogAction createThrottledLogger(uint32_t first_n, uint32_t every_m) {
-    return [first_n, every_m](const std::string& name, uint64_t& count, const std::string& dir) {
-        if (count <= first_n || count % every_m == 0) {
-            std::string suffix = (count > first_n) ? fmt::format(" (Total: {})", count) : "";
-            spdlog::debug("[protocol] {} {}{}", dir, name, suffix);
-        }
-    };
-}
-
-void BuildRegistry() {
-    auto& settings = ProgramSettings::GetInstance();
-    auto* descriptor = CARTA::EventType_descriptor();
-
-    nlohmann::json config_data;
-
-    if (!settings.log_config_path.empty()) {
-        std::ifstream inputFile(settings.log_config_path);
-        if (inputFile.is_open()) {
-            try {
-                inputFile >> config_data;
-                spdlog::info("Successfully loaded custom config from: {}", settings.log_config_path);
-            } catch (const nlohmann::json::parse_error& e) {
-                spdlog::info("Error parsing JSON file: {}", e.what());
-            }
-        } else {
-            spdlog::debug("Could not open file: {}", settings.log_config_path);
-        }
-    }
-
-    if (config_data.contains("rules") && config_data["rules"].is_array()) {
-        for (int i = 0; i < descriptor->value_count(); ++i) {
-            auto* value = descriptor->value(i);
-            auto event_type = static_cast<CARTA::EventType>(value->number());
-            std::string name = value->name();
-
-            bool matched = false;
-
-            for (const auto& rule : config_data["rules"]) {
-                std::regex pattern(rule.value("match", ""));
-
-                if (std::regex_match(name, pattern)) {
-                    std::string action = rule.value("action", "normal");
-
-                    if (action == "throttle") {
-                        registry[event_type] = createThrottledLogger(rule.value("first_n", 5), rule.value("every_m", 100));
-                    } else if (action == "none") {
-                        registry[event_type] = createNoOpLogger();
-                    }
-
-                    matched = true;
-                    break;
-                }
-            }
-
-            if (!matched) {
-                registry[event_type] = createNormalLogger();
-            }
-        }
-    }
-}
-
 void InitLogger() {
-    BuildRegistry();
-
     // Copy parameters from the global settings
     auto& settings = ProgramSettings::GetInstance();
     log_protocol_messages = settings.log_protocol_messages;
@@ -196,29 +118,6 @@ void InitLogger() {
     }
 
     spdlog::flush_every(std::chrono::seconds(3));
-}
-
-void ExecuteLog(CARTA::EventType type, uint64_t& count, const std::string& arrow) {
-    std::lock_guard<std::mutex> lock(registry_mutex);
-
-    count++; // Increments the specific map passed in
-
-    auto it = registry.find(type);
-    if (it != registry.end()) {
-        it->second(CARTA::EventType_Name(type), count, arrow);
-    }
-}
-
-void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (!log_protocol_messages)
-        return;
-    ExecuteLog(event_type, inbound_counts[event_type], "<==");
-}
-
-void LogSentEventType(const CARTA::EventType& event_type) {
-    if (!log_protocol_messages)
-        return;
-    ExecuteLog(event_type, outbound_counts[event_type], "==>");
 }
 
 void FlushLogFile() {
