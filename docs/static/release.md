@@ -6,10 +6,10 @@ In this document, 123 is a placeholder for the current release number, and 124 f
 Beta release
 ------------
 
--# `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0-beta.0`.
+-# `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0-beta.1`.
 -# Create a `release/123.0` branch using the `dev` branch.
--# `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-beta.0`.
--# Create a `v123.0.0-beta.0` tag using the release branch.
+-# `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-beta.1`.
+-# Create a `v123.0.0-beta.1` tag using the release branch.
 -# Test the release branch. Make any required fixes in the `dev` branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.
 -# Create packages from the release branch.
 
@@ -24,10 +24,10 @@ Additional beta release
 This process should be followed if changes have to be made after the beta packages have already been published (or even provided to a limited number of users). If there are significant changes in `dev` that should *not* be included in the beta release, follow the point release procedure instead (but adjust the version strings as required).
 
 -# Make the required fixes in `dev`.
--# `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0-beta.1`.
+-# `dev` branch: update `CHANGELOG.md`. Change the `Unreleased` heading to `123.0.0-beta.2`.
 -# Merge the `dev` branch into the `release/123.0` branch.
--# `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-beta.1`.
--# Create a `v123.0.0-beta.1` tag using the release branch.
+-# `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.0-beta.2`.
+-# Create a `v123.0.0-beta.2` tag using the release branch.
 -# Test the release branch. Make any required fixes in the `dev` branch, and merge them into the release branch. Ideally, bump the version and create a new tag every time changes are merged. If you don't want to bump the version, remember to destroy and recreate the latest tag.
 -# Create packages from the release branch.
 
@@ -54,10 +54,10 @@ Point release
 
 This process should be followed if important bug fixes have to be released after the final release packages have already been published (or even provided to a limited number of users). If there are no changes in `dev` that should not be included in the point release, follow the additional beta release procedure instead (but adjust the version strings as required).
 
--# Make the required fixes in `dev`. Cherry-pick them into the release branch.
+-# Make the required fixes in `dev`. Cherry-pick them into the release branch. Has there been a breaking change to `carta-casacore` since the last stable release? If yes, backport the backend changes now.
 -# `dev` branch: update `CHANGELOG.md`. Move the cherry-picked changes from the `Unreleased` section to a new `123.0.1` section *under* `Unreleased`.
 -# `release/123.0` branch: update `CHANGELOG.md`. Copy only the `123.0.1` section from the changelog in the `dev` branch.
 -# `release/123.0` branch: update `VERSION_ID` string in `src/Util/App.h` to `123.0.1`.
 -# Create a `v123.0.1` tag using the release branch.
 -# Test the release branch. If an issue affects both `dev` and the release branch, fix it in `dev` and cherry-pick the changes into the release branch. If an issue is caused by changes in `dev` which are not included in the point release, make the minimal required changes in the release branch. Ideally, bump the version and create a new tag every time changes are made. If you don't want to bump the version, remember to destroy and recreate the latest tag.
--# Create packages from the release branch.
+-# Create packages from the release branch. Packages should be staged in a separate testing repository for release packages, as the default testing repository may contain newer beta versions. Has the `carta-casacore` version changed? Don't forget to update the package metadata and to copy the `carta-casacore` package.
