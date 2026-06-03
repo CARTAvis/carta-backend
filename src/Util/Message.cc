@@ -466,7 +466,7 @@ CARTA::DirectoryInfo* Message::AddDirectory(CARTA::CatalogListResponse& response
 }
 
 CARTA::CatalogFileInfo* Message::AddFile(CARTA::CatalogListResponse& response, std::string name, CARTA::CatalogFileType type,
-    int64_t file_size, std::string description, int64_t date) {
+    int64_t file_size, int64_t date, std::string description) {
     auto* file_info = response.add_files();
     file_info->set_name(name);
     file_info->set_type(type);

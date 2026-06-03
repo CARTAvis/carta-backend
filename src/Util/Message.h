@@ -135,7 +135,7 @@ public:
     static CARTA::DirectoryInfo* AddDirectory(
         CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::CatalogFileInfo* AddFile(CARTA::CatalogListResponse& response, std::string name,
-        CARTA::CatalogFileType type = CARTA::CatalogFileType::Unknown, int64_t size = 0, std::string description = "", int64_t date = 0);
+        CARTA::CatalogFileType type = CARTA::CatalogFileType::Unknown, int64_t size = 0, int64_t date = 0, std::string description = "");
     static CARTA::RegionListResponse RegionListResponse(CARTA::FileListResponse file_response);
     static CARTA::HeaderEntry* AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
         CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);

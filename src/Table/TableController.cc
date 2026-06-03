@@ -259,7 +259,7 @@ void TableController::OnFileListRequest(
 
                 // Fill the file info
                 auto file_info = Message::AddFile(
-                    file_list_response, entry.path().filename().string(), file_type, fs::file_size(entry), "", file_stats.st_mtim.tv_sec);
+                    file_list_response, entry.path().filename().string(), file_type, fs::file_size(entry), file_stats.st_mtim.tv_sec);
             }
 
             // update the progress and get the difference between the current time and start time
