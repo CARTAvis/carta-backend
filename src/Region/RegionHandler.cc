@@ -940,7 +940,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
         }
 
         // Preview image is now set, make frame to access it.
-        auto preview_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(preview_image, ""));
+        auto preview_loader = FileLoader::GetLoader(preview_image, "");
         auto preview_session_id(-1);
         auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
 
