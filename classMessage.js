@@ -5,6 +5,10 @@ var classMessage =
     [ "AddAxesNumbers", "classMessage.html#acc08f038aac5b66ab354b7910b9dfe5c", null ],
     [ "AddComputedEntry", "classMessage.html#aad5de672550d68135329a1ea136c6a17", null ],
     [ "AddHeaderEntry", "classMessage.html#a05127fe478a39099a4be2810e9240317", null ],
+    [ "AddLineProfileAxis", "classMessage.html#ad8dca9c939e9fec8587fb583172cf5c0", null ],
+    [ "AddProfile", "classMessage.html#a4830fb8d0cb2a4acf8c39cd8615072b9", null ],
+    [ "AddProfile", "classMessage.html#ae3ede3f48012609569508da5656b09d3", null ],
+    [ "AddProfile", "classMessage.html#a2c47b796218a4431aee7e8d6680d32ca", null ],
     [ "AddRequiredTiles", "classMessage.html#a8f3f50d7c76224f6c11eb8f074a47259", null ],
     [ "Beam", "classMessage.html#a50066c9b8734724d4be0ced5e2143dfd", null ],
     [ "CloseFile", "classMessage.html#acfdc04d3a74a1759ad075074bf2c19b1", null ],
@@ -39,10 +43,8 @@ var classMessage =
     [ "SetRegion", "classMessage.html#a916c7171fc85a251d96cbe4d3d6e7dbe", null ],
     [ "SetRegion", "classMessage.html#a9cd958593df60d02c3300fdbef012a81", null ],
     [ "SetRegionAck", "classMessage.html#a75d7d86b23309ae2a94359dc64e923a0", null ],
-    [ "SpatialProfileData", "classMessage.html#afc5c954ad1784b8c550c42331df6dd2c", null ],
-    [ "SpatialProfileData", "classMessage.html#a53123b6b3d094f6c9b05445a55bfb45f", null ],
-    [ "SpectralProfileData", "classMessage.html#af0ee1f2c4e8dc91a09b2ee7a31020566", null ],
-    [ "SpectralProfileData", "classMessage.html#a4e7fcbdfac275064dfd1a3f3582d2bcc", null ],
+    [ "SpatialProfileData", "classMessage.html#a3957449bb920ef027c7ca3cda5449358", null ],
+    [ "SpectralProfileData", "classMessage.html#ab4d3400aea7ba8c5bee4a89ddeb86667", null ],
     [ "StartAnimationAck", "classMessage.html#aaec7bf7eebf4becb13bb7d65ed54bfb6", null ],
     [ "VectorOverlayTileData", "classMessage.html#ae2014883b61e59f5a8af13ab6109a659", null ]
 ];

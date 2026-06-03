@@ -70,5 +70,5 @@ var searchData=
   ['trimspaces_67',['TrimSpaces',['../namespacecarta.html#afc4c4afd1d282ad51a05d830059a55df',1,'carta']]],
   ['try_5fpop_68',['try_pop',['../classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d',1,'carta::concurrent_queue']]],
   ['trycast_69',['TryCast',['../classcarta_1_1DataColumn.html#a9ee54f3fb58e28a423fb84418a0c178d',1,'carta::DataColumn']]],
-  ['type_70',['type',['../structcarta_1_1EventHeader.html#aee18d56213e8780ddd554870aaae64ed',1,'carta::EventHeader::type'],['../structcarta_1_1RegionState.html#a012fe948493b80db2c45fc6477674346',1,'carta::RegionState::type'],['../classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001',1,'carta::Table::Type()']]]
+  ['type_70',['type',['../classcarta_1_1Table.html#ae04fd9705bc409a2e709a19b03bb0001',1,'carta::Table::Type()'],['../structcarta_1_1EventHeader.html#aee18d56213e8780ddd554870aaae64ed',1,'carta::EventHeader::type'],['../structcarta_1_1RegionState.html#a012fe948493b80db2c45fc6477674346',1,'carta::RegionState::type']]]
 ];

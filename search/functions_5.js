@@ -6,7 +6,7 @@ var searchData=
   ['encodeintegers_3',['EncodeIntegers',['../namespacecarta.html#ae0d37b236270de77bb23613108e10258',1,'carta']]],
   ['encodemessage_4',['EncodeMessage',['../classMessage.html#ad7554f7b047d88c0106266229a2f7f74',1,'Message']]],
   ['equal_5',['Equal',['../structcarta_1_1Bounds.html#a77aab47e51cc436b8cf483baca525af7',1,'carta::Bounds']]],
-  ['error_6',['error',['../classcarta_1_1WebBrowser.html#a7d1f41f018d2693505b6383ff9c8dad9',1,'carta::WebBrowser::Error()'],['../classcarta_1_1JsonCustomErrorHandler.html#a69ce79e47ecf44a6f1434b19ab3e6a6c',1,'carta::JsonCustomErrorHandler::error()']]],
+  ['error_6',['error',['../classcarta_1_1JsonCustomErrorHandler.html#a69ce79e47ecf44a6f1434b19ab3e6a6c',1,'carta::JsonCustomErrorHandler::error()'],['../classcarta_1_1WebBrowser.html#a7d1f41f018d2693505b6383ff9c8dad9',1,'carta::WebBrowser::Error()']]],
   ['errordata_7',['ErrorData',['../classMessage.html#a99e84f303d54a46b1cf582bf343c7f29',1,'Message']]],
   ['errorhandler_8',['ErrorHandler',['../classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4',1,'carta::ImageFitter']]],
   ['excludefromcoredump_9',['excludefromcoredump',['../Memory_8cc.html#aed502e6e12b21d1ea4ce93c6a09c404c',1,'ExcludeFromCoreDump(void *address, size_t size):&#160;Memory.cc'],['../Memory_8h.html#aed502e6e12b21d1ea4ce93c6a09c404c',1,'ExcludeFromCoreDump(void *address, size_t size):&#160;Memory.cc']]],

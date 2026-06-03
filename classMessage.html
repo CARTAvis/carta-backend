@@ -136,14 +136,18 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a0ed9dfcb0fca84572479e2b4abb7af52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60da007fe3902ca53c342359ad9e29a0" id="r_a60da007fe3902ca53c342359ad9e29a0"><td class="memItemLeft" align="right" valign="top">static CARTA::ScriptingRequest&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a60da007fe3902ca53c342359ad9e29a0">ScriptingRequest</a> (uint32_t scripting_request_id, const std::string &amp;target, const std::string &amp;action, const std::string &amp;parameters, bool async, const std::string &amp;return_path)</td></tr>
 <tr class="separator:a60da007fe3902ca53c342359ad9e29a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0ee1f2c4e8dc91a09b2ee7a31020566" id="r_af0ee1f2c4e8dc91a09b2ee7a31020566"><td class="memItemLeft" align="right" valign="top">static CARTA::SpectralProfileData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#af0ee1f2c4e8dc91a09b2ee7a31020566">SpectralProfileData</a> (int32_t file_id, int32_t region_id, int32_t stokes, float progress, std::string &amp;coordinate, std::vector&lt; CARTA::StatsType &gt; &amp;required_stats, std::map&lt; CARTA::StatsType, std::vector&lt; double &gt; &gt; &amp;spectral_data)</td></tr>
-<tr class="separator:af0ee1f2c4e8dc91a09b2ee7a31020566"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4e7fcbdfac275064dfd1a3f3582d2bcc" id="r_a4e7fcbdfac275064dfd1a3f3582d2bcc"><td class="memItemLeft" align="right" valign="top">static CARTA::SpectralProfileData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a4e7fcbdfac275064dfd1a3f3582d2bcc">SpectralProfileData</a> (int32_t stokes, float progress)</td></tr>
-<tr class="separator:a4e7fcbdfac275064dfd1a3f3582d2bcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc5c954ad1784b8c550c42331df6dd2c" id="r_afc5c954ad1784b8c550c42331df6dd2c"><td class="memItemLeft" align="right" valign="top">static CARTA::SpatialProfileData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#afc5c954ad1784b8c550c42331df6dd2c">SpatialProfileData</a> (int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel, int32_t stokes, float value, int32_t start, int32_t end, std::vector&lt; float &gt; &amp;profile, std::string &amp;coordinate, int32_t mip, CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string &amp;unit)</td></tr>
-<tr class="separator:afc5c954ad1784b8c550c42331df6dd2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53123b6b3d094f6c9b05445a55bfb45f" id="r_a53123b6b3d094f6c9b05445a55bfb45f"><td class="memItemLeft" align="right" valign="top">static CARTA::SpatialProfileData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a53123b6b3d094f6c9b05445a55bfb45f">SpatialProfileData</a> (int32_t x, int32_t y, int32_t channel, int32_t stokes, float value)</td></tr>
-<tr class="separator:a53123b6b3d094f6c9b05445a55bfb45f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4d3400aea7ba8c5bee4a89ddeb86667" id="r_ab4d3400aea7ba8c5bee4a89ddeb86667"><td class="memItemLeft" align="right" valign="top">static CARTA::SpectralProfileData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ab4d3400aea7ba8c5bee4a89ddeb86667">SpectralProfileData</a> (int32_t stokes, float progress, int32_t file_id=0, int32_t region_id=0)</td></tr>
+<tr class="separator:ab4d3400aea7ba8c5bee4a89ddeb86667"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3ede3f48012609569508da5656b09d3" id="r_ae3ede3f48012609569508da5656b09d3"><td class="memItemLeft" align="right" valign="top">static CARTA::SpectralProfile *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ae3ede3f48012609569508da5656b09d3">AddProfile</a> (CARTA::SpectralProfileData &amp;profile_data, std::string &amp;coordinate, CARTA::StatsType &amp;stats_type, std::vector&lt; double &gt; &amp;values)</td></tr>
+<tr class="separator:ae3ede3f48012609569508da5656b09d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c47b796218a4431aee7e8d6680d32ca" id="r_a2c47b796218a4431aee7e8d6680d32ca"><td class="memItemLeft" align="right" valign="top">static CARTA::SpectralProfile *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a2c47b796218a4431aee7e8d6680d32ca">AddProfile</a> (CARTA::SpectralProfileData &amp;profile_data, std::string &amp;coordinate, CARTA::StatsType &amp;stats_type, std::vector&lt; float &gt; &amp;values)</td></tr>
+<tr class="separator:a2c47b796218a4431aee7e8d6680d32ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3957449bb920ef027c7ca3cda5449358" id="r_a3957449bb920ef027c7ca3cda5449358"><td class="memItemLeft" align="right" valign="top">static CARTA::SpatialProfileData&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a3957449bb920ef027c7ca3cda5449358">SpatialProfileData</a> (int32_t x, int32_t y, int32_t channel, int32_t stokes, float value, int32_t file_id=0, int32_t region_id=0)</td></tr>
+<tr class="separator:a3957449bb920ef027c7ca3cda5449358"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4830fb8d0cb2a4acf8c39cd8615072b9" id="r_a4830fb8d0cb2a4acf8c39cd8615072b9"><td class="memItemLeft" align="right" valign="top">static CARTA::SpatialProfile *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a4830fb8d0cb2a4acf8c39cd8615072b9">AddProfile</a> (CARTA::SpatialProfileData &amp;profile_data, int32_t start, int32_t end, std::vector&lt; float &gt; &amp;values, std::string coordinate, int32_t mip)</td></tr>
+<tr class="separator:a4830fb8d0cb2a4acf8c39cd8615072b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8dca9c939e9fec8587fb583172cf5c0" id="r_ad8dca9c939e9fec8587fb583172cf5c0"><td class="memItemLeft" align="right" valign="top">static CARTA::LineProfileAxis *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ad8dca9c939e9fec8587fb583172cf5c0">AddLineProfileAxis</a> (CARTA::SpatialProfile *spatial_profile, CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string unit)</td></tr>
+<tr class="separator:ad8dca9c939e9fec8587fb583172cf5c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4219aad3d558ca35844027283d980b33" id="r_a4219aad3d558ca35844027283d980b33"><td class="memItemLeft" align="right" valign="top">static CARTA::RasterTileSync&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a4219aad3d558ca35844027283d980b33">RasterTileSync</a> (int32_t file_id, int32_t channel, int32_t stokes, int32_t sync_id, int32_t animation_id, int32_t tile_count, bool end_sync)</td></tr>
 <tr class="separator:a4219aad3d558ca35844027283d980b33"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75d7d86b23309ae2a94359dc64e923a0" id="r_a75d7d86b23309ae2a94359dc64e923a0"><td class="memItemLeft" align="right" valign="top">static CARTA::SetRegionAck&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a75d7d86b23309ae2a94359dc64e923a0">SetRegionAck</a> (int32_t region_id, bool success, std::string err_message)</td></tr>
@@ -440,6 +444,232 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a05127fe478a39099a4be2810e9240317_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
+
+</div>
+</div>
+<a id="ad8dca9c939e9fec8587fb583172cf5c0" name="ad8dca9c939e9fec8587fb583172cf5c0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8dca9c939e9fec8587fb583172cf5c0">&#9670;&#160;</a></span>AddLineProfileAxis()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::LineProfileAxis * Message::AddLineProfileAxis </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::SpatialProfile *&#160;</td>
+          <td class="paramname"><em>spatial_profile</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::ProfileAxisType&#160;</td>
+          <td class="paramname"><em>axis_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>crpix</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>crval</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>cdelt</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>unit</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_ad8dca9c939e9fec8587fb583172cf5c0_icgraph.svg" width="463" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a4830fb8d0cb2a4acf8c39cd8615072b9" name="a4830fb8d0cb2a4acf8c39cd8615072b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4830fb8d0cb2a4acf8c39cd8615072b9">&#9670;&#160;</a></span>AddProfile() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::SpatialProfile * Message::AddProfile </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::SpatialProfileData &amp;&#160;</td>
+          <td class="paramname"><em>profile_data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>start</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>end</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; float &gt; &amp;&#160;</td>
+          <td class="paramname"><em>values</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>coordinate</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>mip</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae3ede3f48012609569508da5656b09d3" name="ae3ede3f48012609569508da5656b09d3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae3ede3f48012609569508da5656b09d3">&#9670;&#160;</a></span>AddProfile() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::SpectralProfile * Message::AddProfile </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::SpectralProfileData &amp;&#160;</td>
+          <td class="paramname"><em>profile_data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>coordinate</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::StatsType &amp;&#160;</td>
+          <td class="paramname"><em>stats_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; double &gt; &amp;&#160;</td>
+          <td class="paramname"><em>values</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_ae3ede3f48012609569508da5656b09d3_icgraph.svg" width="408" height="243"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a2c47b796218a4431aee7e8d6680d32ca" name="a2c47b796218a4431aee7e8d6680d32ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c47b796218a4431aee7e8d6680d32ca">&#9670;&#160;</a></span>AddProfile() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::SpectralProfile * Message::AddProfile </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::SpectralProfileData &amp;&#160;</td>
+          <td class="paramname"><em>profile_data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>coordinate</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::StatsType &amp;&#160;</td>
+          <td class="paramname"><em>stats_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; float &gt; &amp;&#160;</td>
+          <td class="paramname"><em>values</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -2175,8 +2405,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="afc5c954ad1784b8c550c42331df6dd2c" name="afc5c954ad1784b8c550c42331df6dd2c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afc5c954ad1784b8c550c42331df6dd2c">&#9670;&#160;</a></span>SpatialProfileData() <span class="overload">[1/2]</span></h2>
+<a id="a3957449bb920ef027c7ca3cda5449358" name="a3957449bb920ef027c7ca3cda5449358"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3957449bb920ef027c7ca3cda5449358">&#9670;&#160;</a></span>SpatialProfileData()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2187,18 +2417,6 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">CARTA::SpatialProfileData Message::SpatialProfileData </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>file_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>region_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">int32_t&#160;</td>
           <td class="paramname"><em>x</em>, </td>
         </tr>
@@ -2230,61 +2448,13 @@ Here is the caller graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>start</em>, </td>
+          <td class="paramname"><em>file_id</em> = <code>0</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>end</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::vector&lt; float &gt; &amp;&#160;</td>
-          <td class="paramname"><em>profile</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>coordinate</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>mip</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">CARTA::ProfileAxisType&#160;</td>
-          <td class="paramname"><em>axis_type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>crpix</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>crval</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>cdelt</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>unit</em>&#160;</td>
+          <td class="paramname"><em>region_id</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -2301,67 +2471,13 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_afc5c954ad1784b8c550c42331df6dd2c_icgraph.svg" width="459" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_a3957449bb920ef027c7ca3cda5449358_icgraph.svg" width="459" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
 </div>
-<a id="a53123b6b3d094f6c9b05445a55bfb45f" name="a53123b6b3d094f6c9b05445a55bfb45f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a53123b6b3d094f6c9b05445a55bfb45f">&#9670;&#160;</a></span>SpatialProfileData() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">CARTA::SpatialProfileData Message::SpatialProfileData </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>channel</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>stokes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>value</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="af0ee1f2c4e8dc91a09b2ee7a31020566" name="af0ee1f2c4e8dc91a09b2ee7a31020566"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af0ee1f2c4e8dc91a09b2ee7a31020566">&#9670;&#160;</a></span>SpectralProfileData() <span class="overload">[1/2]</span></h2>
+<a id="ab4d3400aea7ba8c5bee4a89ddeb86667" name="ab4d3400aea7ba8c5bee4a89ddeb86667"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4d3400aea7ba8c5bee4a89ddeb86667">&#9670;&#160;</a></span>SpectralProfileData()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2372,18 +2488,6 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">CARTA::SpectralProfileData Message::SpectralProfileData </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>file_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>region_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">int32_t&#160;</td>
           <td class="paramname"><em>stokes</em>, </td>
         </tr>
@@ -2396,20 +2500,14 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>coordinate</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>file_id</em> = <code>0</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::vector&lt; CARTA::StatsType &gt; &amp;&#160;</td>
-          <td class="paramname"><em>required_stats</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::map&lt; CARTA::StatsType, std::vector&lt; double &gt; &gt; &amp;&#160;</td>
-          <td class="paramname"><em>spectral_data</em>&#160;</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>region_id</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -2426,44 +2524,8 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_af0ee1f2c4e8dc91a09b2ee7a31020566_icgraph.svg" width="456" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_ab4d3400aea7ba8c5bee4a89ddeb86667_icgraph.svg" width="456" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
-
-</div>
-</div>
-<a id="a4e7fcbdfac275064dfd1a3f3582d2bcc" name="a4e7fcbdfac275064dfd1a3f3582d2bcc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4e7fcbdfac275064dfd1a3f3582d2bcc">&#9670;&#160;</a></span>SpectralProfileData() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">CARTA::SpectralProfileData Message::SpectralProfileData </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>stokes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>progress</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
 
 </div>
 </div>
