@@ -9,14 +9,14 @@ RUN \
     gdb gfortran git git-lfs libgmock-dev googletest libblas-dev libcfitsio-dev \
     libgsl-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libprotobuf-dev libreadline-dev libssl-dev libstarlink-ast-dev \
-    libtool libxml2-dev libxslt1-dev libzstd-dev pkg-config protobuf-compiler \
+    libtool libxml2-dev libxslt1-dev  libzfp-dev libzstd-dev pkg-config protobuf-compiler \
     python3-numpy python3-astropy software-properties-common unzip wcslib-dev wget uuid-dev gcovr
 
-# Get carta dependencies carta-casacore, and zfp from the cartavis-team PPA
+# Get carta-casacore dependency from the cartavis-team/carta-preview PPA
 RUN \
-  add-apt-repository -y ppa:cartavis-team/carta && \
+  add-apt-repository -y ppa:cartavis-team/carta-preview && \
   apt-get update && \
-  apt-get -y install carta-casacore-dev libzfp-dev
+  apt-get -y install carta-casacore-dev
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
