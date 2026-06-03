@@ -8,6 +8,6 @@ var classcarta_1_1StokesFilesConnector =
     [ "OpenStokesFiles", "classcarta_1_1StokesFilesConnector.html#a293ad12a37f9da0da1f6bcd140c68bd8", null ],
     [ "StokesFilesValid", "classcarta_1_1StokesFilesConnector.html#adf4cafd64661676a483c234b666335cc", null ],
     [ "_concatenated_name", "classcarta_1_1StokesFilesConnector.html#a6edbf96d75b4888e490a2974ad3b2128", null ],
-    [ "_loaders", "classcarta_1_1StokesFilesConnector.html#a3e392dfaa2db4f9d085bb64ecf18c75f", null ],
+    [ "_loaders", "classcarta_1_1StokesFilesConnector.html#a5ec5f61cfa732a19ff3d0d38bd789553", null ],
     [ "_top_level_folder", "classcarta_1_1StokesFilesConnector.html#a4ea71675a73f8ee48ff744e18fb476ef", null ]
 ];

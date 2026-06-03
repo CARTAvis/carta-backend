@@ -129,7 +129,7 @@ var sectionId = 'dynsection-0';
 <g id="a_Node000004"><a xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="1300,-573.87 1134,-573.87 1134,-532.87 1300,-532.87 1300,-573.87"/>
 <text text-anchor="start" x="1142" y="-561.87" font-family="Helvetica,sans-Serif" font-size="10.00">std::map&lt; CARTA::Polarization</text>
-<text text-anchor="start" x="1142" y="-550.87" font-family="Helvetica,sans-Serif" font-size="10.00">Type, std::unique_ptr&lt; carta</text>
+<text text-anchor="start" x="1142" y="-550.87" font-family="Helvetica,sans-Serif" font-size="10.00">Type, std::shared_ptr&lt; carta</text>
 <text text-anchor="middle" x="1217" y="-539.87" font-family="Helvetica,sans-Serif" font-size="10.00">::FileLoader &gt; &gt;</text>
 </a>
 </g>
@@ -210,7 +210,7 @@ var sectionId = 'dynsection-0';
 <title>Node6</title>
 <g id="a_Node000006"><a xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="1049,-568.37 924,-568.37 924,-538.37 1049,-538.37 1049,-568.37"/>
-<text text-anchor="start" x="932" y="-556.37" font-family="Helvetica,sans-Serif" font-size="10.00">std::unique_ptr&lt; carta</text>
+<text text-anchor="start" x="932" y="-556.37" font-family="Helvetica,sans-Serif" font-size="10.00">std::shared_ptr&lt; carta</text>
 <text text-anchor="middle" x="986.5" y="-545.37" font-family="Helvetica,sans-Serif" font-size="10.00">::FileLoader &gt;</text>
 </a>
 </g>

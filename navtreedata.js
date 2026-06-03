@@ -86,7 +86,7 @@ var NAVTREEINDEX =
 "classcarta_1_1CartaHdf5Image.html#a244202bc52a2c614595faf0363f63f8e",
 "classcarta_1_1CompressedFits.html#a94e623f08d835889943c9d7a2fcb7f76",
 "classcarta_1_1ExprLoader.html#a81ca6bd8251b0a7a6285ddd6a24a59e7",
-"classcarta_1_1FileLoader.html#ac8af33ecfa4dd712b78e91ec4221dcb3",
+"classcarta_1_1FileLoader.html#ac8f21fd4c57130d4b37da85c01d5cc56",
 "classcarta_1_1Frame.html#aab2a5d7c4ae3e484737b123b28274f3b",
 "classcarta_1_1HttpServer.html#a63128482ebdede9e4da3e24fd4bf0c7e",
 "classcarta_1_1ImagePtrLoader.html#a822d130b7bb626e46b446aa1cb5184ab",
