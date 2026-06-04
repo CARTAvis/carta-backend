@@ -940,7 +940,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
         }
 
         // Preview image is now set, make frame to access it.
-        auto preview_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(preview_image, ""));
+        auto preview_loader = FileLoader::GetLoader(preview_image, "");
         auto preview_session_id(-1);
         auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
 
@@ -1511,8 +1511,18 @@ bool RegionHandler::FillSpectralProfileData(
                 AxisRange z_range(0, _frames.at(config_file_id)->Depth() - 1); // all channels
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
                     report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                        auto profile_message = Message::SpectralProfileData(
-                            config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
+                        auto profile_message = Message::SpectralProfileData(stokes_index, progress, config_file_id, config_region_id);
+
+                        std::vector<double> nan_value = {DOUBLE_NAN};
+
+                        for (auto stats_type : required_stats) {
+                            if (results.find(stats_type) == results.end()) { // stat not provided
+                                Message::AddProfile(profile_message, coordinate, stats_type, nan_value);
+                            } else {
+                                Message::AddProfile(profile_message, coordinate, stats_type, results[stats_type]);
+                            }
+                        }
+
                         cb(profile_message); // send (partial profile) data
                     });
             }

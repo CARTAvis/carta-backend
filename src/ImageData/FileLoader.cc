@@ -27,23 +27,23 @@
 
 using namespace carta;
 
-FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string& directory) {
+std::shared_ptr<FileLoader> FileLoader::GetLoader(const std::string& filename, const std::string& directory) {
     if (!directory.empty()) {
         // filename is LEL expression for image(s) in directory
-        return new ExprLoader(filename, directory);
+        return std::make_shared<ExprLoader>(filename, directory);
     } else if (IsCompressedFits(filename)) {
-        return new FitsLoader(filename, true);
+        return std::make_shared<FitsLoader>(filename, true);
     } else if (IsRemoteHttpFile(filename)) {
-        return new FitsLoader(filename, false, true);
+        return std::make_shared<FitsLoader>(filename, false, true);
     }
 
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
-            return new CasaLoader(filename);
+            return std::make_shared<CasaLoader>(filename);
         case casacore::ImageOpener::FITS:
-            return new FitsLoader(filename);
+            return std::make_shared<FitsLoader>(filename);
         case casacore::ImageOpener::MIRIAD:
-            return new MiriadLoader(filename);
+            return std::make_shared<MiriadLoader>(filename);
         case casacore::ImageOpener::GIPSY:
             break;
         case casacore::ImageOpener::CAIPS:
@@ -51,22 +51,22 @@ FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string
         case casacore::ImageOpener::NEWSTAR:
             break;
         case casacore::ImageOpener::HDF5:
-            return new Hdf5Loader(filename);
+            return std::make_shared<Hdf5Loader>(filename);
         case casacore::ImageOpener::IMAGECONCAT:
-            return new ConcatLoader(filename);
+            return std::make_shared<ConcatLoader>(filename);
         case casacore::ImageOpener::IMAGEEXPR:
-            return new ExprLoader(filename);
+            return std::make_shared<ExprLoader>(filename);
         case casacore::ImageOpener::COMPLISTIMAGE:
-            return new CompListLoader(filename);
+            return std::make_shared<CompListLoader>(filename);
         default:
             break;
     }
     return nullptr;
 }
 
-FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename) {
+std::shared_ptr<FileLoader> FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename) {
     if (image) {
-        return new ImagePtrLoader(image, filename);
+        return std::make_shared<ImagePtrLoader>(image, filename);
     } else {
         spdlog::error("Fail to assign an image pointer!");
         return nullptr;
@@ -216,7 +216,7 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
     }
 
     if (_coord_sys->nPixelAxes() != _num_dims) {
-        message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
+        message = "Error loading image: number of coordinate pixel axes does not match image shape.";
         return false;
     }
 
