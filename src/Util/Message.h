@@ -131,11 +131,11 @@ public:
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
     static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::FileInfo* AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type = CARTA::FileType::UNKNOWN,
-        int64_t size = 0, std::string hdu_list = "", int64_t date = 0);
+        int64_t size = 0, time_t date = 0, std::string hdu_list = "");
     static CARTA::DirectoryInfo* AddDirectory(
         CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::CatalogFileInfo* AddFile(CARTA::CatalogListResponse& response, std::string name,
-        CARTA::CatalogFileType type = CARTA::CatalogFileType::Unknown, int64_t size = 0, int64_t date = 0, std::string description = "");
+        CARTA::CatalogFileType type = CARTA::CatalogFileType::Unknown, int64_t size = 0, time_t date = 0, std::string description = "");
     static CARTA::RegionListResponse RegionListResponse(CARTA::FileListResponse file_response);
     static CARTA::HeaderEntry* AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
         CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);
