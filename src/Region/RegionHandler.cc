@@ -171,6 +171,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     auto imported_regions = importer->GetRegions(error);
     import_ack.set_message(error);
     if (imported_regions.empty()) {
+        import_ack.set_success(false);
         return;
     }
 
