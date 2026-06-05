@@ -450,7 +450,9 @@ CARTA::FileInfo* Message::AddFile(CARTA::FileListResponse& response, std::string
     file_info->set_type(type);
     file_info->set_size(size);
     auto* list = file_info->mutable_hdu_list();
-    list->Add(hdu_list.begin(), hdu_list.end());
+    for (const auto& item : hdu_list) {
+        *list->Add() = item;
+    }
     file_info->set_date(date);
     return file_info;
 }
