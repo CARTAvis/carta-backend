@@ -1,7 +1,9 @@
 <map id="carta::RegionHandler::ImportRegion" name="carta::RegionHandler::ImportRegion">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,35,164,75"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1RegionHandler.html#a43a9a50fcbb0fb348cd8a10cd52922e8" title=" " alt="" coords="226,5,385,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,42,212,35,213,40,164,47"/>
-<area shape="rect" id="Node000003" href="$namespacecarta.html#a69252619dfa7d9664a4517b757f6ca4c" title="Create and return importer according to region file type." alt="" coords="212,70,399,95"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="164,62,199,66,198,72,164,67"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,55,164,95"/>
+<area shape="rect" id="Node000002" href="$classMessage.html#ac0517a10b6fb0dcd196d8c12c89b0913" title=" " alt="" coords="212,5,429,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="163,53,211,41,251,31,252,36,213,46,165,58"/>
+<area shape="rect" id="Node000003" href="$classcarta_1_1RegionHandler.html#a43a9a50fcbb0fb348cd8a10cd52922e8" title=" " alt="" coords="241,55,400,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="164,73,228,73,228,78,164,78"/>
+<area shape="rect" id="Node000004" href="$namespacecarta.html#a69252619dfa7d9664a4517b757f6ca4c" title="Create and return importer according to region file type." alt="" coords="227,120,414,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="165,93,213,105,252,114,251,119,211,110,163,98"/>
 </map>

@@ -42,7 +42,7 @@ var searchData=
   ['hdf5loader_2ecc_39',['Hdf5Loader.cc',['../Hdf5Loader_8cc.html',1,'']]],
   ['hdf5loader_2eh_40',['Hdf5Loader.h',['../Hdf5Loader_8h.html',1,'']]],
   ['hdf5loader_2etcc_41',['Hdf5Loader.tcc',['../Hdf5Loader_8tcc.html',1,'']]],
-  ['height_42',['height',['../structDimsInfo.html#a9ec319eda659def920ebedae974ec8c8',1,'DimsInfo::height'],['../classcarta_1_1Frame.html#a41e6b02b0af60f3ce60a1478a3c56e0d',1,'carta::Frame::Height()']]],
+  ['height_42',['height',['../classcarta_1_1Frame.html#a41e6b02b0af60f3ce60a1478a3c56e0d',1,'carta::Frame::Height()'],['../structDimsInfo.html#a9ec319eda659def920ebedae974ec8c8',1,'DimsInfo::height']]],
   ['help_43',['help',['../structcarta_1_1ProgramSettings.html#a7882aa5c14ce8c9c846e4f5658194add',1,'carta::ProgramSettings']]],
   ['hips_5fbase_5furl_44',['HIPS_BASE_URL',['../RemoteFiles_8h.html#ac23c641f0c728f8ec2bbd4e11d67036d',1,'RemoteFiles.h']]],
   ['hips_5fmax_5fpixels_45',['HIPS_MAX_PIXELS',['../RemoteFiles_8h.html#ac71a17a813830a7f3f35aa24b0bcdc37',1,'RemoteFiles.h']]],
