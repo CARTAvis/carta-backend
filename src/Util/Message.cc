@@ -77,20 +77,12 @@ CARTA::Point Message::Point(const std::vector<double>& input, int x_index, int y
     return Message::Point(input[x_index], input[y_index]);
 }
 
-CARTA::SetRegion Message::SetRegion(
-    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation) {
-    CARTA::SetRegion set_region;
-    set_region.set_file_id(file_id);
-    set_region.set_region_id(region_id);
-    auto* region_info = set_region.mutable_region_info();
-    region_info->set_region_type(region_type);
-    region_info->set_rotation(rotation);
-    for (auto control_point : control_points) {
-        auto* point = region_info->add_control_points();
-        point->set_x(control_point.x());
-        point->set_y(control_point.y());
-    }
-    return set_region;
+CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
+    CARTA::SetRegion message;
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
+    *message.mutable_region_info() = region_info;
+    return message;
 }
 
 CARTA::ImageBounds Message::ImageBounds(int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max) {
@@ -99,14 +91,6 @@ CARTA::ImageBounds Message::ImageBounds(int32_t x_min, int32_t x_max, int32_t y_
     message.set_x_max(x_max);
     message.set_y_min(y_min);
     message.set_y_max(y_max);
-    return message;
-}
-
-CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
-    CARTA::SetRegion message;
-    message.set_file_id(file_id);
-    message.set_region_id(region_id);
-    *message.mutable_region_info() = region_info;
     return message;
 }
 
@@ -398,6 +382,20 @@ CARTA::ListProgress Message::ListProgress(
     message.set_checked_count(checked_count);
     message.set_percentage(percentage);
     return message;
+}
+
+CARTA::ImportRegionAck Message::AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
+    std::vector<CARTA::Point>& control_points, float rotation, CARTA::RegionStyle style) {
+    // Set CARTA::RegionInfo
+    CARTA::RegionInfo region_info;
+    region_info.set_region_type(region_type);
+    *region_info.mutable_control_points() = {control_points.begin(), control_points.end()};
+    region_info.set_rotation(rotation);
+
+    (*import_ack.mutable_regions())[region_id] = region_info;
+    (*import_ack.mutable_region_styles())[region_id] = style;
+
+    return import_ack;
 }
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
