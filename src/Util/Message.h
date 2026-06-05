@@ -138,7 +138,7 @@ public:
         std::vector<CARTA::Point>& control_points, float region_rotation, CARTA::RegionStyle region_style);
     static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::FileInfo* AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type = CARTA::FileType::UNKNOWN,
-        int64_t size = 0, time_t date = 0, const std::vector<int>& hdu_list = {});
+        int64_t size = 0, time_t date = 0, const std::vector<std::string>& hdu_list = {});
     static CARTA::DirectoryInfo* AddDirectory(
         CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::CatalogFileInfo* AddFile(CARTA::CatalogListResponse& response, std::string name,
