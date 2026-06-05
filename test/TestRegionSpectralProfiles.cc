@@ -56,7 +56,7 @@ public:
 
     static bool SpectralProfile(const fs::path& image_path, const std::vector<float>& points, CARTA::SpectralProfileData& spectral_data,
         bool is_annotation = false) {
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+        auto loader = carta::FileLoader::GetLoader(image_path);
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
 

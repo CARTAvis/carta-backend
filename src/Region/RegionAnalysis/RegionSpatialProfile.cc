@@ -138,8 +138,9 @@ bool RegionSpatialProfile::GetLineSpatialProfile(int file_id, std::shared_ptr<Fr
     std::string unit = increment.getUnit();
 
     // Set message return value
-    spatial_profile_message = Message::SpatialProfileData(
-        file_id, _region_id, x, y, z, stokes_index, value, start, end, profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
+    spatial_profile_message = Message::SpatialProfileData(x, y, z, stokes_index, value, file_id, _region_id);
+    auto spatial_profile = Message::AddProfile(spatial_profile_message, start, end, profile, coordinate, mip);
+    Message::AddLineProfileAxis(spatial_profile, axis_type, crpix, crval, cdelt, unit);
     return true;
 }
 
