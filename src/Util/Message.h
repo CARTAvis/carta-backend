@@ -134,9 +134,11 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
+    static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
+        std::vector<CARTA::Point>& control_points, float region_rotation, CARTA::RegionStyle region_style);
     static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::FileInfo* AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type = CARTA::FileType::UNKNOWN,
-        int64_t size = 0, time_t date = 0, std::string hdu_list = "");
+        int64_t size = 0, time_t date = 0, const std::vector<int>& hdu_list = {});
     static CARTA::DirectoryInfo* AddDirectory(
         CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count = 0);
     static CARTA::CatalogFileInfo* AddFile(CARTA::CatalogListResponse& response, std::string name,

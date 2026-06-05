@@ -443,13 +443,14 @@ CARTA::DirectoryInfo* Message::AddDirectory(CARTA::FileListResponse& response, c
     return directory_info;
 }
 
-CARTA::FileInfo* Message::AddFile(
-    CARTA::FileListResponse& response, std::string name, CARTA::FileType type, int64_t size, time_t date, std::string hdu_list) {
+CARTA::FileInfo* Message::AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type, int64_t size, time_t date,
+    const std::vector<int>& hdu_list) {
     auto* file_info = response.add_files();
     file_info->set_name(name);
     file_info->set_type(type);
     file_info->set_size(size);
-    file_info->add_hdu_list(hdu_list);
+    auto* list = file_info->mutable_hdu_list();
+    list->Add(hdu_list.begin(), hdu_list.end());
     file_info->set_date(date);
     return file_info;
 }
