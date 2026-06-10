@@ -182,6 +182,16 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a03594461e68b148a3398fbaad3d651a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac0517a10b6fb0dcd196d8c12c89b0913" id="r_ac0517a10b6fb0dcd196d8c12c89b0913"><td class="memItemLeft" align="right" valign="top">static CARTA::ImportRegionAck&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ac0517a10b6fb0dcd196d8c12c89b0913">AddImportedRegion</a> (CARTA::ImportRegionAck &amp;import_ack, int region_id, CARTA::RegionType region_type, std::vector&lt; CARTA::Point &gt; &amp;control_points, float region_rotation, CARTA::RegionStyle region_style)</td></tr>
 <tr class="separator:ac0517a10b6fb0dcd196d8c12c89b0913"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af00c377148750c8577ae53eb6f37b364" id="r_af00c377148750c8577ae53eb6f37b364"><td class="memItemLeft" align="right" valign="top">static CARTA::DirectoryInfo *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#af00c377148750c8577ae53eb6f37b364">AddDirectory</a> (CARTA::FileListResponse &amp;response, const std::string &amp;name, time_t date, int item_count=0)</td></tr>
+<tr class="separator:af00c377148750c8577ae53eb6f37b364"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa289e10690867bab405158152724f0d9" id="r_aa289e10690867bab405158152724f0d9"><td class="memItemLeft" align="right" valign="top">static CARTA::FileInfo *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#aa289e10690867bab405158152724f0d9">AddFile</a> (CARTA::FileListResponse &amp;response, std::string name, CARTA::FileType type=CARTA::FileType::UNKNOWN, int64_t size=0, time_t date=0, const std::vector&lt; std::string &gt; &amp;hdu_list={})</td></tr>
+<tr class="separator:aa289e10690867bab405158152724f0d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacdf631e7b4cc60d0cca266bdf868c34" id="r_aacdf631e7b4cc60d0cca266bdf868c34"><td class="memItemLeft" align="right" valign="top">static CARTA::DirectoryInfo *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#aacdf631e7b4cc60d0cca266bdf868c34">AddDirectory</a> (CARTA::CatalogListResponse &amp;response, const std::string &amp;name, time_t date, int item_count=0)</td></tr>
+<tr class="separator:aacdf631e7b4cc60d0cca266bdf868c34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae25a17e8f2ee36e44ec70e01f3141a54" id="r_ae25a17e8f2ee36e44ec70e01f3141a54"><td class="memItemLeft" align="right" valign="top">static CARTA::CatalogFileInfo *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ae25a17e8f2ee36e44ec70e01f3141a54">AddFile</a> (CARTA::CatalogListResponse &amp;response, std::string name, CARTA::CatalogFileType type=CARTA::CatalogFileType::Unknown, int64_t size=0, time_t date=0, std::string description=&quot;&quot;)</td></tr>
+<tr class="separator:ae25a17e8f2ee36e44ec70e01f3141a54"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1899ab7bc0a6d19c0d888a6c9c46e77" id="r_ac1899ab7bc0a6d19c0d888a6c9c46e77"><td class="memItemLeft" align="right" valign="top">static CARTA::RegionListResponse&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#ac1899ab7bc0a6d19c0d888a6c9c46e77">RegionListResponse</a> (CARTA::FileListResponse file_response)</td></tr>
+<tr class="separator:ac1899ab7bc0a6d19c0d888a6c9c46e77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05127fe478a39099a4be2810e9240317" id="r_a05127fe478a39099a4be2810e9240317"><td class="memItemLeft" align="right" valign="top">static CARTA::HeaderEntry *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#a05127fe478a39099a4be2810e9240317">AddHeaderEntry</a> (CARTA::FileInfoExtended &amp;response, std::string name, const std::string &amp;value, CARTA::EntryType type=CARTA::EntryType::STRING, double numeric_value=0.0)</td></tr>
 <tr class="separator:a05127fe478a39099a4be2810e9240317"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aad5de672550d68135329a1ea136c6a17" id="r_aad5de672550d68135329a1ea136c6a17"><td class="memItemLeft" align="right" valign="top">static CARTA::HeaderEntry *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMessage.html#aad5de672550d68135329a1ea136c6a17">AddComputedEntry</a> (CARTA::FileInfoExtended &amp;response, std::string name, const std::string &amp;value, CARTA::EntryType type=CARTA::EntryType::STRING, double numeric_value=0.0)</td></tr>
@@ -384,6 +394,232 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_aad5de672550d68135329a1ea136c6a17_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="aacdf631e7b4cc60d0cca266bdf868c34" name="aacdf631e7b4cc60d0cca266bdf868c34"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aacdf631e7b4cc60d0cca266bdf868c34">&#9670;&#160;</a></span>AddDirectory() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::DirectoryInfo * Message::AddDirectory </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::CatalogListResponse &amp;&#160;</td>
+          <td class="paramname"><em>response</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">time_t&#160;</td>
+          <td class="paramname"><em>date</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>item_count</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af00c377148750c8577ae53eb6f37b364" name="af00c377148750c8577ae53eb6f37b364"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af00c377148750c8577ae53eb6f37b364">&#9670;&#160;</a></span>AddDirectory() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::DirectoryInfo * Message::AddDirectory </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileListResponse &amp;&#160;</td>
+          <td class="paramname"><em>response</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">time_t&#160;</td>
+          <td class="paramname"><em>date</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>item_count</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_af00c377148750c8577ae53eb6f37b364_icgraph.svg" width="611" height="147"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ae25a17e8f2ee36e44ec70e01f3141a54" name="ae25a17e8f2ee36e44ec70e01f3141a54"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae25a17e8f2ee36e44ec70e01f3141a54">&#9670;&#160;</a></span>AddFile() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::CatalogFileInfo * Message::AddFile </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::CatalogListResponse &amp;&#160;</td>
+          <td class="paramname"><em>response</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::CatalogFileType&#160;</td>
+          <td class="paramname"><em>type</em> = <code>CARTA::CatalogFileType::Unknown</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int64_t&#160;</td>
+          <td class="paramname"><em>size</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">time_t&#160;</td>
+          <td class="paramname"><em>date</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>description</em> = <code>&quot;&quot;</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa289e10690867bab405158152724f0d9" name="aa289e10690867bab405158152724f0d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa289e10690867bab405158152724f0d9">&#9670;&#160;</a></span>AddFile() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::FileInfo * Message::AddFile </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileListResponse &amp;&#160;</td>
+          <td class="paramname"><em>response</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::FileType&#160;</td>
+          <td class="paramname"><em>type</em> = <code>CARTA::FileType::UNKNOWN</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int64_t&#160;</td>
+          <td class="paramname"><em>size</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">time_t&#160;</td>
+          <td class="paramname"><em>date</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; std::string &gt; &amp;&#160;</td>
+          <td class="paramname"><em>hdu_list</em> = <code>{}</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_aa289e10690867bab405158152724f0d9_icgraph.svg" width="574" height="147"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -2023,6 +2259,37 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classMessage_a730c49c8e93e27faf31796d44748088b_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="ac1899ab7bc0a6d19c0d888a6c9c46e77" name="ac1899ab7bc0a6d19c0d888a6c9c46e77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac1899ab7bc0a6d19c0d888a6c9c46e77">&#9670;&#160;</a></span>RegionListResponse()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::RegionListResponse Message::RegionListResponse </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::FileListResponse&#160;</td>
+          <td class="paramname"><em>file_response</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classMessage_ac1899ab7bc0a6d19c0d888a6c9c46e77_icgraph.svg" width="447" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>

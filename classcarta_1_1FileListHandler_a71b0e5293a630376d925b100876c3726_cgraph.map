@@ -1,40 +1,46 @@
 <map id="carta::FileListHandler::OnRegionListRequest" name="carta::FileListHandler::OnRegionListRequest">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,274,175,314"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1FileListHandler.html#a1c0729f201216e2ee578126c9fa49f41" title=" " alt="" coords="223,274,383,314"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="175,292,209,292,209,297,175,297"/>
-<area shape="rect" id="Node000003" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title="Determines the image type of a given filename using Casacore." alt="" coords="684,27,837,52"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="304,273,315,223,337,157,354,123,374,90,399,61,429,37,463,21,499,10,536,4,574,3,646,9,706,21,705,26,645,14,574,8,537,10,500,15,465,26,432,42,403,65,378,93,358,125,342,159,320,224,310,275"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4" title=" " alt="" coords="453,102,607,142"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="315,272,361,213,393,180,429,152,440,146,443,150,432,156,396,184,365,217,319,276"/>
-<area shape="rect" id="Node000006" href="$classcarta_1_1FileListHandler.html#a7f4f8c5ad7eb30ad51a712446752283d" title=" " alt="" coords="450,166,610,206"/>
-<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="337,272,430,223,461,209,463,214,432,227,339,277"/>
-<area shape="rect" id="Node000007" href="$File_8cc.html#af9947f7bb03abff3412672068ab7acdf" title="Determines the region file type based on its content or extension." alt="" coords="692,231,829,256"/>
-<area shape="poly" id="edge17_Node000002_Node000007" title=" " alt="" coords="382,274,430,266,561,252,678,244,679,250,561,258,431,272,383,280"/>
-<area shape="rect" id="Node000009" href="$Casacore_8cc.html#ad9fc903282263ccf975d7886e526ddac" title="Determines the image type of a directory. Returns unknown for all files." alt="" coords="463,52,597,78"/>
-<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="308,273,324,233,349,183,384,132,405,108,429,88,449,77,452,81,432,92,409,112,388,135,354,186,329,236,313,275"/>
-<area shape="rect" id="Node000010" href="$File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5" title="Counts the number of items in a given directory." alt="" coords="473,282,587,307"/>
-<area shape="poly" id="edge10_Node000002_Node000010" title=" " alt="" coords="383,292,460,292,460,297,383,297"/>
-<area shape="rect" id="Node000011" href="$classcarta_1_1FileListHandler.html#a17d989234776d56309c835ffdc8a8906" title=" " alt="" coords="450,332,610,372"/>
-<area shape="poly" id="edge11_Node000002_Node000011" title=" " alt="" coords="383,312,438,326,436,331,382,317"/>
-<area shape="rect" id="Node000012" href="$Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="447,396,613,422"/>
-<area shape="poly" id="edge12_Node000002_Node000012" title=" " alt="" coords="329,312,375,348,432,381,453,390,451,394,429,386,372,352,326,317"/>
-<area shape="rect" id="Node000013" href="$File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" title="Determines the image file type based on its content or extension." alt="" coords="463,446,597,471"/>
-<area shape="poly" id="edge13_Node000002_Node000013" title=" " alt="" coords="319,313,364,373,396,405,432,432,452,441,449,446,429,437,392,409,360,376,314,316"/>
-<area shape="rect" id="Node000016" href="$classcarta_1_1ListProgressReporter.html#a10a2db7d423b702b8a3f7537b348de1d" title=" " alt="" coords="431,496,629,536"/>
-<area shape="poly" id="edge18_Node000002_Node000016" title=" " alt="" coords="315,314,331,350,357,395,391,441,432,482,440,487,437,491,429,486,387,445,353,398,327,352,310,316"/>
-<area shape="rect" id="Node000018" href="$classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b" title=" " alt="" coords="431,560,629,600"/>
-<area shape="poly" id="edge20_Node000002_Node000018" title=" " alt="" coords="311,314,324,361,348,423,384,489,406,519,432,546,438,550,435,554,429,550,402,523,379,492,343,426,319,363,306,315"/>
-<area shape="rect" id="Node000005" href="$classcarta_1_1FileInfoLoader.html#a3395971925347571f4724f7ee714a85a" title=" " alt="" coords="683,102,838,142"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="608,120,669,120,669,125,608,125"/>
-<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="611,204,697,225,695,230,610,209"/>
-<area shape="rect" id="Node000008" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="892,274,976,299"/>
-<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="813,254,879,270,878,275,812,259"/>
-<area shape="poly" id="edge9_Node000009_Node000003" title=" " alt="" coords="596,55,670,47,671,52,597,60"/>
-<area shape="poly" id="edge15_Node000013_Node000008" title=" " alt="" coords="596,445,628,432,642,422,652,411,661,399,676,387,727,358,781,333,878,299,880,304,783,338,730,363,679,391,665,403,656,414,646,425,631,437,598,450"/>
-<area shape="rect" id="Node000014" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="693,400,829,426"/>
-<area shape="poly" id="edge14_Node000013_Node000014" title=" " alt="" coords="595,443,682,426,683,431,596,448"/>
-<area shape="rect" id="Node000015" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title="Determines if a given magic number corresponds to a gzip&#45;compressed file." alt="" coords="690,450,831,475"/>
-<area shape="poly" id="edge16_Node000013_Node000015" title=" " alt="" coords="597,457,676,458,676,463,597,462"/>
-<area shape="rect" id="Node000017" href="$classMessage.html#a03594461e68b148a3398fbaad3d651a7" title=" " alt="" coords="677,503,844,528"/>
-<area shape="poly" id="edge19_Node000016_Node000017" title=" " alt="" coords="629,513,664,513,664,518,629,518"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,357,175,397"/>
+<area shape="rect" id="Node000002" href="$classcarta_1_1FileListHandler.html#a1c0729f201216e2ee578126c9fa49f41" title=" " alt="" coords="252,327,412,367"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="174,364,238,356,238,361,175,369"/>
+<area shape="rect" id="Node000021" href="$classMessage.html#ac1899ab7bc0a6d19c0d888a6c9c46e77" title=" " alt="" coords="223,392,441,417"/>
+<area shape="poly" id="edge23_Node000001_Node000021" title=" " alt="" coords="175,384,209,388,208,393,174,389"/>
+<area shape="rect" id="Node000003" href="$classMessage.html#af00c377148750c8577ae53eb6f37b364" title=" " alt="" coords="502,5,675,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="335,327,350,270,379,192,400,150,424,110,453,72,488,40,495,35,498,39,491,44,457,76,429,113,404,153,384,194,355,271,340,328"/>
+<area shape="rect" id="Node000004" href="$classMessage.html#aa289e10690867bab405158152724f0d9" title=" " alt="" coords="521,55,657,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="338,326,357,280,389,218,432,153,458,123,488,97,512,83,515,88,491,101,462,127,436,157,393,221,362,282,343,328"/>
+<area shape="rect" id="Node000005" href="$Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" title="Determines the image type of a given filename using Casacore." alt="" coords="743,131,896,156"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="339,326,359,284,391,232,434,180,459,158,488,141,522,128,557,119,629,112,698,116,757,125,756,130,697,121,629,117,558,124,523,133,491,146,463,163,437,184,395,235,364,286,344,328"/>
+<area shape="rect" id="Node000006" href="$classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4" title=" " alt="" coords="511,206,666,246"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="363,325,420,291,488,256,506,248,508,253,490,260,423,295,365,330"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1FileListHandler.html#a7f4f8c5ad7eb30ad51a712446752283d" title=" " alt="" coords="509,270,669,310"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="412,327,495,308,496,313,413,332"/>
+<area shape="rect" id="Node000009" href="$File_8cc.html#af9947f7bb03abff3412672068ab7acdf" title="Determines the region file type based on its content or extension." alt="" coords="751,335,888,360"/>
+<area shape="poly" id="edge19_Node000002_Node000009" title=" " alt="" coords="412,345,737,345,737,350,412,350"/>
+<area shape="rect" id="Node000011" href="$Casacore_8cc.html#ad9fc903282263ccf975d7886e526ddac" title="Determines the image type of a directory. Returns unknown for all files." alt="" coords="522,156,655,181"/>
+<area shape="poly" id="edge10_Node000002_Node000011" title=" " alt="" coords="346,325,403,259,443,223,488,192,508,183,510,187,491,196,447,227,407,263,350,329"/>
+<area shape="rect" id="Node000012" href="$File_8cc.html#aa6f49a48edd9827968c16d1cc91e25f5" title="Counts the number of items in a given directory." alt="" coords="532,385,645,411"/>
+<area shape="poly" id="edge12_Node000002_Node000012" title=" " alt="" coords="413,360,519,382,518,387,412,366"/>
+<area shape="rect" id="Node000013" href="$classcarta_1_1FileListHandler.html#a17d989234776d56309c835ffdc8a8906" title=" " alt="" coords="509,435,669,475"/>
+<area shape="poly" id="edge13_Node000002_Node000013" title=" " alt="" coords="413,364,443,377,458,388,467,399,477,410,491,421,503,428,501,432,488,426,473,414,463,403,454,392,440,382,411,369"/>
+<area shape="rect" id="Node000014" href="$Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="506,500,671,525"/>
+<area shape="poly" id="edge14_Node000002_Node000014" title=" " alt="" coords="414,360,443,377,455,391,462,405,468,433,473,460,480,473,491,485,499,491,496,496,488,489,475,476,468,462,462,434,457,407,451,394,440,381,411,364"/>
+<area shape="rect" id="Node000015" href="$File_8cc.html#a60e903fd2ab0ea7b240f649d3d207339" title="Determines the image file type based on its content or extension." alt="" coords="522,549,655,575"/>
+<area shape="poly" id="edge15_Node000002_Node000015" title=" " alt="" coords="414,358,443,377,459,398,466,418,468,459,469,499,476,517,491,536,511,549,508,553,488,540,472,520,464,500,462,459,461,419,454,400,440,381,411,363"/>
+<area shape="rect" id="Node000018" href="$classcarta_1_1ListProgressReporter.html#a10a2db7d423b702b8a3f7537b348de1d" title=" " alt="" coords="489,599,688,639"/>
+<area shape="poly" id="edge20_Node000002_Node000018" title=" " alt="" coords="414,358,443,377,462,404,470,431,471,457,468,483,466,509,467,535,474,560,491,586,495,589,491,593,487,589,469,562,461,535,460,509,463,483,466,457,465,432,457,406,439,381,411,362"/>
+<area shape="rect" id="Node000020" href="$classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b" title=" " alt="" coords="489,663,688,703"/>
+<area shape="poly" id="edge22_Node000002_Node000020" title=" " alt="" coords="413,357,429,366,443,378,466,412,475,447,474,481,468,515,463,549,462,582,470,616,491,650,494,653,491,656,487,653,465,618,457,583,458,548,463,514,469,481,469,448,461,415,439,381,426,370,411,362"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1FileInfoLoader.html#a3395971925347571f4724f7ee714a85a" title=" " alt="" coords="742,206,897,246"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="667,223,728,223,728,229,667,229"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="670,307,755,329,754,334,668,312"/>
+<area shape="rect" id="Node000010" href="$String_8cc.html#a1540adc30610b9db4add6622c248b9d1" title="Checks if a string ends with a specified suffix." alt="" coords="951,377,1035,403"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="872,357,938,374,936,379,871,363"/>
+<area shape="poly" id="edge11_Node000011_Node000005" title=" " alt="" coords="655,159,729,151,729,156,656,164"/>
+<area shape="poly" id="edge17_Node000015_Node000010" title=" " alt="" coords="655,548,687,536,701,525,710,514,720,503,734,490,786,462,840,437,937,403,939,408,842,442,788,466,738,495,724,506,714,518,705,529,689,540,657,553"/>
+<area shape="rect" id="Node000016" href="$File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" title="Reads the magic number from the beginning of a file." alt="" coords="751,504,887,529"/>
+<area shape="poly" id="edge16_Node000015_Node000016" title=" " alt="" coords="654,547,740,529,741,535,655,552"/>
+<area shape="rect" id="Node000017" href="$File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" title="Determines if a given magic number corresponds to a gzip&#45;compressed file." alt="" coords="749,553,890,579"/>
+<area shape="poly" id="edge18_Node000015_Node000017" title=" " alt="" coords="655,560,735,562,735,567,655,566"/>
+<area shape="rect" id="Node000019" href="$classMessage.html#a03594461e68b148a3398fbaad3d651a7" title=" " alt="" coords="736,607,903,632"/>
+<area shape="poly" id="edge21_Node000018_Node000019" title=" " alt="" coords="688,617,722,617,722,622,688,622"/>
 </map>
