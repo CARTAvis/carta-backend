@@ -36,7 +36,7 @@ public:
     }
 
     void GenerateContour(fs::path file_path, const CARTA::SmoothingMode& smoothing_mode) {
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        auto loader = carta::FileLoader::GetLoader(file_path);
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
 
         spdlog::info("The generated image contains random pixels values with mean = 0 and STD = 1.");

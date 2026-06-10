@@ -207,7 +207,7 @@ void CartaHdf5Image::SetUpImage() {
             casacore::LogIO log(sink);
             unsigned int which_rep(0);
             casacore::IPosition image_shape(shape());
-            bool drop_stokes(true);
+            bool drop_stokes(false); // need csys shape to match lattice shape
             casacore::CoordinateSystem coordinate_system = casacore::ImageFITSConverter::getCoordinateSystem(
                 stokes_fits_value, unused_headers_rec, _fits_header_strings, log, which_rep, image_shape, drop_stokes);
             setCoordinateInfo(coordinate_system);

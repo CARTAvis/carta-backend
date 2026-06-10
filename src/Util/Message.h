@@ -8,6 +8,9 @@
 #define CARTA_SRC_UTIL_MESSAGE_H_
 
 #include <carta-protobuf/animation.pb.h>
+#include <carta-protobuf/catalog_file_info.pb.h>
+#include <carta-protobuf/catalog_filter.pb.h>
+#include <carta-protobuf/catalog_list.pb.h>
 #include <carta-protobuf/channel_map.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour_image.pb.h>
@@ -19,11 +22,13 @@
 #include <carta-protobuf/fitting_request.pb.h>
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
+#include <carta-protobuf/open_catalog_file.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/pv_request.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/region_list.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
@@ -40,6 +45,7 @@
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
 #include <carta-protobuf/vector_overlay_tile.pb.h>
+#include <ctime>
 
 #include <casacore/casa/Quanta/Quantum.h>
 
@@ -79,8 +85,6 @@ public:
     static CARTA::Point Point(const casacore::Vector<casacore::Double>& input, int x_index = 0, int y_index = 1);
     static CARTA::Point Point(const std::vector<casacore::Quantity>& input, int x_index = 0, int y_index = 1);
     static CARTA::Point Point(const std::vector<double>& input, int x_index = 0, int y_index = 1);
-    static CARTA::SetRegion SetRegion(
-        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation);
     static CARTA::ImageBounds ImageBounds(int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max);
     static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
     static CARTA::ConcatStokesFiles ConcatStokesFiles(
@@ -92,14 +96,21 @@ public:
         const std::string& parameters, bool async, const std::string& return_path);
 
     // Response messages
-    static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
-        std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
-        std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
-    static CARTA::SpectralProfileData SpectralProfileData(int32_t stokes, float progress);
-    static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
-        int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
-        CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit);
-    static CARTA::SpatialProfileData SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value);
+    // spectral profile data
+    static CARTA::SpectralProfileData SpectralProfileData(int32_t stokes, float progress, int32_t file_id = 0, int32_t region_id = 0);
+    static CARTA::SpectralProfile* AddProfile(
+        CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type, std::vector<double>& values);
+    static CARTA::SpectralProfile* AddProfile(
+        CARTA::SpectralProfileData& profile_data, std::string& coordinate, CARTA::StatsType& stats_type, std::vector<float>& values);
+
+    // spatial profile data
+    static CARTA::SpatialProfileData SpatialProfileData(
+        int32_t x, int32_t y, int32_t channel, int32_t stokes, float value, int32_t file_id = 0, int32_t region_id = 0);
+    static CARTA::SpatialProfile* AddProfile(CARTA::SpatialProfileData& profile_data, int32_t start, int32_t end,
+        std::vector<float>& values, std::string coordinate, int32_t mip);
+    static CARTA::LineProfileAxis* AddLineProfileAxis(
+        CARTA::SpatialProfile* spatial_profile, CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string unit);
+
     static CARTA::RasterTileSync RasterTileSync(
         int32_t file_id, int32_t channel, int32_t stokes, int32_t sync_id, int32_t animation_id, int32_t tile_count, bool end_sync);
     static CARTA::SetRegionAck SetRegionAck(int32_t region_id, bool success, std::string err_message);
@@ -123,6 +134,16 @@ public:
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
     static CARTA::ListProgress ListProgress(
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
+    static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
+        std::vector<CARTA::Point>& control_points, float region_rotation, CARTA::RegionStyle region_style);
+    static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, const std::string& name, time_t date, int item_count = 0);
+    static CARTA::FileInfo* AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type = CARTA::FileType::UNKNOWN,
+        int64_t size = 0, time_t date = 0, const std::vector<std::string>& hdu_list = {});
+    static CARTA::DirectoryInfo* AddDirectory(
+        CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count = 0);
+    static CARTA::CatalogFileInfo* AddFile(CARTA::CatalogListResponse& response, std::string name,
+        CARTA::CatalogFileType type = CARTA::CatalogFileType::Unknown, int64_t size = 0, time_t date = 0, std::string description = "");
+    static CARTA::RegionListResponse RegionListResponse(CARTA::FileListResponse file_response);
     static CARTA::HeaderEntry* AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
         CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);
     static CARTA::HeaderEntry* AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,

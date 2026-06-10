@@ -78,7 +78,7 @@ public:
     static bool RegionSpatialProfile(const std::string& image_path, const std::vector<float>& endpoints,
         const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_reqs, CARTA::SpatialProfileData& spatial_profile_message,
         bool is_annotation = false) {
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+        auto loader = carta::FileLoader::GetLoader(image_path);
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
 
@@ -131,7 +131,7 @@ public:
 
 TEST_F(RegionSpatialProfileTest, TestSpatialRequirements) {
     auto image_path = FitsImages() / "noise_3d.fits";
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    auto loader = carta::FileLoader::GetLoader(image_path);
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
     // Set line region
@@ -370,7 +370,7 @@ TEST_F(RegionSpatialProfileTest, FitsAnnotationPointProfile) {
 
 TEST_F(RegionSpatialProfileTest, FitsMovePointProfile) {
     auto image_path = FitsImages() / "noise_3d.fits";
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    auto loader = carta::FileLoader::GetLoader(image_path);
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
     // Set point region
