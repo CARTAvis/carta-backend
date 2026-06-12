@@ -34,6 +34,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     }
     ApplyCommandLineSettings(argc, argv);
     ApplyJSONSettings();
+    LoadLoggingRules();
     // Push files after all settings are applied
     PushFilePaths();
 
@@ -138,6 +139,8 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
         ("log_performance", "enable performance debug logs", cxxopts::value<bool>())
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
+        ("log_config_json", "Path to a custom JSON configuration file", 
+         cxxopts::value<std::string>(log_config_path))
         ("no_frontend", "disable built-in HTTP frontend interface", cxxopts::value<bool>())
         ("no_database", "disable built-in HTTP database interface", cxxopts::value<bool>())
         ("http_url_prefix", "custom URL prefix for HTTP server", cxxopts::value<string>(), "")
@@ -169,15 +172,16 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
 
     options.positional_help("<file or folder to open>");
     options.parse_positional("files");
+
     auto result = options.parse(argc, argv);
 
     std::string log_levels(R"(
- 0   off
- 1   critical
- 2   error
- 3   warning
- 4   info
- 5   debug)");
+0   off
+1   critical
+2   error
+3   warning
+4   info
+5   debug)");
 
     std::string extra = fmt::format(R"(
 By default the CARTA backend uses the current directory as the starting data 
@@ -387,6 +391,41 @@ void ProgramSettings::PushFilePaths() {
 void ProgramSettings::AddDeprecationWarning(const std::string& option, std::string where) {
     auto message = deprecated_options.at(option);
     warning_msgs.push_back(fmt::format("Option {} found in {} is deprecated. {}", option, where, message));
+}
+
+void ProgramSettings::LoadLoggingRules() {
+    const std::string filename = "protocol_logging_rules.json";
+    fs::path system_path = "/etc/carta/" + filename;
+    fs::path user_path = user_directory / filename;
+
+    nlohmann::json merged_config;
+    bool found_any_config = false;
+
+    auto try_load = [&](const fs::path& p) {
+        if (fs::exists(p)) {
+            auto j = JSONSettingsFromFile(p.string());
+            if (j.contains("rules")) {
+                if (!found_any_config) {
+                    merged_config = j;
+                } else {
+                    merged_config["rules"].insert(merged_config["rules"].end(), j["rules"].begin(), j["rules"].end());
+                }
+                found_any_config = true;
+            }
+        }
+    };
+
+    try_load(system_path);
+    try_load(user_path);
+
+    if (found_any_config) {
+        for (const auto& item : merged_config["rules"]) {
+            logging_rules.push_back(
+                {item.value("match", ".*"), item.value("action", "normal"), item.value("first_n", -1), item.value("every_m", -1)});
+        }
+    } else {
+        logging_rules = ProtocolLogger::GetDefaultRules();
+    }
 }
 
 } // namespace carta

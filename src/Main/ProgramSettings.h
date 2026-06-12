@@ -8,6 +8,7 @@
 #define CARTA_SRC_MAIN_PROGRAMSETTINGS_H_
 
 #include <iostream>
+#include <regex>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -16,6 +17,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Logger/Logger.h"
+#include "Logger/ProtocolLogger.h"
 #include "Util/FileSystem.h"
 
 #define OMP_THREAD_COUNT -1
@@ -30,6 +32,7 @@
 #endif
 
 namespace carta {
+
 struct ProgramSettings {
     static ProgramSettings& GetInstance() {
         static ProgramSettings settings;
@@ -61,6 +64,7 @@ struct ProgramSettings {
     bool no_log = false;
     bool log_performance = false;
     bool log_protocol_messages = false;
+    std::string log_config_path;
     int verbosity = 4;
     int wait_time = -1;
     int init_wait_time = -1;
@@ -132,7 +136,9 @@ struct ProgramSettings {
     nlohmann::json JSONSettingsFromFile(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
     void PushFilePaths();
+    void LoadLoggingRules();
 
+    std::vector<LoggingRule> logging_rules;
     std::vector<std::string> warning_msgs;
     std::vector<std::string> debug_msgs;
     void FlushMessages() {
