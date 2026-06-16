@@ -1,0 +1,14 @@
+include(FetchContent)
+
+set(TENSORSTORE_USE_SYSTEM_ZLIB ON CACHE BOOL "" FORCE)
+set(TENSORSTORE_USE_SYSTEM_ZSTD ON CACHE BOOL "" FORCE)
+set(TENSORSTORE_USE_SYSTEM_NLOHMANN_JSON ON CACHE BOOL "" FORCE)
+set(TENSORSTORE_USE_SYSTEM_PROTOBUF OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    tensorstore
+    URL "https://github.com/google/tensorstore/archive/refs/tags/v0.1.84.tar.gz"
+    URL_HASH SHA256=d86fe9dca4b69e5c8b488562351dc654bce1400f5981f922e4be9ba4fafc95ce
+)
+
+FetchContent_MakeAvailable(tensorstore)

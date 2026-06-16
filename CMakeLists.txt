@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24)
 project(carta_backend)
 
 include_directories(src)
@@ -107,7 +107,16 @@ else ()
 endif ()
 
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
-FIND_PACKAGE(Protobuf REQUIRED)
+
+# nlohmann/json
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_Install OFF CACHE INTERNAL "")
+add_subdirectory(third-party/nlohmann_json)
+
+# TensorStore
+include(TensorStore)
+
+FIND_PACKAGE(Protobuf MODULE REQUIRED)
 INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
 
 if (Protobuf_VERSION VERSION_GREATER_EQUAL "4.25.3")
@@ -178,13 +187,9 @@ add_subdirectory(third-party/spdlog)
 # JSON schemas
 add_subdirectory(schemas)
 
-# nlohmann/json
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-set(JSON_Install OFF CACHE INTERNAL "")
-add_subdirectory(third-party/nlohmann_json)
-
 # json-schema-validator
 set(nlohmann_json_VERSION "v3.11.3")
+include_directories(BEFORE ${CMAKE_SOURCE_DIR}/third-party/nlohmann_json/include)
 add_subdirectory(third-party/json-schema-validator)
 
 set(LINK_LIBS
@@ -201,6 +206,9 @@ set(LINK_LIBS
         gsl
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator
+        tensorstore::tensorstore
+        tensorstore::driver_zarr3
+        tensorstore::kvstore_file
         casa_casa
         casa_coordinates
         casa_tables
