@@ -13,6 +13,7 @@
 
 #include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
+#include "Util/File.h"
 
 const std::regex GILDAS_REGEX(" *[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\) *");
 
@@ -74,6 +75,10 @@ CARTA::FileType FolderImageType(const std::string& folder_path, std::string& mes
     casacore::File input_file(folder_path);
     if (input_file.isRegular()) {
         return carta_type;
+    }
+
+    if (IsZarr(folder_path)) {
+        return CARTA::FileType::ZARR;
     }
 
     switch (CasacoreImageType(folder_path)) {

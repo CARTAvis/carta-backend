@@ -106,6 +106,15 @@ else ()
     message(FATAL_ERROR "Could not find zstd")
 endif ()
 
+PKG_SEARCH_MODULE(BLOSC REQUIRED blosc)
+if (BLOSC_FOUND)
+    message(STATUS "blosc found using pkg-config")
+    INCLUDE_DIRECTORIES(${BLOSC_INCLUDE_DIRS})
+    LINK_DIRECTORIES(${BLOSC_LIBRARY_DIRS})
+else ()
+    message(FATAL_ERROR "Could not find blosc")
+endif ()
+
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 
 # nlohmann/json
@@ -201,6 +210,7 @@ set(LINK_LIBS
         z
         zfp
         zstd
+        ${BLOSC_LIBRARIES}
         cfitsio
         wcs
         gsl
@@ -243,6 +253,7 @@ set(SOURCE_FILES
         src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
+        src/ImageData/CartaZarrImage.cc
         src/ImageData/CompressedFits.cc
         src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc
@@ -252,6 +263,10 @@ set(SOURCE_FILES
         src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
+        src/ImageData/ZarrLoader.cc
+        src/ImageData/ZarrMetadata.cc
+        src/ImageData/ZarrStore.cc
+        src/ImageData/ZarrUtil.cc
         src/ImageFitting/ImageFitter.cc
         src/ImageFitting/InitialValueCalculator.cc
         src/ImageGenerators/MomentGenerator.cc

@@ -146,6 +146,9 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<std::vector<int>>(), "<port>")
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
+        ("zarr_file_io_threads", "thread pool size for Zarr file IO operations", cxxopts::value<int>(), "<threads>")
+        ("zarr_data_copy_threads", "thread pool size for Zarr data copy/decode operations (default: omp_threads minus file IO threads)", cxxopts::value<int>(), "<threads>")
+        ("zarr_cache_size", "in-memory chunk cache size for Zarr stores in MB (integer; default 1024; 0 disables caching)", cxxopts::value<int>(), "<MB>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
@@ -213,6 +216,13 @@ end.
 
 By default the number of OpenMP threads is automatically set to the detected 
 number of logical cores. A fixed number may be set with 'omp_threads'.
+
+Access to Zarr images is handled by TensorStore, whose thread pools and caching
+can be tuned. 'zarr_file_io_threads' (default 2) sets the thread pool size for
+file IO operations. 'zarr_data_copy_threads' sets the thread pool size for data
+copy/decode operations; if unset it defaults to the number of OpenMP threads
+minus the file IO threads. 'zarr_cache_size' sets an in-memory chunk cache size
+in MB (integer; default 1024; 0 disables caching).
 
 Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
 in the user's home directory. Logging to the file can be disabled with 'no_log'. 
@@ -282,6 +292,9 @@ global configuration files, respectively.
     applyOptionalArgument(http_url_prefix, "http_url_prefix", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
+    applyOptionalArgument(zarr_file_io_concurrency, "zarr_file_io_threads", result);
+    applyOptionalArgument(zarr_data_copy_concurrency, "zarr_data_copy_threads", result);
+    applyOptionalArgument(zarr_cache_pool_mb, "zarr_cache_size", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);
     applyOptionalArgument(init_wait_time, "initial_timeout", result);
 

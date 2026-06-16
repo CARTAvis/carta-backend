@@ -70,6 +70,9 @@ CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
     if (IsCompressedFits(filename)) {
         return CARTA::FileType::FITS;
     }
+    if (IsZarr(filename)) {
+        return CARTA::FileType::ZARR;
+    }
 
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:

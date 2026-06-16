@@ -11,6 +11,7 @@
 
 #include "FileList/FileListHandler.h"
 #include "HttpServer/HttpServer.h"
+#include "ImageData/ZarrStore.h"
 #include "Logger/CartaLogSink.h"
 #include "Logger/Logger.h"
 #include "ProgramSettings.h"
@@ -117,6 +118,11 @@ int main(int argc, char* argv[]) {
 
         carta::ThreadManager::StartEventHandlingThreads(settings.event_thread_count);
         carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
+
+        // Configure the shared TensorStore (Zarr) context.
+        int effective_omp_threads = settings.omp_thread_count > 0 ? settings.omp_thread_count : omp_get_num_procs();
+        carta::ConfigureTensorStoreContext(
+            settings.zarr_file_io_concurrency, settings.zarr_data_copy_concurrency, settings.zarr_cache_pool_mb, effective_omp_threads);
 
         // One FileListHandler works for all sessions.
         file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);

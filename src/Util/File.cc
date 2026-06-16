@@ -148,6 +148,31 @@ bool IsCompressedFits(const std::string& filename) {
 }
 
 /**
+ * @details This function checks whether the given path is a supported XRADIO Zarr
+ * image directory. It must be a Zarr v3 store with an SKY layout (`SKY`, `l`, `m`)
+ * and a `SKY/zarr.json` array metadata file.
+ */
+bool IsZarr(const std::string& path_string) {
+    std::error_code error_code;
+    fs::path path(path_string);
+
+    if (!fs::is_directory(path, error_code)) {
+        return false;
+    }
+
+    if (!fs::exists(path / "zarr.json", error_code)) {
+        return false;
+    }
+
+    bool sky_valid = fs::is_directory(path / "SKY", error_code) &&
+                     fs::is_directory(path / "l", error_code) &&
+                     fs::is_directory(path / "m", error_code) &&
+                     fs::exists(path / "SKY" / "zarr.json", error_code);
+
+    return sky_valid;
+}
+
+/**
  * @details This function uses a regular expression to determine if the provided filename
  * starts with "http://" or "https://", indicating that it is a remote file
  * accessible via HTTP.

@@ -1,0 +1,38 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018- Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
+//# ZarrUtil.h: low-level helpers for reading Zarr v3 data that TensorStore cannot handle directly
+#ifndef CARTA_SRC_IMAGEDATA_ZARRUTIL_H_
+#define CARTA_SRC_IMAGEDATA_ZARRUTIL_H_
+
+#include <filesystem>
+#include <string>
+#include <vector>
+
+#include <nlohmann/json.hpp>
+
+namespace carta {
+
+// Return a pointer to the JSON value at the given JSON pointer, or nullptr if it does not exist.
+const nlohmann::json* GetJsonPtr(const nlohmann::json& obj, const char* ptr);
+
+/**
+ * @brief Decode a 1-D Zarr v3 "fixed_length_utf32" string array by hand.
+ *
+ * TensorStore's zarr3 driver does not support string data types, so the chunk is read and decoded
+ * directly. Only the single-chunk, 1-D, bytes plus optional zstd/gzip/blosc codec layout produced by
+ * XRADIO for coordinate label arrays is supported.
+ *
+ * @param array_dir Directory of the array (e.g. <image>/polarization).
+ * @param metadata The array's zarr.json metadata.
+ * @return The decoded UTF-8 strings, one per array element.
+ * @throws std::runtime_error On unsupported layout or malformed data.
+ */
+std::vector<std::string> ReadZarrStringArray(const std::filesystem::path& array_dir, const nlohmann::json& metadata);
+
+} // namespace carta
+
+#endif // CARTA_SRC_IMAGEDATA_ZARRUTIL_H_
