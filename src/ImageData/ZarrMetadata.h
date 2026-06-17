@@ -4,11 +4,12 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# ZarrMetadata.h: parse Zarr metadata
+// # ZarrMetadata.h: parse Zarr metadata
 #ifndef CARTA_SRC_IMAGEDATA_ZARRMETADATA_H_
 #define CARTA_SRC_IMAGEDATA_ZARRMETADATA_H_
 
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -18,6 +19,7 @@
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/casa/Arrays/Vector.h>
 #include <casacore/casa/BasicSL/String.h>
+#include <casacore/casa/Utilities/DataType.h>
 #include <casacore/images/Images/ImageBeamSet.h>
 
 namespace carta {
@@ -30,6 +32,8 @@ public:
     ZarrMetadata(const ZarrMetadata&) = delete;
     ZarrMetadata& operator=(const ZarrMetadata&) = delete;
 
+    static bool ComputeImageDataSizeBytes(const std::string& filename, int64_t& size);
+
     bool Initialize();
     bool IsInitialized() const;
 
@@ -39,6 +43,7 @@ public:
     };
 
     const casacore::IPosition& GetShape() const;
+    casacore::DataType GetDataType() const;
     const std::map<std::string, AxisInfo>& GetAxes() const;
 
     casacore::Vector<casacore::String> FitsHeaderStrings();
@@ -57,6 +62,7 @@ private:
     std::unique_ptr<Impl> _impl;
 
     casacore::IPosition _shape;
+    casacore::DataType _data_type = casacore::TpOther;
     std::string _filename;
     bool _initialized = false;
 };

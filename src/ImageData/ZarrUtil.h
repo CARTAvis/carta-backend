@@ -4,12 +4,14 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# ZarrUtil.h: low-level helpers for reading Zarr v3 data that TensorStore cannot handle directly
+// # ZarrUtil.h: low-level helpers for reading Zarr v3 data that TensorStore cannot handle directly
 #ifndef CARTA_SRC_IMAGEDATA_ZARRUTIL_H_
 #define CARTA_SRC_IMAGEDATA_ZARRUTIL_H_
 
 #include <filesystem>
+#include <optional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -17,7 +19,31 @@
 namespace carta {
 
 // Return a pointer to the JSON value at the given JSON pointer, or nullptr if it does not exist.
-const nlohmann::json* GetJsonPtr(const nlohmann::json& obj, const char* ptr);
+const nlohmann::json* FindJsonPtr(const nlohmann::json& obj, const char* ptr);
+
+template <typename T>
+std::optional<T> FindJsonValue(const nlohmann::json& obj, const char* ptr) {
+    const auto* value = FindJsonPtr(obj, ptr);
+    if (!value) {
+        return std::nullopt;
+    }
+
+    if constexpr (std::is_same_v<T, std::string>) {
+        if (value->is_string()) {
+            return value->get<std::string>();
+        }
+    } else if constexpr (std::is_floating_point_v<T>) {
+        if (value->is_number()) {
+            return value->get<T>();
+        }
+    } else if constexpr (std::is_integral_v<T>) {
+        if (value->is_number_integer() || value->is_number_unsigned()) {
+            return value->get<T>();
+        }
+    }
+
+    return std::nullopt;
+}
 
 /**
  * @brief Decode a 1-D Zarr v3 "fixed_length_utf32" string array by hand.
@@ -31,7 +57,7 @@ const nlohmann::json* GetJsonPtr(const nlohmann::json& obj, const char* ptr);
  * @return The decoded UTF-8 strings, one per array element.
  * @throws std::runtime_error On unsupported layout or malformed data.
  */
-std::vector<std::string> ReadZarrStringArray(const std::filesystem::path& array_dir, const nlohmann::json& metadata);
+std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::path& array_dir, const nlohmann::json& metadata);
 
 } // namespace carta
 

@@ -4,12 +4,14 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# ZarrMetadata.cc: parse Zarr metadata
+// # ZarrMetadata.cc: parse Zarr metadata
 #include "ZarrMetadata.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
+#include <limits>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -26,6 +28,7 @@
 
 #include <casacore/casa/BasicSL/Constants.h>
 #include <casacore/casa/Quanta/MVTime.h>
+#include <casacore/casa/Utilities/DataType.h>
 #include <casacore/measures/Measures/MEpoch.h>
 #include <casacore/measures/Measures/Stokes.h>
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
@@ -92,7 +95,56 @@ void ToUpperAscii(std::string& text) {
     std::transform(text.begin(), text.end(), text.begin(), [](unsigned char character) { return std::toupper(character); });
 }
 
-casacore::MEpoch::Types EpochTypeFromScale(std::string scale) {
+void ToLowerAscii(std::string& text) {
+    std::transform(text.begin(), text.end(), text.begin(), [](unsigned char character) { return std::tolower(character); });
+}
+
+bool FitsBitpixForDataType(casacore::DataType data_type, int& bitpix) {
+    static const std::map<casacore::DataType, int> data_type_bitpix{
+        {casacore::TpUChar, 8},
+        {casacore::TpShort, 16},
+        {casacore::TpInt, 32},
+        {casacore::TpInt64, 64},
+        {casacore::TpFloat, -32},
+        {casacore::TpDouble, -64},
+    };
+
+    const auto entry = data_type_bitpix.find(data_type);
+    if (entry == data_type_bitpix.end()) {
+        return false;
+    }
+
+    bitpix = entry->second;
+    return true;
+}
+
+casacore::DataType CasacoreDataTypeFromZarrType(std::string data_type_name) {
+    ToLowerAscii(data_type_name);
+
+    static const std::map<std::string, casacore::DataType> data_type_map{
+        {"bool", casacore::TpBool},
+        {"int8", casacore::TpChar},
+        {"uint8", casacore::TpUChar},
+        {"int16", casacore::TpShort},
+        {"uint16", casacore::TpUShort},
+        {"int32", casacore::TpInt},
+        {"uint32", casacore::TpUInt},
+        {"int64", casacore::TpInt64},
+        {"float32", casacore::TpFloat},
+        {"float64", casacore::TpDouble},
+        {"complex64", casacore::TpComplex},
+        {"complex128", casacore::TpDComplex},
+    };
+
+    auto data_type = data_type_map.find(data_type_name);
+    return data_type == data_type_map.end() ? casacore::TpOther : data_type->second;
+}
+
+casacore::DataType CasacoreDataTypeFromZarrType(const nlohmann::json& array_metadata) {
+    return CasacoreDataTypeFromZarrType(FindJsonValue<std::string>(array_metadata, "/data_type").value_or(""));
+}
+
+casacore::MEpoch::Types GetEpochTypeFromScale(std::string scale) {
     ToUpperAscii(scale);
     casacore::MEpoch::Types type;
     if (!casacore::MEpoch::getType(type, scale)) {
@@ -114,7 +166,7 @@ ObsDate FormatObsDate(const casacore::MEpoch& epoch) {
 
 ObsDate ParseObsDate(const nlohmann::json& data, std::string format, const std::string& scale) {
     ToUpperAscii(format);
-    const casacore::MEpoch::Types epoch_type = EpochTypeFromScale(scale);
+    const casacore::MEpoch::Types epoch_type = GetEpochTypeFromScale(scale);
 
     if (data.is_number()) {
         double mjd = data.get<double>();
@@ -140,7 +192,7 @@ ObsDate ParseObsDate(const nlohmann::json& data, std::string format, const std::
     throw std::runtime_error("Unsupported obsdate data type: " + std::string(data.type_name()));
 }
 
-std::string MakeCtype(const std::string& axis, const std::string& projection) {
+std::string MakeCtypeHeaderValue(const std::string& axis, const std::string& projection) {
     std::string axis_str(axis);
     if (!projection.empty()) {
         while (axis_str.size() < 4) {
@@ -153,9 +205,8 @@ std::string MakeCtype(const std::string& axis, const std::string& projection) {
 
 // Emit a string FITS keyword from a JSON pointer if it resolves to a string. Returns true if added.
 bool TryAddString(FitsHeaderBuilder& builder, const nlohmann::json& obj, const char* ptr, const std::string& key) {
-    const auto* value = GetJsonPtr(obj, ptr);
-    if (value && value->is_string()) {
-        builder.AddString(key, value->get<std::string>());
+    if (auto value = FindJsonValue<std::string>(obj, ptr)) {
+        builder.AddString(key, *value);
         return true;
     }
     return false;
@@ -163,16 +214,15 @@ bool TryAddString(FitsHeaderBuilder& builder, const nlohmann::json& obj, const c
 
 // Emit a numeric FITS keyword from a JSON pointer if it resolves to a number, applying an optional scale.
 bool TryAddDouble(FitsHeaderBuilder& builder, const nlohmann::json& obj, const char* ptr, const std::string& key, double scale = 1.0) {
-    const auto* value = GetJsonPtr(obj, ptr);
-    if (value && value->is_number()) {
-        builder.AddDouble(key, value->get<double>() * scale);
+    if (auto value = FindJsonValue<double>(obj, ptr)) {
+        builder.AddDouble(key, *value * scale);
         return true;
     }
     return false;
 }
 
 template <typename Func>
-void SafeParseBlock(Func func, const std::string& context) {
+void LogParseErrors(Func func, const std::string& context) {
     try {
         func();
     } catch (const std::exception& e) {
@@ -182,17 +232,62 @@ void SafeParseBlock(Func func, const std::string& context) {
     }
 }
 
+casacore::IPosition ParseZarrShape(const nlohmann::json& array_metadata) {
+    const auto* shape = FindJsonPtr(array_metadata, "/shape");
+    if (!shape || !shape->is_array()) {
+        throw std::runtime_error("Zarr shape is not an array");
+    }
+
+    std::vector<int> shape_values;
+    shape_values.reserve(shape->size());
+    for (const auto& dim : *shape) {
+        if (!dim.is_number_integer()) {
+            throw std::runtime_error("Zarr shape contains a non-integer dimension");
+        }
+
+        shape_values.push_back(dim.get<int>());
+    }
+
+    return casacore::IPosition(shape_values);
+}
+
+bool ComputeArraySizeBytes(const casacore::IPosition& shape, casacore::DataType data_type, int64_t& size) {
+    const size_t element_size = casacore::SizeOfType(data_type);
+    if (element_size == 0) {
+        return false;
+    }
+
+    int64_t total_bytes = static_cast<int64_t>(element_size);
+    for (int i = 0; i < shape.size(); ++i) {
+        const int64_t dim_size = shape[i];
+        if (dim_size < 0) {
+            return false;
+        }
+        if (dim_size == 0) {
+            size = 0;
+            return true;
+        }
+        if (total_bytes > std::numeric_limits<int64_t>::max() / dim_size) {
+            return false;
+        }
+        total_bytes *= dim_size;
+    }
+
+    size = total_bytes;
+    return true;
+}
+
 using AxisInfo = ZarrMetadata::AxisInfo;
 
 std::map<std::string, AxisInfo> ParseAxes(const nlohmann::json& metadata) {
-    const auto* dimension_names = GetJsonPtr(metadata, "/dimension_names");
+    const auto* dimension_names = FindJsonPtr(metadata, "/dimension_names");
     if (!dimension_names || !dimension_names->is_array()) {
         throw std::runtime_error("XRADIO schema requires dimension_names array");
     }
 
     std::vector<std::string> dims = dimension_names->get<std::vector<std::string>>();
 
-    const auto* shape_json = GetJsonPtr(metadata, "/shape");
+    const auto* shape_json = FindJsonPtr(metadata, "/shape");
     if (!shape_json || !shape_json->is_array()) {
         throw std::runtime_error("Zarr shape is not an array");
     }
@@ -205,7 +300,7 @@ std::map<std::string, AxisInfo> ParseAxes(const nlohmann::json& metadata) {
     return axes;
 }
 
-const AxisInfo& RequiredAxis(const std::map<std::string, AxisInfo>& axes, const std::string& axis_name) {
+const AxisInfo& RequireAxis(const std::map<std::string, AxisInfo>& axes, const std::string& axis_name) {
     auto axis = axes.find(axis_name);
     if (axis == axes.end()) {
         throw std::runtime_error("Missing required axis " + axis_name);
@@ -215,7 +310,7 @@ const AxisInfo& RequiredAxis(const std::map<std::string, AxisInfo>& axes, const 
 
 void ValidateSupportedAxes(const std::map<std::string, AxisInfo>& axes, const std::vector<std::string>& required_axes) {
     for (const auto& axis_name : required_axes) {
-        const AxisInfo& axis = RequiredAxis(axes, axis_name);
+        const AxisInfo& axis = RequireAxis(axes, axis_name);
         if (axis_name == TIME_AXIS && axis.size > 1) {
             throw std::runtime_error(fmt::format("Zarr images with time axis size > 1 are not supported: time={}", axis.size));
         }
@@ -246,10 +341,10 @@ std::string FormatIntArray(const nlohmann::json& arr) {
 
 // Reorder a storage-order chunk/shard shape into CARTA axis order (x, y, freq, stokes),
 // dropping any extra axes (e.g. time). Missing entries in the shape array default to 1.
-nlohmann::json CartaOrderedShape(
+nlohmann::json MakeCartaOrderedShape(
     const nlohmann::json& arr, const std::map<std::string, AxisInfo>& axes, const std::string& x_axis, const std::string& y_axis) {
     auto value_at = [&](const std::string& name) -> int64_t {
-        const AxisInfo& axis = RequiredAxis(axes, name);
+        const AxisInfo& axis = RequireAxis(axes, name);
         return (axis.index >= arr.size()) ? 1 : arr[axis.index].get<int64_t>();
     };
     return {value_at(x_axis), value_at(y_axis), value_at(FREQUENCY_AXIS), value_at(POLARIZATION_AXIS)};
@@ -258,19 +353,17 @@ nlohmann::json CartaOrderedShape(
 // Describe a Blosc codec, e.g. "Blosc + zstd (level 5, shuffle)".
 std::string FormatBloscCompressor(const nlohmann::json& codec) {
     std::string compressor = "Blosc";
-    const auto* cname = GetJsonPtr(codec, "/configuration/cname");
-    if (cname && cname->is_string()) {
-        compressor += " + " + cname->get<std::string>();
+    if (auto cname = FindJsonValue<std::string>(codec, "/configuration/cname")) {
+        compressor += " + " + *cname;
     }
 
     std::string params;
-    const auto* clevel = GetJsonPtr(codec, "/configuration/clevel");
+    const auto* clevel = FindJsonPtr(codec, "/configuration/clevel");
     if (clevel && clevel->is_number()) {
         params += "level " + std::to_string(clevel->get<int>());
     }
-    const auto* shuffle = GetJsonPtr(codec, "/configuration/shuffle");
-    if (shuffle && shuffle->is_string() && shuffle->get<std::string>() != "noshuffle") {
-        params += (params.empty() ? "" : ", ") + shuffle->get<std::string>();
+    if (auto shuffle = FindJsonValue<std::string>(codec, "/configuration/shuffle"); shuffle && *shuffle != "noshuffle") {
+        params += (params.empty() ? "" : ", ") + *shuffle;
     }
     if (!params.empty()) {
         compressor += " (" + params + ")";
@@ -292,7 +385,7 @@ std::string FormatCompressor(const nlohmann::json* compression_codecs) {
         }
         if (name == "zstd" || name == "gzip") {
             std::string compressor = name;
-            const auto* level = GetJsonPtr(codec, "/configuration/level");
+            const auto* level = FindJsonPtr(codec, "/configuration/level");
             if (level && level->is_number()) {
                 compressor += " (level " + std::to_string(level->get<int>()) + ")";
             }
@@ -320,11 +413,11 @@ struct ZarrMetadata::Impl {
     // Builds the FITS header from the parsed metadata; defined out-of-line below.
     class FitsHeaderComposer;
 
-    casacore::IPosition CartaShape() const {
-        const int x_size = RequiredAxis(axes, L_AXIS).size;
-        const int y_size = RequiredAxis(axes, M_AXIS).size;
-        const int frequency_size = RequiredAxis(axes, FREQUENCY_AXIS).size;
-        const int polarization_size = RequiredAxis(axes, POLARIZATION_AXIS).size;
+    casacore::IPosition BuildCartaShape() const {
+        const int x_size = RequireAxis(axes, L_AXIS).size;
+        const int y_size = RequireAxis(axes, M_AXIS).size;
+        const int frequency_size = RequireAxis(axes, FREQUENCY_AXIS).size;
+        const int polarization_size = RequireAxis(axes, POLARIZATION_AXIS).size;
 
         return casacore::IPosition(std::vector<int>{x_size, y_size, frequency_size, polarization_size});
     }
@@ -340,21 +433,35 @@ struct ZarrMetadata::Impl {
         return has_beams;
     }
 
+    nlohmann::json GetAttributes(const std::string& array_name) const {
+        nlohmann::json metadata = store->ReadArrayMetadata(array_name);
+        if (metadata.contains("attributes")) {
+            return metadata["attributes"];
+        }
+
+        return nlohmann::json::object();
+    }
+
+    std::string GetAttributeString(const std::string& array_name, const std::string& attr_name) const {
+        nlohmann::json attributes = GetAttributes(array_name);
+        return FindJsonValue<std::string>(attributes, ("/" + attr_name).c_str()).value_or("");
+    }
+
     bool LoadBeams(casacore::ImageBeamSet& beam_set) const {
-        std::string beam_array_name = store->GetAttributeString(store->GetImageName(), "beam_fit_params");
+        std::string beam_array_name = GetAttributeString(store->GetImageName(), "beam_fit_params");
         if (beam_array_name.empty()) {
             return false;
         }
 
         try {
-            nlohmann::json beam_metadata = store->GetArrayMetadata(beam_array_name);
+            nlohmann::json beam_metadata = store->ReadArrayMetadata(beam_array_name);
             std::map<std::string, AxisInfo> beam_axes = ParseAxes(beam_metadata);
             ValidateSupportedAxes(beam_axes, {TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, BEAM_PARAMS_LABEL});
 
-            const AxisInfo& time_axis = RequiredAxis(beam_axes, TIME_AXIS);
-            const AxisInfo& freq_axis = RequiredAxis(beam_axes, FREQUENCY_AXIS);
-            const AxisInfo& stokes_axis = RequiredAxis(beam_axes, POLARIZATION_AXIS);
-            const AxisInfo& param_axis = RequiredAxis(beam_axes, BEAM_PARAMS_LABEL);
+            const AxisInfo& time_axis = RequireAxis(beam_axes, TIME_AXIS);
+            const AxisInfo& freq_axis = RequireAxis(beam_axes, FREQUENCY_AXIS);
+            const AxisInfo& stokes_axis = RequireAxis(beam_axes, POLARIZATION_AXIS);
+            const AxisInfo& param_axis = RequireAxis(beam_axes, BEAM_PARAMS_LABEL);
 
             // The BEAM_PARAMS_LABEL coordinate names each position along the parameter axis
             // (e.g. ["major", "minor", "pa"]); look up each parameter by name, as the order may be arbitrary.
@@ -377,7 +484,7 @@ struct ZarrMetadata::Impl {
             const size_t beam_param_axis = param_axis.index;
             const int n_chan = freq_axis.size;
             const int n_stokes = stokes_axis.size;
-            std::string unit = store->GetAttributeString(beam_array_name, "units");
+            std::string unit = GetAttributeString(beam_array_name, "units");
             if (unit.empty()) {
                 throw std::runtime_error(fmt::format("Beam array {} missing units attribute", beam_array_name));
             }
@@ -412,15 +519,15 @@ struct ZarrMetadata::Impl {
 
     // Extract storage encoding info (compressor, compression level, chunk shape, shard shape if any)
     // for the main array, as ordered label/value pairs.
-    std::vector<std::pair<std::string, std::string>> StorageInfo() const {
+    std::vector<std::pair<std::string, std::string>> GetStorageInfo() const {
         std::vector<std::pair<std::string, std::string>> info;
         const nlohmann::json& zarray = store->GetImageMetadata();
 
         // The chunk_grid shape is the shard shape when sharding is used, otherwise the chunk shape.
-        const auto* grid_shape = GetJsonPtr(zarray, "/chunk_grid/configuration/chunk_shape");
+        const auto* grid_shape = FindJsonPtr(zarray, "/chunk_grid/configuration/chunk_shape");
 
         // Locate the sharding codec (if any); the compressor lives in its nested codec list when sharded.
-        const auto* codecs = GetJsonPtr(zarray, "/codecs");
+        const auto* codecs = FindJsonPtr(zarray, "/codecs");
         const nlohmann::json* inner_chunk = nullptr;
         const nlohmann::json* compression_codecs = codecs;
         bool sharded = false;
@@ -428,8 +535,8 @@ struct ZarrMetadata::Impl {
             for (const auto& codec : *codecs) {
                 if (codec.value("name", "") == "sharding_indexed") {
                     sharded = true;
-                    inner_chunk = GetJsonPtr(codec, "/configuration/chunk_shape");
-                    compression_codecs = GetJsonPtr(codec, "/configuration/codecs");
+                    inner_chunk = FindJsonPtr(codec, "/configuration/chunk_shape");
+                    compression_codecs = FindJsonPtr(codec, "/configuration/codecs");
                     break;
                 }
             }
@@ -440,12 +547,12 @@ struct ZarrMetadata::Impl {
 
         // Emit Shard shape (if any), then Chunk shape, then Compressor so they group next to "Shape" in the file browser.
         if (sharded && grid_shape && grid_shape->is_array()) {
-            info.emplace_back("Shard shape", FormatIntArray(CartaOrderedShape(*grid_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
+            info.emplace_back("Shard shape", FormatIntArray(MakeCartaOrderedShape(*grid_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
         }
         // Chunk shape: the inner chunk when sharded, otherwise the chunk_grid shape.
         const nlohmann::json* chunk_shape = sharded ? inner_chunk : grid_shape;
         if (chunk_shape && chunk_shape->is_array()) {
-            info.emplace_back("Chunk shape", FormatIntArray(CartaOrderedShape(*chunk_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
+            info.emplace_back("Chunk shape", FormatIntArray(MakeCartaOrderedShape(*chunk_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
         }
         const std::string compressor = FormatCompressor(compression_codecs);
         if (!compressor.empty()) {
@@ -459,7 +566,8 @@ struct ZarrMetadata::Impl {
 // Assembles FITS header records from the parsed Zarr metadata and coordinate arrays.
 class ZarrMetadata::Impl::FitsHeaderComposer {
 public:
-    FitsHeaderComposer(Impl& impl, const casacore::IPosition& shape) : _impl(impl), _shape(shape) {}
+    FitsHeaderComposer(Impl& impl, const casacore::IPosition& shape, casacore::DataType data_type)
+        : _impl(impl), _shape(shape), _data_type(data_type) {}
 
     casacore::Vector<casacore::String> Build() {
         AppendDataTypeHeaders();
@@ -469,32 +577,27 @@ public:
         AppendSpectralAxis();
         AppendStokesAxis();
         AppendSkyMetadata();
-        AppendBeams();
+        AppendCasaBeamFlag();
         return _builder.Build();
     }
 
 private:
     void AppendDataTypeHeaders() {
-        const nlohmann::json zarray = _impl.store->GetArrayMetadata(_impl.store->GetImageName());
-
-        static constexpr int bitpix_float32 = -32;
-        static constexpr int bitpix_float64 = -64;
-        int bitpix = bitpix_float32;
-        SafeParseBlock([&]() {
-            // Currently XRADIO only supports float32 and float64
-            const auto* dtype = GetJsonPtr(zarray, "/data_type");
-            if (dtype && dtype->is_string()) {
-                std::string dtype_str = dtype->get<std::string>();
-                if (dtype_str == "float32" || dtype_str == "<f4") {
-                    bitpix = bitpix_float32;
-                } else if (dtype_str == "float64" || dtype_str == "<f8") {
-                    bitpix = bitpix_float64;
+        int bitpix = 0;
+        bool has_bitpix = false;
+        LogParseErrors(
+            [&]() {
+                has_bitpix = FitsBitpixForDataType(_data_type, bitpix);
+                if (!has_bitpix) {
+                    spdlog::warn("Zarr data type cannot be represented as FITS BITPIX; omitting FITS BITPIX");
                 }
-            }
-        }, "BITPIX");
+            },
+            "BITPIX");
 
         _builder.AddString("SIMPLE", "T");
-        _builder.AddInt("BITPIX", bitpix);
+        if (has_bitpix) {
+            _builder.AddInt("BITPIX", bitpix);
+        }
     }
 
     void AppendNAxis() {
@@ -513,7 +616,7 @@ private:
         }
         const auto& zattrs = _impl.store->GetRootMetadata()["attributes"];
 
-        const auto* coordinate_system_info = GetJsonPtr(zattrs, "/coordinate_system_info");
+        const auto* coordinate_system_info = FindJsonPtr(zattrs, "/coordinate_system_info");
         if (!(coordinate_system_info && coordinate_system_info->is_object())) {
             return;
         }
@@ -521,7 +624,7 @@ private:
         AppendEquinox(zattrs);
         std::string radesys = AppendRadesys(zattrs);
         AppendDirectionReference(zattrs);
-        AppendCtype(zattrs, radesys);
+        AppendCtypes(zattrs, radesys);
 
         TryAddDouble(_builder, zattrs, "/coordinate_system_info/native_pole_direction/data/0", "LONPOLE", RAD_TO_DEG);
         TryAddDouble(_builder, zattrs, "/coordinate_system_info/native_pole_direction/data/1", "LATPOLE", RAD_TO_DEG);
@@ -532,195 +635,207 @@ private:
     }
 
     void AppendEquinox(const nlohmann::json& zattrs) {
-        SafeParseBlock([&]() {
-            const auto* equinox = GetJsonPtr(zattrs, "/coordinate_system_info/reference_direction/attrs/equinox");
-            if (!equinox) {
-                return;
-            }
-            if (equinox->is_number()) {
-                _builder.AddDouble("EQUINOX", equinox->get<double>());
-            } else if (equinox->is_string()) {
-                std::string val = equinox->get<std::string>();
-                if (!val.empty()) {
-                    size_t start_pos = 0;
-                    if (std::toupper(val[0]) == 'J' || std::toupper(val[0]) == 'B') {
-                        start_pos = 1;
-                    }
-                    try {
-                        _builder.AddDouble("EQUINOX", std::stod(val.substr(start_pos)));
-                    } catch (...) {
-                        spdlog::warn("Invalid EQUINOX format: '{}'", val);
+        LogParseErrors(
+            [&]() {
+                const auto* equinox = FindJsonPtr(zattrs, "/coordinate_system_info/reference_direction/attrs/equinox");
+                if (!equinox) {
+                    return;
+                }
+                if (equinox->is_number()) {
+                    _builder.AddDouble("EQUINOX", equinox->get<double>());
+                } else if (equinox->is_string()) {
+                    std::string val = equinox->get<std::string>();
+                    if (!val.empty()) {
+                        size_t start_pos = 0;
+                        if (std::toupper(val[0]) == 'J' || std::toupper(val[0]) == 'B') {
+                            start_pos = 1;
+                        }
+                        try {
+                            _builder.AddDouble("EQUINOX", std::stod(val.substr(start_pos)));
+                        } catch (...) {
+                            spdlog::warn("Invalid EQUINOX format: '{}'", val);
+                        }
                     }
                 }
-            }
-        }, "EQUINOX");
+            },
+            "EQUINOX");
     }
 
     std::string AppendRadesys(const nlohmann::json& zattrs) {
         std::string radesys;
-        SafeParseBlock([&]() {
-            const auto* frame = GetJsonPtr(zattrs, "/coordinate_system_info/reference_direction/attrs/frame");
-            if (frame && frame->is_string()) {
-                radesys = frame->get<std::string>();
-                ToUpperAscii(radesys);
-                _builder.AddString("RADESYS", radesys);
-            }
-        }, "RADESYS");
+        LogParseErrors(
+            [&]() {
+                if (auto frame = FindJsonValue<std::string>(zattrs, "/coordinate_system_info/reference_direction/attrs/frame")) {
+                    radesys = *frame;
+                    ToUpperAscii(radesys);
+                    _builder.AddString("RADESYS", radesys);
+                }
+            },
+            "RADESYS");
         return radesys;
     }
 
     void AppendDirectionReference(const nlohmann::json& zattrs) {
-        SafeParseBlock([&]() {
-            const auto* ref_data = GetJsonPtr(zattrs, "/coordinate_system_info/reference_direction/data");
-            if (ref_data && ref_data->is_array() && ref_data->size() >= 2) {
-                _builder.AddDouble("CRVAL1", (*ref_data)[0].get<double>() * RAD_TO_DEG);
-                _builder.AddDouble("CRVAL2", (*ref_data)[1].get<double>() * RAD_TO_DEG);
-            }
-        }, "CRVAL1/2");
+        LogParseErrors(
+            [&]() {
+                const auto* ref_data = FindJsonPtr(zattrs, "/coordinate_system_info/reference_direction/data");
+                if (ref_data && ref_data->is_array() && ref_data->size() >= 2) {
+                    _builder.AddDouble("CRVAL1", (*ref_data)[0].get<double>() * RAD_TO_DEG);
+                    _builder.AddDouble("CRVAL2", (*ref_data)[1].get<double>() * RAD_TO_DEG);
+                }
+            },
+            "CRVAL1/2");
     }
 
-    void AppendCtype(const nlohmann::json& zattrs, const std::string& radesys) {
-        SafeParseBlock([&]() {
-            std::string ctype1_prefix = "RA";
-            std::string ctype2_prefix = "DEC";
-            std::string projection_str;
-            const auto* projection = GetJsonPtr(zattrs, "/coordinate_system_info/projection");
-            if (projection && projection->is_string()) {
-                projection_str = projection->get<std::string>();
-            }
-            if (radesys == "GALACTIC") {
-                ctype1_prefix = "GLON";
-                ctype2_prefix = "GLAT";
-            } else if (radesys == "ECLIPTIC") {
-                ctype1_prefix = "ELON";
-                ctype2_prefix = "ELAT";
-            } else if (radesys == "SUPERGALACTIC") {
-                ctype1_prefix = "SLON";
-                ctype2_prefix = "SLAT";
-            }
-            _builder.AddString("CTYPE1", MakeCtype(ctype1_prefix, projection_str));
-            _builder.AddString("CTYPE2", MakeCtype(ctype2_prefix, projection_str));
-        }, "CTYPE1/2");
+    void AppendCtypes(const nlohmann::json& zattrs, const std::string& radesys) {
+        LogParseErrors(
+            [&]() {
+                std::string ctype1_prefix = "RA";
+                std::string ctype2_prefix = "DEC";
+                std::string projection_str;
+                if (auto projection = FindJsonValue<std::string>(zattrs, "/coordinate_system_info/projection")) {
+                    projection_str = *projection;
+                }
+                if (radesys == "GALACTIC") {
+                    ctype1_prefix = "GLON";
+                    ctype2_prefix = "GLAT";
+                } else if (radesys == "ECLIPTIC") {
+                    ctype1_prefix = "ELON";
+                    ctype2_prefix = "ELAT";
+                } else if (radesys == "SUPERGALACTIC") {
+                    ctype1_prefix = "SLON";
+                    ctype2_prefix = "SLAT";
+                }
+                _builder.AddString("CTYPE1", MakeCtypeHeaderValue(ctype1_prefix, projection_str));
+                _builder.AddString("CTYPE2", MakeCtypeHeaderValue(ctype2_prefix, projection_str));
+            },
+            "CTYPE1/2");
     }
 
     void AppendPcMatrix(const nlohmann::json& zattrs) {
-        SafeParseBlock([&]() {
-            const auto* pc_val = GetJsonPtr(zattrs, "/coordinate_system_info/pixel_coordinate_transformation_matrix");
-            if (pc_val && pc_val->is_array() && pc_val->size() >= 2 && (*pc_val)[0].is_array() && (*pc_val)[0].size() >= 2) {
-                _builder.AddDouble("PC1_1", (*pc_val)[0][0].get<double>());
-                _builder.AddDouble("PC1_2", (*pc_val)[0][1].get<double>());
-                _builder.AddDouble("PC2_1", (*pc_val)[1][0].get<double>());
-                _builder.AddDouble("PC2_2", (*pc_val)[1][1].get<double>());
-            }
-        }, "PC Matrix");
+        LogParseErrors(
+            [&]() {
+                const auto* pc_val = FindJsonPtr(zattrs, "/coordinate_system_info/pixel_coordinate_transformation_matrix");
+                if (pc_val && pc_val->is_array() && pc_val->size() >= 2 && (*pc_val)[0].is_array() && (*pc_val)[0].size() >= 2) {
+                    _builder.AddDouble("PC1_1", (*pc_val)[0][0].get<double>());
+                    _builder.AddDouble("PC1_2", (*pc_val)[0][1].get<double>());
+                    _builder.AddDouble("PC2_1", (*pc_val)[1][0].get<double>());
+                    _builder.AddDouble("PC2_2", (*pc_val)[1][1].get<double>());
+                }
+            },
+            "PC Matrix");
     }
 
     void AppendDirectionIncrements() {
-        SafeParseBlock([&]() {
-            // XRADIO uses linear spacing, so the increment is the step between the first two labels.
-            auto add_axis = [&](const ts::SharedOffsetArray<double>& arr, const char* cdelt, const char* crpix, const char* cunit) {
-                if (arr.num_elements() > 1) {
-                    double cdelt_rad = arr(1) - arr(0);
-                    _builder.AddDouble(cdelt, cdelt_rad * RAD_TO_DEG);
-                    if (cdelt_rad != 0.0) {
-                        _builder.AddDouble(crpix, (-arr(0) / cdelt_rad) + 1.0); // +1 for FITS 1-indexed
+        LogParseErrors(
+            [&]() {
+                // XRADIO uses linear spacing, so the increment is the step between the first two labels.
+                auto add_axis = [&](const ts::SharedOffsetArray<double>& arr, const char* cdelt, const char* crpix, const char* cunit) {
+                    if (arr.num_elements() > 1) {
+                        double cdelt_rad = arr(1) - arr(0);
+                        _builder.AddDouble(cdelt, cdelt_rad * RAD_TO_DEG);
+                        if (cdelt_rad != 0.0) {
+                            _builder.AddDouble(crpix, (-arr(0) / cdelt_rad) + 1.0); // +1 for FITS 1-indexed
+                        }
+                        _builder.AddString(cunit, "deg");
                     }
-                    _builder.AddString(cunit, "deg");
-                }
-            };
-            add_axis(_impl.store->ReadDoubleArray(L_AXIS), "CDELT1", "CRPIX1", "CUNIT1");
-            add_axis(_impl.store->ReadDoubleArray(M_AXIS), "CDELT2", "CRPIX2", "CUNIT2");
-        }, "Direction Increments");
+                };
+                add_axis(_impl.store->ReadDoubleArray(L_AXIS), "CDELT1", "CRPIX1", "CUNIT1");
+                add_axis(_impl.store->ReadDoubleArray(M_AXIS), "CDELT2", "CRPIX2", "CUNIT2");
+            },
+            "Direction Increments");
     }
 
     void AppendSpectralAxis() {
-        SafeParseBlock([&]() {
-            auto freq_arr = _impl.store->ReadDoubleArray(FREQUENCY_AXIS);
-            nlohmann::json zattrs = _impl.store->GetAttributes(FREQUENCY_AXIS);
+        LogParseErrors(
+            [&]() {
+                auto freq_arr = _impl.store->ReadDoubleArray(FREQUENCY_AXIS);
+                nlohmann::json zattrs = _impl.GetAttributes(FREQUENCY_AXIS);
 
-            if (freq_arr.num_elements() > 0) {
-                _builder.AddString("CTYPE3", "FREQ");
-                _builder.AddDouble("CRPIX3", 1.0);
-                _builder.AddDouble("CRVAL3", freq_arr(0));
-                if (freq_arr.num_elements() > 1) {
-                    _builder.AddDouble("CDELT3", freq_arr(1) - freq_arr(0));
-                }
-
-                const auto* ref_attrs = GetJsonPtr(zattrs, "/reference_frequency/attrs");
-                if (ref_attrs && ref_attrs->is_object()) {
-                    TryAddString(_builder, *ref_attrs, "/units", "CUNIT3");
-                    const auto* observer = GetJsonPtr(*ref_attrs, "/observer");
-                    if (observer && observer->is_string()) {
-                        std::string specsys = observer->get<std::string>();
-                        ToUpperAscii(specsys);
-                        _builder.AddString("SPECSYS", specsys);
+                if (freq_arr.num_elements() > 0) {
+                    _builder.AddString("CTYPE3", "FREQ");
+                    _builder.AddDouble("CRPIX3", 1.0);
+                    _builder.AddDouble("CRVAL3", freq_arr(0));
+                    if (freq_arr.num_elements() > 1) {
+                        _builder.AddDouble("CDELT3", freq_arr(1) - freq_arr(0));
                     }
-                }
 
-                TryAddDouble(_builder, zattrs, "/rest_frequency/data", "RESTFRQ");
-            }
-        }, "Spectral Axis");
+                    const auto* ref_attrs = FindJsonPtr(zattrs, "/reference_frequency/attrs");
+                    if (ref_attrs && ref_attrs->is_object()) {
+                        TryAddString(_builder, *ref_attrs, "/units", "CUNIT3");
+                        if (auto observer = FindJsonValue<std::string>(*ref_attrs, "/observer")) {
+                            std::string specsys = *observer;
+                            ToUpperAscii(specsys);
+                            _builder.AddString("SPECSYS", specsys);
+                        }
+                    }
+
+                    TryAddDouble(_builder, zattrs, "/rest_frequency/data", "RESTFRQ");
+                }
+            },
+            "Spectral Axis");
     }
 
     void AppendStokesAxis() {
-        SafeParseBlock([&]() {
-            std::vector<std::string> pol_strs = _impl.store->ReadStringArray(POLARIZATION_AXIS);
-            _builder.AddString("CTYPE4", "STOKES");
-            _builder.AddDouble("CRPIX4", 1.0);
+        LogParseErrors(
+            [&]() {
+                std::vector<std::string> pol_strs = _impl.store->ReadStringArray(POLARIZATION_AXIS);
+                _builder.AddString("CTYPE4", "STOKES");
+                _builder.AddDouble("CRPIX4", 1.0);
 
-            std::vector<casacore::Stokes::StokesTypes> stokes_types = StokesTypesFromLabels(pol_strs);
-            bool has_stokes_axis =
-                !stokes_types.empty() && (stokes_types.size() != 1 || stokes_types[0] != casacore::Stokes::I);
-            if (!has_stokes_axis) {
-                _builder.AddDouble("CDELT4", 1.0);
-                _builder.AddDouble("CRVAL4", 1.0);
-                _builder.AddString("CUNIT4", "");
-                return;
-            }
-
-            // FITS represents the Stokes axis linearly in FITS Stokes values (I=1, Q=2, U=3, V=4,
-            // RR=-1, LL=-2, RL=-3, LR=-4, ...), which differ from the casacore enum ordinals. Convert
-            // before computing CRVAL4/CDELT4 and before testing whether the axis is linear at all.
-            std::vector<int> fits_values;
-            fits_values.reserve(stokes_types.size());
-            for (const auto& type : stokes_types) {
-                fits_values.push_back(static_cast<int>(casacore::Stokes::FITSValue(type)));
-            }
-
-            int stokes_first = fits_values[0];
-            _builder.AddDouble("CRVAL4", static_cast<double>(stokes_first));
-            if (fits_values.size() == 1) {
-                _builder.AddDouble("CDELT4", 1.0);
-                _builder.AddString("CUNIT4", "");
-                return;
-            }
-
-            int delta = fits_values[1] - stokes_first;
-            bool uniform = true;
-            for (size_t i = 2; i < fits_values.size(); ++i) {
-                int expected = stokes_first + (static_cast<int>(i) * delta);
-                if (fits_values[i] != expected) {
-                    uniform = false;
-                    break;
+                std::vector<casacore::Stokes::StokesTypes> stokes_types = StokesTypesFromLabels(pol_strs);
+                bool has_stokes_axis = !stokes_types.empty() && (stokes_types.size() != 1 || stokes_types[0] != casacore::Stokes::I);
+                if (!has_stokes_axis) {
+                    _builder.AddDouble("CDELT4", 1.0);
+                    _builder.AddDouble("CRVAL4", 1.0);
+                    _builder.AddString("CUNIT4", "");
+                    return;
                 }
-            }
-            if (uniform) {
-                _builder.AddDouble("CDELT4", static_cast<double>(delta));
-            } else {
-                std::string stokes_list;
-                for (size_t i = 0; i < pol_strs.size(); ++i) {
-                    stokes_list += (i == 0 ? "" : ", ") + pol_strs[i];
+
+                // FITS represents the Stokes axis linearly in FITS Stokes values (I=1, Q=2, U=3, V=4,
+                // RR=-1, LL=-2, RL=-3, LR=-4, ...), which differ from the casacore enum ordinals. Convert
+                // before computing CRVAL4/CDELT4 and before testing whether the axis is linear at all.
+                std::vector<int> fits_values;
+                fits_values.reserve(stokes_types.size());
+                for (const auto& type : stokes_types) {
+                    fits_values.push_back(static_cast<int>(casacore::Stokes::FITSValue(type)));
                 }
-                spdlog::warn("Non-uniform Stokes spacing for types [{}]; cannot be represented with CDELT4", stokes_list);
-            }
-            _builder.AddString("CUNIT4", "");
-        }, "Stokes Axis");
+
+                int stokes_first = fits_values[0];
+                _builder.AddDouble("CRVAL4", static_cast<double>(stokes_first));
+                if (fits_values.size() == 1) {
+                    _builder.AddDouble("CDELT4", 1.0);
+                    _builder.AddString("CUNIT4", "");
+                    return;
+                }
+
+                int delta = fits_values[1] - stokes_first;
+                bool uniform = true;
+                for (size_t i = 2; i < fits_values.size(); ++i) {
+                    int expected = stokes_first + (static_cast<int>(i) * delta);
+                    if (fits_values[i] != expected) {
+                        uniform = false;
+                        break;
+                    }
+                }
+                if (uniform) {
+                    _builder.AddDouble("CDELT4", static_cast<double>(delta));
+                } else {
+                    std::string stokes_list;
+                    for (size_t i = 0; i < pol_strs.size(); ++i) {
+                        stokes_list += (i == 0 ? "" : ", ") + pol_strs[i];
+                    }
+                    spdlog::warn("Non-uniform Stokes spacing for types [{}]; cannot be represented with CDELT4", stokes_list);
+                }
+                _builder.AddString("CUNIT4", "");
+            },
+            "Stokes Axis");
     }
 
     void AppendSkyMetadata() {
         nlohmann::json zattrs_sky;
         try {
-            zattrs_sky = _impl.store->GetAttributes(_impl.store->GetImageName());
+            zattrs_sky = _impl.GetAttributes(_impl.store->GetImageName());
         } catch (...) {
             spdlog::warn("Error parsing SKY zattrs");
             return;
@@ -737,83 +852,109 @@ private:
     }
 
     void AppendObsDate(const nlohmann::json& zattrs_sky) {
-        SafeParseBlock([&]() {
-            const auto* obs_scale = GetJsonPtr(zattrs_sky, "/obsdate/attrs/scale");
-            const auto* obs_format = GetJsonPtr(zattrs_sky, "/obsdate/attrs/format");
-            const auto* obs_data = GetJsonPtr(zattrs_sky, "/obsdate/data");
-            if (obs_format && obs_data && obs_format->is_string()) {
-                std::string scale = "UTC";
-                if (obs_scale && obs_scale->is_string()) {
-                    scale = obs_scale->get<std::string>();
-                } else {
-                    spdlog::warn("Missing or invalid obsdate time scale; falling back to UTC");
+        LogParseErrors(
+            [&]() {
+                auto obs_format = FindJsonValue<std::string>(zattrs_sky, "/obsdate/attrs/format");
+                const auto* obs_data = FindJsonPtr(zattrs_sky, "/obsdate/data");
+                if (obs_format && obs_data) {
+                    std::string scale = "UTC";
+                    if (auto obs_scale = FindJsonValue<std::string>(zattrs_sky, "/obsdate/attrs/scale")) {
+                        scale = *obs_scale;
+                    } else {
+                        spdlog::warn("Missing or invalid obsdate time scale; falling back to UTC");
+                    }
+                    const ObsDate obs_date = ParseObsDate(*obs_data, *obs_format, scale);
+                    ToUpperAscii(scale);
+                    _builder.AddString("TIMESYS", scale);
+                    _builder.AddString("DATE-OBS", obs_date.date);
+                    _builder.AddDouble("MJD-OBS", obs_date.mjd);
                 }
-                const ObsDate obs_date = ParseObsDate(*obs_data, obs_format->get<std::string>(), scale);
-                ToUpperAscii(scale);
-                _builder.AddString("TIMESYS", scale);
-                _builder.AddString("DATE-OBS", obs_date.date);
-                _builder.AddDouble("MJD-OBS", obs_date.mjd);
-            }
-        }, "TIMESYS/DATE-OBS/MJD-OBS");
+            },
+            "TIMESYS/DATE-OBS/MJD-OBS");
     }
 
     void AppendTelescope(const nlohmann::json& zattrs_sky) {
-        SafeParseBlock([&]() {
-            TryAddString(_builder, zattrs_sky, "/telescope/name", "TELESCOP");
-            const auto* telescope_dir = GetJsonPtr(zattrs_sky, "/telescope/direction/data");
-            const auto* telescope_dist = GetJsonPtr(zattrs_sky, "/telescope/distance/data");
-            if (telescope_dir && telescope_dist && telescope_dir->is_array() && telescope_dir->size() >= 2 && telescope_dist->is_array() &&
-                !telescope_dist->empty()) {
-                double lon = (*telescope_dir)[0].get<double>();
-                double lat = (*telescope_dir)[1].get<double>();
-                double radius = (*telescope_dist)[0].get<double>();
-                double obsgeo_x = radius * cos(lat) * cos(lon);
-                double obsgeo_y = radius * cos(lat) * sin(lon);
-                double obsgeo_z = radius * sin(lat);
-                _builder.AddDouble("OBSGEO-X", obsgeo_x);
-                _builder.AddDouble("OBSGEO-Y", obsgeo_y);
-                _builder.AddDouble("OBSGEO-Z", obsgeo_z);
-            }
-        }, "TELESCOPE/OBSGEO");
+        LogParseErrors(
+            [&]() {
+                TryAddString(_builder, zattrs_sky, "/telescope/name", "TELESCOP");
+                const auto* telescope_dir = FindJsonPtr(zattrs_sky, "/telescope/direction/data");
+                const auto* telescope_dist = FindJsonPtr(zattrs_sky, "/telescope/distance/data");
+                if (telescope_dir && telescope_dist && telescope_dir->is_array() && telescope_dir->size() >= 2 &&
+                    telescope_dist->is_array() && !telescope_dist->empty()) {
+                    double lon = (*telescope_dir)[0].get<double>();
+                    double lat = (*telescope_dir)[1].get<double>();
+                    double radius = (*telescope_dist)[0].get<double>();
+                    double obsgeo_x = radius * cos(lat) * cos(lon);
+                    double obsgeo_y = radius * cos(lat) * sin(lon);
+                    double obsgeo_z = radius * sin(lat);
+                    _builder.AddDouble("OBSGEO-X", obsgeo_x);
+                    _builder.AddDouble("OBSGEO-Y", obsgeo_y);
+                    _builder.AddDouble("OBSGEO-Z", obsgeo_z);
+                }
+            },
+            "TELESCOPE/OBSGEO");
     }
 
     void AppendUserMetadata(const nlohmann::json& zattrs_sky) {
-        SafeParseBlock([&]() {
-            const auto* user = GetJsonPtr(zattrs_sky, "/user");
-            if (user && user->is_object()) {
-                for (const auto& [item_key, item_value] : user->items()) {
-                    std::string key = item_key;
-                    ToUpperAscii(key);
-                    if (key.size() > FITS_KEYWORD_MAX_LEN) {
-                        key = key.substr(0, FITS_KEYWORD_MAX_LEN);
-                    }
-                    if (item_value.is_string()) {
-                        _builder.AddString(key, item_value.get<std::string>());
-                    } else if (item_value.is_number_float() || item_value.is_number_integer() || item_value.is_number_unsigned()) {
-                        _builder.AddDouble(key, item_value.get<double>());
+        LogParseErrors(
+            [&]() {
+                const auto* user = FindJsonPtr(zattrs_sky, "/user");
+                if (user && user->is_object()) {
+                    for (const auto& [item_key, item_value] : user->items()) {
+                        std::string key = item_key;
+                        ToUpperAscii(key);
+                        if (key.size() > FITS_KEYWORD_MAX_LEN) {
+                            key = key.substr(0, FITS_KEYWORD_MAX_LEN);
+                        }
+                        if (item_value.is_string()) {
+                            _builder.AddString(key, item_value.get<std::string>());
+                        } else if (item_value.is_number_float() || item_value.is_number_integer() || item_value.is_number_unsigned()) {
+                            _builder.AddDouble(key, item_value.get<double>());
+                        }
                     }
                 }
-            }
-        }, "User Metadata");
+            },
+            "User Metadata");
     }
 
-    void AppendBeams() {
-        SafeParseBlock([&]() {
-            casacore::ImageBeamSet beam_set;
-            if (_impl.GetBeams(beam_set)) {
-                _builder.AddString("CASAMBM", "T");
-            }
-        }, "Beam Parameters");
+    void AppendCasaBeamFlag() {
+        LogParseErrors(
+            [&]() {
+                casacore::ImageBeamSet beam_set;
+                if (_impl.GetBeams(beam_set)) {
+                    _builder.AddString("CASAMBM", "T");
+                }
+            },
+            "Beam Parameters");
     }
 
     Impl& _impl;
     const casacore::IPosition& _shape;
+    casacore::DataType _data_type;
     FitsHeaderBuilder _builder;
 };
 
 ZarrMetadata::ZarrMetadata(const std::string& filename) : _impl(std::make_unique<Impl>()), _filename(filename) {}
 
 ZarrMetadata::~ZarrMetadata() = default;
+
+bool ZarrMetadata::ComputeImageDataSizeBytes(const std::string& filename, int64_t& size) {
+    try {
+        ZarrStore store(filename);
+        if (!store.Open()) {
+            return false;
+        }
+
+        const nlohmann::json& image_metadata = store.GetImageMetadata();
+        if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), CasacoreDataTypeFromZarrType(image_metadata), size)) {
+            return true;
+        }
+    } catch (const std::exception& ex) {
+        spdlog::debug("Failed to compute Zarr image data size: {}", ex.what());
+    }
+
+    return false;
+}
 
 bool ZarrMetadata::Initialize() {
     if (_initialized) {
@@ -826,9 +967,11 @@ bool ZarrMetadata::Initialize() {
             return false;
         }
 
-        _impl->axes = ParseAxes(_impl->store->GetImageMetadata());
+        const nlohmann::json& image_metadata = _impl->store->GetImageMetadata();
+        _impl->axes = ParseAxes(image_metadata);
         ValidateSupportedAxes(_impl->axes, {TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, L_AXIS, M_AXIS});
-        _shape = _impl->CartaShape();
+        _shape = _impl->BuildCartaShape();
+        _data_type = CasacoreDataTypeFromZarrType(image_metadata);
 
         _initialized = true;
 
@@ -853,6 +996,10 @@ bool ZarrMetadata::IsInitialized() const {
 
 const casacore::IPosition& ZarrMetadata::GetShape() const {
     return _shape;
+}
+
+casacore::DataType ZarrMetadata::GetDataType() const {
+    return _data_type;
 }
 
 const std::map<std::string, ZarrMetadata::AxisInfo>& ZarrMetadata::GetAxes() const {
@@ -890,7 +1037,7 @@ std::vector<std::pair<std::string, std::string>> ZarrMetadata::GetStorageInfo() 
     }
 
     try {
-        return _impl->StorageInfo();
+        return _impl->GetStorageInfo();
     } catch (const std::exception& ex) {
         spdlog::debug("Failed to read Zarr storage info: {}", ex.what());
     }
@@ -903,7 +1050,7 @@ casacore::Vector<casacore::String> ZarrMetadata::FitsHeaderStrings() {
         return casacore::Vector<casacore::String>();
     }
 
-    Impl::FitsHeaderComposer composer(*_impl, _shape);
+    Impl::FitsHeaderComposer composer(*_impl, _shape, _data_type);
     return composer.Build();
 }
 

@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# ZarrStore.h: low-level Zarr v3 store access (open, metadata navigation, array reads)
+// # ZarrStore.h: low-level Zarr v3 store access (open, metadata navigation, array reads)
 #ifndef CARTA_SRC_IMAGEDATA_ZARRSTORE_H_
 #define CARTA_SRC_IMAGEDATA_ZARRSTORE_H_
 
@@ -49,12 +49,9 @@ public:
         return _image_json;
     }
 
-    // zarr.json metadata for a named array (cached). An empty name returns the root metadata.
-    nlohmann::json GetArrayMetadata(const std::string& array_name) const;
-    // The "attributes" object of a named array, or an empty object if absent.
-    nlohmann::json GetAttributes(const std::string& array_name) const;
-    // First string value of an attribute (scalar, or first element if it is an array); "" if absent.
-    std::string GetAttributeString(const std::string& array_name, const std::string& attr_name) const;
+    // zarr.json metadata for a named array. An empty name returns the root metadata.
+    // Uses consolidated metadata when available; otherwise reads the per-array zarr.json.
+    nlohmann::json ReadArrayMetadata(const std::string& array_name) const;
 
     // Read a metadata/auxiliary numeric array via TensorStore, not the SKY image array.
     // Throws std::runtime_error on failure.

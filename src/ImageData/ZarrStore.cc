@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# ZarrStore.cc: low-level Zarr v3 store access (open, metadata navigation, array reads)
+// # ZarrStore.cc: low-level Zarr v3 store access (open, metadata navigation, array reads)
 #include "ZarrStore.h"
 
 #include <algorithm>
@@ -60,12 +60,12 @@ ts::Context SharedTensorStoreContext() {
 
         auto context_result = ts::Context::FromJson(context_spec);
         if (!context_result.ok()) {
-            spdlog::warn("Failed to build TensorStore context from settings ({}); falling back to defaults",
-                context_result.status().ToString());
+            spdlog::warn(
+                "Failed to build TensorStore context from settings ({}); falling back to defaults", context_result.status().ToString());
             return ts::Context::Default();
         }
-        spdlog::debug("TensorStore context: file_io_concurrency={}, data_copy_concurrency={}, cache_pool_mb={}",
-            config.file_io_concurrency, config.data_copy_concurrency, config.cache_pool_bytes / BYTES_PER_MB);
+        spdlog::debug("TensorStore context: file_io_concurrency={}, data_copy_concurrency={}, cache_pool_mb={}", config.file_io_concurrency,
+            config.data_copy_concurrency, config.cache_pool_bytes / BYTES_PER_MB);
         return std::move(context_result).value();
     }();
     return context;
@@ -112,7 +112,7 @@ bool ZarrStore::Open() {
         std::filesystem::path base_path(_root_path);
         _root_json = ParseJsonFile(base_path / ZARR_JSON);
 
-        const auto* metadata = GetJsonPtr(_root_json, "/consolidated_metadata/metadata");
+        const auto* metadata = FindJsonPtr(_root_json, "/consolidated_metadata/metadata");
         if (metadata && metadata->is_object()) {
             _consolidated_metadata = *metadata;
             _has_consolidated_metadata = true;
@@ -141,7 +141,7 @@ bool ZarrStore::Open() {
     }
 }
 
-nlohmann::json ZarrStore::GetArrayMetadata(const std::string& array_name) const {
+nlohmann::json ZarrStore::ReadArrayMetadata(const std::string& array_name) const {
     if (array_name.empty()) {
         return _root_json;
     }
@@ -157,31 +157,6 @@ nlohmann::json ZarrStore::GetArrayMetadata(const std::string& array_name) const 
     }
 
     return ParseJsonFile(array_json_path);
-}
-
-nlohmann::json ZarrStore::GetAttributes(const std::string& array_name) const {
-    nlohmann::json metadata = GetArrayMetadata(array_name);
-    if (metadata.contains("attributes")) {
-        return metadata["attributes"];
-    }
-
-    return nlohmann::json::object();
-}
-
-std::string ZarrStore::GetAttributeString(const std::string& array_name, const std::string& attr_name) const {
-    nlohmann::json attributes = GetAttributes(array_name);
-    if (!attributes.is_object()) {
-        return "";
-    }
-
-    if (attributes.contains(attr_name)) {
-        const auto& value = attributes[attr_name];
-        if (value.is_string()) {
-            return value.get<std::string>();
-        }
-    }
-
-    return "";
 }
 
 ts::SharedOffsetArray<double> ZarrStore::ReadDoubleArray(const std::string& array_name) const {
@@ -202,8 +177,8 @@ ts::SharedOffsetArray<double> ZarrStore::ReadDoubleArray(const std::string& arra
 }
 
 std::vector<std::string> ZarrStore::ReadStringArray(const std::string& array_name) const {
-    nlohmann::json metadata = GetArrayMetadata(array_name);
-    return ReadZarrStringArray(std::filesystem::path(_root_path) / array_name, metadata);
+    nlohmann::json metadata = ReadArrayMetadata(array_name);
+    return ReadFixedLengthUtf32StringArray(std::filesystem::path(_root_path) / array_name, metadata);
 }
 
 } // namespace carta
