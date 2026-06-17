@@ -12,9 +12,8 @@
 #include <spdlog/fmt/fmt.h>
 #include <cxxopts/cxxopts.hpp>
 
-#include <casacore/images/Images/ImageOpener.h>
-
 #include "Util/App.h"
+#include "Util/Casacore.h"
 #include "Util/Json.h"
 
 using json = nlohmann::json;
@@ -310,10 +309,7 @@ global configuration files, respectively.
         std::error_code error_code;
         if (fs::exists(p, error_code)) {
             if (fs::is_directory(p, error_code)) {
-                auto image_type = casacore::ImageOpener::imageType(p.string());
-                if (image_type == casacore::ImageOpener::AIPSPP || image_type == casacore::ImageOpener::MIRIAD ||
-                    image_type == casacore::ImageOpener::IMAGECONCAT || image_type == casacore::ImageOpener::IMAGEEXPR ||
-                    image_type == casacore::ImageOpener::COMPLISTIMAGE) {
+                if (std::string message; FolderImageType(p.string(), message) != CARTA::FileType::UNKNOWN) {
                     file_paths.push_back(p);
                 } else {
                     starting_folder = p.string();
