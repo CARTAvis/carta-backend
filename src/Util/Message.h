@@ -120,7 +120,8 @@ public:
     static CARTA::VectorOverlayTileData VectorOverlayTileData(int32_t file_id, int32_t channel, int32_t stokes_intensity,
         int32_t stokes_angle, const CARTA::CompressionType& compression_type, float compression_quality);
     static CARTA::ErrorData ErrorData(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
-    static CARTA::FileInfo FileInfo(const std::string& name, CARTA::FileType type, int64_t size = 0, const std::string& hdu = "");
+    static CARTA::FileInfo FileInfo(
+        const std::string& name, CARTA::FileType type, int64_t size = 0, const std::string& hdu = "", bool size_is_upper_bound = false);
     static CARTA::RasterTileData RasterTileData(int32_t file_id, int32_t sync_id, int32_t animation_id);
     static CARTA::StartAnimationAck StartAnimationAck(bool success, int32_t animation_id, const std::string& message);
     static CARTA::ImportRegionAck ImportRegionAck(bool success, const std::string& message);

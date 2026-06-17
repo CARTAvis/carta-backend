@@ -4,19 +4,52 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# FileInfoLoader.cc: fill FileInfo for all supported file types
+// # FileInfoLoader.cc: fill FileInfo for all supported file types
 
 #include "FileInfoLoader.h"
+
+#include <chrono>
+#include <filesystem>
 
 #include <casacore/casa/HDF5/HDF5File.h>
 #include <casacore/casa/HDF5/HDF5Group.h>
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 
+#include "ImageData/ZarrMetadata.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
 using namespace carta;
+
+namespace {
+
+constexpr std::chrono::milliseconds ZARR_SIZE_TIMEOUT(50);
+
+bool TryComputeDirectorySize(const std::string& filename, std::chrono::milliseconds timeout, int64_t& size) {
+    const auto deadline = std::chrono::steady_clock::now() + timeout;
+    int64_t directory_size = 0;
+    const std::filesystem::path root_path(filename);
+
+    try {
+        for (const auto& entry :
+            std::filesystem::recursive_directory_iterator(root_path, std::filesystem::directory_options::skip_permission_denied)) {
+            if (std::chrono::steady_clock::now() >= deadline) {
+                return false;
+            }
+            if (entry.is_regular_file()) {
+                directory_size += entry.file_size();
+            }
+        }
+    } catch (const std::filesystem::filesystem_error&) {
+        return false;
+    }
+
+    size = directory_size;
+    return true;
+}
+
+} // namespace
 
 FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename) {
     _type = GetCartaFileType(filename);
@@ -40,7 +73,13 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
 
     // fill FileInfo submessage
     int64_t file_size(cc_file.size());
-    if (cc_file.isDirectory()) { // symlinked dirs are dirs
+    bool size_is_upper_bound = false;
+    if (_type == CARTA::FileType::ZARR && cc_file.isDirectory()) {
+        if (!TryComputeDirectorySize(_filename, ZARR_SIZE_TIMEOUT, file_size) &&
+            ZarrMetadata::ComputeImageDataSizeBytes(_filename, file_size)) {
+            size_is_upper_bound = true;
+        }
+    } else if (cc_file.isDirectory()) { // symlinked dirs are dirs
         casacore::Directory cc_dir(cc_file);
         file_size = cc_dir.size();
     } else if (cc_file.isSymLink()) { // gets size of link not file
@@ -51,6 +90,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
 
     file_info.set_date(cc_file.modifyTime());
     file_info.set_size(file_size);
+    file_info.set_size_is_upper_bound(size_is_upper_bound);
     file_info.set_type(_type);
 
     // add hdu for HDF5

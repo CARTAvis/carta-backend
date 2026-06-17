@@ -323,11 +323,13 @@ CARTA::ErrorData Message::ErrorData(const std::string& message, std::vector<std:
     return error_data;
 }
 
-CARTA::FileInfo Message::FileInfo(const std::string& name, CARTA::FileType type, int64_t size, const std::string& hdu) {
+CARTA::FileInfo Message::FileInfo(
+    const std::string& name, CARTA::FileType type, int64_t size, const std::string& hdu, bool size_is_upper_bound) {
     CARTA::FileInfo message;
     message.set_name(name);
     message.set_type(type);
     message.set_size(size);
+    message.set_size_is_upper_bound(size_is_upper_bound);
     message.add_hdu_list(hdu);
     return message;
 }
