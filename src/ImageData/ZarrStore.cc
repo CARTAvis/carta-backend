@@ -118,23 +118,13 @@ bool ZarrStore::Open() {
             _has_consolidated_metadata = true;
         }
 
-        if (_has_consolidated_metadata && _consolidated_metadata.contains(SKY_ARRAY)) {
-            _image_name = SKY_ARRAY;
-            _image_json = _consolidated_metadata[SKY_ARRAY];
-            spdlog::debug("Found Zarr SKY array in consolidated metadata");
-            return true;
+        _image_json = ReadArrayMetadata(SKY_ARRAY);
+        if (_image_json.empty()) {
+            spdlog::error("No SKY array found in {}", _root_path);
+            return false;
         }
-
-        std::filesystem::path array_json_path = base_path / SKY_ARRAY / ZARR_JSON;
-        if (std::filesystem::exists(array_json_path)) {
-            _image_name = SKY_ARRAY;
-            _image_json = ParseJsonFile(array_json_path);
-            spdlog::debug("Found Zarr SKY array in subdirectory: {}", (base_path / SKY_ARRAY).string());
-            return true;
-        }
-
-        spdlog::error("No SKY array found in {}", _root_path);
-        return false;
+        _image_name = SKY_ARRAY;
+        return true;
     } catch (const std::exception& ex) {
         spdlog::error("Failed to load Zarr metadata from {}: {}", _root_path, ex.what());
         return false;

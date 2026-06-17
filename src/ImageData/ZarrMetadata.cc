@@ -291,6 +291,10 @@ std::map<std::string, AxisInfo> ParseAxes(const nlohmann::json& metadata) {
     if (!shape_json || !shape_json->is_array()) {
         throw std::runtime_error("Zarr shape is not an array");
     }
+    if (shape_json->size() != dims.size()) {
+        throw std::runtime_error(
+            fmt::format("Zarr dimension_names size {} does not match shape size {}", dims.size(), shape_json->size()));
+    }
 
     std::map<std::string, AxisInfo> axes;
     for (size_t i = 0; i < dims.size(); ++i) {
@@ -435,20 +439,16 @@ struct ZarrMetadata::Impl {
 
     nlohmann::json GetAttributes(const std::string& array_name) const {
         nlohmann::json metadata = store->ReadArrayMetadata(array_name);
-        if (metadata.contains("attributes")) {
-            return metadata["attributes"];
+        const auto attributes = metadata.find("attributes");
+        if (attributes != metadata.end() && attributes->is_object()) {
+            return *attributes;
         }
 
         return nlohmann::json::object();
     }
 
-    std::string GetAttributeString(const std::string& array_name, const std::string& attr_name) const {
-        nlohmann::json attributes = GetAttributes(array_name);
-        return FindJsonValue<std::string>(attributes, ("/" + attr_name).c_str()).value_or("");
-    }
-
     bool LoadBeams(casacore::ImageBeamSet& beam_set) const {
-        std::string beam_array_name = GetAttributeString(store->GetImageName(), "beam_fit_params");
+        std::string beam_array_name = GetAttributes(store->GetImageName()).value("beam_fit_params", "");
         if (beam_array_name.empty()) {
             return false;
         }
@@ -484,7 +484,7 @@ struct ZarrMetadata::Impl {
             const size_t beam_param_axis = param_axis.index;
             const int n_chan = freq_axis.size;
             const int n_stokes = stokes_axis.size;
-            std::string unit = GetAttributeString(beam_array_name, "units");
+            std::string unit = GetAttributes(beam_array_name).value("units", "");
             if (unit.empty()) {
                 throw std::runtime_error(fmt::format("Beam array {} missing units attribute", beam_array_name));
             }
