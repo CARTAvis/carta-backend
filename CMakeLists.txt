@@ -115,6 +115,7 @@ if (Protobuf_VERSION VERSION_GREATER_EQUAL "4.25.3")
     set(PROTOBUF_LIBRARY
             ${PROTOBUF_LIBRARY}
             absl_hash
+            absl_log_internal_check_op
             absl_log_internal_message
             absl_log_internal_nullguard)
     message(STATUS "Newer protobuf version (${Protobuf_VERSION}) includes abseil libraries")
@@ -326,7 +327,7 @@ install(FILES "${CMAKE_SOURCE_DIR}/static/default_image/default.fits"
     DESTINATION share/carta)
 
 # Tests
-option(test "Build tests." OFF)
+option(test "Build tests." ON)
 if (test)
     FIND_PACKAGE(GTest REQUIRED)
     add_subdirectory(test)
