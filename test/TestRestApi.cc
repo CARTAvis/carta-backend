@@ -23,9 +23,9 @@ using json = nlohmann::json;
 class TestHttpServer : public carta::HttpServer {
 public:
     TestHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, std::string auth_token, bool read_only_mode,
-        fs::path system_config_folder = UserDirectory() / "system_config")
+        fs::path system_directory = UserDirectory() / "system_config")
         : carta::HttpServer(
-              session_manager, root_folder, UserDirectory(), auth_token, read_only_mode, true, true, false, true, "", system_config_folder) {}
+              session_manager, root_folder, UserDirectory(), auth_token, read_only_mode, true, true, false, true, "", system_directory) {}
     FRIEND_TEST(RestApiTest, MissingStartingPrefs);
     FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
     FRIEND_TEST(RestApiTest, MalformedStartingPrefs);

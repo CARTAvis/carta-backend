@@ -32,13 +32,13 @@ uint32_t HttpServer::_scripting_request_id = 0;
 
 HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
     std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting,
-    bool enable_runtime_config, std::string url_prefix, fs::path system_config_folder)
+    bool enable_runtime_config, std::string url_prefix, fs::path system_directory)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
       _auth_token(auth_token),
       _read_only_mode(read_only_mode),
       _config_folder(user_directory / "config"),
-      _global_config_folder(system_config_folder),
+      _system_directory(system_directory),
       _enable_frontend(enable_frontend),
       _enable_database(enable_database),
       _enable_scripting(enable_scripting),
@@ -676,7 +676,7 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
 
     // Site-wide snippets are added first so that user snippets with the same name take precedence
     if (object_type == "snippet") {
-        auto global_objects = GetObjectsFromFolder(_global_config_folder / (object_type + "s"), object_type);
+        auto global_objects = GetObjectsFromFolder(_system_directory / (object_type + "s"), object_type);
         for (auto& [name, obj] : global_objects.items()) {
             obj["siteScoped"] = true;
             objects[name] = obj;

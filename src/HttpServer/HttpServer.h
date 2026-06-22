@@ -34,7 +34,7 @@ class HttpServer {
 public:
     HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token,
         bool read_only_mode = false, bool enable_frontend = true, bool enable_database = true, bool enable_scripting = false,
-        bool enable_runtime_config = true, std::string url_prefix = "", fs::path system_config_folder = "/etc/carta/config");
+        bool enable_runtime_config = true, std::string url_prefix = "", fs::path system_directory = "/etc/carta");
     bool CanServeFrontend() {
         return _frontend_found;
     }
@@ -90,7 +90,7 @@ private:
 
     fs::path _http_root_folder;
     fs::path _config_folder;
-    fs::path _global_config_folder;
+    fs::path _system_directory;
     bool _frontend_found;
     std::string _auth_token;
     bool _read_only_mode;
