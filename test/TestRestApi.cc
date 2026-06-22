@@ -22,8 +22,10 @@ using json = nlohmann::json;
 // Allows testing of protected methods in HttpServer without polluting the original class
 class TestHttpServer : public carta::HttpServer {
 public:
-    TestHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, std::string auth_token, bool read_only_mode)
-        : carta::HttpServer(session_manager, root_folder, UserDirectory(), auth_token, read_only_mode) {}
+    TestHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, std::string auth_token, bool read_only_mode,
+        fs::path system_config_folder = UserDirectory() / "system_config")
+        : carta::HttpServer(
+              session_manager, root_folder, UserDirectory(), auth_token, read_only_mode, true, true, false, true, "", system_config_folder) {}
     FRIEND_TEST(RestApiTest, MissingStartingPrefs);
     FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
     FRIEND_TEST(RestApiTest, MalformedStartingPrefs);
@@ -57,6 +59,10 @@ public:
 
     FRIEND_TEST(RestApiTest, EmptyStartingSnippets);
     FRIEND_TEST(RestApiTest, GetExistingSnippets);
+    FRIEND_TEST(RestApiTest, GetGlobalSnippets);
+    FRIEND_TEST(RestApiTest, GlobalSnippetsMergeWithUserSnippets);
+    FRIEND_TEST(RestApiTest, UserSnippetsOverrideGlobalSnippets);
+    FRIEND_TEST(RestApiTest, GlobalSnippetsOnlyApplyToSnippets);
     FRIEND_TEST(RestApiTest, DeleteSnippet);
     FRIEND_TEST(RestApiTest, DeleteSnippetEmpty);
     FRIEND_TEST(RestApiTest, DeleteSnippetNotJson);
@@ -98,6 +104,7 @@ public:
     fs::path preferences_path;
     fs::path layouts_path;
     fs::path snippets_path;
+    fs::path global_snippets_path;
     fs::path workspaces_path;
     json example_options;
     json new_options;
@@ -110,6 +117,7 @@ public:
         preferences_path = test_user_folder / "config/preferences.json";
         layouts_path = test_user_folder / "config/layouts";
         snippets_path = test_user_folder / "config/snippets";
+        global_snippets_path = test_user_folder / "system_config/snippets";
         workspaces_path = test_user_folder / "config/workspaces";
 
         example_options = R"({
@@ -221,6 +229,11 @@ public:
         std::ofstream((snippets_path / "test_snippet2.json").string()) << example_snippet.dump();
         std::ofstream((snippets_path / "test_snippet3.json").string()) << "this is not a json file!";
         std::ofstream((snippets_path / "bad_snippet_name").string()) << example_snippet.dump(4);
+    }
+
+    void WriteDefaultGlobalSnippets() {
+        fs::create_directories(global_snippets_path);
+        std::ofstream((global_snippets_path / "global_snippet.json").string()) << example_snippet.dump(4);
     }
 
     void WriteDefaultWorkspaces() {
@@ -514,6 +527,39 @@ TEST_F(RestApiTest, GetExistingSnippets) {
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
     EXPECT_EQ(existing_snippets["test_snippet"], example_snippet);
     EXPECT_EQ(existing_snippets["test_snippet2"], example_snippet);
+}
+
+TEST_F(RestApiTest, GetGlobalSnippets) {
+    WriteDefaultGlobalSnippets();
+    auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
+    EXPECT_TRUE(existing_snippets["global_snippet"]["siteScoped"] == true);
+}
+
+TEST_F(RestApiTest, GlobalSnippetsMergeWithUserSnippets) {
+    WriteDefaultGlobalSnippets();
+    WriteDefaultSnippets();
+    auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
+    EXPECT_TRUE(existing_snippets["global_snippet"]["siteScoped"] == true);
+    EXPECT_EQ(existing_snippets["test_snippet"], example_snippet);
+}
+
+TEST_F(RestApiTest, UserSnippetsOverrideGlobalSnippets) {
+    // A global snippet that shares a name with a user snippet
+    fs::create_directories(global_snippets_path);
+    std::ofstream((global_snippets_path / "test_snippet.json").string()) << example_snippet.dump(4);
+    WriteDefaultSnippets();
+    auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
+    // The user snippet wins, so it is not marked site-scoped
+    EXPECT_TRUE(existing_snippets["test_snippet"]["siteScoped"].is_null());
+}
+
+TEST_F(RestApiTest, GlobalSnippetsOnlyApplyToSnippets) {
+    // Site-wide scoping must not leak into other object types
+    auto global_layouts_path = test_user_folder / "system_config/layouts";
+    fs::create_directories(global_layouts_path);
+    std::ofstream((global_layouts_path / "global_layout.json").string()) << example_layout.dump(4);
+    auto existing_layouts = _frontend_server->GetExistingObjects("layout");
+    EXPECT_TRUE(existing_layouts["global_layout"].is_null());
 }
 
 TEST_F(RestApiTest, DeleteSnippet) {

@@ -34,7 +34,7 @@ class HttpServer {
 public:
     HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token,
         bool read_only_mode = false, bool enable_frontend = true, bool enable_database = true, bool enable_scripting = false,
-        bool enable_runtime_config = true, std::string url_prefix = "");
+        bool enable_runtime_config = true, std::string url_prefix = "", fs::path system_config_folder = "/etc/carta/config");
     bool CanServeFrontend() {
         return _frontend_found;
     }
@@ -48,6 +48,7 @@ protected:
     std::string_view ClearPreferencesFromString(const std::string& buffer);
     nlohmann::json GetExistingObjectList(const std::string& object_type);
     nlohmann::json GetObjectFromPath(const fs::path& path, const std::string& object_type);
+    nlohmann::json GetObjectsFromFolder(const fs::path& object_folder, const std::string& object_type);
     nlohmann::json GetExistingObjects(const std::string& object_type);
     nlohmann::json GetExistingObject(const std::string& object_type, const std::string& object_name);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
@@ -89,6 +90,7 @@ private:
 
     fs::path _http_root_folder;
     fs::path _config_folder;
+    fs::path _global_config_folder;
     bool _frontend_found;
     std::string _auth_token;
     bool _read_only_mode;

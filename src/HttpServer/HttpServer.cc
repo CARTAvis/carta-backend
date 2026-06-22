@@ -32,12 +32,13 @@ uint32_t HttpServer::_scripting_request_id = 0;
 
 HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
     std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting,
-    bool enable_runtime_config, std::string url_prefix)
+    bool enable_runtime_config, std::string url_prefix, fs::path system_config_folder)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
       _auth_token(auth_token),
       _read_only_mode(read_only_mode),
       _config_folder(user_directory / "config"),
+      _global_config_folder(system_config_folder),
       _enable_frontend(enable_frontend),
       _enable_database(enable_database),
       _enable_scripting(enable_scripting),
@@ -649,8 +650,7 @@ nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, con
     return obj;
 }
 
-nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
-    auto object_folder = _config_folder / (object_type + "s");
+nlohmann::json HttpServer::GetObjectsFromFolder(const fs::path& object_folder, const std::string& object_type) {
     json objects = json::object();
     std::error_code error_code;
 
@@ -668,6 +668,26 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
             }
         }
     }
+    return objects;
+}
+
+nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
+    json objects = json::object();
+
+    // Site-wide snippets are added first so that user snippets with the same name take precedence
+    if (object_type == "snippet") {
+        auto global_objects = GetObjectsFromFolder(_global_config_folder / (object_type + "s"), object_type);
+        for (auto& [name, obj] : global_objects.items()) {
+            obj["siteScoped"] = true;
+            objects[name] = obj;
+        }
+    }
+
+    auto user_objects = GetObjectsFromFolder(_config_folder / (object_type + "s"), object_type);
+    for (auto& [name, obj] : user_objects.items()) {
+        objects[name] = obj;
+    }
+
     return objects;
 }
 
