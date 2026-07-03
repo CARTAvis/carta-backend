@@ -8,6 +8,7 @@
 #include "ZarrImage.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <cmath>
@@ -55,13 +56,13 @@ constexpr double UNIX_EPOCH_MJD = 40587.0;
 constexpr const char* FREQUENCY_AXIS = "frequency";
 constexpr const char* POLARIZATION_AXIS = "polarization";
 constexpr const char* TIME_AXIS = "time";
-// Direction axis names for SKY.
+// Direction axis names for the image array.
 constexpr const char* L_AXIS = "l";
 constexpr const char* M_AXIS = "m";
 // Beam parameter label axis/coordinate; its values name each parameter (e.g. "major", "minor", "pa").
 constexpr const char* BEAM_PARAMS_LABEL = "beam_params_label";
-// XRADIO image metadata and pixel array name.
-constexpr const char* IMAGE_ARRAY = "SKY";
+constexpr const char* DEFAULT_IMAGE_ARRAY = "SKY";
+constexpr std::array<const char*, 1> SUPPORTED_IMAGE_ARRAYS{"SKY"};
 
 class FitsHeaderBuilder {
 public:
@@ -349,6 +350,23 @@ void ValidateSupportedAxes(const std::map<std::string, AxisInfo>& axes, const st
     }
 }
 
+bool IsSupportedImageArray(const std::string& array_name) {
+    return std::find(SUPPORTED_IMAGE_ARRAYS.begin(), SUPPORTED_IMAGE_ARRAYS.end(), array_name) != SUPPORTED_IMAGE_ARRAYS.end();
+}
+
+std::map<std::string, AxisInfo> ValidateImageArrayMetadata(const std::string& array_name, const nlohmann::json& metadata) {
+    if (!IsSupportedImageArray(array_name)) {
+        throw std::runtime_error("Unsupported Zarr image array " + array_name);
+    }
+    if (metadata.empty()) {
+        throw std::runtime_error("No metadata for Zarr image array " + array_name);
+    }
+
+    std::map<std::string, AxisInfo> axes = ParseAxes(metadata);
+    ValidateSupportedAxes(axes, {TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, L_AXIS, M_AXIS});
+    return axes;
+}
+
 std::vector<casacore::Stokes::StokesTypes> StokesTypesFromLabels(const std::vector<std::string>& labels) {
     std::vector<casacore::Stokes::StokesTypes> types;
     types.reserve(labels.size());
@@ -388,7 +406,8 @@ struct ZarrImage::Impl {
     // Low-level Zarr access. Created during Initialize(); shared so future pixel reads can reuse it.
     std::shared_ptr<ZarrStore> store;
 
-    // XRADIO axis name -> {storage index, size}, parsed from the SKY array metadata.
+    // XRADIO image array name and axis name -> {storage index, size}, parsed from the image array metadata.
+    std::string image_name;
     std::map<std::string, AxisInfo> axes;
 
     // Lazily-loaded beam set: GetBeams() may be called more than once per image (e.g. once while
@@ -431,7 +450,7 @@ struct ZarrImage::Impl {
     }
 
     bool LoadBeams(casacore::ImageBeamSet& beam_set) const {
-        std::string beam_array_name = GetAttributes(IMAGE_ARRAY).value("beam_fit_params", "");
+        std::string beam_array_name = GetAttributes(image_name).value("beam_fit_params", "");
         if (beam_array_name.empty()) {
             return false;
         }
@@ -504,7 +523,7 @@ struct ZarrImage::Impl {
     // for the main array, as ordered label/value pairs.
     std::vector<std::pair<std::string, std::string>> GetStorageInfo() const {
         std::vector<std::pair<std::string, std::string>> info;
-        const ZarrStore::StorageLayout layout = store->GetStorageLayout(IMAGE_ARRAY);
+        const ZarrStore::StorageLayout layout = store->GetStorageLayout(image_name);
 
         // Report shapes in CARTA axis order (x, y, freq, stokes), dropping time axis.
         const std::string axis_labels = " (RA, DEC, FREQ, STOKES)";
@@ -537,7 +556,7 @@ public:
         AppendDirectionIncrements();
         AppendSpectralAxis();
         AppendStokesAxis();
-        AppendSkyMetadata();
+        AppendImageMetadata();
         AppendCasaBeamFlag();
         return _builder.Build();
     }
@@ -793,33 +812,33 @@ private:
             "Stokes Axis");
     }
 
-    void AppendSkyMetadata() {
-        nlohmann::json zattrs_sky;
+    void AppendImageMetadata() {
+        nlohmann::json zattrs_image;
         try {
-            zattrs_sky = _impl.GetAttributes(IMAGE_ARRAY);
+            zattrs_image = _impl.GetAttributes(_impl.image_name);
         } catch (...) {
-            spdlog::warn("Error parsing SKY zattrs");
+            spdlog::warn("Error parsing Zarr image attributes");
             return;
         }
 
-        TryAddString(_builder, zattrs_sky, "/units", "BUNIT");
-        TryAddString(_builder, zattrs_sky, "/type", "BTYPE");
-        TryAddString(_builder, zattrs_sky, "/object_name", "OBJECT");
-        TryAddString(_builder, zattrs_sky, "/observer", "OBSERVER");
+        TryAddString(_builder, zattrs_image, "/units", "BUNIT");
+        TryAddString(_builder, zattrs_image, "/type", "BTYPE");
+        TryAddString(_builder, zattrs_image, "/object_name", "OBJECT");
+        TryAddString(_builder, zattrs_image, "/observer", "OBSERVER");
 
-        AppendObsDate(zattrs_sky);
-        AppendTelescope(zattrs_sky);
-        AppendUserMetadata(zattrs_sky);
+        AppendObsDate(zattrs_image);
+        AppendTelescope(zattrs_image);
+        AppendUserMetadata(zattrs_image);
     }
 
-    void AppendObsDate(const nlohmann::json& zattrs_sky) {
+    void AppendObsDate(const nlohmann::json& zattrs_image) {
         LogParseErrors(
             [&]() {
-                auto obs_format = FindJsonValue<std::string>(zattrs_sky, "/obsdate/attrs/format");
-                const auto* obs_data = FindJsonPtr(zattrs_sky, "/obsdate/data");
+                auto obs_format = FindJsonValue<std::string>(zattrs_image, "/obsdate/attrs/format");
+                const auto* obs_data = FindJsonPtr(zattrs_image, "/obsdate/data");
                 if (obs_format && obs_data) {
                     std::string scale = "UTC";
-                    if (auto obs_scale = FindJsonValue<std::string>(zattrs_sky, "/obsdate/attrs/scale")) {
+                    if (auto obs_scale = FindJsonValue<std::string>(zattrs_image, "/obsdate/attrs/scale")) {
                         scale = *obs_scale;
                     } else {
                         spdlog::warn("Missing or invalid obsdate time scale; falling back to UTC");
@@ -834,12 +853,12 @@ private:
             "TIMESYS/DATE-OBS/MJD-OBS");
     }
 
-    void AppendTelescope(const nlohmann::json& zattrs_sky) {
+    void AppendTelescope(const nlohmann::json& zattrs_image) {
         LogParseErrors(
             [&]() {
-                TryAddString(_builder, zattrs_sky, "/telescope/name", "TELESCOP");
-                const auto* telescope_dir = FindJsonPtr(zattrs_sky, "/telescope/direction/data");
-                const auto* telescope_dist = FindJsonPtr(zattrs_sky, "/telescope/distance/data");
+                TryAddString(_builder, zattrs_image, "/telescope/name", "TELESCOP");
+                const auto* telescope_dir = FindJsonPtr(zattrs_image, "/telescope/direction/data");
+                const auto* telescope_dist = FindJsonPtr(zattrs_image, "/telescope/distance/data");
                 if (telescope_dir && telescope_dist && telescope_dir->is_array() && telescope_dir->size() >= 2 &&
                     telescope_dist->is_array() && !telescope_dist->empty()) {
                     double lon = (*telescope_dir)[0].get<double>();
@@ -856,10 +875,10 @@ private:
             "TELESCOPE/OBSGEO");
     }
 
-    void AppendUserMetadata(const nlohmann::json& zattrs_sky) {
+    void AppendUserMetadata(const nlohmann::json& zattrs_image) {
         LogParseErrors(
             [&]() {
-                const auto* user = FindJsonPtr(zattrs_sky, "/user");
+                const auto* user = FindJsonPtr(zattrs_image, "/user");
                 if (user && user->is_object()) {
                     for (const auto& [item_key, item_value] : user->items()) {
                         std::string key = item_key;
@@ -911,10 +930,9 @@ bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& 
             return false;
         }
 
-        nlohmann::json image_metadata = store.ReadArrayMetadata(IMAGE_ARRAY);
-        if (image_metadata.empty()) {
-            return false;
-        }
+        const std::string image_name = DEFAULT_IMAGE_ARRAY;
+        nlohmann::json image_metadata = store.ReadArrayMetadata(image_name);
+        ValidateImageArrayMetadata(image_name, image_metadata);
         if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), CasacoreDataTypeFromZarrType(image_metadata), size)) {
             size_is_upper_bound = true;
             return true;
@@ -937,14 +955,9 @@ bool ZarrImage::Initialize() {
             return false;
         }
 
-        nlohmann::json image_metadata = _impl->store->ReadArrayMetadata(IMAGE_ARRAY);
-        if (image_metadata.empty()) {
-            spdlog::error("No {} array found in {}", IMAGE_ARRAY, _filename);
-            return false;
-        }
-
-        _impl->axes = ParseAxes(image_metadata);
-        ValidateSupportedAxes(_impl->axes, {TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, L_AXIS, M_AXIS});
+        _impl->image_name = DEFAULT_IMAGE_ARRAY;
+        nlohmann::json image_metadata = _impl->store->ReadArrayMetadata(_impl->image_name);
+        _impl->axes = ValidateImageArrayMetadata(_impl->image_name, image_metadata);
         _shape = _impl->BuildCartaShape();
         _data_type = CasacoreDataTypeFromZarrType(image_metadata);
 

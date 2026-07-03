@@ -13,6 +13,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>

@@ -58,7 +58,7 @@ public:
     // Storage layout for a named array, parsed from its metadata. Throws std::runtime_error on failure.
     StorageLayout GetStorageLayout(const std::string& array_name) const;
 
-    // Read a metadata/auxiliary numeric array via TensorStore, not the SKY image array.
+    // Read a metadata/auxiliary numeric array via TensorStore, not the image array.
     // Throws std::runtime_error on failure.
     tensorstore::SharedOffsetArray<double> ReadDoubleArray(const std::string& array_name) const;
     // Read a Zarr v3 "fixed_length_utf32" string array (TensorStore cannot handle string dtypes).

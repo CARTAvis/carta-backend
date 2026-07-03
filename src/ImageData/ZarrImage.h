@@ -50,7 +50,7 @@ public:
     bool GetBeams(casacore::ImageBeamSet& beam_set);
 
     // Storage encoding info (compressor, compression level, chunk shape, shard shape if any) for the
-    // main SKY array, as ordered label/value pairs suitable for file info computed entries.
+    // image array, as ordered label/value pairs suitable for file info computed entries.
     std::vector<std::pair<std::string, std::string>> GetStorageInfo();
 
     // Stokes type (casacore::Stokes::StokesTypes) for each polarization plane.
