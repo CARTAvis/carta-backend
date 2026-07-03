@@ -4,9 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # ZarrMetadata.h: parse Zarr metadata
-#ifndef CARTA_SRC_IMAGEDATA_ZARRMETADATA_H_
-#define CARTA_SRC_IMAGEDATA_ZARRMETADATA_H_
+// # ZarrImage.h: parse Zarr metadata
+#ifndef CARTA_SRC_IMAGEDATA_ZARRIMAGE_H_
+#define CARTA_SRC_IMAGEDATA_ZARRIMAGE_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -24,13 +24,13 @@
 
 namespace carta {
 
-class ZarrMetadata {
+class ZarrImage {
 public:
-    explicit ZarrMetadata(const std::string& filename);
-    ~ZarrMetadata();
+    explicit ZarrImage(const std::string& filename);
+    ~ZarrImage();
 
-    ZarrMetadata(const ZarrMetadata&) = delete;
-    ZarrMetadata& operator=(const ZarrMetadata&) = delete;
+    ZarrImage(const ZarrImage&) = delete;
+    ZarrImage& operator=(const ZarrImage&) = delete;
 
     static bool ComputeImageDataSizeBytes(const std::string& filename, int64_t& size);
 
@@ -69,4 +69,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEDATA_ZARRMETADATA_H_
+#endif // CARTA_SRC_IMAGEDATA_ZARRIMAGE_H_

@@ -29,7 +29,7 @@ void ConfigureTensorStoreContext(int file_io_concurrency, int data_copy_concurre
 
 // Low-level accessor for a Zarr v3 store on disk: opens the store, navigates (consolidated)
 // metadata, and reads arrays. Schema-agnostic except for locating the main "SKY" image array;
-// XRADIO-specific interpretation lives in ZarrMetadata. Used for metadata parsing and auxiliary
+// XRADIO-specific interpretation lives in ZarrImage. Used for metadata parsing and auxiliary
 // array reads.
 class ZarrStore {
 public:

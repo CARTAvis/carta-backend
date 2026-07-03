@@ -20,7 +20,7 @@
 
 namespace carta {
 
-class ZarrMetadata;
+class ZarrImage;
 
 class CartaZarrImage : public casacore::ImageInterface<float> {
 public:
@@ -51,7 +51,7 @@ public:
     std::vector<std::pair<std::string, std::string>> GetStorageInfo();
 
 private:
-    std::shared_ptr<ZarrMetadata> _metadata;
+    std::shared_ptr<ZarrImage> _metadata;
     casacore::IPosition _shape;
     casacore::String _name;
 

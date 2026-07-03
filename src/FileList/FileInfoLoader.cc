@@ -16,7 +16,7 @@
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 
-#include "ImageData/ZarrMetadata.h"
+#include "ImageData/ZarrImage.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
@@ -76,7 +76,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     bool size_is_upper_bound = false;
     if (_type == CARTA::FileType::ZARR && cc_file.isDirectory()) {
         if (!TryComputeDirectorySize(_filename, ZARR_SIZE_TIMEOUT, file_size) &&
-            ZarrMetadata::ComputeImageDataSizeBytes(_filename, file_size)) {
+            ZarrImage::ComputeImageDataSizeBytes(_filename, file_size)) {
             size_is_upper_bound = true;
         }
     } else if (cc_file.isDirectory()) { // symlinked dirs are dirs

@@ -264,7 +264,7 @@ set(SOURCE_FILES
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
         src/ImageData/ZarrLoader.cc
-        src/ImageData/ZarrMetadata.cc
+        src/ImageData/ZarrImage.cc
         src/ImageData/ZarrStore.cc
         src/ImageData/ZarrUtil.cc
         src/ImageFitting/ImageFitter.cc

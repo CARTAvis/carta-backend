@@ -13,12 +13,12 @@
 #include <casacore/images/Images/ImageInfo.h>
 #include <spdlog/spdlog.h>
 
-#include "ZarrMetadata.h"
+#include "ZarrImage.h"
 
 namespace carta {
 
 CartaZarrImage::CartaZarrImage(const std::string& filename)
-    : _metadata(std::make_shared<ZarrMetadata>(filename)), _name(filename) {
+    : _metadata(std::make_shared<ZarrImage>(filename)), _name(filename) {
     if (!_metadata->Initialize()) {
         throw casacore::AipsError("Failed to initialize Zarr metadata for: " + filename);
     }

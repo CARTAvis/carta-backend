@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # ZarrMetadata.cc: parse Zarr metadata
-#include "ZarrMetadata.h"
+// # ZarrImage.cc: parse Zarr metadata
+#include "ZarrImage.h"
 
 #include <algorithm>
 #include <cctype>
@@ -277,7 +277,7 @@ bool ComputeArraySizeBytes(const casacore::IPosition& shape, casacore::DataType 
     return true;
 }
 
-using AxisInfo = ZarrMetadata::AxisInfo;
+using AxisInfo = ZarrImage::AxisInfo;
 
 std::map<std::string, AxisInfo> ParseAxes(const nlohmann::json& metadata) {
     const auto* dimension_names = FindJsonPtr(metadata, "/dimension_names");
@@ -401,7 +401,7 @@ std::string FormatCompressor(const nlohmann::json* compression_codecs) {
 
 } // namespace
 
-struct ZarrMetadata::Impl {
+struct ZarrImage::Impl {
     // Low-level Zarr access. Created during Initialize(); shared so future pixel reads can reuse it.
     std::shared_ptr<ZarrStore> store;
 
@@ -564,7 +564,7 @@ struct ZarrMetadata::Impl {
 };
 
 // Assembles FITS header records from the parsed Zarr metadata and coordinate arrays.
-class ZarrMetadata::Impl::FitsHeaderComposer {
+class ZarrImage::Impl::FitsHeaderComposer {
 public:
     FitsHeaderComposer(Impl& impl, const casacore::IPosition& shape, casacore::DataType data_type)
         : _impl(impl), _shape(shape), _data_type(data_type) {}
@@ -934,11 +934,11 @@ private:
     FitsHeaderBuilder _builder;
 };
 
-ZarrMetadata::ZarrMetadata(const std::string& filename) : _impl(std::make_unique<Impl>()), _filename(filename) {}
+ZarrImage::ZarrImage(const std::string& filename) : _impl(std::make_unique<Impl>()), _filename(filename) {}
 
-ZarrMetadata::~ZarrMetadata() = default;
+ZarrImage::~ZarrImage() = default;
 
-bool ZarrMetadata::ComputeImageDataSizeBytes(const std::string& filename, int64_t& size) {
+bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& size) {
     try {
         ZarrStore store(filename);
         if (!store.Open()) {
@@ -956,7 +956,7 @@ bool ZarrMetadata::ComputeImageDataSizeBytes(const std::string& filename, int64_
     return false;
 }
 
-bool ZarrMetadata::Initialize() {
+bool ZarrImage::Initialize() {
     if (_initialized) {
         return true;
     }
@@ -982,31 +982,31 @@ bool ZarrMetadata::Initialize() {
             }
             axes_str += name + "=" + std::to_string(info.size);
         }
-        spdlog::debug("ZarrMetadata initialized: {}", axes_str);
+        spdlog::debug("ZarrImage initialized: {}", axes_str);
         return true;
     } catch (const std::exception& ex) {
-        spdlog::error("Exception initializing ZarrMetadata: {}", ex.what());
+        spdlog::error("Exception initializing ZarrImage: {}", ex.what());
         return false;
     }
 }
 
-bool ZarrMetadata::IsInitialized() const {
+bool ZarrImage::IsInitialized() const {
     return _initialized;
 }
 
-const casacore::IPosition& ZarrMetadata::GetShape() const {
+const casacore::IPosition& ZarrImage::GetShape() const {
     return _shape;
 }
 
-casacore::DataType ZarrMetadata::GetDataType() const {
+casacore::DataType ZarrImage::GetDataType() const {
     return _data_type;
 }
 
-const std::map<std::string, ZarrMetadata::AxisInfo>& ZarrMetadata::GetAxes() const {
+const std::map<std::string, ZarrImage::AxisInfo>& ZarrImage::GetAxes() const {
     return _impl->axes;
 }
 
-casacore::Vector<casacore::Int> ZarrMetadata::GetStokesTypes() {
+casacore::Vector<casacore::Int> ZarrImage::GetStokesTypes() {
     casacore::Vector<casacore::Int> stokes_types;
     if (!_initialized) {
         return stokes_types;
@@ -1027,11 +1027,11 @@ casacore::Vector<casacore::Int> ZarrMetadata::GetStokesTypes() {
     return stokes_types;
 }
 
-bool ZarrMetadata::GetBeams(casacore::ImageBeamSet& beam_set) {
+bool ZarrImage::GetBeams(casacore::ImageBeamSet& beam_set) {
     return _impl->GetBeams(beam_set);
 }
 
-std::vector<std::pair<std::string, std::string>> ZarrMetadata::GetStorageInfo() {
+std::vector<std::pair<std::string, std::string>> ZarrImage::GetStorageInfo() {
     if (!_initialized) {
         return {};
     }
@@ -1045,7 +1045,7 @@ std::vector<std::pair<std::string, std::string>> ZarrMetadata::GetStorageInfo() 
     return {};
 }
 
-casacore::Vector<casacore::String> ZarrMetadata::FitsHeaderStrings() {
+casacore::Vector<casacore::String> ZarrImage::FitsHeaderStrings() {
     if (!IsInitialized()) {
         return casacore::Vector<casacore::String>();
     }
