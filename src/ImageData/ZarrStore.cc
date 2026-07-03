@@ -71,6 +71,89 @@ ts::Context SharedTensorStoreContext() {
     return context;
 }
 
+std::vector<int64_t> ParseIntArray(const nlohmann::json* arr) {
+    std::vector<int64_t> values;
+    if (!arr || !arr->is_array()) {
+        return values;
+    }
+    values.reserve(arr->size());
+    for (const auto& dim : *arr) {
+        if (!dim.is_number_integer()) {
+            return {};
+        }
+        values.push_back(dim.get<int64_t>());
+    }
+    return values;
+}
+
+std::string FormatBloscCompressor(const nlohmann::json& codec) {
+    std::string compressor = "Blosc";
+    if (auto cname = FindJsonValue<std::string>(codec, "/configuration/cname")) {
+        compressor += " + " + *cname;
+    }
+
+    std::string params;
+    const auto* clevel = FindJsonPtr(codec, "/configuration/clevel");
+    if (clevel && clevel->is_number()) {
+        params += "level " + std::to_string(clevel->get<int>());
+    }
+    if (auto shuffle = FindJsonValue<std::string>(codec, "/configuration/shuffle"); shuffle && *shuffle != "noshuffle") {
+        params += (params.empty() ? "" : ", ") + *shuffle;
+    }
+    if (!params.empty()) {
+        compressor += " (" + params + ")";
+    }
+    return compressor;
+}
+
+std::string FormatCompressor(const nlohmann::json* compression_codecs) {
+    if (!compression_codecs || !compression_codecs->is_array()) {
+        return {};
+    }
+
+    for (const auto& codec : *compression_codecs) {
+        std::string name = codec.value("name", "");
+        if (name == "blosc") {
+            return FormatBloscCompressor(codec);
+        }
+        if (name == "zstd" || name == "gzip") {
+            std::string compressor = name;
+            const auto* level = FindJsonPtr(codec, "/configuration/level");
+            if (level && level->is_number()) {
+                compressor += " (level " + std::to_string(level->get<int>()) + ")";
+            }
+            return compressor;
+        }
+    }
+    return {};
+}
+
+ZarrStore::StorageLayout ParseStorageLayout(const nlohmann::json& metadata) {
+    ZarrStore::StorageLayout layout;
+
+    const auto* grid_shape = FindJsonPtr(metadata, "/chunk_grid/configuration/chunk_shape");
+    const auto* codecs = FindJsonPtr(metadata, "/codecs");
+    const nlohmann::json* compression_codecs = codecs;
+
+    if (codecs && codecs->is_array()) {
+        for (const auto& codec : *codecs) {
+            if (codec.value("name", "") == "sharding_indexed") {
+                layout.sharded = true;
+                layout.shard_shape = ParseIntArray(grid_shape);
+                layout.chunk_shape = ParseIntArray(FindJsonPtr(codec, "/configuration/chunk_shape"));
+                compression_codecs = FindJsonPtr(codec, "/configuration/codecs");
+                break;
+            }
+        }
+    }
+
+    if (!layout.sharded) {
+        layout.chunk_shape = ParseIntArray(grid_shape);
+    }
+    layout.compressor = FormatCompressor(compression_codecs);
+    return layout;
+}
+
 nlohmann::json ParseJsonFile(const std::filesystem::path& json_path) {
     std::ifstream file(json_path);
     if (!file) {
@@ -147,6 +230,10 @@ nlohmann::json ZarrStore::ReadArrayMetadata(const std::string& array_name) const
     }
 
     return ParseJsonFile(array_json_path);
+}
+
+ZarrStore::StorageLayout ZarrStore::GetStorageLayout(const std::string& array_name) const {
+    return ParseStorageLayout(ReadArrayMetadata(array_name));
 }
 
 ts::SharedOffsetArray<double> ZarrStore::ReadDoubleArray(const std::string& array_name) const {

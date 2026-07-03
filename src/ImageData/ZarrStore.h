@@ -8,6 +8,7 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARRSTORE_H_
 #define CARTA_SRC_IMAGEDATA_ZARRSTORE_H_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -49,9 +50,20 @@ public:
         return _image_json;
     }
 
+    // Zarr-native storage layout for an array. Shapes are in storage dimension order.
+    struct StorageLayout {
+        std::vector<int64_t> chunk_shape;
+        std::vector<int64_t> shard_shape;
+        std::string compressor;
+        bool sharded = false;
+    };
+
     // zarr.json metadata for a named array. An empty name returns the root metadata.
     // Uses consolidated metadata when available; otherwise reads the per-array zarr.json.
     nlohmann::json ReadArrayMetadata(const std::string& array_name) const;
+
+    // Storage layout for a named array, parsed from its metadata. Throws std::runtime_error on failure.
+    StorageLayout GetStorageLayout(const std::string& array_name) const;
 
     // Read a metadata/auxiliary numeric array via TensorStore, not the SKY image array.
     // Throws std::runtime_error on failure.

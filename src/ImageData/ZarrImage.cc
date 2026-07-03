@@ -356,14 +356,14 @@ std::vector<casacore::Stokes::StokesTypes> StokesTypesFromLabels(const std::vect
     return types;
 }
 
-// Format a JSON integer array (e.g. a chunk/shard shape) as "[a, b, c, d]".
-std::string FormatIntArray(const nlohmann::json& arr) {
+// Format an integer array (e.g. a chunk/shard shape) as "[a, b, c, d]".
+std::string FormatIntArray(const std::vector<int64_t>& arr) {
     std::string result = "[";
     for (size_t i = 0; i < arr.size(); ++i) {
         if (i > 0) {
             result += ", ";
         }
-        result += std::to_string(arr[i].get<int64_t>());
+        result += std::to_string(arr[i]);
     }
     result += "]";
     return result;
@@ -371,58 +371,13 @@ std::string FormatIntArray(const nlohmann::json& arr) {
 
 // Reorder a storage-order chunk/shard shape into CARTA axis order (x, y, freq, stokes),
 // dropping any extra axes (e.g. time). Missing entries in the shape array default to 1.
-nlohmann::json MakeCartaOrderedShape(
-    const nlohmann::json& arr, const std::map<std::string, AxisInfo>& axes, const std::string& x_axis, const std::string& y_axis) {
+std::vector<int64_t> MakeCartaOrderedShape(
+    const std::vector<int64_t>& shape, const std::map<std::string, AxisInfo>& axes, const std::string& x_axis, const std::string& y_axis) {
     auto value_at = [&](const std::string& name) -> int64_t {
         const AxisInfo& axis = RequireAxis(axes, name);
-        return (axis.index >= arr.size()) ? 1 : arr[axis.index].get<int64_t>();
+        return (axis.index >= shape.size()) ? 1 : shape[axis.index];
     };
     return {value_at(x_axis), value_at(y_axis), value_at(FREQUENCY_AXIS), value_at(POLARIZATION_AXIS)};
-}
-
-// Describe a Blosc codec, e.g. "Blosc + zstd (level 5, shuffle)".
-std::string FormatBloscCompressor(const nlohmann::json& codec) {
-    std::string compressor = "Blosc";
-    if (auto cname = FindJsonValue<std::string>(codec, "/configuration/cname")) {
-        compressor += " + " + *cname;
-    }
-
-    std::string params;
-    const auto* clevel = FindJsonPtr(codec, "/configuration/clevel");
-    if (clevel && clevel->is_number()) {
-        params += "level " + std::to_string(clevel->get<int>());
-    }
-    if (auto shuffle = FindJsonValue<std::string>(codec, "/configuration/shuffle"); shuffle && *shuffle != "noshuffle") {
-        params += (params.empty() ? "" : ", ") + *shuffle;
-    }
-    if (!params.empty()) {
-        compressor += " (" + params + ")";
-    }
-    return compressor;
-}
-
-// Pick a supported compression codec from a Zarr v3 codec pipeline and describe it.
-// Returns "" if no supported compressor is found.
-std::string FormatCompressor(const nlohmann::json* compression_codecs) {
-    if (!compression_codecs || !compression_codecs->is_array()) {
-        return {};
-    }
-
-    for (const auto& codec : *compression_codecs) {
-        std::string name = codec.value("name", "");
-        if (name == "blosc") {
-            return FormatBloscCompressor(codec);
-        }
-        if (name == "zstd" || name == "gzip") {
-            std::string compressor = name;
-            const auto* level = FindJsonPtr(codec, "/configuration/level");
-            if (level && level->is_number()) {
-                compressor += " (level " + std::to_string(level->get<int>()) + ")";
-            }
-            return compressor;
-        }
-    }
-    return {};
 }
 
 } // namespace
@@ -547,42 +502,20 @@ struct ZarrImage::Impl {
     // for the main array, as ordered label/value pairs.
     std::vector<std::pair<std::string, std::string>> GetStorageInfo() const {
         std::vector<std::pair<std::string, std::string>> info;
-        const nlohmann::json& zarray = store->GetImageMetadata();
-
-        // The chunk_grid shape is the shard shape when sharding is used, otherwise the chunk shape.
-        const auto* grid_shape = FindJsonPtr(zarray, "/chunk_grid/configuration/chunk_shape");
-
-        // Locate the sharding codec (if any); the compressor lives in its nested codec list when sharded.
-        const auto* codecs = FindJsonPtr(zarray, "/codecs");
-        const nlohmann::json* inner_chunk = nullptr;
-        const nlohmann::json* compression_codecs = codecs;
-        bool sharded = false;
-        if (codecs && codecs->is_array()) {
-            for (const auto& codec : *codecs) {
-                if (codec.value("name", "") == "sharding_indexed") {
-                    sharded = true;
-                    inner_chunk = FindJsonPtr(codec, "/configuration/chunk_shape");
-                    compression_codecs = FindJsonPtr(codec, "/configuration/codecs");
-                    break;
-                }
-            }
-        }
+        const ZarrStore::StorageLayout layout = store->GetStorageLayout(store->GetImageName());
 
         // Report shapes in CARTA axis order (x, y, freq, stokes), dropping time axis.
         const std::string axis_labels = " (RA, DEC, FREQ, STOKES)";
 
         // Emit Shard shape (if any), then Chunk shape, then Compressor so they group next to "Shape" in the file browser.
-        if (sharded && grid_shape && grid_shape->is_array()) {
-            info.emplace_back("Shard shape", FormatIntArray(MakeCartaOrderedShape(*grid_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
+        if (layout.sharded && !layout.shard_shape.empty()) {
+            info.emplace_back("Shard shape", FormatIntArray(MakeCartaOrderedShape(layout.shard_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
         }
-        // Chunk shape: the inner chunk when sharded, otherwise the chunk_grid shape.
-        const nlohmann::json* chunk_shape = sharded ? inner_chunk : grid_shape;
-        if (chunk_shape && chunk_shape->is_array()) {
-            info.emplace_back("Chunk shape", FormatIntArray(MakeCartaOrderedShape(*chunk_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
+        if (!layout.chunk_shape.empty()) {
+            info.emplace_back("Chunk shape", FormatIntArray(MakeCartaOrderedShape(layout.chunk_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
         }
-        const std::string compressor = FormatCompressor(compression_codecs);
-        if (!compressor.empty()) {
-            info.emplace_back("Compressor", compressor);
+        if (!layout.compressor.empty()) {
+            info.emplace_back("Compressor", layout.compressor);
         }
 
         return info;
