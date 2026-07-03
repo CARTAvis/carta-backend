@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # ZarrImage.cc: parse Zarr metadata
+// # ZarrImage.cc: interpret an XRADIO Zarr image over a ZarrStore
 #include "ZarrImage.h"
 
 #include <algorithm>
@@ -60,6 +60,8 @@ constexpr const char* L_AXIS = "l";
 constexpr const char* M_AXIS = "m";
 // Beam parameter label axis/coordinate; its values name each parameter (e.g. "major", "minor", "pa").
 constexpr const char* BEAM_PARAMS_LABEL = "beam_params_label";
+// XRADIO image metadata and pixel array name.
+constexpr const char* IMAGE_ARRAY = "SKY";
 
 class FitsHeaderBuilder {
 public:
@@ -429,7 +431,7 @@ struct ZarrImage::Impl {
     }
 
     bool LoadBeams(casacore::ImageBeamSet& beam_set) const {
-        std::string beam_array_name = GetAttributes(store->GetImageName()).value("beam_fit_params", "");
+        std::string beam_array_name = GetAttributes(IMAGE_ARRAY).value("beam_fit_params", "");
         if (beam_array_name.empty()) {
             return false;
         }
@@ -502,7 +504,7 @@ struct ZarrImage::Impl {
     // for the main array, as ordered label/value pairs.
     std::vector<std::pair<std::string, std::string>> GetStorageInfo() const {
         std::vector<std::pair<std::string, std::string>> info;
-        const ZarrStore::StorageLayout layout = store->GetStorageLayout(store->GetImageName());
+        const ZarrStore::StorageLayout layout = store->GetStorageLayout(IMAGE_ARRAY);
 
         // Report shapes in CARTA axis order (x, y, freq, stokes), dropping time axis.
         const std::string axis_labels = " (RA, DEC, FREQ, STOKES)";
@@ -794,7 +796,7 @@ private:
     void AppendSkyMetadata() {
         nlohmann::json zattrs_sky;
         try {
-            zattrs_sky = _impl.GetAttributes(_impl.store->GetImageName());
+            zattrs_sky = _impl.GetAttributes(IMAGE_ARRAY);
         } catch (...) {
             spdlog::warn("Error parsing SKY zattrs");
             return;
@@ -909,7 +911,10 @@ bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& 
             return false;
         }
 
-        const nlohmann::json& image_metadata = store.GetImageMetadata();
+        nlohmann::json image_metadata = store.ReadArrayMetadata(IMAGE_ARRAY);
+        if (image_metadata.empty()) {
+            return false;
+        }
         if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), CasacoreDataTypeFromZarrType(image_metadata), size)) {
             size_is_upper_bound = true;
             return true;
@@ -932,7 +937,12 @@ bool ZarrImage::Initialize() {
             return false;
         }
 
-        const nlohmann::json& image_metadata = _impl->store->GetImageMetadata();
+        nlohmann::json image_metadata = _impl->store->ReadArrayMetadata(IMAGE_ARRAY);
+        if (image_metadata.empty()) {
+            spdlog::error("No {} array found in {}", IMAGE_ARRAY, _filename);
+            return false;
+        }
+
         _impl->axes = ParseAxes(image_metadata);
         ValidateSupportedAxes(_impl->axes, {TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, L_AXIS, M_AXIS});
         _shape = _impl->BuildCartaShape();

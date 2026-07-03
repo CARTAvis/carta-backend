@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # ZarrImage.h: parse Zarr metadata
+// # ZarrImage.h: interpret an XRADIO Zarr image over a ZarrStore
 #ifndef CARTA_SRC_IMAGEDATA_ZARRIMAGE_H_
 #define CARTA_SRC_IMAGEDATA_ZARRIMAGE_H_
 

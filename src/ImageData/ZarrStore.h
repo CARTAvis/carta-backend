@@ -28,26 +28,19 @@ namespace carta {
 //   cache_pool_mb         0    -> chunk cache disabled
 void ConfigureTensorStoreContext(int file_io_concurrency, int data_copy_concurrency, int cache_pool_mb, int omp_thread_count);
 
-// Low-level accessor for a Zarr v3 store on disk: opens the store, navigates (consolidated)
-// metadata, and reads arrays. Schema-agnostic except for locating the main "SKY" image array;
-// XRADIO-specific interpretation lives in ZarrImage. Used for metadata parsing and auxiliary
-// array reads.
+// Low-level accessor for a Zarr v3 store on disk: opens the root, navigates (consolidated)
+// metadata, and reads arrays by name. Fully schema-agnostic; XRADIO-specific interpretation
+// lives in ZarrImage.
 class ZarrStore {
 public:
     explicit ZarrStore(std::string root_path);
 
-    // Parse the root zarr.json, pick up consolidated metadata if present, and locate the SKY array.
-    // Returns false (and logs) on failure. Must be called before any accessor below.
+    // Parse the root zarr.json and pick up consolidated metadata if present. Returns false (and logs)
+    // on failure. Must be called before any accessor below.
     bool Open();
 
-    const std::string& GetImageName() const {
-        return _image_name;
-    }
     const nlohmann::json& GetRootMetadata() const {
         return _root_json;
-    }
-    const nlohmann::json& GetImageMetadata() const {
-        return _image_json;
     }
 
     // Zarr-native storage layout for an array. Shapes are in storage dimension order.
@@ -78,9 +71,7 @@ private:
     // concurrency and cache-pool resources rather than one per opened store.
     tensorstore::Context _context;
 
-    std::string _image_name;
     nlohmann::json _root_json;
-    nlohmann::json _image_json;
     nlohmann::json _consolidated_metadata;
     bool _has_consolidated_metadata = false;
 };

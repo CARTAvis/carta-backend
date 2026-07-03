@@ -33,7 +33,6 @@ namespace carta {
 
 namespace {
 
-constexpr const char* SKY_ARRAY = "SKY";
 constexpr const char* ZARR_JSON = "zarr.json";
 
 constexpr int64_t BYTES_PER_MB = 1024 * 1024;
@@ -201,12 +200,6 @@ bool ZarrStore::Open() {
             _has_consolidated_metadata = true;
         }
 
-        _image_json = ReadArrayMetadata(SKY_ARRAY);
-        if (_image_json.empty()) {
-            spdlog::error("No SKY array found in {}", _root_path);
-            return false;
-        }
-        _image_name = SKY_ARRAY;
         return true;
     } catch (const std::exception& ex) {
         spdlog::error("Failed to load Zarr metadata from {}: {}", _root_path, ex.what());
