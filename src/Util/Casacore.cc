@@ -12,6 +12,7 @@
 #include <casacore/casa/Quanta/UnitMap.h>
 
 #include "ImageData/CartaMiriadImage.h"
+#include "ImageData/ZarrUtil.h"
 #include "Logger/Logger.h"
 #include "Util/File.h"
 
@@ -77,7 +78,7 @@ CARTA::FileType FolderImageType(const std::string& folder_path, std::string& mes
         return carta_type;
     }
 
-    if (IsZarr(folder_path)) {
+    if (carta::IsSupportedZarrImage(folder_path)) {
         return CARTA::FileType::ZARR;
     }
 

@@ -8,7 +8,6 @@
 #include "ZarrImage.h"
 
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <chrono>
 #include <cmath>
@@ -61,8 +60,6 @@ constexpr const char* L_AXIS = "l";
 constexpr const char* M_AXIS = "m";
 // Beam parameter label axis/coordinate; its values name each parameter (e.g. "major", "minor", "pa").
 constexpr const char* BEAM_PARAMS_LABEL = "beam_params_label";
-constexpr const char* DEFAULT_IMAGE_ARRAY = "SKY";
-constexpr std::array<const char*, 1> SUPPORTED_IMAGE_ARRAYS{"SKY"};
 
 class FitsHeaderBuilder {
 public:
@@ -351,7 +348,8 @@ void ValidateSupportedAxes(const std::map<std::string, AxisInfo>& axes, const st
 }
 
 bool IsSupportedImageArray(const std::string& array_name) {
-    return std::find(SUPPORTED_IMAGE_ARRAYS.begin(), SUPPORTED_IMAGE_ARRAYS.end(), array_name) != SUPPORTED_IMAGE_ARRAYS.end();
+    return std::find(ZARR_SUPPORTED_IMAGE_ARRAYS.begin(), ZARR_SUPPORTED_IMAGE_ARRAYS.end(), array_name) !=
+           ZARR_SUPPORTED_IMAGE_ARRAYS.end();
 }
 
 std::map<std::string, AxisInfo> ValidateImageArrayMetadata(const std::string& array_name, const nlohmann::json& metadata) {
@@ -930,7 +928,7 @@ bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& 
             return false;
         }
 
-        const std::string image_name = DEFAULT_IMAGE_ARRAY;
+        const std::string image_name = ZARR_DEFAULT_IMAGE_ARRAY;
         nlohmann::json image_metadata = store.ReadArrayMetadata(image_name);
         ValidateImageArrayMetadata(image_name, image_metadata);
         if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), CasacoreDataTypeFromZarrType(image_metadata), size)) {
@@ -955,7 +953,7 @@ bool ZarrImage::Initialize() {
             return false;
         }
 
-        _impl->image_name = DEFAULT_IMAGE_ARRAY;
+        _impl->image_name = ZARR_DEFAULT_IMAGE_ARRAY;
         nlohmann::json image_metadata = _impl->store->ReadArrayMetadata(_impl->image_name);
         _impl->axes = ValidateImageArrayMetadata(_impl->image_name, image_metadata);
         _shape = _impl->BuildCartaShape();

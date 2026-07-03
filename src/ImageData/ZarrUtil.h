@@ -4,10 +4,11 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # ZarrUtil.h: low-level helpers for reading Zarr v3 data that TensorStore cannot handle directly
+// # ZarrUtil.h: low-level Zarr v3 metadata and data helpers
 #ifndef CARTA_SRC_IMAGEDATA_ZARRUTIL_H_
 #define CARTA_SRC_IMAGEDATA_ZARRUTIL_H_
 
+#include <array>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -18,8 +19,14 @@
 
 namespace carta {
 
+inline constexpr const char* ZARR_DEFAULT_IMAGE_ARRAY = "SKY";
+inline constexpr std::array<const char*, 1> ZARR_SUPPORTED_IMAGE_ARRAYS{ZARR_DEFAULT_IMAGE_ARRAY};
+
 // Return a pointer to the JSON value at the given JSON pointer, or nullptr if it does not exist.
 const nlohmann::json* FindJsonPtr(const nlohmann::json& obj, const char* ptr);
+
+// Return true if the path is a supported XRADIO Zarr image directory.
+bool IsSupportedZarrImage(const std::string& path_string);
 
 template <typename T>
 std::optional<T> FindJsonValue(const nlohmann::json& obj, const char* ptr) {

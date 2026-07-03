@@ -14,6 +14,7 @@
 #include <casacore/casa/OS/File.h>
 
 #include "ImageData/ZarrImage.h"
+#include "ImageData/ZarrUtil.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
@@ -75,7 +76,7 @@ CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
     if (IsCompressedFits(filename)) {
         return CARTA::FileType::FITS;
     }
-    if (IsZarr(filename)) {
+    if (IsSupportedZarrImage(filename)) {
         return CARTA::FileType::ZARR;
     }
 

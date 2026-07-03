@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # ZarrUtil.cc: low-level helpers for reading Zarr v3 data that TensorStore cannot handle directly
+// # ZarrUtil.cc: low-level Zarr v3 metadata and data helpers
 #include "ZarrUtil.h"
 
 #include <cstdint>
@@ -30,6 +30,29 @@ const nlohmann::json* FindJsonPtr(const nlohmann::json& obj, const char* ptr) {
     } catch (...) {
         return nullptr;
     }
+}
+
+bool IsSupportedZarrImage(const std::string& path_string) {
+    std::error_code error_code;
+    std::filesystem::path path(path_string);
+
+    if (!std::filesystem::is_directory(path, error_code)) {
+        return false;
+    }
+
+    if (!std::filesystem::exists(path / "zarr.json", error_code)) {
+        return false;
+    }
+
+    for (const char* array_name : ZARR_SUPPORTED_IMAGE_ARRAYS) {
+        std::filesystem::path array_json_path = path / array_name / "zarr.json";
+        std::error_code exists_error;
+        if (std::filesystem::exists(array_json_path, exists_error)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 namespace {

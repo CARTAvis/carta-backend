@@ -108,15 +108,6 @@ uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
 
 /**
- * @brief Checks whether a given path is a Zarr image directory.
- *
- * @param[in] path_string The path to check.
- *
- * @return `true` if the path contains a supported Zarr array layout, otherwise `false`.
- */
-bool IsZarr(const std::string& path_string);
-
-/**
  * @brief Determines if a given magic number corresponds to a gzip-compressed file.
  *
  * @param[in] magic_number The 32-bit magic number extracted from the file.
