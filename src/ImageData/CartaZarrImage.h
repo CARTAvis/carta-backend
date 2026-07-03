@@ -51,7 +51,7 @@ public:
     std::vector<std::pair<std::string, std::string>> GetStorageInfo();
 
 private:
-    std::shared_ptr<ZarrImage> _metadata;
+    std::shared_ptr<ZarrImage> _zarr_image;
     casacore::IPosition _shape;
     casacore::String _name;
 

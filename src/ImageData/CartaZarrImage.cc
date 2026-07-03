@@ -18,12 +18,12 @@
 namespace carta {
 
 CartaZarrImage::CartaZarrImage(const std::string& filename)
-    : _metadata(std::make_shared<ZarrImage>(filename)), _name(filename) {
-    if (!_metadata->Initialize()) {
+    : _zarr_image(std::make_shared<ZarrImage>(filename)), _name(filename) {
+    if (!_zarr_image->Initialize()) {
         throw casacore::AipsError("Failed to initialize Zarr metadata for: " + filename);
     }
 
-    _shape = _metadata->GetShape();
+    _shape = _zarr_image->GetShape();
 
     SetUpImage();
 
@@ -32,7 +32,7 @@ CartaZarrImage::CartaZarrImage(const std::string& filename)
 
 CartaZarrImage::CartaZarrImage(const CartaZarrImage& other)
     : casacore::ImageInterface<float>(other),
-      _metadata(other._metadata),
+      _zarr_image(other._zarr_image),
       _shape(other._shape),
       _name(other._name) {
     spdlog::debug("CartaZarrImage copy constructor: sharing metadata for {}", _name);
@@ -57,7 +57,7 @@ casacore::IPosition CartaZarrImage::shape() const {
 }
 
 casacore::Bool CartaZarrImage::ok() const {
-    return _metadata && _metadata->IsInitialized();
+    return _zarr_image && _zarr_image->IsInitialized();
 }
 
 casacore::DataType CartaZarrImage::dataType() const {
@@ -69,12 +69,12 @@ casacore::Vector<casacore::String> CartaZarrImage::FitsHeaderStrings() {
         return _fits_header_strings;
     }
 
-    _fits_header_strings = _metadata->FitsHeaderStrings();
+    _fits_header_strings = _zarr_image->FitsHeaderStrings();
     return _fits_header_strings;
 }
 
 std::vector<std::pair<std::string, std::string>> CartaZarrImage::GetStorageInfo() {
-    return _metadata->GetStorageInfo();
+    return _zarr_image->GetStorageInfo();
 }
 
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
@@ -136,7 +136,7 @@ void CartaZarrImage::SetUpImage() {
             // The FITS header represents the Stokes axis linearly (CRVAL4/CDELT4), which cannot
             // describe a non-uniform polarization ordering. Replace it with a StokesCoordinate built
             // directly from the per-plane polarization list, which supports arbitrary ordering.
-            casacore::Vector<casacore::Int> stokes_types = _metadata->GetStokesTypes();
+            casacore::Vector<casacore::Int> stokes_types = _zarr_image->GetStokesTypes();
             int pol_coord = coord_sys.polarizationCoordinateNumber();
             if (!stokes_types.empty() && pol_coord >= 0) {
                 casacore::StokesCoordinate stokes_coord(stokes_types);
@@ -174,7 +174,7 @@ void CartaZarrImage::SetUpImage() {
 
 void CartaZarrImage::SetBeams() {
     casacore::ImageBeamSet beam_set;
-    if (_metadata->GetBeams(beam_set)) {
+    if (_zarr_image->GetBeams(beam_set)) {
         spdlog::debug("CartaZarrImage::SetBeams - Applying beam set");
         casacore::ImageInfo info = imageInfo();
         info.setBeams(beam_set);
