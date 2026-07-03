@@ -9,8 +9,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <limits>
 #include <map>
 #include <memory>
@@ -43,6 +45,7 @@ namespace carta {
 
 namespace {
 
+constexpr std::chrono::milliseconds ZARR_SIZE_TIMEOUT(50);
 constexpr size_t FITS_KEYWORD_MAX_LEN = 8;
 constexpr casacore::uInt DATE_OBS_PRECISION = 12; // MVTime fractional-second digits = precision - 6.
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
@@ -274,6 +277,29 @@ bool ComputeArraySizeBytes(const casacore::IPosition& shape, casacore::DataType 
     }
 
     size = total_bytes;
+    return true;
+}
+
+bool TryComputeDirectorySize(const std::string& filename, std::chrono::milliseconds timeout, int64_t& size) {
+    const auto deadline = std::chrono::steady_clock::now() + timeout;
+    int64_t directory_size = 0;
+    const std::filesystem::path root_path(filename);
+
+    try {
+        for (const auto& entry :
+            std::filesystem::recursive_directory_iterator(root_path, std::filesystem::directory_options::skip_permission_denied)) {
+            if (std::chrono::steady_clock::now() >= deadline) {
+                return false;
+            }
+            if (entry.is_regular_file()) {
+                directory_size += entry.file_size();
+            }
+        }
+    } catch (const std::filesystem::filesystem_error&) {
+        return false;
+    }
+
+    size = directory_size;
     return true;
 }
 
@@ -938,7 +964,12 @@ ZarrImage::ZarrImage(const std::string& filename) : _impl(std::make_unique<Impl>
 
 ZarrImage::~ZarrImage() = default;
 
-bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& size) {
+bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& size, bool& size_is_upper_bound) {
+    size_is_upper_bound = false;
+    if (TryComputeDirectorySize(filename, ZARR_SIZE_TIMEOUT, size)) {
+        return true;
+    }
+
     try {
         ZarrStore store(filename);
         if (!store.Open()) {
@@ -947,6 +978,7 @@ bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& 
 
         const nlohmann::json& image_metadata = store.GetImageMetadata();
         if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), CasacoreDataTypeFromZarrType(image_metadata), size)) {
+            size_is_upper_bound = true;
             return true;
         }
     } catch (const std::exception& ex) {

@@ -32,7 +32,7 @@ public:
     ZarrImage(const ZarrImage&) = delete;
     ZarrImage& operator=(const ZarrImage&) = delete;
 
-    static bool ComputeImageDataSizeBytes(const std::string& filename, int64_t& size);
+    static bool ComputeImageDataSizeBytes(const std::string& filename, int64_t& size, bool& size_is_upper_bound);
 
     bool Initialize();
     bool IsInitialized() const;
