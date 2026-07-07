@@ -17,14 +17,15 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
         return;
     }
 
-    _image.reset(new CartaZarrImage(_filename));
+    auto* zarr_image = new CartaZarrImage(_filename);
+    _image.reset(zarr_image);
 
     _hdu = hdu;
     _image_shape = _image->shape();
     _num_dims = _image_shape.size();
     _has_pixel_mask = _image->hasPixelMask();
     _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
-    _data_type = _image->dataType();
+    _data_type = zarr_image->InternalDataType();
 }
 
 } // namespace carta

@@ -46,6 +46,7 @@ public:
     casacore::Bool doGetMaskSlice(casacore::Array<casacore::Bool>& buffer, const casacore::Slicer& section) override;
 
     casacore::Vector<casacore::String> FitsHeaderStrings();
+    casacore::DataType InternalDataType() const;
 
     // Storage encoding info (compressor, compression level, chunk/shard shape) as label/value pairs.
     std::vector<std::pair<std::string, std::string>> GetStorageInfo();

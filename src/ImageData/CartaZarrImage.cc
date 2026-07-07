@@ -64,6 +64,10 @@ casacore::DataType CartaZarrImage::dataType() const {
     return casacore::TpFloat;
 }
 
+casacore::DataType CartaZarrImage::InternalDataType() const {
+    return _zarr_image->GetDataType();
+}
+
 casacore::Vector<casacore::String> CartaZarrImage::FitsHeaderStrings() {
     if (!_fits_header_strings.empty()) {
         return _fits_header_strings;
