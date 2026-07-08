@@ -164,6 +164,9 @@ private:
     bool ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record, bool export_pixels,
         std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
 
+    bool ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bool restore_axes, const casacore::RecordInterface& region_record,
+        bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
+
     /**
      * @brief Convert casacore Record to annulus region control points and rotation.
      * @param[in] region_state Region definition parameters

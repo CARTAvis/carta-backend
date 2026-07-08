@@ -141,8 +141,11 @@ void RegionConverter::SetReferenceWCRegion() {
                 if (!inner_maj_world.isConform(inner_min_world.getUnit())) {
                     break;
                 }
+                float inner_rotation = _region_state.rotation;
                 if (inner_maj_world <= inner_min_world) {
                     std::swap(inner_maj_world, inner_min_world);
+                } else {
+                    inner_rotation += 90.0;
                 }
 
                 _wcs_control_points = center_world;
@@ -153,8 +156,11 @@ void RegionConverter::SetReferenceWCRegion() {
 
                 casacore::Quantity theta(ellipse_rotation, "deg");
                 theta.convert("rad");
+                casacore::Quantity inner_theta(inner_rotation, "deg");
+                inner_theta.convert("rad");
                 auto outer_wc = new casacore::WCEllipsoid(center_world[0], center_world[1], outer_maj_world, outer_min_world, theta, 0, 1, *_reference_coord_sys);
-                auto inner_wc = new casacore::WCEllipsoid(center_world[0], center_world[1], inner_maj_world, inner_min_world, theta, 0, 1, *_reference_coord_sys);
+                auto inner_wc =
+                    new casacore::WCEllipsoid(center_world[0], center_world[1], inner_maj_world, inner_min_world, inner_theta, 0, 1, *_reference_coord_sys);
                 region = new casacore::WCDifference(casacore::ImageRegion(*outer_wc), casacore::ImageRegion(*inner_wc));
                 delete outer_wc;
                 delete inner_wc;

@@ -251,17 +251,22 @@ bool RegionExporter::ConvertRecordToRectangle(
 
 bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record,
     bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& rotation) {
+    bool restore_axes = (region_state.type == CARTA::RegionType::ELLIPSE || region_state.type == CARTA::RegionType::ANNELLIPSE);
+    return ConvertRecordToEllipse(region_state.control_points[1], restore_axes, region_record, export_pixels, control_points, rotation);
+}
+
+bool RegionExporter::ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bool restore_axes,
+    const casacore::RecordInterface& region_record, bool export_pixels, std::vector<casacore::Quantity>& control_points,
+    casacore::Quantity& rotation) {
     // Ellipse Record is a casacore LCEllipsoid with center and radii in pixel coordinates, and theta for angle.
-    // Use RegionState to check if bmaj/bmin swapped so bmaj > bmin.
+    // Use original control point axes to check if bmaj/bmin swapped so bmaj > bmin.
     casacore::Vector<casacore::Float> center = region_record.asArrayFloat("center");
     casacore::Vector<casacore::Float> radii = region_record.asArrayFloat("radii");
     casacore::Double theta = region_record.asDouble("theta"); // radians
     rotation = casacore::Quantity(theta, "rad");
     rotation.convert("deg"); // CASA rotang, from x-axis
 
-    CARTA::Point ellipse_axes = region_state.control_points[1];
-    bool reversed = (region_state.type == CARTA::RegionType::ELLIPSE || region_state.type == CARTA::RegionType::ANNELLIPSE) &&
-                    ((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
+    bool reversed = restore_axes && ((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
@@ -326,16 +331,28 @@ bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, con
 
 bool RegionExporter::ConvertRecordToAnnulus(const RegionState& region_state, const casacore::RecordInterface& region_record,
     bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& rotation) {
-    if (!region_record.isDefined("region1") || !region_record.isDefined("region2")) {
-        return false;
-    }
-    const casacore::RecordInterface& outer_rec = region_record.asRecord("region1");
-    const casacore::RecordInterface& inner_rec = region_record.asRecord("region2");
-
     std::vector<casacore::Quantity> outer_cp, inner_cp;
     casacore::Quantity outer_rot, inner_rot;
-    bool outer_ok = ConvertRecordToEllipse(region_state, outer_rec, export_pixels, outer_cp, outer_rot);
-    bool inner_ok = ConvertRecordToEllipse(region_state, inner_rec, export_pixels, inner_cp, inner_rot);
+    bool outer_ok(false), inner_ok(false);
+
+    if (region_record.isDefined("region1") && region_record.isDefined("region2")) {
+        const casacore::RecordInterface& outer_rec = region_record.asRecord("region1");
+        const casacore::RecordInterface& inner_rec = region_record.asRecord("region2");
+        outer_ok = ConvertRecordToEllipse(region_state.control_points[1], true, outer_rec, export_pixels, outer_cp, outer_rot);
+        inner_ok = ConvertRecordToEllipse(region_state.control_points[2], true, inner_rec, export_pixels, inner_cp, inner_rot);
+    } else if (region_record.isDefined("regions")) {
+        const casacore::RecordInterface& regions_rec = region_record.asRecord("regions");
+        if (!regions_rec.isDefined("nr") || regions_rec.asInt("nr") < 2) {
+            return false;
+        }
+        const casacore::RecordInterface& outer_rec = regions_rec.asRecord(0);
+        const casacore::RecordInterface& inner_rec = regions_rec.asRecord(1);
+        outer_ok = ConvertRecordToEllipse(region_state.control_points[1], true, outer_rec, export_pixels, outer_cp, outer_rot);
+        inner_ok = ConvertRecordToEllipse(region_state.control_points[2], true, inner_rec, export_pixels, inner_cp, inner_rot);
+    } else {
+        return false;
+    }
+
     if (!outer_ok || !inner_ok || outer_cp.size() < 4 || inner_cp.size() < 4) {
         return false;
     }
