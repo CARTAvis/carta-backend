@@ -114,6 +114,9 @@ bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::Reg
         case CARTA::RegionType::ANNCOMPASS:
             converted = ConvertRecordToEllipse(region_state, region_record, export_pixels, control_points, rotation);
             break;
+        case CARTA::RegionType::ANNULUS:
+            converted = ConvertRecordToAnnulus(region_state, region_record, export_pixels, control_points, rotation);
+            break;
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON:
@@ -319,6 +322,33 @@ bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, con
         return false;
     }
     return false;
+}
+
+bool RegionExporter::ConvertRecordToAnnulus(const RegionState& region_state, const casacore::RecordInterface& region_record,
+    bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& rotation) {
+    if (!region_record.isDefined("region1") || !region_record.isDefined("region2")) {
+        return false;
+    }
+    const casacore::RecordInterface& outer_rec = region_record.asRecord("region1");
+    const casacore::RecordInterface& inner_rec = region_record.asRecord("region2");
+
+    std::vector<casacore::Quantity> outer_cp, inner_cp;
+    casacore::Quantity outer_rot, inner_rot;
+    bool outer_ok = ConvertRecordToEllipse(region_state, outer_rec, export_pixels, outer_cp, outer_rot);
+    bool inner_ok = ConvertRecordToEllipse(region_state, inner_rec, export_pixels, inner_cp, inner_rot);
+    if (!outer_ok || !inner_ok || outer_cp.size() < 4 || inner_cp.size() < 4) {
+        return false;
+    }
+
+    // For annulus control points: center (from outer), outer sizes, inner sizes
+    control_points.push_back(outer_cp[0]);
+    control_points.push_back(outer_cp[1]);
+    control_points.push_back(outer_cp[2]);
+    control_points.push_back(outer_cp[3]);
+    control_points.push_back(inner_cp[2]);
+    control_points.push_back(inner_cp[3]);
+    rotation = outer_rot;
+    return true;
 }
 
 bool RegionExporter::ConvertRecordToPolygonLine(

@@ -37,7 +37,8 @@ bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::Region
     std::vector<CARTA::Point> points = region_state.control_points;
     float rotation = region_state.rotation;
 
-    if (region_type == CARTA::RegionType::ELLIPSE || region_type == CARTA::RegionType::ANNELLIPSE) {
+    if (region_type == CARTA::RegionType::ELLIPSE || region_type == CARTA::RegionType::ANNELLIPSE ||
+        region_type == CARTA::RegionType::ANNULUS) {
         rotation += 90.0; // DS9 angle measured from x-axis
         if (rotation > 360.0) {
             rotation -= 360.0;
@@ -91,6 +92,22 @@ bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::Region
                 } else {
                     file_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f})", _region_names[region_type], one_based_x, one_based_y,
                         points[1].x(), points[1].y());
+                }
+            }
+            break;
+        }
+        case CARTA::RegionType::ANNULUS: {
+            // annulus(x,y,r1,r2) OR ellipse(x,y,rx1,ry1,rx2,ry2) OR ellipse(x,y,rx1,ry1,rx2,ry2,angle)
+            if (points[1].x() == points[1].y() && points[2].x() == points[2].y()) {
+                // circle when outer bmaj==bmin and inner bmaj==bmin
+                file_line = fmt::format("annulus({:.2f}, {:.2f}, {:.2f}, {:.2f})", one_based_x, one_based_y, points[2].x(), points[1].x());
+            } else {
+                if (rotation > 0.0) {
+                    file_line = fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", one_based_x, one_based_y,
+                        points[2].x(), points[2].y(), points[1].x(), points[1].y(), rotation);
+                } else {
+                    file_line = fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f})", one_based_x, one_based_y,
+                        points[2].x(), points[2].y(), points[1].x(), points[1].y());
                 }
             }
             break;
@@ -285,6 +302,23 @@ std::string Ds9Exporter::GetRegionPixelLine(CARTA::RegionType region_type, const
             }
             break;
         }
+        case CARTA::RegionType::ANNULUS: {
+            if (control_points[2].getValue() == control_points[3].getValue() && control_points[4].getValue() == control_points[5].getValue()) {
+                file_line = fmt::format("annulus({:.4f}, {:.4f}, {:.4f}, {:.4f})", control_points[0].getValue(), control_points[1].getValue(),
+                    control_points[4].getValue(), control_points[2].getValue());
+            } else {
+                if (rotation == 0.0) {
+                    file_line = fmt::format("ellipse({:.4f}, {:.4f}, {:.4f}, {:.4f}, {:.4f}, {:.4f})", control_points[0].getValue(),
+                        control_points[1].getValue(), control_points[4].getValue(), control_points[5].getValue(),
+                        control_points[2].getValue(), control_points[3].getValue());
+                } else {
+                    file_line = fmt::format("ellipse({:.4f}, {:.4f}, {:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", control_points[0].getValue(),
+                        control_points[1].getValue(), control_points[4].getValue(), control_points[5].getValue(),
+                        control_points[2].getValue(), control_points[3].getValue(), rotation);
+                }
+            }
+            break;
+        }
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON:
@@ -366,6 +400,19 @@ std::string Ds9Exporter::GetRegionWorldLine(CARTA::RegionType region_type, const
             } else {
                 file_line = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", _region_names[region_type],
                     control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue(),
+                    control_points[2].get("arcsec").getValue(), control_points[3].get("arcsec").getValue(), rotation);
+            }
+            break;
+        }
+        case CARTA::RegionType::ANNULUS: {
+            if (control_points[2].getValue() == control_points[3].getValue() && control_points[4].getValue() == control_points[5].getValue()) {
+                file_line = fmt::format("annulus({:.9f}, {:.9f}, {:.4f}\", {:.4f}\")", control_points[0].get("deg").getValue(),
+                    control_points[1].get("deg").getValue(), control_points[4].get("arcsec").getValue(),
+                    control_points[2].get("arcsec").getValue());
+            } else {
+                file_line = fmt::format("ellipse({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {:.4f}\", {:.4f}\", {})",
+                    control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue(),
+                    control_points[4].get("arcsec").getValue(), control_points[5].get("arcsec").getValue(),
                     control_points[2].get("arcsec").getValue(), control_points[3].get("arcsec").getValue(), rotation);
             }
             break;

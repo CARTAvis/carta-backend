@@ -2013,7 +2013,8 @@ bool RegionHandler::IsClosedRegion(int region_id) {
     // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         auto type = GetRegion(region_id)->GetRegionState().type;
-        return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON);
+        return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON) ||
+               (type == CARTA::RegionType::ANNULUS);
     }
     return false;
 }

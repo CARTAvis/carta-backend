@@ -71,6 +71,7 @@ private:
     casacore::TableRecord GetPolygonRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
     casacore::TableRecord GetRotboxRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
     casacore::TableRecord GetEllipseRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
+    casacore::TableRecord GetAnnulusRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
 
     // Utilities for pixel/world conversion
     bool PointsToImagePixels(const std::vector<CARTA::Point>& points, std::shared_ptr<casacore::CoordinateSystem> output_csys,
