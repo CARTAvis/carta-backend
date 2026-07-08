@@ -106,15 +106,6 @@ else ()
     message(FATAL_ERROR "Could not find zstd")
 endif ()
 
-PKG_SEARCH_MODULE(BLOSC REQUIRED blosc)
-if (BLOSC_FOUND)
-    message(STATUS "blosc found using pkg-config")
-    INCLUDE_DIRECTORIES(${BLOSC_INCLUDE_DIRS})
-    LINK_DIRECTORIES(${BLOSC_LIBRARY_DIRS})
-else ()
-    message(FATAL_ERROR "Could not find blosc")
-endif ()
-
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 
 # nlohmann/json
@@ -124,19 +115,6 @@ add_subdirectory(third-party/nlohmann_json)
 
 # TensorStore
 include(TensorStore)
-
-FIND_PACKAGE(Protobuf MODULE REQUIRED)
-INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
-
-if (Protobuf_VERSION VERSION_GREATER_EQUAL "4.25.3")
-    FIND_PACKAGE(absl REQUIRED)
-    set(PROTOBUF_LIBRARY
-            ${PROTOBUF_LIBRARY}
-            absl_hash
-            absl_log_internal_message
-            absl_log_internal_nullguard)
-    message(STATUS "Newer protobuf version (${Protobuf_VERSION}) includes abseil libraries")
-endif ()
 
 FIND_PACKAGE(Threads)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
@@ -204,13 +182,13 @@ add_subdirectory(third-party/json-schema-validator)
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
-        ${PROTOBUF_LIBRARY}
         uSockets
         uuid
         z
         zfp
         zstd
-        ${BLOSC_LIBRARIES}
+        # blosc vendored by TensorStore
+        Blosc::blosc
         cfitsio
         wcs
         gsl
