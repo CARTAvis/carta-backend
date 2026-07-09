@@ -8,6 +8,7 @@
 #include "ZarrImage.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <cmath>
@@ -18,6 +19,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -60,6 +62,11 @@ constexpr const char* L_AXIS = "l";
 constexpr const char* M_AXIS = "m";
 // Beam parameter label axis/coordinate; its values name each parameter (e.g. "major", "minor", "pa").
 constexpr const char* BEAM_PARAMS_LABEL = "beam_params_label";
+
+constexpr std::array<const char*, 5> IMAGE_REQUIRED_AXES{
+    TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, L_AXIS, M_AXIS};
+constexpr std::array<const char*, 4> BEAM_REQUIRED_AXES{
+    TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, BEAM_PARAMS_LABEL};
 
 class FitsHeaderBuilder {
 public:
@@ -121,7 +128,8 @@ bool FitsBitpixForDataType(casacore::DataType data_type, int& bitpix) {
     return true;
 }
 
-casacore::DataType CasacoreDataTypeFromZarrType(std::string data_type_name) {
+casacore::DataType ParseZarrDataType(const nlohmann::json& array_metadata) {
+    std::string data_type_name = FindJsonValue<std::string>(array_metadata, "/data_type").value_or("");
     ToLowerAscii(data_type_name);
 
     static const std::map<std::string, casacore::DataType> data_type_map{
@@ -141,10 +149,6 @@ casacore::DataType CasacoreDataTypeFromZarrType(std::string data_type_name) {
 
     auto data_type = data_type_map.find(data_type_name);
     return data_type == data_type_map.end() ? casacore::TpOther : data_type->second;
-}
-
-casacore::DataType CasacoreDataTypeFromZarrType(const nlohmann::json& array_metadata) {
-    return CasacoreDataTypeFromZarrType(FindJsonValue<std::string>(array_metadata, "/data_type").value_or(""));
 }
 
 casacore::MEpoch::Types GetEpochTypeFromScale(std::string scale) {
@@ -196,32 +200,25 @@ ObsDate ParseObsDate(const nlohmann::json& data, std::string format, const std::
 }
 
 std::string MakeCtypeHeaderValue(const std::string& axis, const std::string& projection) {
-    std::string axis_str(axis);
-    if (!projection.empty()) {
-        while (axis_str.size() < 4) {
-            axis_str += '-';
-        }
-        return axis_str + "-" + projection;
+    if (projection.empty()) {
+        return axis;
     }
-    return axis_str;
+    // Pad the axis name to at least 4 chars with '-', then append the projection (e.g. "RA" -> "RA---SIN").
+    return fmt::format("{:-<4}-{}", axis, projection);
 }
 
-// Emit a string FITS keyword from a JSON pointer if it resolves to a string. Returns true if added.
-bool TryAddString(FitsHeaderBuilder& builder, const nlohmann::json& obj, const char* ptr, const std::string& key) {
+// Emit a string FITS keyword from a JSON pointer if it resolves to a string.
+void TryAddString(FitsHeaderBuilder& builder, const nlohmann::json& obj, const char* ptr, const std::string& key) {
     if (auto value = FindJsonValue<std::string>(obj, ptr)) {
         builder.AddString(key, *value);
-        return true;
     }
-    return false;
 }
 
 // Emit a numeric FITS keyword from a JSON pointer if it resolves to a number, applying an optional scale.
-bool TryAddDouble(FitsHeaderBuilder& builder, const nlohmann::json& obj, const char* ptr, const std::string& key, double scale = 1.0) {
+void TryAddDouble(FitsHeaderBuilder& builder, const nlohmann::json& obj, const char* ptr, const std::string& key, double scale = 1.0) {
     if (auto value = FindJsonValue<double>(obj, ptr)) {
         builder.AddDouble(key, *value * scale);
-        return true;
     }
-    return false;
 }
 
 template <typename Func>
@@ -303,34 +300,30 @@ bool TryComputeDirectorySize(const std::string& filename, std::chrono::milliseco
     return true;
 }
 
-using AxisInfo = ZarrImage::AxisInfo;
+using ZarrAxisInfo = ZarrImage::ZarrAxisInfo;
 
-std::map<std::string, AxisInfo> ParseAxes(const nlohmann::json& metadata) {
+std::map<std::string, ZarrAxisInfo> ParseZarrAxes(const nlohmann::json& metadata) {
     const auto* dimension_names = FindJsonPtr(metadata, "/dimension_names");
     if (!dimension_names || !dimension_names->is_array()) {
         throw std::runtime_error("XRADIO schema requires dimension_names array");
     }
 
     std::vector<std::string> dims = dimension_names->get<std::vector<std::string>>();
-
-    const auto* shape_json = FindJsonPtr(metadata, "/shape");
-    if (!shape_json || !shape_json->is_array()) {
-        throw std::runtime_error("Zarr shape is not an array");
-    }
-    if (shape_json->size() != dims.size()) {
+    const casacore::IPosition shape = ParseZarrShape(metadata);
+    if (shape.size() != static_cast<int>(dims.size())) {
         throw std::runtime_error(
-            fmt::format("Zarr dimension_names size {} does not match shape size {}", dims.size(), shape_json->size()));
+            fmt::format("Zarr dimension_names size {} does not match shape size {}", dims.size(), shape.size()));
     }
 
-    std::map<std::string, AxisInfo> axes;
+    std::map<std::string, ZarrAxisInfo> axes;
     for (size_t i = 0; i < dims.size(); ++i) {
-        axes[dims[i]] = AxisInfo{i, (*shape_json)[i].get<int>()};
+        axes[dims[i]] = ZarrAxisInfo{i, static_cast<int>(shape[i])};
     }
 
     return axes;
 }
 
-const AxisInfo& RequireAxis(const std::map<std::string, AxisInfo>& axes, const std::string& axis_name) {
+const ZarrAxisInfo& RequireAxis(const std::map<std::string, ZarrAxisInfo>& axes, const std::string& axis_name) {
     auto axis = axes.find(axis_name);
     if (axis == axes.end()) {
         throw std::runtime_error("Missing required axis " + axis_name);
@@ -338,10 +331,11 @@ const AxisInfo& RequireAxis(const std::map<std::string, AxisInfo>& axes, const s
     return axis->second;
 }
 
-void ValidateSupportedAxes(const std::map<std::string, AxisInfo>& axes, const std::vector<std::string>& required_axes) {
+template <size_t N>
+void ValidateRequiredAxes(const std::map<std::string, ZarrAxisInfo>& axes, const std::array<const char*, N>& required_axes) {
     for (const auto& axis_name : required_axes) {
-        const AxisInfo& axis = RequireAxis(axes, axis_name);
-        if (axis_name == TIME_AXIS && axis.size > 1) {
+        const ZarrAxisInfo& axis = RequireAxis(axes, axis_name);
+        if (std::string_view(axis_name) == TIME_AXIS && axis.size > 1) {
             throw std::runtime_error(fmt::format("Zarr images with time axis size > 1 are not supported: time={}", axis.size));
         }
     }
@@ -352,7 +346,7 @@ bool IsSupportedImageArray(const std::string& array_name) {
            ZARR_SUPPORTED_IMAGE_ARRAYS.end();
 }
 
-std::map<std::string, AxisInfo> ValidateImageArrayMetadata(const std::string& array_name, const nlohmann::json& metadata) {
+std::map<std::string, ZarrAxisInfo> ParseImageAxes(const std::string& array_name, const nlohmann::json& metadata) {
     if (!IsSupportedImageArray(array_name)) {
         throw std::runtime_error("Unsupported Zarr image array " + array_name);
     }
@@ -360,8 +354,8 @@ std::map<std::string, AxisInfo> ValidateImageArrayMetadata(const std::string& ar
         throw std::runtime_error("No metadata for Zarr image array " + array_name);
     }
 
-    std::map<std::string, AxisInfo> axes = ParseAxes(metadata);
-    ValidateSupportedAxes(axes, {TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, L_AXIS, M_AXIS});
+    std::map<std::string, ZarrAxisInfo> axes = ParseZarrAxes(metadata);
+    ValidateRequiredAxes(axes, IMAGE_REQUIRED_AXES);
     return axes;
 }
 
@@ -374,28 +368,14 @@ std::vector<casacore::Stokes::StokesTypes> StokesTypesFromLabels(const std::vect
     return types;
 }
 
-// Format an integer array (e.g. a chunk/shard shape) as "[a, b, c, d]".
-std::string FormatIntArray(const std::vector<int64_t>& arr) {
-    std::string result = "[";
-    for (size_t i = 0; i < arr.size(); ++i) {
-        if (i > 0) {
-            result += ", ";
-        }
-        result += std::to_string(arr[i]);
-    }
-    result += "]";
-    return result;
-}
-
 // Reorder a storage-order chunk/shard shape into CARTA axis order (x, y, freq, stokes),
 // dropping any extra axes (e.g. time). Missing entries in the shape array default to 1.
-std::vector<int64_t> MakeCartaOrderedShape(
-    const std::vector<int64_t>& shape, const std::map<std::string, AxisInfo>& axes, const std::string& x_axis, const std::string& y_axis) {
+std::vector<int64_t> ReorderShapeToCartaAxes(const std::vector<int64_t>& shape, const std::map<std::string, ZarrAxisInfo>& axes) {
     auto value_at = [&](const std::string& name) -> int64_t {
-        const AxisInfo& axis = RequireAxis(axes, name);
+        const ZarrAxisInfo& axis = RequireAxis(axes, name);
         return (axis.index >= shape.size()) ? 1 : shape[axis.index];
     };
-    return {value_at(x_axis), value_at(y_axis), value_at(FREQUENCY_AXIS), value_at(POLARIZATION_AXIS)};
+    return {value_at(L_AXIS), value_at(M_AXIS), value_at(FREQUENCY_AXIS), value_at(POLARIZATION_AXIS)};
 }
 
 } // namespace
@@ -406,7 +386,7 @@ struct ZarrImage::Impl {
 
     // XRADIO image array name and axis name -> {storage index, size}, parsed from the image array metadata.
     std::string image_name;
-    std::map<std::string, AxisInfo> axes;
+    std::map<std::string, ZarrAxisInfo> axes;
 
     // Lazily-loaded beam set: GetBeams() may be called more than once per image (e.g. once while
     // building the FITS header and once while setting up the image), so the array is read only once.
@@ -455,13 +435,13 @@ struct ZarrImage::Impl {
 
         try {
             nlohmann::json beam_metadata = store->ReadArrayMetadata(beam_array_name);
-            std::map<std::string, AxisInfo> beam_axes = ParseAxes(beam_metadata);
-            ValidateSupportedAxes(beam_axes, {TIME_AXIS, POLARIZATION_AXIS, FREQUENCY_AXIS, BEAM_PARAMS_LABEL});
+            std::map<std::string, ZarrAxisInfo> beam_axes = ParseZarrAxes(beam_metadata);
+            ValidateRequiredAxes(beam_axes, BEAM_REQUIRED_AXES);
 
-            const AxisInfo& time_axis = RequireAxis(beam_axes, TIME_AXIS);
-            const AxisInfo& freq_axis = RequireAxis(beam_axes, FREQUENCY_AXIS);
-            const AxisInfo& stokes_axis = RequireAxis(beam_axes, POLARIZATION_AXIS);
-            const AxisInfo& param_axis = RequireAxis(beam_axes, BEAM_PARAMS_LABEL);
+            const ZarrAxisInfo& time_axis = RequireAxis(beam_axes, TIME_AXIS);
+            const ZarrAxisInfo& freq_axis = RequireAxis(beam_axes, FREQUENCY_AXIS);
+            const ZarrAxisInfo& stokes_axis = RequireAxis(beam_axes, POLARIZATION_AXIS);
+            const ZarrAxisInfo& param_axis = RequireAxis(beam_axes, BEAM_PARAMS_LABEL);
 
             // The BEAM_PARAMS_LABEL coordinate names each position along the parameter axis
             // (e.g. ["major", "minor", "pa"]); look up each parameter by name, as the order may be arbitrary.
@@ -523,15 +503,17 @@ struct ZarrImage::Impl {
         std::vector<std::pair<std::string, std::string>> info;
         const ZarrStore::StorageLayout layout = store->GetStorageLayout(image_name);
 
-        // Report shapes in CARTA axis order (x, y, freq, stokes), dropping time axis.
-        const std::string axis_labels = " (RA, DEC, FREQ, STOKES)";
+        // Report shapes in CARTA axis order (x, y, freq, stokes), dropping time axis: "[a, b, c, d] (RA, DEC, FREQ, STOKES)".
+        auto format_shape = [&](const std::vector<int64_t>& shape) {
+            return fmt::format("[{}] (RA, DEC, FREQ, STOKES)", fmt::join(ReorderShapeToCartaAxes(shape, axes), ", "));
+        };
 
         // Emit Shard shape (if any), then Chunk shape, then Compressor so they group next to "Shape" in the file browser.
         if (layout.sharded && !layout.shard_shape.empty()) {
-            info.emplace_back("Shard shape", FormatIntArray(MakeCartaOrderedShape(layout.shard_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
+            info.emplace_back("Shard shape", format_shape(layout.shard_shape));
         }
         if (!layout.chunk_shape.empty()) {
-            info.emplace_back("Chunk shape", FormatIntArray(MakeCartaOrderedShape(layout.chunk_shape, axes, L_AXIS, M_AXIS)) + axis_labels);
+            info.emplace_back("Chunk shape", format_shape(layout.chunk_shape));
         }
         if (!layout.compressor.empty()) {
             info.emplace_back("Compressor", layout.compressor);
@@ -595,7 +577,7 @@ private:
         const auto& zattrs = _impl.store->GetRootMetadata()["attributes"];
 
         const auto* coordinate_system_info = FindJsonPtr(zattrs, "/coordinate_system_info");
-        if (!(coordinate_system_info && coordinate_system_info->is_object())) {
+        if (!coordinate_system_info || !coordinate_system_info->is_object()) {
             return;
         }
 
@@ -799,11 +781,8 @@ private:
                 if (uniform) {
                     _builder.AddDouble("CDELT4", static_cast<double>(delta));
                 } else {
-                    std::string stokes_list;
-                    for (size_t i = 0; i < pol_strs.size(); ++i) {
-                        stokes_list += (i == 0 ? "" : ", ") + pol_strs[i];
-                    }
-                    spdlog::warn("Non-uniform Stokes spacing for types [{}]; cannot be represented with CDELT4", stokes_list);
+                    spdlog::warn("Non-uniform Stokes spacing for types [{}]; cannot be represented with CDELT4",
+                        fmt::join(pol_strs, ", "));
                 }
                 _builder.AddString("CUNIT4", "");
             },
@@ -930,8 +909,8 @@ bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& 
 
         const std::string image_name = ZARR_DEFAULT_IMAGE_ARRAY;
         nlohmann::json image_metadata = store.ReadArrayMetadata(image_name);
-        ValidateImageArrayMetadata(image_name, image_metadata);
-        if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), CasacoreDataTypeFromZarrType(image_metadata), size)) {
+        ParseImageAxes(image_name, image_metadata);
+        if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), ParseZarrDataType(image_metadata), size)) {
             size_is_upper_bound = true;
             return true;
         }
@@ -955,9 +934,9 @@ bool ZarrImage::Initialize() {
 
         _impl->image_name = ZARR_DEFAULT_IMAGE_ARRAY;
         nlohmann::json image_metadata = _impl->store->ReadArrayMetadata(_impl->image_name);
-        _impl->axes = ValidateImageArrayMetadata(_impl->image_name, image_metadata);
+        _impl->axes = ParseImageAxes(_impl->image_name, image_metadata);
         _shape = _impl->BuildCartaShape();
-        _data_type = CasacoreDataTypeFromZarrType(image_metadata);
+        _data_type = ParseZarrDataType(image_metadata);
 
         _initialized = true;
 
@@ -988,7 +967,7 @@ casacore::DataType ZarrImage::GetDataType() const {
     return _data_type;
 }
 
-const std::map<std::string, ZarrImage::AxisInfo>& ZarrImage::GetAxes() const {
+const std::map<std::string, ZarrImage::ZarrAxisInfo>& ZarrImage::GetAxes() const {
     return _impl->axes;
 }
 

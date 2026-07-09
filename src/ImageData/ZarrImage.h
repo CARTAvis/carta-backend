@@ -37,14 +37,14 @@ public:
     bool Initialize();
     bool IsInitialized() const;
 
-    struct AxisInfo {
+    struct ZarrAxisInfo {
         size_t index;
         int size;
     };
 
     const casacore::IPosition& GetShape() const;
     casacore::DataType GetDataType() const;
-    const std::map<std::string, AxisInfo>& GetAxes() const;
+    const std::map<std::string, ZarrAxisInfo>& GetAxes() const;
 
     casacore::Vector<casacore::String> FitsHeaderStrings();
     bool GetBeams(casacore::ImageBeamSet& beam_set);
