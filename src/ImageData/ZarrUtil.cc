@@ -7,6 +7,7 @@
 // # ZarrUtil.cc: low-level Zarr v3 metadata and data helpers
 #include "ZarrUtil.h"
 
+#include <array>
 #include <cstdint>
 #include <fstream>
 #include <iterator>
@@ -208,10 +209,51 @@ size_t DecompressBytesCodec(const std::vector<uint8_t>& compressed, BytesCodec c
     throw std::runtime_error("Unsupported bytes codec");
 }
 
-// Codec layout for a Zarr v3 string array: the optional bytes-to-bytes compressor and byte order.
+// CRC32C (Castagnoli polynomial, RFC 3720), as required by the Zarr v3 crc32c codec.
+uint32_t Crc32c(const uint8_t* data, size_t size) {
+    constexpr uint32_t reversed_polynomial = 0x82F63B78u;
+    static const std::array<uint32_t, 256> table = []() {
+        std::array<uint32_t, 256> entries{};
+        for (uint32_t index = 0; index < entries.size(); ++index) {
+            uint32_t crc = index;
+            for (int bit = 0; bit < 8; ++bit) {
+                crc = (crc & 1) ? ((crc >> 1) ^ reversed_polynomial) : (crc >> 1);
+            }
+            entries[index] = crc;
+        }
+        return entries;
+    }();
+
+    uint32_t crc = 0xFFFFFFFFu;
+    for (size_t i = 0; i < size; ++i) {
+        crc = table[(crc ^ data[i]) & 0xFF] ^ (crc >> 8);
+    }
+    return crc ^ 0xFFFFFFFFu;
+}
+
+// Verify and remove one 4-byte CRC32C suffix (stored little-endian regardless of the bytes codec
+// endianness); returns the payload size without the checksum.
+size_t StripCrc32c(const uint8_t* data, size_t size, const std::string& array_name) {
+    if (size < sizeof(uint32_t)) {
+        throw std::runtime_error(fmt::format("Array {} chunk is too small to contain a CRC32C checksum ({} bytes)", array_name, size));
+    }
+    const size_t payload_size = size - sizeof(uint32_t);
+    const uint32_t stored = ReadUint32(data + payload_size, true);
+    const uint32_t computed = Crc32c(data, payload_size);
+    if (stored != computed) {
+        throw std::runtime_error(
+            fmt::format("Array {} CRC32C checksum mismatch (stored {:#010x}, computed {:#010x})", array_name, stored, computed));
+    }
+    return payload_size;
+}
+
+// Codec layout for a Zarr v3 string array: the optional bytes-to-bytes compressor, byte order, and
+// the number of crc32c codecs on each side of the compressor (in codec-chain / encode order).
 struct StringCodecInfo {
     std::optional<BytesCodec> bytes_codec;
     bool little_endian = true;
+    size_t crc_before_compressor = 0; // crc32c encoded before the compressor: suffix ends up inside the compressed payload
+    size_t crc_after_compressor = 0;  // crc32c encoded after the compressor: suffix wraps the stored chunk on disk
 };
 
 void SetBytesCodec(StringCodecInfo& info, BytesCodec codec, const std::string& array_name) {
@@ -228,6 +270,7 @@ StringCodecInfo ParseStringCodecs(const nlohmann::json& metadata, const std::str
     if (!codecs || !codecs->is_array()) {
         return info;
     }
+    bool seen_bytes = false;
     for (const auto& codec : *codecs) {
         const std::string codec_name = codec.value("name", "");
         if (codec_name == "blosc") {
@@ -237,10 +280,25 @@ StringCodecInfo ParseStringCodecs(const nlohmann::json& metadata, const std::str
         } else if (codec_name == "zstd") {
             SetBytesCodec(info, BytesCodec::Zstd, array_name);
         } else if (codec_name == "bytes") {
+            if (seen_bytes) {
+                throw std::runtime_error(fmt::format("Array {} has multiple bytes codecs in its codec chain", array_name));
+            }
+            seen_bytes = true;
             info.little_endian = (FindJsonValue<std::string>(codec, "/configuration/endian").value_or("little") != "big");
+        } else if (codec_name == "crc32c") {
+            // The compressor (if any) is recorded once seen, so its presence distinguishes the two sides.
+            ++(info.bytes_codec ? info.crc_after_compressor : info.crc_before_compressor);
+        } else if (codec_name == "transpose") {
+            // For a 1-D array the only valid permutation is the identity [0], which is a no-op.
+            const auto* order = FindJsonPtr(codec, "/configuration/order");
+            if (!order || *order != nlohmann::json::array({0})) {
+                throw std::runtime_error(
+                    fmt::format("Array {} uses a non-identity transpose; unsupported for 1-D string decode", array_name));
+            }
         } else {
-            throw std::runtime_error(fmt::format(
-                "Array {} uses unsupported codec '{}'; only bytes, zstd, gzip, and blosc are supported", array_name, codec_name));
+            throw std::runtime_error(
+                fmt::format("Array {} uses unsupported codec '{}'; only bytes, transpose, zstd, gzip, blosc, and crc32c are supported",
+                    array_name, codec_name));
         }
     }
     return info;
@@ -295,24 +353,36 @@ std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::
     }
     std::vector<uint8_t> raw((std::istreambuf_iterator<char>(chunk_file)), std::istreambuf_iterator<char>());
 
-    // Apply the optional bytes->bytes compressor before interpreting the UTF-32 payload.
+    // Undo the bytes->bytes codecs (outermost first) before interpreting the UTF-32 payload.
     const StringCodecInfo codec_info = ParseStringCodecs(metadata, array_name);
     if (num_elements > std::numeric_limits<size_t>::max() / length_bytes) {
         throw std::runtime_error(fmt::format("Array {} expected byte count overflows size_t", array_name));
     }
     const size_t expected_bytes = num_elements * length_bytes;
-    std::vector<uint8_t> bytes;
-    size_t actual_bytes = 0;
-    if (codec_info.bytes_codec) {
-        std::vector<uint8_t> decompressed(expected_bytes);
-        actual_bytes = DecompressBytesCodec(raw, *codec_info.bytes_codec, decompressed);
-        bytes = std::move(decompressed);
-    } else {
-        actual_bytes = raw.size();
-        bytes = std::move(raw);
+
+    std::vector<uint8_t> bytes = std::move(raw);
+    size_t bytes_size = bytes.size();
+
+    // crc32c after the compressor wraps the stored chunk; verify and strip it before decompressing.
+    for (size_t i = 0; i < codec_info.crc_after_compressor; ++i) {
+        bytes_size = StripCrc32c(bytes.data(), bytes_size, array_name);
     }
-    if (actual_bytes < expected_bytes) {
-        throw std::runtime_error(fmt::format("Array {} smaller than expected ({} < {})", array_name, actual_bytes, expected_bytes));
+
+    if (codec_info.bytes_codec) {
+        bytes.resize(bytes_size); // the decompressor input must be exactly the compressed stream (zstd rejects trailing bytes)
+        // crc32c before the compressor leaves its suffix inside the decompressed payload.
+        std::vector<uint8_t> decompressed(expected_bytes + (sizeof(uint32_t) * codec_info.crc_before_compressor));
+        bytes_size = DecompressBytesCodec(bytes, *codec_info.bytes_codec, decompressed);
+        bytes = std::move(decompressed);
+    }
+
+    // crc32c before the compressor wraps the (now decompressed) payload; strip it last.
+    for (size_t i = 0; i < codec_info.crc_before_compressor; ++i) {
+        bytes_size = StripCrc32c(bytes.data(), bytes_size, array_name);
+    }
+
+    if (bytes_size < expected_bytes) {
+        throw std::runtime_error(fmt::format("Array {} smaller than expected ({} < {})", array_name, bytes_size, expected_bytes));
     }
 
     return DecodeFixedLengthUtf32(bytes, num_elements, length_bytes, codec_info.little_endian);

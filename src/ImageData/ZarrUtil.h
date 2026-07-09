@@ -56,8 +56,9 @@ std::optional<T> FindJsonValue(const nlohmann::json& obj, const char* ptr) {
  * @brief Decode a 1-D Zarr v3 "fixed_length_utf32" string array by hand.
  *
  * TensorStore's zarr3 driver does not support string data types, so the chunk is read and decoded
- * directly. Only the single-chunk, 1-D, bytes plus optional zstd/gzip/blosc codec layout produced by
- * XRADIO for coordinate label arrays is supported.
+ * directly. Only single-chunk 1-D arrays are supported, with a codec chain of: an optional identity
+ * transpose, bytes, at most one of zstd/gzip/blosc, and any number of crc32c codecs (checksums are
+ * verified). This covers the layouts produced by XRADIO for coordinate label arrays.
  *
  * @param array_dir Directory of the array (e.g. <image>/polarization).
  * @param metadata The array's zarr.json metadata.
