@@ -334,14 +334,27 @@ std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::
     if (!shape_json || !shape_json->is_array() || !chunk_shape_json || !chunk_shape_json->is_array()) {
         throw std::runtime_error(fmt::format("Array {} missing shape or chunk_shape", array_name));
     }
-    if (shape_json->size() != 1) {
+    if (shape_json->size() != 1 || chunk_shape_json->size() != 1) {
         throw std::runtime_error(fmt::format("Array {} is not 1-D; only 1-D string arrays are supported", array_name));
     }
-    if (*shape_json != *chunk_shape_json) {
+    if (!(*shape_json)[0].is_number_unsigned() && !(*shape_json)[0].is_number_integer()) {
+        throw std::runtime_error(fmt::format("Array {} has an invalid shape", array_name));
+    }
+    if (!(*chunk_shape_json)[0].is_number_unsigned() && !(*chunk_shape_json)[0].is_number_integer()) {
+        throw std::runtime_error(fmt::format("Array {} has an invalid chunk_shape", array_name));
+    }
+
+    const int64_t num_elements_value = (*shape_json)[0].get<int64_t>();
+    const int64_t chunk_elements_value = (*chunk_shape_json)[0].get<int64_t>();
+    if (num_elements_value < 0 || chunk_elements_value <= 0) {
+        throw std::runtime_error(fmt::format("Array {} has an invalid shape or chunk_shape", array_name));
+    }
+    if (num_elements_value > chunk_elements_value) {
         throw std::runtime_error(fmt::format("Array {} is multi-chunk; unsupported for string decode", array_name));
     }
 
-    const size_t num_elements = (*shape_json)[0].get<size_t>();
+    const size_t num_elements = static_cast<size_t>(num_elements_value);
+    const size_t chunk_elements = static_cast<size_t>(chunk_elements_value);
 
     // Determine the single chunk's file path using the default chunk key encoding ("c" + separator + index).
     std::string separator = FindJsonValue<std::string>(metadata, "/chunk_key_encoding/configuration/separator").value_or("/");
@@ -360,10 +373,10 @@ std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::
 
     // Undo the bytes->bytes codecs (outermost first) before interpreting the UTF-32 payload.
     const StringCodecInfo codec_info = ParseStringCodecs(metadata, array_name);
-    if (num_elements > std::numeric_limits<size_t>::max() / length_bytes) {
+    if (chunk_elements > std::numeric_limits<size_t>::max() / length_bytes) {
         throw std::runtime_error(fmt::format("Array {} expected byte count overflows size_t", array_name));
     }
-    const size_t expected_bytes = num_elements * length_bytes;
+    const size_t expected_chunk_bytes = chunk_elements * length_bytes;
 
     std::vector<uint8_t> bytes = std::move(raw);
     size_t bytes_size = bytes.size();
@@ -376,7 +389,10 @@ std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::
     if (codec_info.bytes_codec) {
         bytes.resize(bytes_size); // the decompressor input must be exactly the compressed stream (zstd rejects trailing bytes)
         // crc32c before the compressor leaves its suffix inside the decompressed payload.
-        std::vector<uint8_t> decompressed(expected_bytes + (sizeof(uint32_t) * codec_info.crc_before_compressor));
+        if (codec_info.crc_before_compressor > (std::numeric_limits<size_t>::max() - expected_chunk_bytes) / sizeof(uint32_t)) {
+            throw std::runtime_error(fmt::format("Array {} expected checksum byte count overflows size_t", array_name));
+        }
+        std::vector<uint8_t> decompressed(expected_chunk_bytes + (sizeof(uint32_t) * codec_info.crc_before_compressor));
         bytes_size = DecompressBytesCodec(bytes, *codec_info.bytes_codec, decompressed);
         bytes = std::move(decompressed);
     }
@@ -386,8 +402,8 @@ std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::
         bytes_size = StripCrc32c(bytes.data(), bytes_size, array_name);
     }
 
-    if (bytes_size < expected_bytes) {
-        throw std::runtime_error(fmt::format("Array {} smaller than expected ({} < {})", array_name, bytes_size, expected_bytes));
+    if (bytes_size < expected_chunk_bytes) {
+        throw std::runtime_error(fmt::format("Array {} smaller than expected ({} < {})", array_name, bytes_size, expected_chunk_bytes));
     }
 
     return DecodeFixedLengthUtf32(bytes, num_elements, length_bytes, codec_info.little_endian);

@@ -37,6 +37,7 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         ImageData/TestFitsUtil.cc
         ImageData/TestZarrStore.cc
+        ImageData/TestZarrUtil.cc
         TestBlockSmooth.cc
         TestContour.cc
         TestCursorSpatialProfiles.cc
