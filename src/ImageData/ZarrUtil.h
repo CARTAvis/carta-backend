@@ -25,6 +25,9 @@ inline constexpr std::array<const char*, 1> ZARR_SUPPORTED_IMAGE_ARRAYS{ZARR_DEF
 // Return a pointer to the JSON value at the given JSON pointer, or nullptr if it does not exist.
 const nlohmann::json* FindJsonPtr(const nlohmann::json& obj, const char* ptr);
 
+// Return the supported image arrays present in a Zarr image directory, in ZARR_SUPPORTED_IMAGE_ARRAYS order.
+std::vector<std::string> ListZarrImageArrays(const std::string& path_string);
+
 // Return true if the path is a supported XRADIO Zarr image directory.
 bool IsSupportedZarrImage(const std::string& path_string);
 

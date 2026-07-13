@@ -33,27 +33,32 @@ const nlohmann::json* FindJsonPtr(const nlohmann::json& obj, const char* ptr) {
     }
 }
 
-bool IsSupportedZarrImage(const std::string& path_string) {
+std::vector<std::string> ListZarrImageArrays(const std::string& path_string) {
+    std::vector<std::string> array_names;
     std::error_code error_code;
     std::filesystem::path path(path_string);
 
     if (!std::filesystem::is_directory(path, error_code)) {
-        return false;
+        return array_names;
     }
 
     if (!std::filesystem::exists(path / "zarr.json", error_code)) {
-        return false;
+        return array_names;
     }
 
     for (const char* array_name : ZARR_SUPPORTED_IMAGE_ARRAYS) {
         std::filesystem::path array_json_path = path / array_name / "zarr.json";
         std::error_code exists_error;
         if (std::filesystem::exists(array_json_path, exists_error)) {
-            return true;
+            array_names.emplace_back(array_name);
         }
     }
 
-    return false;
+    return array_names;
+}
+
+bool IsSupportedZarrImage(const std::string& path_string) {
+    return !ListZarrImageArrays(path_string).empty();
 }
 
 namespace {

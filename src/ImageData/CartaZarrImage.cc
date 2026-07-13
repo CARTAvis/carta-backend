@@ -17,8 +17,8 @@
 
 namespace carta {
 
-CartaZarrImage::CartaZarrImage(const std::string& filename)
-    : _zarr_image(std::make_shared<ZarrImage>(filename)), _name(filename) {
+CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& image_name)
+    : _zarr_image(std::make_shared<ZarrImage>(filename, image_name)), _name(filename) {
     if (!_zarr_image->Initialize()) {
         throw casacore::AipsError("Failed to initialize Zarr metadata for: " + filename);
     }

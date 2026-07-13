@@ -17,7 +17,7 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
         return;
     }
 
-    auto* zarr_image = new CartaZarrImage(_filename);
+    auto* zarr_image = new CartaZarrImage(_filename, hdu);
     _image.reset(zarr_image);
 
     _hdu = hdu;

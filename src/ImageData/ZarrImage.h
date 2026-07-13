@@ -26,7 +26,8 @@ namespace carta {
 
 class ZarrImage {
 public:
-    explicit ZarrImage(const std::string& filename);
+    // If image_name is empty, ZARR_DEFAULT_IMAGE_ARRAY is used.
+    explicit ZarrImage(const std::string& filename, const std::string& image_name = std::string());
     ~ZarrImage();
 
     ZarrImage(const ZarrImage&) = delete;
@@ -64,6 +65,7 @@ private:
     casacore::IPosition _shape;
     casacore::DataType _data_type = casacore::TpOther;
     std::string _filename;
+    std::string _image_name;
     bool _initialized = false;
 };
 

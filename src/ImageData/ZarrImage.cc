@@ -891,7 +891,10 @@ private:
     FitsHeaderBuilder _builder;
 };
 
-ZarrImage::ZarrImage(const std::string& filename) : _impl(std::make_unique<Impl>()), _filename(filename) {}
+ZarrImage::ZarrImage(const std::string& filename, const std::string& image_name)
+    : _impl(std::make_unique<Impl>()),
+      _filename(filename),
+      _image_name(image_name.empty() ? ZARR_DEFAULT_IMAGE_ARRAY : image_name) {}
 
 ZarrImage::~ZarrImage() = default;
 
@@ -907,7 +910,8 @@ bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& 
             return false;
         }
 
-        const std::string image_name = ZARR_DEFAULT_IMAGE_ARRAY;
+        const auto array_names = ListZarrImageArrays(filename);
+        const std::string image_name = array_names.empty() ? ZARR_DEFAULT_IMAGE_ARRAY : array_names.front();
         nlohmann::json image_metadata = store.ReadArrayMetadata(image_name);
         ParseImageAxes(image_name, image_metadata);
         if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), ParseZarrDataType(image_metadata), size)) {
@@ -932,7 +936,7 @@ bool ZarrImage::Initialize() {
             return false;
         }
 
-        _impl->image_name = ZARR_DEFAULT_IMAGE_ARRAY;
+        _impl->image_name = _image_name;
         nlohmann::json image_metadata = _impl->store->ReadArrayMetadata(_impl->image_name);
         _impl->axes = ParseImageAxes(_impl->image_name, image_metadata);
         _shape = _impl->BuildCartaShape();

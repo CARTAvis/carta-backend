@@ -24,7 +24,8 @@ class ZarrImage;
 
 class CartaZarrImage : public casacore::ImageInterface<float> {
 public:
-    explicit CartaZarrImage(const std::string& filename);
+    // If image_name is empty, ZARR_DEFAULT_IMAGE_ARRAY is used.
+    explicit CartaZarrImage(const std::string& filename, const std::string& image_name = std::string());
     CartaZarrImage(const CartaZarrImage& other);
     ~CartaZarrImage() override;
 
