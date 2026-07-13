@@ -14,7 +14,6 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
-#include <limits>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -249,32 +248,6 @@ casacore::IPosition ParseZarrShape(const nlohmann::json& array_metadata) {
     }
 
     return casacore::IPosition(shape_values);
-}
-
-bool ComputeArraySizeBytes(const casacore::IPosition& shape, casacore::DataType data_type, int64_t& size) {
-    const size_t element_size = casacore::SizeOfType(data_type);
-    if (element_size == 0) {
-        return false;
-    }
-
-    int64_t total_bytes = static_cast<int64_t>(element_size);
-    for (int i = 0; i < shape.size(); ++i) {
-        const int64_t dim_size = shape[i];
-        if (dim_size < 0) {
-            return false;
-        }
-        if (dim_size == 0) {
-            size = 0;
-            return true;
-        }
-        if (total_bytes > std::numeric_limits<int64_t>::max() / dim_size) {
-            return false;
-        }
-        total_bytes *= dim_size;
-    }
-
-    size = total_bytes;
-    return true;
 }
 
 bool TryComputeDirectorySize(const std::string& filename, std::chrono::milliseconds timeout, int64_t& size) {
@@ -910,14 +883,9 @@ bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& 
             return false;
         }
 
-        const auto array_names = ListZarrImageArrays(filename);
-        const std::string image_name = array_names.empty() ? ZARR_DEFAULT_IMAGE_ARRAY : array_names.front();
-        nlohmann::json image_metadata = store.ReadArrayMetadata(image_name);
-        ParseImageAxes(image_name, image_metadata);
-        if (ComputeArraySizeBytes(ParseZarrShape(image_metadata), ParseZarrDataType(image_metadata), size)) {
-            size_is_upper_bound = true;
-            return true;
-        }
+        size = store.ComputeTotalArraySizeBytes();
+        size_is_upper_bound = true;
+        return true;
     } catch (const std::exception& ex) {
         spdlog::debug("Failed to compute Zarr image data size: {}", ex.what());
     }

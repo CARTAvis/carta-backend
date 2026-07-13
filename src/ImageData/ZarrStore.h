@@ -55,6 +55,12 @@ public:
     // Uses consolidated metadata when available; otherwise reads the per-array zarr.json.
     nlohmann::json ReadArrayMetadata(const std::string& array_name) const;
 
+    // Sum the uncompressed logical sizes of every array in the store. Uses consolidated metadata
+    // when available; otherwise walks only the Zarr group hierarchy (array chunk directories are
+    // not traversed). Throws std::runtime_error on invalid metadata, unsupported data types, or
+    // integer overflow.
+    int64_t ComputeTotalArraySizeBytes() const;
+
     // Storage layout for a named array, parsed from its metadata. Throws std::runtime_error on failure.
     StorageLayout GetStorageLayout(const std::string& array_name) const;
 

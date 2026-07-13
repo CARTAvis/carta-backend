@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <limits>
+#include <map>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -163,6 +165,110 @@ nlohmann::json ParseJsonFile(const std::filesystem::path& json_path) {
     return nlohmann::json::parse(file);
 }
 
+int64_t ParseElementSizeBytes(const nlohmann::json& metadata, const std::string& array_name) {
+    const auto* data_type = FindJsonPtr(metadata, "/data_type");
+    if (!data_type) {
+        throw std::runtime_error("Array " + array_name + " is missing data_type");
+    }
+
+    if (data_type->is_string()) {
+        static const std::map<std::string, int64_t, std::less<>> element_sizes{
+            {"bool", 1},
+            {"int8", 1},
+            {"uint8", 1},
+            {"int16", 2},
+            {"uint16", 2},
+            {"float16", 2},
+            {"int32", 4},
+            {"uint32", 4},
+            {"float32", 4},
+            {"int64", 8},
+            {"uint64", 8},
+            {"float64", 8},
+            {"complex64", 8},
+            {"complex128", 16},
+        };
+        const std::string& data_type_name = data_type->get_ref<const std::string&>();
+        auto element_size = element_sizes.find(data_type_name);
+        if (element_size != element_sizes.end()) {
+            return element_size->second;
+        }
+        throw std::runtime_error("Array " + array_name + " has unsupported data_type " + data_type_name);
+    }
+
+    if (data_type->is_object()) {
+        // XRADIO coordinate labels use the fixed_length_utf32 extension data type. Other
+        // fixed-length extension types can be sized the same way when they declare length_bytes.
+        auto length_bytes = FindJsonValue<int64_t>(*data_type, "/configuration/length_bytes");
+        if (length_bytes && *length_bytes > 0) {
+            return *length_bytes;
+        }
+    }
+
+    throw std::runtime_error("Array " + array_name + " has unsupported data_type " + data_type->dump());
+}
+
+int64_t ParseDimensionSize(const nlohmann::json& dimension, const std::string& array_name) {
+    if (dimension.is_number_unsigned()) {
+        const uint64_t value = dimension.get<uint64_t>();
+        if (value <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+            return static_cast<int64_t>(value);
+        }
+    } else if (dimension.is_number_integer()) {
+        const int64_t value = dimension.get<int64_t>();
+        if (value >= 0) {
+            return value;
+        }
+    }
+    throw std::runtime_error("Array " + array_name + " has an invalid shape dimension " + dimension.dump());
+}
+
+int64_t ComputeArraySizeBytes(const nlohmann::json& metadata, const std::string& array_name) {
+    const auto* shape = FindJsonPtr(metadata, "/shape");
+    if (!shape || !shape->is_array()) {
+        throw std::runtime_error("Array " + array_name + " is missing shape");
+    }
+
+    int64_t total_bytes = ParseElementSizeBytes(metadata, array_name);
+    for (const auto& dimension : *shape) {
+        const int64_t dimension_size = ParseDimensionSize(dimension, array_name);
+        if (dimension_size == 0) {
+            return 0;
+        }
+        if (total_bytes > std::numeric_limits<int64_t>::max() / dimension_size) {
+            throw std::runtime_error("Array " + array_name + " byte size overflows int64_t");
+        }
+        total_bytes *= dimension_size;
+    }
+    return total_bytes;
+}
+
+using NamedMetadata = std::pair<std::string, nlohmann::json>;
+
+void CollectArrayMetadata(
+    const std::filesystem::path& group_path, const std::filesystem::path& relative_path, std::vector<NamedMetadata>& arrays) {
+    for (const auto& entry : std::filesystem::directory_iterator(group_path)) {
+        std::error_code error_code;
+        if (entry.is_symlink(error_code) || error_code || !entry.is_directory(error_code) || error_code) {
+            continue;
+        }
+
+        const std::filesystem::path metadata_path = entry.path() / ZARR_JSON;
+        if (!std::filesystem::is_regular_file(metadata_path, error_code) || error_code) {
+            continue;
+        }
+
+        nlohmann::json metadata = ParseJsonFile(metadata_path);
+        const std::filesystem::path child_relative_path = relative_path / entry.path().filename();
+        const std::string node_type = metadata.value("node_type", "");
+        if (node_type == "array") {
+            arrays.emplace_back(child_relative_path.generic_string(), std::move(metadata));
+        } else if (node_type == "group") {
+            CollectArrayMetadata(entry.path(), child_relative_path, arrays);
+        }
+    }
+}
+
 ts::TensorStore<> OpenTensorStore(const std::string& array_path, const ts::Context& context) {
     auto spec_result = ts::Spec::FromJson({
         {"driver", "zarr3"},
@@ -224,6 +330,38 @@ nlohmann::json ZarrStore::ReadArrayMetadata(const std::string& array_name) const
     }
 
     return ParseJsonFile(array_json_path);
+}
+
+int64_t ZarrStore::ComputeTotalArraySizeBytes() const {
+    std::vector<NamedMetadata> arrays;
+    if (_root_json.value("node_type", "") == "array") {
+        arrays.emplace_back("/", _root_json);
+    } else if (_has_consolidated_metadata) {
+        for (const auto& [array_name, metadata] : _consolidated_metadata.items()) {
+            if (metadata.value("node_type", "") == "array") {
+                arrays.emplace_back(array_name, metadata);
+            }
+        }
+    }
+
+    // An absent or empty consolidated metadata object is not enough to enumerate the store. Walk
+    // group nodes instead, stopping at each array so chunk directories are never visited.
+    if (arrays.empty() && _root_json.value("node_type", "") != "array") {
+        CollectArrayMetadata(_root_path, {}, arrays);
+    }
+    if (arrays.empty()) {
+        throw std::runtime_error("Zarr store contains no arrays");
+    }
+
+    int64_t total_bytes = 0;
+    for (const auto& [array_name, metadata] : arrays) {
+        const int64_t array_size = ComputeArraySizeBytes(metadata, array_name);
+        if (total_bytes > std::numeric_limits<int64_t>::max() - array_size) {
+            throw std::runtime_error("Total Zarr array byte size overflows int64_t");
+        }
+        total_bytes += array_size;
+    }
+    return total_bytes;
 }
 
 ZarrStore::StorageLayout ZarrStore::GetStorageLayout(const std::string& array_name) const {
