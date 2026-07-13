@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -240,11 +241,20 @@ casacore::IPosition ParseZarrShape(const nlohmann::json& array_metadata) {
     std::vector<int> shape_values;
     shape_values.reserve(shape->size());
     for (const auto& dim : *shape) {
-        if (!dim.is_number_integer()) {
-            throw std::runtime_error("Zarr shape contains a non-integer dimension");
+        if (dim.is_number_unsigned()) {
+            const uint64_t value = dim.get<uint64_t>();
+            if (value <= static_cast<uint64_t>(std::numeric_limits<int>::max())) {
+                shape_values.push_back(static_cast<int>(value));
+                continue;
+            }
+        } else if (dim.is_number_integer()) {
+            const int64_t value = dim.get<int64_t>();
+            if (value >= 0 && value <= std::numeric_limits<int>::max()) {
+                shape_values.push_back(static_cast<int>(value));
+                continue;
+            }
         }
-
-        shape_values.push_back(dim.get<int>());
+        throw std::runtime_error("Zarr shape contains an invalid dimension " + dim.dump());
     }
 
     return casacore::IPosition(shape_values);
