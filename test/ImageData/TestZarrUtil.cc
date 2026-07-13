@@ -60,4 +60,25 @@ TEST_F(ZarrStringArrayTest, ReadsSingleCompressedChunkThatOverhangsArrayShape) {
     EXPECT_EQ(carta::ReadFixedLengthUtf32StringArray(_array_path, metadata), (std::vector<std::string>{"A", "BC"}));
 }
 
+TEST_F(ZarrStringArrayTest, ReadsV2ChunkKeyEncoding) {
+    const nlohmann::json metadata{
+        {"zarr_format", 3},
+        {"node_type", "array"},
+        {"shape", {2}},
+        {"data_type", {{"name", "fixed_length_utf32"}, {"configuration", {{"length_bytes", 8}}}}},
+        {"chunk_grid", {{"name", "regular"}, {"configuration", {{"chunk_shape", {2}}}}}},
+        {"chunk_key_encoding", {{"name", "v2"}}},
+        {"codecs", {{{"name", "bytes"}, {"configuration", {{"endian", "little"}}}}}},
+    };
+
+    const std::vector<uint32_t> code_points{'A', 0, 'B', 'C'};
+    std::ofstream chunk_file(_array_path / "0", std::ios::binary);
+    ASSERT_TRUE(chunk_file.is_open());
+    chunk_file.write(
+        reinterpret_cast<const char*>(code_points.data()), static_cast<std::streamsize>(code_points.size() * sizeof(uint32_t)));
+    chunk_file.close();
+
+    EXPECT_EQ(carta::ReadFixedLengthUtf32StringArray(_array_path, metadata), (std::vector<std::string>{"A", "BC"}));
+}
+
 } // namespace

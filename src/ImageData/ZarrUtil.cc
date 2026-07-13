@@ -309,11 +309,13 @@ StringCodecInfo ParseStringCodecs(const nlohmann::json& metadata, const std::str
     return info;
 }
 
-} // namespace
+struct StringArrayLayout {
+    size_t num_elements;
+    size_t chunk_elements;
+    size_t length_bytes;
+};
 
-std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::path& array_dir, const nlohmann::json& metadata) {
-    const std::string array_name = array_dir.filename().string();
-
+StringArrayLayout ParseStringArrayLayout(const nlohmann::json& metadata, const std::string& array_name) {
     auto dtype_name = FindJsonValue<std::string>(metadata, "/data_type/name");
     if (!dtype_name || *dtype_name != "fixed_length_utf32") {
         const auto* dtype_name_json = FindJsonPtr(metadata, "/data_type/name");
@@ -327,7 +329,6 @@ std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::
     if (*length_bytes_value <= 0 || (*length_bytes_value % static_cast<int64_t>(sizeof(uint32_t))) != 0) {
         throw std::runtime_error(fmt::format("Array {} has invalid length_bytes {}", array_name, *length_bytes_value));
     }
-    const size_t length_bytes = static_cast<size_t>(*length_bytes_value);
 
     const auto* shape_json = FindJsonPtr(metadata, "/shape");
     const auto* chunk_shape_json = FindJsonPtr(metadata, "/chunk_grid/configuration/chunk_shape");
@@ -353,34 +354,41 @@ std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::
         throw std::runtime_error(fmt::format("Array {} is multi-chunk; unsupported for string decode", array_name));
     }
 
-    const size_t num_elements = static_cast<size_t>(num_elements_value);
-    const size_t chunk_elements = static_cast<size_t>(chunk_elements_value);
+    return {static_cast<size_t>(num_elements_value), static_cast<size_t>(chunk_elements_value), static_cast<size_t>(*length_bytes_value)};
+}
 
-    // Determine the single chunk's file path using the default chunk key encoding ("c" + separator + index).
-    std::string separator = FindJsonValue<std::string>(metadata, "/chunk_key_encoding/configuration/separator").value_or("/");
-    std::filesystem::path chunk_path = array_dir / ("c" + separator + "0");
-
-    // Missing chunk: all elements take the (empty) fill value.
-    if (!std::filesystem::exists(chunk_path)) {
-        return std::vector<std::string>(num_elements, std::string());
+std::filesystem::path GetStringChunkPath(
+    const std::filesystem::path& array_dir, const nlohmann::json& metadata, const std::string& array_name) {
+    const std::string key_encoding = FindJsonValue<std::string>(metadata, "/chunk_key_encoding/name").value_or("default");
+    if (key_encoding == "default") {
+        const std::string separator = FindJsonValue<std::string>(metadata, "/chunk_key_encoding/configuration/separator").value_or("/");
+        if (separator != "/" && separator != ".") {
+            throw std::runtime_error(fmt::format("Array {} has invalid chunk key separator '{}'", array_name, separator));
+        }
+        return array_dir / ("c" + separator + "0");
     }
+    if (key_encoding == "v2") {
+        return array_dir / "0";
+    }
+    throw std::runtime_error(fmt::format("Array {} uses unsupported chunk key encoding '{}'", array_name, key_encoding));
+}
 
+std::vector<uint8_t> ReadChunkFile(const std::filesystem::path& chunk_path) {
     std::ifstream chunk_file(chunk_path, std::ios::binary);
     if (!chunk_file) {
         throw std::runtime_error("Failed to open array data " + chunk_path.string());
     }
-    std::vector<uint8_t> raw((std::istreambuf_iterator<char>(chunk_file)), std::istreambuf_iterator<char>());
+    return std::vector<uint8_t>((std::istreambuf_iterator<char>(chunk_file)), std::istreambuf_iterator<char>());
+}
 
-    // Undo the bytes->bytes codecs (outermost first) before interpreting the UTF-32 payload.
-    const StringCodecInfo codec_info = ParseStringCodecs(metadata, array_name);
-    if (chunk_elements > std::numeric_limits<size_t>::max() / length_bytes) {
+std::vector<uint8_t> DecodeStringChunk(
+    std::vector<uint8_t> bytes, const StringCodecInfo& codec_info, const StringArrayLayout& layout, const std::string& array_name) {
+    if (layout.chunk_elements > std::numeric_limits<size_t>::max() / layout.length_bytes) {
         throw std::runtime_error(fmt::format("Array {} expected byte count overflows size_t", array_name));
     }
-    const size_t expected_chunk_bytes = chunk_elements * length_bytes;
+    const size_t expected_chunk_bytes = layout.chunk_elements * layout.length_bytes;
 
-    std::vector<uint8_t> bytes = std::move(raw);
     size_t bytes_size = bytes.size();
-
     // crc32c after the compressor wraps the stored chunk; verify and strip it before decompressing.
     for (size_t i = 0; i < codec_info.crc_after_compressor; ++i) {
         bytes_size = StripCrc32c(bytes.data(), bytes_size, array_name);
@@ -405,8 +413,26 @@ std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::
     if (bytes_size < expected_chunk_bytes) {
         throw std::runtime_error(fmt::format("Array {} smaller than expected ({} < {})", array_name, bytes_size, expected_chunk_bytes));
     }
+    bytes.resize(bytes_size);
+    return bytes;
+}
 
-    return DecodeFixedLengthUtf32(bytes, num_elements, length_bytes, codec_info.little_endian);
+} // namespace
+
+std::vector<std::string> ReadFixedLengthUtf32StringArray(const std::filesystem::path& array_dir, const nlohmann::json& metadata) {
+    const std::string array_name = array_dir.filename().string();
+    const StringArrayLayout layout = ParseStringArrayLayout(metadata, array_name);
+    const std::filesystem::path chunk_path = GetStringChunkPath(array_dir, metadata, array_name);
+
+    // Missing chunk: all elements take the (empty) fill value.
+    if (!std::filesystem::exists(chunk_path)) {
+        return std::vector<std::string>(layout.num_elements, std::string());
+    }
+
+    std::vector<uint8_t> bytes = ReadChunkFile(chunk_path);
+    const StringCodecInfo codec_info = ParseStringCodecs(metadata, array_name);
+    bytes = DecodeStringChunk(std::move(bytes), codec_info, layout, array_name);
+    return DecodeFixedLengthUtf32(bytes, layout.num_elements, layout.length_bytes, codec_info.little_endian);
 }
 
 } // namespace carta
