@@ -542,7 +542,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 lock.unlock();
 
                 // copy file info, extended file info
-                auto response_file_info = Message::FileInfo(file_info.name(), file_info.type(), file_info.size(), hdu);
+                auto response_file_info = Message::FileInfo(
+                    file_info.name(), file_info.type(), file_info.size(), hdu, file_info.size_is_upper_bound());
                 *ack.mutable_file_info() = response_file_info;
                 *ack.mutable_file_info_extended() = file_info_extended;
                 uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
