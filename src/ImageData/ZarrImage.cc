@@ -888,8 +888,13 @@ ZarrImage::ZarrImage(const std::string& filename, const std::string& image_name)
 ZarrImage::~ZarrImage() = default;
 
 bool ZarrImage::ComputeImageDataSizeBytes(const std::string& filename, int64_t& size, bool& size_is_upper_bound) {
+    return ComputeImageDataSizeBytes(filename, size, size_is_upper_bound, ZARR_SIZE_TIMEOUT);
+}
+
+bool ZarrImage::ComputeImageDataSizeBytes(
+    const std::string& filename, int64_t& size, bool& size_is_upper_bound, std::chrono::milliseconds directory_size_timeout) {
     size_is_upper_bound = false;
-    if (TryComputeDirectorySize(filename, ZARR_SIZE_TIMEOUT, size)) {
+    if (TryComputeDirectorySize(filename, directory_size_timeout, size)) {
         return true;
     }
 

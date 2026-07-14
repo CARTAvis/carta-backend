@@ -8,6 +8,7 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARRIMAGE_H_
 #define CARTA_SRC_IMAGEDATA_ZARRIMAGE_H_
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -34,6 +35,8 @@ public:
     ZarrImage& operator=(const ZarrImage&) = delete;
 
     static bool ComputeImageDataSizeBytes(const std::string& filename, int64_t& size, bool& size_is_upper_bound);
+    static bool ComputeImageDataSizeBytes(
+        const std::string& filename, int64_t& size, bool& size_is_upper_bound, std::chrono::milliseconds directory_size_timeout);
 
     bool Initialize();
     bool IsInitialized() const;
