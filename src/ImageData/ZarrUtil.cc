@@ -193,11 +193,19 @@ size_t BloscDecompress(const std::vector<uint8_t>& compressed, std::vector<uint8
     if (compressed_bytes > compressed.size()) {
         throw std::runtime_error(fmt::format("Blosc buffer is truncated ({} > {})", compressed_bytes, compressed.size()));
     }
+    if (decompressed_bytes != decompressed.size()) {
+        throw std::runtime_error(
+            fmt::format("Blosc decompressed size does not match expected chunk size ({} != {})", decompressed_bytes, decompressed.size()));
+    }
 
     std::call_once(blosc_init_once, []() { blosc_init(); });
     const int decompressed_size = blosc_decompress(compressed.data(), decompressed.data(), decompressed.size());
     if (decompressed_size < 0) {
         throw std::runtime_error(fmt::format("Blosc decompression failed with code {}", decompressed_size));
+    }
+    if (static_cast<size_t>(decompressed_size) != decompressed.size()) {
+        throw std::runtime_error(
+            fmt::format("Blosc produced an unexpected decompressed size ({} != {})", decompressed_size, decompressed.size()));
     }
     return static_cast<size_t>(decompressed_size);
 }
