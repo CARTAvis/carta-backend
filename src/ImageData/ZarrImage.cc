@@ -346,7 +346,11 @@ std::vector<casacore::Stokes::StokesTypes> StokesTypesFromLabels(const std::vect
     std::vector<casacore::Stokes::StokesTypes> types;
     types.reserve(labels.size());
     for (const auto& label : labels) {
-        types.push_back(casacore::Stokes::type(label));
+        const casacore::Stokes::StokesTypes type = casacore::Stokes::type(label);
+        if (type == casacore::Stokes::Undefined) {
+            throw std::runtime_error(fmt::format("Unknown Stokes label '{}'", label));
+        }
+        types.push_back(type);
     }
     return types;
 }
