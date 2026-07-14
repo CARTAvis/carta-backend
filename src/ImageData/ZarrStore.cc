@@ -40,6 +40,29 @@ constexpr const char* ZARR_JSON = "zarr.json";
 
 constexpr int64_t BYTES_PER_MB = 1024 * 1024;
 
+std::filesystem::path ResolveArrayPath(const std::string& root_path, const std::string& array_name) {
+    const std::filesystem::path relative_path(array_name);
+    if (relative_path.is_absolute() || relative_path.has_root_name() || array_name.find('\\') != std::string::npos) {
+        throw std::runtime_error("Invalid Zarr array path " + array_name);
+    }
+    for (const auto& component : relative_path) {
+        if (component == "." || component == "..") {
+            throw std::runtime_error("Invalid Zarr array path " + array_name);
+        }
+    }
+
+    const std::filesystem::path canonical_root = std::filesystem::weakly_canonical(std::filesystem::absolute(root_path));
+    const std::filesystem::path canonical_target = std::filesystem::weakly_canonical(canonical_root / relative_path);
+    auto root_component = canonical_root.begin();
+    auto target_component = canonical_target.begin();
+    for (; root_component != canonical_root.end(); ++root_component, ++target_component) {
+        if (target_component == canonical_target.end() || *target_component != *root_component) {
+            throw std::runtime_error("Zarr array path escapes store root: " + array_name);
+        }
+    }
+    return canonical_target;
+}
+
 struct ContextConfig {
     int file_io_concurrency = 0;
     int data_copy_concurrency = 0;
@@ -319,12 +342,14 @@ nlohmann::json ZarrStore::ReadArrayMetadata(const std::string& array_name) const
         return _root_json;
     }
 
+    const std::filesystem::path array_path = ResolveArrayPath(_root_path, array_name);
+
     if (_has_consolidated_metadata && _consolidated_metadata.contains(array_name)) {
         return _consolidated_metadata.at(array_name);
     }
 
     // No consolidated metadata: read the per-array zarr.json from disk.
-    std::filesystem::path array_json_path = std::filesystem::path(_root_path) / array_name / ZARR_JSON;
+    const std::filesystem::path array_json_path = array_path / ZARR_JSON;
     if (!std::filesystem::exists(array_json_path)) {
         return nlohmann::json::object();
     }
@@ -369,7 +394,7 @@ ZarrStore::StorageLayout ZarrStore::GetStorageLayout(const std::string& array_na
 }
 
 ts::SharedOffsetArray<double> ZarrStore::ReadDoubleArray(const std::string& array_name) const {
-    std::filesystem::path target_path = std::filesystem::path(_root_path) / array_name;
+    const std::filesystem::path target_path = ResolveArrayPath(_root_path, array_name);
     auto tensor_store = OpenTensorStore(target_path.string(), _context);
 
     auto typed_store_result = ts::StaticCast<ts::TensorStore<double>>(tensor_store);
@@ -387,7 +412,7 @@ ts::SharedOffsetArray<double> ZarrStore::ReadDoubleArray(const std::string& arra
 
 std::vector<std::string> ZarrStore::ReadStringArray(const std::string& array_name) const {
     nlohmann::json metadata = ReadArrayMetadata(array_name);
-    return ReadFixedLengthUtf32StringArray(std::filesystem::path(_root_path) / array_name, metadata);
+    return ReadFixedLengthUtf32StringArray(ResolveArrayPath(_root_path, array_name), metadata);
 }
 
 } // namespace carta
