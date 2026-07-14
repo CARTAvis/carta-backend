@@ -25,6 +25,7 @@
 #include "FileList/FitsHduList.h"
 #include "ImageData/CompressedFits.h"
 #include "ImageData/FitsLoader.h"
+#include "ImageData/ZarrUtil.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
@@ -203,16 +204,19 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             requested_hdu = file_info.hdu_list(0);
         }
 
-        if (!requested_hdu.empty() || (file_info.type() != CARTA::FileType::FITS)) {
+        if (requested_hdu.empty() && (file_info.type() == CARTA::FileType::FITS)) {
+            // Get extended file info for all FITS hdus
+            file_info_ok = ext_info_loader.FillFitsFileInfoMap(hdu_info_map, fullname, message);
+        } else if (requested_hdu.empty() && (file_info.type() == CARTA::FileType::ZARR)) {
+            // Get extended file info for all Zarr image arrays; array names act as hdu names
+            file_info_ok = ext_info_loader.FillZarrFileInfoMap(hdu_info_map, fullname, message);
+        } else {
             // Get extended file info for requested hdu or images without hdus
             CARTA::FileInfoExtended file_info_ext;
             file_info_ok = ext_info_loader.FillFileExtInfo(file_info_ext, fullname, requested_hdu, message);
             if (file_info_ok) {
                 hdu_info_map[requested_hdu] = file_info_ext;
             }
-        } else {
-            // Get extended file info for all FITS hdus
-            file_info_ok = ext_info_loader.FillFitsFileInfoMap(hdu_info_map, fullname, message);
         }
 
         if (file_info_ok && loader->IsHistoryBeam()) {
@@ -279,6 +283,16 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 
                     hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
                 }
+            } else if (hdu.empty() && (file_info.type() == CARTA::FileType::ZARR)) {
+                // Use first image array name as hdu
+                std::vector<std::string> array_names = ListZarrImageArrays(fullname);
+
+                if (array_names.empty()) {
+                    message = "No image array found for Zarr.";
+                    return file_info_ok;
+                }
+
+                hdu = array_names[0];
             }
         }
 

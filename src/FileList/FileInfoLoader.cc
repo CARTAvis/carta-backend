@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// # FileInfoLoader.cc: fill FileInfo for all supported file types
+//# FileInfoLoader.cc: fill FileInfo for all supported file types
 
 #include "FileInfoLoader.h"
 
@@ -59,19 +59,10 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     file_info.set_size_is_upper_bound(size_is_upper_bound);
     file_info.set_type(_type);
 
-    // add hdu for HDF5 and Zarr
+    // add hdu for HDF5
     if (_type == CARTA::FileType::HDF5) {
         casacore::String abs_file_name(cc_file.path().absoluteName());
         success = GetHdf5HduList(file_info, abs_file_name);
-    } else if (_type == CARTA::FileType::ZARR) {
-        // Image array names act as HDU names, so the frontend can select which array to open
-        for (const auto& array_name : ListZarrImageArrays(cc_file.path().absoluteName())) {
-            file_info.add_hdu_list(array_name);
-        }
-        if (file_info.hdu_list_size() == 0) {
-            file_info.add_hdu_list("");
-        }
-        success = true;
     } else {
         file_info.add_hdu_list("");
         success = true;

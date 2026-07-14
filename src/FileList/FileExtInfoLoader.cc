@@ -25,6 +25,7 @@
 #include "../ImageData/CartaFitsImage.h"
 #include "../ImageData/CartaHdf5Image.h"
 #include "../ImageData/CartaZarrImage.h"
+#include "../ImageData/ZarrUtil.h"
 #include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
 #include "Util/Casacore.h"
@@ -78,6 +79,32 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
             if (FillFileExtInfo(file_info_ext, filename, hdu_num, message)) {
                 hdu_info_map[hdu_num] = file_info_ext;
             }
+        }
+    }
+
+    map_ok = !hdu_info_map.empty();
+    if (!map_ok) {
+        message = "Error loading headers or image.";
+    }
+
+    return map_ok;
+}
+
+bool FileExtInfoLoader::FillZarrFileInfoMap(
+    std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message) {
+    // Fill map with FileInfoExtended for all Zarr image arrays; array names act as hdu names
+    std::vector<std::string> array_names = ListZarrImageArrays(filename);
+    bool map_ok(false);
+
+    if (array_names.empty()) {
+        message = "No image arrays found.";
+        return map_ok;
+    }
+
+    for (auto& array_name : array_names) {
+        CARTA::FileInfoExtended file_info_ext;
+        if (FillFileExtInfo(file_info_ext, filename, array_name, message)) {
+            hdu_info_map[array_name] = file_info_ext;
         }
     }
 
