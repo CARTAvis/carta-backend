@@ -36,6 +36,7 @@ set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
         ImageData/TestFitsUtil.cc
+        ImageData/TestZarrImage.cc
         ImageData/TestZarrStore.cc
         ImageData/TestZarrUtil.cc
         TestBlockSmooth.cc
