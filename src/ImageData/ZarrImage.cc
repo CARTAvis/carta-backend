@@ -300,7 +300,9 @@ std::map<std::string, ZarrAxisInfo> ParseZarrAxes(const nlohmann::json& metadata
 
     std::map<std::string, ZarrAxisInfo> axes;
     for (size_t i = 0; i < dims.size(); ++i) {
-        axes[dims[i]] = ZarrAxisInfo{i, static_cast<int>(shape[i])};
+        if (!axes.emplace(dims[i], ZarrAxisInfo{i, static_cast<int>(shape[i])}).second) {
+            throw std::runtime_error("Duplicate Zarr dimension name " + dims[i]);
+        }
     }
 
     return axes;
