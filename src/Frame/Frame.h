@@ -219,7 +219,7 @@ public:
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel = CURRENT_Z);
 
 protected:
     // Validate z and stokes index values
@@ -266,7 +266,7 @@ protected:
     }
 
     // For vector field calculation
-    bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
+    bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel);
 
     // Setup
     uint32_t _session_id;

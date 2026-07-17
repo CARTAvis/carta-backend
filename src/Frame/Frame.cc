@@ -2483,14 +2483,15 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
     return _vector_field.SetParameters(message, _axes.stokes);
 }
 
-bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    if (_vector_field.ClearParameters(callback, _z_index)) {
+bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel) {
+    int vector_channel = channel == CURRENT_Z ? _z_index : channel;
+    if (_vector_field.ClearParameters(callback, vector_channel)) {
         return true;
     }
-    return DoVectorFieldCalculation(callback);
+    return DoVectorFieldCalculation(callback, vector_channel);
 }
 
-bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel) {
     // Prevent deleting the Frame while this task is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
@@ -2528,7 +2529,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 
         // Get current stokes data
         if (current_stokes_as_pi || current_stokes_as_pa) {
-            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, CurrentStokes(), bounds, mip)) {
+            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, channel, CurrentStokes(), bounds, mip)) {
                 return false;
             }
         }
@@ -2538,14 +2539,14 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
             for (auto one : stokes_flag) {
                 std::string stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, mip)) {
+                    !GetDownsampledRasterData(stokes_data[stokes], width, height, channel, stokes_indices[stokes], bounds, mip)) {
                     return false;
                 }
             }
         }
 
         // Calculate PI or PA and then send a partial response message
-        _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+        _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, channel, progress, callback);
     }
     return true;
 }
