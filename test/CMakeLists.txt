@@ -37,6 +37,7 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         ImageData/TestFitsUtil.cc
         TestBlockSmooth.cc
+        TestChannelMapTileCache.cc
         TestContour.cc
         TestCursorSpatialProfiles.cc
         TestExprImage.cc

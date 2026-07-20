@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -48,6 +49,26 @@ typedef std::function<void()> ScriptingSessionClosedCallback;
 struct PerSocketData {
     uint32_t session_id;
     string address;
+};
+
+struct ChannelMapTileRequestKey {
+    int file_id;
+    int channel;
+    int stokes;
+    CARTA::CompressionType compression_type;
+    float compression_quality;
+    std::vector<int32_t> tiles;
+
+    bool operator==(const ChannelMapTileRequestKey& other) const {
+        return file_id == other.file_id && channel == other.channel && stokes == other.stokes &&
+               compression_type == other.compression_type && compression_quality == other.compression_quality && tiles == other.tiles;
+    }
+};
+
+struct PreparedChannelMapTiles {
+    ChannelMapTileRequestKey key;
+    int animation_id;
+    std::vector<std::optional<CARTA::RasterTileData>> tile_messages;
 };
 
 class Session {
@@ -264,6 +285,11 @@ protected:
     void UpdateRegionData(int file_id, int region_id, bool z_changed, bool stokes_changed);
     bool SendVectorFieldData(int file_id, int channel = CURRENT_Z);
 
+    ChannelMapTileRequestKey MakeChannelMapTileRequestKey(const CARTA::AddRequiredTiles& message, int channel, int stokes) const;
+    PreparedChannelMapTiles PrepareRasterTiles(
+        const CARTA::AddRequiredTiles& message, int channel, int stokes, int animation_id, bool is_current_z);
+    void SendPreparedRasterTiles(PreparedChannelMapTiles& prepared_tiles);
+
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = true);
     void SendFileEvent(
@@ -305,6 +331,7 @@ protected:
     // Manage image channels. Key is file_id.
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
+    std::unordered_map<int, PreparedChannelMapTiles> _prepared_channel_map_tiles;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;

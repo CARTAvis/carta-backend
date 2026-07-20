@@ -146,6 +146,7 @@ void Session::SetInitExitTimeout(int secs) {
 
 void Session::WaitForTaskCancellation() {
     _connected = false;
+    _prepared_channel_map_tiles.clear();
     for (auto& frame : _frames) {
         frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
     }
@@ -655,12 +656,14 @@ void Session::DeleteFrame(int file_id) {
         _frames.clear();
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
+        _prepared_channel_map_tiles.clear();
     } else if (_frames.count(file_id)) {
         _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
         _image_channel_task_active.erase(file_id);
+        _prepared_channel_map_tiles.erase(file_id);
     }
     if (_region_handler) {
         _region_handler->RemoveFrame(file_id);
@@ -694,14 +697,31 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
         requested_z = _frames.at(file_id)->CurrentZ();
     }
     auto stokes = _frames.at(file_id)->CurrentStokes();
-    auto sync_id = ++_sync_id;
+    auto prepared_tiles = PrepareRasterTiles(message, requested_z, stokes, animation_id, is_current_z);
+    SendPreparedRasterTiles(prepared_tiles);
+}
 
-    int num_tiles = message.tiles_size();
-    auto start_message = Message::RasterTileSync(file_id, requested_z, stokes, sync_id, animation_id, num_tiles, false);
-    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
+ChannelMapTileRequestKey Session::MakeChannelMapTileRequestKey(const CARTA::AddRequiredTiles& message, int channel, int stokes) const {
+    ChannelMapTileRequestKey key;
+    key.file_id = message.file_id();
+    key.channel = channel;
+    key.stokes = stokes;
+    key.compression_type = message.compression_type();
+    key.compression_quality = message.compression_quality();
+    key.tiles.assign(message.tiles().begin(), message.tiles().end());
+    return key;
+}
 
-    CARTA::CompressionType compression_type = message.compression_type();
-    float compression_quality = message.compression_quality();
+PreparedChannelMapTiles Session::PrepareRasterTiles(
+    const CARTA::AddRequiredTiles& message, int channel, int stokes, int animation_id, bool is_current_z) {
+    auto file_id = message.file_id();
+    auto num_tiles = message.tiles_size();
+    auto compression_type = message.compression_type();
+    auto compression_quality = message.compression_quality();
+    PreparedChannelMapTiles prepared_tiles;
+    prepared_tiles.key = MakeChannelMapTileRequestKey(message, channel, stokes);
+    prepared_tiles.animation_id = animation_id;
+    prepared_tiles.tile_messages.resize(num_tiles);
 
     Timer t;
     ThreadManager::ApplyThreadLimit();
@@ -714,21 +734,19 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
             for (int i = j; i < num_tiles; i += stride) {
                 const auto& encoded_coordinate = message.tiles(i);
                 auto tile = Tile::Decode(encoded_coordinate);
-                auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
+                auto raster_tile_data = Message::RasterTileData(file_id, 0, animation_id);
                 bool tile_error(false);
-                if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, requested_z, stokes,
+                if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, channel, stokes,
                                                   compression_type, compression_quality, is_current_z, tile_error)) {
-                    // Only use deflate on outgoing message if the raster image compression type is NONE
-                    SendFileEvent(
-                        file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
+                    prepared_tiles.tile_messages[i] = std::move(raster_tile_data);
                 } else {
                     if (tile_error) {
-                        SendLogEvent(fmt::format("Invalid mip calculation: channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y,
-                                         tile.layer),
+                        SendLogEvent(
+                            fmt::format("Invalid mip calculation: channel={}, x={}, y={}, layer={}", channel, tile.x, tile.y, tile.layer),
                             {"animation"}, CARTA::ErrorSeverity::WARNING);
                     } else {
                         spdlog::warn(
-                            "Discarding stale tile request for channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y, tile.layer);
+                            "Discarding stale tile request for channel={}, x={}, y={}, layer={}", channel, tile.x, tile.y, tile.layer);
                     }
                 }
             }
@@ -738,9 +756,30 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
     // Measure duration for get tile data
     spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed().ms());
 
+    return prepared_tiles;
+}
+
+void Session::SendPreparedRasterTiles(PreparedChannelMapTiles& prepared_tiles) {
+    auto& key = prepared_tiles.key;
+    auto sync_id = ++_sync_id;
+    auto num_tiles = key.tiles.size();
+    auto start_message =
+        Message::RasterTileSync(key.file_id, key.channel, key.stokes, sync_id, prepared_tiles.animation_id, num_tiles, false);
+    SendFileEvent(key.file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
+
+    for (auto& tile_message : prepared_tiles.tile_messages) {
+        if (tile_message) {
+            tile_message->set_sync_id(sync_id);
+            // Only use deflate on outgoing message if the raster image compression type is NONE
+            SendFileEvent(
+                key.file_id, CARTA::EventType::RASTER_TILE_DATA, 0, *tile_message, key.compression_type == CARTA::CompressionType::NONE);
+        }
+    }
+
     // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
-    auto final_message = Message::RasterTileSync(file_id, requested_z, stokes, sync_id, animation_id, num_tiles, true);
-    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
+    auto final_message =
+        Message::RasterTileSync(key.file_id, key.channel, key.stokes, sync_id, prepared_tiles.animation_id, num_tiles, true);
+    SendFileEvent(key.file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
 }
 
 void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
@@ -752,13 +791,32 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
         // Set new channel and/or stokes
         auto z_target = message.channel();
         auto stokes_target = message.stokes();
-        bool channel_map_data_request = message.channel_map_enabled() && message.has_required_tiles() && !message.required_tiles().tiles().empty();
+        bool channel_map_data_request =
+            message.channel_map_enabled() && message.has_required_tiles() && !message.required_tiles().tiles().empty();
         if (channel_map_data_request) {
             SendContourData(file_id, true, z_target);
             SendVectorFieldData(file_id, z_target);
-            OnAddRequiredTiles(message.required_tiles(), z_target);
+            auto current_key = MakeChannelMapTileRequestKey(message.required_tiles(), z_target, stokes_target);
+            auto prepared_iter = _prepared_channel_map_tiles.find(file_id);
+            PreparedChannelMapTiles current_tiles;
+            if (prepared_iter != _prepared_channel_map_tiles.end() && prepared_iter->second.key == current_key) {
+                current_tiles = std::move(prepared_iter->second);
+                spdlog::debug("Using prepared channel map tiles for file {}, channel {}", file_id, z_target);
+            } else {
+                current_tiles = PrepareRasterTiles(message.required_tiles(), z_target, stokes_target, 0, false);
+            }
+            _prepared_channel_map_tiles.erase(file_id);
+            SendPreparedRasterTiles(current_tiles);
+
+            bool prepare_next = message.has_next_channel() && message.has_next_required_tiles() &&
+                                !message.next_required_tiles().tiles().empty() && message.next_required_tiles().file_id() == file_id;
+            if (prepare_next) {
+                _prepared_channel_map_tiles.emplace(
+                    file_id, PrepareRasterTiles(message.next_required_tiles(), message.next_channel(), stokes_target, 0, false));
+            }
             return;
         }
+        _prepared_channel_map_tiles.erase(file_id);
         bool z_changed(z_target != frame->CurrentZ());
         bool stokes_changed(stokes_target != frame->CurrentStokes());
         std::string err_message;
