@@ -159,6 +159,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
 
     options.add_options("Deprecated and debug")
         ("debug_no_auth", "accept all incoming WebSocket connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
+        ("no_channel_map_tile_preparation", "disable preparing the next channel map tiles while sending the current tiles", cxxopts::value<bool>())
         ("no_runtime_config", "do not send a runtime config object to frontend clients", cxxopts::value<bool>())
         ("controller_deployment", "used when the backend is launched by carta-controller", cxxopts::value<bool>())
         ("threads", "[deprecated] manually set number of event processing threads (no longer supported)", cxxopts::value<int>(), "<threads>")
@@ -257,6 +258,7 @@ global configuration files, respectively.
     no_log = result["no_log"].as<bool>();
     log_performance = result["log_performance"].as<bool>();
     log_protocol_messages = result["log_protocol_messages"].as<bool>();
+    no_channel_map_tile_preparation = result["no_channel_map_tile_preparation"].as<bool>();
 
     no_http = result["no_http"].as<bool>(); // deprecated
     no_database = result["no_database"].as<bool>();

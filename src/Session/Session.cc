@@ -73,6 +73,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
     _top_level_folder = settings.top_level_folder;
     _read_only_mode = settings.read_only_mode;
     _enable_scripting = settings.enable_scripting;
+    _prepare_channel_map_tiles = !settings.no_channel_map_tile_preparation;
 
     ++_num_sessions;
     UpdateLastMessageTimestamp();
@@ -796,12 +797,16 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
         if (channel_map_data_request) {
             SendContourData(file_id, true, z_target);
             SendVectorFieldData(file_id, z_target);
-            auto current_key = MakeChannelMapTileRequestKey(message.required_tiles(), z_target, stokes_target);
-            auto prepared_iter = _prepared_channel_map_tiles.find(file_id);
             PreparedChannelMapTiles current_tiles;
-            if (prepared_iter != _prepared_channel_map_tiles.end() && prepared_iter->second.key == current_key) {
-                current_tiles = std::move(prepared_iter->second);
-                spdlog::debug("Using prepared channel map tiles for file {}, channel {}", file_id, z_target);
+            if (_prepare_channel_map_tiles) {
+                auto current_key = MakeChannelMapTileRequestKey(message.required_tiles(), z_target, stokes_target);
+                auto prepared_iter = _prepared_channel_map_tiles.find(file_id);
+                if (prepared_iter != _prepared_channel_map_tiles.end() && prepared_iter->second.key == current_key) {
+                    current_tiles = std::move(prepared_iter->second);
+                    spdlog::debug("Using prepared channel map tiles for file {}, channel {}", file_id, z_target);
+                } else {
+                    current_tiles = PrepareRasterTiles(message.required_tiles(), z_target, stokes_target, 0, false);
+                }
             } else {
                 current_tiles = PrepareRasterTiles(message.required_tiles(), z_target, stokes_target, 0, false);
             }
@@ -810,7 +815,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
 
             bool prepare_next = message.has_next_channel() && message.has_next_required_tiles() &&
                                 !message.next_required_tiles().tiles().empty() && message.next_required_tiles().file_id() == file_id;
-            if (prepare_next) {
+            if (_prepare_channel_map_tiles && prepare_next) {
                 _prepared_channel_map_tiles.emplace(
                     file_id, PrepareRasterTiles(message.next_required_tiles(), message.next_channel(), stokes_target, 0, false));
             }

@@ -368,6 +368,7 @@ protected:
     std::string _top_level_folder;
     bool _read_only_mode;
     bool _enable_scripting;
+    bool _prepare_channel_map_tiles;
 };
 
 } // namespace carta

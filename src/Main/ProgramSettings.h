@@ -61,6 +61,7 @@ struct ProgramSettings {
     bool no_log = false;
     bool log_performance = false;
     bool log_protocol_messages = false;
+    bool no_channel_map_tile_preparation = false;
     int verbosity = 4;
     int wait_time = -1;
     int init_wait_time = -1;
