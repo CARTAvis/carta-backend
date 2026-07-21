@@ -614,7 +614,7 @@ bool Frame::GetRasterTileData(
 
     if (mip > 1 && !Stokes::IsComputed(_stokes_index)) {
         // Try to load downsampled data from the image file
-        loaded_data = _loader->GetDownsampledRasterData(*tile_data_ptr, _z_index, _stokes_index, bounds, mip, _image_mutex);
+        loaded_data = _loader->GetDownsampledRasterData(*tile_data_ptr, z, _stokes_index, bounds, mip, _image_mutex);
     } else if (z == _z_index && !_image_cache_valid && _use_tile_cache) {
         // Load a tile from the tile cache if the full image cache isn't populated
         auto cache_tile_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
