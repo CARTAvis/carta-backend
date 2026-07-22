@@ -61,6 +61,7 @@ set(TEST_SOURCES
         TestRegionSpectralProfiles.cc
         TestRegionStats.cc
         TestRestApi.cc
+        TestSession.cc
         TestTileEncoding.cc
         TestVoTable.cc
         Util/TestUtilCasacore.cc

@@ -755,6 +755,10 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
         bool channel_map_data_request =
             message.channel_map_enabled() && message.has_required_tiles() && !message.required_tiles().tiles().empty();
         if (channel_map_data_request) {
+            if (z_target < 0 || z_target >= frame->Depth()) {
+                SendLogEvent(fmt::format("Channel {} is invalid in image", z_target), {"channels"}, CARTA::ErrorSeverity::ERROR);
+                return;
+            }
             SendContourData(file_id, true, z_target);
             SendVectorFieldData(file_id, z_target);
             OnAddRequiredTiles(message.required_tiles(), z_target);
@@ -2476,9 +2480,10 @@ void Session::CloseCachedImage(const std::string& directory, const std::string& 
 void Session::AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
     // Image channel mutex has been locked by SessionManager.
     // Keep only the latest request. Channel map sequencing is managed by the frontend.
+    auto file_id = message.file_id();
     std::pair<CARTA::SetImageChannels, uint32_t> rp;
-    while (_set_channel_queues[message.file_id()].try_pop(rp)) {
+    while (_set_channel_queues[file_id].try_pop(rp)) {
     }
 
-    _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
+    _set_channel_queues[file_id].push(std::make_pair(std::move(message), request_id));
 }
