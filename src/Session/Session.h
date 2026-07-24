@@ -69,8 +69,8 @@ public:
     bool OnOpenFile(int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
         CARTA::OpenFileAck* open_file_ack);
     void OnCloseFile(const CARTA::CloseFile& message);
-    bool OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int channel = CURRENT_Z, int animation_id = 0,
-        bool skip_data = false, int stokes = CURRENT_STOKES);
+    bool OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int channel = CURRENT_Z, int animation_id = 0, bool skip_data = false,
+        int stokes = CURRENT_STOKES);
     SetImageChannelsResult OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);

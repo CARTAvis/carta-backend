@@ -424,8 +424,7 @@ void Frame::GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes) {
 // ****************************************************
 // Raster Data
 
-bool Frame::GetRasterData(
-    int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter, int stokes) {
+bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter, int stokes) {
     // apply bounds and downsample image cache
     int requested_stokes = stokes == CURRENT_STOKES ? _stokes_index : stokes;
     bool use_image_cache = z == _z_index && requested_stokes == _stokes_index;
@@ -2480,8 +2479,7 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
     return _vector_field.SetParameters(message, _axes.stokes);
 }
 
-bool Frame::CalculateVectorField(
-    const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel, int stokes) {
+bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel, int stokes) {
     int vector_channel = channel == CURRENT_Z ? _z_index : channel;
     if (_vector_field.ClearParameters(callback, vector_channel)) {
         return true;

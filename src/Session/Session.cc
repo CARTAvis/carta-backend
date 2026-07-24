@@ -668,8 +668,7 @@ void Session::DeleteFrame(int file_id) {
     }
 }
 
-bool Session::OnAddRequiredTiles(
-    const CARTA::AddRequiredTiles& message, int z, int animation_id, bool skip_data, int stokes) {
+bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, int animation_id, bool skip_data, int stokes) {
     auto file_id = message.file_id();
 
     if (!_frames.count(file_id)) {
@@ -1916,8 +1915,7 @@ bool Session::SendContourData(int file_id, bool ignore_empty, int channel, int s
             if (ignore_empty) {
                 return false;
             } else {
-                auto empty_response =
-                    Message::ContourImageData(file_id, settings.reference_file_id, contour_channel, contour_stokes, 1.0);
+                auto empty_response = Message::ContourImageData(file_id, settings.reference_file_id, contour_channel, contour_stokes, 1.0);
                 SendFileEvent(file_id, CARTA::EventType::CONTOUR_IMAGE_DATA, 0, empty_response);
                 return true;
             }
