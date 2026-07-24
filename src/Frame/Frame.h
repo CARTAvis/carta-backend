@@ -135,7 +135,7 @@ public:
     inline ContourSettings& GetContourParameters() {
         return _contour_settings;
     };
-    bool ContourImage(ContourCallback& partial_contour_callback, int channel);
+    bool ContourImage(ContourCallback& partial_contour_callback, int channel, int stokes = CURRENT_STOKES);
 
     // Histograms: image and cube
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& configs);
@@ -219,7 +219,8 @@ public:
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel = CURRENT_Z);
+    bool CalculateVectorField(
+        const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel = CURRENT_Z, int stokes = CURRENT_STOKES);
 
 protected:
     // Validate z and stokes index values
@@ -234,9 +235,10 @@ protected:
     void InvalidateImageCache();
 
     // Downsampled data from image cache if current z
-    bool GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
+    bool GetRasterData(
+        int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true, int stokes = CURRENT_STOKES);
     bool GetRasterTileData(
-        int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error);
+        int z, int stokes, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error);
 
     // Fill vector for given z and stokes
     void GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
@@ -266,7 +268,7 @@ protected:
     }
 
     // For vector field calculation
-    bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel);
+    bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel, int stokes);
 
     // Setup
     uint32_t _session_id;

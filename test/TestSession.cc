@@ -15,13 +15,17 @@ using namespace carta;
 
 class ChannelMapTestSession : public Session {
 public:
-    ChannelMapTestSession() : Session(nullptr, nullptr, 0, "", nullptr) {
-        auto loader = FileLoader::GetLoader(FitsImages() / "10x10x10.fits");
+    ChannelMapTestSession(fs::path image = FitsImages() / "10x10x10.fits") : Session(nullptr, nullptr, 0, "", nullptr) {
+        auto loader = FileLoader::GetLoader(image);
         _frames.emplace(FILE_ID, std::make_shared<Frame>(0, loader, "0"));
     }
 
     int CurrentChannel() const {
         return _frames.at(FILE_ID)->CurrentZ();
+    }
+
+    int CurrentStokes() const {
+        return _frames.at(FILE_ID)->CurrentStokes();
     }
 
     int Depth() const {
@@ -37,16 +41,41 @@ public:
         return headers;
     }
 
+    std::vector<std::pair<EventHeader, CARTA::ChannelMapFlowControl>> TakeFlowControlEvents() {
+        std::vector<std::pair<EventHeader, CARTA::ChannelMapFlowControl>> events;
+        std::pair<std::vector<char>, bool> message;
+        while (_out_msgs.try_pop(message)) {
+            std::string_view message_view(message.first.data(), message.first.size());
+            auto header = Message::GetEventHeader(message_view);
+            if (header.GetType() == CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL) {
+                events.emplace_back(header, Message::DecodeMessage<CARTA::ChannelMapFlowControl>(message_view));
+            }
+        }
+        return events;
+    }
+
+    std::vector<CARTA::RasterTileData> TakeRasterTileData() {
+        std::vector<CARTA::RasterTileData> tiles;
+        std::pair<std::vector<char>, bool> message;
+        while (_out_msgs.try_pop(message)) {
+            std::string_view message_view(message.first.data(), message.first.size());
+            if (Message::GetEventHeader(message_view).GetType() == CARTA::EventType::RASTER_TILE_DATA) {
+                tiles.push_back(Message::DecodeMessage<CARTA::RasterTileData>(message_view));
+            }
+        }
+        return tiles;
+    }
+
     static constexpr int FILE_ID = 1;
 };
 
 class SessionChannelMapTest : public ::testing::Test {
 protected:
-    static CARTA::SetImageChannels ChannelRequest(int channel, bool with_tile) {
+    static CARTA::SetImageChannels ChannelRequest(int channel, bool with_tile, int stokes = 0) {
         CARTA::SetImageChannels message;
         message.set_file_id(ChannelMapTestSession::FILE_ID);
         message.set_channel(channel);
-        message.set_stokes(0);
+        message.set_stokes(stokes);
         message.set_channel_map_enabled(true);
         if (with_tile) {
             auto* required_tiles = message.mutable_required_tiles();
@@ -76,11 +105,71 @@ TEST_F(SessionChannelMapTest, KeepsCurrentChannelWhileSendingChannelData) {
 
     session.ExecuteSetChannelEvt({ChannelRequest(1, true), request_id});
 
-    auto headers = session.TakeOutgoingEventHeaders();
-    ASSERT_FALSE(headers.empty());
+    auto events = session.TakeFlowControlEvents();
+    ASSERT_EQ(events.size(), 1);
     EXPECT_EQ(session.CurrentChannel(), 0);
-    EXPECT_EQ(headers.back().GetType(), CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL);
-    EXPECT_EQ(headers.back().request_id, request_id);
+    EXPECT_EQ(events.front().first.request_id, request_id);
+    EXPECT_EQ(events.front().second.completed_channel(), 1);
+    EXPECT_EQ(events.front().second.status(), CARTA::ChannelMapFlowControl::COMPLETED);
+}
+
+TEST_F(SessionChannelMapTest, RejectsInvalidChannelMapRequests) {
+    ChannelMapTestSession session;
+
+    session.ExecuteSetChannelEvt({ChannelRequest(session.Depth(), true), 42});
+
+    auto events = session.TakeFlowControlEvents();
+    ASSERT_EQ(events.size(), 1);
+    EXPECT_EQ(events.front().second.status(), CARTA::ChannelMapFlowControl::REJECTED);
+    EXPECT_FALSE(events.front().second.message().empty());
+}
+
+TEST_F(SessionChannelMapTest, RejectsRequestsForMissingFiles) {
+    ChannelMapTestSession session;
+    auto request = ChannelRequest(1, true);
+    request.set_file_id(99);
+
+    session.ExecuteSetChannelEvt({request, 42});
+
+    auto events = session.TakeFlowControlEvents();
+    ASSERT_EQ(events.size(), 1);
+    EXPECT_EQ(events.front().second.status(), CARTA::ChannelMapFlowControl::REJECTED);
+}
+
+TEST_F(SessionChannelMapTest, RejectsIncompleteTileGeneration) {
+    ChannelMapTestSession session;
+    auto request = ChannelRequest(1, true);
+    request.mutable_required_tiles()->set_tiles(0, Tile::Encode(0, 0, 1));
+
+    session.ExecuteSetChannelEvt({request, 42});
+
+    auto events = session.TakeFlowControlEvents();
+    ASSERT_EQ(events.size(), 1);
+    EXPECT_EQ(events.front().second.status(), CARTA::ChannelMapFlowControl::REJECTED);
+}
+
+TEST_F(SessionChannelMapTest, CancelsSupersededQueuedRequests) {
+    ChannelMapTestSession session;
+
+    session.AddToSetChannelQueue(ChannelRequest(1, true), 41);
+    session.AddToSetChannelQueue(ChannelRequest(2, true), 42);
+
+    auto events = session.TakeFlowControlEvents();
+    ASSERT_EQ(events.size(), 1);
+    EXPECT_EQ(events.front().first.request_id, 41);
+    EXPECT_EQ(events.front().second.completed_channel(), 1);
+    EXPECT_EQ(events.front().second.status(), CARTA::ChannelMapFlowControl::CANCELLED);
+}
+
+TEST_F(SessionChannelMapTest, UsesRequestedStokesWithoutChangingCurrentStokes) {
+    ChannelMapTestSession session(FitsImages() / "noise_4d.fits");
+
+    session.OnSetImageChannels(ChannelRequest(0, true, 1));
+
+    auto raster_tiles = session.TakeRasterTileData();
+    ASSERT_EQ(raster_tiles.size(), 1);
+    EXPECT_EQ(raster_tiles.front().stokes(), 1);
+    EXPECT_EQ(session.CurrentStokes(), 0);
 }
 
 TEST_F(SessionChannelMapTest, EmptyRequestUpdatesCurrentChannel) {
