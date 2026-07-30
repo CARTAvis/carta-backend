@@ -706,7 +706,7 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
 
     CARTA::CompressionType compression_type = message.compression_type();
     float compression_quality = message.compression_quality();
-    std::atomic_bool all_tiles_sent(true);
+    std::atomic_int successful_tiles(0);
 
     Timer t;
     ThreadManager::ApplyThreadLimit();
@@ -726,8 +726,8 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
                     // Only use deflate on outgoing message if the raster image compression type is NONE
                     SendFileEvent(
                         file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
+                    ++successful_tiles;
                 } else {
-                    all_tiles_sent = false;
                     if (tile_error) {
                         SendLogEvent(fmt::format("Invalid mip calculation: channel={}, x={}, y={}, layer={}", requested_z, tile.x, tile.y,
                                          tile.layer),
@@ -745,9 +745,10 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
     spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed().ms());
 
     // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
-    auto final_message = Message::RasterTileSync(file_id, requested_z, requested_stokes, sync_id, animation_id, num_tiles, true);
+    auto final_message =
+        Message::RasterTileSync(file_id, requested_z, requested_stokes, sync_id, animation_id, successful_tiles.load(), true);
     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
-    return all_tiles_sent;
+    return true;
 }
 
 SetImageChannelsResult Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
@@ -769,8 +770,6 @@ SetImageChannelsResult Session::OnSetImageChannels(const CARTA::SetImageChannels
                 SendLogEvent(error, {"channels"}, CARTA::ErrorSeverity::ERROR);
                 return {CARTA::ChannelMapFlowControl::REJECTED, error};
             }
-            SendContourData(file_id, true, z_target, stokes_target);
-            SendVectorFieldData(file_id, z_target, stokes_target);
             if (!OnAddRequiredTiles(message.required_tiles(), z_target, 0, false, stokes_target)) {
                 auto error = fmt::format("Failed to generate all requested tiles for channel {} and Stokes {}", z_target, stokes_target);
                 return {CARTA::ChannelMapFlowControl::REJECTED, error};

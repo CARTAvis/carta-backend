@@ -4,6 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <algorithm>
+
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
@@ -64,6 +66,34 @@ public:
             }
         }
         return tiles;
+    }
+
+    std::vector<CARTA::RasterTileSync> TakeRasterTileSync() {
+        std::vector<CARTA::RasterTileSync> sync_messages;
+        std::pair<std::vector<char>, bool> message;
+        while (_out_msgs.try_pop(message)) {
+            std::string_view message_view(message.first.data(), message.first.size());
+            if (Message::GetEventHeader(message_view).GetType() == CARTA::EventType::RASTER_TILE_SYNC) {
+                sync_messages.push_back(Message::DecodeMessage<CARTA::RasterTileSync>(message_view));
+            }
+        }
+        return sync_messages;
+    }
+
+    void EnableContours() {
+        CARTA::SetContourParameters message;
+        message.set_file_id(FILE_ID);
+        message.set_reference_file_id(FILE_ID);
+        auto* image_bounds = message.mutable_image_bounds();
+        image_bounds->set_x_max(_frames.at(FILE_ID)->Width());
+        image_bounds->set_y_max(_frames.at(FILE_ID)->Height());
+        message.add_levels(0.5);
+        message.set_smoothing_mode(CARTA::SmoothingMode::NoSmoothing);
+        message.set_smoothing_factor(1);
+        message.set_decimation_factor(1);
+        message.set_compression_level(0);
+        message.set_contour_chunk_size(100000);
+        ASSERT_TRUE(_frames.at(FILE_ID)->SetContourParameters(message));
     }
 
     static constexpr int FILE_ID = 1;
@@ -136,16 +166,35 @@ TEST_F(SessionChannelMapTest, RejectsRequestsForMissingFiles) {
     EXPECT_EQ(events.front().second.status(), CARTA::ChannelMapFlowControl::REJECTED);
 }
 
-TEST_F(SessionChannelMapTest, RejectsIncompleteTileGeneration) {
+TEST_F(SessionChannelMapTest, CompletesIncompleteTileGenerationWithSuccessfulCount) {
     ChannelMapTestSession session;
     auto request = ChannelRequest(1, true);
+    request.mutable_required_tiles()->add_tiles(Tile::Encode(0, 0, 0));
     request.mutable_required_tiles()->set_tiles(0, Tile::Encode(0, 0, 1));
 
-    session.ExecuteSetChannelEvt({request, 42});
+    auto result = session.OnSetImageChannels(request);
 
-    auto events = session.TakeFlowControlEvents();
-    ASSERT_EQ(events.size(), 1);
-    EXPECT_EQ(events.front().second.status(), CARTA::ChannelMapFlowControl::REJECTED);
+    EXPECT_EQ(result.status, CARTA::ChannelMapFlowControl::COMPLETED);
+    auto sync_messages = session.TakeRasterTileSync();
+    ASSERT_EQ(sync_messages.size(), 2);
+    EXPECT_EQ(sync_messages.front().tile_count(), 2);
+    EXPECT_EQ(sync_messages.back().tile_count(), 1);
+    EXPECT_TRUE(sync_messages.back().end_sync());
+}
+
+TEST_F(SessionChannelMapTest, ChannelDataRequestsDoNotGenerateOverlays) {
+    ChannelMapTestSession session;
+    session.EnableContours();
+
+    session.OnSetImageChannels(ChannelRequest(1, true));
+
+    auto headers = session.TakeOutgoingEventHeaders();
+    EXPECT_EQ(std::count_if(headers.begin(), headers.end(),
+                  [](const auto& header) { return header.GetType() == CARTA::EventType::CONTOUR_IMAGE_DATA; }),
+        0);
+    EXPECT_EQ(std::count_if(headers.begin(), headers.end(),
+                  [](const auto& header) { return header.GetType() == CARTA::EventType::VECTOR_OVERLAY_TILE_DATA; }),
+        0);
 }
 
 TEST_F(SessionChannelMapTest, CancelsSupersededQueuedRequests) {
