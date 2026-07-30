@@ -437,6 +437,55 @@ void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA:
     }
 }
 
+CARTA::DirectoryInfo* Message::AddDirectory(CARTA::FileListResponse& response, const std::string& name, time_t date, int item_count) {
+    auto* directory_info = response.add_subdirectories();
+    directory_info->set_name(name);
+    directory_info->set_date(date);
+    directory_info->set_item_count(item_count);
+    return directory_info;
+}
+
+CARTA::FileInfo* Message::AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type, int64_t size, time_t date,
+    const std::vector<std::string>& hdu_list) {
+    auto* file_info = response.add_files();
+    file_info->set_name(name);
+    file_info->set_type(type);
+    file_info->set_size(size);
+    *file_info->mutable_hdu_list() = {hdu_list.begin(), hdu_list.end()};
+    file_info->set_date(date);
+    return file_info;
+}
+
+CARTA::DirectoryInfo* Message::AddDirectory(CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count) {
+    auto* directory_info = response.add_subdirectories();
+    directory_info->set_name(name);
+    directory_info->set_date(date);
+    directory_info->set_item_count(item_count);
+    return directory_info;
+}
+
+CARTA::CatalogFileInfo* Message::AddFile(CARTA::CatalogListResponse& response, std::string name, CARTA::CatalogFileType type,
+    int64_t file_size, time_t date, std::string description) {
+    auto* file_info = response.add_files();
+    file_info->set_name(name);
+    file_info->set_type(type);
+    file_info->set_file_size(file_size);
+    file_info->set_description(description);
+    file_info->set_date(date);
+    return file_info;
+}
+
+CARTA::RegionListResponse Message::RegionListResponse(CARTA::FileListResponse file_response) {
+    CARTA::RegionListResponse region_response;
+    region_response.set_success(file_response.success());
+    region_response.set_message(file_response.message());
+    region_response.set_directory(file_response.directory());
+    region_response.set_parent(file_response.parent());
+    *region_response.mutable_files() = {file_response.files().begin(), file_response.files().end()};
+    *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
+    region_response.set_cancel(file_response.cancel());
+    return region_response;
+}
 CARTA::HeaderEntry* Message::AddComputedEntry(
     CARTA::FileInfoExtended& response, std::string name, const std::string& value, CARTA::EntryType type, double numeric_value) {
     auto entry = response.add_computed_entries();

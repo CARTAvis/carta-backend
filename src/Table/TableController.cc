@@ -12,6 +12,7 @@
 #include "Main/ProgramSettings.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/File.h"
+#include "Util/Message.h"
 
 #if defined(__APPLE__)
 #define st_mtim st_mtimespec
@@ -237,14 +238,11 @@ void TableController::OnFileListRequest(
                     // Try to construct a directory iterator. If it fails, the directory is inaccessible
                     auto test_directory_iterator = fs::directory_iterator(entry);
 
-                    auto directory_info = file_list_response.add_subdirectories();
-                    directory_info->set_name(entry.path().filename().string());
-                    directory_info->set_item_count(GetNumItems(entry.path().string()));
-
-                    // Fill in file time
                     struct stat file_stats;
                     stat(entry.path().c_str(), &file_stats);
-                    directory_info->set_date(file_stats.st_mtim.tv_sec);
+
+                    Message::AddDirectory(file_list_response, entry.path().filename().string(), file_stats.st_mtim.tv_sec,
+                        GetNumItems(entry.path().string()));
                 } catch (fs::filesystem_error) {
                     // Skip inaccessible folders
                     continue;
@@ -254,16 +252,14 @@ void TableController::OnFileListRequest(
                 if (file_type == CARTA::Unknown && file_list_request.filter_mode() != CARTA::FileListFilterMode::AllFiles) {
                     continue;
                 }
-                // Fill the file info
-                auto file_info = file_list_response.add_files();
-                file_info->set_name(entry.path().filename().string());
-                file_info->set_type(file_type);
-                file_info->set_file_size(fs::file_size(entry));
 
                 // Fill in file time
                 struct stat file_stats;
                 stat(entry.path().c_str(), &file_stats);
-                file_info->set_date(file_stats.st_mtim.tv_sec);
+
+                // Fill the file info
+                auto file_info = Message::AddFile(
+                    file_list_response, entry.path().filename().string(), file_type, fs::file_size(entry), file_stats.st_mtim.tv_sec);
             }
 
             // update the progress and get the difference between the current time and start time

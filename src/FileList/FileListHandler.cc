@@ -19,6 +19,7 @@
 #include "Timer/ListProgressReporter.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
+#include "Util/Message.h"
 
 #define INVALID_PATH_VALUE \
     { '\0' }
@@ -134,7 +135,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
         if (carta_file_type != CARTA::FileType::UNKNOWN) {
             // Add image with file info
-            auto& file_info = *file_list_response.add_files();
             // Directory is path above image
             casacore::Path image_path(full_path);
             std::string directory(image_path.dirName());
@@ -145,10 +145,10 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
             file_list_response.set_parent(parent);
             // Image name is base name of image path
             std::string name_only = image_path.baseName();
-            file_info.set_name(name_only);
+            auto file_info = Message::AddFile(file_list_response, name_only);
             // Add file info
             FileInfoLoader info_loader = FileInfoLoader(full_path, carta_file_type);
-            info_loader.FillFileInfo(file_info);
+            info_loader.FillFileInfo(*file_info);
             file_list_response.set_success(true);
             return;
         } else if (!message.empty()) {
@@ -186,15 +186,11 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
                 if (list_all_files) {
                     if (cc_file.isRegular(true)) {
-                        auto& file_info = *file_list_response.add_files();
-                        file_info.set_name(name_only);
+                        auto file_info = Message::AddFile(file_list_response, name_only);
                         FileInfoLoader info_loader = FileInfoLoader(full_path, CARTA::FileType::UNKNOWN);
-                        info_loader.FillFileInfo(file_info);
+                        info_loader.FillFileInfo(*file_info);
                     } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
-                        auto directory_info = file_list_response.add_subdirectories();
-                        directory_info->set_name(name_only);
-                        directory_info->set_date(cc_file.modifyTime());
-                        // skip item count
+                        Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime());
                     }
                 } else {
                     try {
@@ -215,10 +211,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                             } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
                                        CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN) {
                                 // Add directory: not image type
-                                auto directory_info = file_list_response.add_subdirectories();
-                                directory_info->set_name(name_only);
-                                directory_info->set_date(cc_file.modifyTime());
-                                directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
+                                Message::AddDirectory(
+                                    file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                             }
                         } else {
                             // Image list
@@ -246,10 +240,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                             result_msg = {message, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                                         } else {
                                             // UNKNOWN directories are directories
-                                            auto directory_info = file_list_response.add_subdirectories();
-                                            directory_info->set_name(name_only);
-                                            directory_info->set_date(cc_file.modifyTime());
-                                            directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
+                                            Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime(),
+                                                GetNumItems(cc_file.path().absoluteName()));
                                         }
                                         break;
                                     }
@@ -260,10 +252,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                             }
 
                             if (add_image_file) {
-                                auto& file_info = *file_list_response.add_files();
-                                file_info.set_name(name_only);
+                                auto file_info = Message::AddFile(file_list_response, name_only);
                                 FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
-                                info_loader.FillFileInfo(file_info);
+                                info_loader.FillFileInfo(*file_info);
                             }
                         }
                     } catch (casacore::AipsError& err) {
@@ -312,13 +303,7 @@ void FileListHandler::OnRegionListRequest(
     GetFileList(file_response, folder, result_msg, region_request.filter_mode(), true);
 
     // copy to region list message
-    region_response.set_success(file_response.success());
-    region_response.set_message(file_response.message());
-    region_response.set_directory(file_response.directory());
-    region_response.set_parent(file_response.parent());
-    *region_response.mutable_files() = {file_response.files().begin(), file_response.files().end()};
-    *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
-    region_response.set_cancel(file_response.cancel());
+    region_response = Message::RegionListResponse(file_response);
 
     _regionlist_folder = INVALID_PATH_VALUE; // ready for next file list request
 }

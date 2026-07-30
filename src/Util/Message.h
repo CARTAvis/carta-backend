@@ -8,6 +8,9 @@
 #define CARTA_SRC_UTIL_MESSAGE_H_
 
 #include <carta-protobuf/animation.pb.h>
+#include <carta-protobuf/catalog_file_info.pb.h>
+#include <carta-protobuf/catalog_filter.pb.h>
+#include <carta-protobuf/catalog_list.pb.h>
 #include <carta-protobuf/channel_map.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour_image.pb.h>
@@ -19,11 +22,13 @@
 #include <carta-protobuf/fitting_request.pb.h>
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
+#include <carta-protobuf/open_catalog_file.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/pv_request.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/region_list.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
@@ -40,6 +45,7 @@
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
 #include <carta-protobuf/vector_overlay_tile.pb.h>
+#include <ctime>
 
 #include <casacore/casa/Quanta/Quantum.h>
 
@@ -131,6 +137,14 @@ public:
         const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
     static CARTA::ImportRegionAck AddImportedRegion(CARTA::ImportRegionAck& import_ack, int region_id, CARTA::RegionType region_type,
         std::vector<CARTA::Point>& control_points, float region_rotation, CARTA::RegionStyle region_style);
+    static CARTA::DirectoryInfo* AddDirectory(CARTA::FileListResponse& response, const std::string& name, time_t date, int item_count = 0);
+    static CARTA::FileInfo* AddFile(CARTA::FileListResponse& response, std::string name, CARTA::FileType type = CARTA::FileType::UNKNOWN,
+        int64_t size = 0, time_t date = 0, const std::vector<std::string>& hdu_list = {});
+    static CARTA::DirectoryInfo* AddDirectory(
+        CARTA::CatalogListResponse& response, const std::string& name, time_t date, int item_count = 0);
+    static CARTA::CatalogFileInfo* AddFile(CARTA::CatalogListResponse& response, std::string name,
+        CARTA::CatalogFileType type = CARTA::CatalogFileType::Unknown, int64_t size = 0, time_t date = 0, std::string description = "");
+    static CARTA::RegionListResponse RegionListResponse(CARTA::FileListResponse file_response);
     static CARTA::HeaderEntry* AddHeaderEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
         CARTA::EntryType type = CARTA::EntryType::STRING, double numeric_value = 0.0);
     static CARTA::HeaderEntry* AddComputedEntry(CARTA::FileInfoExtended& response, std::string name, const std::string& value,
