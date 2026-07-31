@@ -33,6 +33,7 @@
 #include <casacore/casa/BasicSL/Constants.h>
 #include <casacore/casa/Quanta/MVTime.h>
 #include <casacore/casa/Utilities/DataType.h>
+#include <casacore/fits/FITS/fits.h>
 #include <casacore/measures/Measures/MEpoch.h>
 #include <casacore/measures/Measures/Stokes.h>
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
@@ -48,7 +49,9 @@ namespace carta {
 namespace {
 
 constexpr std::chrono::milliseconds ZARR_SIZE_TIMEOUT(50);
+constexpr size_t FITS_CARD_LENGTH = 80;
 constexpr size_t FITS_KEYWORD_MAX_LEN = 8;
+constexpr size_t FITS_STRING_MAX_ENCODED_LEN = 68;
 constexpr casacore::uInt DATE_OBS_PRECISION = 12; // MVTime fractional-second digits = precision - 6.
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
 constexpr double UNIX_EPOCH_MJD = 40587.0;
@@ -70,35 +73,94 @@ constexpr std::array<const char*, 4> BEAM_REQUIRED_AXES{
 
 class FitsHeaderBuilder {
 public:
-    void AddRecord(const std::string& key_value) {
-        _headers.emplace_back(fmt::format("{:<80}", key_value));
+    void AddString(const std::string& key, const std::string& value) {
+        if (value.empty() || !ValidateKeyword(key)) {
+            return;
+        }
+
+        const std::string safe_value = PrepareStringValue(key, value);
+        _keywords.mk(key.c_str(), safe_value.c_str());
     }
 
-    void AddString(const std::string& key, const std::string& value) {
-        if (!value.empty()) {
-            AddRecord(fmt::format("{:<8}= '{}'", key, value));
-        }
+    void AddBool(const std::string& key, bool value) {
+        AddValue(key, value);
     }
 
     void AddDouble(const std::string& key, double value) {
-        AddRecord(fmt::format("{:<8}= {:#.13G}", key, value));
+        AddValue(key, value);
     }
 
     void AddInt(const std::string& key, int value) {
-        AddRecord(fmt::format("{:<8}= {}", key, value));
+        AddValue(key, value);
     }
 
     casacore::Vector<casacore::String> Build() {
-        AddRecord("END");
-        casacore::Vector<casacore::String> result(_headers.size());
-        for (size_t i = 0; i < _headers.size(); ++i) {
-            result[i] = _headers[i];
+        _keywords.end();
+        const std::string cards = _keywords.toString();
+        if (cards.size() % FITS_CARD_LENGTH != 0) {
+            throw std::runtime_error("Casacore produced an invalid FITS header length");
+        }
+
+        casacore::Vector<casacore::String> result(cards.size() / FITS_CARD_LENGTH);
+        for (size_t i = 0; i < result.size(); ++i) {
+            result[i] = cards.substr(i * FITS_CARD_LENGTH, FITS_CARD_LENGTH);
         }
         return result;
     }
 
 private:
-    std::vector<std::string> _headers;
+    template <typename T>
+    void AddValue(const std::string& key, T value) {
+        if (ValidateKeyword(key)) {
+            _keywords.mk(key.c_str(), value);
+        }
+    }
+
+    static bool IsKeywordCharacter(unsigned char character) {
+        return (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9') || character == '-' || character == '_';
+    }
+
+    static bool ValidateKeyword(const std::string& key) {
+        const bool valid = !key.empty() && key.size() <= FITS_KEYWORD_MAX_LEN && std::all_of(key.begin(), key.end(), IsKeywordCharacter);
+        if (!valid) {
+            spdlog::warn("Skipping invalid FITS keyword '{}'", key);
+        }
+        return valid;
+    }
+
+    static std::string PrepareStringValue(const std::string& key, const std::string& value) {
+        std::string result;
+        result.reserve(std::min(value.size(), FITS_STRING_MAX_ENCODED_LEN));
+        size_t encoded_length = 0;
+        bool sanitized = false;
+        bool truncated = false;
+
+        for (unsigned char character : value) {
+            const bool is_printable_ascii = character >= 0x20 && character <= 0x7e;
+            const char safe_character = is_printable_ascii ? static_cast<char>(character) : '?';
+            sanitized |= !is_printable_ascii;
+
+            // FITS escapes an apostrophe inside a string as two apostrophes.
+            const size_t encoded_character_length = safe_character == '\'' ? 2 : 1;
+            if (encoded_length + encoded_character_length > FITS_STRING_MAX_ENCODED_LEN) {
+                truncated = true;
+                break;
+            }
+
+            result.push_back(safe_character);
+            encoded_length += encoded_character_length;
+        }
+
+        if (sanitized) {
+            spdlog::warn("Replaced non-ASCII characters in FITS string value for keyword {}", key);
+        }
+        if (truncated) {
+            spdlog::warn("Truncated FITS string value for keyword {} to fit an 80-byte card", key);
+        }
+        return result;
+    }
+
+    casacore::FitsKeywordList _keywords;
 };
 
 void ToUpperAscii(std::string& text) {
@@ -543,7 +605,7 @@ private:
             },
             "BITPIX");
 
-        _builder.AddString("SIMPLE", "T");
+        _builder.AddBool("SIMPLE", true);
         if (has_bitpix) {
             _builder.AddInt("BITPIX", bitpix);
         }
@@ -868,7 +930,7 @@ private:
             [&]() {
                 casacore::ImageBeamSet beam_set;
                 if (_impl.GetBeams(beam_set)) {
-                    _builder.AddString("CASAMBM", "T");
+                    _builder.AddBool("CASAMBM", true);
                 }
             },
             "Beam Parameters");

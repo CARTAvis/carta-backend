@@ -110,6 +110,21 @@ std::string Trim(std::string value) {
     return value.substr(first, last - first + 1);
 }
 
+std::string ParseFitsString(const std::string& value) {
+    std::string parsed_value;
+    for (size_t i = 1; i < value.size(); ++i) {
+        if (value[i] != '\'') {
+            parsed_value.push_back(value[i]);
+        } else if (i + 1 < value.size() && value[i + 1] == '\'') {
+            parsed_value.push_back('\'');
+            ++i;
+        } else {
+            break;
+        }
+    }
+    return Trim(std::move(parsed_value));
+}
+
 std::map<std::string, std::string> ParseFitsHeaders(const casacore::Vector<casacore::String>& headers) {
     std::map<std::string, std::string> values;
     for (const auto& header : headers) {
@@ -122,8 +137,7 @@ std::map<std::string, std::string> ParseFitsHeaders(const casacore::Vector<casac
         const std::string key = Trim(record.substr(0, equals));
         std::string value = Trim(record.substr(equals + 1));
         if (!value.empty() && value.front() == '\'') {
-            const size_t closing_quote = value.find('\'', 1);
-            value = value.substr(1, closing_quote - 1);
+            value = ParseFitsString(value);
         } else {
             std::istringstream stream(value);
             stream >> value;
@@ -294,6 +308,29 @@ TEST_F(ZarrImageDegradationTest, OmitsStokesIncrementForNonUniformLabels) {
     const auto headers = ParseFitsHeaders(image.FitsHeaderStrings());
     EXPECT_EQ(headers.at("CTYPE4"), "STOKES");
     EXPECT_EQ(headers.count("CDELT4"), 0);
+}
+
+TEST_F(ZarrImageDegradationTest, FormatsArbitraryMetadataAsValidFitsCards) {
+    auto metadata = ReadJson(_store_path / "SKY" / "zarr.json");
+    metadata["attributes"]["object_name"] = "O'Brien";
+    metadata["attributes"]["observer"] = std::string(100, 'A');
+    metadata["attributes"]["user"]["invalid key"] = "ignored";
+    WriteJson(_store_path / "SKY" / "zarr.json", metadata);
+
+    carta::ZarrImage image(_store_path.string());
+    ASSERT_TRUE(image.Initialize());
+
+    const auto header_strings = image.FitsHeaderStrings();
+    for (const auto& header : header_strings) {
+        EXPECT_EQ(header.size(), 80);
+    }
+
+    const auto headers = ParseFitsHeaders(header_strings);
+    EXPECT_EQ(headers.at("OBJECT"), "O'Brien");
+    EXPECT_EQ(headers.at("OBSERVER"), std::string(68, 'A'));
+    EXPECT_EQ(headers.count("INVALID"), 0);
+
+    EXPECT_NO_THROW(carta::CartaZarrImage(_store_path.string()));
 }
 
 TEST(ZarrImageSizeTest, UsesExactDirectorySizeWhenWalkCompletes) {
