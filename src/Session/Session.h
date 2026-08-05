@@ -81,7 +81,7 @@ public:
     void OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
     void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
     void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
-    void OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent = false);
+    void OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent = false, uint32_t request_id = 0);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
@@ -263,7 +263,8 @@ protected:
     bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
 
     // Send data streams
-    bool SendContourData(int file_id, bool ignore_empty = true, int channel = CURRENT_Z, int stokes = CURRENT_STOKES);
+    bool SendContourData(
+        int file_id, bool ignore_empty = true, int channel = CURRENT_Z, int stokes = CURRENT_STOKES, uint32_t request_id = 0);
     bool SendSpatialProfileData(int file_id, int region_id);
     bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
     bool SendRegionStatsData(int file_id, int region_id);

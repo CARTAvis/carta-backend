@@ -1125,29 +1125,46 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
     }
 }
 
-void Session::OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent) {
+void Session::OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent, uint32_t request_id) {
     int file_id(message.file_id());
+    const bool channel_map_request(message.has_channel());
+    CARTA::ChannelMapFlowControl::Status status(CARTA::ChannelMapFlowControl::COMPLETED);
+    std::string status_message;
 
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         const int num_levels = message.levels_size();
+        const bool settings_changed = frame->SetContourParameters(message);
 
-        if (frame->SetContourParameters(message) && num_levels && !silent) {
-            if (message.has_channel_range()) {
-                int start_channel(message.channel_range().min());
-                int end_channel(message.channel_range().max());
-                int nchan(frame->Depth());
-#pragma omp parallel for
-                for (int chan = start_channel; chan <= end_channel; ++chan) {
-                    if (chan >= nchan) {
-                        continue;
-                    }
-                    SendContourData(file_id, true, chan);
+        if (num_levels && !silent) {
+            if (channel_map_request) {
+                int channel(message.channel());
+                int stokes(message.has_stokes() ? message.stokes() : frame->CurrentStokes());
+                bool valid_channel(channel >= 0 && channel < frame->Depth());
+                bool valid_stokes((stokes >= 0 && stokes < frame->NumStokes()) || Stokes::IsComputed(stokes));
+                if (!valid_channel || !valid_stokes) {
+                    status = CARTA::ChannelMapFlowControl::REJECTED;
+                    status_message = fmt::format("Channel {} or Stokes {} is invalid in image", channel, stokes);
+                } else if (!SendContourData(file_id, true, channel, stokes, request_id)) {
+                    status = CARTA::ChannelMapFlowControl::REJECTED;
+                    status_message = fmt::format("Failed to generate contours for channel {} and Stokes {}", channel, stokes);
                 }
-            } else {
+            } else if (settings_changed || request_id) {
                 SendContourData(file_id);
             }
         }
+    } else if (channel_map_request) {
+        status = CARTA::ChannelMapFlowControl::REJECTED;
+        status_message = fmt::format("File id {} not found", file_id);
+    }
+
+    if (channel_map_request && request_id) {
+        CARTA::ChannelMapFlowControl flow_control;
+        flow_control.set_file_id(file_id);
+        flow_control.set_completed_channel(message.channel());
+        flow_control.set_status(status);
+        flow_control.set_message(status_message);
+        SendEvent(CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL, request_id, flow_control);
     }
 }
 
@@ -1902,7 +1919,7 @@ void Session::StopPvPreviewUpdates(int preview_id) {
     }
 }
 
-bool Session::SendContourData(int file_id, bool ignore_empty, int channel, int stokes) {
+bool Session::SendContourData(int file_id, bool ignore_empty, int channel, int stokes, uint32_t request_id) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         const ContourSettings settings = frame->GetContourParameters();
@@ -1915,7 +1932,7 @@ bool Session::SendContourData(int file_id, bool ignore_empty, int channel, int s
                 return false;
             } else {
                 auto empty_response = Message::ContourImageData(file_id, settings.reference_file_id, contour_channel, contour_stokes, 1.0);
-                SendFileEvent(file_id, CARTA::EventType::CONTOUR_IMAGE_DATA, 0, empty_response);
+                SendFileEvent(file_id, CARTA::EventType::CONTOUR_IMAGE_DATA, request_id, empty_response);
                 return true;
             }
         }
@@ -1963,7 +1980,8 @@ bool Session::SendContourData(int file_id, bool ignore_empty, int channel, int s
                 }
             }
             // Only use deflate compression if contours don't have ZSTD compression
-            SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response, compression_level < 1);
+            SendFileEvent(
+                partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, request_id, partial_response, compression_level < 1);
         };
 
         if (frame->ContourImage(callback, contour_channel, contour_stokes)) {

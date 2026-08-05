@@ -17,6 +17,11 @@ using namespace carta;
 
 class ChannelMapTestSession : public Session {
 public:
+    struct ContourEvents {
+        std::vector<std::pair<EventHeader, CARTA::ContourImageData>> data;
+        std::vector<std::pair<EventHeader, CARTA::ChannelMapFlowControl>> flow_control;
+    };
+
     ChannelMapTestSession(fs::path image = FitsImages() / "10x10x10.fits") : Session(nullptr, nullptr, 0, "", nullptr) {
         auto loader = FileLoader::GetLoader(image);
         _frames.emplace(FILE_ID, std::make_shared<Frame>(0, loader, "0"));
@@ -51,6 +56,21 @@ public:
             auto header = Message::GetEventHeader(message_view);
             if (header.GetType() == CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL) {
                 events.emplace_back(header, Message::DecodeMessage<CARTA::ChannelMapFlowControl>(message_view));
+            }
+        }
+        return events;
+    }
+
+    ContourEvents TakeContourEvents() {
+        ContourEvents events;
+        std::pair<std::vector<char>, bool> message;
+        while (_out_msgs.try_pop(message)) {
+            std::string_view message_view(message.first.data(), message.first.size());
+            auto header = Message::GetEventHeader(message_view);
+            if (header.GetType() == CARTA::EventType::CONTOUR_IMAGE_DATA) {
+                events.data.emplace_back(header, Message::DecodeMessage<CARTA::ContourImageData>(message_view));
+            } else if (header.GetType() == CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL) {
+                events.flow_control.emplace_back(header, Message::DecodeMessage<CARTA::ChannelMapFlowControl>(message_view));
             }
         }
         return events;
@@ -114,7 +134,61 @@ protected:
         }
         return message;
     }
+
+    static CARTA::SetContourParameters ContourRequest(int channel, int stokes = 0) {
+        CARTA::SetContourParameters message;
+        message.set_file_id(ChannelMapTestSession::FILE_ID);
+        message.set_reference_file_id(ChannelMapTestSession::FILE_ID);
+        message.add_levels(0.5);
+        message.set_smoothing_mode(CARTA::SmoothingMode::NoSmoothing);
+        message.set_smoothing_factor(1);
+        message.set_decimation_factor(1);
+        message.set_compression_level(0);
+        message.set_contour_chunk_size(100000);
+        message.set_channel(channel);
+        message.set_stokes(stokes);
+        return message;
+    }
 };
+
+TEST_F(SessionChannelMapTest, SendsCorrelatedContoursOneChannelAtATime) {
+    ChannelMapTestSession session;
+    auto request = ContourRequest(1);
+
+    for (const auto& request_info : {std::pair<int, uint32_t>{1, 41}, std::pair<int, uint32_t>{2, 42}}) {
+        int channel = request_info.first;
+        uint32_t request_id = request_info.second;
+        request.set_channel(channel);
+        session.OnSetContourParameters(request, false, request_id);
+
+        auto events = session.TakeContourEvents();
+        ASSERT_FALSE(events.data.empty());
+        ASSERT_EQ(events.flow_control.size(), 1);
+        EXPECT_TRUE(std::all_of(events.data.begin(), events.data.end(), [channel, request_id](const auto& event) {
+            return event.first.request_id == request_id && event.second.channel() == channel && event.second.stokes() == 0;
+        }));
+        EXPECT_EQ(events.flow_control.front().first.request_id, request_id);
+        EXPECT_EQ(events.flow_control.front().second.completed_channel(), channel);
+        EXPECT_EQ(events.flow_control.front().second.status(), CARTA::ChannelMapFlowControl::COMPLETED);
+    }
+
+    EXPECT_EQ(session.CurrentChannel(), 0);
+}
+
+TEST_F(SessionChannelMapTest, ReappliesUnchangedContoursAfterLeavingChannelMap) {
+    ChannelMapTestSession session;
+    auto request = ContourRequest(0);
+    request.clear_channel();
+    request.clear_stokes();
+
+    session.OnSetContourParameters(request, false, 41);
+    ASSERT_FALSE(session.TakeContourEvents().data.empty());
+
+    session.OnSetContourParameters(request, false, 42);
+    auto events = session.TakeContourEvents();
+    EXPECT_FALSE(events.data.empty());
+    EXPECT_TRUE(events.flow_control.empty());
+}
 
 TEST_F(SessionChannelMapTest, RejectsInvalidChannelDataRequests) {
     ChannelMapTestSession session;
