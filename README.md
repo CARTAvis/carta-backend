@@ -1,3 +1,8 @@
+# CARTA: 3D rendering widget - Backend
+This branch (`ixaka/render3d`) contains the source code for the CARTA backend including a prototype of a 3D visulisation widget. The widget allows volumetric rendering of spectral cubes within CARTA.
+
+The CARTA backend is used in conjunction with the [`ixaka\render3d` CARTA frontend](https://github.com/CARTAvis/carta-frontend/tree/render3d-v0.1), and both must be installed separately in order to test and develop the 3D rendering widget.
+
 # CARTA Image Viewer (Backend)
 
 ![code coverage](https://raw.githubusercontent.com/CARTAvis/carta-backend/refs/heads/gh-storage/badge-coverage.svg)
@@ -11,53 +16,6 @@ Although the data is compressed with the lossy ZFP algorithm, the compression ar
 While data sizes depend on compression quality, sizes are [comparable](https://docs.google.com/spreadsheets/d/1lp1687TL0bYmbM3jGyjuPd9dYZnrAYGnLIQXWVpnmS0/edit?usp=sharing) with sizes of compressed JPEG images with a 95% quality setting (depending on the colour map used to generate the JPEG image). PNG compression is generally a factor of 2 larger than the ZFP-compressed data.
 
 [^1] using the [custom IDIA schema](https://github.com/CARTAvis/fits2idia).
-
-# Installation
-
-If you are looking for releases of the CARTA application for desktop users, please refer to the [main website](https://cartavis.org/#download).
-
-If you would like to set up CARTA in a multi-user environment, we recommend installing the [CARTA controller](https://carta-controller.readthedocs.io). We provide detailed instructions for a complete deployment of all components on supported platforms.
-
-The rest of this document describes installation of **the backend component only** (for use with a separately installed frontend, or with the controller).
-
-## Linux packages
-
-We provide packages of the backend and all required dependencies for recent Ubuntu LTS releases and recent AlmaLinux releases. They should also work on equivalent distributions closely based on Ubuntu and on RHEL.
-
-The packages install a launcher which allows CARTA to be started from the desktop environment's menu.
-
-The beta package saves user configuration to `.carta-beta` rather than `.carta`.
-
-### Ubuntu
-
-```shell
-sudo add-apt-repository ppa:cartavis-team/carta
-sudo apt-get update
-
-# install the latest beta version of the backend only
-sudo apt-get install carta-backend-beta
-
-# OR install the latest stable release version of the backend only
-sudo apt-get install carta-backend
-```
-
-The beta and stable Ubuntu packages use the same install locations, and only one can be installed at a time.
-
-### AlmaLinux (and equivalents)
-
-```shell
-sudo dnf install epel-release
-sudo dnf install 'dnf-command(copr)'
-sudo dnf copr enable cartavis/carta
-
-# install the latest beta version of the backend only
-sudo dnf install carta-backend-beta
-
-# install the latest stable release version of the backend only
-sudo dnf install carta-backend
-```
-
-The RPM beta package uses a custom install location in `/opt`, and can be installed in parallel with the stable package.
 
 ## Building the development version from source
 
