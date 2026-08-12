@@ -158,9 +158,10 @@ void RegionConverter::SetReferenceWCRegion() {
                 theta.convert("rad");
                 casacore::Quantity inner_theta(inner_rotation, "deg");
                 inner_theta.convert("rad");
-                auto outer_wc = new casacore::WCEllipsoid(center_world[0], center_world[1], outer_maj_world, outer_min_world, theta, 0, 1, *_reference_coord_sys);
-                auto inner_wc =
-                    new casacore::WCEllipsoid(center_world[0], center_world[1], inner_maj_world, inner_min_world, inner_theta, 0, 1, *_reference_coord_sys);
+                auto outer_wc = new casacore::WCEllipsoid(
+                    center_world[0], center_world[1], outer_maj_world, outer_min_world, theta, 0, 1, *_reference_coord_sys);
+                auto inner_wc = new casacore::WCEllipsoid(
+                    center_world[0], center_world[1], inner_maj_world, inner_min_world, inner_theta, 0, 1, *_reference_coord_sys);
                 region = new casacore::WCDifference(casacore::ImageRegion(*outer_wc), casacore::ImageRegion(*inner_wc));
                 delete outer_wc;
                 delete inner_wc;
@@ -381,7 +382,8 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
     // Closed region types: rectangle, ellipse, polygon.
     // Check ellipse and rectangle distortion; always use polygon for polygon regions.
     CARTA::RegionType region_type = _region_state.type;
-    if ((region_type != CARTA::RegionType::ELLIPSE) && (region_type != CARTA::RegionType::RECTANGLE) && (region_type != CARTA::RegionType::ANNULUS)) {
+    if ((region_type != CARTA::RegionType::ELLIPSE) && (region_type != CARTA::RegionType::RECTANGLE) &&
+        (region_type != CARTA::RegionType::ANNULUS)) {
         return true;
     }
 

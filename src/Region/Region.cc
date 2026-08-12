@@ -429,11 +429,9 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
                 // Build real LCEllipsoid objects, then use their toRecord() as sub-records.
                 // LCEllipsoid constructor takes 0-based center coordinates.
                 casacore::LCEllipsoid outer_ellipse(
-                    center(0), center(1), outer_radii(0), outer_radii(1),
-                    static_cast<float>(outer_theta.getValue()), shape_2d);
+                    center(0), center(1), outer_radii(0), outer_radii(1), static_cast<float>(outer_theta.getValue()), shape_2d);
                 casacore::LCEllipsoid inner_ellipse(
-                    center(0), center(1), inner_radii(0), inner_radii(1),
-                    static_cast<float>(inner_theta.getValue()), shape_2d);
+                    center(0), center(1), inner_radii(0), inner_radii(1), static_cast<float>(inner_theta.getValue()), shape_2d);
 
                 // Build the "regions" sub-record matching LCRegionMulti::makeRecord format:
                 // integer-keyed records + "nr" count
