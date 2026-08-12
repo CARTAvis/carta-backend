@@ -54,8 +54,7 @@ std::unordered_map<CARTA::EventType, SessionManager::MessageHandler> SessionMana
     {CARTA::EventType::STOP_FITTING, &SessionManager::StopFittingHandler},
     {CARTA::EventType::STOP_PV_PREVIEW, &SessionManager::StopPvPreviewHandler},
     {CARTA::EventType::CLOSE_PV_PREVIEW, &SessionManager::ClosePvPreviewHandler},
-    {CARTA::EventType::REMOTE_FILE_REQUEST, &SessionManager::RemoteFileRequestHandler},
-    {CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL, &SessionManager::ChannelMapFlowControlHandler}};
+    {CARTA::EventType::REMOTE_FILE_REQUEST, &SessionManager::RemoteFileRequestHandler}};
 
 SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
@@ -578,11 +577,6 @@ void SessionManager::ClosePvPreviewHandler(Session* session, std::string_view sv
 void SessionManager::RemoteFileRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::RemoteFileRequest>(sv_message);
     session->OnRemoteFileRequest(message, head.request_id);
-};
-
-void SessionManager::ChannelMapFlowControlHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
-    auto message = Message::DecodeMessage<CARTA::ChannelMapFlowControl>(sv_message);
-    session->HandleChannelMapFlowControlEvt(message);
 };
 
 } // namespace carta
