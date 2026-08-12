@@ -63,6 +63,7 @@ set(TEST_SOURCES
         TestRestApi.cc
         TestTileEncoding.cc
         TestVoTable.cc
+        TestVectorFieldCalc.cc
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc
