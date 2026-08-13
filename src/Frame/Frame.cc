@@ -414,21 +414,22 @@ void Frame::InvalidateImageCache() {
     _image_cache_valid = false;
 }
 
-void Frame::GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes) {
+bool Frame::GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes) {
     // fill slice for given z and stokes
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
     z_slice.resize(stokes_slicer.slicer.length().product());
-    GetSlicerData(stokes_slicer, z_slice.data());
+    return GetSlicerData(stokes_slicer, z_slice.data());
 }
 
 // ****************************************************
 // Raster Data
 
-bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter, int stokes) {
+bool Frame::GetRasterData(
+    int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter, int stokes, const float* channel_data) {
     // apply bounds and downsample image cache
     int requested_stokes = stokes == CURRENT_STOKES ? _stokes_index : stokes;
     bool use_image_cache = z == _z_index && requested_stokes == _stokes_index;
-    if (!_valid || !CheckStokes(requested_stokes) || (use_image_cache && !_image_cache_valid)) {
+    if (!_valid || !CheckStokes(requested_stokes) || (use_image_cache && !channel_data && !_image_cache_valid)) {
         return false;
     }
 
@@ -460,14 +461,16 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     Timer t;
-    float* z_data;
+    const float* z_data(channel_data);
     std::vector<float> z_slice;
-    if (use_image_cache) {
+    if (!z_data && use_image_cache) {
         // Use image cache for the current z and Stokes
         z_data = _image_cache.get();
-    } else {
+    } else if (!z_data) {
         // Load data for the requested z and Stokes
-        GetZSlice(z_slice, z, requested_stokes);
+        if (!GetZSlice(z_slice, z, requested_stokes)) {
+            return false;
+        }
         z_data = z_slice.data();
     }
 
@@ -489,7 +492,7 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
 
 // Tile data
 bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-    CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error) {
+    CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error, const float* channel_data) {
     // Early exit if z or stokes has changed and using current z
     if (is_current_z && ZStokesChanged(z, stokes)) {
         return false;
@@ -511,7 +514,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     std::shared_ptr<std::vector<float>> tile_data_ptr;
     int tile_width;
     int tile_height;
-    if (GetRasterTileData(z, stokes, tile_data_ptr, tile, tile_width, tile_height, error)) {
+    if (GetRasterTileData(z, stokes, tile_data_ptr, tile, tile_width, tile_height, error, channel_data)) {
         size_t tile_image_data_size = sizeof(float) * tile_data_ptr->size(); // tile image data size in bytes
 
         if (is_current_z && ZStokesChanged(z, stokes)) {
@@ -582,8 +585,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     return false;
 }
 
-bool Frame::GetRasterTileData(
-    int z, int stokes, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error) {
+bool Frame::GetRasterTileData(int z, int stokes, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width,
+    int& height, bool& error, const float* channel_data) {
     int mip = Tile::LayerToMip(tile.layer, _dims.width, _dims.height, TILE_SIZE, TILE_SIZE);
     if (mip == -1) {
         spdlog::error("Invalid tile layer {} for image size {}x{}.", tile.layer, _dims.width, _dims.height);
@@ -621,7 +624,7 @@ bool Frame::GetRasterTileData(
 
     // Fall back to using the full image cache.
     if (!loaded_data) {
-        loaded_data = GetRasterData(z, *tile_data_ptr, bounds, mip, true, stokes);
+        loaded_data = GetRasterData(z, *tile_data_ptr, bounds, mip, true, stokes, channel_data);
     }
 
     return loaded_data;

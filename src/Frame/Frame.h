@@ -128,7 +128,9 @@ public:
 
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-        CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error);
+        CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error,
+        const float* channel_data = nullptr);
+    bool GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
 
     // Functions used for smoothing and contouring
     bool SetContourParameters(const CARTA::SetContourParameters& message);
@@ -235,13 +237,10 @@ protected:
     void InvalidateImageCache();
 
     // Downsampled data from image cache if current z
-    bool GetRasterData(
-        int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true, int stokes = CURRENT_STOKES);
-    bool GetRasterTileData(
-        int z, int stokes, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error);
-
-    // Fill vector for given z and stokes
-    void GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
+    bool GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true,
+        int stokes = CURRENT_STOKES, const float* channel_data = nullptr);
+    bool GetRasterTileData(int z, int stokes, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height,
+        bool& error, const float* channel_data = nullptr);
 
     // Histograms: z is single z index or ALL_Z for cube
     int AutoBinSize();

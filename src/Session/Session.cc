@@ -674,10 +674,11 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
     if (!_frames.count(file_id)) {
         return false;
     }
+    auto frame = _frames.at(file_id);
 
     if (skip_data) {
         // Update view settings and skip sending data
-        _frames.at(file_id)->SetAnimationViewSettings(message);
+        frame->SetAnimationViewSettings(message);
         return true;
     }
 
@@ -689,15 +690,22 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
         return false;
     }
 
+    Timer t;
     int requested_z(z);
     bool is_current_z(z == CURRENT_Z);
     if (is_current_z) {
-        requested_z = _frames.at(file_id)->CurrentZ();
+        requested_z = frame->CurrentZ();
     }
     int requested_stokes(stokes);
     if (requested_stokes == CURRENT_STOKES) {
-        requested_stokes = _frames.at(file_id)->CurrentStokes();
+        requested_stokes = frame->CurrentStokes();
     }
+    std::vector<float> channel_data;
+    bool additional_channel = requested_z != frame->CurrentZ() || requested_stokes != frame->CurrentStokes();
+    if (!is_current_z && additional_channel && !frame->GetZSlice(channel_data, requested_z, requested_stokes)) {
+        return false;
+    }
+    const float* channel_data_ptr = channel_data.empty() ? nullptr : channel_data.data();
     auto sync_id = ++_sync_id;
 
     int num_tiles = message.tiles_size();
@@ -708,7 +716,6 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
     float compression_quality = message.compression_quality();
     std::atomic_int successful_tiles(0);
 
-    Timer t;
     ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
     {
@@ -721,8 +728,8 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
                 auto tile = Tile::Decode(encoded_coordinate);
                 auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
                 bool tile_error(false);
-                if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, requested_z, requested_stokes,
-                                                  compression_type, compression_quality, is_current_z, tile_error)) {
+                if (frame->FillRasterTileData(raster_tile_data, tile, requested_z, requested_stokes, compression_type, compression_quality,
+                        is_current_z, tile_error, channel_data_ptr)) {
                     // Only use deflate on outgoing message if the raster image compression type is NONE
                     SendFileEvent(
                         file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
