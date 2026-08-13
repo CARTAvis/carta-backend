@@ -461,12 +461,9 @@ bool Frame::GetRasterData(
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     Timer t;
-    const float* z_data(channel_data);
     std::vector<float> z_slice;
-    if (!z_data && use_image_cache) {
-        // Use image cache for the current z and Stokes
-        z_data = _image_cache.get();
-    } else if (!z_data) {
+    const float* z_data = channel_data ? channel_data : (use_image_cache ? _image_cache.get() : nullptr);
+    if (!z_data) {
         // Load data for the requested z and Stokes
         if (!GetZSlice(z_slice, z, requested_stokes)) {
             return false;
