@@ -70,8 +70,8 @@ public:
         CARTA::OpenFileAck* open_file_ack);
     void OnCloseFile(const CARTA::CloseFile& message);
     bool OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int channel = CURRENT_Z, int animation_id = 0, bool skip_data = false,
-        int stokes = CURRENT_STOKES);
-    SetImageChannelsResult OnSetImageChannels(const CARTA::SetImageChannels& message);
+        int stokes = CURRENT_STOKES, uint32_t request_id = 0);
+    SetImageChannelsResult OnSetImageChannels(const CARTA::SetImageChannels& message, uint32_t request_id = 0);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);
     void OnRemoveRegion(const CARTA::RemoveRegion& message);
@@ -107,7 +107,7 @@ public:
 
     // Task handling
     void ExecuteSetChannelEvt(std::pair<CARTA::SetImageChannels, uint32_t> request) {
-        auto result = OnSetImageChannels(request.first);
+        auto result = OnSetImageChannels(request.first, request.second);
         if (request.first.channel_map_enabled()) {
             CARTA::ChannelMapFlowControl flow_control;
             flow_control.set_file_id(request.first.file_id());

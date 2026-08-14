@@ -143,6 +143,21 @@ TEST_F(SessionChannelMapTest, KeepsCurrentChannelWhileSendingChannelData) {
     EXPECT_EQ(events.front().second.status(), CARTA::ChannelMapFlowControl::COMPLETED);
 }
 
+TEST_F(SessionChannelMapTest, UsesRequestIdForRasterTileSync) {
+    ChannelMapTestSession session;
+    constexpr uint32_t request_id = 42;
+
+    session.OnSetImageChannels(ChannelRequest(1, true), request_id);
+
+    auto headers = session.TakeOutgoingEventHeaders();
+    std::vector<EventHeader> sync_headers;
+    std::copy_if(headers.begin(), headers.end(), std::back_inserter(sync_headers),
+        [](const auto& header) { return header.GetType() == CARTA::EventType::RASTER_TILE_SYNC; });
+    ASSERT_EQ(sync_headers.size(), 2);
+    EXPECT_TRUE(std::all_of(sync_headers.begin(), sync_headers.end(),
+        [request_id](const auto& header) { return header.request_id == request_id; }));
+}
+
 TEST_F(SessionChannelMapTest, RejectsInvalidChannelMapRequests) {
     ChannelMapTestSession session;
 

@@ -668,7 +668,8 @@ void Session::DeleteFrame(int file_id) {
     }
 }
 
-bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, int animation_id, bool skip_data, int stokes) {
+bool Session::OnAddRequiredTiles(
+    const CARTA::AddRequiredTiles& message, int z, int animation_id, bool skip_data, int stokes, uint32_t request_id) {
     auto file_id = message.file_id();
 
     if (!_frames.count(file_id)) {
@@ -710,7 +711,7 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
 
     int num_tiles = message.tiles_size();
     auto start_message = Message::RasterTileSync(file_id, requested_z, requested_stokes, sync_id, animation_id, num_tiles, false);
-    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
+    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, request_id, start_message);
 
     CARTA::CompressionType compression_type = message.compression_type();
     float compression_quality = message.compression_quality();
@@ -754,11 +755,11 @@ bool Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, 
     // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
     auto final_message =
         Message::RasterTileSync(file_id, requested_z, requested_stokes, sync_id, animation_id, successful_tiles.load(), true);
-    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
+    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, request_id, final_message);
     return true;
 }
 
-SetImageChannelsResult Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
+SetImageChannelsResult Session::OnSetImageChannels(const CARTA::SetImageChannels& message, uint32_t request_id) {
     auto file_id(message.file_id());
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (_frames.count(file_id)) {
@@ -777,7 +778,7 @@ SetImageChannelsResult Session::OnSetImageChannels(const CARTA::SetImageChannels
                 SendLogEvent(error, {"channels"}, CARTA::ErrorSeverity::ERROR);
                 return {CARTA::ChannelMapFlowControl::REJECTED, error};
             }
-            if (!OnAddRequiredTiles(message.required_tiles(), z_target, 0, false, stokes_target)) {
+            if (!OnAddRequiredTiles(message.required_tiles(), z_target, 0, false, stokes_target, request_id)) {
                 auto error = fmt::format("Failed to generate all requested tiles for channel {} and Stokes {}", z_target, stokes_target);
                 return {CARTA::ChannelMapFlowControl::REJECTED, error};
             }
@@ -801,7 +802,7 @@ SetImageChannelsResult Session::OnSetImageChannels(const CARTA::SetImageChannels
 
         // Send any required tiles if they have been requested
         if (message.has_required_tiles()) {
-            OnAddRequiredTiles(message.required_tiles());
+            OnAddRequiredTiles(message.required_tiles(), CURRENT_Z, 0, false, CURRENT_STOKES, request_id);
         }
         return {CARTA::ChannelMapFlowControl::COMPLETED, ""};
     } else {
