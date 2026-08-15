@@ -2385,7 +2385,8 @@ bool Frame::GetDownsampledRasterData(
     downsampled_width = std::ceil((float)tile_original_width / mip);
     downsampled_height = std::ceil((float)tile_original_height / mip);
 
-    if (channel_data) {
+    bool use_image_cache = z == _z_index && stokes == _stokes_index && _image_cache_valid;
+    if (channel_data || use_image_cache) {
         return GetRasterData(z, data, bounds, mip, true, stokes, channel_data);
     }
 

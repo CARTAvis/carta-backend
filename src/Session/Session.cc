@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
+#include <map>
 #include <memory>
 #include <thread>
 #include <tuple>
@@ -705,18 +706,24 @@ bool Session::OnAddRequiredTiles(
     struct RequiredTileData {
         Tile tile;
         CARTA::ImageBounds bounds;
+        int mip;
         int width;
         int height;
         std::vector<float> data;
         bool valid;
     };
 
+    struct DownsampledTileData {
+        CARTA::ImageBounds bounds;
+        int width;
+        int height;
+        std::vector<float> data;
+    };
+
     int num_tiles = message.tiles_size();
     int image_width = frame->Width();
     int image_height = frame->Height();
-    int mip = -1;
-    CARTA::ImageBounds combined_bounds;
-    bool have_valid_tile(false);
+    std::map<int, DownsampledTileData> downsampled_tiles;
     std::vector<RequiredTileData> required_tiles;
     required_tiles.reserve(num_tiles);
 
@@ -724,63 +731,63 @@ bool Session::OnAddRequiredTiles(
         auto tile = Tile::Decode(encoded_coordinate);
         int tile_mip = Tile::LayerToMip(tile.layer, image_width, image_height, TILE_SIZE, TILE_SIZE);
         if (tile_mip < 1) {
-            required_tiles.push_back({tile, {}, 0, 0, {}, false});
+            required_tiles.push_back({tile, {}, tile_mip, 0, 0, {}, false});
             continue;
         }
 
         auto bounds = GetImageBounds(tile, image_width, image_height, tile_mip);
         int original_width = bounds.x_max() - bounds.x_min();
         int original_height = bounds.y_max() - bounds.y_min();
-        if (original_width <= 0 || original_height <= 0 || (mip > 0 && tile_mip != mip)) {
-            required_tiles.push_back({tile, bounds, 0, 0, {}, false});
+        if (original_width <= 0 || original_height <= 0) {
+            required_tiles.push_back({tile, bounds, tile_mip, 0, 0, {}, false});
             continue;
         }
-        mip = tile_mip;
 
-        if (!have_valid_tile) {
-            combined_bounds = bounds;
-            have_valid_tile = true;
+        auto [mip_data_iterator, inserted] = downsampled_tiles.try_emplace(tile_mip);
+        auto& mip_data = mip_data_iterator->second;
+        if (inserted) {
+            mip_data.bounds = bounds;
         } else {
-            combined_bounds.set_x_min(std::min(combined_bounds.x_min(), bounds.x_min()));
-            combined_bounds.set_x_max(std::max(combined_bounds.x_max(), bounds.x_max()));
-            combined_bounds.set_y_min(std::min(combined_bounds.y_min(), bounds.y_min()));
-            combined_bounds.set_y_max(std::max(combined_bounds.y_max(), bounds.y_max()));
+            mip_data.bounds.set_x_min(std::min(mip_data.bounds.x_min(), bounds.x_min()));
+            mip_data.bounds.set_x_max(std::max(mip_data.bounds.x_max(), bounds.x_max()));
+            mip_data.bounds.set_y_min(std::min(mip_data.bounds.y_min(), bounds.y_min()));
+            mip_data.bounds.set_y_max(std::max(mip_data.bounds.y_max(), bounds.y_max()));
         }
 
-        required_tiles.push_back(
-            {tile, bounds, (original_width + mip - 1) / mip, (original_height + mip - 1) / mip, {}, true});
+        required_tiles.push_back({tile, bounds, tile_mip, (original_width + tile_mip - 1) / tile_mip,
+            (original_height + tile_mip - 1) / tile_mip, {}, true});
     }
 
     std::vector<float> channel_data;
     bool additional_channel = requested_z != frame->CurrentZ() || requested_stokes != frame->CurrentStokes();
-    if (have_valid_tile && !is_current_z && additional_channel && !frame->GetZSlice(channel_data, requested_z, requested_stokes)) {
+    if (!downsampled_tiles.empty() && !is_current_z && additional_channel &&
+        !frame->GetZSlice(channel_data, requested_z, requested_stokes)) {
         return false;
     }
     const float* channel_data_ptr = channel_data.empty() ? nullptr : channel_data.data();
 
-    std::vector<float> downsampled_data;
-    int downsampled_width;
-    int downsampled_height;
-    if (have_valid_tile &&
-        !frame->GetDownsampledRasterData(downsampled_data, downsampled_width, downsampled_height, requested_z, requested_stokes,
-            combined_bounds, mip, channel_data_ptr)) {
-        return false;
+    for (auto& [mip, mip_data] : downsampled_tiles) {
+        if (!frame->GetDownsampledRasterData(mip_data.data, mip_data.width, mip_data.height, requested_z, requested_stokes,
+                mip_data.bounds, mip, channel_data_ptr)) {
+            return false;
+        }
     }
 
     for (auto& required_tile : required_tiles) {
         if (!required_tile.valid) {
             continue;
         }
-        int source_x = (required_tile.bounds.x_min() - combined_bounds.x_min()) / mip;
-        int source_y = (required_tile.bounds.y_min() - combined_bounds.y_min()) / mip;
-        if (source_x < 0 || source_y < 0 || source_x + required_tile.width > downsampled_width ||
-            source_y + required_tile.height > downsampled_height) {
+        const auto& mip_data = downsampled_tiles.at(required_tile.mip);
+        int source_x = (required_tile.bounds.x_min() - mip_data.bounds.x_min()) / required_tile.mip;
+        int source_y = (required_tile.bounds.y_min() - mip_data.bounds.y_min()) / required_tile.mip;
+        if (source_x < 0 || source_y < 0 || source_x + required_tile.width > mip_data.width ||
+            source_y + required_tile.height > mip_data.height) {
             return false;
         }
 
         required_tile.data.resize(required_tile.width * required_tile.height);
         for (int row = 0; row < required_tile.height; ++row) {
-            auto source = downsampled_data.begin() + (source_y + row) * downsampled_width + source_x;
+            auto source = mip_data.data.begin() + (source_y + row) * mip_data.width + source_x;
             auto destination = required_tile.data.begin() + row * required_tile.width;
             std::copy_n(source, required_tile.width, destination);
         }

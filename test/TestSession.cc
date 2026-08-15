@@ -197,6 +197,20 @@ TEST_F(SessionChannelMapTest, CompletesIncompleteTileGenerationWithSuccessfulCou
     EXPECT_TRUE(sync_messages.back().end_sync());
 }
 
+TEST_F(SessionChannelMapTest, GeneratesTilesFromMultipleLayers) {
+    ChannelMapTestSession session(FitsImages() / "500x500.fits");
+    auto request = ChannelRequest(0, true);
+    request.mutable_required_tiles()->add_tiles(Tile::Encode(0, 0, 1));
+
+    auto result = session.OnSetImageChannels(request);
+
+    EXPECT_EQ(result.status, CARTA::ChannelMapFlowControl::COMPLETED);
+    auto raster_tiles = session.TakeRasterTileData();
+    ASSERT_EQ(raster_tiles.size(), 2);
+    EXPECT_TRUE(std::any_of(raster_tiles.begin(), raster_tiles.end(), [](const auto& data) { return data.tiles(0).layer() == 0; }));
+    EXPECT_TRUE(std::any_of(raster_tiles.begin(), raster_tiles.end(), [](const auto& data) { return data.tiles(0).layer() == 1; }));
+}
+
 TEST_F(SessionChannelMapTest, ChannelDataRequestsDoNotGenerateOverlays) {
     ChannelMapTestSession session;
     session.EnableContours();
