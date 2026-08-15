@@ -701,15 +701,93 @@ bool Session::OnAddRequiredTiles(
     if (requested_stokes == CURRENT_STOKES) {
         requested_stokes = frame->CurrentStokes();
     }
+
+    struct RequiredTileData {
+        Tile tile;
+        CARTA::ImageBounds bounds;
+        int width;
+        int height;
+        std::vector<float> data;
+        bool valid;
+    };
+
+    int num_tiles = message.tiles_size();
+    int image_width = frame->Width();
+    int image_height = frame->Height();
+    int mip = -1;
+    CARTA::ImageBounds combined_bounds;
+    bool have_valid_tile(false);
+    std::vector<RequiredTileData> required_tiles;
+    required_tiles.reserve(num_tiles);
+
+    for (const auto& encoded_coordinate : message.tiles()) {
+        auto tile = Tile::Decode(encoded_coordinate);
+        int tile_mip = Tile::LayerToMip(tile.layer, image_width, image_height, TILE_SIZE, TILE_SIZE);
+        if (tile_mip < 1) {
+            required_tiles.push_back({tile, {}, 0, 0, {}, false});
+            continue;
+        }
+
+        auto bounds = GetImageBounds(tile, image_width, image_height, tile_mip);
+        int original_width = bounds.x_max() - bounds.x_min();
+        int original_height = bounds.y_max() - bounds.y_min();
+        if (original_width <= 0 || original_height <= 0 || (mip > 0 && tile_mip != mip)) {
+            required_tiles.push_back({tile, bounds, 0, 0, {}, false});
+            continue;
+        }
+        mip = tile_mip;
+
+        if (!have_valid_tile) {
+            combined_bounds = bounds;
+            have_valid_tile = true;
+        } else {
+            combined_bounds.set_x_min(std::min(combined_bounds.x_min(), bounds.x_min()));
+            combined_bounds.set_x_max(std::max(combined_bounds.x_max(), bounds.x_max()));
+            combined_bounds.set_y_min(std::min(combined_bounds.y_min(), bounds.y_min()));
+            combined_bounds.set_y_max(std::max(combined_bounds.y_max(), bounds.y_max()));
+        }
+
+        required_tiles.push_back(
+            {tile, bounds, (original_width + mip - 1) / mip, (original_height + mip - 1) / mip, {}, true});
+    }
+
     std::vector<float> channel_data;
     bool additional_channel = requested_z != frame->CurrentZ() || requested_stokes != frame->CurrentStokes();
-    if (!is_current_z && additional_channel && !frame->GetZSlice(channel_data, requested_z, requested_stokes)) {
+    if (have_valid_tile && !is_current_z && additional_channel && !frame->GetZSlice(channel_data, requested_z, requested_stokes)) {
         return false;
     }
     const float* channel_data_ptr = channel_data.empty() ? nullptr : channel_data.data();
+
+    std::vector<float> downsampled_data;
+    int downsampled_width;
+    int downsampled_height;
+    if (have_valid_tile &&
+        !frame->GetDownsampledRasterData(downsampled_data, downsampled_width, downsampled_height, requested_z, requested_stokes,
+            combined_bounds, mip, channel_data_ptr)) {
+        return false;
+    }
+
+    for (auto& required_tile : required_tiles) {
+        if (!required_tile.valid) {
+            continue;
+        }
+        int source_x = (required_tile.bounds.x_min() - combined_bounds.x_min()) / mip;
+        int source_y = (required_tile.bounds.y_min() - combined_bounds.y_min()) / mip;
+        if (source_x < 0 || source_y < 0 || source_x + required_tile.width > downsampled_width ||
+            source_y + required_tile.height > downsampled_height) {
+            return false;
+        }
+
+        required_tile.data.resize(required_tile.width * required_tile.height);
+        for (int row = 0; row < required_tile.height; ++row) {
+            auto source = downsampled_data.begin() + (source_y + row) * downsampled_width + source_x;
+            auto destination = required_tile.data.begin() + row * required_tile.width;
+            std::copy_n(source, required_tile.width, destination);
+        }
+    }
+
     auto sync_id = ++_sync_id;
 
-    int num_tiles = message.tiles_size();
     auto start_message = Message::RasterTileSync(file_id, requested_z, requested_stokes, sync_id, animation_id, num_tiles, false);
     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, request_id, start_message);
 
@@ -725,12 +803,13 @@ bool Session::OnAddRequiredTiles(
 #pragma omp for
         for (int j = 0; j < stride; j++) {
             for (int i = j; i < num_tiles; i += stride) {
-                const auto& encoded_coordinate = message.tiles(i);
-                auto tile = Tile::Decode(encoded_coordinate);
+                auto& required_tile = required_tiles[i];
+                const auto& tile = required_tile.tile;
                 auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
-                bool tile_error(false);
-                if (frame->FillRasterTileData(raster_tile_data, tile, requested_z, requested_stokes, compression_type, compression_quality,
-                        is_current_z, tile_error, channel_data_ptr)) {
+                bool tile_error(!required_tile.valid);
+                if (required_tile.valid &&
+                    frame->FillRasterTileData(raster_tile_data, tile, requested_z, requested_stokes, compression_type, compression_quality,
+                        is_current_z, tile_error, required_tile.width, required_tile.height, required_tile.data)) {
                     // Only use deflate on outgoing message if the raster image compression type is NONE
                     SendFileEvent(
                         file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);

@@ -129,7 +129,7 @@ public:
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
         CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error,
-        const float* channel_data = nullptr);
+        int tile_width, int tile_height, std::vector<float>& tile_data);
     bool GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
 
     // Functions used for smoothing and contouring
@@ -220,7 +220,8 @@ public:
     // For vector field setting and calculation
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     bool GetDownsampledRasterData(
-        std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
+        std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip,
+        const float* channel_data = nullptr);
     bool CalculateVectorField(
         const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel = CURRENT_Z, int stokes = CURRENT_STOKES);
 
@@ -239,8 +240,6 @@ protected:
     // Downsampled data from image cache if current z
     bool GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true,
         int stokes = CURRENT_STOKES, const float* channel_data = nullptr);
-    bool GetRasterTileData(int z, int stokes, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height,
-        bool& error, const float* channel_data = nullptr);
 
     // Histograms: z is single z index or ALL_Z for cube
     int AutoBinSize();
@@ -310,8 +309,7 @@ protected:
 
     // Tile data
     bool _use_tile_cache;
-    TileCache _tile_cache;                // cache for full-resolution image tiles
-    std::shared_ptr<TilePool> _tile_pool; // memory allocated for tile data
+    TileCache _tile_cache; // cache for full-resolution image tiles
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
     mutable std::shared_mutex _active_task_mutex;
