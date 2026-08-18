@@ -754,13 +754,13 @@ bool Session::OnAddRequiredTiles(
             mip_data.bounds.set_y_max(std::max(mip_data.bounds.y_max(), bounds.y_max()));
         }
 
-        required_tiles.push_back({tile, bounds, tile_mip, (original_width + tile_mip - 1) / tile_mip,
-            (original_height + tile_mip - 1) / tile_mip, {}, true});
+        required_tiles.push_back(
+            {tile, bounds, tile_mip, (original_width + tile_mip - 1) / tile_mip, (original_height + tile_mip - 1) / tile_mip, {}, true});
     }
 
     for (auto& [mip, mip_data] : downsampled_tiles) {
-        if (!frame->GetDownsampledRasterData(mip_data.data, mip_data.width, mip_data.height, requested_z, requested_stokes,
-                mip_data.bounds, mip)) {
+        if (!frame->GetDownsampledRasterData(
+                mip_data.data, mip_data.width, mip_data.height, requested_z, requested_stokes, mip_data.bounds, mip)) {
             return false;
         }
     }

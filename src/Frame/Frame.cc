@@ -2373,9 +2373,8 @@ void Frame::CloseCachedImage(const std::string& file) {
     }
 }
 
-bool Frame::GetDownsampledRasterData(
-    std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip,
-    const float* channel_data) {
+bool Frame::GetDownsampledRasterData(std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes,
+    CARTA::ImageBounds& bounds, int mip, const float* channel_data) {
     int tile_original_width = bounds.x_max() - bounds.x_min();
     int tile_original_height = bounds.y_max() - bounds.y_min();
     if (tile_original_width * tile_original_height == 0) {
@@ -2395,8 +2394,7 @@ bool Frame::GetDownsampledRasterData(
     bool use_loader_mipmaps = !Stokes::IsComputed(stokes);
 
     // Check does the (HDF5) loader has the right (mip) downsampled data
-    if (use_loader_mipmaps && _loader->HasMip(mip) &&
-        _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
+    if (use_loader_mipmaps && _loader->HasMip(mip) && _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
         return true;
     }
 

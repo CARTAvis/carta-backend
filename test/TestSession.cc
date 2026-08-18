@@ -175,8 +175,8 @@ TEST_F(SessionChannelMapTest, UsesRequestIdForRasterTileSync) {
     std::copy_if(headers.begin(), headers.end(), std::back_inserter(sync_headers),
         [](const auto& header) { return header.GetType() == CARTA::EventType::RASTER_TILE_SYNC; });
     ASSERT_EQ(sync_headers.size(), 2);
-    EXPECT_TRUE(std::all_of(sync_headers.begin(), sync_headers.end(),
-        [request_id](const auto& header) { return header.request_id == request_id; }));
+    EXPECT_TRUE(std::all_of(
+        sync_headers.begin(), sync_headers.end(), [request_id](const auto& header) { return header.request_id == request_id; }));
 }
 
 TEST_F(SessionChannelMapTest, RejectsInvalidChannelMapRequests) {

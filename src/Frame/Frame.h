@@ -128,8 +128,8 @@ public:
 
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-        CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error,
-        int tile_width, int tile_height, std::vector<float>& tile_data);
+        CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error, int tile_width, int tile_height,
+        std::vector<float>& tile_data);
     bool GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
 
     // Functions used for smoothing and contouring
@@ -219,9 +219,8 @@ public:
 
     // For vector field setting and calculation
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
-    bool GetDownsampledRasterData(
-        std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip,
-        const float* channel_data = nullptr);
+    bool GetDownsampledRasterData(std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes,
+        CARTA::ImageBounds& bounds, int mip, const float* channel_data = nullptr);
     bool CalculateVectorField(
         const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel = CURRENT_Z, int stokes = CURRENT_STOKES);
 
