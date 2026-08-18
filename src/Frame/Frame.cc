@@ -2386,20 +2386,22 @@ bool Frame::GetDownsampledRasterData(
     downsampled_height = std::ceil((float)tile_original_height / mip);
 
     bool use_image_cache = z == _z_index && stokes == _stokes_index && _image_cache_valid;
-    if (channel_data || use_image_cache) {
-        return GetRasterData(z, data, bounds, mip, true, stokes, channel_data);
+    if (use_image_cache) {
+        return GetRasterData(z, data, bounds, mip, true, stokes);
     }
 
     std::vector<float> tile_data;
     bool use_loader_downsampled_data(false);
+    bool use_loader_mipmaps = !Stokes::IsComputed(stokes);
 
     // Check does the (HDF5) loader has the right (mip) downsampled data
-    if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
+    if (use_loader_mipmaps && _loader->HasMip(mip) &&
+        _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
         return true;
     }
 
     // Check is there another downsampled data that we can use to downsample
-    for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
+    for (int sub_mip = 2; use_loader_mipmaps && sub_mip < mip; ++sub_mip) {
         if (mip % sub_mip == 0) {
             int loader_mip = mip / sub_mip;
             if (_loader->HasMip(loader_mip) && _loader->GetDownsampledRasterData(tile_data, z, stokes, bounds, loader_mip, _image_mutex)) {
@@ -2412,6 +2414,10 @@ bool Frame::GetDownsampledRasterData(
                 break;
             }
         }
+    }
+
+    if (!use_loader_downsampled_data && channel_data) {
+        return GetRasterData(z, data, bounds, mip, true, stokes, channel_data);
     }
 
     if (!use_loader_downsampled_data) {

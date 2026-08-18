@@ -758,17 +758,9 @@ bool Session::OnAddRequiredTiles(
             (original_height + tile_mip - 1) / tile_mip, {}, true});
     }
 
-    std::vector<float> channel_data;
-    bool additional_channel = requested_z != frame->CurrentZ() || requested_stokes != frame->CurrentStokes();
-    if (!downsampled_tiles.empty() && !is_current_z && additional_channel &&
-        !frame->GetZSlice(channel_data, requested_z, requested_stokes)) {
-        return false;
-    }
-    const float* channel_data_ptr = channel_data.empty() ? nullptr : channel_data.data();
-
     for (auto& [mip, mip_data] : downsampled_tiles) {
         if (!frame->GetDownsampledRasterData(mip_data.data, mip_data.width, mip_data.height, requested_z, requested_stokes,
-                mip_data.bounds, mip, channel_data_ptr)) {
+                mip_data.bounds, mip)) {
             return false;
         }
     }

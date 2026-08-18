@@ -11,14 +11,35 @@
 #include "CommonTestUtilities.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
+#include "ImageData/Hdf5Loader.h"
 #include "Session/Session.h"
 
 using namespace carta;
+
+class TrackingHdf5Loader : public Hdf5Loader {
+public:
+    explicit TrackingHdf5Loader(const std::string& filename) : Hdf5Loader(filename) {}
+
+    bool GetDownsampledRasterData(
+        std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override {
+        bool loaded = Hdf5Loader::GetDownsampledRasterData(data, z, stokes, bounds, mip, image_mutex);
+        if (loaded) {
+            ++downsampled_raster_loads;
+        }
+        return loaded;
+    }
+
+    int downsampled_raster_loads = 0;
+};
 
 class ChannelMapTestSession : public Session {
 public:
     ChannelMapTestSession(fs::path image = FitsImages() / "10x10x10.fits") : Session(nullptr, nullptr, 0, "", nullptr) {
         auto loader = FileLoader::GetLoader(image);
+        _frames.emplace(FILE_ID, std::make_shared<Frame>(0, loader, "0"));
+    }
+
+    explicit ChannelMapTestSession(const std::shared_ptr<FileLoader>& loader) : Session(nullptr, nullptr, 0, "", nullptr) {
         _frames.emplace(FILE_ID, std::make_shared<Frame>(0, loader, "0"));
     }
 
@@ -209,6 +230,17 @@ TEST_F(SessionChannelMapTest, GeneratesTilesFromMultipleLayers) {
     ASSERT_EQ(raster_tiles.size(), 2);
     EXPECT_TRUE(std::any_of(raster_tiles.begin(), raster_tiles.end(), [](const auto& data) { return data.tiles(0).layer() == 0; }));
     EXPECT_TRUE(std::any_of(raster_tiles.begin(), raster_tiles.end(), [](const auto& data) { return data.tiles(0).layer() == 1; }));
+}
+
+TEST_F(SessionChannelMapTest, UsesHdf5MipmapsForAdditionalChannels) {
+    auto loader = std::make_shared<TrackingHdf5Loader>((Hdf5Images() / "1000x1000x2_nans.hdf5").string());
+    ChannelMapTestSession session(loader);
+    ASSERT_TRUE(loader->HasMip(4));
+
+    auto result = session.OnSetImageChannels(ChannelRequest(1, true));
+
+    EXPECT_EQ(result.status, CARTA::ChannelMapFlowControl::COMPLETED);
+    EXPECT_EQ(loader->downsampled_raster_loads, 1);
 }
 
 TEST_F(SessionChannelMapTest, ChannelDataRequestsDoNotGenerateOverlays) {
