@@ -709,7 +709,8 @@ bool Session::OnAddRequiredTiles(
         int mip;
         int width;
         int height;
-        std::vector<float> data;
+        TilePtr data;
+        bool loaded;
         bool valid;
     };
 
@@ -721,6 +722,7 @@ bool Session::OnAddRequiredTiles(
     };
 
     int num_tiles = message.tiles_size();
+    frame->ReserveTilePool(num_tiles);
     int image_width = frame->Width();
     int image_height = frame->Height();
     std::map<int, DownsampledTileData> downsampled_tiles;
@@ -731,7 +733,7 @@ bool Session::OnAddRequiredTiles(
         auto tile = Tile::Decode(encoded_coordinate);
         int tile_mip = Tile::LayerToMip(tile.layer, image_width, image_height, TILE_SIZE, TILE_SIZE);
         if (tile_mip < 1) {
-            required_tiles.push_back({tile, {}, tile_mip, 0, 0, {}, false});
+            required_tiles.push_back({tile, {}, tile_mip, 0, 0, nullptr, false, false});
             continue;
         }
 
@@ -739,23 +741,28 @@ bool Session::OnAddRequiredTiles(
         int original_width = bounds.x_max() - bounds.x_min();
         int original_height = bounds.y_max() - bounds.y_min();
         if (original_width <= 0 || original_height <= 0) {
-            required_tiles.push_back({tile, bounds, tile_mip, 0, 0, {}, false});
+            required_tiles.push_back({tile, bounds, tile_mip, 0, 0, nullptr, false, false});
             continue;
         }
 
-        auto [mip_data_iterator, inserted] = downsampled_tiles.try_emplace(tile_mip);
-        auto& mip_data = mip_data_iterator->second;
-        if (inserted) {
-            mip_data.bounds = bounds;
-        } else {
-            mip_data.bounds.set_x_min(std::min(mip_data.bounds.x_min(), bounds.x_min()));
-            mip_data.bounds.set_x_max(std::max(mip_data.bounds.x_max(), bounds.x_max()));
-            mip_data.bounds.set_y_min(std::min(mip_data.bounds.y_min(), bounds.y_min()));
-            mip_data.bounds.set_y_max(std::max(mip_data.bounds.y_max(), bounds.y_max()));
+        bool loaded(false);
+        auto tile_data = frame->GetRasterTileData(bounds, requested_z, requested_stokes, tile_mip, loaded);
+
+        if (!loaded) {
+            auto [mip_data_iterator, inserted] = downsampled_tiles.try_emplace(tile_mip);
+            auto& mip_data = mip_data_iterator->second;
+            if (inserted) {
+                mip_data.bounds = bounds;
+            } else {
+                mip_data.bounds.set_x_min(std::min(mip_data.bounds.x_min(), bounds.x_min()));
+                mip_data.bounds.set_x_max(std::max(mip_data.bounds.x_max(), bounds.x_max()));
+                mip_data.bounds.set_y_min(std::min(mip_data.bounds.y_min(), bounds.y_min()));
+                mip_data.bounds.set_y_max(std::max(mip_data.bounds.y_max(), bounds.y_max()));
+            }
         }
 
-        required_tiles.push_back(
-            {tile, bounds, tile_mip, (original_width + tile_mip - 1) / tile_mip, (original_height + tile_mip - 1) / tile_mip, {}, true});
+        required_tiles.push_back({tile, bounds, tile_mip, (original_width + tile_mip - 1) / tile_mip,
+            (original_height + tile_mip - 1) / tile_mip, tile_data, loaded, true});
     }
 
     for (auto& [mip, mip_data] : downsampled_tiles) {
@@ -766,7 +773,7 @@ bool Session::OnAddRequiredTiles(
     }
 
     for (auto& required_tile : required_tiles) {
-        if (!required_tile.valid) {
+        if (!required_tile.valid || required_tile.loaded) {
             continue;
         }
         const auto& mip_data = downsampled_tiles.at(required_tile.mip);
@@ -777,10 +784,10 @@ bool Session::OnAddRequiredTiles(
             return false;
         }
 
-        required_tile.data.resize(required_tile.width * required_tile.height);
+        required_tile.data->resize(required_tile.width * required_tile.height);
         for (int row = 0; row < required_tile.height; ++row) {
             auto source = mip_data.data.begin() + (source_y + row) * mip_data.width + source_x;
-            auto destination = required_tile.data.begin() + row * required_tile.width;
+            auto destination = required_tile.data->begin() + row * required_tile.width;
             std::copy_n(source, required_tile.width, destination);
         }
     }

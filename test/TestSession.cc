@@ -29,7 +29,17 @@ public:
         return loaded;
     }
 
+    bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes,
+        std::mutex& image_mutex) override {
+        bool loaded = Hdf5Loader::GetChunk(data, data_width, data_height, min_x, min_y, z, stokes, image_mutex);
+        if (loaded) {
+            ++chunk_loads;
+        }
+        return loaded;
+    }
+
     int downsampled_raster_loads = 0;
+    int chunk_loads = 0;
 };
 
 class ChannelMapTestSession : public Session {
@@ -241,6 +251,19 @@ TEST_F(SessionChannelMapTest, UsesHdf5MipmapsForAdditionalChannels) {
 
     EXPECT_EQ(result.status, CARTA::ChannelMapFlowControl::COMPLETED);
     EXPECT_EQ(loader->downsampled_raster_loads, 1);
+}
+
+TEST_F(SessionChannelMapTest, UsesHdf5TileCacheForCurrentChannelAtFullResolution) {
+    auto loader = std::make_shared<TrackingHdf5Loader>((Hdf5Images() / "1000x1000x2_nans.hdf5").string());
+    ChannelMapTestSession session(loader);
+    auto request = ChannelRequest(0, true);
+    request.mutable_required_tiles()->set_tiles(0, Tile::Encode(0, 0, 2));
+
+    auto result = session.OnSetImageChannels(request);
+
+    EXPECT_EQ(result.status, CARTA::ChannelMapFlowControl::COMPLETED);
+    EXPECT_EQ(loader->chunk_loads, 1);
+    EXPECT_EQ(loader->downsampled_raster_loads, 0);
 }
 
 TEST_F(SessionChannelMapTest, ChannelDataRequestsDoNotGenerateOverlays) {

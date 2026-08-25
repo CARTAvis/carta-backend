@@ -38,6 +38,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _z_index(default_z),
       _stokes_index(DEFAULT_STOKES),
       _image_cache_valid(false),
+      _tile_pool(std::make_shared<TilePool>()),
       _use_tile_cache(false),
       _moment_generator(nullptr),
       _moment_name_index(0) {
@@ -85,6 +86,9 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         _valid = false;
         return;
     }
+
+    // set the tile pool capacity
+    _tile_pool->Grow(omp_get_max_threads());
 
     // reset the tile cache if the loader will use it
     if (_use_tile_cache) {
@@ -365,6 +369,10 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
     return updated;
 }
 
+void Frame::ReserveTilePool(int capacity) {
+    _tile_pool->Reserve(capacity);
+}
+
 bool Frame::SetCursor(float x, float y) {
     bool changed = ((x != _cursor.x) || (y != _cursor.y));
     _cursor = PointXy(x, y);
@@ -486,16 +494,17 @@ bool Frame::GetRasterData(
 // Tile data
 bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
     CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error, int tile_width, int tile_height,
-    std::vector<float>& tile_data) {
+    const TilePtr& tile_data_ptr) {
     // Early exit if z or stokes has changed and using current z
     if (is_current_z && ZStokesChanged(z, stokes)) {
         return false;
     }
 
-    if (tile_width <= 0 || tile_height <= 0 || tile_data.size() != static_cast<size_t>(tile_width * tile_height)) {
+    if (!tile_data_ptr || tile_width <= 0 || tile_height <= 0 || tile_data_ptr->size() != static_cast<size_t>(tile_width * tile_height)) {
         error = true;
         return false;
     }
+    auto& tile_data = *tile_data_ptr;
 
     raster_tile_data.set_channel(z);
     raster_tile_data.set_stokes(stokes);
@@ -577,6 +586,22 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     }
 
     return false;
+}
+
+TilePtr Frame::GetRasterTileData(const CARTA::ImageBounds& bounds, int z, int stokes, int mip, bool& loaded) {
+    auto tile_data = _tile_pool->Pull();
+    loaded = false;
+
+    if (mip == 1 && z == _z_index && stokes == _stokes_index && !_image_cache_valid && _use_tile_cache) {
+        auto cached_data = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        if (cached_data) {
+            // Compression replaces NaNs in its input, so keep the cached tile immutable.
+            tile_data->assign(cached_data->begin(), cached_data->end());
+            loaded = true;
+        }
+    }
+
+    return tile_data;
 }
 
 // ****************************************************

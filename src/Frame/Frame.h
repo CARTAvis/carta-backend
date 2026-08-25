@@ -122,6 +122,7 @@ public:
         return _required_animation_tiles;
     };
     bool SetImageChannels(int new_z, int new_stokes, std::string& message);
+    void ReserveTilePool(int capacity);
 
     // Cursor
     bool SetCursor(float x, float y);
@@ -129,7 +130,8 @@ public:
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
         CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error, int tile_width, int tile_height,
-        std::vector<float>& tile_data);
+        const TilePtr& tile_data);
+    TilePtr GetRasterTileData(const CARTA::ImageBounds& bounds, int z, int stokes, int mip, bool& loaded);
     bool GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
 
     // Functions used for smoothing and contouring
@@ -308,7 +310,8 @@ protected:
 
     // Tile data
     bool _use_tile_cache;
-    TileCache _tile_cache; // cache for full-resolution image tiles
+    TileCache _tile_cache;                // cache for full-resolution image tiles
+    std::shared_ptr<TilePool> _tile_pool; // memory allocated for tile data
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
     mutable std::shared_mutex _active_task_mutex;
