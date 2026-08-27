@@ -82,6 +82,7 @@ public:
     FRIEND_TEST(RestApiTest, SetWorkspaceReadOnly);
 
     FRIEND_TEST(RestApiTest, SendScriptingRequest);
+    FRIEND_TEST(RestApiTest, SendScriptingRequestInvalidReturnPath);
     FRIEND_TEST(RestApiTest, SendScriptingRequestSessionNotFound);
     FRIEND_TEST(RestApiTest, SendScriptingRequestBadJson);
     FRIEND_TEST(RestApiTest, SendScriptingRequestServerError);
@@ -715,26 +716,48 @@ TEST_F(RestApiTest, SendScriptingRequest) {
 
     int requested_session_id(1);
 
+    const std::vector<json> return_paths = {
+        "frameInfo.fileId",
+        json::array({"id", "type"}),
+        json({{"id", "frameInfo.fileId"}, {"label", "name"}}),
+    };
+
+    for (const auto& return_path : return_paths) {
+        body["return_path"] = return_path;
+        auto status = _frontend_server->SendScriptingRequest(
+            body.dump(), requested_session_id, [](const bool&, const std::string&, const std::string&) {}, []() {},
+            [&](int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action, std::string& parameters,
+                bool& async, std::string& parsed_return_path, ScriptingResponseCallback callback,
+                ScriptingSessionClosedCallback session_closed_callback) {
+                last_session_id = session_id;
+                last_target = target;
+                last_action = action;
+                last_parameters = parameters;
+                last_async = async;
+                last_return_path = parsed_return_path;
+
+                return true;
+            });
+        EXPECT_EQ(status, HTTP_200);
+        EXPECT_EQ(last_session_id, 1);
+        EXPECT_EQ(last_target, "");
+        EXPECT_EQ(last_action, "openFile");
+        EXPECT_EQ(last_parameters, body["parameters"].dump());
+        EXPECT_FALSE(last_async);
+        EXPECT_EQ(last_return_path, return_path.is_string() ? return_path.get<std::string>() : return_path.dump());
+    }
+}
+
+TEST_F(RestApiTest, SendScriptingRequestInvalidReturnPath) {
+    json body = {
+        {"session_id", 1}, {"path", ""}, {"action", "openFile"}, {"parameters", json::array()}, {"async", false}, {"return_path", true}};
+    int requested_session_id(1);
+
     auto status = _frontend_server->SendScriptingRequest(
         body.dump(), requested_session_id, [](const bool&, const std::string&, const std::string&) {}, []() {},
-        [&](int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action, std::string& parameters, bool& async,
-            std::string& return_path, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback) {
-            last_session_id = session_id;
-            last_target = target;
-            last_action = action;
-            last_parameters = parameters;
-            last_async = async;
-            last_return_path = return_path;
-
-            return true;
-        });
-    EXPECT_EQ(status, HTTP_200);
-    EXPECT_EQ(last_session_id, 1);
-    EXPECT_EQ(last_target, "");
-    EXPECT_EQ(last_action, "openFile");
-    EXPECT_EQ(last_parameters, body["parameters"].dump());
-    EXPECT_EQ(last_async, false);
-    EXPECT_EQ(last_return_path, "frameInfo.fileId");
+        [&](int&, uint32_t&, std::string&, std::string&, std::string&, bool&, std::string&, ScriptingResponseCallback,
+            ScriptingSessionClosedCallback) { return true; });
+    EXPECT_EQ(status, HTTP_400);
 }
 
 TEST_F(RestApiTest, SendScriptingRequestSessionNotFound) {
