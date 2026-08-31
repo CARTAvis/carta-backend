@@ -867,10 +867,8 @@ std::string_view HttpServer::SendScriptingRequest(const std::string& buffer, int
             const auto& return_path_value = req["return_path"];
             if (return_path_value.is_string()) {
                 return_path = return_path_value.get<std::string>();
-            } else if (return_path_value.is_array() || return_path_value.is_object()) {
-                return_path = return_path_value.dump();
             } else {
-                return HTTP_400;
+                return_path = return_path_value.dump();
             }
         }
 
