@@ -8,6 +8,8 @@
 
 #include "RegionStatistics.h"
 
+#include <algorithm>
+
 #include "Util/File.h"
 #include "Util/Message.h"
 
@@ -60,8 +62,12 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
     if (_cache.find(cache_id) != _cache.end()) {
         std::map<CARTA::StatsType, double> stats_results;
         if (_cache[cache_id].GetStats(stats_results)) {
-            FillStatistics(stats_data_message, required_stats, stats_results); // Message helper
-            return true;
+            bool all_stats_cached = std::all_of(required_stats.begin(), required_stats.end(),
+                [&stats_results](CARTA::StatsType type) { return stats_results.find(type) != stats_results.end(); });
+            if (all_stats_cached) {
+                FillStatistics(stats_data_message, required_stats, stats_results); // Message helper
+                return true;
+            }
         }
     }
 
