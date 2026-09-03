@@ -99,6 +99,13 @@ public:
 
     virtual casacore::Lattice<casacore::Bool>& pixelMask();
 
+    // Whether the underlying table has a "mask" column. When false, the image
+    // behaves exactly like an unmasked ADIOSImage: doGetMaskSlice() reports
+    // every pixel valid and no NaN-unmasking is attempted.
+    casacore::Bool hasMaskColumn() const {
+        return has_mask_p;
+    }
+
     // rewritten PagedImage private functions
     void attach_logtable();
     void setTableType();
@@ -114,7 +121,8 @@ private:
     void reopenRW();
 
     casacore::ArrayColumn<T> map_p;
-    casacore::ArrayColumn<bool> mask_p; // bool
+    casacore::ArrayColumn<bool> mask_p; // bool; only valid when has_mask_p is true
+    casacore::Bool has_mask_p = false;  // true iff the table has a "mask" column
     casacore::Table tab_p;
     casacore::LatticeRegion* regionPtr_p;
     casacore::uInt row_p;

@@ -104,7 +104,10 @@ ADIOSImage<T>::ADIOSImage(
     : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)), regionPtr_p(0) {
     tab_p = casacore::Table(filename, casacore::Table::TableOption::Old);
     map_p = casacore::ArrayColumn<T>(tab_p, "map");
-    mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
+    has_mask_p = tab_p.tableDesc().isColumn("mask");
+    if (has_mask_p) {
+        mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
+    }
     row_p = rowNumber;
     config = configname;
     attach_logtable();
@@ -120,7 +123,10 @@ ADIOSImage<T>::ADIOSImage(askapparallel::AskapParallel& comms, const casacore::S
     adios_comm = comms.interGroupCommIndex();
     tab_p = casacore::Table(filename, casacore::Table::TableOption::Old);
     map_p = casacore::ArrayColumn<T>(tab_p, "map");
-    mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
+    has_mask_p = tab_p.tableDesc().isColumn("mask");
+    if (has_mask_p) {
+        mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
+    }
     row_p = rowNumber;
     config = configname;
     restoreAll(tab_p.keywordSet());
@@ -130,7 +136,11 @@ ADIOSImage<T>::ADIOSImage(askapparallel::AskapParallel& comms, const casacore::S
 
 template <class T>
 ADIOSImage<T>::ADIOSImage(const ADIOSImage<T>& other)
-    : casacore::ImageInterface<T>(other), map_p(other.map_p), mask_p(other.mask_p), regionPtr_p(0) {
+    : casacore::ImageInterface<T>(other),
+      map_p(other.map_p),
+      mask_p(other.mask_p),
+      has_mask_p(other.has_mask_p),
+      regionPtr_p(0) {
     if (other.regionPtr_p != 0) {
         regionPtr_p = new casacore::LatticeRegion(*other.regionPtr_p);
     }
@@ -221,6 +231,7 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
         }
     }
     mask_p = arrayColMask;
+    has_mask_p = true;
 }
 
 template <class T>
@@ -460,6 +471,13 @@ casacore::Bool ADIOSImage<T>::doGetSlice(casacore::Array<T>& buffer, const casac
 
 template <class T>
 casacore::Bool ADIOSImage<T>::doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& theSlice) {
+    if (!has_mask_p) {
+        // No "mask" column in this table: treat every pixel as valid so callers
+        // that don't check hasMaskColumn() first still get a well-defined result.
+        buffer.resize(theSlice.length());
+        buffer = true;
+        return casacore::False;
+    }
     mask_p.getSlice(row_p, theSlice, buffer, casacore::True);
     return casacore::False;
 }
@@ -499,7 +517,9 @@ void ADIOSImage<T>::resize(const casacore::TiledShape& newShape) {
     }
     casacore::IPosition tileShape = newShape.tileShape();
     map_p.setShape(row_p, newShape.shape(), tileShape);
-    mask_p.setShape(row_p, newShape.shape(), tileShape);
+    if (has_mask_p) {
+        mask_p.setShape(row_p, newShape.shape(), tileShape);
+    }
 }
 
 template <class T>
@@ -512,14 +532,18 @@ void ADIOSImage<T>::reopenRW() {
     if (!tab_p.isWritable()) {
         tab_p.reopenRW();
         map_p = casacore::ArrayColumn<T>(tab_p, "map");
-        mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
+        if (has_mask_p) {
+            mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
+        }
     }
 }
 
 template <class T>
 void ADIOSImage<T>::reopenColumn() {
     map_p = casacore::ArrayColumn<T>(tab_p, "map");
-    mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
+    if (has_mask_p) {
+        mask_p = casacore::ArrayColumn<bool>(tab_p, "mask");
+    }
 }
 
 template <class T>

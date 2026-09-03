@@ -390,48 +390,49 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
                 // 2. ONLY read the requested 2D slice from the ADIOS2 file
                 adiosImage->doGetSlice(ramSlice, slicer);
 
-                // 3. ONLY read the requested 2D mask slice
-                // casacore::Array<bool> mask;
-                // 3. Pre-allocate and initialize mask to true (GOOD).
-                casacore::Array<bool> mask(slicer.length());
-                mask = false; // initialise to false -> NaN if the corners are empty and not get read at all
-                              // masking logic is :true - valid pixel, false - flagged pixel.
+                // 3. Only touch the mask column if this table actually has one.
+                // Older/plain ADIOS2 files have no "mask" column at all; treat
+                // every pixel in those as valid and skip NaN-unmasking entirely.
+                if (adiosImage->hasMaskColumn()) {
+                    // Pre-allocate and initialize mask to false -> NaN if the corners
+                    // are empty and not read at all.
+                    // masking logic is: true - valid pixel, false - flagged pixel.
+                    casacore::Array<bool> mask(slicer.length());
+                    mask = false;
 
-                // 4. Read the requested 2D mask slice
-                adiosImage->doGetMaskSlice(mask, slicer);
+                    // Read the requested 2D mask slice
+                    adiosImage->doGetMaskSlice(mask, slicer);
 
-                // 4. Apply NaNs to the 2D slice
-                // bool hasNaN = casacore::anyTrue(mask);
-                // printf("DEBUG FileLoader::GetSlice BEFORE : value[0] = %.8f , mask[0] = %d, hasNaN = %d\n",
-                // *ramSlice.begin(),(int)(*mask.begin()),hasNaN);
-                // if (hasNaN) {
-                if (!casacore::allTrue(
-                        mask)) { // true means valid value, if not all mask values are true -> some are false -> have to be set to NaN :
-                    // set NaN where mask=0 (mask=1 means a valid value) :
-                    ramSlice(!mask) = std::numeric_limits<float>::quiet_NaN();
-                    // Mask 1 -> NaN ramSlice(mask) = std::numeric_limits<float>::quiet_NaN();
+                    // Apply NaNs to the 2D slice: true means valid value, if not all
+                    // mask values are true -> some are false -> have to be set to NaN
+                    if (!casacore::allTrue(mask)) {
+                        // set NaN where mask=0 (mask=1 means a valid value):
+                        ramSlice(!mask) = std::numeric_limits<float>::quiet_NaN();
+                    }
+                    printf("DEBUG FileLoader::GetSlice : value[0] = %.8f , mask[0] = %d\n", *ramSlice.begin(), (int)(*mask.begin()));
+
+                    // --- DEBUG BLOCK START ---
+                    // Get the coordinates for the corner [0,0] and the dead center of the slice
+                    casacore::IPosition corner(ramSlice.ndim(), 0);
+                    casacore::IPosition center = ramSlice.shape() / 2;
+
+                    // slicer.start() usually contains [X, Y, Channel, Stokes]
+                    int currentChannel = (slicer.start().nelements() > 2) ? slicer.start()[2] : 0;
+
+                    printf("--- DEBUG CHANNEL %d ---\n", currentChannel);
+                    printf("CORNER: Mask = %s | Value = %f\n", mask(corner) ? "TRUE (Valid)" : "FALSE (NaN)", ramSlice(corner));
+                    printf("CENTER: Mask = %s | Value = %f\n", mask(center) ? "TRUE (Valid)" : "FALSE (NaN)", ramSlice(center));
+                    printf("------------------------\n");
+                    // --- DEBUG BLOCK END ---
+                } else {
+                    printf("DEBUG FileLoader::GetSlice : no mask column present, value[0] = %.8f\n", *ramSlice.begin());
                 }
-                printf("DEBUG FileLoader::GetSlice : value[0] = %.8f , mask[0] = %d\n", *ramSlice.begin(), (int)(*mask.begin()));
 
-                // 5. Put the sliced RAM into your memImage
+                // Put the sliced RAM into your memImage
                 memImage.put(ramSlice);
 
                 // change the reference to memImage
                 actual_image = &memImage;
-
-                // --- DEBUG BLOCK START ---
-                // Get the coordinates for the corner [0,0] and the dead center of the slice
-                casacore::IPosition corner(ramSlice.ndim(), 0);
-                casacore::IPosition center = ramSlice.shape() / 2;
-
-                // slicer.start() usually contains [X, Y, Channel, Stokes]
-                int currentChannel = (slicer.start().nelements() > 2) ? slicer.start()[2] : 0;
-
-                printf("--- DEBUG CHANNEL %d ---\n", currentChannel);
-                printf("CORNER: Mask = %s | Value = %f\n", mask(corner) ? "TRUE (Valid)" : "FALSE (NaN)", ramSlice(corner));
-                printf("CENTER: Mask = %s | Value = %f\n", mask(center) ? "TRUE (Valid)" : "FALSE (NaN)", ramSlice(center));
-                printf("------------------------\n");
-                // --- DEBUG BLOCK END ---
             }
         }
 
