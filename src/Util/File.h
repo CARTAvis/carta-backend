@@ -108,6 +108,13 @@ uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
 
 /**
+ * @brief Checks whether a path is a supported XRADIO Zarr image directory.
+ *
+ * Malformed or unsupported stores are treated as non-matches by this predicate.
+ */
+bool IsZarr(const std::string& path_string);
+
+/**
  * @brief Determines if a given magic number corresponds to a gzip-compressed file.
  *
  * @param[in] magic_number The 32-bit magic number extracted from the file.

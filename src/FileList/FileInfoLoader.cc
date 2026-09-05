@@ -8,13 +8,19 @@
 
 #include "FileInfoLoader.h"
 
+#include <limits>
+#include <optional>
+
 #include <casacore/casa/HDF5/HDF5File.h>
 #include <casacore/casa/HDF5/HDF5Group.h>
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 
+#include <carta-zarr/carta_zarr.h>
+
 #include "Util/Casacore.h"
 #include "Util/File.h"
+#include "ImageData/ZarrContext.h"
 
 using namespace carta;
 
@@ -40,7 +46,25 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
 
     // fill FileInfo submessage
     int64_t file_size(cc_file.size());
-    if (cc_file.isDirectory()) { // symlinked dirs are dirs
+    bool size_is_upper_bound = false;
+    std::optional<carta::zarr::Dataset> zarr_dataset;
+    if (_type == CARTA::FileType::ZARR && cc_file.isDirectory()) {
+        const auto context = GetZarrContext();
+        auto dataset = carta::zarr::Dataset::Open(*context, _filename);
+        if (dataset) {
+            auto dataset_size = dataset.value().Size();
+            if (dataset_size && dataset_size.value().bytes <=
+                    static_cast<std::uint64_t>(std::numeric_limits<int64_t>::max())) {
+                file_size = static_cast<int64_t>(dataset_size.value().bytes);
+                size_is_upper_bound = dataset_size.value().is_upper_bound;
+            }
+            zarr_dataset = std::move(dataset.value());
+        }
+        if (!zarr_dataset) {
+            casacore::Directory cc_dir(cc_file);
+            file_size = cc_dir.size();
+        }
+    } else if (cc_file.isDirectory()) { // symlinked dirs are dirs
         casacore::Directory cc_dir(cc_file);
         file_size = cc_dir.size();
     } else if (cc_file.isSymLink()) { // gets size of link not file
@@ -51,7 +75,21 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
 
     file_info.set_date(cc_file.modifyTime());
     file_info.set_size(file_size);
+    file_info.set_size_is_upper_bound(size_is_upper_bound);
     file_info.set_type(_type);
+
+    // add hdu for ZARR
+    if (_type == CARTA::FileType::ZARR) {
+        if (!zarr_dataset || zarr_dataset->descriptor().image_ids.empty()) {
+            return success;
+        }
+        for (const auto& image_id : zarr_dataset->descriptor().image_ids) {
+            if (zarr_dataset->OpenImage(image_id)) {
+                file_info.add_hdu_list(image_id);
+            }
+        }
+        return true;
+    }
 
     // add hdu for HDF5
     if (_type == CARTA::FileType::HDF5) {
@@ -69,6 +107,9 @@ CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
     // get casacore image type then convert to carta file type
     if (IsCompressedFits(filename)) {
         return CARTA::FileType::FITS;
+    }
+    if (IsZarr(filename)) {
+        return CARTA::FileType::ZARR;
     }
 
     switch (CasacoreImageType(filename)) {

@@ -10,6 +10,8 @@
 #include <fstream>
 #include <regex>
 
+#include <carta-zarr/carta_zarr.h>
+
 #include "String.h"
 
 /**
@@ -145,6 +147,11 @@ bool IsCompressedFits(const std::string& filename) {
     }
 
     return false;
+}
+
+bool IsZarr(const std::string& path_string) {
+    const auto result = carta::zarr::IsXradioImage(path_string);
+    return result && result.value();
 }
 
 /**
