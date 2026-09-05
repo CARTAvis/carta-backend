@@ -111,12 +111,9 @@ FIND_PACKAGE(Protobuf REQUIRED)
 INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
 
 if (Protobuf_VERSION VERSION_GREATER_EQUAL "4.25.3")
-    FIND_PACKAGE(absl REQUIRED)
-    set(PROTOBUF_LIBRARY
-            ${PROTOBUF_LIBRARY}
-            absl_hash
-            absl_log_internal_message
-            absl_log_internal_nullguard)
+    PKG_SEARCH_MODULE(PROTOBUF_PC REQUIRED protobuf)
+    set(PROTOBUF_LIBRARY ${PROTOBUF_PC_LIBRARIES})
+    LINK_DIRECTORIES(${PROTOBUF_PC_LIBRARY_DIRS})
     message(STATUS "Newer protobuf version (${Protobuf_VERSION}) includes abseil libraries")
 endif ()
 
@@ -182,6 +179,7 @@ add_subdirectory(schemas)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_Install OFF CACHE INTERNAL "")
 add_subdirectory(third-party/nlohmann_json)
+include_directories(${CMAKE_SOURCE_DIR}/third-party/nlohmann_json/include)
 
 # json-schema-validator
 set(nlohmann_json_VERSION "v3.11.3")
