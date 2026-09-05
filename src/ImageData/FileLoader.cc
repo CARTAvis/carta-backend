@@ -24,6 +24,7 @@
 #include "ImagePtrLoader.h"
 #include "MiriadLoader.h"
 #include "PolarizationCalculator.h"
+#include "ZarrLoader.h"
 
 using namespace carta;
 
@@ -35,6 +36,8 @@ std::shared_ptr<FileLoader> FileLoader::GetLoader(const std::string& filename, c
         return std::make_shared<FitsLoader>(filename, true);
     } else if (IsRemoteHttpFile(filename)) {
         return std::make_shared<FitsLoader>(filename, false, true);
+    } else if (IsZarr(filename)) {
+        return std::make_shared<ZarrLoader>(filename);
     }
 
     switch (CasacoreImageType(filename)) {

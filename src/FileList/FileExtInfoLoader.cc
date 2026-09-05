@@ -24,6 +24,7 @@
 
 #include "../ImageData/CartaFitsImage.h"
 #include "../ImageData/CartaHdf5Image.h"
+#include "../ImageData/CartaZarrImage.h"
 #include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
 #include "Util/Casacore.h"
@@ -203,8 +204,15 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     auto image_shape = _loader->GetShape();
                     auto axes = _loader->GetAxes();
                     casacore::Vector<casacore::String> axes_names;
+                    std::vector<std::pair<std::string, std::string>> storage_entries;
+                    if (image_type == "CartaZarrImage") {
+                        CartaZarrImage* zarr_image = dynamic_cast<CartaZarrImage*>(image.get());
+                        if (zarr_image) {
+                            storage_entries = zarr_image->GetStorageInfo();
+                        }
+                    }
 
-                    AddShapeEntries(extended_info, image_shape, axes, axes_names);
+                    AddShapeEntries(extended_info, image_shape, axes, axes_names, storage_entries);
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
                     AddComputedEntries(extended_info, image.get(), axes, use_image_for_entries, is_history_beam);
@@ -677,7 +685,7 @@ void FileExtInfoLoader::AddDataTypeEntry(
 }
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const AxesInfo& axes,
-    casacore::Vector<casacore::String>& axes_names) {
+    casacore::Vector<casacore::String>& axes_names, const std::vector<std::pair<std::string, std::string>>& storage_entries) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
     DimsInfo dims(axes, shape);
@@ -731,6 +739,10 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
             break;
     }
     Message::AddComputedEntry(extended_info, "Shape", shape_string);
+
+    for (const auto& [name, value] : storage_entries) {
+        Message::AddComputedEntry(extended_info, name, value);
+    }
 
     if (axes.spectral >= 0) {
         // header entry for number of channels

@@ -11,6 +11,8 @@
 
 #include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/casa/Utilities/DataType.h>
@@ -52,7 +54,8 @@ private:
     // Computed entries
     void AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type, casacore::DataType equivalent_type);
     void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const AxesInfo& axes,
-        casacore::Vector<casacore::String>& axes_names);
+        casacore::Vector<casacore::String>& axes_names,
+        const std::vector<std::pair<std::string, std::string>>& storage_entries = {});
     void AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename,
         AxesInfo& axes, CompressedFits* compressed_fits = nullptr);
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image, const AxesInfo& axes,

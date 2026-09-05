@@ -240,6 +240,7 @@ set(SOURCE_FILES
         src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
+        src/ImageData/CartaZarrImage.cc
         src/ImageData/CompressedFits.cc
         src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc
@@ -250,6 +251,7 @@ set(SOURCE_FILES
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
         src/ImageData/ZarrContext.cc
+        src/ImageData/ZarrLoader.cc
         src/ImageFitting/ImageFitter.cc
         src/ImageFitting/InitialValueCalculator.cc
         src/ImageGenerators/MomentGenerator.cc

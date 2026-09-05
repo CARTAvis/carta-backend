@@ -9,8 +9,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <mutex>
-#include <stdexcept>
 
+#include <casacore/casa/Exceptions/Error.h>
 #include <spdlog/spdlog.h>
 
 namespace carta {
@@ -34,11 +34,11 @@ std::shared_ptr<const carta::zarr::Context> CreateContext(const carta::zarr::Ope
         return std::make_shared<const carta::zarr::Context>(std::move(context_result.value()));
     }
 
-    spdlog::warn("Failed to create carta-zarr context from settings ({}); falling back to defaults",
+    spdlog::warn("Failed to apply requested carta-zarr resource limits ({}); using carta-zarr defaults",
                  context_result.error().message);
     auto default_context = carta::zarr::Context::Create();
     if (!default_context) {
-        throw std::runtime_error("Failed to create default carta-zarr context: " + default_context.error().message);
+        throw casacore::AipsError("Failed to create default carta-zarr context: " + default_context.error().message);
     }
     return std::make_shared<const carta::zarr::Context>(std::move(default_context.value()));
 }
@@ -63,8 +63,10 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, in
     std::scoped_lock lock(ContextMutex());
     SharedContext() = std::move(context);
 
-    spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_mb={}",
-                  file_io_concurrency, effective_data_copy_threads, std::max(0, cache_pool_mb));
+    const std::string file_io_threads = file_io_concurrency > 0 ? std::to_string(file_io_concurrency) : "default";
+    const std::string cache_size_mib = cache_pool_mb > 0 ? std::to_string(cache_pool_mb) : "disabled";
+    spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_mib={}",
+                  file_io_threads, effective_data_copy_threads, cache_size_mib);
 }
 
 std::shared_ptr<const carta::zarr::Context> GetZarrContext() {
