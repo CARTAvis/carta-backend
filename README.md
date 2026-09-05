@@ -99,6 +99,7 @@ The backend build depends on the following libraries (this is not an exhaustive 
 * [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly.[^1]
 * [Zstd](https://github.com/facebook/zstd) for data compression.
 * [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats.
+* [carta-zarr](https://github.com/CARTAvis/carta-zarr) for XRADIO/Zarr image support. This library is built and installed separately.
 * [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support.
 * [libuuid](https://linux.die.net/man/3/libuuid) for generating auth tokens (if not using external authentication).
 * [cfitsio](https://heasarc.gsfc.nasa.gov/fitsio/) library for I/O with FITS format data files.
