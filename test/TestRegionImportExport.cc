@@ -429,3 +429,51 @@ TEST_F(RegionImportExportTest, TestDs9WorldExportImport) {
     // Check that all regions were imported
     ASSERT_EQ(import_ack1.regions_size(), num_regions);
 }
+
+TEST_F(RegionImportExportTest, TestDs9AnnulusExportImport) {
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto loader0 = carta::FileLoader::GetLoader(image_path0);
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+
+    carta::RegionHandler region_handler;
+    int file_id(0);
+    int region_id(-1);
+    std::vector<float> annulus_points = {5.0, 5.0, 3.0, 4.0, 1.5, 2.0};
+    float rotation(15.0);
+    ASSERT_TRUE(SetRegion(region_handler, file_id, region_id, CARTA::ANNULUS, annulus_points, rotation, frame0->CoordinateSystem()));
+
+    std::map<int, CARTA::RegionStyle> region_style_map;
+    region_style_map[region_id] = GetRegionStyle(CARTA::ANNULUS);
+
+    std::string filename;
+    bool overwrite(false);
+    CARTA::ExportRegionAck export_ack;
+    region_handler.ExportRegion(file_id, frame0, CARTA::DS9_REG, CARTA::PIXEL, region_style_map, filename, overwrite, export_ack);
+    ASSERT_GT(export_ack.contents_size(), 0);
+
+    std::vector<std::string> export_contents = {export_ack.contents().begin(), export_ack.contents().end()};
+    auto contents_string = ConcatContents(export_contents);
+    bool file_is_filename(false);
+    CARTA::ImportRegionAck import_ack;
+    region_handler.ImportRegion(file_id, frame0, CARTA::DS9_REG, contents_string, file_is_filename, import_ack);
+    ASSERT_EQ(import_ack.regions_size(), 1);
+
+    CARTA::RegionInfo imported_info = import_ack.regions().begin()->second;
+    auto imported_region_state = GetRegionState(file_id, imported_info);
+    auto original_region_state = region_handler.GetRegion(region_id)->GetRegionState();
+    ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state, CARTA::DS9_REG));
+
+    CARTA::ExportRegionAck world_export_ack;
+    region_handler.ExportRegion(file_id, frame0, CARTA::DS9_REG, CARTA::WORLD, region_style_map, filename, overwrite, world_export_ack);
+    ASSERT_GT(world_export_ack.contents_size(), 0);
+
+    export_contents = {world_export_ack.contents().begin(), world_export_ack.contents().end()};
+    contents_string = ConcatContents(export_contents);
+    CARTA::ImportRegionAck world_import_ack;
+    region_handler.ImportRegion(file_id, frame0, CARTA::DS9_REG, contents_string, file_is_filename, world_import_ack);
+    ASSERT_EQ(world_import_ack.regions_size(), 1);
+
+    imported_info = world_import_ack.regions().begin()->second;
+    imported_region_state = GetRegionState(file_id, imported_info);
+    ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state, CARTA::DS9_REG));
+}

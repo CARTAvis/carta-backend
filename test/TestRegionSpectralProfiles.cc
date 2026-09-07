@@ -45,7 +45,9 @@ public:
 
         // Define RegionState and set region
         CARTA::RegionType region_type;
-        if (control_points.size() > 1) {
+        if (control_points.size() == 3) {
+            region_type = CARTA::ANNULUS;
+        } else if (control_points.size() > 1) {
             region_type = is_annotation ? CARTA::ANNPOLYGON : CARTA::POLYGON;
         } else {
             region_type = is_annotation ? CARTA::ANNPOINT : CARTA::POINT;
@@ -189,4 +191,18 @@ TEST_F(RegionSpectralProfileTest, TestAnnPointSpectralProfile) {
     CARTA::SpectralProfileData spectral_data;
     bool ok = SpectralProfile(image_path, points, spectral_data, true);
     ASSERT_FALSE(ok);
+}
+
+TEST_F(RegionSpectralProfileTest, TestAnnulusSpectralProfile) {
+    auto image_path = FitsImages() / "noise_3d.fits";
+    std::vector<float> points = {2.5, 2.5, 2.0, 2.0, 1.0, 1.0};
+    CARTA::SpectralProfileData spectral_data;
+    bool ok = SpectralProfile(image_path, points, spectral_data);
+
+    ASSERT_TRUE(ok);
+    ASSERT_EQ(spectral_data.file_id(), 0);
+    ASSERT_EQ(spectral_data.region_id(), 1);
+    ASSERT_EQ(spectral_data.stokes(), 0);
+    ASSERT_EQ(spectral_data.progress(), 1.0);
+    ASSERT_GT(spectral_data.profiles_size(), 0);
 }
