@@ -162,8 +162,10 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
     std::vector<carta::zarr::RegionMask> zarr_regions;
     zarr_regions.reserve(regions.size());
     for (const auto& region : regions) {
-        zarr_regions.push_back({region.x_start, region.y_start, region.width, region.height,
-            reinterpret_cast<const std::uint8_t*>(region.mask)});
+        auto& spec = zarr_regions.emplace_back(carta::zarr::RegionMask{region.x_start, region.y_start, region.width,
+            region.height, reinterpret_cast<const std::uint8_t*>(region.mask)});
+        spec.row_runs = region.runs;
+        spec.row_run_offsets = region.run_offsets;
     }
 
     carta::zarr::SpectralReduceRequest request;
@@ -260,6 +262,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         state.z_range = range;
         state.channels_done = 0;
         state.stats.clear();
+        state.runs = RunsOfMask(mask);
         const std::vector<CARTA::StatsType> reported{CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount,
             CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma,
             CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::Extrema};
@@ -273,9 +276,13 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
 
     if (state.channels_done < channels) {
         static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to borrow a mask");
-        const carta::zarr::RegionMask region{static_cast<std::uint64_t>(origin(0)), static_cast<std::uint64_t>(origin(1)),
+        carta::zarr::RegionMask region{static_cast<std::uint64_t>(origin(0)), static_cast<std::uint64_t>(origin(1)),
             static_cast<std::uint64_t>(mask_shape(0)), static_cast<std::uint64_t>(mask_shape(1)),
             reinterpret_cast<const std::uint8_t*>(mask.asArray().data())};
+        if (!state.runs.Empty()) {
+            region.row_runs = state.runs.runs.data();
+            region.row_run_offsets = state.runs.offsets.data();
+        }
 
         carta::zarr::SpectralReduceRequest request;
         request.spectral = {static_cast<std::uint64_t>(range.from + state.channels_done),

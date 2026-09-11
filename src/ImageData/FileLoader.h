@@ -55,7 +55,34 @@ struct RegionMaskSpec {
     std::uint64_t width = 0;
     std::uint64_t height = 0;
     const casacore::Bool* mask = nullptr;
+    // The same selection in run-length form; see RegionMaskRuns. When these are set they are the
+    // selection and `mask` is not read. Both or neither.
+    const std::uint32_t* runs = nullptr;
+    const std::uint64_t* run_offsets = nullptr;
 };
+
+// A region mask as runs of selected pixels rather than a byte per pixel.
+//
+// Row r of the bounding box owns the runs at [offsets[r], offsets[r+1]), and run k is the half-open
+// column range [runs[2k], runs[2k+1]). A reader that takes this form does not have to read a
+// megabyte of raster to learn which chunks a region occupies, and every pixel of a run is selected,
+// so it can accumulate one with the loop it uses for a region that has no mask at all.
+//
+// The obvious representation is worth it because regions are nearly convex: a rotated rectangle or
+// an ellipse is one run per row whatever its size, so a thin band across a 7763x4742 image is 38 kB
+// of runs against 36.8 MB of raster.
+struct RegionMaskRuns {
+    std::vector<std::uint32_t> runs;
+    std::vector<std::uint64_t> offsets;
+
+    bool Empty() const {
+        return offsets.size() < 2;
+    }
+};
+
+// Derive the runs of a casacore region mask. Returns an empty result for a mask that is not a
+// contiguous two-dimensional array, which is the same case the callers already decline.
+RegionMaskRuns RunsOfMask(const casacore::ArrayLattice<casacore::Bool>& mask);
 
 // One run of channels of a batched reduction, for every region at once.
 //

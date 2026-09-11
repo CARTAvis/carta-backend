@@ -54,6 +54,9 @@ private:
         AxisRange z_range;
         std::size_t channels_done = 0;
         std::map<CARTA::StatsType, std::vector<double>> stats;
+        // Derived once when the region is first seen, not per call: a resumption would otherwise
+        // read the whole raster again to say the same thing about which chunks it occupies.
+        RegionMaskRuns runs;
     };
 
     void AllocateImage(const std::string& hdu) override;

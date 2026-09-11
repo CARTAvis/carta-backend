@@ -880,6 +880,39 @@ bool FileLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     return false;
 }
 
+RegionMaskRuns carta::RunsOfMask(const casacore::ArrayLattice<casacore::Bool>& mask) {
+    RegionMaskRuns out;
+    const auto shape = mask.shape();
+    if (shape.size() != 2 || !mask.asArray().contiguousStorage()) {
+        return out;
+    }
+    const auto width = static_cast<std::uint64_t>(shape(0));
+    const auto height = static_cast<std::uint64_t>(shape(1));
+    const casacore::Bool* values = mask.asArray().data();
+    out.offsets.reserve(static_cast<std::size_t>(height) + 1);
+    out.offsets.push_back(0);
+    for (std::uint64_t y = 0; y < height; ++y) {
+        const casacore::Bool* row = values + (y * width);
+        std::uint64_t x = 0;
+        while (x < width) {
+            while (x < width && !row[x]) {
+                ++x;
+            }
+            if (x == width) {
+                break;
+            }
+            const auto begin = static_cast<std::uint32_t>(x);
+            while (x < width && row[x]) {
+                ++x;
+            }
+            out.runs.push_back(begin);
+            out.runs.push_back(static_cast<std::uint32_t>(x));
+        }
+        out.offsets.push_back(out.runs.size() / 2);
+    }
+    return out;
+}
+
 bool FileLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
     const std::function<bool(const RegionSpectralBlock&)>& sink) {
     // Only a loader that can read many regions in one pass over the pixels implements this. Saying
