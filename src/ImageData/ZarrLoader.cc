@@ -93,7 +93,7 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
 
 bool ZarrLoader::GetCursorSpectralData(
     std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& /*image_mutex*/,
-    const std::function<bool()>& cancellation_requested) {
+    const std::function<bool()>& cancellation_requested, const std::function<bool(float progress)>& partial_callback) {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
     if (!image || _num_dims != 4 || count_x <= 0 || count_y <= 0 || cursor_x < 0 || cursor_y < 0 || stokes < 0) {
         return false;
@@ -110,10 +110,22 @@ bool ZarrLoader::GetCursorSpectralData(
     const casacore::IPosition start(4, cursor_x, cursor_y, 0, stokes);
     const casacore::IPosition length(4, count_x, count_y, depth, 1);
     const casacore::Slicer section(start, length);
-    data.resize(static_cast<std::size_t>(count_x) * static_cast<std::size_t>(count_y) * static_cast<std::size_t>(depth));
+    // NaN rather than zero for the part not read yet: with a partial callback the caller publishes
+    // this buffer before it is full, and an unread channel must look unread rather than empty.
+    data.assign(static_cast<std::size_t>(count_x) * static_cast<std::size_t>(count_y) * static_cast<std::size_t>(depth),
+        FLOAT_NAN);
     casacore::Array<float> destination(section.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     carta::zarr::ReadOptions options;
     options.cancellation_requested = cancellation_requested;
+    if (partial_callback) {
+        // Asking for progress is what makes carta-zarr issue the read in chunk-aligned pieces, so
+        // the profile arrives in a prefix that grows rather than all at the end. Where those pieces
+        // fall is the library's decision: it is the one that knows how many chunks a request has to
+        // hold before they can be decoded in parallel.
+        options.progress = [&](std::size_t written, std::size_t total) {
+            return partial_callback(total == 0 ? 1.0f : static_cast<float>(written) / static_cast<float>(total));
+        };
+    }
 
     try {
         // carta-zarr Image handles are immutable and safe for concurrent reads. The backend

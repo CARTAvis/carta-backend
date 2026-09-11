@@ -131,9 +131,16 @@ public:
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
     // Spectral profiles for cursor and region
+    // Fill `data` with a cursor's or small box's spectrum.
+    //
+    // `partial_callback`, when given, is called as the profile fills, with the fraction of it that
+    // is final: the leading portion of `data` up to that fraction is already correct and can be
+    // forwarded. Returning false from it cancels the read. A loader that reads the whole profile in
+    // one operation ignores it, which is honest -- it has no partial answer to offer.
     virtual bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
-        const std::function<bool()>& cancellation_requested = {});
+        const std::function<bool()>& cancellation_requested = {},
+        const std::function<bool(float progress)>& partial_callback = {});
     // Check if one can apply swizzled data under such image format and region condition
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,

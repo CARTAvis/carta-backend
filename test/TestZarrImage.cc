@@ -325,6 +325,59 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataStopsWhenTheSinkDoes) {
 // A region's spectral profile now comes from the loader rather than from casacore iterating the
 // image. The two have to be the same numbers: this builds one masked region, asks the loader for
 // its profile, and asks casacore for the same region's statistics one channel at a time.
+// A cursor profile now reports itself as it fills, so that a long one draws progressively and a
+// cursor move can stop it. What the callback promises is that the leading fraction of the buffer is
+// already final -- this fixture is one piece wide, so that promise, not the split, is what is
+// pinned here.
+TEST_F(ZarrImageTest, CursorSpectralDataReportsItsProgress) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+
+    const int x = 3, y = 4, stokes = 1;
+    std::mutex image_mutex;
+    std::vector<float> profile;
+    std::vector<float> reported;
+    ASSERT_TRUE(loader->GetCursorSpectralData(profile, stokes, x, 1, y, 1, image_mutex, {},
+        [&](float progress) {
+            EXPECT_GT(progress, 0.0f);
+            EXPECT_LE(progress, 1.0f);
+            EXPECT_TRUE(reported.empty() || progress > reported.back()) << "progress should only grow";
+            reported.push_back(progress);
+            const auto finished = static_cast<std::size_t>(progress * profile.size() + 0.5f);
+            for (std::size_t z = 0; z < finished; ++z) {
+                const bool flagged = !ExpectedFlag(x, y) || InMissingChunk(x, z, stokes);
+                if (flagged) {
+                    EXPECT_TRUE(std::isnan(profile[z])) << "a reported channel should already be final at z=" << z;
+                } else {
+                    EXPECT_FLOAT_EQ(profile[z], ExpectedValue(x, y, z, stokes)) << "at z=" << z;
+                }
+            }
+            return true;
+        }));
+    ASSERT_EQ(profile.size(), static_cast<std::size_t>(kDepth));
+    ASSERT_FALSE(reported.empty());
+    EXPECT_FLOAT_EQ(reported.back(), 1.0f) << "the last report should cover the whole profile";
+}
+
+// The same callback is how the read is stopped, because the caller checking between pieces is the
+// only place that knows the cursor has moved.
+TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenTheCallbackDoes) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+
+    std::mutex image_mutex;
+    std::vector<float> profile;
+    int calls = 0;
+    EXPECT_FALSE(loader->GetCursorSpectralData(profile, 0, 1, 1, 1, 1, image_mutex, {},
+        [&](float) {
+            ++calls;
+            return false;
+        }));
+    EXPECT_EQ(calls, 1);
+}
+
 TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);

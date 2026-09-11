@@ -1467,13 +1467,33 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
             std::vector<float> spectral_data;
             int xy_count(1);
-            if (!Stokes::IsComputed(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
-                                                   (start_cursor.y + 0.5), xy_count, _image_mutex,
-                                                   [this, start_cursor, &config]() {
-                                                       return !(_cursor == start_cursor) || !IsConnected() || !HasSpectralConfig(config);
-                                                   })) {
-                // A direct read is one operation, so it must perform the same final state check as
-                // the incremental fallback before publishing its result.
+            auto profile_cancelled = [this, start_cursor, &config]() {
+                return !(_cursor == start_cursor) || !IsConnected() || !HasSpectralConfig(config);
+            };
+            // Publish the finished part of the profile on the same cadence as the incremental path
+            // below, so that a loader reading directly behaves like one reading in slices: a curve
+            // that grows, and a cursor move that stops it. A loader with nothing partial to offer
+            // simply never calls this.
+            auto t_start_profile = std::chrono::high_resolution_clock::now();
+            auto publish_partial = [&](float progress) {
+                if (profile_cancelled()) {
+                    return false;
+                }
+                auto t_now = std::chrono::high_resolution_clock::now();
+                if (progress < 1.0f &&
+                    std::chrono::duration<double, std::milli>(t_now - t_start_profile).count() > TARGET_PARTIAL_CURSOR_TIME) {
+                    t_start_profile = t_now;
+                    auto partial_message = Message::SpectralProfileData(CurrentStokes(), progress);
+                    Message::AddProfile(partial_message, config.coordinate, config.all_stats[0], spectral_data);
+                    cb(partial_message);
+                }
+                return true;
+            };
+            if (!Stokes::IsComputed(stokes) &&
+                _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
+                    (start_cursor.y + 0.5), xy_count, _image_mutex, profile_cancelled, publish_partial)) {
+                // The read may have published partial profiles, but the final one still has to pass
+                // the same state check as the incremental fallback before it goes out.
                 if (!(_cursor == start_cursor) || !IsConnected()) {
                     return false;
                 }

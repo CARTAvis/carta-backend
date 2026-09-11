@@ -22,7 +22,8 @@ public:
 
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
-        const std::function<bool()>& cancellation_requested = {}) override;
+        const std::function<bool()>& cancellation_requested = {},
+        const std::function<bool(float progress)>& partial_callback = {}) override;
 
     bool GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override;
