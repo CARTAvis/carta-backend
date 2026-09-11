@@ -218,6 +218,10 @@ bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 // and returns. The pause happens at a block boundary, and blocks are aligned to whole spectral
 // chunks, so resuming decodes nothing twice.
 //
+// The hint is left at zero on purpose: the library then emits once per read budget, which is as
+// often as it can without making the reads smaller. That is what gives the deadline below somewhere
+// to fire -- asking for one block at the end would make this loop a single call however long it ran.
+//
 // Channels are finished in order rather than all of them being refined together: a channel this
 // call reports is final, and the ones after it stay NaN until their turn.
 bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
