@@ -25,6 +25,7 @@
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/measures/Measures/MEpoch.h>
+#include <casacore/casa/Quanta/MVPosition.h>
 #include <casacore/measures/Measures/MPosition.h>
 #include <casacore/coordinates/Coordinates/ObsInfo.h>
 #include <casacore/measures/Measures/Stokes.h>
@@ -219,9 +220,9 @@ void SetObservationInfo(casacore::CoordinateSystem& coordinate_system,
     }
     if (descriptor->observatory_position) {
         const auto& position = *descriptor->observatory_position;
+        // MVPosition interprets three doubles as Cartesian coordinates.
         observation.setTelescopePosition(casacore::MPosition(
-            casacore::Quantity(position[0], "m"), casacore::Quantity(position[1], "m"),
-            casacore::Quantity(position[2], "m"), casacore::MPosition::ITRF));
+            casacore::MVPosition(position[0], position[1], position[2]), casacore::MPosition::ITRF));
     }
     coordinate_system.setObsInfo(observation);
 }
@@ -326,8 +327,38 @@ casacore::DataType CartaZarrImage::InternalDataType() const {
     }
 }
 
-casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& /*buffer*/, const casacore::Slicer& /*section*/) {
-    throw casacore::AipsError("CartaZarrImage::doGetSlice - carta-zarr pixel reads are not implemented yet");
+carta::zarr::ReadRequest CartaZarrImage::MakeReadRequest(const casacore::Slicer& section) {
+    const auto& start = section.start();
+    const auto& length = section.length();
+    const auto& stride = section.stride();
+
+    carta::zarr::ReadRequest request;
+    request.axes.reserve(carta::zarr::kXradioImageAxisOrder.size());
+    for (casacore::uInt axis = 0; axis < start.size(); ++axis) {
+        request.axes.push_back({static_cast<std::uint64_t>(start(axis)),
+            static_cast<std::uint64_t>(length(axis)), static_cast<std::uint64_t>(stride(axis)),
+        });
+    }
+    request.axes.push_back({0, 1, 1});
+    return request;
+}
+
+casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
+    if (!_zarr_image) {
+        throw casacore::AipsError("CartaZarrImage::doGetSlice - image is not open");
+    }
+    buffer.resize(section.length());
+
+    bool delete_storage(false);
+    float* storage = buffer.getStorage(delete_storage);
+    auto read = _zarr_image->Read(MakeReadRequest(section),
+        {storage, static_cast<std::size_t>(buffer.nelements()) * sizeof(float)});
+    buffer.putStorage(storage, delete_storage);
+
+    if (!read) {
+        throw casacore::AipsError("CartaZarrImage::doGetSlice - " + read.error().message);
+    }
+    return false;
 }
 
 void CartaZarrImage::doPutSlice(const casacore::Array<float>& /*buffer*/, const casacore::IPosition& /*where*/, const casacore::IPosition& /*stride*/) {
@@ -346,6 +377,7 @@ casacore::ImageInterface<float>* CartaZarrImage::cloneII() const {
     return new CartaZarrImage(*this);
 }
 
+// Flagged pixels are already returned as NaN by carta-zarr.
 casacore::Bool CartaZarrImage::isMasked() const {
     return false;
 }
@@ -355,15 +387,17 @@ casacore::Bool CartaZarrImage::hasPixelMask() const {
 }
 
 const casacore::Lattice<casacore::Bool>& CartaZarrImage::pixelMask() const {
-    throw casacore::AipsError("CartaZarrImage::pixelMask - pixel mask reads are not implemented yet");
+    throw casacore::AipsError("CartaZarrImage::pixelMask - the mask is read by section, not as a lattice");
 }
 
 casacore::Lattice<casacore::Bool>& CartaZarrImage::pixelMask() {
-    throw casacore::AipsError("CartaZarrImage::pixelMask - pixel mask reads are not implemented yet");
+    throw casacore::AipsError("CartaZarrImage::pixelMask - the mask is read by section, not as a lattice");
 }
 
-casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& /*buffer*/, const casacore::Slicer& /*section*/) {
-    throw casacore::AipsError("CartaZarrImage::doGetMaskSlice - pixel mask reads are not implemented yet");
+casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& buffer, const casacore::Slicer& section) {
+    buffer.resize(section.length());
+    buffer = true;
+    return false;
 }
 
 std::vector<std::pair<std::string, std::string>> CartaZarrImage::GetStorageInfo() const {

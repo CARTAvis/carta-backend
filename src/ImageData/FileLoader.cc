@@ -340,6 +340,9 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
         if (image_type == "CartaFitsImage") {
             // Use cfitsio for slice
             return image->doGetSlice(data, slicer);
+        } else if (image_type == "CartaZarrImage") {
+            image->doGetSlice(data, slicer);
+            return true;
         } else if (image_type == "ImageExpr") {
             // Use ImageExpr for slice
             casacore::Array<float> slice_data;

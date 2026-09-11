@@ -8,7 +8,6 @@
 
 #include <carta-zarr/carta_zarr.h>
 
-#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -54,6 +53,7 @@ public:
 private:
     void SetUpImage();
     void SetBeams();
+    static carta::zarr::ReadRequest MakeReadRequest(const casacore::Slicer& section);
 
     std::string _filename;
     std::string _image_id;
