@@ -211,6 +211,87 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
 // and accumulates in one pass, where casacore's route iterates cursors and asks for the mask
 // separately. The HDF5 heuristic this replaces (height * depth < width) exists because HDF5 really
 // does have two datasets on disk and picking the wrong one is expensive.
+// The six accumulators a reduction produces, as the statistics the caller's own calculator would
+// have produced from the same pixels.
+//
+// An empty plane is the case worth naming: BasicStatsCalculator leaves its extrema at the
+// identities it started from rather than reporting NaN, and callers compare against those, so the
+// NaN a reduction reports for an untouched extremum is turned back into them here.
+BasicStats<float> PlaneStats(const carta::zarr::SpectralBlock& block, std::size_t channel) {
+    double num_pixels = 0.0;
+    double sum = 0.0;
+    double sum_sq = 0.0;
+    double smallest = DOUBLE_NAN;
+    double largest = DOUBLE_NAN;
+    for (std::size_t slot = 0; slot < block.statistic_count; ++slot) {
+        const double value = block.values[(slot * block.statistic_stride) + channel];
+        switch (block.statistics[slot]) {
+            case carta::zarr::Statistic::num_pixels: num_pixels = value; break;
+            case carta::zarr::Statistic::sum: sum = value; break;
+            case carta::zarr::Statistic::sum_sq: sum_sq = value; break;
+            case carta::zarr::Statistic::min: smallest = value; break;
+            case carta::zarr::Statistic::max: largest = value; break;
+            default: break;
+        }
+    }
+
+    const auto count = static_cast<std::size_t>(num_pixels);
+    if (count == 0) {
+        return BasicStats<float>();
+    }
+    const double mean = sum / num_pixels;
+    const double std_dev =
+        count > 1 ? std::sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1.0)) : DOUBLE_NAN;
+    const double rms = std::sqrt(sum_sq / num_pixels);
+    return BasicStats<float>{count, sum, mean, std_dev, static_cast<float>(smallest),
+        static_cast<float>(largest), rms, sum_sq};
+}
+
+bool ZarrLoader::GetCubeBasicStats(
+    int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    if (!image || !plane_callback || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
+        return false;
+    }
+    const auto depth = static_cast<std::uint64_t>(_image_shape(2));
+    if (depth == 0) {
+        return false;
+    }
+
+    // One region covering the plane, with no mask: the reduction's own six accumulators over the
+    // whole image are exactly a plane's basic statistics, so this needs no reduction of its own.
+    const carta::zarr::RegionMask region{0, 0, static_cast<std::uint64_t>(_image_shape(0)),
+        static_cast<std::uint64_t>(_image_shape(1)), nullptr};
+
+    carta::zarr::SpectralReduceRequest request;
+    request.spectral = {0, depth, 1};
+    request.polarization = static_cast<std::uint64_t>(stokes);
+    request.regions = &region;
+    request.region_count = 1;
+    request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum |
+                         carta::zarr::Statistic::sum_sq | carta::zarr::Statistic::min |
+                         carta::zarr::Statistic::max;
+
+    try {
+        const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
+            if (!block.complete) {
+                return true;  // a plane is reported when it is final, not while it fills
+            }
+            for (std::uint64_t c = 0; c < block.channel_count; ++c) {
+                if (!plane_callback(static_cast<int>(block.first_channel + c),
+                        PlaneStats(block, static_cast<std::size_t>(c)))) {
+                    return false;
+                }
+            }
+            return true;
+        });
+        return finished;
+    } catch (const casacore::AipsError& error) {
+        spdlog::warn("Could not reduce the planes of a Zarr dataset: {}", error.getMesg());
+        return false;
+    }
+}
+
 bool ZarrLoader::SpectralRunsAlongY() const {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
     return image != nullptr && image->SpectralRunsAlongY();

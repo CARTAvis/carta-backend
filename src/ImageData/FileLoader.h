@@ -21,6 +21,7 @@
 #include <carta-protobuf/enums.pb.h>
 
 #include "ImageData/FileInfo.h"
+#include "ImageStats/BasicStatsCalculator.h"
 #include "Util/Casacore.h"
 #include "Util/Stokes.h"
 
@@ -171,6 +172,19 @@ public:
         const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {});
     // Check if one can apply swizzled data under such image format and region condition
+    // Basic statistics for every plane of one stokes, in one pass over the pixels.
+    //
+    // The caller's own loop asks plane by plane, and each of those reads a whole plane into a
+    // vector before reducing it. A loader that can walk the cube itself neither materialises a
+    // plane nor reads one twice, which is what this exists for; `plane_callback` receives each
+    // plane as it is finished and returning false from it cancels the walk.
+    //
+    // False means this loader has no such path and the caller should keep its own loop. A loader
+    // that returns false must not have called the callback.
+    virtual bool GetCubeBasicStats(
+        int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
+        return false;
+    }
     // Whether a region handing this loader runs should lay them along y. See RegionMaskRuns.
     virtual bool SpectralRunsAlongY() const {
         return false;

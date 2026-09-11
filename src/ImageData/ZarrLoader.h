@@ -28,6 +28,8 @@ public:
     bool GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override;
 
+    bool GetCubeBasicStats(
+        int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) override;
     bool SpectralRunsAlongY() const override;
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
     bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,

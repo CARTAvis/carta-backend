@@ -383,6 +383,68 @@ TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenTheCallbackDoes) {
 // checks between calls all come too late. The loader reports through the callback while the call is
 // still working, carrying partial sums that converge; the finished profile must be unaffected by
 // having been looked at on the way.
+// Every plane's statistics in one pass, against the loop the caller would otherwise run: read the
+// plane, then reduce it. The comparison is the point -- this path exists to avoid materialising a
+// plane and to avoid reading each one twice, and neither is worth anything if it disagrees.
+TEST_F(ZarrImageTest, CubeBasicStatsAgreeWithThePerPlaneLoop) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto image = loader->GetImage();
+    ASSERT_NE(image, nullptr);
+
+    for (int stokes = 0; stokes < kStokes; ++stokes) {
+        std::map<int, BasicStats<float>> from_loader;
+        ASSERT_TRUE(loader->GetCubeBasicStats(stokes, [&](int z, const BasicStats<float>& stats) {
+            EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
+            from_loader[z] = stats;
+            return true;
+        })) << "the Zarr loader should serve cube statistics itself";
+        ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
+
+        for (int z = 0; z < kDepth; ++z) {
+            casacore::Slicer slicer(casacore::IPosition(4, 0, 0, z, stokes),
+                casacore::IPosition(4, kWidth, kHeight, 1, 1));
+            // doGetSlice's Bool says whether the array references the lattice, not whether it
+            // succeeded, so it is the shape that is checked here.
+            casacore::Array<float> plane;
+            image->doGetSlice(plane, slicer);
+            ASSERT_EQ(plane.nelements(), static_cast<std::size_t>(kWidth) * kHeight);
+            BasicStats<float> reference;
+            CalcBasicStats(reference, plane.data(), plane.nelements());
+
+            const std::string where = " z=" + std::to_string(z) + " stokes=" + std::to_string(stokes);
+            const auto& actual = from_loader[z];
+            EXPECT_EQ(actual.num_pixels, reference.num_pixels) << where;
+            EXPECT_FLOAT_EQ(actual.min_val, reference.min_val) << where;
+            EXPECT_FLOAT_EQ(actual.max_val, reference.max_val) << where;
+            for (const auto& [name, pair] : std::map<std::string, std::pair<double, double>>{
+                     {"sum", {actual.sum, reference.sum}}, {"sumSq", {actual.sumSq, reference.sumSq}},
+                     {"mean", {actual.mean, reference.mean}}, {"rms", {actual.rms, reference.rms}},
+                     {"stdDev", {actual.stdDev, reference.stdDev}}}) {
+                if (std::isnan(pair.second)) {
+                    EXPECT_TRUE(std::isnan(pair.first)) << name << where;
+                } else {
+                    EXPECT_NEAR(pair.first, pair.second, 1e-9 * (1.0 + std::abs(pair.second))) << name << where;
+                }
+            }
+        }
+    }
+}
+
+// A callback that says stop ends the walk rather than being asked for the next plane.
+TEST_F(ZarrImageTest, CubeBasicStatsStopWhenTheCallbackDoes) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    int calls = 0;
+    EXPECT_FALSE(loader->GetCubeBasicStats(0, [&](int, const BasicStats<float>&) {
+        ++calls;
+        return false;
+    }));
+    EXPECT_EQ(calls, 1) << "a callback that says stop should not be asked again";
+}
+
 TEST_F(ZarrImageTest, RegionSpectralDataReportsWhileItIsStillWorking) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
