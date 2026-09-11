@@ -84,7 +84,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
             return success;
         }
         for (const auto& image : zarr_dataset->descriptor().images) {
-            if (image.readable && zarr_dataset->OpenImage(image.id)) {
+            if (image.readable) {
                 file_info.add_hdu_list(image.id);
             }
         }
