@@ -344,21 +344,27 @@ carta::zarr::ReadRequest CartaZarrImage::MakeReadRequest(const casacore::Slicer&
 }
 
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
+    Read(buffer, section);
+    return false;
+}
+
+bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
+    const carta::zarr::ReadOptions& options) const {
     if (!_zarr_image) {
-        throw casacore::AipsError("CartaZarrImage::doGetSlice - image is not open");
+        throw casacore::AipsError("CartaZarrImage::Read - image is not open");
     }
     buffer.resize(section.length());
 
     bool delete_storage(false);
     float* storage = buffer.getStorage(delete_storage);
     auto read = _zarr_image->Read(MakeReadRequest(section),
-        {storage, static_cast<std::size_t>(buffer.nelements()) * sizeof(float)});
+        {storage, static_cast<std::size_t>(buffer.nelements()) * sizeof(float)}, options);
     buffer.putStorage(storage, delete_storage);
 
     if (!read) {
-        throw casacore::AipsError("CartaZarrImage::doGetSlice - " + read.error().message);
+        throw casacore::AipsError("CartaZarrImage::Read - " + read.error().message);
     }
-    return false;
+    return true;
 }
 
 void CartaZarrImage::doPutSlice(const casacore::Array<float>& /*buffer*/, const casacore::IPosition& /*where*/, const casacore::IPosition& /*stride*/) {

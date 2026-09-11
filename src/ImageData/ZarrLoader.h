@@ -15,10 +15,8 @@ public:
     explicit ZarrLoader(const std::string& filename);
 
     bool GetCursorSpectralData(
-        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
-    bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes,
-        std::mutex& image_mutex) override;
-    bool UseTileCache() const override;
+        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
+        const std::function<bool()>& cancellation_requested = {}) override;
 
 private:
     void AllocateImage(const std::string& hdu) override;

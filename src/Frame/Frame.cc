@@ -1468,7 +1468,18 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             std::vector<float> spectral_data;
             int xy_count(1);
             if (!Stokes::IsComputed(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
-                                                   (start_cursor.y + 0.5), xy_count, _image_mutex)) {
+                                                   (start_cursor.y + 0.5), xy_count, _image_mutex,
+                                                   [this, start_cursor, &config]() {
+                                                       return !(_cursor == start_cursor) || !IsConnected() || !HasSpectralConfig(config);
+                                                   })) {
+                // A direct read is one operation, so it must perform the same final state check as
+                // the incremental fallback before publishing its result.
+                if (!(_cursor == start_cursor) || !IsConnected()) {
+                    return false;
+                }
+                if (!HasSpectralConfig(config)) {
+                    break;
+                }
                 // Send final profile message with loader data
                 auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
                 Message::AddProfile(profile_message, config.coordinate, config.all_stats[0], spectral_data);

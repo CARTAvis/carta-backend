@@ -216,7 +216,8 @@ std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsData(FileInfo::Data ds)
 }
 
 bool Hdf5Loader::GetCursorSpectralData(
-    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
+    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
+    const std::function<bool()>& /*cancellation_requested*/) {
     bool data_ok(false);
     std::unique_lock<std::mutex> ulock(image_mutex);
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);

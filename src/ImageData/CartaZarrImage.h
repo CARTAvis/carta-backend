@@ -35,6 +35,8 @@ public:
     casacore::DataType dataType() const override;
     casacore::DataType InternalDataType() const;
     casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) override;
+    bool Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
+        const carta::zarr::ReadOptions& options = {}) const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where,
         const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;

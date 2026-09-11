@@ -8,6 +8,7 @@
 #define CARTA_SRC_IMAGEDATA_FILELOADER_H_
 
 #include <memory>
+#include <functional>
 #include <string>
 
 #include <casacore/casa/Utilities/DataType.h>
@@ -100,7 +101,8 @@ public:
 
     // Spectral profiles for cursor and region
     virtual bool GetCursorSpectralData(
-        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
+        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
+        const std::function<bool()>& cancellation_requested = {});
     // Check if one can apply swizzled data under such image format and region condition
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
