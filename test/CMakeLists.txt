@@ -4,6 +4,9 @@ project(carta_backend_test)
 
 add_definitions(-DCARTA_USER_FOLDER_PREFIX=".carta-unit-tests")
 
+# See test/data/images/zarr/README.md for fixture generation instructions.
+add_definitions(-DZARR_PIXEL_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/pixels")
+
 # Performance tests should not be run by default, since they need to be run in isolation
 option(performance_tests "Build performance tests." OFF)
 if (performance_tests)
@@ -46,6 +49,7 @@ set(TEST_SOURCES
         TestFitsTable.cc
         TestHdf5Attributes.cc
         TestHdf5Image.cc
+        TestZarrImage.cc
         TestHistogram.cc
         TestImageFitting.cc
         TestMain.cc

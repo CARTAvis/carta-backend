@@ -8,11 +8,13 @@
 
 #include <carta-zarr/carta_zarr.h>
 
+#include <mutex>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <casacore/casa/Arrays/Array.h>
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/lattices/Lattices/TiledShape.h>
 
@@ -35,6 +37,7 @@ public:
     casacore::DataType dataType() const override;
     casacore::DataType InternalDataType() const;
     casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) override;
+    casacore::IPosition doNiceCursorShape(casacore::uInt max_pixels) const override;
     bool Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {}) const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where,
@@ -56,6 +59,16 @@ private:
     void SetUpImage();
     void SetBeams();
     static carta::zarr::ReadRequest MakeReadRequest(const casacore::Slicer& section);
+
+    // The finiteness mask of the most recent doGetSlice. casacore asks for a cursor's pixels and
+    // then that same cursor's mask, so computing the mask while the pixels are still hot turns the
+    // second request into a lookup instead of a second decode-and-transpose. The image is
+    // read-only, so a section that matches is always still valid.
+    mutable std::mutex _mask_cache_mutex;
+    mutable casacore::IPosition _mask_cache_start;
+    mutable casacore::IPosition _mask_cache_length;
+    mutable casacore::IPosition _mask_cache_stride;
+    mutable casacore::Array<casacore::Bool> _mask_cache;
 
     std::string _filename;
     std::string _image_id;

@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <mutex>
 #include <limits>
 #include <utility>
 
@@ -34,6 +35,10 @@
 
 namespace carta {
 namespace {
+
+// Sections larger than this are the raster path, which never asks for a mask; caching one would
+// cost a byte per pixel of a whole plane for nothing.
+constexpr casacore::Int kMaskCacheMaxPixels = 1 << 22;
 
 std::vector<std::uint64_t> CartaShape(const carta::zarr::ImageDescriptor& descriptor) {
     std::vector<std::uint64_t> shape(4, 0);
@@ -343,8 +348,57 @@ carta::zarr::ReadRequest CartaZarrImage::MakeReadRequest(const casacore::Slicer&
     return request;
 }
 
+// casacore's default fills axis 0, which is l - the axis that is not contiguous on disk. On a
+// 7763-wide image that makes every cursor one row spanning about thirty chunks, so a plane's
+// statistics decode the whole plane once per row. Report the chunk instead, the way
+// CartaFitsImage reports its tile shape.
+//
+// max_pixels is advice, and it is followed only as far as it helps: a cursor smaller than one
+// chunk decodes exactly as much as a whole chunk does, so the non-spatial axes are collapsed to
+// fit and the spatial chunk itself is reported even when it is larger than the advice.
+casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels) const {
+    if (!_zarr_image) {
+        return casacore::ImageInterface<float>::doNiceCursorShape(max_pixels);
+    }
+    const auto& chunk = _zarr_image->chunk_geometry().chunk_shape;
+    if (chunk.size() < static_cast<std::size_t>(_shape.size())) {
+        return casacore::ImageInterface<float>::doNiceCursorShape(max_pixels);
+    }
+
+    casacore::IPosition cursor(_shape.size());
+    for (casacore::uInt axis = 0; axis < _shape.size(); ++axis) {
+        cursor(axis) = std::min<casacore::Int>(static_cast<casacore::Int>(chunk[axis]), _shape(axis));
+    }
+
+    // Collapse the non-spatial axes, slowest first, until the advice is met.
+    for (casacore::uInt axis = _shape.size(); axis > 2 && cursor.product() > static_cast<casacore::Int>(max_pixels);
+         --axis) {
+        cursor(axis - 1) = 1;
+    }
+
+    // Grow by whole chunks while the advice still allows it: one chunk per cursor is one small
+    // request per chunk, which leaves the decode pool idle.
+    for (casacore::uInt axis = 0; axis < 2; ++axis) {
+        const auto step = static_cast<casacore::Int>(chunk[axis]);
+        while (cursor(axis) + step <= _shape(axis) &&
+               (cursor.product() / cursor(axis)) * (cursor(axis) + step) <= static_cast<casacore::Int>(max_pixels)) {
+            cursor(axis) += step;
+        }
+    }
+    return cursor;
+}
+
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
     Read(buffer, section);
+
+    if (section.length().product() <= kMaskCacheMaxPixels) {
+        casacore::Array<casacore::Bool> mask = isFinite(buffer);
+        std::scoped_lock lock(_mask_cache_mutex);
+        _mask_cache_start = section.start();
+        _mask_cache_length = section.length();
+        _mask_cache_stride = section.stride();
+        _mask_cache.reference(mask);
+    }
     return false;
 }
 
@@ -383,13 +437,16 @@ casacore::ImageInterface<float>* CartaZarrImage::cloneII() const {
     return new CartaZarrImage(*this);
 }
 
-// Flagged pixels are already returned as NaN by carta-zarr.
+// carta-zarr returns a flagged or absent pixel as NaN, so the mask this image reports is the
+// finiteness of its own pixels, exactly as CartaFitsImage does for a float image. casacore's
+// statistics and moments have no NaN handling of their own; they exclude a pixel only when the
+// image reports a mask, so reporting none makes every one of those results NaN.
 casacore::Bool CartaZarrImage::isMasked() const {
-    return false;
+    return true;
 }
 
 casacore::Bool CartaZarrImage::hasPixelMask() const {
-    return false;
+    return true;
 }
 
 const casacore::Lattice<casacore::Bool>& CartaZarrImage::pixelMask() const {
@@ -401,8 +458,20 @@ casacore::Lattice<casacore::Bool>& CartaZarrImage::pixelMask() {
 }
 
 casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& buffer, const casacore::Slicer& section) {
+    {
+        std::scoped_lock lock(_mask_cache_mutex);
+        if (!_mask_cache.empty() && _mask_cache_start == section.start() && _mask_cache_length == section.length() &&
+            _mask_cache_stride == section.stride()) {
+            buffer.resize(section.length());
+            buffer = _mask_cache;
+            return false;
+        }
+    }
+
+    casacore::Array<float> pixels;
+    Read(pixels, section);
     buffer.resize(section.length());
-    buffer = true;
+    buffer = isFinite(pixels);
     return false;
 }
 
