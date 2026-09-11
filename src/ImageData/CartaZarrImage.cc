@@ -421,6 +421,23 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
     return true;
 }
 
+bool CartaZarrImage::ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
+    const carta::zarr::ReadOptions& options) const {
+    if (!_zarr_image) {
+        throw casacore::AipsError("CartaZarrImage::ReduceSpectral - image is not open");
+    }
+    auto reduced = _zarr_image->ReduceSpectral(request, sink, options);
+    if (!reduced) {
+        // A sink that asked to stop is not an error to report upwards; it is the caller's own
+        // decision arriving back as one.
+        if (reduced.error().code == carta::zarr::ErrorCode::cancelled) {
+            return false;
+        }
+        throw casacore::AipsError("CartaZarrImage::ReduceSpectral - " + reduced.error().message);
+    }
+    return true;
+}
+
 void CartaZarrImage::doPutSlice(const casacore::Array<float>& /*buffer*/, const casacore::IPosition& /*where*/, const casacore::IPosition& /*stride*/) {
     throw casacore::AipsError("CartaZarrImage::doPutSlice - image is not writable");
 }

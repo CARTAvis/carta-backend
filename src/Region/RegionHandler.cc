@@ -2055,6 +2055,13 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     std::vector<RegionState> box_regions;
 
     if (line_box_regions.GetLineBoxRegions(line_region_state, line_coord_sys, width, increment, box_regions, message)) {
+        // Every box in one pass over the pixels, where the loader can do that. The boxes overlap
+        // heavily, so the loop below reads the same chunks once per box; this reads each once.
+        if (TryBatchedLineProfiles(file_id, region_id, line_region_state, box_regions, line_coord_sys, z_range, stokes_index,
+                progress_callback, profiles, reverse, cancelled)) {
+            return !cancelled && !allEQ(profiles, FLOAT_NAN);
+        }
+
         auto t_start = std::chrono::high_resolution_clock::now();
         auto num_profiles = box_regions.size();
         for (size_t iprofile = 0; iprofile < num_profiles; ++iprofile) {
@@ -2108,6 +2115,145 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     }
 
     return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, FLOAT_NAN);
+}
+
+// One pass over the pixels for every box of a line, instead of one pass per box.
+//
+// The boxes of a position-velocity cut overlap heavily -- 5,792 of them along a 4096 pixel diagonal,
+// each a few pixels across -- so asking for them one at a time reads the same chunks over and over.
+// A loader that can take them all at once reads each covered chunk once and accumulates whichever
+// boxes land on it.
+//
+// This is an accelerator, not a replacement: it declines rather than fails whenever it meets
+// something it does not handle, and the caller then walks the boxes one at a time as before.
+bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
+    const std::vector<RegionState>& box_regions, std::shared_ptr<casacore::CoordinateSystem> line_coord_sys,
+    const AxisRange& z_range, int stokes_index, std::function<void(float)>& progress_callback,
+    casacore::Matrix<float>& profiles, bool reverse, bool& cancelled) {
+    if (Stokes::IsComputed(stokes_index) || box_regions.empty() || !FrameSet(file_id)) {
+        return false;
+    }
+    const auto num_profiles = box_regions.size();
+    const auto num_channels = static_cast<std::size_t>(z_range.to - z_range.from + 1);
+    if (num_channels == 0) {
+        return false;
+    }
+
+    auto frame = _frames.at(file_id);
+    auto image_csys = frame->CoordinateSystem();
+    auto image_shape = frame->ImageShape();
+
+    // The masks are borrowed for the whole reduction, so they are built first and kept alive here.
+    // Reserving exactly is load bearing: a reallocation would move the arrays the specs point into.
+    std::vector<casacore::ArrayLattice<casacore::Bool>> masks;
+    std::vector<RegionMaskSpec> specs;
+    std::vector<std::size_t> spec_to_box;
+    masks.reserve(num_profiles);
+    specs.reserve(num_profiles);
+    spec_to_box.reserve(num_profiles);
+
+    for (std::size_t iprofile = 0; iprofile < num_profiles; ++iprofile) {
+        auto region = std::make_shared<Region>(box_regions[iprofile], line_coord_sys);
+        auto lc_region = region->GetLCRegion(file_id, image_csys, image_shape, StokesSource(), false);
+        if (!lc_region) {
+            // A box that does not land on this image has no profile, which is what the per-box path
+            // also produces for it: a row of NaN.
+            continue;
+        }
+        const auto bounding_box = lc_region->boundingBox();
+        if (bounding_box.start().size() < 2 || bounding_box.length()(0) < 1 || bounding_box.length()(1) < 1) {
+            return false;
+        }
+
+        masks.push_back(region->GetImageRegionMask(file_id));
+        const auto& mask = masks.back();
+
+        RegionMaskSpec spec;
+        spec.x_start = static_cast<std::uint64_t>(bounding_box.start()(0));
+        spec.y_start = static_cast<std::uint64_t>(bounding_box.start()(1));
+        spec.width = static_cast<std::uint64_t>(bounding_box.length()(0));
+        spec.height = static_cast<std::uint64_t>(bounding_box.length()(1));
+        if (!mask.shape().empty()) {
+            // An unrotated rectangle arrives as an LCBox with no raster mask at all, and its
+            // bounding box is the region. Anything else must describe exactly that bounding box.
+            if (mask.shape().size() != 2 || mask.shape()(0) != bounding_box.length()(0) ||
+                mask.shape()(1) != bounding_box.length()(1) || !mask.asArray().contiguousStorage()) {
+                return false;
+            }
+            spec.mask = mask.asArray().data();
+        }
+        specs.push_back(spec);
+        spec_to_box.push_back(iprofile);
+    }
+
+    if (specs.empty()) {
+        return false;
+    }
+
+    casacore::Matrix<float> batched;
+    if (reverse) {
+        batched.resize(casacore::IPosition(2, num_channels, num_profiles));
+    } else {
+        batched.resize(casacore::IPosition(2, num_profiles, num_channels));
+    }
+    batched = FLOAT_NAN;
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+    std::size_t blocks = 0;
+    std::size_t channels_done = 0;
+    bool stopped = false;
+
+    const bool complete = frame->GetLoaderMultiRegionSpectralData(
+        specs, z_range, stokes_index, [&](const RegionSpectralBlock& block) {
+            ++blocks;
+            if (CancelLineProfiles(region_id, file_id, line_region_state) || _stop_pv[file_id]) {
+                stopped = true;
+                return false;
+            }
+
+            for (std::size_t r = 0; r < block.region_count; ++r) {
+                const double* counts = block.num_pixels + (r * block.region_stride);
+                const double* sums = block.sum + (r * block.region_stride);
+                const auto iprofile = spec_to_box[r];
+                for (std::size_t c = 0; c < block.channel_count; ++c) {
+                    // A channel whose box caught nothing has no mean, and NaN is what the per-box
+                    // path leaves there too.
+                    const float mean =
+                        counts[c] > 0.0 ? static_cast<float>(sums[c] / counts[c]) : FLOAT_NAN;
+                    const auto channel = block.first_channel + c;
+                    if (reverse) {
+                        batched(channel, iprofile) = mean;
+                    } else {
+                        batched(iprofile, channel) = mean;
+                    }
+                }
+            }
+
+            channels_done += block.channel_count;
+            const auto t_end = std::chrono::high_resolution_clock::now();
+            const auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+            const float progress = float(channels_done) / float(num_channels);
+            if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress >= 1.0)) {
+                t_start = t_end;
+                progress_callback(progress);
+            }
+            return true;
+        });
+
+    if (stopped) {
+        cancelled = true;
+        profiles.resize();
+        return true;
+    }
+    if (!complete || blocks == 0 || channels_done != num_channels) {
+        // Either the loader has no batched path, or it gave up partway. Both mean the caller should
+        // do the work the long way rather than publish half a profile.
+        return false;
+    }
+
+    profiles.reference(batched);
+    progress_callback(1.0);
+    return true;
 }
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {

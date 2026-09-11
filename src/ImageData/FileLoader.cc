@@ -879,6 +879,13 @@ bool FileLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     return false;
 }
 
+bool FileLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
+    const std::function<bool(const RegionSpectralBlock&)>& sink) {
+    // Only a loader that can read many regions in one pass over the pixels implements this. Saying
+    // no here is not a failure: the caller falls back to reducing one region at a time.
+    return false;
+}
+
 bool FileLoader::GetDownsampledRasterData(
     std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
     // Must be implemented in subclasses

@@ -40,6 +40,11 @@ public:
     casacore::IPosition doNiceCursorShape(casacore::uInt max_pixels) const override;
     bool Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {}) const;
+    // Reduce many 2D regions over a run of channels in one pass over the pixels. Exposed here
+    // rather than through the casacore interface because casacore has no such call: a Lattice is
+    // asked for pixels, and every reduction it offers is one region at a time.
+    bool ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
+        const carta::zarr::ReadOptions& options = {}) const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where,
         const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;

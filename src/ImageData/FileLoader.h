@@ -7,9 +7,11 @@
 #ifndef CARTA_SRC_IMAGEDATA_FILELOADER_H_
 #define CARTA_SRC_IMAGEDATA_FILELOADER_H_
 
-#include <memory>
+#include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include <casacore/casa/Utilities/DataType.h>
 #include <casacore/images/Images/ImageInterface.h>
@@ -39,6 +41,35 @@ struct StokesRegion {
     StokesRegion() {}
     StokesRegion(StokesSource stokes_source_, casacore::ImageRegion image_region_)
         : stokes_source(stokes_source_), image_region(image_region_) {}
+};
+
+// One 2D region of a batched spectral reduction: its bounding box in image pixels, plus an
+// optional raster mask laid out row-major with x fastest, exactly as casacore's LCRegionFixed
+// stores one. Both the mask and this struct are borrowed for the duration of the call.
+//
+// A null mask selects the whole bounding box, and that is a required case rather than a shortcut:
+// an unrotated rectangle becomes an LCBox, whose getMask() is empty.
+struct RegionMaskSpec {
+    std::uint64_t x_start = 0;
+    std::uint64_t y_start = 0;
+    std::uint64_t width = 0;
+    std::uint64_t height = 0;
+    const casacore::Bool* mask = nullptr;
+};
+
+// One run of channels of a batched reduction, for every region at once.
+//
+// num_pixels and sum are both laid out [region][channel] with region_stride doubles between
+// regions, and point into the loader's own buffer: they are valid only until the callback returns.
+// A channel whose region caught no valid pixel has num_pixels zero, which is the caller's signal
+// that the mean it wants does not exist rather than a number to divide by.
+struct RegionSpectralBlock {
+    std::size_t first_channel = 0;
+    std::size_t channel_count = 0;
+    std::size_t region_count = 0;
+    std::size_t region_stride = 0;
+    const double* num_pixels = nullptr;
+    const double* sum = nullptr;
 };
 
 class FileLoader {
@@ -108,6 +139,15 @@ public:
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+    // Reduce many regions over the same channels in one pass over the pixels, calling the sink with
+    // a run of channels at a time. Returning false from the sink cancels the reduction.
+    //
+    // A position-velocity cut is one box per pixel along the line -- 5,792 of them across a 4096
+    // pixel diagonal -- and they overlap heavily, so asking for them one at a time reads the same
+    // chunks once per box. Default false: a loader whose format has no batched path keeps the
+    // existing route, which is per-region and correct, just proportional to the region count.
+    virtual bool GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
+        const std::function<bool(const RegionSpectralBlock&)>& sink);
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual bool GetChunk(

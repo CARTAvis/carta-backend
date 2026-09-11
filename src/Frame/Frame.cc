@@ -1802,6 +1802,14 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
     return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
+bool Frame::GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
+    const std::function<bool(const RegionSpectralBlock&)>& sink) {
+    // No image mutex: the only loader that answers this reads through immutable carta-zarr handles,
+    // which are safe to call concurrently, and every other loader declines without touching the
+    // image at all.
+    return _loader->GetMultiRegionSpectralData(regions, z_range, stokes, sink);
+}
+
 bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Get spectral data from loader (add image mutex for swizzled data)

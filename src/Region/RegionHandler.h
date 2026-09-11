@@ -114,6 +114,13 @@ private:
     bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index, const std::string& coordinate,
         std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, casacore::Quantity& increment, bool& cancelled,
         std::string& message, bool reverse = false);
+    // Reduce every box of a line in one pass over the pixels, when the file's loader can. Returns
+    // whether it produced a complete set of profiles; the caller falls back to one box at a time
+    // otherwise, which is slower but always available.
+    bool TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
+        const std::vector<RegionState>& box_regions, std::shared_ptr<casacore::CoordinateSystem> line_coord_sys,
+        const AxisRange& z_range, int stokes_index, std::function<void(float)>& progress_callback,
+        casacore::Matrix<float>& profiles, bool reverse, bool& cancelled);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     casacore::Vector<float> GetTemporaryRegionProfile(int file_id, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> csys, const AxisRange& z_range, int stokes_index, double& num_pixels);
