@@ -17,6 +17,7 @@
 
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/LRegions/LCBox.h>
+#include <casacore/lattices/LRegions/LCPixelSet.h>
 
 #include "ImageData/CartaZarrImage.h"
 #include "ImageData/FileLoader.h"
@@ -321,6 +322,74 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataStopsWhenTheSinkDoes) {
 // own. Both frames below read the same Zarr file: the first through ZarrLoader, which reduces every
 // box at once, and the second through a loader holding the same CartaZarrImage, which has no
 // batched path and so walks the boxes one at a time.
+// A region's spectral profile now comes from the loader rather than from casacore iterating the
+// image. The two have to be the same numbers: this builds one masked region, asks the loader for
+// its profile, and asks casacore for the same region's statistics one channel at a time.
+TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto image = loader->GetImage();
+    ASSERT_NE(image, nullptr);
+
+    // A region straddling the chunk boundary at x = 2, with a mask that is neither empty nor full.
+    const int x0 = 1, y0 = 1, region_width = 3, region_height = 4;
+    casacore::Array<casacore::Bool> mask(casacore::IPosition(4, region_width, region_height, 1, 1));
+    for (int y = 0; y < region_height; ++y) {
+        for (int x = 0; x < region_width; ++x) {
+            mask(casacore::IPosition(4, x, y, 0, 0)) = ((x + (2 * y)) % 3) != 0;
+        }
+    }
+    casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, region_width, region_height));
+    for (int y = 0; y < region_height; ++y) {
+        for (int x = 0; x < region_width; ++x) {
+            mask_2d(casacore::IPosition(2, x, y)) = mask(casacore::IPosition(4, x, y, 0, 0));
+        }
+    }
+    casacore::ArrayLattice<casacore::Bool> mask_lattice(mask_2d);
+
+    const std::vector<CARTA::StatsType> compared{CARTA::StatsType::NumPixels, CARTA::StatsType::Sum,
+        CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::Min,
+        CARTA::StatsType::Max};
+
+    for (int stokes = 0; stokes < kStokes; ++stokes) {
+        std::mutex image_mutex;
+        EXPECT_TRUE(loader->UseRegionSpectralData(casacore::IPosition(2, region_width, region_height), image_mutex))
+            << "the Zarr loader should serve region profiles itself";
+
+        std::map<CARTA::StatsType, std::vector<double>> from_loader;
+        float progress = 0.0;
+        int rounds = 0;
+        while (progress < 1.0) {
+            ASSERT_TRUE(loader->GetRegionSpectralData(stokes, AxisRange(0, kDepth - 1), stokes, mask_lattice,
+                casacore::IPosition(2, x0, y0), image_mutex, from_loader, progress))
+                << "the loader profile failed at stokes=" << stokes;
+            ASSERT_LT(++rounds, 100) << "the loader profile never completed";
+        }
+
+        for (int z = 0; z < kDepth; ++z) {
+            casacore::LCBox box(casacore::IPosition(4, x0, y0, z, stokes),
+                casacore::IPosition(4, x0 + region_width - 1, y0 + region_height - 1, z, stokes), image->shape());
+            casacore::SubImage<float> sub_image(*image, casacore::LCPixelSet(mask, box), false);
+
+            std::map<CARTA::StatsType, std::vector<double>> from_casacore;
+            ASSERT_TRUE(CalcStatsValues(from_casacore, compared, sub_image, false));
+
+            for (const auto stat : compared) {
+                const double loader_value = from_loader[stat][z];
+                const double casacore_value = from_casacore[stat][0];
+                const std::string where = " stat=" + std::to_string(static_cast<int>(stat)) +
+                                          " z=" + std::to_string(z) + " stokes=" + std::to_string(stokes);
+                if (std::isnan(casacore_value)) {
+                    EXPECT_TRUE(std::isnan(loader_value)) << where;
+                } else {
+                    EXPECT_NEAR(loader_value, casacore_value, 1e-9 * (1.0 + std::abs(casacore_value))) << where;
+                }
+            }
+        }
+    }
+}
+
 TEST_F(ZarrImageTest, PvImageAgreesBetweenTheBatchedAndPerBoxPaths) {
     const auto pv_data = [&](const std::shared_ptr<FileLoader>& loader, bool& succeeded) {
         std::shared_ptr<Frame> frame(new Frame(0, loader, ""));

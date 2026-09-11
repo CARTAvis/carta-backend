@@ -8,6 +8,12 @@
 
 #include "FileLoader.h"
 
+#include <chrono>
+#include <map>
+#include <mutex>
+#include <utility>
+#include <vector>
+
 namespace carta {
 
 class ZarrLoader : public FileLoader {
@@ -21,8 +27,30 @@ public:
     bool GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override;
 
+    bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
+    bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
+        const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
+        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
+
 private:
+    // What one region's profile has accumulated so far.
+    //
+    // GetRegionSpectralData is called in a loop until it reports completion, because that loop is
+    // where the caller checks whether the region still exists and whether the user still wants the
+    // answer. A whole-cube profile is seconds of work, so it has to be interruptible somewhere, and
+    // the seam between calls is the only one the interface offers.
+    struct RegionSpectralState {
+        casacore::IPosition origin;
+        casacore::IPosition shape;
+        AxisRange z_range;
+        std::size_t channels_done = 0;
+        std::map<CARTA::StatsType, std::vector<double>> stats;
+    };
+
     void AllocateImage(const std::string& hdu) override;
+
+    std::mutex _region_spectral_mutex;
+    std::map<std::pair<int, int>, RegionSpectralState> _region_spectral;
 };
 
 }  // namespace carta
