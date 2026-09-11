@@ -237,9 +237,9 @@ CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& i
     }
 
     if (image_id.empty()) {
-        const auto& image_ids = dataset.value().descriptor().image_ids;
-        if (!image_ids.empty()) {
-            _image_id = image_ids.front();
+        const auto& default_image_id = dataset.value().descriptor().default_image_id;
+        if (default_image_id) {
+            _image_id = *default_image_id;
         }
     } else {
         _image_id = image_id;

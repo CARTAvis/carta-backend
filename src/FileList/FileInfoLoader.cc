@@ -80,12 +80,12 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
 
     // add hdu for ZARR
     if (_type == CARTA::FileType::ZARR) {
-        if (!zarr_dataset || zarr_dataset->descriptor().image_ids.empty()) {
+        if (!zarr_dataset || zarr_dataset->descriptor().images.empty()) {
             return success;
         }
-        for (const auto& image_id : zarr_dataset->descriptor().image_ids) {
-            if (zarr_dataset->OpenImage(image_id)) {
-                file_info.add_hdu_list(image_id);
+        for (const auto& image : zarr_dataset->descriptor().images) {
+            if (image.readable && zarr_dataset->OpenImage(image.id)) {
+                file_info.add_hdu_list(image.id);
             }
         }
         return true;
