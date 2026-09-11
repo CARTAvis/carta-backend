@@ -1822,6 +1822,15 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
     return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
+bool Frame::GetCubeBasicStats(int stokes, const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
+    // Each plane is cached on the way past, because the per-plane path this replaces cached it and
+    // later per-plane requests still look there.
+    return _loader->GetCubeBasicStats(stokes, [&](int z, const BasicStats<float>& stats) {
+        _image_basic_stats[CacheKey(z, stokes)] = stats;
+        return plane_callback(z, stats);
+    });
+}
+
 bool Frame::SpectralRunsAlongY() const {
     return _loader->SpectralRunsAlongY();
 }

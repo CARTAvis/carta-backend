@@ -1673,17 +1673,18 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // stats for entire cube
             BasicStats<float> cube_stats;
-            for (size_t z = 0; z < depth; ++z) {
-                // stats for this z
-                BasicStats<float> z_stats;
-                if (!_frames.at(file_id)->GetBasicStats(z, stokes, z_stats)) {
-                    return calculated;
-                }
-                cube_stats.join(z_stats);
+
+            // What one plane costs the caller, shared by the loader's own walk and the per-plane
+            // loop below so that the two report progress and stop at the same points.
+            bool stats_cancelled(false);
+            auto take_plane = [&](int z, const BasicStats<float>& z_stats) {
+                BasicStats<float> joined(z_stats);
+                cube_stats.join(joined);
 
                 // check for cancel
                 if (_histogram_context.is_group_execution_cancelled()) {
-                    break;
+                    stats_cancelled = true;
+                    return false;
                 }
 
                 // check for progress update
@@ -1698,6 +1699,24 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     auto* message_histogram = progress_msg.mutable_histograms();
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                     t_start = t_end;
+                }
+                return true;
+            };
+
+            // A loader that can walk the cube itself neither materialises a plane nor reads each
+            // one twice. Its false means either that it has no such path or that `take_plane` said
+            // stop, which is why the cancel is tracked separately rather than read from the return.
+            if (!_frames.at(file_id)->GetCubeBasicStats(stokes, take_plane) && !stats_cancelled) {
+                cube_stats = BasicStats<float>();
+                for (size_t z = 0; z < depth; ++z) {
+                    // stats for this z
+                    BasicStats<float> z_stats;
+                    if (!_frames.at(file_id)->GetBasicStats(z, stokes, z_stats)) {
+                        return calculated;
+                    }
+                    if (!take_plane(static_cast<int>(z), z_stats)) {
+                        break;
+                    }
                 }
             }
 

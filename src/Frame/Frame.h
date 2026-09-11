@@ -186,6 +186,10 @@ public:
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
     // Whether this image's loader wants a region's runs along y. False for every loader that has no
     // batched path, which is also every loader that will not be asked for runs.
+    // Every plane's basic statistics in one pass, when the loader can do that. False means it
+    // cannot and the caller should keep its own per-plane loop; a callback returning false cancels,
+    // which also returns false, so a caller that needs to tell them apart watches its own callback.
+    bool GetCubeBasicStats(int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback);
     bool SpectralRunsAlongY() const;
     bool GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink);

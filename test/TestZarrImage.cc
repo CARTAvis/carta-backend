@@ -432,6 +432,35 @@ TEST_F(ZarrImageTest, CubeBasicStatsAgreeWithThePerPlaneLoop) {
     }
 }
 
+// The same walk through a Frame, whose passthrough also fills the per-plane cache that the loop
+// this replaces filled. That the cache was filled is not what is checked here -- a later
+// GetBasicStats returns the same numbers whether it read the cache or recomputed them, and the
+// cache is private -- so this covers the passthrough and leaves the caching to inspection.
+TEST_F(ZarrImageTest, CubeBasicStatsAgreeThroughAFrame) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    ASSERT_TRUE(frame->IsValid());
+
+    const int stokes = 1;
+    std::map<int, BasicStats<float>> walked;
+    ASSERT_TRUE(frame->GetCubeBasicStats(stokes, [&](int z, const BasicStats<float>& stats) {
+        walked[z] = stats;
+        return true;
+    }));
+    ASSERT_EQ(walked.size(), static_cast<std::size_t>(kDepth));
+
+    for (int z = 0; z < kDepth; ++z) {
+        BasicStats<float> cached;
+        ASSERT_TRUE(frame->GetBasicStats(z, stokes, cached)) << "z=" << z;
+        EXPECT_EQ(cached.num_pixels, walked[z].num_pixels) << "z=" << z;
+        EXPECT_FLOAT_EQ(cached.min_val, walked[z].min_val) << "z=" << z;
+        EXPECT_FLOAT_EQ(cached.max_val, walked[z].max_val) << "z=" << z;
+        EXPECT_DOUBLE_EQ(cached.sum, walked[z].sum) << "z=" << z;
+    }
+}
+
 // A callback that says stop ends the walk rather than being asked for the next plane.
 TEST_F(ZarrImageTest, CubeBasicStatsStopWhenTheCallbackDoes) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
