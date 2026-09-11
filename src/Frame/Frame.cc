@@ -1486,6 +1486,14 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                 cb(profile_message);
             } else {
+                // A cancelled direct read is reported as unavailable by the loader. Do not turn
+                // that cancellation into a second I/O attempt through the incremental fallback.
+                if (!(_cursor == start_cursor) || !IsConnected()) {
+                    return false;
+                }
+                if (!HasSpectralConfig(config)) {
+                    break;
+                }
                 // Send image slices
                 // Set up slicer
                 int x_index, y_index;
