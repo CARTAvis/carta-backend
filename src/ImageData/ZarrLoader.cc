@@ -272,6 +272,10 @@ bool ZarrLoader::GetCubeBasicStats(
                          carta::zarr::Statistic::sum_sq | carta::zarr::Statistic::min |
                          carta::zarr::Statistic::max;
 
+    // As above: a scan over the cube should not evict the session's working set.
+    carta::zarr::ReadOptions options;
+    options.cache_policy = carta::zarr::CachePolicy::bypass;
+
     try {
         const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
             if (!block.complete) {
@@ -284,7 +288,7 @@ bool ZarrLoader::GetCubeBasicStats(
                 }
             }
             return true;
-        });
+        }, options);
         return finished;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not reduce the planes of a Zarr dataset: {}", error.getMesg());
@@ -312,6 +316,11 @@ bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBound
     request.lower = bounds.min;
     request.upper = bounds.max;
 
+    // A cube scan touches every chunk once and reuses none of them, so it runs against a pool of
+    // its own that holds nothing rather than evicting whatever the session is looking at.
+    carta::zarr::ReadOptions options;
+    options.cache_policy = carta::zarr::CachePolicy::bypass;
+
     std::vector<int> plane_bins(static_cast<std::size_t>(num_bins));
     try {
         return image->ComputeHistogram(request, [&](const carta::zarr::HistogramBlock& block) {
@@ -328,7 +337,7 @@ bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBound
                 }
             }
             return true;
-        });
+        }, options);
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not bin the planes of a Zarr dataset: {}", error.getMesg());
         return false;
