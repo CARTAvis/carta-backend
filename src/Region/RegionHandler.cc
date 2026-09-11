@@ -1637,21 +1637,37 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             auto t_start = std::chrono::high_resolution_clock::now();
             auto t_latest = t_start;
 
+            // The reasons to stop, asked in one place so that a loader whose call is long enough to
+            // outlast them can ask too.
+            auto still_wanted = [&]() {
+                return RegionFileIdsValid(region_id, file_id) && region->GetRegionState() == initial_region_state &&
+                       (!use_current_stokes || stokes_index == frame->CurrentStokes()) &&
+                       HasSpectralRequirements(region_id, file_id, coordinate, required_stats);
+            };
+
+            // Sending on the same clock as the loop below, and resetting the same timer, so that a
+            // profile arriving through this one does not also arrive through the other.
+            auto send_partial = [&](const ProfilesMap& partial, float partial_progress) {
+                if (!still_wanted()) {
+                    return false;
+                }
+                auto t_now = std::chrono::high_resolution_clock::now();
+                if (std::chrono::duration<double, std::milli>(t_now - t_latest).count() <= TARGET_PARTIAL_REGION_TIME) {
+                    return true;
+                }
+                for (const auto& profile : partial) {
+                    if (results.count(profile.first)) {
+                        results[profile.first] = profile.second;
+                    }
+                }
+                t_latest = t_now;
+                partial_results_callback(results, partial_progress);
+                return true;
+            };
+
             // Get partial profiles until complete (do once if cached)
             while (progress < 1.0) {
-                // Cancel if region or frame is closing
-                if (!RegionFileIdsValid(region_id, file_id)) {
-                    return false;
-                }
-
-                // Cancel if region, current stokes, or spectral requirements changed
-                if (region->GetRegionState() != initial_region_state) {
-                    return false;
-                }
-                if (use_current_stokes && (stokes_index != frame->CurrentStokes())) {
-                    return false;
-                }
-                if (!HasSpectralRequirements(region_id, file_id, coordinate, required_stats)) {
+                if (!still_wanted()) {
                     return false;
                 }
 
@@ -1659,7 +1675,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
                     int tmp_stokes_index;
                     return (frame->GetStokesTypeIndex(tmp_coordinate, tmp_stokes_index) &&
-                            frame->GetLoaderSpectralData(region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress));
+                            frame->GetLoaderSpectralData(
+                                region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress));
                 };
 
                 ProfilesMap partial_profiles;
@@ -1668,7 +1685,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                         return false;
                     }
                 } else { // For regular stokes I, Q, U, or V
-                    if (!frame->GetLoaderSpectralData(region_id, z_range, stokes_index, mask, xy_origin, partial_profiles, progress)) {
+                    if (!frame->GetLoaderSpectralData(
+                            region_id, z_range, stokes_index, mask, xy_origin, partial_profiles, progress, send_partial)) {
                         return false;
                     }
                 }

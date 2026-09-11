@@ -21,6 +21,7 @@
 
 #include "ImageData/CartaZarrImage.h"
 #include "ImageData/FileLoader.h"
+#include "ImageData/ZarrLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageStats/StatsCalculator.h"
 #include "Region/RegionHandler.h"
@@ -376,6 +377,93 @@ TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenTheCallbackDoes) {
             return false;
         }));
     EXPECT_EQ(calls, 1);
+}
+
+// A region covering a large image takes tens of seconds to read one chunk layer, and the caller's
+// checks between calls all come too late. The loader reports through the callback while the call is
+// still working, carrying partial sums that converge; the finished profile must be unaffected by
+// having been looked at on the way.
+TEST_F(ZarrImageTest, RegionSpectralDataReportsWhileItIsStillWorking) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    // One byte, so every chunk is its own read and the reduction cannot finish in one.
+    zarr_loader->SetSpectralReadBudgetBytes(1);
+
+    const int x0 = 1, y0 = 1, region_width = 3, region_height = 4;
+    casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, region_width, region_height), true);
+    casacore::ArrayLattice<casacore::Bool> mask_lattice(mask_2d);
+    const casacore::IPosition origin(2, x0, y0);
+    std::mutex image_mutex;
+
+    std::vector<float> reported;
+    std::map<CARTA::StatsType, std::vector<double>> from_loader;
+    float progress = 0.0;
+    int rounds = 0;
+    while (progress < 1.0) {
+        ASSERT_TRUE(loader->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask_lattice, origin, image_mutex,
+            from_loader, progress,
+            [&](const std::map<CARTA::StatsType, std::vector<double>>& partial, float partial_progress) {
+                EXPECT_EQ(partial.count(CARTA::StatsType::Sum), 1u) << "a partial profile should carry the stats";
+                reported.push_back(partial_progress);
+                return true;
+            }));
+        ASSERT_LT(++rounds, 200) << "the loader profile never completed";
+    }
+    ASSERT_FALSE(reported.empty()) << "a one-byte budget should have made the reduction report on the way";
+    for (const float value : reported) {
+        EXPECT_GE(value, 0.0f);
+        EXPECT_LT(value, 1.0f) << "a report from inside the call is never the finished profile";
+    }
+
+    // The same profile without ever looking at it.
+    auto reference_loader = FileLoader::GetLoader(kZarrFixture.string());
+    reference_loader->OpenFile("");
+    std::map<CARTA::StatsType, std::vector<double>> reference;
+    float reference_progress = 0.0;
+    while (reference_progress < 1.0) {
+        ASSERT_TRUE(reference_loader->GetRegionSpectralData(
+            0, AxisRange(0, kDepth - 1), 0, mask_lattice, origin, image_mutex, reference, reference_progress));
+    }
+    for (const auto& [stat, values] : reference) {
+        ASSERT_EQ(from_loader[stat].size(), values.size()) << "stat=" << static_cast<int>(stat);
+        for (std::size_t z = 0; z < values.size(); ++z) {
+            const std::string where = " stat=" + std::to_string(static_cast<int>(stat)) + " z=" + std::to_string(z);
+            if (std::isnan(values[z])) {
+                EXPECT_TRUE(std::isnan(from_loader[stat][z])) << where;
+            } else {
+                EXPECT_NEAR(from_loader[stat][z], values[z], 1e-9 * (1.0 + std::abs(values[z]))) << where;
+            }
+        }
+    }
+}
+
+// A callback that says stop ends the call rather than being asked again.
+TEST_F(ZarrImageTest, RegionSpectralDataStopsWhenTheCallbackDoes) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    zarr_loader->SetSpectralReadBudgetBytes(1);
+
+    const int region_width = 3, region_height = 4;
+    casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, region_width, region_height), true);
+    casacore::ArrayLattice<casacore::Bool> mask_lattice(mask_2d);
+    std::mutex image_mutex;
+
+    std::map<CARTA::StatsType, std::vector<double>> from_loader;
+    float progress = 0.0;
+    int calls = 0;
+    EXPECT_FALSE(loader->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask_lattice,
+        casacore::IPosition(2, 1, 1), image_mutex, from_loader, progress,
+        [&](const std::map<CARTA::StatsType, std::vector<double>>&, float) {
+            ++calls;
+            return false;
+        }));
+    EXPECT_EQ(calls, 1) << "a callback that says stop should not be asked again";
 }
 
 TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {

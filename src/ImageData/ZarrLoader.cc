@@ -226,7 +226,8 @@ bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 // call reports is final, and the ones after it stay NaN until their turn.
 bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& /*image_mutex*/,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
+    const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback) {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
     if (!image || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
         return false;
@@ -290,17 +291,39 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME);
         bool paused = false;
         try {
+            const auto report = [&](double done) {
+                return !partial_callback ||
+                       partial_callback(state.stats, static_cast<float>(done / static_cast<double>(channels)));
+            };
+            carta::zarr::ReadOptions options;
+            options.temporary_memory_limit_bytes = _spectral_read_budget_bytes;
             const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
                 StoreSpectralBlock(state.stats, block, first_channel, beam_area, has_flux);
+                if (!block.complete) {
+                    // Partial sums over the chunks read so far. Forwarding them is the whole point
+                    // of the callback: one chunk layer of a region covering a large image is tens of
+                    // seconds, and this is the only thing the caller sees while it is being read.
+                    // Nothing is finished, so channels_done does not move and the same channels
+                    // arrive again.
+                    return report(static_cast<double>(first_channel + block.first_channel) +
+                                  (block.completeness * static_cast<double>(block.channel_count)));
+                }
                 state.channels_done = first_channel + static_cast<std::size_t>(block.first_channel + block.channel_count);
-                if (std::chrono::steady_clock::now() >= deadline && state.channels_done < channels) {
+                if (state.channels_done >= channels) {
+                    return true;
+                }
+                if (!report(static_cast<double>(state.channels_done))) {
+                    return false;
+                }
+                if (std::chrono::steady_clock::now() >= deadline) {
                     // Hand back what is finished so the caller can show it and decide whether this
-                    // profile is still wanted.
+                    // profile is still wanted. Only ever at a block boundary: a pause inside one
+                    // would throw away the partial sums, and the next call would read them again.
                     paused = true;
                     return false;
                 }
                 return true;
-            });
+            }, options);
             if (!finished && !paused) {
                 return false;
             }

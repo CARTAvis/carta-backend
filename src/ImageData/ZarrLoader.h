@@ -31,7 +31,15 @@ public:
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
     bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
+        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
+        const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {}) override;
+
+    // The read budget one spectral reduction may hold, in bytes; zero leaves the library its own.
+    // Exists so that a test can make a reduction take more than one read, which is what a region
+    // covering a large image does and what no fixture small enough to keep in a repository can.
+    void SetSpectralReadBudgetBytes(std::size_t bytes) {
+        _spectral_read_budget_bytes = bytes;
+    }
 
 private:
     // What one region's profile has accumulated so far.
@@ -50,6 +58,7 @@ private:
 
     void AllocateImage(const std::string& hdu) override;
 
+    std::size_t _spectral_read_budget_bytes = 0;
     std::mutex _region_spectral_mutex;
     std::map<std::pair<int, int>, RegionSpectralState> _region_spectral;
 };

@@ -270,7 +270,10 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 
 bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
+    const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback/*unused*/) {
+    // A call here is bounded by INIT_DELTA_Z columns, so the caller's own checks between calls are
+    // timely and there is nothing this would say sooner.
     // Return calculated stats if valid and complete,
     // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
     // Calling function should check for complete progress when x-range of region is complete

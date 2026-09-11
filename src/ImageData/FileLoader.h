@@ -143,9 +143,16 @@ public:
         const std::function<bool(float progress)>& partial_callback = {});
     // Check if one can apply swizzled data under such image format and region condition
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
+    // `partial_callback`, when given, is called while one call is still working, with the profile
+    // as it stands and how far along it is. A loader whose call is long enough that the caller's
+    // own between-call checks would come too late reports through this instead; returning false
+    // from it cancels the call. The values it carries are not final -- counts and sums grow and a
+    // mean converges -- which is the same partial answer this interface already returns when it
+    // reports progress below one.
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
+        const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {});
     // Reduce many regions over the same channels in one pass over the pixels, calling the sink with
     // a run of channels at a time. Returning false from the sink cancels the reduction.
     //

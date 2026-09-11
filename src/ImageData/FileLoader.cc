@@ -874,7 +874,8 @@ bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 
 bool FileLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
+    const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback) {
     // Must be implemented in subclasses
     return false;
 }
