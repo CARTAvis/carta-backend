@@ -49,8 +49,9 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, in
     carta::zarr::OpenOptions options;
     options.io_threads = file_io_concurrency > 0 ? static_cast<unsigned int>(file_io_concurrency) : 0;
 
+    // I/O threads are mostly blocked on reads and do not reduce the decode thread budget.
     const int effective_data_copy_threads =
-        data_copy_concurrency > 0 ? data_copy_concurrency : std::max(1, omp_thread_count - file_io_concurrency);
+        data_copy_concurrency > 0 ? data_copy_concurrency : std::max(1, omp_thread_count);
     options.decode_threads = static_cast<unsigned int>(effective_data_copy_threads);
 
     if (cache_pool_mb > 0) {
