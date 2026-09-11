@@ -421,6 +421,21 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
     return true;
 }
 
+bool CartaZarrImage::ComputeHistogram(const carta::zarr::HistogramRequest& request,
+    const carta::zarr::HistogramSink& sink, const carta::zarr::ReadOptions& options) const {
+    if (!_zarr_image.has_value()) {
+        throw casacore::AipsError("Zarr image is not open");
+    }
+    auto result = _zarr_image->ComputeHistogram(request, sink, options);
+    if (result) {
+        return true;
+    }
+    if (result.error().code == carta::zarr::ErrorCode::cancelled) {
+        return false;
+    }
+    throw casacore::AipsError(result.error().message);
+}
+
 bool CartaZarrImage::SpectralRunsAlongY() const {
     return _zarr_image.has_value() &&
            _zarr_image->chunk_geometry().fastest_spatial_axis == carta::zarr::AxisRole::spatial_y;

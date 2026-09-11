@@ -45,6 +45,10 @@ public:
     // asked for pixels, and every reduction it offers is one region at a time.
     bool ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
         const carta::zarr::ReadOptions& options = {}) const;
+    // Bin every plane over a fixed range in one pass. Exposed here for the same reason
+    // ReduceSpectral is: casacore has no such call.
+    bool ComputeHistogram(const carta::zarr::HistogramRequest& request, const carta::zarr::HistogramSink& sink,
+        const carta::zarr::ReadOptions& options = {}) const;
     // True when this store varies fastest along y, which is the axis a region's runs have to lie
     // along for ReduceSpectral to take them.
     bool SpectralRunsAlongY() const;

@@ -190,6 +190,10 @@ public:
     // cannot and the caller should keep its own per-plane loop; a callback returning false cancels,
     // which also returns false, so a caller that needs to tell them apart watches its own callback.
     bool GetCubeBasicStats(int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback);
+    // Every plane's bin counts in one pass, when the loader can do that. As with
+    // GetCubeBasicStats, false means it cannot and a callback returning false also returns false.
+    bool GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
+        const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback);
     bool SpectralRunsAlongY() const;
     bool GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink);

@@ -292,6 +292,49 @@ bool ZarrLoader::GetCubeBasicStats(
     }
 }
 
+bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
+    const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    if (!image || !plane_callback || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
+        return false;
+    }
+    const auto depth = static_cast<std::uint64_t>(_image_shape(2));
+    if (depth == 0 || num_bins <= 0 || !(bounds.min < bounds.max)) {
+        // An empty or inverted range is the caller's degenerate case, which it answers with a single
+        // bin over [0, 0]; that is not a shape this walk can produce, so it declines instead.
+        return false;
+    }
+
+    carta::zarr::HistogramRequest request;
+    request.spectral = {0, depth, 1};
+    request.polarization = static_cast<std::uint64_t>(stokes);
+    request.bins = static_cast<std::uint32_t>(num_bins);
+    request.lower = bounds.min;
+    request.upper = bounds.max;
+
+    std::vector<int> plane_bins(static_cast<std::size_t>(num_bins));
+    try {
+        return image->ComputeHistogram(request, [&](const carta::zarr::HistogramBlock& block) {
+            if (!block.complete) {
+                return true;  // a plane is reported when it is final, not while it fills
+            }
+            for (std::uint64_t c = 0; c < block.channel_count; ++c) {
+                const auto* row = block.counts + (static_cast<std::size_t>(c) * block.bin_count);
+                for (std::size_t bin = 0; bin < plane_bins.size(); ++bin) {
+                    plane_bins[bin] = static_cast<int>(row[bin]);
+                }
+                if (!plane_callback(static_cast<int>(block.first_channel + c), plane_bins)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    } catch (const casacore::AipsError& error) {
+        spdlog::warn("Could not bin the planes of a Zarr dataset: {}", error.getMesg());
+        return false;
+    }
+}
+
 bool ZarrLoader::SpectralRunsAlongY() const {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
     return image != nullptr && image->SpectralRunsAlongY();

@@ -1831,6 +1831,13 @@ bool Frame::GetCubeBasicStats(int stokes, const std::function<bool(int, const Ba
     });
 }
 
+bool Frame::GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
+    const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
+    // Nothing is cached on the way past here: the per-plane path only caches a histogram for the
+    // image region, and a cube histogram is not that.
+    return _loader->GetCubeHistogram(stokes, num_bins, bounds, plane_callback);
+}
+
 bool Frame::SpectralRunsAlongY() const {
     return _loader->SpectralRunsAlongY();
 }

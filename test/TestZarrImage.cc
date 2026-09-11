@@ -461,6 +461,55 @@ TEST_F(ZarrImageTest, CubeBasicStatsAgreeThroughAFrame) {
     }
 }
 
+// Every plane's bin counts in one pass, against the per-plane path that reads the plane and bins
+// it. Counts are integers, so unlike the statistics these have to agree exactly.
+TEST_F(ZarrImageTest, CubeHistogramAgreesWithThePerPlaneLoop) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    ASSERT_TRUE(frame->IsValid());
+
+    const int num_bins = 9;
+    const HistogramBounds bounds(0.0, 4000.0);
+    for (int stokes = 0; stokes < kStokes; ++stokes) {
+        std::map<int, std::vector<int>> from_loader;
+        ASSERT_TRUE(frame->GetCubeHistogram(stokes, num_bins, bounds, [&](int z, const std::vector<int>& bins) {
+            EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
+            from_loader[z] = bins;
+            return true;
+        })) << "the Zarr loader should bin the cube itself";
+        ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
+
+        for (int z = 0; z < kDepth; ++z) {
+            Histogram reference;
+            ASSERT_TRUE(frame->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, reference));
+            const auto& expected = reference.GetHistogramBins();
+            ASSERT_EQ(from_loader[z].size(), expected.size());
+            for (std::size_t bin = 0; bin < expected.size(); ++bin) {
+                EXPECT_EQ(from_loader[z][bin], expected[bin])
+                    << " bin=" << bin << " z=" << z << " stokes=" << stokes;
+            }
+        }
+    }
+}
+
+// A range the walk cannot express is declined rather than answered differently: the caller's
+// degenerate case is a single bin over [0, 0], which is not a histogram this produces.
+TEST_F(ZarrImageTest, CubeHistogramDeclinesAnEmptyRange) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    int calls = 0;
+    auto count = [&](int, const std::vector<int>&) {
+        ++calls;
+        return true;
+    };
+    EXPECT_FALSE(loader->GetCubeHistogram(0, 8, HistogramBounds(5.0, 5.0), count));
+    EXPECT_FALSE(loader->GetCubeHistogram(0, 0, HistogramBounds(0.0, 10.0), count));
+    EXPECT_EQ(calls, 0) << "a declined request should not have reported a plane";
+}
+
 // A callback that says stop ends the walk rather than being asked for the next plane.
 TEST_F(ZarrImageTest, CubeBasicStatsStopWhenTheCallbackDoes) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());

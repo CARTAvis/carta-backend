@@ -1737,20 +1737,22 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 // get histogram bins for each z and accumulate bin counts in cube_bins
                 Histogram z_histogram; // histogram for each z using cube stats
                 Histogram cube_histogram;
-                for (size_t z = 0; z < depth; ++z) {
-                    if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
-                        return calculated; // z histogram failed
-                    }
-
-                    if (z == 0) {
-                        cube_histogram = std::move(z_histogram);
+                // What one plane costs the caller, shared by the loader's own walk and the
+                // per-plane loop below so that the two report progress and stop together.
+                bool histogram_cancelled(false);
+                bool have_cube_histogram(false);
+                auto take_plane = [&](int z, const Histogram& plane) {
+                    if (!have_cube_histogram) {
+                        cube_histogram = plane;
+                        have_cube_histogram = true;
                     } else {
-                        cube_histogram.Add(z_histogram);
+                        cube_histogram.Add(plane);
                     }
 
                     // check for cancel
                     if (_histogram_context.is_group_execution_cancelled()) {
-                        break;
+                        histogram_cancelled = true;
+                        return false;
                     }
 
                     auto t_end = std::chrono::high_resolution_clock::now();
@@ -1765,6 +1767,31 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         FillHistogram(message_histogram, cube_stats, cube_histogram);
                         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                         t_start = t_end;
+                    }
+                    return true;
+                };
+
+                // The loader gets the whole question first, as it did for the statistics above. It
+                // hands back bin counts rather than a Histogram because binning is all it did; the
+                // bounds and the bin count came from here in the first place.
+                const bool batched = _frames.at(file_id)->GetCubeHistogram(
+                    stokes, num_bins, bounds, [&](int z, const std::vector<int>& bins) {
+                        Histogram plane(num_bins, bounds, nullptr, 0);
+                        plane.SetHistogramBins(bins);
+                        return take_plane(z, plane);
+                    });
+
+                if (!batched && !histogram_cancelled) {
+                    cube_histogram = Histogram();
+                    have_cube_histogram = false;
+                    for (size_t z = 0; z < depth; ++z) {
+                        if (!_frames.at(file_id)->CalculateHistogram(
+                                CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
+                            return calculated; // z histogram failed
+                        }
+                        if (!take_plane(static_cast<int>(z), z_histogram)) {
+                            break;
+                        }
                     }
                 }
 

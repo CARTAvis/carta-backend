@@ -22,6 +22,7 @@
 
 #include "ImageData/FileInfo.h"
 #include "ImageStats/BasicStatsCalculator.h"
+#include "ImageStats/Histogram.h"
 #include "Util/Casacore.h"
 #include "Util/Stokes.h"
 
@@ -183,6 +184,18 @@ public:
     // that returns false must not have called the callback.
     virtual bool GetCubeBasicStats(
         int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
+        return false;
+    }
+    // Bin counts for every plane of one stokes over a fixed range, in one pass over the pixels.
+    //
+    // The companion to GetCubeBasicStats, and there for the same reason: the caller's own loop asks
+    // plane by plane and each of those reads a whole plane into a vector first. `plane_callback`
+    // receives each plane's bins as it is finished and returning false from it cancels.
+    //
+    // False means this loader has no such path. A loader that returns false must not have called
+    // the callback.
+    virtual bool GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
+        const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
         return false;
     }
     // Whether a region handing this loader runs should lay them along y. See RegionMaskRuns.
