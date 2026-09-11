@@ -45,6 +45,9 @@ public:
     // asked for pixels, and every reduction it offers is one region at a time.
     bool ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
         const carta::zarr::ReadOptions& options = {}) const;
+    // True when this store varies fastest along y, which is the axis a region's runs have to lie
+    // along for ReduceSpectral to take them.
+    bool SpectralRunsAlongY() const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where,
         const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;

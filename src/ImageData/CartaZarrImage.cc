@@ -421,6 +421,11 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
     return true;
 }
 
+bool CartaZarrImage::SpectralRunsAlongY() const {
+    return _zarr_image.has_value() &&
+           _zarr_image->chunk_geometry().fastest_spatial_axis == carta::zarr::AxisRole::spatial_y;
+}
+
 bool CartaZarrImage::ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
     const carta::zarr::ReadOptions& options) const {
     if (!_zarr_image) {

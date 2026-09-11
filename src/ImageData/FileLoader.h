@@ -59,6 +59,8 @@ struct RegionMaskSpec {
     // selection and `mask` is not read. Both or neither.
     const std::uint32_t* runs = nullptr;
     const std::uint64_t* run_offsets = nullptr;
+    // Which way the runs lie. It has to match the image, so it is asked for rather than assumed.
+    bool runs_along_y = false;
 };
 
 // A region mask as runs of selected pixels rather than a byte per pixel.
@@ -82,7 +84,7 @@ struct RegionMaskRuns {
 
 // Derive the runs of a casacore region mask. Returns an empty result for a mask that is not a
 // contiguous two-dimensional array, which is the same case the callers already decline.
-RegionMaskRuns RunsOfMask(const casacore::ArrayLattice<casacore::Bool>& mask);
+RegionMaskRuns RunsOfMask(const casacore::ArrayLattice<casacore::Bool>& mask, bool along_y);
 
 // One run of channels of a batched reduction, for every region at once.
 //
@@ -169,6 +171,10 @@ public:
         const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {});
     // Check if one can apply swizzled data under such image format and region condition
+    // Whether a region handing this loader runs should lay them along y. See RegionMaskRuns.
+    virtual bool SpectralRunsAlongY() const {
+        return false;
+    }
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
     // `partial_callback`, when given, is called while one call is still working, with the profile
     // as it stands and how far along it is. A loader whose call is long enough that the caller's

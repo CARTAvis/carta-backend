@@ -1822,6 +1822,10 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
     return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
+bool Frame::SpectralRunsAlongY() const {
+    return _loader->SpectralRunsAlongY();
+}
+
 bool Frame::GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
     const std::function<bool(const RegionSpectralBlock&)>& sink) {
     // No image mutex: the only loader that answers this reads through immutable carta-zarr handles,

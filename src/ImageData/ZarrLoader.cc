@@ -166,6 +166,8 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
             region.height, reinterpret_cast<const std::uint8_t*>(region.mask)});
         spec.row_runs = region.runs;
         spec.row_run_offsets = region.run_offsets;
+        spec.run_axis =
+            region.runs_along_y ? carta::zarr::AxisRole::spatial_y : carta::zarr::AxisRole::spatial_x;
     }
 
     carta::zarr::SpectralReduceRequest request;
@@ -209,6 +211,11 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
 // and accumulates in one pass, where casacore's route iterates cursors and asks for the mask
 // separately. The HDF5 heuristic this replaces (height * depth < width) exists because HDF5 really
 // does have two datasets on disk and picking the wrong one is expensive.
+bool ZarrLoader::SpectralRunsAlongY() const {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    return image != nullptr && image->SpectralRunsAlongY();
+}
+
 bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& /*image_mutex*/) {
     return std::dynamic_pointer_cast<CartaZarrImage>(_image) != nullptr && _num_dims == 4 && region_shape.size() >= 2;
 }
@@ -262,7 +269,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         state.z_range = range;
         state.channels_done = 0;
         state.stats.clear();
-        state.runs = RunsOfMask(mask);
+        state.runs = RunsOfMask(mask, image->SpectralRunsAlongY());
         const std::vector<CARTA::StatsType> reported{CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount,
             CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma,
             CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::Extrema};
@@ -282,6 +289,8 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         if (!state.runs.Empty()) {
             region.row_runs = state.runs.runs.data();
             region.row_run_offsets = state.runs.offsets.data();
+            region.run_axis = image->SpectralRunsAlongY() ? carta::zarr::AxisRole::spatial_y
+                                                          : carta::zarr::AxisRole::spatial_x;
         }
 
         carta::zarr::SpectralReduceRequest request;

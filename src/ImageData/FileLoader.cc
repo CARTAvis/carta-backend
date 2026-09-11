@@ -880,7 +880,7 @@ bool FileLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     return false;
 }
 
-RegionMaskRuns carta::RunsOfMask(const casacore::ArrayLattice<casacore::Bool>& mask) {
+RegionMaskRuns carta::RunsOfMask(const casacore::ArrayLattice<casacore::Bool>& mask, bool along_y) {
     RegionMaskRuns out;
     const auto shape = mask.shape();
     if (shape.size() != 2 || !mask.asArray().contiguousStorage()) {
@@ -889,24 +889,30 @@ RegionMaskRuns carta::RunsOfMask(const casacore::ArrayLattice<casacore::Bool>& m
     const auto width = static_cast<std::uint64_t>(shape(0));
     const auto height = static_cast<std::uint64_t>(shape(1));
     const casacore::Bool* values = mask.asArray().data();
-    out.offsets.reserve(static_cast<std::size_t>(height) + 1);
+    // Walking columns instead of rows reads the raster with a stride, which is the price of runs
+    // that lie along the axis the image is contiguous in. It is paid once per region.
+    const std::uint64_t outer = along_y ? width : height;
+    const std::uint64_t inner = along_y ? height : width;
+    const std::uint64_t outer_step = along_y ? 1 : width;
+    const std::uint64_t inner_step = along_y ? width : 1;
+    out.offsets.reserve(static_cast<std::size_t>(outer) + 1);
     out.offsets.push_back(0);
-    for (std::uint64_t y = 0; y < height; ++y) {
-        const casacore::Bool* row = values + (y * width);
-        std::uint64_t x = 0;
-        while (x < width) {
-            while (x < width && !row[x]) {
-                ++x;
+    for (std::uint64_t o = 0; o < outer; ++o) {
+        const casacore::Bool* line = values + (o * outer_step);
+        std::uint64_t i = 0;
+        while (i < inner) {
+            while (i < inner && !line[i * inner_step]) {
+                ++i;
             }
-            if (x == width) {
+            if (i == inner) {
                 break;
             }
-            const auto begin = static_cast<std::uint32_t>(x);
-            while (x < width && row[x]) {
-                ++x;
+            const auto begin = static_cast<std::uint32_t>(i);
+            while (i < inner && line[i * inner_step]) {
+                ++i;
             }
             out.runs.push_back(begin);
-            out.runs.push_back(static_cast<std::uint32_t>(x));
+            out.runs.push_back(static_cast<std::uint32_t>(i));
         }
         out.offsets.push_back(out.runs.size() / 2);
     }
