@@ -6,6 +6,7 @@
 #include "ZarrLoader.h"
 
 #include "CartaZarrImage.h"
+#include "ZarrContext.h"
 #include "Util/Nan.h"
 
 #include <chrono>
@@ -342,6 +343,60 @@ bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBound
         spdlog::warn("Could not bin the planes of a Zarr dataset: {}", error.getMesg());
         return false;
     }
+}
+
+bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample,
+    BasicStats<float>& stats, std::vector<int>& bins, const std::function<bool(double progress)>& progress) {
+    const auto settings = GetZarrHistogramSettings();
+    if (!settings.one_pass) {
+        // Exact is the default, and the default is two passes. Declining here is what keeps the
+        // caller's own loops in charge without it having to know this setting exists.
+        return false;
+    }
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    if (!image || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3) || num_bins <= 0) {
+        return false;
+    }
+    const auto depth = static_cast<std::uint64_t>(_image_shape(2));
+    if (depth == 0) {
+        return false;
+    }
+
+    carta::zarr::CubeHistogramRequest request;
+    request.spectral = {0, depth, 1};
+    request.polarization = static_cast<std::uint64_t>(stokes);
+    request.bins = static_cast<std::uint32_t>(num_bins);
+    request.spatial_sample = spatial_sample > 0 ? spatial_sample : settings.spatial_sample;
+    request.progress = progress;
+
+    // As with the other cube walks: read every chunk once, keep none of them.
+    carta::zarr::ReadOptions options;
+    options.cache_policy = carta::zarr::CachePolicy::bypass;
+
+    auto result = image->ComputeCubeHistogram(request, options);
+    if (!result) {
+        if (result.error().code != carta::zarr::ErrorCode::cancelled) {
+            spdlog::warn("Could not compute a Zarr cube histogram in one pass: {}", result.error().message);
+        }
+        return false;
+    }
+
+    const auto& computed = result.value();
+    const auto count = static_cast<std::size_t>(computed.num_pixels);
+    if (count == 0) {
+        stats = BasicStats<float>();
+    } else {
+        const double mean = computed.sum / computed.num_pixels;
+        const double std_dev =
+            count > 1 ? std::sqrt((computed.sum_sq - (computed.sum * computed.sum / computed.num_pixels)) /
+                                  (computed.num_pixels - 1.0))
+                      : DOUBLE_NAN;
+        stats = BasicStats<float>{count, computed.sum, mean, std_dev, static_cast<float>(computed.minimum),
+            static_cast<float>(computed.maximum), std::sqrt(computed.sum_sq / computed.num_pixels),
+            computed.sum_sq};
+    }
+    bins.assign(computed.counts.begin(), computed.counts.end());
+    return true;
 }
 
 bool ZarrLoader::SpectralRunsAlongY() const {

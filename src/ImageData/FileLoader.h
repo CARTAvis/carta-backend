@@ -198,6 +198,18 @@ public:
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
         return false;
     }
+    // A cube histogram and its statistics from a single pass over the pixels.
+    //
+    // The two-pass shape exists because bin edges come from the data's own extremes. A loader that
+    // can find the range and bin at the same time answers here instead, and says what it did: the
+    // bins are the caller's, the statistics come back alongside because the caller reports them.
+    //
+    // False means this loader will not -- it has no such path, or it was not asked to -- and the
+    // caller keeps its two passes. A loader that returns false must not have called `progress`.
+    virtual bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
+        const std::function<bool(double progress)>& progress) {
+        return false;
+    }
     // Whether a region handing this loader runs should lay them along y. See RegionMaskRuns.
     virtual bool SpectralRunsAlongY() const {
         return false;

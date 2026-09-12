@@ -436,6 +436,14 @@ bool CartaZarrImage::ComputeHistogram(const carta::zarr::HistogramRequest& reque
     throw casacore::AipsError(result.error().message);
 }
 
+carta::zarr::Result<carta::zarr::CubeHistogramResult> CartaZarrImage::ComputeCubeHistogram(
+    const carta::zarr::CubeHistogramRequest& request, const carta::zarr::ReadOptions& options) const {
+    if (!_zarr_image.has_value()) {
+        throw casacore::AipsError("Zarr image is not open");
+    }
+    return _zarr_image->ComputeCubeHistogram(request, options);
+}
+
 bool CartaZarrImage::SpectralRunsAlongY() const {
     return _zarr_image.has_value() &&
            _zarr_image->chunk_geometry().fastest_spatial_axis == carta::zarr::AxisRole::spatial_y;

@@ -194,6 +194,13 @@ public:
     // GetCubeBasicStats, false means it cannot and a callback returning false also returns false.
     bool GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback);
+    // A cube histogram and its statistics in one pass, when the loader will. False means it will
+    // not and the caller keeps its two passes.
+    // The bin count a request for AUTO_BIN_SIZE means. Public because the batched paths are handed
+    // a resolved count and would decline a request for -1 bins.
+    int AutoBinSize();
+    bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
+        const std::function<bool(double progress)>& progress);
     bool SpectralRunsAlongY() const;
     bool GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink);
@@ -256,7 +263,6 @@ protected:
     void GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes);
 
     // Histograms: z is single z index or ALL_Z for cube
-    int AutoBinSize();
     bool FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
     bool FillHistogramFromFrameCache(
         int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram);              // histogram message

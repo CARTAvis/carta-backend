@@ -52,6 +52,7 @@ struct ProgramSettings {
     int zarr_file_io_concurrency = ZARR_FILE_IO_CONCURRENCY;
     int zarr_data_copy_concurrency = ZARR_DATA_COPY_CONCURRENCY;
     int zarr_cache_pool_mb = ZARR_CACHE_POOL_MB;
+    std::string zarr_histogram_method = "exact";
     std::string top_level_folder = "/";
     std::string starting_folder = ".";
     std::string host = "0.0.0.0";
@@ -119,7 +120,8 @@ struct ProgramSettings {
         {"starting_folder", &starting_folder},
         {"frontend_folder", &frontend_folder},
         {"browser", &browser},
-        {"http_url_prefix", &http_url_prefix}
+        {"http_url_prefix", &http_url_prefix},
+        {"zarr_histogram_method", &zarr_histogram_method}
     };
 
     std::unordered_map<std::string, std::vector<int>*> vector_int_keys_map {

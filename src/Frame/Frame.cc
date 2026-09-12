@@ -1838,6 +1838,11 @@ bool Frame::GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bo
     return _loader->GetCubeHistogram(stokes, num_bins, bounds, plane_callback);
 }
 
+bool Frame::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample,
+    BasicStats<float>& stats, std::vector<int>& bins, const std::function<bool(double progress)>& progress) {
+    return _loader->GetCubeHistogramOnePass(stokes, num_bins, spatial_sample, stats, bins, progress);
+}
+
 bool Frame::SpectralRunsAlongY() const {
     return _loader->SpectralRunsAlongY();
 }

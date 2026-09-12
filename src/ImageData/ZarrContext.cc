@@ -45,6 +45,44 @@ std::shared_ptr<const carta::zarr::Context> CreateContext(const carta::zarr::Ope
 
 }  // namespace
 
+namespace {
+ZarrHistogramSettings g_histogram_settings;
+}  // namespace
+
+void ConfigureZarrHistogram(const std::string& method) {
+    // Default unless told otherwise, so a typo is two passes rather than a silently sampled answer.
+    g_histogram_settings = ZarrHistogramSettings{};
+    if (method.empty() || method == "exact") {
+        return;
+    }
+    if (method == "binned") {
+        g_histogram_settings.one_pass = true;
+        return;
+    }
+    if (method.rfind("sampled", 0) == 0) {
+        g_histogram_settings.one_pass = true;
+        g_histogram_settings.spatial_sample = 4;
+        const auto colon = method.find(':');
+        if (colon != std::string::npos) {
+            try {
+                const auto stride = std::stoull(method.substr(colon + 1));
+                if (stride > 0) {
+                    g_histogram_settings.spatial_sample = stride;
+                }
+            } catch (const std::exception&) {
+                spdlog::warn("Ignoring the stride in zarr_histogram_method '{}'; using {}", method,
+                    g_histogram_settings.spatial_sample);
+            }
+        }
+        return;
+    }
+    spdlog::warn("Unknown zarr_histogram_method '{}'; cube histograms stay exact", method);
+}
+
+ZarrHistogramSettings GetZarrHistogramSettings() {
+    return g_histogram_settings;
+}
+
 void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, int cache_pool_mb, int omp_thread_count) {
     carta::zarr::OpenOptions options;
     options.io_threads = file_io_concurrency > 0 ? static_cast<unsigned int>(file_io_concurrency) : 0;

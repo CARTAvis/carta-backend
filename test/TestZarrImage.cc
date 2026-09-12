@@ -21,6 +21,7 @@
 
 #include "ImageData/CartaZarrImage.h"
 #include "ImageData/FileLoader.h"
+#include "ImageData/ZarrContext.h"
 #include "ImageData/ZarrLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageStats/StatsCalculator.h"
@@ -491,6 +492,72 @@ TEST_F(ZarrImageTest, CubeHistogramAgreesWithThePerPlaneLoop) {
                     << " bin=" << bin << " z=" << z << " stokes=" << stokes;
             }
         }
+    }
+}
+
+// One pass over the cube, against the two the caller would otherwise run. Off unless asked for, so
+// the first thing checked is that it stays off.
+TEST_F(ZarrImageTest, CubeHistogramOnePassAgreesWithTwo) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    ASSERT_TRUE(frame->IsValid());
+
+    const int num_bins = 7;
+    const int stokes = 1;
+    BasicStats<float> stats;
+    std::vector<int> bins;
+    EXPECT_FALSE(loader->GetCubeHistogramOnePass(stokes, num_bins, 0, stats, bins, {}))
+        << "exact is the default, so one pass should be declined until it is asked for";
+
+    // The setting is process-wide, so it goes back however this ends.
+    struct Restore {
+        ~Restore() {
+            ConfigureZarrHistogram("exact");
+        }
+    } restore;
+    ConfigureZarrHistogram("binned");
+
+    ASSERT_TRUE(loader->GetCubeHistogramOnePass(stokes, num_bins, 0, stats, bins, {}));
+    ASSERT_EQ(bins.size(), static_cast<std::size_t>(num_bins));
+
+    // The two-pass answer over the range the one pass found.
+    BasicStats<float> two_pass_stats;
+    for (int z = 0; z < kDepth; ++z) {
+        BasicStats<float> plane;
+        ASSERT_TRUE(frame->GetBasicStats(z, stokes, plane));
+        two_pass_stats.join(plane);
+    }
+    EXPECT_EQ(stats.num_pixels, two_pass_stats.num_pixels);
+    EXPECT_FLOAT_EQ(stats.min_val, two_pass_stats.min_val) << "the extremes are exact in either method";
+    EXPECT_FLOAT_EQ(stats.max_val, two_pass_stats.max_val);
+    EXPECT_NEAR(stats.sum, two_pass_stats.sum, 1e-9 * (1.0 + std::abs(two_pass_stats.sum)));
+
+    const HistogramBounds bounds(two_pass_stats.min_val, two_pass_stats.max_val);
+    Histogram two_pass;
+    for (int z = 0; z < kDepth; ++z) {
+        Histogram plane;
+        ASSERT_TRUE(frame->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, plane));
+        if (z == 0) {
+            two_pass = plane;
+        } else {
+            two_pass.Add(plane);
+        }
+    }
+
+    // Bin edges are where the two are allowed to differ, so what is required is that no pixel was
+    // lost and that the shape is the same.
+    std::int64_t one_pass_total = 0;
+    std::int64_t two_pass_total = 0;
+    for (std::size_t bin = 0; bin < bins.size(); ++bin) {
+        one_pass_total += bins[bin];
+        two_pass_total += two_pass.GetHistogramBins()[bin];
+    }
+    EXPECT_EQ(one_pass_total, static_cast<std::int64_t>(stats.num_pixels)) << "every pixel should be in a bin";
+    EXPECT_EQ(one_pass_total, two_pass_total);
+    for (std::size_t bin = 0; bin < bins.size(); ++bin) {
+        EXPECT_EQ(bins[bin], two_pass.GetHistogramBins()[bin]) << " bin=" << bin;
     }
 }
 

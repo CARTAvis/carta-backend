@@ -32,6 +32,8 @@ public:
         int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) override;
     bool GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) override;
+    bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
+        const std::function<bool(double progress)>& progress) override;
     bool SpectralRunsAlongY() const override;
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
     bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,

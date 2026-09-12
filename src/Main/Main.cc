@@ -124,6 +124,7 @@ int main(int argc, char* argv[]) {
         const int effective_omp_threads = settings.omp_thread_count > 0 ? settings.omp_thread_count : omp_get_num_procs();
         carta::ConfigureZarrContext(
             settings.zarr_file_io_concurrency, settings.zarr_data_copy_concurrency, settings.zarr_cache_pool_mb, effective_omp_threads);
+        carta::ConfigureZarrHistogram(settings.zarr_histogram_method);
 
         // One FileListHandler works for all sessions.
         file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);

@@ -1657,6 +1657,11 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             Timer t;
             auto num_bins = cube_histogram_config.num_bins;
+            if (num_bins == AUTO_BIN_SIZE) {
+                // Resolved here rather than left to CalculateHistogram, because the batched paths
+                // are handed this value directly and a request for -1 bins is one they decline.
+                num_bins = _frames.at(file_id)->AutoBinSize();
+            }
 
             // Get stokes index
             int stokes;
@@ -1670,6 +1675,40 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             int request_id(0);
             size_t depth(_frames.at(file_id)->Depth());
             size_t total_z(depth * 2); // for progress; go through z twice, for stats then histogram
+
+            // A loader that can find the range and bin at the same time answers both passes at
+            // once. It declines unless it was asked to, so the two passes below stay the default
+            // and this costs nothing when it is not wanted.
+            bool one_pass_done(false);
+            BasicStats<float> one_pass_stats;
+            std::vector<int> one_pass_bins;
+            {
+                bool one_pass_cancelled(false);
+                auto t_one_pass = std::chrono::high_resolution_clock::now();
+                one_pass_done = _frames.at(file_id)->GetCubeHistogramOnePass(
+                    stokes, num_bins, 0, one_pass_stats, one_pass_bins, [&](double progress) {
+                        if (_histogram_context.is_group_execution_cancelled()) {
+                            one_pass_cancelled = true;
+                            return false;
+                        }
+                        auto t_now = std::chrono::high_resolution_clock::now();
+                        auto dt =
+                            std::chrono::duration_cast<std::chrono::microseconds>(t_now - t_one_pass).count();
+                        if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
+                            // One pass, so the whole bar belongs to it rather than its second half.
+                            _histogram_progress = static_cast<float>(progress);
+                            auto progress_msg = Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z,
+                                stokes, _histogram_progress, cube_histogram_config);
+                            SendFileEvent(
+                                file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
+                            t_one_pass = t_now;
+                        }
+                        return true;
+                    });
+                if (one_pass_cancelled) {
+                    return calculated;
+                }
+            }
 
             // stats for entire cube
             BasicStats<float> cube_stats;
@@ -1706,7 +1745,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             // A loader that can walk the cube itself neither materialises a plane nor reads each
             // one twice. Its false means either that it has no such path or that `take_plane` said
             // stop, which is why the cancel is tracked separately rather than read from the return.
-            if (!_frames.at(file_id)->GetCubeBasicStats(stokes, take_plane) && !stats_cancelled) {
+            if (one_pass_done) {
+                cube_stats = one_pass_stats;
+            } else if (!_frames.at(file_id)->GetCubeBasicStats(stokes, take_plane) && !stats_cancelled) {
                 cube_stats = BasicStats<float>();
                 for (size_t z = 0; z < depth; ++z) {
                     // stats for this z
@@ -1774,7 +1815,13 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 // The loader gets the whole question first, as it did for the statistics above. It
                 // hands back bin counts rather than a Histogram because binning is all it did; the
                 // bounds and the bin count came from here in the first place.
-                const bool batched = _frames.at(file_id)->GetCubeHistogram(
+                if (one_pass_done) {
+                    cube_histogram = Histogram(num_bins, bounds, nullptr, 0);
+                    cube_histogram.SetHistogramBins(one_pass_bins);
+                    have_cube_histogram = true;
+                }
+
+                const bool batched = one_pass_done || _frames.at(file_id)->GetCubeHistogram(
                     stokes, num_bins, bounds, [&](int z, const std::vector<int>& bins) {
                         Histogram plane(num_bins, bounds, nullptr, 0);
                         plane.SetHistogramBins(bins);

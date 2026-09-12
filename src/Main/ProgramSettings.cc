@@ -149,6 +149,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("zarr_file_io_threads", "thread pool size for Zarr file IO operations", cxxopts::value<int>(), "<threads>")
         ("zarr_data_copy_threads", "thread pool size for Zarr data copy/decode operations (<= 0: max(1, omp_threads))", cxxopts::value<int>(), "<threads>")
         ("zarr_cache_size", "in-memory chunk cache size for Zarr stores in MiB (integer; default 1024; <= 0 disables caching)", cxxopts::value<int>(), "<MiB>")
+        ("zarr_histogram_method", "how to compute a cube histogram over a Zarr store: exact (default, two passes), binned (one pass, approximate bin edges) or sampled[:stride] (one pass over every nth pixel)", cxxopts::value<std::string>(), "<method>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
@@ -295,6 +296,7 @@ global configuration files, respectively.
     applyOptionalArgument(zarr_file_io_concurrency, "zarr_file_io_threads", result);
     applyOptionalArgument(zarr_data_copy_concurrency, "zarr_data_copy_threads", result);
     applyOptionalArgument(zarr_cache_pool_mb, "zarr_cache_size", result);
+    applyOptionalArgument(zarr_histogram_method, "zarr_histogram_method", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);
     applyOptionalArgument(init_wait_time, "initial_timeout", result);
 
