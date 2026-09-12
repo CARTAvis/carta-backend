@@ -623,16 +623,28 @@ void CartaZarrImage::SetBeams() {
         return;
     }
 
-    casacore::ImageBeamSet beam_set(static_cast<casacore::uInt>(max_channel + 1),
-        static_cast<casacore::uInt>(max_polarization + 1));
+    // Fill a matrix and hand the whole thing over at once. casacore recomputes the smallest- and
+    // largest-area beams only when the set is given all its beams together; setting them one at a
+    // time leaves the smallest one at the null beam the set was sized with.
+    const auto channels = static_cast<casacore::uInt>(max_channel + 1);
+    const auto polarizations = static_cast<casacore::uInt>(max_polarization + 1);
+    casacore::Matrix<casacore::GaussianBeam> beam_matrix(channels, polarizations);
+    std::size_t filled = 0;
     for (const auto& beam : values) {
         if (beam.time != 0) {
             continue;
         }
-        beam_set.setBeam(static_cast<casacore::Int>(beam.channel), static_cast<casacore::Int>(beam.polarization),
+        beam_matrix(static_cast<casacore::uInt>(beam.channel), static_cast<casacore::uInt>(beam.polarization)) =
             casacore::GaussianBeam(casacore::Quantity(beam.major, beam.unit), casacore::Quantity(beam.minor, beam.unit),
-                casacore::Quantity(beam.position_angle, beam.unit)));
+                casacore::Quantity(beam.position_angle, beam.unit));
+        ++filled;
     }
+    if (filled != static_cast<std::size_t>(channels) * polarizations) {
+        // The planes left over keep the null beam, which is what the smallest-area beam then reports.
+        spdlog::warn("XRADIO beam table of {} covers {} of {} planes", _filename, filled,
+            static_cast<std::size_t>(channels) * polarizations);
+    }
+    casacore::ImageBeamSet beam_set(beam_matrix);
     auto image_info = imageInfo();
     image_info.setBeams(beam_set);
     setImageInfo(image_info);
