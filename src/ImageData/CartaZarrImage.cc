@@ -549,6 +549,8 @@ std::vector<std::pair<std::string, std::string>> CartaZarrImage::GetStorageInfo(
         }
         return result;
     };
+    // The values alone: these are the image's own axes in the image's own order, so the file-info
+    // panel labels them the way it labels the image shape rather than naming them a second way.
     const auto format_shape = [](const std::vector<std::uint64_t>& values) {
         std::string result = "[";
         for (std::size_t index = 0; index < values.size(); ++index) {
@@ -557,7 +559,7 @@ std::vector<std::pair<std::string, std::string>> CartaZarrImage::GetStorageInfo(
             }
             result += std::to_string(values[index]);
         }
-        return result + "] (SPATIAL_X, SPATIAL_Y, FREQ, STOKES)";
+        return result + "]";
     };
 
     std::vector<std::pair<std::string, std::string>> entries;

@@ -740,8 +740,19 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     }
     Message::AddComputedEntry(extended_info, "Shape", shape_string);
 
+    // A storage entry which carries a shape lists the same axes in the same order as the shape
+    // above, so it is labelled from the same names.
+    std::string axes_label;
+    for (int i = 0; i < num_dims && i < (int)axes_names.size(); ++i) {
+        axes_label += (i == 0 ? " (" : ", ") + std::string(axes_names[i]);
+    }
+    if (!axes_label.empty()) {
+        axes_label += ")";
+    }
+
     for (const auto& [name, value] : storage_entries) {
-        Message::AddComputedEntry(extended_info, name, value);
+        bool has_shape = !value.empty() && value.front() == '[';
+        Message::AddComputedEntry(extended_info, name, has_shape ? value + axes_label : value);
     }
 
     if (axes.spectral >= 0) {
