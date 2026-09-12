@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 include(ExternalProject)
 project(carta_backend_test)
 
@@ -21,11 +21,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(TEST_COMMON_LIBS gtest gtest_main)
+# The imported targets, not the bare library names: an installed GTest is found through its own
+# package config, which defines these and carries its include directory with them. The bare
+# names only resolve for a GTest that happens to sit on the default library path. They were
+# named GTest::GTest and GTest::Main before CMake 3.20, which is what this file now requires.
+set(TEST_COMMON_LIBS GTest::gtest GTest::gtest_main)
 
 enable_testing()
-find_package(GTest)
-include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+find_package(GTest REQUIRED)
+include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 if (HDF5_FOUND)
