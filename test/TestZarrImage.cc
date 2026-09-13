@@ -561,6 +561,68 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassAgreesWithTwo) {
     }
 }
 
+// One pass reports a histogram of what it has read, not only a fraction, so the frontend can redraw
+// as it fills in -- which is what the two-pass path does from its halfway mark on.
+//
+// The budget is what makes this testable at all: the walk reports between reads, and the fixture is
+// small enough to be read in one go unless it is told otherwise.
+TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    zarr_loader->SetReadBudgetBytes(1);
+
+    struct Restore {
+        ~Restore() {
+            ConfigureZarrHistogram("exact");
+        }
+    } restore;
+    ConfigureZarrHistogram("binned");
+
+    const int num_bins = 7;
+    const int stokes = 1;
+    BasicStats<float> stats;
+    std::vector<int> bins;
+
+    int updates = 0;
+    double last_progress = -1.0;
+    std::size_t last_pixels = 0;
+    ASSERT_TRUE(loader->GetCubeHistogramOnePass(
+        stokes, num_bins, 0, stats, bins, [&](const CubeHistogramUpdate& update) {
+            ++updates;
+            EXPECT_GT(update.progress, last_progress) << "progress should not go backwards";
+            last_progress = update.progress;
+
+            BasicStats<float> partial_stats;
+            std::vector<int> partial_bins;
+            update.snapshot(partial_stats, partial_bins);
+            EXPECT_EQ(partial_bins.size(), static_cast<std::size_t>(num_bins));
+            std::int64_t total = 0;
+            for (const auto count : partial_bins) {
+                total += count;
+            }
+            EXPECT_EQ(total, static_cast<std::int64_t>(partial_stats.num_pixels))
+                << "a partial histogram should hold every pixel it has counted";
+            EXPECT_GE(partial_stats.num_pixels, last_pixels) << "a partial cannot un-read a pixel";
+            last_pixels = partial_stats.num_pixels;
+            if (partial_stats.num_pixels > 0) {
+                EXPECT_LE(partial_stats.min_val, partial_stats.max_val);
+            }
+            return true;
+        }));
+
+    EXPECT_GT(updates, 0) << "a one-byte budget should have taken several reads and reported on each";
+    EXPECT_GE(stats.num_pixels, last_pixels) << "the answer should hold at least what the last partial did";
+
+    // And saying stop ends the walk, which the loader reports as having no answer.
+    BasicStats<float> ignored_stats;
+    std::vector<int> ignored_bins;
+    EXPECT_FALSE(loader->GetCubeHistogramOnePass(
+        stokes, num_bins, 0, ignored_stats, ignored_bins, [](const CubeHistogramUpdate&) { return false; }));
+}
+
 // A range the walk cannot express is declined rather than answered differently: the caller's
 // degenerate case is a single bin over [0, 0], which is not a histogram this produces.
 TEST_F(ZarrImageTest, CubeHistogramDeclinesAnEmptyRange) {
@@ -597,7 +659,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataReportsWhileItIsStillWorking) {
     auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
     ASSERT_NE(zarr_loader, nullptr);
     // One byte, so every chunk is its own read and the reduction cannot finish in one.
-    zarr_loader->SetSpectralReadBudgetBytes(1);
+    zarr_loader->SetReadBudgetBytes(1);
 
     const int x0 = 1, y0 = 1, region_width = 3, region_height = 4;
     casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, region_width, region_height), true);
@@ -654,7 +716,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataStopsWhenTheCallbackDoes) {
     loader->OpenFile("");
     auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
     ASSERT_NE(zarr_loader, nullptr);
-    zarr_loader->SetSpectralReadBudgetBytes(1);
+    zarr_loader->SetReadBudgetBytes(1);
 
     const int region_width = 3, region_height = 4;
     casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, region_width, region_height), true);

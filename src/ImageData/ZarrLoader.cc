@@ -402,6 +402,7 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
     // As with the other cube walks: read every chunk once, keep none of them.
     carta::zarr::ReadOptions options;
     options.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.temporary_memory_limit_bytes = _read_budget_bytes;
 
     auto result = image->ComputeCubeHistogram(request, options);
     if (!result) {
@@ -518,7 +519,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
                        partial_callback(state.stats, static_cast<float>(done / static_cast<double>(channels)));
             };
             carta::zarr::ReadOptions options;
-            options.temporary_memory_limit_bytes = _spectral_read_budget_bytes;
+            options.temporary_memory_limit_bytes = _read_budget_bytes;
             const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
                 StoreSpectralBlock(state.stats, block, first_channel, beam_area, has_flux);
                 if (!block.complete) {

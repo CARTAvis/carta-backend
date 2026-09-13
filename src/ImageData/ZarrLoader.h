@@ -41,11 +41,13 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
         const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {}) override;
 
-    // The read budget one spectral reduction may hold, in bytes; zero leaves the library its own.
-    // Exists so that a test can make a reduction take more than one read, which is what a region
+    // The read budget one batched walk may hold, in bytes; zero leaves the library its own.
+    // Exists so that a test can make a walk take more than one read, which is what a region
     // covering a large image does and what no fixture small enough to keep in a repository can.
-    void SetSpectralReadBudgetBytes(std::size_t bytes) {
-        _spectral_read_budget_bytes = bytes;
+    // Both the spectral reduction and the one-pass cube histogram honour it; the histogram needs it
+    // for the same reason and for one more, since it only reports its progress between reads.
+    void SetReadBudgetBytes(std::size_t bytes) {
+        _read_budget_bytes = bytes;
     }
 
 private:
@@ -68,7 +70,7 @@ private:
 
     void AllocateImage(const std::string& hdu) override;
 
-    std::size_t _spectral_read_budget_bytes = 0;
+    std::size_t _read_budget_bytes = 0;
     std::mutex _region_spectral_mutex;
     std::map<std::pair<int, int>, RegionSpectralState> _region_spectral;
 };
