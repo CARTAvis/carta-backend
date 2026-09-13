@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -1006,4 +1007,86 @@ TEST_F(ZarrImageTest, MeasurePlaneReads) {
             static_cast<double>(after.read_bytes - before.read_bytes) / mib, after.syscr - before.syscr);
         std::fflush(stdout);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Measurement, not a test. Skipped unless CARTA_SHAPE_STORE names a store.
+//
+// One read of a whole plane against one read per chunk row. Both decode exactly
+// the same chunks -- a band is a whole chunk tall, so no chunk is touched twice --
+// so the only difference is where the decoded pixels land.
+//
+// The destination is x-fastest, and these stores are y-fastest, so filling a plane
+// is a transposing scatter. Done in one call it scatters across the whole plane;
+// done a band at a time it scatters inside a band, which is contiguous in the
+// destination and two orders of magnitude smaller.
+//
+// The decoded-chunk cache is off, so every repeat does the same work and the page
+// cache is the only thing kept warm. Variants alternate and the median is reported,
+// because this project has twice drawn the opposite conclusion from too few reps.
+// ---------------------------------------------------------------------------
+TEST_F(ZarrImageTest, MeasurePlaneReadShapes) {
+    const char* store_env = std::getenv("CARTA_SHAPE_STORE");
+    if (store_env == nullptr || *store_env == '\0') {
+        GTEST_SKIP() << "set CARTA_SHAPE_STORE to measure";
+    }
+    carta::ConfigureZarrContext(ZARR_FILE_IO_CONCURRENCY, ZARR_DATA_COPY_CONCURRENCY, 0, omp_get_num_procs());
+
+    auto loader = FileLoader::GetLoader(store_env);
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(loader->GetImage());
+    ASSERT_NE(image, nullptr);
+
+    const auto shape = image->shape();
+    const auto width = static_cast<int>(shape(0));
+    const auto height = static_cast<int>(shape(1));
+    const auto band = static_cast<int>(image->niceCursorShape(image->advisedMaxPixels())(1));
+    ASSERT_GT(band, 0);
+    std::vector<float> plane(static_cast<std::size_t>(width) * height);
+
+    const char* mult_env = std::getenv("CARTA_SHAPE_BAND_CHUNKS");
+    const int band_chunks = mult_env ? std::max(1, std::stoi(mult_env)) : 1;
+    const int band_rows = band * band_chunks;
+    // True means the store varies y fastest while the destination varies x fastest, so filling a
+    // plane transposes -- which is the whole reason a destination-shaped read might have helped.
+    std::printf("\nSHAPE transposing=%d\n", image->SpectralRunsAlongY() ? 1 : 0);
+
+    const int reps = 5;
+    std::vector<double> whole;
+    std::vector<double> bands;
+    for (int rep = 0; rep < reps; ++rep) {
+        for (int variant = 0; variant < 2; ++variant) {
+            const auto t0 = std::chrono::steady_clock::now();
+            if (variant == 0) {
+                casacore::Slicer section(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, width, height, 1, 1));
+                casacore::Array<float> view(section.length(), plane.data(), casacore::StorageInitPolicy::SHARE);
+                ASSERT_TRUE(image->Read(view, section));
+            } else {
+                for (int y = 0; y < height; y += band_rows) {
+                    const int rows = std::min(band_rows, height - y);
+                    casacore::Slicer section(
+                        casacore::IPosition(4, 0, y, 0, 0), casacore::IPosition(4, width, rows, 1, 1));
+                    // A run of rows is contiguous in an x-fastest destination, so this shares the
+                    // image buffer rather than copying out of a temporary.
+                    casacore::Array<float> view(section.length(),
+                        plane.data() + (static_cast<std::size_t>(y) * width), casacore::StorageInitPolicy::SHARE);
+                    ASSERT_TRUE(image->Read(view, section));
+                }
+            }
+            const auto t1 = std::chrono::steady_clock::now();
+            (variant == 0 ? whole : bands).push_back(std::chrono::duration<double, std::milli>(t1 - t0).count());
+        }
+    }
+
+    auto median = [](std::vector<double> v) {
+        std::sort(v.begin(), v.end());
+        return v[v.size() / 2];
+    };
+    const double pixels = static_cast<double>(width) * height;
+    std::printf("SHAPE store=%s %dx%d band=%d x%d reps=%d\n", store_env, width, height, band, band_chunks, reps);
+    std::printf("SHAPE whole-plane  median %7.1f ms  %8.1f MPix/s\n", median(whole), pixels / (median(whole) * 1000.0));
+    std::printf("SHAPE chunk-bands  median %7.1f ms  %8.1f MPix/s  (%d reads)\n", median(bands),
+        pixels / (median(bands) * 1000.0), (height + band_rows - 1) / band_rows);
+    std::fflush(stdout);
 }
