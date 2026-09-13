@@ -1839,7 +1839,8 @@ bool Frame::GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bo
 }
 
 bool Frame::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample,
-    BasicStats<float>& stats, std::vector<int>& bins, const std::function<bool(double progress)>& progress) {
+    BasicStats<float>& stats, std::vector<int>& bins,
+    const std::function<bool(const CubeHistogramUpdate&)>& progress) {
     return _loader->GetCubeHistogramOnePass(stokes, num_bins, spatial_sample, stats, bins, progress);
 }
 

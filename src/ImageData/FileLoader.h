@@ -45,6 +45,22 @@ struct StokesRegion {
         : stokes_source(stokes_source_), image_region(image_region_) {}
 };
 
+// What a one-pass cube histogram reports while it runs.
+//
+// The two-pass path sends a histogram of the planes it has binned so far on every progress update
+// and the frontend re-renders from it. One pass has the same thing to offer at any moment, because
+// it tracks the extremes exactly as it goes and so always knows the bin edges for what it has read.
+//
+// `snapshot` is what asks for it, and it is separate from `progress` because it is not free: it
+// re-aggregates the walk's provisional histograms, which on a cube with thousands of reads would
+// cost more than the binning if it happened on every one. A caller reporting on a timer asks only
+// when it reports. `stats` and `bins` come back over the same bounds, and those widen as more of
+// the cube arrives.
+struct CubeHistogramUpdate {
+    double progress = 0.0;
+    std::function<void(BasicStats<float>& stats, std::vector<int>& bins)> snapshot;
+};
+
 // One 2D region of a batched spectral reduction: its bounding box in image pixels, plus an
 // optional raster mask laid out row-major with x fastest, exactly as casacore's LCRegionFixed
 // stores one. Both the mask and this struct are borrowed for the duration of the call.
@@ -207,7 +223,7 @@ public:
     // False means this loader will not -- it has no such path, or it was not asked to -- and the
     // caller keeps its two passes. A loader that returns false must not have called `progress`.
     virtual bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
-        const std::function<bool(double progress)>& progress) {
+        const std::function<bool(const CubeHistogramUpdate&)>& progress) {
         return false;
     }
     // Whether a region handing this loader runs should lay them along y. See RegionMaskRuns.

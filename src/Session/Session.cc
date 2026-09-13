@@ -1686,7 +1686,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 bool one_pass_cancelled(false);
                 auto t_one_pass = std::chrono::high_resolution_clock::now();
                 one_pass_done = _frames.at(file_id)->GetCubeHistogramOnePass(
-                    stokes, num_bins, 0, one_pass_stats, one_pass_bins, [&](double progress) {
+                    stokes, num_bins, 0, one_pass_stats, one_pass_bins, [&](const CubeHistogramUpdate& update) {
                         if (_histogram_context.is_group_execution_cancelled()) {
                             one_pass_cancelled = true;
                             return false;
@@ -1696,9 +1696,24 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                             std::chrono::duration_cast<std::chrono::microseconds>(t_now - t_one_pass).count();
                         if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
                             // One pass, so the whole bar belongs to it rather than its second half.
-                            _histogram_progress = static_cast<float>(progress);
+                            _histogram_progress = static_cast<float>(update.progress);
                             auto progress_msg = Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z,
                                 stokes, _histogram_progress, cube_histogram_config);
+                            // The histogram of what has been read so far, which is what the two-pass
+                            // path sends from its halfway mark on and what the frontend re-renders
+                            // from. Asked for only here, because building it is not free.
+                            BasicStats<float> partial_stats;
+                            std::vector<int> partial_bins;
+                            update.snapshot(partial_stats, partial_bins);
+                            if (!partial_bins.empty() && partial_stats.num_pixels > 0) {
+                                // The bounds widen as the walk goes, so they come from the snapshot
+                                // rather than from the cube bounds, which are not known yet.
+                                Histogram partial(num_bins,
+                                    HistogramBounds(partial_stats.min_val, partial_stats.max_val), nullptr, 0);
+                                partial.SetHistogramBins(partial_bins);
+                                auto* message_histogram = progress_msg.mutable_histograms();
+                                FillHistogram(message_histogram, partial_stats, partial);
+                            }
                             SendFileEvent(
                                 file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                             t_one_pass = t_now;

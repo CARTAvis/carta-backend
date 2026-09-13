@@ -200,7 +200,7 @@ public:
     // a resolved count and would decline a request for -1 bins.
     int AutoBinSize();
     bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
-        const std::function<bool(double progress)>& progress);
+        const std::function<bool(const CubeHistogramUpdate&)>& progress);
     bool SpectralRunsAlongY() const;
     bool GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink);

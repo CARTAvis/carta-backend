@@ -345,8 +345,25 @@ bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBound
     }
 }
 
+// The statistics CARTA reports, from what one pass counted. Shared by the answer and by the
+// snapshots handed out on the way, which are the same shape over fewer pixels.
+static BasicStats<float> ToBasicStats(const carta::zarr::CubeHistogramResult& computed) {
+    const auto count = static_cast<std::size_t>(computed.num_pixels);
+    if (count == 0) {
+        return BasicStats<float>();
+    }
+    const double mean = computed.sum / computed.num_pixels;
+    const double std_dev =
+        count > 1 ? std::sqrt((computed.sum_sq - (computed.sum * computed.sum / computed.num_pixels)) /
+                              (computed.num_pixels - 1.0))
+                  : DOUBLE_NAN;
+    return BasicStats<float>{count, computed.sum, mean, std_dev, static_cast<float>(computed.minimum),
+        static_cast<float>(computed.maximum), std::sqrt(computed.sum_sq / computed.num_pixels), computed.sum_sq};
+}
+
 bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample,
-    BasicStats<float>& stats, std::vector<int>& bins, const std::function<bool(double progress)>& progress) {
+    BasicStats<float>& stats, std::vector<int>& bins,
+    const std::function<bool(const CubeHistogramUpdate&)>& progress) {
     const auto settings = GetZarrHistogramSettings();
     if (!settings.one_pass) {
         // Exact is the default, and the default is two passes. Declining here is what keeps the
@@ -367,7 +384,20 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
     request.polarization = static_cast<std::uint64_t>(stokes);
     request.bins = static_cast<std::uint32_t>(num_bins);
     request.spatial_sample = spatial_sample > 0 ? spatial_sample : settings.spatial_sample;
-    request.progress = progress;
+    if (progress) {
+        request.progress = [&progress](const carta::zarr::CubeHistogramProgress& update) {
+            CubeHistogramUpdate reported;
+            reported.progress = update.progress;
+            // Kept lazy the whole way down: the library only re-aggregates if this is called, and
+            // this is only called if the caller asks.
+            reported.snapshot = [&update](BasicStats<float>& partial_stats, std::vector<int>& partial_bins) {
+                const auto so_far = update.snapshot();
+                partial_stats = ToBasicStats(so_far);
+                partial_bins.assign(so_far.counts.begin(), so_far.counts.end());
+            };
+            return progress(reported);
+        };
+    }
 
     // As with the other cube walks: read every chunk once, keep none of them.
     carta::zarr::ReadOptions options;
@@ -382,19 +412,7 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
     }
 
     const auto& computed = result.value();
-    const auto count = static_cast<std::size_t>(computed.num_pixels);
-    if (count == 0) {
-        stats = BasicStats<float>();
-    } else {
-        const double mean = computed.sum / computed.num_pixels;
-        const double std_dev =
-            count > 1 ? std::sqrt((computed.sum_sq - (computed.sum * computed.sum / computed.num_pixels)) /
-                                  (computed.num_pixels - 1.0))
-                      : DOUBLE_NAN;
-        stats = BasicStats<float>{count, computed.sum, mean, std_dev, static_cast<float>(computed.minimum),
-            static_cast<float>(computed.maximum), std::sqrt(computed.sum_sq / computed.num_pixels),
-            computed.sum_sq};
-    }
+    stats = ToBasicStats(computed);
     bins.assign(computed.counts.begin(), computed.counts.end());
     return true;
 }
