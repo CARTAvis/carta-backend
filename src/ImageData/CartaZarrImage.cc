@@ -649,6 +649,8 @@ void CartaZarrImage::SetBeams() {
     const auto polarizations = static_cast<casacore::uInt>(max_polarization + 1);
     casacore::Matrix<casacore::GaussianBeam> beam_matrix(channels, polarizations);
     std::size_t filled = 0;
+    const carta::zarr::Beam* first = nullptr;
+    bool every_plane_alike = true;
     for (const auto& beam : values) {
         if (beam.time != 0) {
             continue;
@@ -657,15 +659,36 @@ void CartaZarrImage::SetBeams() {
             casacore::GaussianBeam(casacore::Quantity(beam.major, beam.unit), casacore::Quantity(beam.minor, beam.unit),
                 casacore::Quantity(beam.position_angle, beam.unit));
         ++filled;
+
+        if (first == nullptr) {
+            first = &beam;
+        } else if (beam.major != first->major || beam.minor != first->minor ||
+                   beam.position_angle != first->position_angle || beam.unit != first->unit) {
+            every_plane_alike = false;
+        }
     }
-    if (filled != static_cast<std::size_t>(channels) * polarizations) {
+    const auto planes = static_cast<std::size_t>(channels) * polarizations;
+    if (filled != planes) {
         // The planes left over keep the null beam, which is what the smallest-area beam then reports.
-        spdlog::warn("XRADIO beam table of {} covers {} of {} planes", _filename, filled,
-            static_cast<std::size_t>(channels) * polarizations);
+        spdlog::warn("XRADIO beam table of {} covers {} of {} planes", _filename, filled, planes);
     }
-    casacore::ImageBeamSet beam_set(beam_matrix);
+
     auto image_info = imageInfo();
-    image_info.setBeams(beam_set);
+
+    // A table that says the same beam on every plane is a single beam, and saying so is not
+    // cosmetic. hasMultipleBeams() is what decides whether a consumer has to reconcile planes that
+    // differ: ImageMoments convolves the whole cube to a common beam before it computes anything
+    // (ImageMoments.tcc:74), materialising a full-size copy of the input. On a 7763 x 4742 x 7776
+    // cube that copy is 1.09 TiB and the moment fails outright for want of a work directory --
+    // for a convolution that, when every plane already has the same beam, changes nothing.
+    //
+    // Exactly equal, with no tolerance. Beams that merely almost agree are the case the common-beam
+    // machinery exists for, and a tolerance invented here would quietly skip it.
+    if (every_plane_alike && first != nullptr && filled == planes) {
+        image_info.setBeams(casacore::ImageBeamSet(beam_matrix(0, 0)));
+    } else {
+        image_info.setBeams(casacore::ImageBeamSet(beam_matrix));
+    }
     setImageInfo(image_info);
 }
 

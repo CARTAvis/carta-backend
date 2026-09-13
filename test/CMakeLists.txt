@@ -6,6 +6,8 @@ add_definitions(-DCARTA_USER_FOLDER_PREFIX=".carta-unit-tests")
 
 # See test/data/images/zarr/README.md for fixture generation instructions.
 add_definitions(-DZARR_PIXEL_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/pixels")
+add_definitions(-DZARR_XRADIO_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/minimal")
+add_definitions(-DZARR_XRADIO_UNIFORM_BEAM_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/uniform_beam")
 
 # Performance tests should not be run by default, since they need to be run in isolation
 option(performance_tests "Build performance tests." OFF)

@@ -877,3 +877,45 @@ TEST_F(ZarrImageTest, NiceCursorShapeIsTheChunk) {
 }
 
 }  // namespace
+// A beam table with one row per plane is how XRADIO stores beams whether or not the planes differ,
+// so the loader has to decide which it is. The decision is not cosmetic: hasMultipleBeams() is what
+// makes a consumer reconcile the planes, and ImageMoments reconciles by convolving the whole cube
+// to a common beam before computing anything, materialising a full-size copy of the input.
+TEST_F(ZarrImageTest, BeamsThatAgreeOnEveryPlaneBecomeOne) {
+    const std::filesystem::path fixture{ZARR_XRADIO_UNIFORM_BEAM_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "uniform-beam fixture not found at " << fixture;
+    }
+    auto loader = FileLoader::GetLoader(fixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto image = loader->GetImage();
+    ASSERT_NE(image, nullptr);
+
+    const auto& info = image->imageInfo();
+    ASSERT_TRUE(info.hasBeam());
+    EXPECT_FALSE(info.hasMultipleBeams()) << "every plane carries the same beam";
+    ASSERT_TRUE(info.hasSingleBeam());
+
+    const auto beam = info.restoringBeam();
+    EXPECT_DOUBLE_EQ(beam.getMajor().getValue("rad"), 2.0e-5);
+    EXPECT_DOUBLE_EQ(beam.getMinor().getValue("rad"), 1.0e-5);
+    EXPECT_DOUBLE_EQ(beam.getPA().getValue("rad"), 0.1);
+}
+
+TEST_F(ZarrImageTest, BeamsThatDifferPerPlaneStayMany) {
+    const std::filesystem::path fixture{ZARR_XRADIO_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio fixture not found at " << fixture;
+    }
+    auto loader = FileLoader::GetLoader(fixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto image = loader->GetImage();
+    ASSERT_NE(image, nullptr);
+
+    const auto& info = image->imageInfo();
+    ASSERT_TRUE(info.hasBeam());
+    EXPECT_TRUE(info.hasMultipleBeams()) << "the planes carry different beams";
+    EXPECT_EQ(info.getBeamSet().nelements(), 6u);  // three channels by two polarizations
+}
