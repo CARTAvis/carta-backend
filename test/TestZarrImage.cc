@@ -45,6 +45,7 @@ const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
 struct PlaneIo {
     long long rchar = 0;      // what read() handed over, page-cache hits included
     long long read_bytes = 0; // what actually came off the block device
+    long long syscr = 0;      // how many read() calls that took
 };
 
 PlaneIo ReadIo() {
@@ -57,6 +58,8 @@ PlaneIo ReadIo() {
             counters.rchar = value;
         } else if (key == "read_bytes:") {
             counters.read_bytes = value;
+        } else if (key == "syscr:") {
+            counters.syscr = value;
         }
     }
     return counters;
@@ -968,7 +971,9 @@ TEST_F(ZarrImageTest, MeasurePlaneReads) {
 
     const char* cache_env = std::getenv("CARTA_PLANE_CACHE_MB");
     const int cache_mb = cache_env ? std::stoi(cache_env) : ZARR_CACHE_POOL_MB;
-    carta::ConfigureZarrContext(ZARR_FILE_IO_CONCURRENCY, ZARR_DATA_COPY_CONCURRENCY, cache_mb, omp_get_num_procs());
+    const char* io_env = std::getenv("CARTA_PLANE_IO_THREADS");
+    const int io_threads = io_env ? std::stoi(io_env) : ZARR_FILE_IO_CONCURRENCY;
+    carta::ConfigureZarrContext(io_threads, ZARR_DATA_COPY_CONCURRENCY, cache_mb, omp_get_num_procs());
 
     auto loader = FileLoader::GetLoader(store);
     ASSERT_NE(loader, nullptr);
@@ -980,10 +985,13 @@ TEST_F(ZarrImageTest, MeasurePlaneReads) {
     const int channels = count_env ? std::stoi(count_env) : 12;
     const double pixels = static_cast<double>(frame->Width()) * static_cast<double>(frame->Height());
 
-    std::printf("\nPLANE store=%s %zux%zu cache_MiB=%d\n", store.c_str(), frame->Width(), frame->Height(), cache_mb);
+    std::printf("\nPLANE store=%s %zux%zu cache_MiB=%d io_threads=%d\n", store.c_str(), frame->Width(),
+        frame->Height(), cache_mb, io_threads);
     // From one, not zero: a Frame opens at z 0 with its cache already filled, and
     // SetImageChannels declines a channel that is not a change.
-    for (int z = 1; z <= channels; ++z) {
+    const char* first_env = std::getenv("CARTA_PLANE_FIRST");
+    const int first = first_env ? std::stoi(first_env) : 1;
+    for (int z = first; z < first + channels; ++z) {
         const auto before = ReadIo();
         const auto t0 = std::chrono::steady_clock::now();
         std::string message;
@@ -993,9 +1001,9 @@ TEST_F(ZarrImageTest, MeasurePlaneReads) {
 
         const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
         const double mib = 1024.0 * 1024.0;
-        std::printf("PLANE z=%-4d %8.1f ms %8.1f MPix/s  read %7.1f MiB  disk %7.1f MiB\n", z, ms,
-            pixels / (ms * 1000.0), static_cast<double>(after.rchar - before.rchar) / mib,
-            static_cast<double>(after.read_bytes - before.read_bytes) / mib);
+        std::printf("PLANE z=%-4d %8.1f ms %8.1f MPix/s  read %7.1f MiB  disk %7.1f MiB  reads %6lld\n", z,
+            ms, pixels / (ms * 1000.0), static_cast<double>(after.rchar - before.rchar) / mib,
+            static_cast<double>(after.read_bytes - before.read_bytes) / mib, after.syscr - before.syscr);
         std::fflush(stdout);
     }
 }
