@@ -36,9 +36,23 @@
 namespace carta {
 namespace {
 
-// Sections larger than this are the raster path, which never asks for a mask; caching one would
-// cost a byte per pixel of a whole plane for nothing.
+// Sections this size or smaller keep their mask whatever shape they are: a byte per pixel of four
+// mebipixels is cheap enough not to reason about.
 constexpr casacore::Int kMaskCacheMaxPixels = 1 << 22;
+
+// Above that, only a section spanning more than one plane keeps its mask, and only up to this many
+// pixels.
+//
+// The raster path reads one plane at a time and never asks for a mask, so computing one there
+// costs a byte per pixel and an isFinite pass per channel change for nothing -- that is what the
+// small cap above was protecting. A section covering many channels at once is not the raster path;
+// it is a casacore cube walk, and those ask for the mask immediately after the pixels, for the
+// same section.
+//
+// Getting this wrong is expensive rather than merely wasteful, because the fallback in
+// doGetMaskSlice is to read the section again: a moment over a 512x512x7776 cube walks it in
+// 512x107x7776 slabs, 426 mebipixels each, and missing here made it decode the whole cube twice.
+constexpr casacore::Int kMaskCacheMaxCubePixels = 1 << 30;
 
 std::vector<std::uint64_t> CartaShape(const carta::zarr::ImageDescriptor& descriptor) {
     std::vector<std::uint64_t> shape(4, 0);
@@ -391,7 +405,10 @@ casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels)
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
     Read(buffer, section);
 
-    if (section.length().product() <= kMaskCacheMaxPixels) {
+    const auto length = section.length();
+    const bool one_plane = length.size() < 3 || (length(2) <= 1 && (length.size() < 4 || length(3) <= 1));
+    const casacore::Int most_pixels = one_plane ? kMaskCacheMaxPixels : kMaskCacheMaxCubePixels;
+    if (section.length().product() <= most_pixels) {
         casacore::Array<casacore::Bool> mask = isFinite(buffer);
         std::scoped_lock lock(_mask_cache_mutex);
         _mask_cache_start = section.start();
