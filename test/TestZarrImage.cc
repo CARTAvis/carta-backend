@@ -12,7 +12,11 @@
 
 #include <cmath>
 #include <cstdint>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <vector>
 
 #include <casacore/images/Images/SubImage.h>
@@ -22,6 +26,7 @@
 #include "ImageData/CartaZarrImage.h"
 #include "ImageData/FileLoader.h"
 #include "ImageData/ZarrContext.h"
+#include "Main/ProgramSettings.h"
 #include "ImageData/ZarrLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageStats/StatsCalculator.h"
@@ -34,6 +39,20 @@ using namespace carta;
 namespace {
 
 const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
+
+// Bytes this process has been handed by read(), page-cache hits included: what the walk asked the
+// filesystem for, as opposed to what reached the disk.
+long long ReadIo() {
+    std::ifstream io("/proc/self/io");
+    std::string key;
+    long long value = 0;
+    while (io >> key >> value) {
+        if (key == "rchar:") {
+            return value;
+        }
+    }
+    return 0;
+}
 
 constexpr int kWidth = 4;
 constexpr int kHeight = 5;
@@ -918,4 +937,55 @@ TEST_F(ZarrImageTest, BeamsThatDifferPerPlaneStayMany) {
     ASSERT_TRUE(info.hasBeam());
     EXPECT_TRUE(info.hasMultipleBeams()) << "the planes carry different beams";
     EXPECT_EQ(info.getBeamSet().nelements(), 6u);  // three channels by two polarizations
+}
+
+// ---------------------------------------------------------------------------
+// Measurement, not a test. Skipped unless CARTA_PLANE_STORE names a store.
+//
+//   CARTA_PLANE_STORE=<path>      the image to step through
+//   CARTA_PLANE_CHANNELS=<n>      how many channels to visit (default 12)
+//   CARTA_PLANE_CACHE_MB=<n>      decoded-chunk cache, as the server sizes it
+//
+// This is the interactive path: every channel change refills the whole image
+// cache at full resolution. Reported per channel, because a store chunked more
+// than one channel deep should make the first of each group expensive and the
+// rest nearly free -- and whether it actually does is the question.
+// ---------------------------------------------------------------------------
+TEST_F(ZarrImageTest, MeasurePlaneReads) {
+    const char* store_env = std::getenv("CARTA_PLANE_STORE");
+    if (store_env == nullptr || *store_env == '\0') {
+        GTEST_SKIP() << "set CARTA_PLANE_STORE to measure";
+    }
+    const std::string store(store_env);
+
+    const char* cache_env = std::getenv("CARTA_PLANE_CACHE_MB");
+    const int cache_mb = cache_env ? std::stoi(cache_env) : ZARR_CACHE_POOL_MB;
+    carta::ConfigureZarrContext(ZARR_FILE_IO_CONCURRENCY, ZARR_DATA_COPY_CONCURRENCY, cache_mb, omp_get_num_procs());
+
+    auto loader = FileLoader::GetLoader(store);
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    ASSERT_TRUE(frame->IsValid());
+
+    const char* count_env = std::getenv("CARTA_PLANE_CHANNELS");
+    const int channels = count_env ? std::stoi(count_env) : 12;
+    const double pixels = static_cast<double>(frame->Width()) * static_cast<double>(frame->Height());
+
+    std::printf("\nPLANE store=%s %zux%zu cache_MiB=%d\n", store.c_str(), frame->Width(), frame->Height(), cache_mb);
+    // From one, not zero: a Frame opens at z 0 with its cache already filled, and
+    // SetImageChannels declines a channel that is not a change.
+    for (int z = 1; z <= channels; ++z) {
+        const auto before = ReadIo();
+        const auto t0 = std::chrono::steady_clock::now();
+        std::string message;
+        ASSERT_TRUE(frame->SetImageChannels(z, 0, message)) << message;
+        const auto t1 = std::chrono::steady_clock::now();
+        const auto after = ReadIo();
+
+        const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        std::printf("PLANE z=%-4d %8.1f ms %8.1f MPix/s  read %7.1f MiB\n", z, ms, pixels / (ms * 1000.0),
+            static_cast<double>(after - before) / (1024.0 * 1024.0));
+        std::fflush(stdout);
+    }
 }
