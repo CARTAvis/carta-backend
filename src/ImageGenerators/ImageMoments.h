@@ -87,6 +87,12 @@ private:
     // Get a suitable chunk shape in order for the iteration
     casacore::IPosition ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in);
 
+    // The slab LineMultiApply reads at a time from a lattice that decodes in chunks, and the
+    // order to step it in. Empty when the lattice reports no chunking finer than itself, which
+    // leaves the caller on ChunkShape.
+    casacore::IPosition SlabShape(casacore::uInt collapse_axis, const casacore::MaskedLattice<T>& lattice_in,
+        casacore::IPosition& axis_path);
+
     // Stop moment calculation
     volatile bool _stop;
 
