@@ -11,6 +11,7 @@
 #define CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <vector>
 
@@ -598,12 +599,25 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
 
     casacore::uInt n_done = 0; // Number of slices have done
 
+    // Where the walk's time goes, because the answer is not what it looks like. The read fans out
+    // over the decode pool; everything after it is one thread. Timed per slab, so the cost of
+    // timing does not land on the thing being timed -- a per-line version of this cost 30% on a
+    // cube with 36.8 million lines.
+    double prof_read = 0, prof_process = 0, prof_store = 0;
+    std::size_t prof_slabs = 0, prof_lines = 0;
+    auto prof_now = [] { return std::chrono::steady_clock::now(); };
+    auto prof_since = [](auto t) { return std::chrono::duration<double>(std::chrono::steady_clock::now() - t).count(); };
+    auto prof_total = prof_now();
+
     // Iterate through a cube image, chunk by chunk
-    for (lat_iter.reset(); !lat_iter.atEnd(); ++lat_iter) {
+    for (lat_iter.reset(); !lat_iter.atEnd();) {
+        auto prof_t = prof_now();
         const casacore::IPosition iter_pos = lat_iter.position();
         const casacore::Array<T>& chunk = lat_iter.cursor();
         casacore::IPosition chunk_shape = chunk.shape();
         const casacore::Array<casacore::Bool> mask_chunk = use_mask ? lat_iter.getMask() : Array<Bool>();
+        prof_read += prof_since(prof_t);
+        ++prof_slabs;
 
         chunk_slice_start = 0;
         chunk_slice_end = chunk_slice_end_at_chunk_iter_begin;
@@ -620,6 +634,7 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
         }
 
         // Iterate through a chunk, slice by slice on the output image display axes
+        prof_t = prof_now();
         casacore::Bool done = casacore::False;
         while (!done) {
             if (_stop) { // Break the iteration in a chunk
@@ -630,6 +645,7 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             casacore::Vector<Bool> mask =
                 use_mask ? casacore::Vector<casacore::Bool>(mask_chunk(chunk_slice_start, chunk_slice_end)) : no_mask;
             cur_pos = iter_pos + chunk_slice_start;
+            ++prof_lines;
 
             // Do calculations
             collapser.multiProcess(result, result_mask, data, mask, cur_pos);
@@ -663,6 +679,9 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             }
         }
 
+        prof_process += prof_since(prof_t);
+        prof_t = prof_now();
+
         if (_stop) { // Break the iteration in a cube image
             break;
         }
@@ -686,6 +705,18 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
                 }
             }
         }
+
+        prof_store += prof_since(prof_t);
+        ++lat_iter;
+    }
+
+    {
+        const double total = prof_since(prof_total);
+        spdlog::debug(
+            "moment walk: {:.1f} s over {} slabs and {} lines -- read {:.1f} s ({:.0f}%, on the decode "
+            "pool), collapsing {:.1f} s ({:.0f}%, one thread), writing {:.1f} s ({:.0f}%)",
+            total, prof_slabs, prof_lines, prof_read, 100.0 * prof_read / total, prof_process,
+            100.0 * prof_process / total, prof_store, 100.0 * prof_store / total);
     }
 
     if (_progress_monitor) {
