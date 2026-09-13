@@ -42,16 +42,24 @@ const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
 
 // Bytes this process has been handed by read(), page-cache hits included: what the walk asked the
 // filesystem for, as opposed to what reached the disk.
-long long ReadIo() {
+struct PlaneIo {
+    long long rchar = 0;      // what read() handed over, page-cache hits included
+    long long read_bytes = 0; // what actually came off the block device
+};
+
+PlaneIo ReadIo() {
+    PlaneIo counters;
     std::ifstream io("/proc/self/io");
     std::string key;
     long long value = 0;
     while (io >> key >> value) {
         if (key == "rchar:") {
-            return value;
+            counters.rchar = value;
+        } else if (key == "read_bytes:") {
+            counters.read_bytes = value;
         }
     }
-    return 0;
+    return counters;
 }
 
 constexpr int kWidth = 4;
@@ -984,8 +992,10 @@ TEST_F(ZarrImageTest, MeasurePlaneReads) {
         const auto after = ReadIo();
 
         const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-        std::printf("PLANE z=%-4d %8.1f ms %8.1f MPix/s  read %7.1f MiB\n", z, ms, pixels / (ms * 1000.0),
-            static_cast<double>(after - before) / (1024.0 * 1024.0));
+        const double mib = 1024.0 * 1024.0;
+        std::printf("PLANE z=%-4d %8.1f ms %8.1f MPix/s  read %7.1f MiB  disk %7.1f MiB\n", z, ms,
+            pixels / (ms * 1000.0), static_cast<double>(after.rchar - before.rchar) / mib,
+            static_cast<double>(after.read_bytes - before.read_bytes) / mib);
         std::fflush(stdout);
     }
 }

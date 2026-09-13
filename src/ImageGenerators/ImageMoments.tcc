@@ -750,6 +750,25 @@ casacore::IPosition ImageMoments<T>::SlabShape(
     // deliberate, one-at-a-time operation, so it may hold more than an interactive read -- but it
     // shares the server, hence the fraction and the ceiling.
     //
+    // The ceiling is not a compromise between memory and speed; measured, it is the fastest point.
+    // Sweeping it on 512 x 512 x 7776 chunked 512x512x4, warm, everything else fixed:
+    //
+    //     256 MiB  reads the store 29.0x  70.1 s
+    //     512 MiB                  14.6x  74.2 s
+    //       1 GiB                   7.3x  45.6 s
+    //       2 GiB                   3.7x  39.5 s
+    //       4 GiB                   2.3x  40.2 s
+    //     9.7 GiB (the whole unit)  1.6x  75-80 s
+    //
+    // The curve is a U. Below the knee the decode dominates, as expected. Above it the slab stops
+    // fitting anything -- a profile along the collapse axis is strided by the whole display area,
+    // so every line touches thousands of pages, and 2.4x fewer bytes read cost 2x the time. Reading
+    // less is not the objective; it is only the proxy that holds on the way up to the knee.
+    //
+    // So the ceiling is the measured optimum and the fraction only matters on machines too small
+    // to reach it. A sixteenth puts a 16 GB machine at 1 GiB rather than the 512 MiB a thirty-second
+    // would, and 512 MiB measured worse than 256.
+    //
     // Off memoryTotal, not memoryFree: memoryFree tracks MemFree, which a full page cache drives
     // to near nothing while MemAvailable stays whole -- 15.7 GB against 125.3 GB on the machine
     // this was measured on. Sizing off it makes the walk's speed depend on how much unrelated file
@@ -766,7 +785,7 @@ casacore::IPosition ImageMoments<T>::SlabShape(
     }
     const ptrdiff_t total_kib = casacore::HostInfo::memoryTotal();
     const casacore::uInt64 total_bytes = total_kib > 0 ? static_cast<casacore::uInt64>(total_kib) * 1024 : 0;
-    casacore::uInt64 budget = std::min<casacore::uInt64>(total_bytes / 32, most_bytes);
+    casacore::uInt64 budget = std::min<casacore::uInt64>(total_bytes / 16, most_bytes);
     budget = std::max(budget, least_bytes);
     budget = std::min(budget, unit_bytes);
 
