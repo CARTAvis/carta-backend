@@ -308,6 +308,8 @@ TEST_F(MomentTest, MeasureZarrWalk) {
     moments.setInExCludeRange(casacore::Vector<float>(), casacore::Vector<float>());
 
     spdlog::set_level(spdlog::level::debug);
+    spdlog::info("measure: shape {} nice {} masked {} multiple_beams {}", sub->shape().toString(),
+        sub->niceCursorShape().toString(), sub->isMasked(), sub->imageInfo().hasMultipleBeams());
     const auto before = ReadIoCounters();
     const auto t0 = std::chrono::steady_clock::now();
     auto results = moments.createMoments(true, "moment_measure", false);
