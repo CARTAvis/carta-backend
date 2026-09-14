@@ -92,7 +92,23 @@ public:
         }
     }
 
-    static void GenerateMoments(const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis) {
+    // The twelve include coordinate moments, which pin the walk to one worker. Anything that
+    // means to exercise the parallel walk has to ask for moments that do not.
+    static casacore::Vector<casacore::Int> MomentsWithoutCoordinates() {
+        casacore::Vector<casacore::Int> moments(8);
+        moments[0] = 0;  // AVERAGE
+        moments[1] = 1;  // INTEGRATED
+        moments[2] = 4;  // MEDIAN
+        moments[3] = 6;  // STANDARD_DEVIATION
+        moments[4] = 7;  // RMS
+        moments[5] = 8;  // ABS_MEAN_DEVIATION
+        moments[6] = 9;  // MAXIMUM
+        moments[7] = 11; // MINIMUM
+        return moments;
+    }
+
+    static void GenerateMoments(const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis,
+        const casacore::Vector<casacore::Int>& wanted = casacore::Vector<casacore::Int>()) {
         ASSERT_TRUE(image) << "Image must not be null";
         // create casa/carta moments generators
         casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
@@ -104,6 +120,10 @@ public:
 
         // set moment types
         casacore::Vector<casacore::Int> moments(12);
+        if (!wanted.empty()) {
+            moments.resize(wanted.nelements());
+            moments = wanted;
+        } else {
         moments[0] = 0;   // AVERAGE
         moments[1] = 1;   // INTEGRATED
         moments[2] = 2;   // WEIGHTED_MEAN_COORDINATE
@@ -116,6 +136,7 @@ public:
         moments[9] = 10;  // MAXIMUM_COORDINATE
         moments[10] = 11; // MINIMUM
         moments[11] = 12; // MINIMUM_COORDINATE
+        }
 
         // the other settings
         casacore::Vector<float> include_pix;
@@ -329,4 +350,22 @@ TEST_F(MomentTest, MeasureZarrWalk) {
         (long long)length(3), cache_mb, seconds, wanted_bytes / mib, rchar / mib, disk / mib,
         wanted_bytes > 0 ? rchar / wanted_bytes : 0.0);
     std::fflush(stdout);
+}
+
+// The walk runs on many workers only when no coordinate moment is asked for, so the tests above --
+// which ask for all twelve -- run it on one. This is the same oracle over the same fixture with the
+// coordinate moments left out, which is the only case that reaches the parallel path.
+TEST_F(MomentTest, CheckConsistencyInParallel) {
+    auto file_path = Hdf5Images() / "1000x1000x2x2_nans.hdf5";
+    if (!std::filesystem::exists(file_path)) {
+        GTEST_SKIP() << "fixture not found at " << file_path;
+    }
+    auto loader = FileLoader::GetLoader(file_path.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("0");
+    std::shared_ptr<casacore::ImageInterface<float>> image = loader->GetImage();
+    ASSERT_NE(image, nullptr);
+
+    int moment_axis(2);
+    GenerateMoments(image, moment_axis, MomentsWithoutCoordinates());
 }

@@ -21,6 +21,9 @@
 #include <imageanalysis/ImageAnalysis/MomentsBase.h>
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
 
+#include <memory>
+#include <vector>
+
 #include "Image2DConvolver.h"
 
 namespace carta {
@@ -81,8 +84,11 @@ private:
     void WhatIsTheNoise(T& noise, const casacore::ImageInterface<T>& image);
 
     // Iterate through a cube image with the moments calculator. Re-write from the casacore::LatticeApply<T,U>::lineMultiApply() function
+    // One collapser per worker. They hold their own scratch -- selectedData_p, pixelIn_p, a whole
+    // copy of the coordinate system -- so a shared one cannot be called from more than one thread,
+    // and the walk is 77-86% of the time inside that call.
     void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
-        casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis);
+        const std::vector<std::shared_ptr<casa::MomentCalcBase<T>>>& collapsers, casacore::uInt collapse_axis);
 
     // Get a suitable chunk shape in order for the iteration
     casacore::IPosition ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in);
