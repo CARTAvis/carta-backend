@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <string>
@@ -108,6 +109,7 @@ class PeekableFrame : public Frame {
 public:
     using Frame::Frame;
     using Frame::GetCachedCubeHistogram;
+    using Frame::GetCachedImageHistogram;
 };
 
 std::shared_ptr<PeekableFrame> ZarrFrame(std::shared_ptr<FileLoader> loader) {
@@ -139,6 +141,34 @@ CARTA::SetHistogramRequirements CubeHistogramRequirements(int file_id, int num_b
     config->set_channel(ALL_Z);
     config->set_num_bins(num_bins);
     return message;
+}
+
+CARTA::SetHistogramRequirements ImageHistogramRequirements(int file_id, int num_bins, int channel) {
+    CARTA::SetHistogramRequirements message;
+    message.set_file_id(file_id);
+    message.set_region_id(IMAGE_REGION_ID);
+    auto* config = message.add_histograms();
+    config->set_coordinate("z");
+    config->set_channel(channel);
+    config->set_num_bins(num_bins);
+    return message;
+}
+
+// Bytes read() has handed this process, page-cache hits included. A histogram served from a cache
+// reads nothing at all, which is a sharper thing to assert than how long it took.
+//
+// Reading /proc/self/io is itself a read, so the counter moves even across doing nothing; every
+// measurement below is taken against that cost rather than against zero.
+long long BytesRead() {
+    std::ifstream io("/proc/self/io");
+    std::string key;
+    long long value = 0;
+    while (io >> key >> value) {
+        if (key == "rchar:") {
+            return value;
+        }
+    }
+    return -1;
 }
 
 std::int64_t TotalCount(const CARTA::Histogram& histogram) {
@@ -525,6 +555,41 @@ TEST_F(SessionTest, AnHdf5CubeHistogramComesFromItsOwnStatisticsWithoutAWalk) {
         << "the loader answered, so Session never calculated or cached cube statistics";
 }
 
+// The cube cache is keyed the same way, so a different bin count is a miss that walks again rather
+// than a hit handed back at the wrong resolution.
+TEST_F(SessionTest, ACubeHistogramWithADifferentBinCountIsRecalculated) {
+    HeadlessSession session;
+    const int file_id = 0;
+    auto loader = OpenZarrLoader();
+    ASSERT_NE(loader, nullptr);
+    auto frame = ZarrFrame(loader);
+    ASSERT_TRUE(frame->IsValid());
+    session.AdoptFrame(file_id, frame);
+    session._histogram_progress_interval = 0.0;
+
+    session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, 7), 1);
+    const auto* seven = FinalHistogram(session.TakeHistograms());
+    ASSERT_NE(seven, nullptr);
+    ASSERT_EQ(seven->histograms().bins_size(), 7);
+    const auto seven_total = TotalCount(seven->histograms());
+
+    session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, 13), 2);
+    const auto messages = session.TakeHistograms();
+    const auto* thirteen = FinalHistogram(messages);
+    ASSERT_NE(thirteen, nullptr);
+    ASSERT_EQ(thirteen->histograms().bins_size(), 13) << "a different bin count is a cache miss, not a reshaped hit";
+    EXPECT_GT(messages.size(), 1u) << "a miss walks the cube, which reports progress";
+    EXPECT_EQ(TotalCount(thirteen->histograms()), seven_total) << "same pixels, divided up differently";
+
+    // Both are in the cache now, each under its own bin count.
+    BasicStats<float> cube_stats;
+    ASSERT_TRUE(frame->GetBasicStats(ALL_Z, 0, cube_stats));
+    const HistogramBounds bounds(cube_stats.min_val, cube_stats.max_val);
+    Histogram cached;
+    EXPECT_TRUE(frame->GetCachedCubeHistogram(0, 7, bounds, cached));
+    EXPECT_TRUE(frame->GetCachedCubeHistogram(0, 13, bounds, cached));
+}
+
 // The cache the request above cannot reach does work, which is what makes the early return above a
 // missed hit rather than a guard against a broken cache.
 TEST_F(SessionTest, TheFrameCubeHistogramCacheItselfHoldsTheAnswer) {
@@ -553,6 +618,171 @@ TEST_F(SessionTest, TheFrameCubeHistogramCacheItselfHoldsTheAnswer) {
     for (std::size_t bin = 0; bin < bins.size(); ++bin) {
         EXPECT_EQ(bins[bin], final_message->histograms().bins(static_cast<int>(bin))) << "bin " << bin;
     }
+}
+
+// A plane's histogram is cached by Frame::CalculateHistogram and looked up by
+// GetCachedImageHistogram, and Frame::FillRegionHistogramData sits between them -- but nothing
+// covered that path. Zeroing what the cache hands back used to pass the whole suite.
+//
+// The plane asked for is not the current one, so calculating it has to read; a cache hit reads
+// nothing. That difference is what separates the two requests, rather than how long each took.
+TEST_F(SessionTest, AnImageHistogramIsAnsweredFromTheFrameCacheOnASecondRequest) {
+    HeadlessSession session;
+    const int file_id = 0;
+    const int num_bins = 7;
+    const int channel = 1; // not CurrentZ(), so the first request has to go and read it
+    auto loader = OpenZarrLoader();
+    ASSERT_NE(loader, nullptr);
+    auto frame = ZarrFrame(loader);
+    ASSERT_TRUE(frame->IsValid());
+    ASSERT_NE(frame->CurrentZ(), channel);
+    session.AdoptFrame(file_id, frame);
+
+    // What the counter moves by across nothing at all.
+    const long long idle_a = BytesRead();
+    const long long idle_b = BytesRead();
+    const long long instrument = idle_b - idle_a;
+    ASSERT_GE(instrument, 0);
+
+    const long long before_first = BytesRead();
+    session.OnSetHistogramRequirements(ImageHistogramRequirements(file_id, num_bins, channel), 1);
+    const long long after_first = BytesRead();
+    auto messages = session.TakeHistograms();
+    ASSERT_EQ(messages.size(), 1u);
+    const auto first = messages[0].histograms();
+    ASSERT_EQ(first.bins_size(), num_bins);
+    EXPECT_EQ(messages[0].channel(), channel);
+    ASSERT_GT(after_first - before_first, instrument + 64) << "a plane that is not the current one has to be read";
+
+    // It landed in the cache the second request is supposed to find.
+    BasicStats<float> stats;
+    ASSERT_TRUE(frame->GetBasicStats(channel, 0, stats));
+    Histogram cached;
+    ASSERT_TRUE(frame->GetCachedImageHistogram(channel, 0, num_bins, HistogramBounds(stats.min_val, stats.max_val), cached));
+
+    const long long before_second = BytesRead();
+    EXPECT_TRUE(session.SendRegionHistogramData(file_id, IMAGE_REGION_ID));
+    const long long after_second = BytesRead();
+    messages = session.TakeHistograms();
+    ASSERT_EQ(messages.size(), 1u);
+    EXPECT_LE(after_second - before_second, instrument + 8) << "a cached plane histogram should not read anything";
+
+    const auto& repeat = messages[0].histograms();
+    ASSERT_EQ(repeat.bins_size(), first.bins_size());
+    for (int bin = 0; bin < first.bins_size(); ++bin) {
+        EXPECT_EQ(repeat.bins(bin), first.bins(bin)) << "bin " << bin;
+    }
+    EXPECT_DOUBLE_EQ(repeat.bin_width(), first.bin_width());
+    EXPECT_DOUBLE_EQ(repeat.first_bin_center(), first.first_bin_center());
+    EXPECT_FLOAT_EQ(repeat.mean(), first.mean());
+    EXPECT_FLOAT_EQ(repeat.std_dev(), first.std_dev());
+}
+
+// The cache is keyed on the bin count as well as the plane, so asking for a different one is a miss
+// that recalculates rather than a hit that hands back the wrong shape.
+TEST_F(SessionTest, AnImageHistogramWithADifferentBinCountIsRecalculated) {
+    HeadlessSession session;
+    const int file_id = 0;
+    const int channel = 1;
+    auto loader = OpenZarrLoader();
+    ASSERT_NE(loader, nullptr);
+    auto frame = ZarrFrame(loader);
+    ASSERT_TRUE(frame->IsValid());
+    session.AdoptFrame(file_id, frame);
+
+    session.OnSetHistogramRequirements(ImageHistogramRequirements(file_id, 7, channel), 1);
+    auto messages = session.TakeHistograms();
+    ASSERT_EQ(messages.size(), 1u);
+    const auto seven = messages[0].histograms();
+    ASSERT_EQ(seven.bins_size(), 7);
+
+    session.OnSetHistogramRequirements(ImageHistogramRequirements(file_id, 13, channel), 2);
+    messages = session.TakeHistograms();
+    ASSERT_EQ(messages.size(), 1u);
+    const auto thirteen = messages[0].histograms();
+    ASSERT_EQ(thirteen.bins_size(), 13) << "a different bin count is a cache miss, not a reshaped hit";
+
+    // Same pixels either way, however they are divided up.
+    EXPECT_EQ(TotalCount(thirteen), TotalCount(seven));
+    EXPECT_FLOAT_EQ(thirteen.mean(), seven.mean());
+    EXPECT_FLOAT_EQ(thirteen.std_dev(), seven.std_dev());
+
+    // And the first answer is still in the cache, not replaced by the second.
+    BasicStats<float> stats;
+    ASSERT_TRUE(frame->GetBasicStats(channel, 0, stats));
+    const HistogramBounds bounds(stats.min_val, stats.max_val);
+    Histogram cached;
+    EXPECT_TRUE(frame->GetCachedImageHistogram(channel, 0, 7, bounds, cached));
+    EXPECT_TRUE(frame->GetCachedImageHistogram(channel, 0, 13, bounds, cached));
+}
+
+// The cache is keyed on the bounds as well, which only a request that fixes them can vary. Without
+// this, two histograms of the same plane at the same bin count but over different ranges would be
+// the same histogram.
+TEST_F(SessionTest, AnImageHistogramWithDifferentFixedBoundsIsRecalculated) {
+    HeadlessSession session;
+    const int file_id = 0;
+    const int num_bins = 7;
+    const int channel = 1;
+    auto loader = OpenZarrLoader();
+    ASSERT_NE(loader, nullptr);
+    auto frame = ZarrFrame(loader);
+    ASSERT_TRUE(frame->IsValid());
+    session.AdoptFrame(file_id, frame);
+
+    auto request = [&](double min, double max, int request_id) {
+        auto message = ImageHistogramRequirements(file_id, num_bins, channel);
+        auto* config = message.mutable_histograms(0);
+        config->set_fixed_bounds(true);
+        config->mutable_bounds()->set_min(min);
+        config->mutable_bounds()->set_max(max);
+        session.OnSetHistogramRequirements(message, request_id);
+        auto messages = session.TakeHistograms();
+        EXPECT_EQ(messages.size(), 1u);
+        return messages.empty() ? CARTA::Histogram() : messages[0].histograms();
+    };
+
+    const auto narrow = request(0.0, 1000.0, 1);
+    const auto wide = request(0.0, 2000.0, 2);
+
+    ASSERT_EQ(narrow.bins_size(), num_bins);
+    ASSERT_EQ(wide.bins_size(), num_bins);
+    // The bounds travel as floats, so the widths are compared as floats.
+    EXPECT_NEAR(narrow.bin_width(), 1000.0 / num_bins, 1e-3);
+    EXPECT_NEAR(wide.bin_width(), 2000.0 / num_bins, 1e-3)
+        << "the second range is a cache miss, not the first histogram handed back";
+    EXPECT_NE(TotalCount(narrow), TotalCount(wide)) << "a wider range over the same plane holds more pixels";
+
+    // Both are cached, each under its own bounds.
+    Histogram cached;
+    EXPECT_TRUE(frame->GetCachedImageHistogram(channel, 0, num_bins, HistogramBounds(0.0, 1000.0), cached));
+    EXPECT_TRUE(frame->GetCachedImageHistogram(channel, 0, num_bins, HistogramBounds(0.0, 2000.0), cached));
+}
+
+// The control for the branch ahead of the frame cache: an HDF5 file with a Statistics/XY sidecar
+// answers a plane histogram from the loader, without calculating one and without caching one.
+TEST_F(SessionTest, AnHdf5ImageHistogramComesFromItsOwnStatistics) {
+    HeadlessSession session;
+    const int file_id = 0;
+    auto frame = FrameOver(Hdf5Images() / "10x10x10.hdf5");
+    ASSERT_NE(frame, nullptr);
+    ASSERT_TRUE(frame->IsValid());
+    session.AdoptFrame(file_id, frame);
+
+    // The sidecar decides the bin count, so the request has to be the one that accepts it.
+    session.OnSetHistogramRequirements(ImageHistogramRequirements(file_id, AUTO_BIN_SIZE, CURRENT_Z), 1);
+
+    const auto messages = session.TakeHistograms();
+    ASSERT_EQ(messages.size(), 1u);
+    const auto& histogram = messages[0].histograms();
+    EXPECT_GT(histogram.bins_size(), 0);
+
+    BasicStats<float> stats;
+    ASSERT_TRUE(frame->GetBasicStats(frame->CurrentZ(), 0, stats));
+    Histogram cached;
+    EXPECT_FALSE(frame->GetCachedImageHistogram(
+        frame->CurrentZ(), 0, histogram.bins_size(), HistogramBounds(stats.min_val, stats.max_val), cached))
+        << "the loader answered, so nothing should have been calculated or cached here";
 }
 
 // What a repeated cube histogram request costs, on a store worth measuring. Skipped unless asked:
