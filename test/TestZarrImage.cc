@@ -31,6 +31,7 @@
 #include "ImageData/ZarrLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageStats/StatsCalculator.h"
+#include "Region/RegionAnalysis/LineBoxRegions.h"
 #include "Region/RegionHandler.h"
 #include "Util/Message.h"
 #include "src/Frame/Frame.h"
@@ -40,6 +41,14 @@ using namespace carta;
 namespace {
 
 const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
+
+// RegionHandler keeps the batched line path to itself, and the frames it works over too.
+class PeekableRegionHandler : public carta::RegionHandler {
+public:
+    using carta::RegionHandler::TryBatchedLineProfiles;
+    using carta::RegionHandler::_frames;
+    using carta::RegionHandler::_line_profile_progress_interval;
+};
 
 // Bytes this process has been handed by read(), page-cache hits included: what the walk asked the
 // filesystem for, as opposed to what reached the disk.
@@ -313,6 +322,104 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataMatchesAPerRegionSum) {
         ASSERT_TRUE(reduced) << "the batched reduction failed at stokes=" << stokes;
         EXPECT_EQ(channels_seen, static_cast<std::size_t>(kDepth));
     }
+}
+
+// A reduction whose block takes more than one read hands that block over as it fills, and the
+// arrivals are indistinguishable unless the flag comes with them. It did not: this path was the
+// only batched one in the loader that neither asked for a read budget nor forwarded `complete`.
+TEST_F(ZarrImageTest, MultiRegionSpectralDataMarksPartialBlocks) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    // One byte, so every chunk is its own read and the block cannot arrive finished the first time.
+    zarr_loader->SetReadBudgetBytes(1);
+
+    const std::vector<RegionMaskSpec> regions{{0, 0, kWidth, kHeight, nullptr}};
+    std::size_t partials = 0;
+    std::size_t complete_channels = 0;
+    std::size_t every_arrival = 0;
+    ASSERT_TRUE(loader->GetMultiRegionSpectralData(regions, AxisRange(0, kDepth - 1), 0,
+        [&](const RegionSpectralBlock& block) {
+            every_arrival += block.channel_count;
+            if (block.complete) {
+                complete_channels += block.channel_count;
+                EXPECT_DOUBLE_EQ(block.completeness, 1.0);
+            } else {
+                ++partials;
+                EXPECT_GT(block.completeness, 0.0) << "a partial has read something";
+                EXPECT_LT(block.completeness, 1.0) << "and not everything";
+            }
+            return true;
+        }));
+
+    EXPECT_GT(partials, 0u) << "a one-byte budget should have split the block across reads";
+    EXPECT_GT(every_arrival, complete_channels) << "the partials are exactly what a counter must not count";
+    EXPECT_EQ(complete_channels, static_cast<std::size_t>(kDepth))
+        << "counting only finished blocks should account for every channel exactly once";
+}
+
+// The consumer of the path above, which had no test at all -- which is how the bug survived: the
+// guard rejected the batched pass, the caller fell back to reading each box on its own, and the
+// answer came out right. The only symptom was that the optimisation never ran.
+TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    zarr_loader->SetReadBudgetBytes(1);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    ASSERT_TRUE(frame->IsValid());
+
+    PeekableRegionHandler handler;
+    const int file_id = 0;
+    handler._frames[file_id] = frame;
+    // Report on every arrival rather than twice a second, so the partials are visible at all.
+    handler._line_profile_progress_interval = 0.0;
+
+    auto csys = frame->CoordinateSystem();
+    std::vector<CARTA::Point> control_points{
+        Message::Point(0.0, 0.0), Message::Point(kWidth - 1.0, kHeight - 1.0)};
+    RegionState line_state(file_id, CARTA::RegionType::LINE, control_points, 0.0);
+    int region_id = -1;
+    ASSERT_TRUE(handler.SetRegion(region_id, line_state, csys));
+
+    LineBoxRegions line_box_regions;
+    std::vector<RegionState> box_regions;
+    casacore::Quantity increment;
+    std::string message;
+    ASSERT_TRUE(line_box_regions.GetLineBoxRegions(line_state, csys, 3, increment, box_regions, message)) << message;
+    ASSERT_FALSE(box_regions.empty());
+
+    // A finished block moves progress by at least one whole channel, so any smaller forward step
+    // came from a block reported while it was still filling. Merely seeing a fraction proves
+    // nothing: an intermediate finished block gives one of those too.
+    const float one_channel = 1.0f / static_cast<float>(kDepth);
+    float highest_progress = -1.0f;
+    float previous_progress = 0.0f;
+    bool saw_step_finer_than_a_channel = false;
+    std::function<void(float)> progress_callback = [&](float progress) {
+        const float step = progress - previous_progress;
+        if (step > 0.0f && step < one_channel - 1e-4f) {
+            saw_step_finer_than_a_channel = true;
+        }
+        previous_progress = progress;
+        highest_progress = std::max(highest_progress, progress);
+    };
+    casacore::Matrix<float> profiles;
+    bool cancelled = false;
+    EXPECT_TRUE(handler.TryBatchedLineProfiles(file_id, region_id, line_state, box_regions, csys,
+        AxisRange(0, kDepth - 1), 0, progress_callback, profiles, false, cancelled))
+        << "a reduction split across reads should still produce a complete set of profiles";
+    EXPECT_FALSE(cancelled);
+    ASSERT_EQ(profiles.shape().size(), 2u);
+    EXPECT_EQ(profiles.shape()(0), static_cast<casacore::Int>(box_regions.size()));
+    EXPECT_EQ(profiles.shape()(1), kDepth);
+    EXPECT_FLOAT_EQ(highest_progress, 1.0f) << "progress should reach one, and counting partials drove it past";
+    EXPECT_TRUE(saw_step_finer_than_a_channel)
+        << "without a block that arrives in pieces this test proves nothing, so the split is asserted too";
 }
 
 // The right chunk of the fixture is missing at z = 1, stokes = 2, so every one of its pixels is

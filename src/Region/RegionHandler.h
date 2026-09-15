@@ -22,6 +22,8 @@
 #include "RegionAnalysis/RegionSpatialProfile.h"
 #include "RegionAnalysis/RegionStatistics.h"
 
+#define LINE_PROFILE_PROGRESS_INTERVAL 500
+
 namespace carta {
 
 class RegionHandler {
@@ -85,6 +87,26 @@ public:
     bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame,
         GeneratedImage& model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback);
 
+protected:
+    // Reduce every box of a line in one pass over the pixels, when the file's loader can. Returns
+    // whether it produced a complete set of profiles; the caller falls back to one box at a time
+    // otherwise, which is slower but always available.
+    //
+    // Reachable by a subclass rather than private, with the frames it works over, because its one
+    // caller swallows its answer: a false sends the caller down the slow path, which produces the
+    // same profiles, so nothing downstream can tell whether this ever ran.
+    bool TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
+        const std::vector<RegionState>& box_regions, std::shared_ptr<casacore::CoordinateSystem> line_coord_sys,
+        const AxisRange& z_range, int stokes_index, std::function<void(float)>& progress_callback,
+        casacore::Matrix<float>& profiles, bool reverse, bool& cancelled);
+
+    std::unordered_map<int, std::shared_ptr<Frame>> _frames;
+
+    // How often a line profile walk reports progress, in milliseconds. A field rather than the
+    // constant it starts at because the partial reports are only reachable after that long, which
+    // is the same reason they went untested: a test cannot wait half a second per assertion.
+    double _line_profile_progress_interval = LINE_PROFILE_PROGRESS_INTERVAL;
+
 private:
     // Region ID handling
     int GetNextRegionId();
@@ -114,13 +136,6 @@ private:
     bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index, const std::string& coordinate,
         std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, casacore::Quantity& increment, bool& cancelled,
         std::string& message, bool reverse = false);
-    // Reduce every box of a line in one pass over the pixels, when the file's loader can. Returns
-    // whether it produced a complete set of profiles; the caller falls back to one box at a time
-    // otherwise, which is slower but always available.
-    bool TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
-        const std::vector<RegionState>& box_regions, std::shared_ptr<casacore::CoordinateSystem> line_coord_sys,
-        const AxisRange& z_range, int stokes_index, std::function<void(float)>& progress_callback,
-        casacore::Matrix<float>& profiles, bool reverse, bool& cancelled);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     casacore::Vector<float> GetTemporaryRegionProfile(int file_id, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> csys, const AxisRange& z_range, int stokes_index, double& num_pixels);
@@ -160,7 +175,6 @@ private:
     std::mutex _region_mutex;
 
     // Frames: key is file_id
-    std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
     // Region analysis
     std::unordered_map<int, std::unique_ptr<RegionHistogram>> _region_histograms;

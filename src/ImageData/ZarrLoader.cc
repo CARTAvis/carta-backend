@@ -180,6 +180,9 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
     // nothing else is accumulated.
     request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum;
 
+    carta::zarr::ReadOptions options;
+    options.temporary_memory_limit_bytes = _read_budget_bytes;
+
     try {
         return image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
             RegionSpectralBlock forwarded;
@@ -187,6 +190,11 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
             forwarded.channel_count = static_cast<std::size_t>(block.channel_count);
             forwarded.region_count = zarr_regions.size();
             forwarded.region_stride = block.region_stride;
+            // A block that takes more than one read arrives several times, filling in. The caller
+            // needs to know which arrival is the answer, so this is passed on rather than dropped:
+            // the generator wants the partials to show progress with.
+            forwarded.complete = block.complete;
+            forwarded.completeness = block.completeness;
             // Both statistics live in the one buffer; their slots are what the block declares.
             for (std::size_t slot = 0; slot < block.statistic_count; ++slot) {
                 const double* values = block.values + (slot * block.statistic_stride);
@@ -200,7 +208,7 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
                 return false;
             }
             return sink(forwarded);
-        });
+        }, options);
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not reduce regions over the spectrum of a Zarr dataset: {}", error.getMesg());
         return false;

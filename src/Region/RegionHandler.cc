@@ -24,7 +24,6 @@
 #include "Util/Image.h"
 #include "Util/Nan.h"
 
-#define LINE_PROFILE_PROGRESS_INTERVAL 500
 
 namespace carta {
 
@@ -2125,7 +2124,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
             auto t_end = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
 
-            if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress >= 1.0)) {
+            if ((dt > _line_profile_progress_interval) || (progress >= 1.0)) {
                 t_start = t_end;
                 progress_callback(progress);
             }
@@ -2261,11 +2260,23 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
                 }
             }
 
-            channels_done += block.channel_count;
+            // A block that takes more than one read arrives several times, filling in, and a last
+            // time complete. The partial sums above are worth writing down -- on a large image one
+            // chunk layer is tens of seconds, and they are all the caller has to show meanwhile --
+            // but nothing is finished until the block says so, and channels_done must not move for
+            // one: the check after this walk is what decides whether the whole pass is usable, and
+            // counting a channel more than once is what made it always decide no.
+            const double done = block.complete
+                ? static_cast<double>(channels_done + block.channel_count)
+                : static_cast<double>(channels_done) + (block.completeness * static_cast<double>(block.channel_count));
+            if (block.complete) {
+                channels_done += block.channel_count;
+            }
+
             const auto t_end = std::chrono::high_resolution_clock::now();
             const auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-            const float progress = float(channels_done) / float(num_channels);
-            if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress >= 1.0)) {
+            const float progress = static_cast<float>(done / static_cast<double>(num_channels));
+            if ((dt > _line_profile_progress_interval) || (progress >= 1.0)) {
                 t_start = t_end;
                 progress_callback(progress);
             }

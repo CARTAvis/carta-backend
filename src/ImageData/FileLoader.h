@@ -117,6 +117,14 @@ struct RegionSpectralBlock {
     std::size_t region_stride = 0;
     const double* num_pixels = nullptr;
     const double* sum = nullptr;
+    // Whether these values are final. A reduction whose block spans more than one read hands the
+    // block over as it fills, so a caller has something to show long before the last pixel is in;
+    // the same channels arrive again, refined, and a last time with this set. The counts and sums
+    // of an unfinished block are honest over what has been read, but they are not the answer, so a
+    // caller counting off finished channels must not count these.
+    bool complete = true;
+    // The fraction of this block's chunks that are in the values, in [0, 1]. One when complete.
+    double completeness = 1.0;
 };
 
 class FileLoader {
