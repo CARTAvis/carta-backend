@@ -5,8 +5,12 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -108,6 +112,22 @@ public:
 
 std::shared_ptr<PeekableFrame> ZarrFrame(std::shared_ptr<FileLoader> loader) {
     return std::shared_ptr<PeekableFrame>(new PeekableFrame(0, std::move(loader), ""));
+}
+
+// A frame over any format, for the tests that check the cube histogram cache is not a Zarr
+// arrangement. A Zarr store is a directory and takes no hdu, and its loader wants opening first;
+// FITS and HDF5 take the hdu the other suites pass.
+std::shared_ptr<PeekableFrame> FrameOver(const std::filesystem::path& path) {
+    auto loader = FileLoader::GetLoader(path.string());
+    if (!loader) {
+        return nullptr;
+    }
+    std::string hdu = "0";
+    if (std::filesystem::is_directory(path)) {
+        hdu.clear();
+        loader->OpenFile(hdu);
+    }
+    return std::shared_ptr<PeekableFrame>(new PeekableFrame(0, std::move(loader), hdu));
 }
 
 CARTA::SetHistogramRequirements CubeHistogramRequirements(int file_id, int num_bins) {
@@ -407,16 +427,14 @@ TEST_F(SessionTest, CancelledCubeHistogramSendsNoFinalMessage) {
     }
 }
 
-// A second request walks the cube again, which is worth pinning because it is not what the code
-// around it reads as. Session caches the finished histogram with Frame::CacheCubeHistogram, and
-// Frame::GetCachedCubeHistogram would hand it back -- but Frame::FillRegionHistogramData returns
-// early for CUBE_REGION_ID before it ever reaches the frame cache, so the only cache a cube
-// histogram can be served from is the loader's own precomputed statistics, which only HDF5 with a
-// stats sidecar has. That early return is upstream (Frame.cc, 2020), not part of the Zarr work, so
-// it is recorded here rather than changed: on a large cube this is a full re-walk per request.
+// A second request is answered from the cache rather than by walking the cube again.
 //
-// If that early return is ever fixed, this test is the one that should fail first.
-TEST_F(SessionTest, ASecondCubeHistogramRequestWalksTheCubeAgain) {
+// Session caches the finished histogram with Frame::CacheCubeHistogram and the statistics it was
+// binned under with CacheCubeStats. Frame::FillRegionHistogramData used to return early for
+// CUBE_REGION_ID before it reached either, so the only cache a cube histogram could be served from
+// was the loader's own precomputed statistics -- which only HDF5 with a stats sidecar has. Every
+// other format re-walked the whole cube on every request, which on a large store is minutes.
+TEST_F(SessionTest, ASecondCubeHistogramRequestIsAnsweredFromTheCache) {
     HeadlessSession session;
     const int file_id = 0;
     const int num_bins = 7;
@@ -426,7 +444,7 @@ TEST_F(SessionTest, ASecondCubeHistogramRequestWalksTheCubeAgain) {
     ASSERT_TRUE(frame->IsValid());
     session.AdoptFrame(file_id, frame);
 
-    // Reporting on every block, so that a walk is loud and a cached answer would be silent.
+    // Reporting on every block, so that a walk is loud and a cached answer is a single message.
     session._histogram_progress_interval = 0.0;
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
@@ -438,17 +456,73 @@ TEST_F(SessionTest, ASecondCubeHistogramRequestWalksTheCubeAgain) {
 
     EXPECT_TRUE(session.SendRegionHistogramData(file_id, CUBE_REGION_ID));
     const auto second_messages = session.TakeHistograms();
-    const auto* second = FinalHistogram(second_messages);
-    ASSERT_NE(second, nullptr);
+    ASSERT_EQ(second_messages.size(), 1u) << "a cached answer should be one message, not another walk";
+    EXPECT_EQ(second_messages[0].progress(), 1.0);
+    EXPECT_EQ(second_messages[0].region_id(), CUBE_REGION_ID);
+    EXPECT_EQ(second_messages[0].channel(), ALL_Z);
 
-    EXPECT_GT(second_messages.size(), 1u)
-        << "a cache hit would be a single message; more than one means the cube was walked again";
-
-    // Whatever it costs, it has to be the same answer.
-    ASSERT_EQ(second->histograms().bins_size(), first_bins.bins_size());
+    const auto& cached = second_messages[0].histograms();
+    ASSERT_EQ(cached.bins_size(), first_bins.bins_size());
     for (int bin = 0; bin < first_bins.bins_size(); ++bin) {
-        EXPECT_EQ(second->histograms().bins(bin), first_bins.bins(bin)) << "bin " << bin;
+        EXPECT_EQ(cached.bins(bin), first_bins.bins(bin)) << "bin " << bin;
     }
+    EXPECT_DOUBLE_EQ(cached.bin_width(), first_bins.bin_width());
+    EXPECT_DOUBLE_EQ(cached.first_bin_center(), first_bins.first_bin_center());
+    EXPECT_FLOAT_EQ(cached.mean(), first_bins.mean());
+    EXPECT_FLOAT_EQ(cached.std_dev(), first_bins.std_dev());
+}
+
+// The same, over FITS, because the cache is Frame's and has nothing to do with Zarr. This is the
+// format the early return cost the most: no loader statistics to fall back on.
+TEST_F(SessionTest, ASecondCubeHistogramRequestIsAnsweredFromTheCacheForFits) {
+    HeadlessSession session;
+    const int file_id = 0;
+    const int num_bins = 7;
+    auto frame = FrameOver(FitsImages() / "10x10x10.fits");
+    ASSERT_NE(frame, nullptr);
+    ASSERT_TRUE(frame->IsValid());
+    session.AdoptFrame(file_id, frame);
+    session._histogram_progress_interval = 0.0;
+
+    session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
+    const auto* first = FinalHistogram(session.TakeHistograms());
+    ASSERT_NE(first, nullptr);
+    const auto first_bins = first->histograms();
+    ASSERT_EQ(first_bins.bins_size(), num_bins);
+
+    EXPECT_TRUE(session.SendRegionHistogramData(file_id, CUBE_REGION_ID));
+    const auto second_messages = session.TakeHistograms();
+    ASSERT_EQ(second_messages.size(), 1u) << "a cached answer should be one message, not another walk";
+    ASSERT_EQ(second_messages[0].histograms().bins_size(), first_bins.bins_size());
+    for (int bin = 0; bin < first_bins.bins_size(); ++bin) {
+        EXPECT_EQ(second_messages[0].histograms().bins(bin), first_bins.bins(bin)) << "bin " << bin;
+    }
+}
+
+// The control for the branch above: an HDF5 file with a Statistics/XYZ sidecar answers from the
+// loader's own precomputed histogram, on the first request, without walking anything. That path
+// runs before the frame cache is consulted and is meant to stay untouched.
+TEST_F(SessionTest, AnHdf5CubeHistogramComesFromItsOwnStatisticsWithoutAWalk) {
+    HeadlessSession session;
+    const int file_id = 0;
+    auto frame = FrameOver(Hdf5Images() / "10x10x10.hdf5");
+    ASSERT_NE(frame, nullptr);
+    ASSERT_TRUE(frame->IsValid());
+    session.AdoptFrame(file_id, frame);
+    session._histogram_progress_interval = 0.0;
+
+    // The sidecar decides the bin count, so the request has to be the one that accepts it.
+    session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, AUTO_BIN_SIZE), 1);
+
+    const auto messages = session.TakeHistograms();
+    ASSERT_EQ(messages.size(), 1u) << "precomputed statistics should answer in one message, with no walk";
+    EXPECT_EQ(messages[0].progress(), 1.0);
+    EXPECT_GT(messages[0].histograms().bins_size(), 0);
+
+    // And nothing was cached in the frame, because nothing was calculated.
+    BasicStats<float> cube_stats;
+    EXPECT_FALSE(frame->GetBasicStats(ALL_Z, 0, cube_stats))
+        << "the loader answered, so Session never calculated or cached cube statistics";
 }
 
 // The cache the request above cannot reach does work, which is what makes the early return above a
@@ -479,6 +553,51 @@ TEST_F(SessionTest, TheFrameCubeHistogramCacheItselfHoldsTheAnswer) {
     for (std::size_t bin = 0; bin < bins.size(); ++bin) {
         EXPECT_EQ(bins[bin], final_message->histograms().bins(static_cast<int>(bin))) << "bin " << bin;
     }
+}
+
+// What a repeated cube histogram request costs, on a store worth measuring. Skipped unless asked:
+//
+//   CARTA_SESSION_STORE=/path/to/store.zarr CARTA_SESSION_BINS=10000 \
+//     ./carta_backend_tests --gtest_filter='SessionTest.MeasureRepeatedCubeHistogram'
+TEST_F(SessionTest, MeasureRepeatedCubeHistogram) {
+    const char* store = std::getenv("CARTA_SESSION_STORE");
+    if (store == nullptr) {
+        GTEST_SKIP() << "set CARTA_SESSION_STORE to measure";
+    }
+    const char* bins_env = std::getenv("CARTA_SESSION_BINS");
+    const int num_bins = bins_env != nullptr ? std::atoi(bins_env) : AUTO_BIN_SIZE;
+
+    HeadlessSession session;
+    const int file_id = 0;
+    auto frame = FrameOver(std::filesystem::path(store));
+    ASSERT_NE(frame, nullptr);
+    ASSERT_TRUE(frame->IsValid());
+    session.AdoptFrame(file_id, frame);
+
+    auto timed = [&](const std::function<void()>& work) {
+        const auto start = std::chrono::steady_clock::now();
+        work();
+        return std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+    };
+
+    const double first = timed([&] { session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1); });
+    const auto first_messages = session.TakeHistograms();
+    const auto* answer = FinalHistogram(first_messages);
+    ASSERT_NE(answer, nullptr);
+
+    const double second = timed([&] { EXPECT_TRUE(session.SendRegionHistogramData(file_id, CUBE_REGION_ID)); });
+    const auto second_messages = session.TakeHistograms();
+    const auto* repeat = FinalHistogram(second_messages);
+    ASSERT_NE(repeat, nullptr);
+
+    ASSERT_EQ(repeat->histograms().bins_size(), answer->histograms().bins_size());
+    for (int bin = 0; bin < answer->histograms().bins_size(); ++bin) {
+        ASSERT_EQ(repeat->histograms().bins(bin), answer->histograms().bins(bin)) << "bin " << bin;
+    }
+
+    std::printf("measure: shape %s bins %d -- first %.3f s (%zu messages), repeat %.6f s (%zu messages), %.0fx\n",
+        frame->Depth() > 0 ? "cube" : "plane", answer->histograms().bins_size(), first, first_messages.size(), second,
+        second_messages.size(), second > 0.0 ? first / second : 0.0);
 }
 
 } // namespace

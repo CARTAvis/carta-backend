@@ -798,9 +798,19 @@ bool Frame::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramDat
         bool histogram_filled = !histogram_config.fixed_bounds && FillHistogramFromLoaderCache(z, stokes, num_bins, histogram);
 
         if (!histogram_filled) {
-            // must calculate cube histogram from Session
             if ((region_id == CUBE_REGION_ID) || (z == ALL_Z)) {
-                return false;
+                // Session caches the cube histogram it calculated, under the bounds it used. Those
+                // bounds come from the cube statistics, which it caches at the same time, so a hit
+                // needs both -- and without them there is nothing to look the histogram up by.
+                BasicStats<float> cube_stats;
+                if (GetBasicStats(ALL_Z, stokes, cube_stats) &&
+                    FillHistogramFromFrameCache(ALL_Z, stokes, num_bins, histogram_config.GetBounds(cube_stats), histogram)) {
+                    region_histogram_callback(histogram_data);
+                    have_valid_histogram = true;
+                    continue;
+                }
+
+                return false; // must calculate cube histogram from Session
             }
 
             // calculate image histogram
