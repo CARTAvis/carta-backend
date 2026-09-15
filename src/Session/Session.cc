@@ -1783,12 +1783,16 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             if (!_histogram_context.is_group_execution_cancelled()) {
                 _frames.at(file_id)->CacheCubeStats(stokes, cube_stats);
 
-                // send progress message: half done
-                _histogram_progress = 0.50;
-                auto half_progress =
-                    Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
-                auto* message_histogram = half_progress.mutable_histograms();
-                SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
+                // send progress message: half done. Not when one pass did both halves -- it has
+                // already reported past this point, and a bar that goes back to 50% reads as the
+                // work having been thrown away.
+                if (!one_pass_done) {
+                    _histogram_progress = 0.50;
+                    auto half_progress = Message::RegionHistogramData(
+                        file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
+                    auto* message_histogram = half_progress.mutable_histograms();
+                    SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
+                }
 
                 // get histogram bins for each z and accumulate bin counts in cube_bins
                 Histogram z_histogram; // histogram for each z using cube stats
