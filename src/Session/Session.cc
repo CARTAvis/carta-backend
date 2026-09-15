@@ -1694,7 +1694,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         auto t_now = std::chrono::high_resolution_clock::now();
                         auto dt =
                             std::chrono::duration_cast<std::chrono::microseconds>(t_now - t_one_pass).count();
-                        if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
+                        if ((dt / 1e6) > _histogram_progress_interval) {
                             // One pass, so the whole bar belongs to it rather than its second half.
                             _histogram_progress = static_cast<float>(update.progress);
                             auto progress_msg = Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z,
@@ -1744,7 +1744,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 // check for progress update
                 auto t_end = std::chrono::high_resolution_clock::now();
                 auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
+                if ((dt / 1e6) > _histogram_progress_interval) {
                     // send progress
                     float this_z(z);
                     _histogram_progress = this_z / total_z;
@@ -1817,7 +1817,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                     auto t_end = std::chrono::high_resolution_clock::now();
                     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                    if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
+                    if ((dt / 1e6) > _histogram_progress_interval) {
                         // Send progress update
                         float this_z(z);
                         _histogram_progress = 0.5 + (this_z / total_z);

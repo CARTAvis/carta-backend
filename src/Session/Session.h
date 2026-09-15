@@ -312,6 +312,11 @@ protected:
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
 
+    // How often that progress is reported, in seconds. A field rather than the constant it starts
+    // at because the reporting path is only reachable after that long has passed, which is why it
+    // went untested: a test cannot wait two seconds per assertion, but it can ask for every block.
+    double _histogram_progress_interval = UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS;
+
     // message queue <msg, compress>
     concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
