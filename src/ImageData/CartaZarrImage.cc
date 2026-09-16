@@ -429,7 +429,7 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
     bool delete_storage(false);
     float* storage = buffer.getStorage(delete_storage);
     auto read = _zarr_image->Read(MakeReadRequest(section),
-        {storage, static_cast<std::size_t>(buffer.nelements()) * sizeof(float)}, options);
+        {storage, static_cast<std::size_t>(buffer.nelements())}, options);
     buffer.putStorage(storage, delete_storage);
 
     if (!read) {
