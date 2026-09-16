@@ -171,6 +171,14 @@ long long BytesRead() {
     return -1;
 }
 
+// Whether this kernel keeps that counter at all: only Linux does. Where it does not, every reading
+// is the same number, so the difference between two of them is zero -- which is not "it read
+// nothing", it is "nothing was counted", and a test that cannot tell those apart would report a
+// cache hit for a walk that read the whole cube.
+bool ReadsAreCounted() {
+    return BytesRead() >= 0;
+}
+
 std::int64_t TotalCount(const CARTA::Histogram& histogram) {
     std::int64_t total = 0;
     for (int bin = 0; bin < histogram.bins_size(); ++bin) {
@@ -695,7 +703,11 @@ TEST_F(SessionTest, AnImageHistogramIsAnsweredFromTheFrameCacheOnASecondRequest)
     ASSERT_NE(frame->CurrentZ(), channel);
     session.AdoptFrame(file_id, frame);
 
-    // What the counter moves by across nothing at all.
+    // What the counter moves by across nothing at all. Where the kernel keeps no such counter the
+    // two readings below measure nothing rather than zero, so the assertions that compare them are
+    // left out; what this test is really for -- that the second request is answered from the cache
+    // with the same histogram -- does not depend on them.
+    const bool counted = ReadsAreCounted();
     const long long idle_a = BytesRead();
     const long long idle_b = BytesRead();
     const long long instrument = idle_b - idle_a;
@@ -709,7 +721,9 @@ TEST_F(SessionTest, AnImageHistogramIsAnsweredFromTheFrameCacheOnASecondRequest)
     const auto first = messages[0].histograms();
     ASSERT_EQ(first.bins_size(), num_bins);
     EXPECT_EQ(messages[0].channel(), channel);
-    ASSERT_GT(after_first - before_first, instrument + 64) << "a plane that is not the current one has to be read";
+    if (counted) {
+        ASSERT_GT(after_first - before_first, instrument + 64) << "a plane that is not the current one has to be read";
+    }
 
     // It landed in the cache the second request is supposed to find.
     BasicStats<float> stats;
@@ -722,7 +736,9 @@ TEST_F(SessionTest, AnImageHistogramIsAnsweredFromTheFrameCacheOnASecondRequest)
     const long long after_second = BytesRead();
     messages = session.TakeHistograms();
     ASSERT_EQ(messages.size(), 1u);
-    EXPECT_LE(after_second - before_second, instrument + 8) << "a cached plane histogram should not read anything";
+    if (counted) {
+        EXPECT_LE(after_second - before_second, instrument + 8) << "a cached plane histogram should not read anything";
+    }
 
     const auto& repeat = messages[0].histograms();
     ASSERT_EQ(repeat.bins_size(), first.bins_size());
