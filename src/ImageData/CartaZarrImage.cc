@@ -645,8 +645,21 @@ void CartaZarrImage::SetBeams() {
     // Fill a matrix and hand the whole thing over at once. casacore recomputes the smallest- and
     // largest-area beams only when the set is given all its beams together; setting them one at a
     // time leaves the smallest one at the null beam the set was sized with.
-    const auto channels = static_cast<casacore::uInt>(max_channel + 1);
-    const auto polarizations = static_cast<casacore::uInt>(max_polarization + 1);
+    //
+    // Sized from the image, not from the table. casacore checks a beam set against the coordinate
+    // axes (ImageInfo::checkBeamSet), so a table that stops short of the last channel would give a
+    // set the image rejects -- opening the file would fail outright rather than degrade. Sized this
+    // way, the planes the table does not name keep the null beam, which is the documented
+    // degradation, and the warning below is what says so.
+    const auto channels = _shape.size() > 2 ? static_cast<casacore::uInt>(_shape(2)) : casacore::uInt(1);
+    const auto polarizations = _shape.size() > 3 ? static_cast<casacore::uInt>(_shape(3)) : casacore::uInt(1);
+    if (max_channel >= channels || max_polarization >= polarizations) {
+        // Beams for planes that are not there. Nothing sensible to put them on, and writing them
+        // would run off the matrix.
+        spdlog::warn("XRADIO beam table of {} names channel {} polarization {} of an image with {} and {}; ignoring the beams",
+            _filename, max_channel, max_polarization, channels, polarizations);
+        return;
+    }
     casacore::Matrix<casacore::GaussianBeam> beam_matrix(channels, polarizations);
     std::size_t filled = 0;
     const carta::zarr::Beam* first = nullptr;
