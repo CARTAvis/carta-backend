@@ -202,6 +202,8 @@ public:
     bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
         const std::function<bool(const CubeHistogramUpdate&)>& progress);
     bool SpectralRunsAlongY() const;
+    // Tell the loader a region is gone, so it can drop whatever it kept for that region's walk.
+    void ReleaseRegion(int region_id);
     bool GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink);
     bool GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

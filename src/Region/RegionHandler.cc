@@ -508,6 +508,15 @@ bool RegionHandler::SetStatsRequirements(
 
 void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for all regions or a specific region
+
+    // A loader that can resume a region's spectral walk keeps its own state for that region, and
+    // this is the only thing that knows the region has gone.
+    for (auto& frame : _frames) {
+        if (frame.second) {
+            frame.second->ReleaseRegion(region_id);
+        }
+    }
+
     if (region_id == ALL_REGIONS) {
         _region_histograms.clear();
         _region_statistics.clear();

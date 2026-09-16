@@ -50,7 +50,9 @@ public:
         _read_budget_bytes = bytes;
     }
 
-private:
+    void ReleaseRegion(int region_id) override;
+
+protected:
     // What one region's profile has accumulated so far.
     //
     // GetRegionSpectralData is called in a loop until it reports completion, because that loop is
@@ -72,6 +74,8 @@ private:
 
     std::size_t _read_budget_bytes = 0;
     std::mutex _region_spectral_mutex;
+    // Reachable by a subclass so a test can see that a removed region's state went with it: the
+    // only other evidence is memory that is not freed, which nothing can assert on.
     std::map<std::pair<int, int>, RegionSpectralState> _region_spectral;
 };
 

@@ -1858,6 +1858,10 @@ bool Frame::SpectralRunsAlongY() const {
     return _loader->SpectralRunsAlongY();
 }
 
+void Frame::ReleaseRegion(int region_id) {
+    _loader->ReleaseRegion(region_id);
+}
+
 bool Frame::GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
     const std::function<bool(const RegionSpectralBlock&)>& sink) {
     // No image mutex: the only loader that answers this reads through immutable carta-zarr handles,

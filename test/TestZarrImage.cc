@@ -42,6 +42,15 @@ namespace {
 
 const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
 
+// The loader keeps a region's spectral walk where only a subclass can see it.
+class PeekableZarrLoader : public carta::ZarrLoader {
+public:
+    using carta::ZarrLoader::ZarrLoader;
+    std::size_t RegionStateCount() const {
+        return _region_spectral.size();
+    }
+};
+
 // RegionHandler keeps the batched line path to itself, and the frames it works over too.
 class PeekableRegionHandler : public carta::RegionHandler {
 public:
@@ -420,6 +429,72 @@ TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
     EXPECT_FLOAT_EQ(highest_progress, 1.0f) << "progress should reach one, and counting partials drove it past";
     EXPECT_TRUE(saw_step_finer_than_a_channel)
         << "without a block that arrives in pieces this test proves nothing, so the split is asserted too";
+}
+
+// A region's spectral walk is resumable, so the loader keeps where it got to -- keyed by region and
+// stokes, and until now never erased. Every region a user drew and deleted left its channels behind
+// for the life of the loader, which outlives the file: Session keeps a cache of them.
+TEST_F(ZarrImageTest, RemovingARegionReleasesWhatTheLoaderKeptForIt) {
+    auto loader = std::make_shared<PeekableZarrLoader>(kZarrFixture.string());
+    loader->OpenFile("");
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    ASSERT_TRUE(frame->IsValid());
+    ASSERT_EQ(loader->RegionStateCount(), 0u);
+
+    casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, kWidth, kHeight), true);
+    casacore::ArrayLattice<casacore::Bool> mask(mask_2d);
+    const casacore::IPosition origin(2, 0, 0);
+    std::mutex image_mutex;
+
+    // Two regions, two stokes each, so the entries are keyed on both and removing one leaves three.
+    for (const int region_id : {1, 2}) {
+        for (const int stokes : {0, 1}) {
+            std::map<CARTA::StatsType, std::vector<double>> results;
+            float progress = 0.0f;
+            ASSERT_TRUE(loader->GetRegionSpectralData(
+                region_id, AxisRange(0, kDepth - 1), stokes, mask, origin, image_mutex, results, progress))
+                << "region " << region_id << " stokes " << stokes;
+        }
+    }
+    ASSERT_EQ(loader->RegionStateCount(), 4u);
+
+    frame->ReleaseRegion(1);
+    EXPECT_EQ(loader->RegionStateCount(), 2u) << "both stokes of that region should have gone, and only those";
+
+    frame->ReleaseRegion(ALL_REGIONS);
+    EXPECT_EQ(loader->RegionStateCount(), 0u);
+}
+
+// And through the seam that actually runs in production. The test above calls the loader's release
+// by hand, which says nothing about whether anything ever calls it: RegionHandler is what learns
+// that a region is gone, and it has to pass that on to every frame's loader.
+TEST_F(ZarrImageTest, RemovingARegionThroughTheHandlerReachesTheLoader) {
+    auto loader = std::make_shared<PeekableZarrLoader>(kZarrFixture.string());
+    loader->OpenFile("");
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    ASSERT_TRUE(frame->IsValid());
+
+    PeekableRegionHandler handler;
+    const int file_id = 0;
+    handler._frames[file_id] = frame;
+
+    std::vector<CARTA::Point> control_points{Message::Point(2.0, 2.0), Message::Point(2.0, 2.0)};
+    RegionState rectangle(file_id, CARTA::RegionType::RECTANGLE, control_points, 0.0);
+    int region_id = -1;
+    ASSERT_TRUE(handler.SetRegion(region_id, rectangle, frame->CoordinateSystem()));
+
+    casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, kWidth, kHeight), true);
+    casacore::ArrayLattice<casacore::Bool> mask(mask_2d);
+    const casacore::IPosition origin(2, 0, 0);
+    std::mutex image_mutex;
+    std::map<CARTA::StatsType, std::vector<double>> results;
+    float progress = 0.0f;
+    ASSERT_TRUE(loader->GetRegionSpectralData(
+        region_id, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress));
+    ASSERT_EQ(loader->RegionStateCount(), 1u);
+
+    handler.RemoveRegion(region_id);
+    EXPECT_EQ(loader->RegionStateCount(), 0u) << "removing a region should reach the loader that kept its walk";
 }
 
 // The right chunk of the fixture is missing at z = 1, stokes = 2, so every one of its pixels is

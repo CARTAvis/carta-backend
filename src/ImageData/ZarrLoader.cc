@@ -143,6 +143,18 @@ bool ZarrLoader::GetCursorSpectralData(
 // The batched path exists for the position-velocity generator, which asks for one small box per
 // pixel along a line. carta-zarr walks the chunks once and accumulates whichever boxes land on
 // each, so the cost follows the chunks the boxes cover rather than the number of boxes.
+void ZarrLoader::ReleaseRegion(int region_id) {
+    std::scoped_lock lock(_region_spectral_mutex);
+    if (region_id == ALL_REGIONS) {
+        _region_spectral.clear();
+        return;
+    }
+    // Keyed by region and stokes both, so one region is several entries.
+    for (auto it = _region_spectral.begin(); it != _region_spectral.end();) {
+        it = it->first.first == region_id ? _region_spectral.erase(it) : std::next(it);
+    }
+}
+
 bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
     const std::function<bool(const RegionSpectralBlock&)>& sink) {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);

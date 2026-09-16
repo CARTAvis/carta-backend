@@ -245,6 +245,11 @@ public:
     // from it cancels the call. The values it carries are not final -- counts and sums grow and a
     // mean converges -- which is the same partial answer this interface already returns when it
     // reports progress below one.
+    // Forget whatever was being kept for a region's spectral walk, because the region is gone.
+    // ALL_REGIONS means all of them. A loader that resumes such a walk keeps state per region and
+    // has nothing else that would tell it; one that keeps nothing does nothing here.
+    virtual void ReleaseRegion(int region_id) {}
+
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
