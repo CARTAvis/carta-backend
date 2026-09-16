@@ -50,6 +50,7 @@ set(TEST_SOURCES
         TestCursorSpatialProfiles.cc
         TestExprImage.cc
         TestFileInfo.cc
+        TestFileInfoCache.cc
         TestFileList.cc
         TestFitsImage.cc
         TestFitsTable.cc
