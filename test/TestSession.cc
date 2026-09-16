@@ -342,6 +342,58 @@ TEST_F(SessionTest, OnePassCubeHistogramMatchesTwoPassThroughTheSession) {
     EXPECT_FLOAT_EQ(one_pass.std_dev(), two_pass.std_dev());
 }
 
+// A request that fixes the bin edges is one the one-pass walk cannot answer: it finds the range as
+// it goes and bins over what it found, so its counts belong to the data's own extremes. Taking them
+// anyway published counts of one range under the edges of another -- silently, since the counts
+// look like counts.
+TEST_F(SessionTest, ACubeHistogramWithFixedBoundsIgnoresTheOnePassWalk) {
+    const int file_id = 0;
+    const int num_bins = 7;
+    const double fixed_min = 0.0;
+    const double fixed_max = 4000.0;
+
+    auto run = [&](bool one_pass) {
+        HeadlessSession session;
+        auto loader = OpenZarrLoader();
+        EXPECT_NE(loader, nullptr);
+        auto frame = ZarrFrame(loader);
+        EXPECT_TRUE(frame->IsValid());
+        session.AdoptFrame(file_id, frame);
+
+        auto message = CubeHistogramRequirements(file_id, num_bins);
+        auto* config = message.mutable_histograms(0);
+        config->set_fixed_bounds(true);
+        config->mutable_bounds()->set_min(fixed_min);
+        config->mutable_bounds()->set_max(fixed_max);
+
+        RestoreHistogramMethod restore;
+        ConfigureZarrHistogram(one_pass ? "binned" : "exact");
+        session.OnSetHistogramRequirements(message, 1);
+
+        const auto messages = session.TakeHistograms();
+        const auto* final_message = FinalHistogram(messages);
+        EXPECT_NE(final_message, nullptr);
+        return final_message != nullptr ? final_message->histograms() : CARTA::Histogram();
+    };
+
+    const auto two_pass = run(false);
+    const auto asked_for_one_pass = run(true);
+
+    ASSERT_EQ(two_pass.bins_size(), num_bins);
+    ASSERT_EQ(asked_for_one_pass.bins_size(), num_bins);
+
+    // The edges are the ones that were asked for, in both.
+    EXPECT_NEAR(two_pass.bin_width(), (fixed_max - fixed_min) / num_bins, 1e-3);
+    EXPECT_NEAR(asked_for_one_pass.bin_width(), (fixed_max - fixed_min) / num_bins, 1e-3)
+        << "the counts were binned over the data's range, so these edges do not describe them";
+    EXPECT_NEAR(asked_for_one_pass.first_bin_center(), two_pass.first_bin_center(), 1e-3);
+
+    // And so are the counts under them.
+    for (int bin = 0; bin < num_bins; ++bin) {
+        EXPECT_EQ(asked_for_one_pass.bins(bin), two_pass.bins(bin)) << "bin " << bin;
+    }
+}
+
 // The one-pass walk reports as it goes, and those reports are supposed to carry the histogram of
 // what has been read so far -- which is what the two-pass path sends from its halfway mark on and
 // what the frontend re-renders from. Two things make this reachable: a one-byte read budget, so

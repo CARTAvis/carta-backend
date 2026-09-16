@@ -1679,10 +1679,16 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             // A loader that can find the range and bin at the same time answers both passes at
             // once. It declines unless it was asked to, so the two passes below stay the default
             // and this costs nothing when it is not wanted.
+            //
+            // Not for a request that fixes the bounds. The walk finds the range as it goes and
+            // re-aggregates onto what it found, so its counts belong to the data's own extremes and
+            // there is nowhere to hand it a range it was not given. Labelling those counts with the
+            // requested edges below would publish counts of one thing as counts of another. The two
+            // passes have the range before they bin, so they are the ones that can answer this.
             bool one_pass_done(false);
             BasicStats<float> one_pass_stats;
             std::vector<int> one_pass_bins;
-            {
+            if (!cube_histogram_config.fixed_bounds) {
                 bool one_pass_cancelled(false);
                 auto t_one_pass = std::chrono::high_resolution_clock::now();
                 one_pass_done = _frames.at(file_id)->GetCubeHistogramOnePass(
