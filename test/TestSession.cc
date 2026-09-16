@@ -179,7 +179,9 @@ std::int64_t TotalCount(const CARTA::Histogram& histogram) {
     return total;
 }
 
-// The last message of a completed cube histogram, which is the one the frontend keeps.
+// The last message of a completed cube histogram, which is the one the frontend keeps. It points
+// into `messages`, so the caller holds that vector for as long as it holds the answer -- passing
+// TakeHistograms() straight in leaves the pointer dangling at the end of the statement.
 const CARTA::RegionHistogramData* FinalHistogram(const std::vector<CARTA::RegionHistogramData>& messages) {
     for (auto it = messages.rbegin(); it != messages.rend(); ++it) {
         if (it->progress() >= 1.0) {
@@ -567,7 +569,8 @@ TEST_F(SessionTest, ASecondCubeHistogramRequestIsAnsweredFromTheCacheForFits) {
     session._histogram_progress_interval = 0.0;
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
-    const auto* first = FinalHistogram(session.TakeHistograms());
+    const auto first_messages = session.TakeHistograms();
+    const auto* first = FinalHistogram(first_messages);
     ASSERT_NE(first, nullptr);
     const auto first_bins = first->histograms();
     ASSERT_EQ(first_bins.bins_size(), num_bins);
@@ -620,7 +623,8 @@ TEST_F(SessionTest, ACubeHistogramWithADifferentBinCountIsRecalculated) {
     session._histogram_progress_interval = 0.0;
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, 7), 1);
-    const auto* seven = FinalHistogram(session.TakeHistograms());
+    const auto seven_messages = session.TakeHistograms();
+    const auto* seven = FinalHistogram(seven_messages);
     ASSERT_NE(seven, nullptr);
     ASSERT_EQ(seven->histograms().bins_size(), 7);
     const auto seven_total = TotalCount(seven->histograms());
@@ -655,7 +659,8 @@ TEST_F(SessionTest, TheFrameCubeHistogramCacheItselfHoldsTheAnswer) {
     session.AdoptFrame(file_id, frame);
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
-    const auto* final_message = FinalHistogram(session.TakeHistograms());
+    const auto final_messages = session.TakeHistograms();
+    const auto* final_message = FinalHistogram(final_messages);
     ASSERT_NE(final_message, nullptr);
 
     BasicStats<float> cached_stats;
