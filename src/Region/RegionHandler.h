@@ -124,6 +124,7 @@ private:
     void RemoveRegionRequirementsCache(int region_id);
     void RemoveFileRequirementsCache(int file_id);
     void ClearRegionCache(int region_id);
+    void ReleaseRegionFromLoaders(int region_id);
 
     // Data stream helpers
     bool GetRegionSpectralData(int region_id, int file_id, const AxisRange& z_range, std::string& coordinate, int stokes_index,

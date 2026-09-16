@@ -509,13 +509,7 @@ bool RegionHandler::SetStatsRequirements(
 void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for all regions or a specific region
 
-    // A loader that can resume a region's spectral walk keeps its own state for that region, and
-    // this is the only thing that knows the region has gone.
-    for (auto& frame : _frames) {
-        if (frame.second) {
-            frame.second->ReleaseRegion(region_id);
-        }
-    }
+    ReleaseRegionFromLoaders(region_id);
 
     if (region_id == ALL_REGIONS) {
         _region_histograms.clear();
@@ -661,8 +655,26 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
     }
 }
 
+// A loader that can resume a region's spectral walk keeps its own state for that region, and this
+// handler is the only thing that knows the region has gone or changed underneath it.
+void RegionHandler::ReleaseRegionFromLoaders(int region_id) {
+    for (auto& frame : _frames) {
+        if (frame.second) {
+            frame.second->ReleaseRegion(region_id);
+        }
+    }
+}
+
 void RegionHandler::ClearRegionCache(int region_id) {
     // Remove cached data when region changes
+
+    // The loader's state for this region is cached data too, and the cheapest thing it keeps is the
+    // answer itself. It is kept against the region's bounding box and channel range, which an edit
+    // need not change: rotating a rectangle or dragging one vertex of a polygon inward leaves both
+    // alone while making a different mask of them, and the walk would then be resumed -- or skipped
+    // outright, if it had finished -- against the mask before the edit.
+    ReleaseRegionFromLoaders(region_id);
+
     if (_region_histograms.find(region_id) != _region_histograms.end()) {
         _region_histograms[region_id]->ClearCache();
     }

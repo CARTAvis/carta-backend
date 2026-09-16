@@ -101,6 +101,19 @@ bool ExpectedFlag(int x, int y) {
     return ((x + y) % 3) != 0;
 }
 
+// Pixels of a region mask that the image's own flags also keep, which is what a profile counts.
+std::size_t CountUnflagged(const casacore::Array<casacore::Bool>& mask) {
+    std::size_t count = 0;
+    for (int y = 0; y < kHeight; ++y) {
+        for (int x = 0; x < kWidth; ++x) {
+            if (mask(casacore::IPosition(2, x, y)) && ExpectedFlag(x, y)) {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
 class ZarrImageTest : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -495,6 +508,64 @@ TEST_F(ZarrImageTest, RemovingARegionThroughTheHandlerReachesTheLoader) {
 
     handler.RemoveRegion(region_id);
     EXPECT_EQ(loader->RegionStateCount(), 0u) << "removing a region should reach the loader that kept its walk";
+}
+
+// An edit that leaves the region's bounding box and channel range alone still makes a different
+// mask of them -- rotating a rectangle, dragging one vertex of a polygon inward -- and the loader
+// keeps its answer against that box and range. Nothing told it the mask underneath had changed, so
+// a finished walk was handed back as it stood and a half-finished one was resumed against the runs
+// of the mask before the edit.
+TEST_F(ZarrImageTest, EditingARegionThroughTheHandlerReachesTheLoader) {
+    auto loader = std::make_shared<PeekableZarrLoader>(kZarrFixture.string());
+    loader->OpenFile("");
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    ASSERT_TRUE(frame->IsValid());
+
+    PeekableRegionHandler handler;
+    const int file_id = 0;
+    handler._frames[file_id] = frame;
+
+    std::vector<CARTA::Point> control_points{Message::Point(2.0, 2.0), Message::Point(4.0, 4.0)};
+    RegionState rectangle(file_id, CARTA::RegionType::RECTANGLE, control_points, 0.0);
+    int region_id = -1;
+    ASSERT_TRUE(handler.SetRegion(region_id, rectangle, frame->CoordinateSystem()));
+
+    // Two masks over the same box and the same channels: every pixel, then one column of them.
+    casacore::Array<casacore::Bool> whole_2d(casacore::IPosition(2, kWidth, kHeight), true);
+    casacore::Array<casacore::Bool> column_2d(casacore::IPosition(2, kWidth, kHeight), false);
+    for (int y = 0; y < kHeight; ++y) {
+        column_2d(casacore::IPosition(2, 0, y)) = true;
+    }
+    casacore::ArrayLattice<casacore::Bool> whole(whole_2d);
+    casacore::ArrayLattice<casacore::Bool> column(column_2d);
+    const casacore::IPosition origin(2, 0, 0);
+    std::mutex image_mutex;
+
+    std::map<CARTA::StatsType, std::vector<double>> before;
+    float progress = 0.0f;
+    ASSERT_TRUE(loader->GetRegionSpectralData(
+        region_id, AxisRange(0, kDepth - 1), 0, whole, origin, image_mutex, before, progress));
+    ASSERT_EQ(progress, 1.0f);
+    ASSERT_EQ(loader->RegionStateCount(), 1u);
+    ASSERT_EQ(before[CARTA::StatsType::NumPixels].size(), static_cast<std::size_t>(kDepth));
+    ASSERT_EQ(before[CARTA::StatsType::NumPixels][0], static_cast<double>(CountUnflagged(whole_2d)));
+
+    // The edit keeps the bounding box the loader compares against, which is the whole point: a
+    // rotation is what a user does to a region without moving or resizing it.
+    RegionState rotated(file_id, CARTA::RegionType::RECTANGLE, control_points, 45.0);
+    ASSERT_TRUE(handler.SetRegion(region_id, rotated, frame->CoordinateSystem()));
+    EXPECT_EQ(loader->RegionStateCount(), 0u) << "editing a region should reach the loader that kept its walk";
+
+    std::map<CARTA::StatsType, std::vector<double>> after;
+    progress = 0.0f;
+    ASSERT_TRUE(loader->GetRegionSpectralData(
+        region_id, AxisRange(0, kDepth - 1), 0, column, origin, image_mutex, after, progress));
+    ASSERT_EQ(progress, 1.0f);
+    ASSERT_EQ(after[CARTA::StatsType::NumPixels].size(), static_cast<std::size_t>(kDepth));
+    EXPECT_EQ(after[CARTA::StatsType::NumPixels][0], static_cast<double>(CountUnflagged(column_2d)))
+        << "the profile after the edit should count the pixels of the mask it was given";
+    EXPECT_NE(after[CARTA::StatsType::Sum][0], before[CARTA::StatsType::Sum][0])
+        << "a changed mask should not be answered with the sum of the one before it";
 }
 
 // The right chunk of the fixture is missing at z = 1, stokes = 2, so every one of its pixels is
