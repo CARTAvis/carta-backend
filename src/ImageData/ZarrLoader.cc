@@ -154,6 +154,18 @@ BasicStats<float> ToBasicStats(const carta::zarr::CubeHistogramResult& computed)
 
 ZarrLoader::ZarrLoader(const std::string& filename) : FileLoader(filename) {}
 
+// Six entry points asked this in six spellings, and two of them put the upper bound on `stokes` a
+// dozen lines further down, after they had already begun working out shapes -- so whether a request
+// was refused for being out of range or accepted and then refused for something else depended on
+// which one you were reading.
+std::shared_ptr<CartaZarrImage> ZarrLoader::ImageForStokes(int stokes) const {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    if (!image || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
+        return nullptr;
+    }
+    return image;
+}
+
 void ZarrLoader::AllocateImage(const std::string& hdu) {
     if (_image && hdu == _hdu) {
         return;
@@ -173,16 +185,15 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
 bool ZarrLoader::GetCursorSpectralData(
     std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& /*image_mutex*/,
     const std::function<bool()>& cancellation_requested, const std::function<bool(float progress)>& partial_callback) {
-    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    if (!image || _num_dims != 4 || count_x <= 0 || count_y <= 0 || cursor_x < 0 || cursor_y < 0 || stokes < 0) {
+    auto image = ImageForStokes(stokes);
+    if (!image || count_x <= 0 || count_y <= 0 || cursor_x < 0 || cursor_y < 0) {
         return false;
     }
 
     const auto width = _image_shape(0);
     const auto height = _image_shape(1);
     const auto depth = _image_shape(2);
-    const auto num_stokes = _image_shape(3);
-    if (cursor_x > width || cursor_y > height || stokes >= num_stokes || count_x > width - cursor_x || count_y > height - cursor_y) {
+    if (cursor_x > width || cursor_y > height || count_x > width - cursor_x || count_y > height - cursor_y) {
         return false;
     }
 
@@ -235,14 +246,13 @@ void ZarrLoader::ReleaseRegion(int region_id) {
 
 bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
     const std::function<bool(const RegionSpectralBlock&)>& sink) {
-    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    if (!image || _num_dims != 4 || regions.empty() || !sink || stokes < 0) {
+    auto image = ImageForStokes(stokes);
+    if (!image || regions.empty() || !sink) {
         return false;
     }
 
     const auto depth = _image_shape(2);
-    const auto num_stokes = _image_shape(3);
-    if (stokes >= num_stokes || z_range.from < 0 || z_range.to < z_range.from || z_range.to >= depth) {
+    if (z_range.from < 0 || z_range.to < z_range.from || z_range.to >= depth) {
         return false;
     }
 
@@ -302,8 +312,8 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
 
 bool ZarrLoader::GetCubeBasicStats(
     int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
-    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    if (!image || !plane_callback || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
+    auto image = ImageForStokes(stokes);
+    if (!image || !plane_callback) {
         return false;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
@@ -351,8 +361,8 @@ bool ZarrLoader::GetCubeBasicStats(
 
 bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
     const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
-    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    if (!image || !plane_callback || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
+    auto image = ImageForStokes(stokes);
+    if (!image || !plane_callback) {
         return false;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
@@ -406,8 +416,8 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
         // caller's own loops in charge without it having to know this setting exists.
         return false;
     }
-    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    if (!image || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3) || num_bins <= 0) {
+    auto image = ImageForStokes(stokes);
+    if (!image || num_bins <= 0) {
         return false;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
@@ -485,8 +495,8 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& /*image_mutex*/,
     std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
     const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback) {
-    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    if (!image || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
+    auto image = ImageForStokes(stokes);
+    if (!image) {
         return false;
     }
     const auto mask_shape = mask.shape();

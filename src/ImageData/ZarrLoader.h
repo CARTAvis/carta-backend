@@ -16,6 +16,8 @@
 
 namespace carta {
 
+class CartaZarrImage;
+
 class ZarrLoader : public FileLoader {
 public:
     explicit ZarrLoader(const std::string& filename);
@@ -71,6 +73,10 @@ protected:
     };
 
     void AllocateImage(const std::string& hdu) override;
+
+    // The image this loader reads, when it can serve a request for `stokes` at all. Null means it
+    // cannot, which every entry point here reports as false.
+    std::shared_ptr<CartaZarrImage> ImageForStokes(int stokes) const;
 
     std::size_t _read_budget_bytes = 0;
     std::mutex _region_spectral_mutex;
