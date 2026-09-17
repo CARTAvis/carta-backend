@@ -26,6 +26,51 @@
 
 using namespace carta;
 
+namespace carta {
+
+// Where the moment walk's time goes.
+//
+// Both halves of it are parallel and they came out about even, so the split is worth keeping
+// visible. Timed per slab rather than per line, so the cost of the timing does not land on the
+// thing being timed: a per-line version of this cost 30% on a cube with 36.8 million lines.
+//
+// Begin and Since are explicit rather than a scoped guard, because what a phase produces -- the
+// slab, the results collapsed out of it -- outlives the phase and cannot be shut inside a block,
+// and because the setup between two phases is deliberately counted in neither of them.
+class WalkTiming {
+public:
+    double read = 0.0;
+    double collapse = 0.0;
+    double store = 0.0;
+    std::size_t slabs = 0;
+    std::size_t lines = 0;
+
+    void Begin() {
+        _phase = Clock::now();
+    }
+
+    double Since() const {
+        return std::chrono::duration<double>(Clock::now() - _phase).count();
+    }
+
+    void Log(std::size_t workers) const {
+        const double total = std::chrono::duration<double>(Clock::now() - _started).count();
+        spdlog::debug(
+            "moment walk: {:.1f} s over {} slabs and {} lines -- read {:.1f} s ({:.0f}%, decode pool), "
+            "collapsing {:.1f} s ({:.0f}%, {} workers), writing {:.1f} s ({:.0f}%)",
+            total, slabs, lines, read, 100.0 * read / total, collapse, 100.0 * collapse / total, workers, store,
+            100.0 * store / total);
+    }
+
+private:
+    using Clock = std::chrono::steady_clock;
+
+    Clock::time_point _started = Clock::now();
+    Clock::time_point _phase = Clock::now();
+};
+
+} // namespace carta
+
 template <class T>
 ImageMoments<T>::ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os,
     casa::ImageMomentsProgressMonitor* progress_monitor, casacore::Bool over_write_output)
@@ -650,25 +695,17 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
 
     casacore::uInt n_done = 0; // Number of slices have done
 
-    // Where the walk's time goes. Both halves are parallel now and they came out about even, so
-    // the split is worth keeping visible. Timed per slab, so the cost of timing does not land on
-    // the thing being timed -- a per-line version of this cost 30% on a cube with 36.8 million
-    // lines.
-    double prof_read = 0, prof_process = 0, prof_store = 0;
-    std::size_t prof_slabs = 0, prof_lines = 0;
-    auto prof_now = [] { return std::chrono::steady_clock::now(); };
-    auto prof_since = [](auto t) { return std::chrono::duration<double>(std::chrono::steady_clock::now() - t).count(); };
-    auto prof_total = prof_now();
+    WalkTiming timing;
 
     // Iterate through a cube image, chunk by chunk
     for (lat_iter.reset(); !lat_iter.atEnd();) {
-        auto prof_t = prof_now();
+        timing.Begin();
         const casacore::IPosition iter_pos = lat_iter.position();
         const casacore::Array<T>& chunk = lat_iter.cursor();
         casacore::IPosition chunk_shape = chunk.shape();
         const casacore::Array<casacore::Bool> mask_chunk = use_mask ? lat_iter.getMask() : Array<Bool>();
-        prof_read += prof_since(prof_t);
-        ++prof_slabs;
+        timing.read += timing.Since();
+        ++timing.slabs;
 
         casacore::IPosition result_array_shape = chunk_shape;
         result_array_shape[collapse_axis] = 1;
@@ -706,7 +743,7 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             stride *= static_cast<std::size_t>(result_array_shape[axis]);
         }
 
-        prof_t = prof_now();
+        timing.Begin();
 #pragma omp parallel for schedule(static) num_threads(static_cast<int>(workers))
         for (std::ptrdiff_t line = 0; line < static_cast<std::ptrdiff_t>(slab_lines); ++line) {
             if (_stop) { // Cannot break out of a parallel loop; skipping is the same thing here
@@ -745,7 +782,7 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
                 mask_out_ptr[k][offset] = result_masks[worker][k];
             }
         }
-        prof_lines += slab_lines;
+        timing.lines += slab_lines;
 
         // Report progress once for the slab. Per line it was a virtual call on every one of them,
         // and from inside a parallel loop it would need serialising as well.
@@ -754,8 +791,8 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             _progress_monitor->nstepsDone(n_done + _steps_for_beam_convolution);
         }
 
-        prof_process += prof_since(prof_t);
-        prof_t = prof_now();
+        timing.collapse += timing.Since();
+        timing.Begin();
 
         if (_stop) { // Break the iteration in a cube image
             break;
@@ -781,18 +818,11 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             }
         }
 
-        prof_store += prof_since(prof_t);
+        timing.store += timing.Since();
         ++lat_iter;
     }
 
-    {
-        const double total = prof_since(prof_total);
-        spdlog::debug(
-            "moment walk: {:.1f} s over {} slabs and {} lines -- read {:.1f} s ({:.0f}%, decode pool), "
-            "collapsing {:.1f} s ({:.0f}%, {} workers), writing {:.1f} s ({:.0f}%)",
-            total, prof_slabs, prof_lines, prof_read, 100.0 * prof_read / total, prof_process,
-            100.0 * prof_process / total, collapsers.size(), prof_store, 100.0 * prof_store / total);
-    }
+    timing.Log(collapsers.size());
 
     if (_progress_monitor) {
         _progress_monitor->done();
