@@ -57,7 +57,7 @@ struct BasicStats {
 
     BasicStats<T>(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq);
     BasicStats<T>();
-    void join(BasicStats<T>& other);
+    void join(const BasicStats<T>& other);
 };
 
 template <typename T>

@@ -1758,8 +1758,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             // loop below so that the two report progress and stop at the same points.
             bool stats_cancelled(false);
             auto take_plane_stats = [&](int z, const BasicStats<float>& z_stats) {
-                BasicStats<float> joined(z_stats);
-                cube_stats.join(joined);
+                cube_stats.join(z_stats);
 
                 // check for cancel
                 if (_histogram_context.is_group_execution_cancelled()) {

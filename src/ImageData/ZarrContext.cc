@@ -43,10 +43,8 @@ std::shared_ptr<const carta::zarr::Context> CreateContext(const carta::zarr::Ope
     return std::make_shared<const carta::zarr::Context>(std::move(default_context.value()));
 }
 
-}  // namespace
-
-namespace {
 ZarrHistogramSettings g_histogram_settings;
+
 }  // namespace
 
 void ConfigureZarrHistogram(const std::string& method) {

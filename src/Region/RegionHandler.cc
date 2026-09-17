@@ -2165,8 +2165,8 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
 // This is an accelerator, not a replacement: it declines rather than fails whenever it meets
 // something it does not handle, and the caller then walks the boxes one at a time as before.
 bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
-    const std::vector<RegionState>& box_regions, std::shared_ptr<casacore::CoordinateSystem> line_coord_sys,
-    const AxisRange& z_range, int stokes_index, std::function<void(float)>& progress_callback,
+    const std::vector<RegionState>& box_regions, const std::shared_ptr<casacore::CoordinateSystem>& line_coord_sys,
+    const AxisRange& z_range, int stokes_index, const std::function<void(float)>& progress_callback,
     casacore::Matrix<float>& profiles, bool reverse, bool& cancelled) {
     if (Stokes::IsComputed(stokes_index) || box_regions.empty() || !FrameSet(file_id)) {
         return false;

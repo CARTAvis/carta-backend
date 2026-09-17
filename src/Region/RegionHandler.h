@@ -97,8 +97,8 @@ protected:
     // caller swallows its answer: a false sends the caller down the slow path, which produces the
     // same profiles, so nothing downstream can tell whether this ever ran.
     bool TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
-        const std::vector<RegionState>& box_regions, std::shared_ptr<casacore::CoordinateSystem> line_coord_sys,
-        const AxisRange& z_range, int stokes_index, std::function<void(float)>& progress_callback,
+        const std::vector<RegionState>& box_regions, const std::shared_ptr<casacore::CoordinateSystem>& line_coord_sys,
+        const AxisRange& z_range, int stokes_index, const std::function<void(float)>& progress_callback,
         casacore::Matrix<float>& profiles, bool reverse, bool& cancelled);
 
     // Frames: key is file_id

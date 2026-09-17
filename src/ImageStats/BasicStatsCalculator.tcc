@@ -15,7 +15,7 @@
 namespace carta {
 
 template <typename T>
-void BasicStats<T>::join(BasicStats<T>& other) {
+void BasicStats<T>::join(const BasicStats<T>& other) {
     if (other.num_pixels) {
         sum += other.sum;
         sumSq += other.sumSq;
