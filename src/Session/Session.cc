@@ -1734,10 +1734,30 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             // stats for entire cube
             BasicStats<float> cube_stats;
 
+            // What either pass sends while it works, on one clock so that the two cannot report at
+            // different rates. `so_far` is the histogram to show, which the first pass does not
+            // have yet; the field goes on the message either way, as it always has.
+            auto report_progress = [&](float progress, const Histogram* so_far) {
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+                if ((dt / 1e6) <= _histogram_progress_interval) {
+                    return;
+                }
+                _histogram_progress = progress;
+                auto progress_msg =
+                    Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
+                auto* message_histogram = progress_msg.mutable_histograms();
+                if (so_far != nullptr) {
+                    FillHistogram(message_histogram, cube_stats, *so_far);
+                }
+                SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
+                t_start = t_end;
+            };
+
             // What one plane costs the caller, shared by the loader's own walk and the per-plane
             // loop below so that the two report progress and stop at the same points.
             bool stats_cancelled(false);
-            auto take_plane = [&](int z, const BasicStats<float>& z_stats) {
+            auto take_plane_stats = [&](int z, const BasicStats<float>& z_stats) {
                 BasicStats<float> joined(z_stats);
                 cube_stats.join(joined);
 
@@ -1747,28 +1767,18 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     return false;
                 }
 
-                // check for progress update
-                auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                if ((dt / 1e6) > _histogram_progress_interval) {
-                    // send progress
-                    float this_z(z);
-                    _histogram_progress = this_z / total_z;
-                    auto progress_msg =
-                        Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
-                    auto* message_histogram = progress_msg.mutable_histograms();
-                    SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
-                    t_start = t_end;
-                }
+                // The first pass is the first half of the bar, and has no histogram to show yet.
+                float this_z(z);
+                report_progress(this_z / total_z, nullptr);
                 return true;
             };
 
             // A loader that can walk the cube itself neither materialises a plane nor reads each
-            // one twice. Its false means either that it has no such path or that `take_plane` said
+            // one twice. Its false means either that it has no such path or that `take_plane_stats` said
             // stop, which is why the cancel is tracked separately rather than read from the return.
             if (one_pass_done) {
                 cube_stats = one_pass_stats;
-            } else if (!_frames.at(file_id)->GetCubeBasicStats(stokes, take_plane) && !stats_cancelled) {
+            } else if (!_frames.at(file_id)->GetCubeBasicStats(stokes, take_plane_stats) && !stats_cancelled) {
                 cube_stats = BasicStats<float>();
                 for (size_t z = 0; z < depth; ++z) {
                     // stats for this z
@@ -1776,7 +1786,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     if (!_frames.at(file_id)->GetBasicStats(z, stokes, z_stats)) {
                         return calculated;
                     }
-                    if (!take_plane(static_cast<int>(z), z_stats)) {
+                    if (!take_plane_stats(static_cast<int>(z), z_stats)) {
                         break;
                     }
                 }
@@ -1807,7 +1817,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 // per-plane loop below so that the two report progress and stop together.
                 bool histogram_cancelled(false);
                 bool have_cube_histogram(false);
-                auto take_plane = [&](int z, const Histogram& plane) {
+                auto take_plane_histogram = [&](int z, const Histogram& plane) {
                     if (!have_cube_histogram) {
                         cube_histogram = plane;
                         have_cube_histogram = true;
@@ -1821,19 +1831,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         return false;
                     }
 
-                    auto t_end = std::chrono::high_resolution_clock::now();
-                    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                    if ((dt / 1e6) > _histogram_progress_interval) {
-                        // Send progress update
-                        float this_z(z);
-                        _histogram_progress = 0.5 + (this_z / total_z);
-                        auto progress_msg = Message::RegionHistogramData(
-                            file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
-                        auto* message_histogram = progress_msg.mutable_histograms();
-                        FillHistogram(message_histogram, cube_stats, cube_histogram);
-                        SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
-                        t_start = t_end;
-                    }
+                    // The second pass is the second half, and shows what it has binned so far.
+                    float this_z(z);
+                    report_progress(0.5 + (this_z / total_z), &cube_histogram);
                     return true;
                 };
 
@@ -1850,7 +1850,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     stokes, num_bins, bounds, [&](int z, const std::vector<int>& bins) {
                         Histogram plane(num_bins, bounds, nullptr, 0);
                         plane.SetHistogramBins(bins);
-                        return take_plane(z, plane);
+                        return take_plane_histogram(z, plane);
                     });
 
                 if (!batched && !histogram_cancelled) {
@@ -1861,7 +1861,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                                 CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
                             return calculated; // z histogram failed
                         }
-                        if (!take_plane(static_cast<int>(z), z_histogram)) {
+                        if (!take_plane_histogram(static_cast<int>(z), z_histogram)) {
                             break;
                         }
                     }
