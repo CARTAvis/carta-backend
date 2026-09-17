@@ -21,6 +21,7 @@
 #include <casacore/images/Images/ImageInterface.h>
 
 #include <carta-protobuf/file_info.pb.h>
+#include "ImageData/CartaZarrImage.h"
 #include "ImageData/CompressedFits.h"
 #include "ImageData/FileLoader.h"
 
@@ -54,8 +55,7 @@ private:
     // Computed entries
     void AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type, casacore::DataType equivalent_type);
     void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const AxesInfo& axes,
-        casacore::Vector<casacore::String>& axes_names,
-        const std::vector<std::pair<std::string, std::string>>& storage_entries = {});
+        casacore::Vector<casacore::String>& axes_names, const std::vector<StorageEntry>& storage_entries = {});
     void AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename,
         AxesInfo& axes, CompressedFits* compressed_fits = nullptr);
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image, const AxesInfo& axes,

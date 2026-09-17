@@ -20,6 +20,18 @@
 
 namespace carta {
 
+// One line of a Zarr image's storage layout, for the file-info panel.
+//
+// `has_shape` says the value is this image's own axes in this image's own order, so whoever
+// displays it can label those axes the way it labels the image shape. Carried here rather than
+// recovered from the value, which the consumer used to do by looking for a leading '[': a contract
+// between two modules that nothing stated and nothing checked.
+struct StorageEntry {
+    std::string name;
+    std::string value;
+    bool has_shape = false;
+};
+
 // XRADIO sky images use the backend's canonical pixel order:
 // [spatial X, spatial Y, spectral frequency, polarization]. The backend currently supports
 // only a singleton XRADIO time axis, which is represented as observation metadata rather than
@@ -68,7 +80,7 @@ public:
     casacore::Bool doGetMaskSlice(casacore::Array<casacore::Bool>& buffer,
         const casacore::Slicer& section) override;
 
-    std::vector<std::pair<std::string, std::string>> GetStorageInfo() const;
+    std::vector<StorageEntry> GetStorageInfo() const;
 
 private:
     void SetUpImage();

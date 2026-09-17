@@ -204,7 +204,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     auto image_shape = _loader->GetShape();
                     auto axes = _loader->GetAxes();
                     casacore::Vector<casacore::String> axes_names;
-                    std::vector<std::pair<std::string, std::string>> storage_entries;
+                    std::vector<StorageEntry> storage_entries;
                     if (image_type == "CartaZarrImage") {
                         CartaZarrImage* zarr_image = dynamic_cast<CartaZarrImage*>(image.get());
                         if (zarr_image) {
@@ -685,7 +685,7 @@ void FileExtInfoLoader::AddDataTypeEntry(
 }
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const AxesInfo& axes,
-    casacore::Vector<casacore::String>& axes_names, const std::vector<std::pair<std::string, std::string>>& storage_entries) {
+    casacore::Vector<casacore::String>& axes_names, const std::vector<StorageEntry>& storage_entries) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
     DimsInfo dims(axes, shape);
@@ -750,9 +750,8 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
         axes_label += ")";
     }
 
-    for (const auto& [name, value] : storage_entries) {
-        bool has_shape = !value.empty() && value.front() == '[';
-        Message::AddComputedEntry(extended_info, name, has_shape ? value + axes_label : value);
+    for (const auto& entry : storage_entries) {
+        Message::AddComputedEntry(extended_info, entry.name, entry.has_shape ? entry.value + axes_label : entry.value);
     }
 
     if (axes.spectral >= 0) {

@@ -537,7 +537,7 @@ casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& b
     return false;
 }
 
-std::vector<std::pair<std::string, std::string>> CartaZarrImage::GetStorageInfo() const {
+std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
     if (!_descriptor.storage) {
         return {};
     }
@@ -579,13 +579,13 @@ std::vector<std::pair<std::string, std::string>> CartaZarrImage::GetStorageInfo(
         return result + "]";
     };
 
-    std::vector<std::pair<std::string, std::string>> entries;
+    std::vector<StorageEntry> entries;
     if (storage.sharded) {
-        entries.emplace_back("Shard shape", format_shape(ordered_shape(storage.shard_shape)));
+        entries.push_back({"Shard shape", format_shape(ordered_shape(storage.shard_shape)), true});
     }
-    entries.emplace_back("Chunk shape", format_shape(ordered_shape(storage.chunk_shape)));
+    entries.push_back({"Chunk shape", format_shape(ordered_shape(storage.chunk_shape)), true});
     if (!storage.compressor.empty()) {
-        entries.emplace_back("Compressor", storage.compressor);
+        entries.push_back({"Compressor", storage.compressor, false});
     }
     return entries;
 }
