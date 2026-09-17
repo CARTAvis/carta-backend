@@ -22,9 +22,10 @@
 #include "RegionAnalysis/RegionSpatialProfile.h"
 #include "RegionAnalysis/RegionStatistics.h"
 
-#define LINE_PROFILE_PROGRESS_INTERVAL 500
-
 namespace carta {
+
+// How often a line profile walk reports progress by default, in milliseconds.
+inline constexpr double kLineProfileProgressInterval = 500.0;
 
 class RegionHandler {
 public:
@@ -100,12 +101,13 @@ protected:
         const AxisRange& z_range, int stokes_index, std::function<void(float)>& progress_callback,
         casacore::Matrix<float>& profiles, bool reverse, bool& cancelled);
 
+    // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
     // How often a line profile walk reports progress, in milliseconds. A field rather than the
     // constant it starts at because the partial reports are only reachable after that long, which
     // is the same reason they went untested: a test cannot wait half a second per assertion.
-    double _line_profile_progress_interval = LINE_PROFILE_PROGRESS_INTERVAL;
+    double _line_profile_progress_interval = kLineProfileProgressInterval;
 
 private:
     // Region ID handling
@@ -174,8 +176,6 @@ private:
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
     std::mutex _region_mutex;
-
-    // Frames: key is file_id
 
     // Region analysis
     std::unordered_map<int, std::unique_ptr<RegionHistogram>> _region_histograms;
