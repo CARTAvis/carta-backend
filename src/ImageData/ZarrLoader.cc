@@ -184,8 +184,8 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
     }
 
     carta::zarr::SpectralReduceRequest request;
-    request.spectral = {static_cast<std::uint64_t>(z_range.from), static_cast<std::uint64_t>(z_range.to - z_range.from + 1), 1};
-    request.polarization = static_cast<std::uint64_t>(stokes);
+    request.planes.spectral = {static_cast<std::uint64_t>(z_range.from), static_cast<std::uint64_t>(z_range.to - z_range.from + 1), 1};
+    request.planes.polarization = static_cast<std::uint64_t>(stokes);
     request.regions = zarr_regions.data();
     request.region_count = zarr_regions.size();
     // The generator wants a mean, and a mean is a sum over a count. Nothing else is read, so
@@ -285,8 +285,8 @@ bool ZarrLoader::GetCubeBasicStats(
         static_cast<std::uint64_t>(_image_shape(1)), nullptr};
 
     carta::zarr::SpectralReduceRequest request;
-    request.spectral = {0, depth, 1};
-    request.polarization = static_cast<std::uint64_t>(stokes);
+    request.planes.spectral = {0, depth, 1};
+    request.planes.polarization = static_cast<std::uint64_t>(stokes);
     request.regions = &region;
     request.region_count = 1;
     request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum |
@@ -331,8 +331,8 @@ bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBound
     }
 
     carta::zarr::HistogramRequest request;
-    request.spectral = {0, depth, 1};
-    request.polarization = static_cast<std::uint64_t>(stokes);
+    request.planes.spectral = {0, depth, 1};
+    request.planes.polarization = static_cast<std::uint64_t>(stokes);
     request.bins = static_cast<std::uint32_t>(num_bins);
     request.lower = bounds.min;
     request.upper = bounds.max;
@@ -400,8 +400,8 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
     }
 
     carta::zarr::CubeHistogramRequest request;
-    request.spectral = {0, depth, 1};
-    request.polarization = static_cast<std::uint64_t>(stokes);
+    request.planes.spectral = {0, depth, 1};
+    request.planes.polarization = static_cast<std::uint64_t>(stokes);
     request.bins = static_cast<std::uint32_t>(num_bins);
     request.spatial_sample = spatial_sample > 0 ? spatial_sample : settings.spatial_sample;
     if (progress) {
@@ -521,9 +521,9 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         }
 
         carta::zarr::SpectralReduceRequest request;
-        request.spectral = {static_cast<std::uint64_t>(range.from + state.channels_done),
+        request.planes.spectral = {static_cast<std::uint64_t>(range.from + state.channels_done),
             static_cast<std::uint64_t>(channels - state.channels_done), 1};
-        request.polarization = static_cast<std::uint64_t>(stokes);
+        request.planes.polarization = static_cast<std::uint64_t>(stokes);
         request.regions = &region;
         request.region_count = 1;
         request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::nan_count |
