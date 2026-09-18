@@ -82,6 +82,14 @@ private:
     RegionState ImportEllipseRegion(std::vector<std::string>& parameters, bool is_annotation = false);
 
     /**
+     * @brief Import annulus region.
+     * @param parameters Region definition parameters
+     * @param is_annotation Whether region is annotation region
+     * @return region state struct
+     */
+    RegionState ImportAnnulusRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+
+    /**
      * @brief Import rectangle region.
      * @param parameters Region definition parameters
      * @param is_annotation Whether region is annotation region

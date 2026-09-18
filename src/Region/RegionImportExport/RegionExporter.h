@@ -164,6 +164,21 @@ private:
     bool ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record, bool export_pixels,
         std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
 
+    bool ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bool restore_axes, const casacore::RecordInterface& region_record,
+        bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
+
+    /**
+     * @brief Convert casacore Record to annulus region control points and rotation.
+     * @param[in] region_state Region definition parameters
+     * @param[in] region_record casacore Record created from casacore LCRegion
+     * @param[in] export_pixels Whether to set control points in pixel or world coordinates
+     * @param[out] control_points Region control points
+     * @param[out] qrotation Region rotation
+     * @return Whether the conversion is successful
+     */
+    bool ConvertRecordToAnnulus(const RegionState& region_state, const casacore::RecordInterface& region_record, bool export_pixels,
+        std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
+
     /**
      * @brief Convert casacore Record to polygon/polyline region control points.
      * @param[in] region_record casacore Record created from casacore LCRegion

@@ -45,6 +45,8 @@ public:
         CARTA::RegionType region_type = CARTA::RegionType::POLYGON;
         if (is_annotation) {
             region_type = CARTA::RegionType::ANNPOLYGON;
+        } else if (npoints == 3) {
+            region_type = CARTA::RegionType::ANNULUS;
         }
         RegionState region_state(file_id, region_type, control_points, 0.0);
         return region_handler.SetRegion(region_id, region_state, csys);
@@ -121,4 +123,25 @@ TEST_F(RegionStatsTest, TestFitsAnnotationRegionStats) {
     CARTA::RegionStatsData stats_data;
     bool ok = RegionStats(image_path, endpoints, stats_data, true);
     ASSERT_FALSE(ok);
+}
+
+TEST_F(RegionStatsTest, TestFitsAnnulusRegionStats) {
+    auto image_path = FitsImages() / "noise_3d.fits";
+    std::vector<float> endpoints = {2.5, 2.5, 2.0, 2.0, 1.0, 1.0};
+    CARTA::RegionStatsData stats_data;
+    bool ok = RegionStats(image_path, endpoints, stats_data);
+
+    // Check stats fields
+    ASSERT_TRUE(ok);
+    ASSERT_EQ(stats_data.file_id(), 0);
+    ASSERT_EQ(stats_data.region_id(), 1);
+    ASSERT_EQ(stats_data.channel(), 0);
+    ASSERT_EQ(stats_data.stokes(), 0);
+    ASSERT_GT(stats_data.statistics_size(), 0);
+
+    for (size_t i = 0; i < stats_data.statistics_size(); ++i) {
+        if (stats_data.statistics(i).stats_type() == CARTA::StatsType::NumPixels) {
+            ASSERT_GT(stats_data.statistics(i).value(), 0);
+        }
+    }
 }

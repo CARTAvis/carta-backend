@@ -8,9 +8,12 @@
 
 #include "Region.h"
 
+#include <casacore/lattices/LRegions/LCDifference.h>
+#include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/RegionType.h>
 
+#include "Logger/Logger.h"
 #include "RegionConverter.h"
 
 using namespace carta;
@@ -87,6 +90,11 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
         case CARTA::ANNELLIPSE:   // [(cx,cy), (bmaj, bmin)]
         case CARTA::ANNCOMPASS: { // [(cx, cy), (length, length)]
             points_ok = (npoints == 2) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0);
+            break;
+        }
+        case CARTA::ANNULUS: { // [(cx, cy), (outer_x, outer_y), (inner_x, inner_y)]
+            points_ok = (npoints == 3) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0) && (points[2].x() > 0) &&
+                        (points[2].y() > 0) && (points[1].x() > points[2].x()) && (points[1].y() > points[2].y());
             break;
         }
         case CARTA::ANNTEXT: { // [(cx, cy), (width, height)]
@@ -370,7 +378,76 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
             record.define("theta", theta.getValue());
             break;
         }
-        default: // Annulus not implemented
+        case CARTA::RegionType::ANNULUS: {
+            if (region_state.control_points.size() < 3) {
+                break;
+            }
+            casacore::Vector<casacore::Float> center(2);
+            center(0) = region_state.control_points[0].x();
+            center(1) = region_state.control_points[0].y();
+
+            // Outer ellipse: control_points[1] = {semiMinor, semiMajor}
+            auto outer_min = region_state.control_points[1].x();
+            auto outer_maj = region_state.control_points[1].y();
+            auto ellipse_rotation = region_state.rotation;
+            // LCEllipsoid radii[0]=first, radii[1]=second; theta measured from radii[0] axis.
+            // Ensure radii[0] >= radii[1] (casacore convention), swap and adjust angle.
+            casacore::Vector<casacore::Float> outer_radii(2);
+            float outer_theta_deg = ellipse_rotation;
+            if (outer_maj >= outer_min) {
+                outer_radii(0) = outer_maj;
+                outer_radii(1) = outer_min;
+            } else {
+                outer_radii(0) = outer_min;
+                outer_radii(1) = outer_maj;
+                outer_theta_deg += 90.0;
+            }
+            casacore::Quantity outer_theta(outer_theta_deg, "deg");
+            outer_theta.convert("rad");
+
+            casacore::Vector<casacore::Int> shape_2d(2);
+            shape_2d(0) = image_shape(0);
+            shape_2d(1) = image_shape(1);
+
+            // Inner ellipse: control_points[2] = {semiMinor, semiMajor}
+            auto inner_min = region_state.control_points[2].x();
+            auto inner_maj = region_state.control_points[2].y();
+            casacore::Vector<casacore::Float> inner_radii(2);
+            float inner_theta_deg = ellipse_rotation;
+            if (inner_maj >= inner_min) {
+                inner_radii(0) = inner_maj;
+                inner_radii(1) = inner_min;
+            } else {
+                inner_radii(0) = inner_min;
+                inner_radii(1) = inner_maj;
+                inner_theta_deg += 90.0;
+            }
+            casacore::Quantity inner_theta(inner_theta_deg, "deg");
+            inner_theta.convert("rad");
+
+            try {
+                // Build real LCEllipsoid objects, then use their toRecord() as sub-records.
+                // LCEllipsoid constructor takes 0-based center coordinates.
+                casacore::LCEllipsoid outer_ellipse(
+                    center(0), center(1), outer_radii(0), outer_radii(1), static_cast<float>(outer_theta.getValue()), shape_2d);
+                casacore::LCEllipsoid inner_ellipse(
+                    center(0), center(1), inner_radii(0), inner_radii(1), static_cast<float>(inner_theta.getValue()), shape_2d);
+
+                // Build the "regions" sub-record matching LCRegionMulti::makeRecord format:
+                // integer-keyed records + "nr" count
+                casacore::TableRecord regions_rec;
+                regions_rec.defineRecord(0, outer_ellipse.toRecord(""));
+                regions_rec.defineRecord(1, inner_ellipse.toRecord(""));
+                regions_rec.define("nr", 2);
+
+                record.define("name", "LCDifference");
+                record.defineRecord("regions", regions_rec);
+            } catch (const casacore::AipsError& err) {
+                spdlog::warn("Error building ANNULUS LCDifference record: {}", err.getMesg());
+            }
+            break;
+        }
+        default:
             break;
     }
     CompleteRegionRecord(record, image_shape);

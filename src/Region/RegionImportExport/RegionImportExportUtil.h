@@ -24,8 +24,8 @@ static std::unordered_map<CARTA::TextAnnotationPosition, std::string> text_posit
 
 /** @brief Map from CARTA region type to string, common to all region file types. */
 static std::unordered_map<CARTA::RegionType, std::string> region_names{{CARTA::RegionType::LINE, "line"},
-    {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNRULER, "# ruler"},
-    {CARTA::RegionType::ANNCOMPASS, "# compass"}};
+    {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNULUS, "ellipse"},
+    {CARTA::RegionType::ANNRULER, "# ruler"}, {CARTA::RegionType::ANNCOMPASS, "# compass"}};
 
 /**
  * @brief Return map from CARTA region type to string for region file type.
