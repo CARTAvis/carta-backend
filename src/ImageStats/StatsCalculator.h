@@ -32,7 +32,11 @@ static std::unordered_map<CARTA::StatsType, casacore::LatticeStatsBase::Statisti
     {CARTA::StatsType::Sum, casacore::LatticeStatsBase::SUM}, {CARTA::StatsType::Mean, casacore::LatticeStatsBase::MEAN},
     {CARTA::StatsType::RMS, casacore::LatticeStatsBase::RMS}, {CARTA::StatsType::Sigma, casacore::LatticeStatsBase::SIGMA},
     {CARTA::StatsType::SumSq, casacore::LatticeStatsBase::SUMSQ}, {CARTA::StatsType::Min, casacore::LatticeStatsBase::MIN},
-    {CARTA::StatsType::Extrema, casacore::LatticeStatsBase::MIN}, {CARTA::StatsType::Max, casacore::LatticeStatsBase::MAX}};
+    {CARTA::StatsType::Extrema, casacore::LatticeStatsBase::MIN}, {CARTA::StatsType::Max, casacore::LatticeStatsBase::MAX},
+    {CARTA::StatsType::Median, casacore::LatticeStatsBase::MEDIAN},
+    {CARTA::StatsType::MedAbsDevMed, casacore::LatticeStatsBase::MEDABSDEVMED},
+    {CARTA::StatsType::Quartile, casacore::LatticeStatsBase::QUARTILE}, {CARTA::StatsType::Q1, casacore::LatticeStatsBase::Q1},
+    {CARTA::StatsType::Q3, casacore::LatticeStatsBase::Q3}};
 
 /** @brief Calculate basic stats from a float vector using BasicStatsCalculator
  *  @param stats The results returned in a BasicStats struct
