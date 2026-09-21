@@ -538,16 +538,24 @@ casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& b
 }
 
 std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
-    if (!_descriptor.storage) {
+    // Whether there is a layout to report is ImageDescriptor::storage's question: it is absent when
+    // the profile could not describe one. ChunkGeometry cannot answer it, because it synthesises a
+    // geometry from the image's own shape when there is no layout behind it.
+    if (!_zarr_image || !_descriptor.storage) {
         return {};
     }
 
-    const auto& storage = *_descriptor.storage;
+    // What that layout is, though, is read from the geometry: it reports the same four facts in the
+    // image's own axis order, which is the order this panel wants. Reading them from the descriptor
+    // meant undoing a transpose here that the library had already undone -- the thing ChunkGeometry
+    // says in its own comment a consumer should never have to do.
+    const auto& storage = _zarr_image->chunk_geometry();
+
     const auto ordered_shape = [&](const std::vector<std::uint64_t>& values) {
         std::vector<std::uint64_t> result(4, 1);
-        for (const auto& axis : _descriptor.axes) {
-            const std::uint64_t value = axis.storage_index < values.size() ? values[axis.storage_index] : 1;
-            switch (axis.role) {
+        for (std::size_t index = 0; index < _descriptor.axes.size(); ++index) {
+            const std::uint64_t value = index < values.size() ? values[index] : 1;
+            switch (_descriptor.axes[index].role) {
                 case carta::zarr::AxisRole::spatial_x:
                     result[0] = value;
                     break;
