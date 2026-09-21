@@ -150,8 +150,11 @@ bool IsCompressedFits(const std::string& filename) {
 }
 
 bool IsZarr(const std::string& path_string) {
-    const auto result = carta::zarr::IsXradioImage(path_string);
-    return result && result.value();
+    // A malformed XRADIO-like store is a match that did not stand up, not a Zarr image, and not an
+    // error worth surfacing from a file listing. ProbeSchema reports it as an answer; only a store
+    // that cannot be read at all comes back as an error, and that is a no here too.
+    const auto probed = carta::zarr::ProbeSchema(path_string, carta::zarr::kXradioImageSchema);
+    return probed && probed.value().kind == carta::zarr::SchemaMatchKind::match;
 }
 
 /**

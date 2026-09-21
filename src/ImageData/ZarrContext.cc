@@ -90,11 +90,9 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, in
         data_copy_concurrency > 0 ? data_copy_concurrency : std::max(1, omp_thread_count);
     options.decode_threads = static_cast<unsigned int>(effective_data_copy_threads);
 
-    if (cache_pool_mb > 0) {
-        options.cache_bytes = static_cast<std::size_t>(cache_pool_mb) * BYTES_PER_MB;
-    } else {
-        options.disable_cache = true;
-    }
+    // Zero is a size carta-zarr takes literally: the pool that holds nothing, which is what this
+    // used to say with a separate disable_cache beside the size.
+    options.cache_bytes = cache_pool_mb > 0 ? static_cast<std::size_t>(cache_pool_mb) * BYTES_PER_MB : 0;
 
     auto context = CreateContext(options);
     std::scoped_lock lock(ContextMutex());
