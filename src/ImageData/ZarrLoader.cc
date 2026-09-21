@@ -206,13 +206,14 @@ bool ZarrLoader::GetCursorSpectralData(
         FLOAT_NAN);
     casacore::Array<float> destination(section.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     carta::zarr::ReadOptions options;
-    options.cancellation_requested = cancellation_requested;
+    options.control.cancellation_requested = cancellation_requested;
+    // Supplying a progress callback is what makes carta-zarr issue the read in chunk-aligned pieces,
+    // so the profile arrives in a prefix that grows rather than all at the end. Where those pieces
+    // fall is the library's decision: it is the one that knows how many chunks a request has to hold
+    // before they can be decoded in parallel.
+    carta::zarr::ProgressCallback progress;
     if (partial_callback) {
-        // Asking for progress is what makes carta-zarr issue the read in chunk-aligned pieces, so
-        // the profile arrives in a prefix that grows rather than all at the end. Where those pieces
-        // fall is the library's decision: it is the one that knows how many chunks a request has to
-        // hold before they can be decoded in parallel.
-        options.progress = [&](std::size_t written, std::size_t total) {
+        progress = [&](std::size_t written, std::size_t total) {
             return partial_callback(total == 0 ? 1.0f : static_cast<float>(written) / static_cast<float>(total));
         };
     }
@@ -220,7 +221,7 @@ bool ZarrLoader::GetCursorSpectralData(
     try {
         // carta-zarr Image handles are immutable and safe for concurrent reads. The backend
         // mutex is intentionally not held across this I/O operation.
-        image->Read(destination, section, options);
+        image->Read(destination, section, options, progress);
         return true;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not load cursor spectral data from Zarr dataset: {}", error.getMesg());
@@ -337,7 +338,7 @@ bool ZarrLoader::GetCubeBasicStats(
 
     // As above: a scan over the cube should not evict the session's working set.
     carta::zarr::ReadOptions options;
-    options.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.control.cache_policy = carta::zarr::CachePolicy::bypass;
 
     try {
         const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
@@ -382,7 +383,7 @@ bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBound
     // A cube scan touches every chunk once and reuses none of them, so it runs against a pool of
     // its own that holds nothing rather than evicting whatever the session is looking at.
     carta::zarr::ReadOptions options;
-    options.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.control.cache_policy = carta::zarr::CachePolicy::bypass;
 
     std::vector<int> plane_bins(static_cast<std::size_t>(num_bins));
     try {
@@ -447,7 +448,7 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
 
     // As with the other cube walks: read every chunk once, keep none of them.
     carta::zarr::ReadOptions options;
-    options.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.control.cache_policy = carta::zarr::CachePolicy::bypass;
     options.temporary_memory_limit_bytes = _read_budget_bytes;
 
     auto result = image->ComputeCubeHistogram(request, options);

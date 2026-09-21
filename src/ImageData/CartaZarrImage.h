@@ -51,7 +51,8 @@ public:
     casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) override;
     casacore::IPosition doNiceCursorShape(casacore::uInt max_pixels) const override;
     bool Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
-        const carta::zarr::ReadOptions& options = {}) const;
+        const carta::zarr::ReadOptions& options = {},
+        const carta::zarr::ProgressCallback& progress = {}) const;
     // Reduce many 2D regions over a run of channels in one pass over the pixels. Exposed here
     // rather than through the casacore interface because casacore has no such call: a Lattice is
     // asked for pixels, and every reduction it offers is one region at a time.
