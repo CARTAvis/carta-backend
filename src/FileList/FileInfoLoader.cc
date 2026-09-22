@@ -131,7 +131,13 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
     auto dataset_size = dataset.value().Size();
     if (dataset_size && dataset_size.value().bytes <= static_cast<std::uint64_t>(std::numeric_limits<int64_t>::max())) {
         entry.size = static_cast<int64_t>(dataset_size.value().bytes);
-        entry.size_is_upper_bound = dataset_size.value().is_upper_bound;
+        // The library says which of two questions it answered, not how the answers compare -- see
+        // its ADR 0008. Treating the declared size as an upper bound is this line's inference, and
+        // it holds for the reason the walk usually gives up: a store too large to enumerate inside
+        // the timeout is one whose compressed chunks dwarf its metadata. It does not hold when the
+        // walk failed for some other reason, such as a directory that refused to be read, and
+        // nothing here can tell the two apart.
+        entry.size_is_upper_bound = dataset_size.value().basis == carta::zarr::SizeBasis::declared;
     }
 
     const auto& images = dataset.value().descriptor().images;
