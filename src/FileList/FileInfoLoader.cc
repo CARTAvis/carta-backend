@@ -142,7 +142,7 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
 
     const auto& images = dataset.value().descriptor().images;
     for (const auto& image : images) {
-        if (image.readable) {
+        if (image.openable) {
             entry.hdu_list.push_back(image.id);
         }
     }
