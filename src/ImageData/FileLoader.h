@@ -89,8 +89,12 @@ struct RegionMaskSpec {
 // so it can accumulate one with the loop it uses for a region that has no mask at all.
 //
 // The obvious representation is worth it because regions are nearly convex: a rotated rectangle or
-// an ellipse is one run per row whatever its size, so a thin band across a 7763x4742 image is 38 kB
-// of runs against 36.8 MB of raster.
+// an ellipse is one run per row whatever its size, so a thin band across a 7763x4742 image is 76 kB
+// against 36.8 MB of raster -- 38 kB of runs and the same again of offsets, one per row either way.
+//
+// Offsets are half of that and cannot be dropped by numbering runs from the start of the bounding
+// box rather than the start of a row: they are what lets the reader ask for row r's runs by index,
+// and it asks once per row per region per chunk it decodes.
 struct RegionMaskRuns {
     std::vector<std::uint32_t> runs;
     std::vector<std::uint64_t> offsets;
