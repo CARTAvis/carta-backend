@@ -538,17 +538,19 @@ casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& b
 }
 
 std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
-    // Whether there is a layout to report is ImageDescriptor::storage's question: it is absent when
-    // the profile could not describe one. ChunkGeometry cannot answer it, because it synthesises a
-    // geometry from the image's own shape when there is no layout behind it.
-    if (!_zarr_image || !_descriptor.storage) {
+    if (!_zarr_image) {
         return {};
     }
 
-    // What that layout is, though, is read from the geometry: it reports the same four facts in the
-    // image's own axis order, which is the order this panel wants. Reading them from the descriptor
-    // meant undoing a transpose here that the library had already undone -- the thing ChunkGeometry
-    // says in its own comment a consumer should never have to do.
+    // An open image always has a layout, so there is nothing else to guard. That was not always so:
+    // ImageDescriptor::storage used to be optional, and this asked whether it was there, because a
+    // ChunkGeometry built without one reported the whole image as a single chunk. carta-zarr now
+    // refuses such an array at the parse instead, so the case cannot reach an opened image.
+    //
+    // The layout is read from the geometry: it reports the same four facts in the image's own axis
+    // order, which is the order this panel wants. Reading them from the descriptor meant undoing a
+    // transpose here that the library had already undone -- the thing ChunkGeometry says in its own
+    // comment a consumer should never have to do.
     const auto& storage = _zarr_image->chunk_geometry();
 
     const auto ordered_shape = [&](const std::vector<std::uint64_t>& values) {
