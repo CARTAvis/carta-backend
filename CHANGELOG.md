@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * Refactored loader factory to return smart pointers to loaders ([#1597](https://github.com/CARTAvis/carta-backend/pull/1597)).
-* Updated workspace validation to schema v2 ([#2254](https://github.com/CARTAvis/carta-frontend/issues/2254)).
+* Updated workspace validation to schema v2 ([#1629](https://github.com/CARTAvis/carta-backend/issues/1629)).
 
 ## [6.0.0-beta.1]
 
