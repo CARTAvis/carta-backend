@@ -88,11 +88,19 @@ public:
     }
 };
 
-// The process-wide histogram method goes back however a test ends.
-struct RestoreHistogramMethod {
-    ~RestoreHistogramMethod() {
-        ConfigureZarrHistogram("exact");
+// The histogram method a session reads from the settings when it is built, set for one test and put
+// back however it ends. Made before the session, because that is when the session reads it.
+class HistogramMethod {
+public:
+    explicit HistogramMethod(const std::string& method) : _previous(ProgramSettings::GetInstance().zarr_histogram_method) {
+        ProgramSettings::GetInstance().zarr_histogram_method = method;
     }
+    ~HistogramMethod() {
+        ProgramSettings::GetInstance().zarr_histogram_method = _previous;
+    }
+
+private:
+    std::string _previous;
 };
 
 std::shared_ptr<FileLoader> OpenZarrLoader() {
@@ -267,6 +275,7 @@ TEST_F(SessionTest, CubeHistogramRequirementsProduceAHistogram) {
 // with the right number of bins either way and only the speed differs. What separates them is which
 // path ran, and the halfway marker says: one pass does not send one, two passes do.
 TEST_F(SessionTest, CubeHistogramResolvesAutoBinSizeBeforeOfferingItToTheBatchedPath) {
+    HistogramMethod method("binned");
     HeadlessSession session;
     const int file_id = 0;
     auto loader = OpenZarrLoader();
@@ -276,8 +285,6 @@ TEST_F(SessionTest, CubeHistogramResolvesAutoBinSizeBeforeOfferingItToTheBatched
     ASSERT_EQ(frame->AutoBinSize(), kAutoBins);
     session.AdoptFrame(file_id, frame);
 
-    RestoreHistogramMethod restore;
-    ConfigureZarrHistogram("binned");
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, AUTO_BIN_SIZE), 1);
 
     const auto messages = session.TakeHistograms();
@@ -321,6 +328,7 @@ TEST_F(SessionTest, OnePassCubeHistogramMatchesTwoPassThroughTheSession) {
     const int num_bins = 7;
 
     auto run = [&](bool one_pass) {
+        HistogramMethod method(one_pass ? "binned" : "exact");
         HeadlessSession session;
         auto loader = OpenZarrLoader();
         EXPECT_NE(loader, nullptr);
@@ -328,8 +336,6 @@ TEST_F(SessionTest, OnePassCubeHistogramMatchesTwoPassThroughTheSession) {
         EXPECT_TRUE(frame->IsValid());
         session.AdoptFrame(file_id, frame);
 
-        RestoreHistogramMethod restore;
-        ConfigureZarrHistogram(one_pass ? "binned" : "exact");
         session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
 
         const auto messages = session.TakeHistograms();
@@ -363,6 +369,7 @@ TEST_F(SessionTest, ACubeHistogramWithFixedBoundsIgnoresTheOnePassWalk) {
     const double fixed_max = 4000.0;
 
     auto run = [&](bool one_pass) {
+        HistogramMethod method(one_pass ? "binned" : "exact");
         HeadlessSession session;
         auto loader = OpenZarrLoader();
         EXPECT_NE(loader, nullptr);
@@ -376,8 +383,6 @@ TEST_F(SessionTest, ACubeHistogramWithFixedBoundsIgnoresTheOnePassWalk) {
         config->mutable_bounds()->set_min(fixed_min);
         config->mutable_bounds()->set_max(fixed_max);
 
-        RestoreHistogramMethod restore;
-        ConfigureZarrHistogram(one_pass ? "binned" : "exact");
         session.OnSetHistogramRequirements(message, 1);
 
         const auto messages = session.TakeHistograms();
@@ -410,6 +415,7 @@ TEST_F(SessionTest, ACubeHistogramWithFixedBoundsIgnoresTheOnePassWalk) {
 // the walk takes several reads and reports between them, and a zero progress interval, so the
 // session does not sit on those reports for two seconds.
 TEST_F(SessionTest, OnePassProgressCarriesTheHistogramSoFar) {
+    HistogramMethod method("binned");
     HeadlessSession session;
     const int file_id = 0;
     const int num_bins = 7;
@@ -423,8 +429,6 @@ TEST_F(SessionTest, OnePassProgressCarriesTheHistogramSoFar) {
     session.AdoptFrame(file_id, frame);
     session._histogram_progress_interval = 0.0;
 
-    RestoreHistogramMethod restore;
-    ConfigureZarrHistogram("binned");
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
 
     const auto messages = session.TakeHistograms();

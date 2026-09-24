@@ -813,8 +813,8 @@ TEST_F(ZarrImageTest, CubeHistogramAgreesWithThePerPlaneLoop) {
     }
 }
 
-// One pass over the cube, against the two the caller would otherwise run. Off unless asked for, so
-// the first thing checked is that it stays off.
+// One pass over the cube, against the two the caller would otherwise run. Whether to make it is the
+// session's decision, so here it is simply asked for.
 TEST_F(ZarrImageTest, CubeHistogramOnePassAgreesWithTwo) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
@@ -827,17 +827,9 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassAgreesWithTwo) {
     BasicStats<float> stats;
     std::vector<int> bins;
     EXPECT_EQ(loader->ZarrBatched()->CubeHistogram(stokes, num_bins, 0, stats, bins, {}), ZarrBatchOutcome::failed)
-        << "exact is the default, so one pass should be declined until it is asked for";
+        << "a stride of zero reads no pixel, and it no longer means 'whatever the settings say'";
 
-    // The setting is process-wide, so it goes back however this ends.
-    struct Restore {
-        ~Restore() {
-            ConfigureZarrHistogram("exact");
-        }
-    } restore;
-    ConfigureZarrHistogram("binned");
-
-    ASSERT_EQ(loader->ZarrBatched()->CubeHistogram(stokes, num_bins, 0, stats, bins, {}), ZarrBatchOutcome::finished);
+    ASSERT_EQ(loader->ZarrBatched()->CubeHistogram(stokes, num_bins, 1, stats, bins, {}), ZarrBatchOutcome::finished);
     ASSERT_EQ(bins.size(), static_cast<std::size_t>(num_bins));
 
     // The two-pass answer over the range the one pass found.
@@ -892,13 +884,6 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     ASSERT_NE(zarr_loader, nullptr);
     zarr_loader->SetReadBudgetBytes(1);
 
-    struct Restore {
-        ~Restore() {
-            ConfigureZarrHistogram("exact");
-        }
-    } restore;
-    ConfigureZarrHistogram("binned");
-
     const int num_bins = 7;
     const int stokes = 1;
     BasicStats<float> stats;
@@ -908,7 +893,7 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     double last_progress = -1.0;
     std::size_t last_pixels = 0;
     ASSERT_EQ(loader->ZarrBatched()->CubeHistogram(
-        stokes, num_bins, 0, stats, bins, [&](const CubeHistogramUpdate& update) {
+        stokes, num_bins, 1, stats, bins, [&](const CubeHistogramUpdate& update) {
             ++updates;
             EXPECT_GT(update.progress, last_progress) << "progress should not go backwards";
             last_progress = update.progress;
@@ -938,7 +923,27 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     BasicStats<float> ignored_stats;
     std::vector<int> ignored_bins;
     EXPECT_EQ(loader->ZarrBatched()->CubeHistogram(
-        stokes, num_bins, 0, ignored_stats, ignored_bins, [](const CubeHistogramUpdate&) { return false; }), ZarrBatchOutcome::cancelled);
+        stokes, num_bins, 1, ignored_stats, ignored_bins, [](const CubeHistogramUpdate&) { return false; }), ZarrBatchOutcome::cancelled);
+}
+
+// The setting a session reads to decide how a cube histogram is made. A typo is two passes rather
+// than a silently sampled answer.
+TEST(ZarrHistogramMethod, TheSettingSaysWhetherToMakeOnePassAndOverWhichPixels) {
+    const auto exact = ParseZarrHistogramMethod("exact");
+    EXPECT_FALSE(exact.one_pass);
+    EXPECT_FALSE(ParseZarrHistogramMethod("").one_pass) << "no setting is exact";
+
+    const auto binned = ParseZarrHistogramMethod("binned");
+    EXPECT_TRUE(binned.one_pass);
+    EXPECT_EQ(binned.spatial_sample, 1u) << "binned reads every pixel";
+
+    EXPECT_TRUE(ParseZarrHistogramMethod("sampled").one_pass);
+    EXPECT_EQ(ParseZarrHistogramMethod("sampled").spatial_sample, 4u) << "sampled on its own takes every fourth";
+    EXPECT_EQ(ParseZarrHistogramMethod("sampled:8").spatial_sample, 8u);
+    EXPECT_EQ(ParseZarrHistogramMethod("sampled:x").spatial_sample, 4u) << "a stride that is not a number is ignored";
+    EXPECT_EQ(ParseZarrHistogramMethod("sampled:0").spatial_sample, 4u) << "and so is one that reads nothing";
+
+    EXPECT_FALSE(ParseZarrHistogramMethod("bined").one_pass) << "a misspelling is exact";
 }
 
 // A range the walk cannot express is declined rather than answered differently: the caller's

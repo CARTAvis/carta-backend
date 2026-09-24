@@ -74,6 +74,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
     _top_level_folder = settings.top_level_folder;
     _read_only_mode = settings.read_only_mode;
     _enable_scripting = settings.enable_scripting;
+    _zarr_histogram_method = ParseZarrHistogramMethod(settings.zarr_histogram_method);
 
     ++_num_sessions;
     UpdateLastMessageTimestamp();
@@ -1677,8 +1678,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             size_t total_z(depth * 2); // for progress; go through z twice, for stats then histogram
 
             // A loader that can find the range and bin at the same time answers both passes at
-            // once. It declines unless it was asked to, so the two passes below stay the default
-            // and this costs nothing when it is not wanted.
+            // once, when the settings ask for it; exact is the default, and then the two passes
+            // below are all there is.
             //
             // Not for a request that fixes the bounds. The walk finds the range as it goes and
             // re-aggregates onto what it found, so its counts belong to the data's own extremes and
@@ -1689,10 +1690,10 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             bool one_pass_done(false);
             BasicStats<float> one_pass_stats;
             std::vector<int> one_pass_bins;
-            if (zarr_batched && !cube_histogram_config.fixed_bounds) {
+            if (zarr_batched && _zarr_histogram_method.one_pass && !cube_histogram_config.fixed_bounds) {
                 auto t_one_pass = std::chrono::high_resolution_clock::now();
                 const auto one_pass = zarr_batched->CubeHistogram(
-                    stokes, num_bins, 0, one_pass_stats, one_pass_bins, [&](const CubeHistogramUpdate& update) {
+                    stokes, num_bins, _zarr_histogram_method.spatial_sample, one_pass_stats, one_pass_bins, [&](const CubeHistogramUpdate& update) {
                         if (_histogram_context.is_group_execution_cancelled()) {
                             return false;
                         }

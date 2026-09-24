@@ -392,14 +392,8 @@ ZarrBatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const His
 ZarrBatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample,
     BasicStats<float>& stats, std::vector<int>& bins,
     const std::function<bool(const CubeHistogramUpdate&)>& progress) {
-    const auto settings = GetZarrHistogramSettings();
-    if (!settings.one_pass) {
-        // Exact is the default, and the default is two passes. Declining here is what keeps the
-        // caller's own loops in charge without it having to know this setting exists.
-        return ZarrBatchOutcome::failed;
-    }
     auto image = ImageForStokes(stokes);
-    if (!image || num_bins <= 0) {
+    if (!image || num_bins <= 0 || spatial_sample == 0) {
         return ZarrBatchOutcome::failed;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
@@ -411,7 +405,7 @@ ZarrBatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64
     request.planes.spectral = {0, depth, 1};
     request.planes.polarization = static_cast<std::uint64_t>(stokes);
     request.bins = static_cast<std::uint32_t>(num_bins);
-    request.spatial_sample = spatial_sample > 0 ? spatial_sample : settings.spatial_sample;
+    request.spatial_sample = spatial_sample;
     if (progress) {
         request.progress = [&progress](const carta::zarr::CubeHistogramProgress& update) {
             CubeHistogramUpdate reported;

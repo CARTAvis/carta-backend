@@ -30,6 +30,7 @@
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
 #include "ImageData/StokesFilesConnector.h"
+#include "ImageData/ZarrContext.h"
 #include "Main/ProgramSettings.h"
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
@@ -349,6 +350,8 @@ protected:
     std::string _top_level_folder;
     bool _read_only_mode;
     bool _enable_scripting;
+    // How a cube histogram over a Zarr store is computed, read from the settings once like the rest.
+    ZarrHistogramMethod _zarr_histogram_method;
 };
 
 } // namespace carta

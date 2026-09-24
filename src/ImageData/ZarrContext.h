@@ -28,17 +28,20 @@ std::shared_ptr<const carta::zarr::Context> GetZarrContext();
 // Exact is two passes over the pixels: one to find the range, one to bin over it. The other two are
 // one pass, which halves the reading and gives up where the bin edges land -- see
 // carta::zarr::CubeHistogramRequest. They are here to be measured, not to be defaults.
-struct ZarrHistogramSettings {
+//
+// Decided by the session, which is where a cube histogram is asked for and which already declines
+// one pass for a request with fixed bounds; the loader only does what it is told. It used to read a
+// process-wide setting itself, so the decision was invisible to the caller that made the request.
+struct ZarrHistogramMethod {
     bool one_pass = false;
     // Take every nth pixel along both spatial axes. One reads every pixel.
     std::uint64_t spatial_sample = 1;
 };
 
-// Parse the zarr_histogram_method setting: "exact" (the default), "binned", or "sampled" with an
-// optional stride, as in "sampled:4". An unrecognised value logs and leaves the default.
-void ConfigureZarrHistogram(const std::string& method);
-
-ZarrHistogramSettings GetZarrHistogramSettings();
+// The zarr_histogram_method setting: "exact" (the default), "binned", or "sampled" with an optional
+// stride, as in "sampled:4". What it does not recognise it logs and answers exact, so a typo is two
+// passes rather than a silently sampled answer.
+ZarrHistogramMethod ParseZarrHistogramMethod(const std::string& method);
 
 }  // namespace carta
 
