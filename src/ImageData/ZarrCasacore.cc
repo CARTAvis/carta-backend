@@ -214,10 +214,12 @@ ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& des
     const auto fixed = EquinoxOf(type);
     const auto& named = descriptor.direction->equinox;
     if (fixed && named && *named != *fixed) {
-        std::ostringstream note;
-        note << "direction frame " << descriptor.direction->reference_frame << " names equinox " << *named
-             << ", which casacore cannot hold; its coordinates are read as " << casacore::MDirection::showType(type);
-        made.notes.push_back(note.str());
+        const std::string read_as = casacore::MDirection::showType(type);
+        std::ostringstream equinox;
+        equinox << *named;
+        made.notes.push_back(ZarrNote{ZarrNoteTopic::celestial_frame, "equinox " + equinox.str() + " read as " + read_as,
+            "direction frame " + descriptor.direction->reference_frame + " names equinox " + equinox.str() +
+                ", which casacore cannot hold; its coordinates are read as " + read_as});
     }
     return made;
 }
@@ -250,9 +252,11 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
     if (max_channel >= channels || max_polarization >= polarizations) {
         // Beams for planes that are not there. Nothing sensible to put them on, and writing them
         // would run off the matrix.
-        result.notes.push_back("beam table names channel " + std::to_string(max_channel) + " polarization " +
-                               std::to_string(max_polarization) + " of an image with " + std::to_string(channels) +
-                               " and " + std::to_string(polarizations) + "; ignoring the beams");
+        // No beam entry is shown without beams, so this one has nowhere to sit but the log.
+        result.notes.push_back(ZarrNote{ZarrNoteTopic::none, "beam table ignored",
+            "beam table names channel " + std::to_string(max_channel) + " polarization " + std::to_string(max_polarization) +
+                " of an image with " + std::to_string(channels) + " and " + std::to_string(polarizations) +
+                "; ignoring the beams"});
         return result;
     }
     casacore::Matrix<casacore::GaussianBeam> beam_matrix(channels, polarizations);
@@ -278,7 +282,8 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
     const auto planes = static_cast<std::size_t>(channels) * polarizations;
     if (filled != planes) {
         // The planes left over keep the null beam, which is what the smallest-area beam then reports.
-        result.notes.push_back("beam table covers " + std::to_string(filled) + " of " + std::to_string(planes) + " planes");
+        const std::string covers = "covers " + std::to_string(filled) + " of " + std::to_string(planes) + " planes";
+        result.notes.push_back(ZarrNote{ZarrNoteTopic::beam, "table " + covers, "beam table " + covers});
     }
 
     // A table that says the same beam on every plane is a single beam, and saying so is not

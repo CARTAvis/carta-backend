@@ -132,6 +132,7 @@ CartaZarrImage::CartaZarrImage(const CartaZarrImage& other)
       _image_id(other._image_id),
       _zarr_image(other._zarr_image),
       _axes(other._axes),
+      _notes(other._notes),
       _descriptor(other._descriptor),
       _shape(other._shape) {}
 
@@ -381,9 +382,17 @@ std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
 
 void CartaZarrImage::SetUpImage() {
     try {
+        _notes = NotesFromDiagnostics(_descriptor.diagnostics);
+        for (const auto& note : _notes) {
+            if (note.topic == ZarrNoteTopic::none) {
+                // Nothing in the file info it qualifies, so this is the only place it is said.
+                spdlog::warn("XRADIO {}: {}", _filename, note.detail);
+            }
+        }
         auto made = MakeZarrCoordinateSystem(_descriptor);
-        for (const auto& note : made.notes) {
-            spdlog::warn("XRADIO {}: {}", _filename, note);
+        for (auto& note : made.notes) {
+            spdlog::warn("XRADIO {}: {}", _filename, note.detail);
+            _notes.push_back(std::move(note));
         }
         setCoordinateInfo(made.coordinates);
         if (!_descriptor.unit.empty()) {
@@ -421,9 +430,10 @@ void CartaZarrImage::SetBeams() {
     // Sized from the image rather than from the table; see MakeZarrBeamSet.
     const auto channels = _shape.size() > 2 ? static_cast<casacore::uInt>(_shape(2)) : casacore::uInt(1);
     const auto polarizations = _shape.size() > 3 ? static_cast<casacore::uInt>(_shape(3)) : casacore::uInt(1);
-    const auto made = MakeZarrBeamSet(beams.value(), channels, polarizations);
-    for (const auto& note : made.notes) {
-        spdlog::warn("XRADIO {}: {}", _filename, note);
+    auto made = MakeZarrBeamSet(beams.value(), channels, polarizations);
+    for (auto& note : made.notes) {
+        spdlog::warn("XRADIO {}: {}", _filename, note.detail);
+        _notes.push_back(std::move(note));
     }
     if (!made.beams) {
         return;

@@ -216,6 +216,14 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
                     AddComputedEntries(extended_info, image.get(), axes, use_image_for_entries, is_history_beam);
+                    if (image_type == "CartaZarrImage") {
+                        // What is only approximately so is said beside the value it qualifies, as a
+                        // header card's comment is. A note with no such value was logged when the
+                        // image opened.
+                        if (const auto* zarr_image = dynamic_cast<const CartaZarrImage*>(image.get())) {
+                            AnnotateEntries(extended_info, zarr_image->Notes());
+                        }
+                    }
                     info_ok = true;
                 }
             } else { // image failed

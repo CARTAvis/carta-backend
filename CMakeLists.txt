@@ -244,6 +244,7 @@ set(SOURCE_FILES
         src/ImageData/CartaZarrAxes.cc
         src/ImageData/CartaZarrImage.cc
         src/ImageData/ZarrCasacore.cc
+        src/ImageData/ZarrNotes.cc
         src/ImageData/CompressedFits.cc
         src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc

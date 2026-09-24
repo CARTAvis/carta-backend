@@ -8,6 +8,8 @@
 
 #include <carta-zarr/descriptor.h>
 
+#include "ZarrNotes.h"
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -31,8 +33,8 @@ namespace carta {
 struct ZarrCoordinates {
     casacore::CoordinateSystem coordinates;
     // What a reader should be told, such as an equinox the direction frame cannot hold. Said here
-    // rather than logged so that the caller can say which file it was.
-    std::vector<std::string> notes;
+    // rather than logged so that the caller can say which file it was, and show it where it belongs.
+    std::vector<ZarrNote> notes;
 };
 
 // The coordinate system of an image in CARTA's order -- direction, spectral, Stokes -- with the
@@ -48,8 +50,8 @@ struct ZarrBeams {
     // for planes the image does not have.
     std::optional<casacore::ImageBeamSet> beams;
     // What a reader should be told, such as a table that covers only some planes. Said here rather
-    // than logged so that the caller can say which file it was.
-    std::vector<std::string> notes;
+    // than logged so that the caller can say which file it was, and show it where it belongs.
+    std::vector<ZarrNote> notes;
 };
 
 // The beams at the first time, on an image of `channels` by `polarizations` planes. A table that

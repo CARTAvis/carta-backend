@@ -9,6 +9,7 @@
 #include <carta-zarr/carta_zarr.h>
 
 #include "CartaZarrAxes.h"
+#include "ZarrNotes.h"
 
 #include <mutex>
 #include <optional>
@@ -82,6 +83,11 @@ public:
         const casacore::Slicer& section) override;
 
     std::vector<StorageEntry> GetStorageInfo() const;
+    // What a reader should know about this image's values: carta-zarr's diagnostics on it and what
+    // the backend had to say while describing it to casacore. See ZarrNote.
+    const std::vector<ZarrNote>& Notes() const {
+        return _notes;
+    }
 
 private:
     void SetUpImage();
@@ -104,6 +110,7 @@ private:
     std::optional<carta::zarr::Image> _zarr_image;
     // Set with _zarr_image, and never without it: an image CARTA cannot display is not opened.
     std::optional<CartaZarrAxes> _axes;
+    std::vector<ZarrNote> _notes;
     carta::zarr::ImageDescriptor _descriptor;
     casacore::IPosition _shape;
 };

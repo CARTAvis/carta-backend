@@ -109,7 +109,8 @@ TEST(ZarrCasacore, AnEquinoxTheFrameCannotHoldIsSaid) {
     EXPECT_EQ(at_1975.coordinates.directionCoordinate().directionType(), casacore::MDirection::J2000)
         << "still opened, as the nearest frame casacore has";
     ASSERT_EQ(at_1975.notes.size(), 1u);
-    EXPECT_NE(at_1975.notes.front().find("1975"), std::string::npos) << at_1975.notes.front();
+    EXPECT_EQ(at_1975.notes.front().topic, carta::ZarrNoteTopic::celestial_frame) << "it qualifies the frame shown";
+    EXPECT_EQ(at_1975.notes.front().brief, "equinox 1975 read as J2000");
 
     described.direction->reference_frame = "FK4";
     described.direction->equinox = 1950.0;
@@ -214,7 +215,8 @@ TEST(ZarrCasacore, ATableThatCoversSomePlanesSaysSo) {
     ASSERT_TRUE(made.beams.has_value());
     EXPECT_EQ(made.beams->nelements(), 6u) << "one plane has the null beam, so they are not all alike";
     ASSERT_EQ(made.notes.size(), 1u);
-    EXPECT_NE(made.notes.front().find("covers 5 of 6"), std::string::npos) << made.notes.front();
+    EXPECT_EQ(made.notes.front().topic, carta::ZarrNoteTopic::beam);
+    EXPECT_EQ(made.notes.front().brief, "table covers 5 of 6 planes");
 }
 
 TEST(ZarrCasacore, ATableNamingPlanesTheImageLacksIsIgnored) {
@@ -223,5 +225,6 @@ TEST(ZarrCasacore, ATableNamingPlanesTheImageLacksIsIgnored) {
     const auto made = MakeZarrBeamSet(table, 3, 2);
     EXPECT_FALSE(made.beams.has_value());
     ASSERT_EQ(made.notes.size(), 1u);
-    EXPECT_NE(made.notes.front().find("ignoring the beams"), std::string::npos) << made.notes.front();
+    EXPECT_EQ(made.notes.front().topic, carta::ZarrNoteTopic::none) << "with no beams there is no beam entry to sit beside";
+    EXPECT_NE(made.notes.front().detail.find("ignoring the beams"), std::string::npos) << made.notes.front().detail;
 }
