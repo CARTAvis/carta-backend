@@ -60,7 +60,11 @@ protected:
     // where the caller checks whether the region still exists and whether the user still wants the
     // answer. A whole-cube profile is seconds of work, so it has to be interruptible somewhere, and
     // the seam between calls is the only one the interface offers.
+    //
+    // Each state has its own lock, held for the whole of one call's walk, so that two calls for the
+    // same region and stokes take turns rather than both writing its stats.
     struct RegionSpectralState {
+        std::mutex mutex;
         casacore::IPosition origin;
         casacore::IPosition shape;
         AxisRange z_range;
@@ -75,10 +79,13 @@ protected:
     std::shared_ptr<CartaZarrImage> ImageForStokes(int stokes) const;
 
     std::size_t _read_budget_bytes = 0;
+    // Guards the map and nothing in it: held only to find, add, or drop an entry, never across a
+    // walk. A walk holds its state through the shared_ptr, so a release that drops the entry while
+    // the walk is running leaves it to finish into a state nobody will ask for again.
     std::mutex _region_spectral_mutex;
     // Reachable by a subclass so a test can see that a removed region's state went with it: the
     // only other evidence is memory that is not freed, which nothing can assert on.
-    std::map<std::pair<int, int>, RegionSpectralState> _region_spectral;
+    std::map<std::pair<int, int>, std::shared_ptr<RegionSpectralState>> _region_spectral;
 };
 
 }  // namespace carta

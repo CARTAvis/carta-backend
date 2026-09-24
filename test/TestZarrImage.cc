@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <future>
 #include <fstream>
 #include <vector>
 
@@ -1017,6 +1018,46 @@ TEST_F(ZarrImageTest, RegionSpectralDataStopsWhenTheCallbackDoes) {
             return false;
         }));
     EXPECT_EQ(calls, 1) << "a callback that says stop should not be asked again";
+}
+
+// A walk takes up to TARGET_PARTIAL_REGION_TIME between returns, and the loader used to hold one
+// lock over every region's state for all of it. Removing or editing any other region then waited
+// for that walk, and so did every other region's profile. Released from another thread because on
+// this one the old lock was not merely slow but a self-deadlock.
+TEST_F(ZarrImageTest, ReleasingARegionDoesNotWaitForAnotherRegionsWalk) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    // One byte, so the walk reports from inside itself and there is a moment to release during.
+    zarr_loader->SetReadBudgetBytes(1);
+
+    casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, kWidth, kHeight), true);
+    casacore::ArrayLattice<casacore::Bool> mask_lattice(mask_2d);
+    std::mutex image_mutex;
+
+    // Kept out here because a future from std::async waits for its task when destroyed: dropped
+    // inside the callback, a release that is stuck behind the walk would stall the walk itself.
+    std::vector<std::future<void>> releases;
+    bool released_in_time = true;
+    std::map<CARTA::StatsType, std::vector<double>> from_loader;
+    float progress = 0.0;
+    int rounds = 0;
+    while (progress < 1.0) {
+        ASSERT_TRUE(loader->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask_lattice,
+            casacore::IPosition(2, 0, 0), image_mutex, from_loader, progress,
+            [&](const std::map<CARTA::StatsType, std::vector<double>>&, float) {
+                releases.push_back(std::async(std::launch::async, [&] { loader->ReleaseRegion(1); }));
+                if (releases.back().wait_for(std::chrono::seconds(2)) != std::future_status::ready) {
+                    released_in_time = false;
+                }
+                return true;
+            }));
+        ASSERT_LT(++rounds, 200) << "the loader profile never completed";
+    }
+    ASSERT_FALSE(releases.empty()) << "a one-byte budget should have made the walk report on the way";
+    EXPECT_TRUE(released_in_time) << "releasing region 1 should not wait for region 0's walk";
 }
 
 TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {

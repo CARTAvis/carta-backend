@@ -469,8 +469,20 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     const double beam_area = CalculateBeamArea();
     const bool has_flux = !std::isnan(beam_area);
 
-    std::scoped_lock lock(_region_spectral_mutex);
-    auto& state = _region_spectral[{region_id, stokes}];
+    std::shared_ptr<RegionSpectralState> held;
+    {
+        std::scoped_lock lock(_region_spectral_mutex);
+        auto& entry = _region_spectral[{region_id, stokes}];
+        if (!entry) {
+            entry = std::make_shared<RegionSpectralState>();
+        }
+        held = entry;
+    }
+    // Only this region's lock from here on. The walk below runs for up to TARGET_PARTIAL_REGION_TIME
+    // and calls partial_callback as it goes; under the map's lock that stalled every other region's
+    // profile and every ReleaseRegion, and a callback that released a region deadlocked.
+    std::scoped_lock state_lock(held->mutex);
+    auto& state = *held;
     // Compared size first: casacore's IPosition comparison throws rather than returning false when
     // the two do not conform, and the stored one is empty until the first call.
     const bool same_region = state.origin.size() == origin.size() && state.shape.size() == mask_shape.size() &&
