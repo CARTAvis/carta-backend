@@ -59,6 +59,7 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestZarrImage.cc
+        TestZarrCasacore.cc
         TestHistogram.cc
         TestImageFitting.cc
         TestMain.cc
