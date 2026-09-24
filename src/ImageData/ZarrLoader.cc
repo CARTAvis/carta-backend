@@ -181,8 +181,12 @@ bool ZarrLoader::GetCursorSpectralData(
     try {
         // carta-zarr Image handles are immutable and safe for concurrent reads. The backend
         // mutex is intentionally not held across this I/O operation.
-        image->Read(destination, section, options, progress);
-        return true;
+        if (image->Read(destination, section, options, progress)) {
+            return true;
+        }
+        // Stopped by the cursor moving on: what is in the buffer is a prefix nobody wants now.
+        data.clear();
+        return false;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not load cursor spectral data from Zarr dataset: {}", error.getMesg());
         data.clear();

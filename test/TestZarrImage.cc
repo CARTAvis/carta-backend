@@ -665,6 +665,20 @@ TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenTheCallbackDoes) {
     EXPECT_EQ(calls, 1);
 }
 
+// A read the caller cancelled is the caller's own decision, not a failure of the image. It used to
+// be thrown like one, so every cursor move that stopped a profile part-way logged a warning.
+TEST_F(ZarrImageTest, ACancelledReadIsNotAnError) {
+    CartaZarrImage image(kZarrFixture.string());
+    carta::zarr::ReadOptions options;
+    options.control.cancellation_requested = [] { return true; };
+    casacore::Array<float> buffer;
+    const casacore::Slicer section(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, 1, 1, kDepth, 1));
+
+    bool finished = true;
+    EXPECT_NO_THROW(finished = image.Read(buffer, section, options));
+    EXPECT_FALSE(finished) << "a cancelled read should say it did not finish";
+}
+
 // A region covering a large image takes tens of seconds to read one chunk layer, and the caller's
 // checks between calls all come too late. The loader reports through the callback while the call is
 // still working, carrying partial sums that converge; the finished profile must be unaffected by

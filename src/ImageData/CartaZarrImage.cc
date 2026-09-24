@@ -452,11 +452,7 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
     auto read = image.Read(MakeReadRequest(section),
         {storage, static_cast<std::size_t>(buffer.nelements())}, options, progress);
     buffer.putStorage(storage, delete_storage);
-
-    if (!read) {
-        throw casacore::AipsError("CartaZarrImage::Read - " + read.error().message);
-    }
-    return true;
+    return Finished(read, "Read");
 }
 
 bool CartaZarrImage::ComputeHistogram(const carta::zarr::HistogramRequest& request,
