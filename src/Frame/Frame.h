@@ -184,8 +184,6 @@ public:
     // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
-    // Whether this image's loader wants a region's runs along y. False for every loader that has no
-    // batched path, which is also every loader that will not be asked for runs.
     // Every plane's basic statistics in one pass, when the loader can do that. False means it
     // cannot and the caller should keep its own per-plane loop; a callback returning false cancels,
     // which also returns false, so a caller that needs to tell them apart watches its own callback.
@@ -194,11 +192,11 @@ public:
     // GetCubeBasicStats, false means it cannot and a callback returning false also returns false.
     bool GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback);
-    // A cube histogram and its statistics in one pass, when the loader will. False means it will
-    // not and the caller keeps its two passes.
     // The bin count a request for AUTO_BIN_SIZE means. Public because the batched paths are handed
     // a resolved count and would decline a request for -1 bins.
     int AutoBinSize();
+    // A cube histogram and its statistics in one pass, when the loader will. False means it will
+    // not and the caller keeps its two passes.
     bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
         const std::function<bool(const CubeHistogramUpdate&)>& progress);
     // Tell the loader a region is gone, so it can drop whatever it kept for that region's walk.
