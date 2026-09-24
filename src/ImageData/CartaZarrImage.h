@@ -62,9 +62,10 @@ public:
     // ReduceSpectral is: casacore has no such call.
     bool ComputeHistogram(const carta::zarr::HistogramRequest& request, const carta::zarr::HistogramSink& sink,
         const carta::zarr::ReadOptions& options = {}) const;
-    // One histogram for the whole cube in a single pass, with the range found on the way.
-    carta::zarr::Result<carta::zarr::CubeHistogramResult> ComputeCubeHistogram(
-        const carta::zarr::CubeHistogramRequest& request, const carta::zarr::ReadOptions& options = {}) const;
+    // One histogram for the whole cube in a single pass, with the range found on the way. Reports
+    // what the other two do: false when the caller cancelled, an exception when the read failed.
+    bool ComputeCubeHistogram(const carta::zarr::CubeHistogramRequest& request,
+        carta::zarr::CubeHistogramResult& result, const carta::zarr::ReadOptions& options = {}) const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where,
         const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;
@@ -83,6 +84,8 @@ public:
 private:
     void SetUpImage();
     void SetBeams();
+    // The library image, or an exception naming `where` when there is none.
+    const carta::zarr::Image& Opened(const char* where) const;
     static carta::zarr::ReadRequest MakeReadRequest(const casacore::Slicer& section);
 
     // The finiteness mask of the most recent doGetSlice. casacore asks for a cursor's pixels and

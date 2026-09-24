@@ -54,6 +54,22 @@ constexpr casacore::Int kMaskCacheMaxPixels = 1 << 22;
 // 512x107x7776 slabs, 426 mebipixels each, and missing here made it decode the whole cube twice.
 constexpr casacore::Int kMaskCacheMaxCubePixels = 1 << 30;
 
+// What the backend makes of a library call that did not succeed, said once for every call this
+// image passes through. A cancellation is the caller's own decision arriving back -- a sink or a
+// progress callback that said stop, or a cancellation_requested that said yes -- so it is false
+// rather than an error to report upwards. Anything else is thrown, which is how a casacore image
+// reports failure.
+template <typename T>
+bool Finished(const carta::zarr::Result<T>& result, const char* where) {
+    if (result) {
+        return true;
+    }
+    if (result.error().code == carta::zarr::ErrorCode::cancelled) {
+        return false;
+    }
+    throw casacore::AipsError(std::string("CartaZarrImage::") + where + " - " + result.error().message);
+}
+
 std::vector<std::uint64_t> CartaShape(const carta::zarr::ImageDescriptor& descriptor) {
     std::vector<std::uint64_t> shape(4, 0);
     for (const auto& axis : descriptor.axes) {
@@ -419,16 +435,21 @@ casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const 
     return false;
 }
 
+const carta::zarr::Image& CartaZarrImage::Opened(const char* where) const {
+    if (!_zarr_image) {
+        throw casacore::AipsError(std::string("CartaZarrImage::") + where + " - image is not open");
+    }
+    return *_zarr_image;
+}
+
 bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
     const carta::zarr::ReadOptions& options, const carta::zarr::ProgressCallback& progress) const {
-    if (!_zarr_image) {
-        throw casacore::AipsError("CartaZarrImage::Read - image is not open");
-    }
+    const auto& image = Opened("Read");
     buffer.resize(section.length());
 
     bool delete_storage(false);
     float* storage = buffer.getStorage(delete_storage);
-    auto read = _zarr_image->Read(MakeReadRequest(section),
+    auto read = image.Read(MakeReadRequest(section),
         {storage, static_cast<std::size_t>(buffer.nelements())}, options, progress);
     buffer.putStorage(storage, delete_storage);
 
@@ -440,42 +461,22 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
 
 bool CartaZarrImage::ComputeHistogram(const carta::zarr::HistogramRequest& request,
     const carta::zarr::HistogramSink& sink, const carta::zarr::ReadOptions& options) const {
-    if (!_zarr_image.has_value()) {
-        throw casacore::AipsError("Zarr image is not open");
-    }
-    auto result = _zarr_image->ComputeHistogram(request, sink, options);
-    if (result) {
-        return true;
-    }
-    if (result.error().code == carta::zarr::ErrorCode::cancelled) {
-        return false;
-    }
-    throw casacore::AipsError(result.error().message);
+    return Finished(Opened("ComputeHistogram").ComputeHistogram(request, sink, options), "ComputeHistogram");
 }
 
-carta::zarr::Result<carta::zarr::CubeHistogramResult> CartaZarrImage::ComputeCubeHistogram(
-    const carta::zarr::CubeHistogramRequest& request, const carta::zarr::ReadOptions& options) const {
-    if (!_zarr_image.has_value()) {
-        throw casacore::AipsError("Zarr image is not open");
+bool CartaZarrImage::ComputeCubeHistogram(const carta::zarr::CubeHistogramRequest& request,
+    carta::zarr::CubeHistogramResult& result, const carta::zarr::ReadOptions& options) const {
+    auto computed = Opened("ComputeCubeHistogram").ComputeCubeHistogram(request, options);
+    if (!Finished(computed, "ComputeCubeHistogram")) {
+        return false;
     }
-    return _zarr_image->ComputeCubeHistogram(request, options);
+    result = std::move(computed).value();
+    return true;
 }
 
 bool CartaZarrImage::ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
     const carta::zarr::ReadOptions& options) const {
-    if (!_zarr_image) {
-        throw casacore::AipsError("CartaZarrImage::ReduceSpectral - image is not open");
-    }
-    auto reduced = _zarr_image->ReduceSpectral(request, sink, options);
-    if (!reduced) {
-        // A sink that asked to stop is not an error to report upwards; it is the caller's own
-        // decision arriving back as one.
-        if (reduced.error().code == carta::zarr::ErrorCode::cancelled) {
-            return false;
-        }
-        throw casacore::AipsError("CartaZarrImage::ReduceSpectral - " + reduced.error().message);
-    }
-    return true;
+    return Finished(Opened("ReduceSpectral").ReduceSpectral(request, sink, options), "ReduceSpectral");
 }
 
 void CartaZarrImage::doPutSlice(const casacore::Array<float>& /*buffer*/, const casacore::IPosition& /*where*/, const casacore::IPosition& /*stride*/) {

@@ -410,15 +410,16 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
     options.control.cache_policy = carta::zarr::CachePolicy::bypass;
     options.temporary_memory_limit_bytes = _read_budget_bytes;
 
-    auto result = image->ComputeCubeHistogram(request, options);
-    if (!result) {
-        if (result.error().code != carta::zarr::ErrorCode::cancelled) {
-            spdlog::warn("Could not compute a Zarr cube histogram in one pass: {}", result.error().message);
+    carta::zarr::CubeHistogramResult computed;
+    try {
+        if (!image->ComputeCubeHistogram(request, computed, options)) {
+            return false;
         }
+    } catch (const casacore::AipsError& error) {
+        spdlog::warn("Could not compute a Zarr cube histogram in one pass: {}", error.getMesg());
         return false;
     }
 
-    const auto& computed = result.value();
     stats = ToBasicStats(computed);
     bins.assign(computed.counts.begin(), computed.counts.end());
     return true;
