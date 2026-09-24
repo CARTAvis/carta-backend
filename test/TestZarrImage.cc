@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <future>
+#include <limits>
 #include <fstream>
 #include <vector>
 
@@ -677,6 +678,22 @@ TEST_F(ZarrImageTest, ACancelledReadIsNotAnError) {
     bool finished = true;
     EXPECT_NO_THROW(finished = image.Read(buffer, section, options));
     EXPECT_FALSE(finished) << "a cancelled read should say it did not finish";
+}
+
+// A whole-cube histogram counts in 64 bits and the backend holds a bin as an int. A 2.9e11-pixel
+// cube needs under 1% of its pixels in one bin to pass INT_MAX, and a narrowing cast wrapped that to
+// a negative count. No fixture is that large, so the conversion is checked on its own.
+TEST(ZarrBinCounts, ACountPastIntMaxIsHeldThereRatherThanWrapped) {
+    constexpr auto kIntMax = std::numeric_limits<int>::max();
+    const std::vector<std::uint64_t> counts{5, static_cast<std::uint64_t>(kIntMax), std::uint64_t{1} << 31,
+        std::uint64_t{1} << 40};
+    std::vector<int> bins;
+    EXPECT_TRUE(AssignBinCounts(counts.data(), counts.size(), bins)) << "two of these do not fit in an int";
+    EXPECT_EQ(bins, (std::vector<int>{5, kIntMax, kIntMax, kIntMax}));
+
+    const std::vector<std::uint64_t> small{0, 1, 2};
+    EXPECT_FALSE(AssignBinCounts(small.data(), small.size(), bins)) << "nothing here needed holding";
+    EXPECT_EQ(bins, (std::vector<int>{0, 1, 2}));
 }
 
 // A region covering a large image takes tens of seconds to read one chunk layer, and the caller's

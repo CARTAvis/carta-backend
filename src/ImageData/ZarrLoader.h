@@ -9,6 +9,7 @@
 #include "FileLoader.h"
 
 #include <chrono>
+#include <cstdint>
 #include <map>
 #include <mutex>
 #include <utility>
@@ -17,6 +18,12 @@
 namespace carta {
 
 class CartaZarrImage;
+
+// Bin counts as the backend holds them: int, because CARTA's protocol carries a bin as sfixed32.
+// The library counts in 64 bits, and a whole-cube histogram can pass INT_MAX in one bin; such a
+// count is held at INT_MAX rather than wrapped to a negative one that every percentile read from it
+// would inherit. Returns whether any count was held.
+bool AssignBinCounts(const std::uint64_t* counts, std::size_t size, std::vector<int>& bins);
 
 class ZarrLoader : public FileLoader {
 public:

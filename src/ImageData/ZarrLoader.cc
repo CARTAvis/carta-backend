@@ -9,9 +9,11 @@
 #include "ZarrContext.h"
 #include "Util/Nan.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <vector>
 
@@ -111,6 +113,17 @@ BasicStats<float> ToBasicStats(const carta::zarr::CubeHistogramResult& computed)
 }
 
 }  // namespace
+
+bool AssignBinCounts(const std::uint64_t* counts, std::size_t size, std::vector<int>& bins) {
+    constexpr auto kMost = static_cast<std::uint64_t>(std::numeric_limits<int>::max());
+    bins.resize(size);
+    bool held = false;
+    for (std::size_t bin = 0; bin < size; ++bin) {
+        held = held || counts[bin] > kMost;
+        bins[bin] = static_cast<int>(std::min(counts[bin], kMost));
+    }
+    return held;
+}
 
 ZarrLoader::ZarrLoader(const std::string& filename) : FileLoader(filename) {}
 
@@ -349,22 +362,26 @@ bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBound
     options.control.cache_policy = carta::zarr::CachePolicy::bypass;
 
     std::vector<int> plane_bins(static_cast<std::size_t>(num_bins));
+    bool held = false;
     try {
-        return image->ComputeHistogram(request, [&](const carta::zarr::HistogramBlock& block) {
+        const bool finished = image->ComputeHistogram(request, [&](const carta::zarr::HistogramBlock& block) {
             if (!block.complete) {
                 return true;  // a plane is reported when it is final, not while it fills
             }
             for (std::uint64_t c = 0; c < block.channel_count; ++c) {
                 const auto* row = block.counts + (static_cast<std::size_t>(c) * block.bin_count);
-                for (std::size_t bin = 0; bin < plane_bins.size(); ++bin) {
-                    plane_bins[bin] = static_cast<int>(row[bin]);
-                }
+                held = AssignBinCounts(row, plane_bins.size(), plane_bins) || held;
                 if (!plane_callback(static_cast<int>(block.first_channel + c), plane_bins)) {
                     return false;
                 }
             }
             return true;
         }, options);
+        if (held) {
+            spdlog::warn("A Zarr plane histogram has a bin past {} pixels; it is reported as that many",
+                std::numeric_limits<int>::max());
+        }
+        return finished;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not bin the planes of a Zarr dataset: {}", error.getMesg());
         return false;
@@ -403,7 +420,8 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
             reported.snapshot = [&update](BasicStats<float>& partial_stats, std::vector<int>& partial_bins) {
                 const auto so_far = update.snapshot();
                 partial_stats = ToBasicStats(so_far);
-                partial_bins.assign(so_far.counts.begin(), so_far.counts.end());
+                // Not warned about here: a partial count only grows into the final one, which is.
+                AssignBinCounts(so_far.counts.data(), so_far.counts.size(), partial_bins);
             };
             return progress(reported);
         };
@@ -425,7 +443,10 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
     }
 
     stats = ToBasicStats(computed);
-    bins.assign(computed.counts.begin(), computed.counts.end());
+    if (AssignBinCounts(computed.counts.data(), computed.counts.size(), bins)) {
+        spdlog::warn("A Zarr cube histogram has a bin past {} pixels; it is reported as that many",
+            std::numeric_limits<int>::max());
+    }
     return true;
 }
 
