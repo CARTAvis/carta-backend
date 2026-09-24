@@ -376,7 +376,7 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
         // check stokes coordinate
         std::string profile_coordinate(profile.coordinate());
         int stokes_index;
-        if (!frame->GetStokesTypeIndex(profile_coordinate, stokes_index)) {
+        if (!frame->GetCoordinateStokesIndex(profile_coordinate, stokes_index)) {
             continue;
         }
 
@@ -1408,7 +1408,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
             for (auto& histogram_config : histogram_configs) {
                 // Create data message for each configuration
                 int stokes_index(0);
-                if (!frame->GetStokesTypeIndex(histogram_config.coordinate, stokes_index)) {
+                if (!frame->GetCoordinateStokesIndex(histogram_config.coordinate, stokes_index)) {
                     continue;
                 }
 
@@ -1496,7 +1496,7 @@ bool RegionHandler::FillSpectralProfileData(
                 }
 
                 int stokes_index;
-                if (!_frames.at(config_file_id)->GetStokesTypeIndex(coordinate, stokes_index)) {
+                if (!_frames.at(config_file_id)->GetCoordinateStokesIndex(coordinate, stokes_index)) {
                     continue;
                 }
 
@@ -1608,8 +1608,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
             auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
                 int tmp_stokes_index;
-                return (
-                    frame->GetStokesTypeIndex(tmp_coordinate, tmp_stokes_index) && get_stokes_profiles_data(tmp_results, tmp_stokes_index));
+                return (frame->GetCoordinateStokesIndex(tmp_coordinate, tmp_stokes_index) &&
+                        get_stokes_profiles_data(tmp_results, tmp_stokes_index));
             };
 
             if (Stokes::IsComputed(stokes_index)) { // For computed stokes
@@ -1658,7 +1658,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 // Get partial profile
                 auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
                     int tmp_stokes_index;
-                    return (frame->GetStokesTypeIndex(tmp_coordinate, tmp_stokes_index) &&
+                    return (frame->GetCoordinateStokesIndex(tmp_coordinate, tmp_stokes_index) &&
                             frame->GetLoaderSpectralData(region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress));
                 };
 
@@ -1739,7 +1739,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
         auto get_profiles_data = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
             int tmp_stokes_index;
-            return (frame->GetStokesTypeIndex(tmp_coordinate, tmp_stokes_index) &&
+            return (frame->GetCoordinateStokesIndex(tmp_coordinate, tmp_stokes_index) &&
                     get_stokes_profiles_data(tmp_partial_profiles, tmp_stokes_index));
         };
 
@@ -1855,7 +1855,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
             for (auto& stats_config : stats_configs) {
                 // Get stokes and channel from config
                 int stokes_index(0);
-                if (!frame->GetStokesTypeIndex(stats_config.coordinate(), stokes_index)) {
+                if (!frame->GetCoordinateStokesIndex(stats_config.coordinate(), stokes_index)) {
                     continue; // invalid image/computed Stokes
                 }
 
@@ -1962,7 +1962,7 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
                     }
 
                     int stokes_index(0);
-                    if (!frame->GetStokesTypeIndex(spatial_config.coordinate(), stokes_index)) {
+                    if (!frame->GetCoordinateStokesIndex(spatial_config.coordinate(), stokes_index)) {
                         continue; // invalid image/computed Stokes
                     }
 

@@ -250,19 +250,23 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         int delt = 0;
         int stokes_fits_value = 0;
         for (int i = 0; i < message.stokes_files_size(); ++i) {
-            int new_stokes_value = message.stokes_files(i).polarization_type();
+            auto new_stokes_value = message.stokes_files(i).polarization_type();
             int new_stokes_fits_value;
-            if (Stokes::ConvertFits(new_stokes_value, new_stokes_fits_value)) {
-                if (stokes_fits_value != 0) {
-                    if (delt == 0) {
-                        delt = new_stokes_fits_value - stokes_fits_value;
-                    } else if (new_stokes_fits_value - stokes_fits_value != delt) {
-                        err = fmt::format("Hypercube {} is not allowed!", _concatenated_name);
-                        return false;
-                    }
-                }
-                stokes_fits_value = new_stokes_fits_value;
+            try {
+                new_stokes_fits_value = Stokes::ToFits(new_stokes_value);
+            } catch (const std::out_of_range& e) {
+                err = fmt::format("Cannot convert unsupported polarization {} to FITS.", Stokes::Name(new_stokes_value));
+                return false;
             }
+            if (stokes_fits_value != 0) {
+                if (delt == 0) {
+                    delt = new_stokes_fits_value - stokes_fits_value;
+                } else if (new_stokes_fits_value - stokes_fits_value != delt) {
+                    err = fmt::format("Hypercube {} is not allowed!", _concatenated_name);
+                    return false;
+                }
+            }
+            stokes_fits_value = new_stokes_fits_value;
         }
     }
 

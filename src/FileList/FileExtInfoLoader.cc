@@ -64,6 +64,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
         fits_hdu_list.GetHduList(hdu_list, message);
 
         if (hdu_list.empty()) {
+            spdlog::error(message);
             message = "No image HDUs found.";
             return map_ok;
         }
@@ -82,6 +83,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
 
     map_ok = !hdu_info_map.empty();
     if (!map_ok) {
+        spdlog::error(message);
         message = "Error loading headers or image.";
     }
 

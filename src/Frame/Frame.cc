@@ -786,7 +786,7 @@ bool Frame::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramDat
         int num_bins = histogram_config.num_bins;
 
         // Set stokes
-        if (!GetStokesTypeIndex(histogram_config.coordinate, stokes)) {
+        if (!GetCoordinateStokesIndex(histogram_config.coordinate, stokes)) {
             continue;
         }
 
@@ -1033,7 +1033,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
     for (auto stats_config : _image_required_stats) {
         // Get stokes index
         int stokes;
-        if (!GetStokesTypeIndex(stats_config.coordinate(), stokes)) {
+        if (!GetCoordinateStokesIndex(stats_config.coordinate(), stokes)) {
             continue;
         }
 
@@ -1153,7 +1153,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     for (auto& config : configs) {
         // Get stokes
         int stokes;
-        if (!GetStokesTypeIndex(config.coordinate(), stokes)) {
+        if (!GetCoordinateStokesIndex(config.coordinate(), stokes)) {
             continue;
         }
         stokes_configs[stokes].push_back(config);
@@ -1461,7 +1461,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         // Send spectral profile data if cursor inside image
         if (start_cursor.InImage(_dims.width, _dims.height)) {
             int stokes;
-            if (!GetStokesTypeIndex(coordinate, stokes)) {
+            if (!GetCoordinateStokesIndex(coordinate, stokes)) {
                 continue;
             }
 
@@ -1809,8 +1809,10 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
         }
 
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
+        auto stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
+        _loader->GetStokesType(CurrentStokes(), stokes_type);
         _moment_generator->CalculateMoments(file_id, stokes_region.image_region, _axes.z, _axes.stokes, name_index, progress_callback,
-            moment_request, moment_response, collapse_results, region_state, GetStokesType(CurrentStokes()));
+            moment_request, moment_response, collapse_results, region_state, Stokes::Description(stokes_type));
         ulock.unlock();
     }
 
@@ -2342,9 +2344,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
     return casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
 }
 
-bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
-    // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy).
+bool Frame::GetCoordinateStokesIndex(const string& coordinate, int& stokes_index) {
+    // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
     // Returns stokes axis index for coordinate or computed stokes, and whether this index exists or can be computed.
+
     if (coordinate.empty() || coordinate == 'x' || coordinate == 'y' || coordinate == 'z') {
         // Profile only or blank; use current Stokes
         stokes_index = CurrentStokes();
@@ -2364,32 +2367,8 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
 
     auto stokes_type = Stokes::Get(stokes_string);
     if (stokes_type) {
-        if (Stokes::IsComputed(stokes_type)) {
-            stokes_index = stokes_type;
-
-            // Recursively check if components exist for computed stokes.
-            std::unordered_map<CARTA::PolarizationType, std::vector<string>> computed_stokes_components{{CARTA::Ptotal, {"Q", "U", "V"}},
-                {CARTA::Plinear, {"Q", "U"}}, {CARTA::PFtotal, {"Ptotal", "I"}}, {CARTA::PFlinear, {"Plinear", "I"}},
-                {CARTA::Pangle, {"Q", "U"}}};
-            int test_stokes;
-            for (auto& component : computed_stokes_components[stokes_type]) {
-                stokes_ok = GetStokesTypeIndex(component, test_stokes);
-                if (!stokes_ok) {
-                    break;
-                }
-            }
-        } else {
-            if (!_loader->GetStokesIndices().empty()) {
-                // Stokes are defined in image
-                stokes_ok = _loader->GetStokesTypeIndex(stokes_type, stokes_index);
-            } else {
-                int assumed_stokes_index = (stokes_type - 1) % 4;
-                if (NumStokes() > assumed_stokes_index) {
-                    stokes_index = assumed_stokes_index;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
-                }
-            }
+        if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
+            stokes_ok = true;
         }
     }
 
@@ -2399,20 +2378,6 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
     }
 
     return true;
-}
-
-std::string Frame::GetStokesType(int stokes_index) {
-    auto stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
-
-    // Computed stokes: stokes index is equal to numeric value
-    if (Stokes::IsComputed(stokes_index)) {
-        stokes_type = Stokes::Get(stokes_index);
-    }
-
-    // Otherwise try to map index to type with loader
-    _loader->GetStokesType(stokes_index, stokes_type);
-
-    return Stokes::Description(stokes_type);
 }
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
@@ -2514,9 +2479,9 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 
     // Set stokes flags and get their indices
     bool use_threshold_I = !std::isnan(threshold) && threshold_option == CARTA::PolarizationType::I;
-    stokes_flag["I"] = (fractional || use_threshold_I) && GetStokesTypeIndex("I", stokes_indices["I"]);
-    stokes_flag["Q"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("Q", stokes_indices["Q"]);
-    stokes_flag["U"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("U", stokes_indices["U"]);
+    stokes_flag["I"] = (fractional || use_threshold_I) && _loader->GetStokesTypeIndex(CARTA::PolarizationType::I, stokes_indices["I"]);
+    stokes_flag["Q"] = (calculate_pi || calculate_pa) && _loader->GetStokesTypeIndex(CARTA::PolarizationType::Q, stokes_indices["Q"]);
+    stokes_flag["U"] = (calculate_pi || calculate_pa) && _loader->GetStokesTypeIndex(CARTA::PolarizationType::U, stokes_indices["U"]);
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
