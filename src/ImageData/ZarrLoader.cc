@@ -95,7 +95,7 @@ void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, 
 // An empty plane is the case worth naming: BasicStatsCalculator leaves its extrema at the
 // identities it started from rather than reporting NaN, and callers compare against those, so the
 // NaN a reduction reports for an untouched extremum is turned back into them here.
-BasicStats<float> PlaneStats(const carta::zarr::SpectralTotals& counted) {
+BasicStats<float> ToPlaneStats(const carta::zarr::SpectralTotals& counted) {
     const auto count = static_cast<std::size_t>(counted.num_pixels);
     if (count == 0) {
         return BasicStats<float>();
@@ -108,7 +108,7 @@ BasicStats<float> PlaneStats(const carta::zarr::SpectralTotals& counted) {
 // The statistics CARTA reports, from what one pass counted. Shared by the answer and by the
 // snapshots handed out on the way, which are the same shape over fewer pixels.
 BasicStats<float> ToBasicStats(const carta::zarr::CubeHistogramResult& computed) {
-    return PlaneStats(carta::zarr::SpectralTotals{
+    return ToPlaneStats(carta::zarr::SpectralTotals{
         computed.num_pixels, computed.nan_count, computed.sum, computed.sum_sq, computed.minimum, computed.maximum});
 }
 
@@ -222,16 +222,16 @@ void ZarrLoader::ReleaseRegion(int region_id) {
     }
 }
 
-bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
+ZarrBatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
     const std::function<bool(const RegionSpectralBlock&)>& sink) {
     auto image = ImageForStokes(stokes);
     if (!image || regions.empty() || !sink) {
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 
     const auto depth = _image_shape(2);
     if (z_range.from < 0 || z_range.to < z_range.from || z_range.to >= depth) {
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 
     // casacore stores a Bool as one byte and an LCRegionFixed's mask contiguously with x fastest,
@@ -266,7 +266,7 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
     forwarded.sums.resize(zarr_regions.size());
 
     try {
-        return image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
+        const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
             forwarded.first_channel = static_cast<std::size_t>(block.first_channel);
             forwarded.channel_count = static_cast<std::size_t>(block.channel_count);
             // A block that takes more than one read arrives several times, filling in. The caller
@@ -281,21 +281,22 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
             }
             return sink(forwarded);
         }, options);
+        return finished ? ZarrBatchOutcome::finished : ZarrBatchOutcome::cancelled;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not reduce regions over the spectrum of a Zarr dataset: {}", error.getMesg());
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 }
 
-bool ZarrLoader::GetCubeBasicStats(
+ZarrBatchOutcome ZarrLoader::PlaneStats(
     int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
     auto image = ImageForStokes(stokes);
     if (!image || !plane_callback) {
-        return false;
+        return ZarrBatchOutcome::failed;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
     if (depth == 0) {
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 
     // One region covering the plane, with no mask: the reduction's own six accumulators over the
@@ -323,30 +324,30 @@ bool ZarrLoader::GetCubeBasicStats(
             }
             for (std::uint64_t c = 0; c < block.channel_count; ++c) {
                 if (!plane_callback(static_cast<int>(block.first_channel + c),
-                        PlaneStats(block.Totals(0, c)))) {
+                        ToPlaneStats(block.Totals(0, c)))) {
                     return false;
                 }
             }
             return true;
         }, options);
-        return finished;
+        return finished ? ZarrBatchOutcome::finished : ZarrBatchOutcome::cancelled;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not reduce the planes of a Zarr dataset: {}", error.getMesg());
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 }
 
-bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
+ZarrBatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
     const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
     auto image = ImageForStokes(stokes);
     if (!image || !plane_callback) {
-        return false;
+        return ZarrBatchOutcome::failed;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
     if (depth == 0 || num_bins <= 0 || !(bounds.min < bounds.max)) {
         // An empty or inverted range is the caller's degenerate case, which it answers with a single
         // bin over [0, 0]; that is not a shape this walk can produce, so it declines instead.
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 
     carta::zarr::HistogramRequest request;
@@ -381,29 +382,29 @@ bool ZarrLoader::GetCubeHistogram(int stokes, int num_bins, const HistogramBound
             spdlog::warn("A Zarr plane histogram has a bin past {} pixels; it is reported as that many",
                 std::numeric_limits<int>::max());
         }
-        return finished;
+        return finished ? ZarrBatchOutcome::finished : ZarrBatchOutcome::cancelled;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not bin the planes of a Zarr dataset: {}", error.getMesg());
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 }
 
-bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample,
+ZarrBatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample,
     BasicStats<float>& stats, std::vector<int>& bins,
     const std::function<bool(const CubeHistogramUpdate&)>& progress) {
     const auto settings = GetZarrHistogramSettings();
     if (!settings.one_pass) {
         // Exact is the default, and the default is two passes. Declining here is what keeps the
         // caller's own loops in charge without it having to know this setting exists.
-        return false;
+        return ZarrBatchOutcome::failed;
     }
     auto image = ImageForStokes(stokes);
     if (!image || num_bins <= 0) {
-        return false;
+        return ZarrBatchOutcome::failed;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
     if (depth == 0) {
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 
     carta::zarr::CubeHistogramRequest request;
@@ -435,11 +436,11 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
     carta::zarr::CubeHistogramResult computed;
     try {
         if (!image->ComputeCubeHistogram(request, computed, options)) {
-            return false;
+            return ZarrBatchOutcome::cancelled;
         }
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not compute a Zarr cube histogram in one pass: {}", error.getMesg());
-        return false;
+        return ZarrBatchOutcome::failed;
     }
 
     stats = ToBasicStats(computed);
@@ -447,7 +448,7 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
         spdlog::warn("A Zarr cube histogram has a bin past {} pixels; it is reported as that many",
             std::numeric_limits<int>::max());
     }
-    return true;
+    return ZarrBatchOutcome::finished;
 }
 
 // Zarr has one copy of the pixels, so there is no second layout to choose between and no

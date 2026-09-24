@@ -1685,16 +1685,15 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             // there is nowhere to hand it a range it was not given. Labelling those counts with the
             // requested edges below would publish counts of one thing as counts of another. The two
             // passes have the range before they bin, so they are the ones that can answer this.
+            auto* zarr_batched = _frames.at(file_id)->ZarrBatched();
             bool one_pass_done(false);
             BasicStats<float> one_pass_stats;
             std::vector<int> one_pass_bins;
-            if (!cube_histogram_config.fixed_bounds) {
-                bool one_pass_cancelled(false);
+            if (zarr_batched && !cube_histogram_config.fixed_bounds) {
                 auto t_one_pass = std::chrono::high_resolution_clock::now();
-                one_pass_done = _frames.at(file_id)->GetCubeHistogramOnePass(
+                const auto one_pass = zarr_batched->CubeHistogram(
                     stokes, num_bins, 0, one_pass_stats, one_pass_bins, [&](const CubeHistogramUpdate& update) {
                         if (_histogram_context.is_group_execution_cancelled()) {
-                            one_pass_cancelled = true;
                             return false;
                         }
                         auto t_now = std::chrono::high_resolution_clock::now();
@@ -1726,9 +1725,10 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         }
                         return true;
                     });
-                if (one_pass_cancelled) {
+                if (one_pass == ZarrBatchOutcome::cancelled) {
                     return calculated;
                 }
+                one_pass_done = one_pass == ZarrBatchOutcome::finished;
             }
 
             // stats for entire cube
@@ -1756,13 +1756,11 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // What one plane costs the caller, shared by the loader's own walk and the per-plane
             // loop below so that the two report progress and stop at the same points.
-            bool stats_cancelled(false);
             auto take_plane_stats = [&](int z, const BasicStats<float>& z_stats) {
                 cube_stats.join(z_stats);
 
                 // check for cancel
                 if (_histogram_context.is_group_execution_cancelled()) {
-                    stats_cancelled = true;
                     return false;
                 }
 
@@ -1773,11 +1771,11 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             };
 
             // A loader that can walk the cube itself neither materialises a plane nor reads each
-            // one twice. Its false means either that it has no such path or that `take_plane_stats` said
-            // stop, which is why the cancel is tracked separately rather than read from the return.
+            // one twice. Only a walk that did not answer sends this to its own loop; one that was
+            // cancelled has nothing more to do.
             if (one_pass_done) {
                 cube_stats = one_pass_stats;
-            } else if (!_frames.at(file_id)->GetCubeBasicStats(stokes, take_plane_stats) && !stats_cancelled) {
+            } else if (_frames.at(file_id)->GetCubeBasicStats(stokes, take_plane_stats) == ZarrBatchOutcome::failed) {
                 cube_stats = BasicStats<float>();
                 for (size_t z = 0; z < depth; ++z) {
                     // stats for this z
@@ -1814,7 +1812,6 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 Histogram cube_histogram;
                 // What one plane costs the caller, shared by the loader's own walk and the
                 // per-plane loop below so that the two report progress and stop together.
-                bool histogram_cancelled(false);
                 bool have_cube_histogram(false);
                 auto take_plane_histogram = [&](int z, const Histogram& plane) {
                     if (!have_cube_histogram) {
@@ -1826,7 +1823,6 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                     // check for cancel
                     if (_histogram_context.is_group_execution_cancelled()) {
-                        histogram_cancelled = true;
                         return false;
                     }
 
@@ -1845,14 +1841,18 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     have_cube_histogram = true;
                 }
 
-                const bool batched = one_pass_done || _frames.at(file_id)->GetCubeHistogram(
-                    stokes, num_bins, bounds, [&](int z, const std::vector<int>& bins) {
+                auto binned = ZarrBatchOutcome::failed;
+                if (one_pass_done) {
+                    binned = ZarrBatchOutcome::finished;
+                } else if (zarr_batched) {
+                    binned = zarr_batched->PlaneHistograms(stokes, num_bins, bounds, [&](int z, const std::vector<int>& bins) {
                         Histogram plane(num_bins, bounds, nullptr, 0);
                         plane.SetHistogramBins(bins);
                         return take_plane_histogram(z, plane);
                     });
+                }
 
-                if (!batched && !histogram_cancelled) {
+                if (binned == ZarrBatchOutcome::failed) {
                     cube_histogram = Histogram();
                     have_cube_histogram = false;
                     for (size_t z = 0; z < depth; ++z) {

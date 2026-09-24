@@ -2178,6 +2178,11 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
     }
 
     auto frame = _frames.at(file_id);
+    // Asked before any mask is built: a loader with no batched walk declines here for nothing.
+    auto* zarr_batched = frame->ZarrBatched();
+    if (!zarr_batched) {
+        return false;
+    }
     auto image_csys = frame->CoordinateSystem();
     auto image_shape = frame->ImageShape();
 
@@ -2239,13 +2244,11 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
     auto t_start = std::chrono::high_resolution_clock::now();
     std::size_t blocks = 0;
     std::size_t channels_done = 0;
-    bool stopped = false;
 
-    const bool complete = frame->GetLoaderMultiRegionSpectralData(
+    const auto outcome = zarr_batched->RegionSpectra(
         specs, z_range, stokes_index, [&](const RegionSpectralBlock& block) {
             ++blocks;
             if (CancelLineProfiles(region_id, file_id, line_region_state) || _stop_pv[file_id]) {
-                stopped = true;
                 return false;
             }
 
@@ -2290,12 +2293,12 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
             return true;
         });
 
-    if (stopped) {
+    if (outcome == ZarrBatchOutcome::cancelled) {
         cancelled = true;
         profiles.resize();
         return true;
     }
-    if (!complete || blocks == 0 || channels_done != num_channels) {
+    if (outcome != ZarrBatchOutcome::finished || blocks == 0 || channels_done != num_channels) {
         // Either the loader has no batched path, or it gave up partway. Both mean the caller should
         // do the work the long way rather than publish half a profile.
         return false;

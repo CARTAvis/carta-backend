@@ -45,67 +45,7 @@ struct StokesRegion {
         : stokes_source(stokes_source_), image_region(image_region_) {}
 };
 
-// What a one-pass cube histogram reports while it runs.
-//
-// The two-pass path sends a histogram of the planes it has binned so far on every progress update
-// and the frontend re-renders from it. One pass has the same thing to offer at any moment, because
-// it tracks the extremes exactly as it goes and so always knows the bin edges for what it has read.
-//
-// `snapshot` is what asks for it, and it is separate from `progress` because it is not free: it
-// re-aggregates the walk's provisional histograms, which on a cube with thousands of reads would
-// cost more than the binning if it happened on every one. A caller reporting on a timer asks only
-// when it reports. `stats` and `bins` come back over the same bounds, and those widen as more of
-// the cube arrives.
-struct CubeHistogramUpdate {
-    double progress = 0.0;
-    std::function<void(BasicStats<float>& stats, std::vector<int>& bins)> snapshot;
-};
-
-// One 2D region of a batched spectral reduction: its bounding box in image pixels, plus an
-// optional raster mask laid out row-major with x fastest, exactly as casacore's LCRegionFixed
-// stores one. Both the mask and this struct are borrowed for the duration of the call.
-//
-// A null mask selects the whole bounding box, and that is a required case rather than a shortcut:
-// an unrotated rectangle becomes an LCBox, whose getMask() is empty.
-struct RegionMaskSpec {
-    std::uint64_t x_start = 0;
-    std::uint64_t y_start = 0;
-    std::uint64_t width = 0;
-    std::uint64_t height = 0;
-    const casacore::Bool* mask = nullptr;
-};
-
-// One run of channels of a batched reduction, for every region at once.
-//
-// NumPixels(r) and Sum(r) are region r's channel_count values, and point into the loader's own
-// buffer: they are valid only until the callback returns. How the loader lays its regions out is
-// its own business, which is why they are asked for by region rather than walked with a stride. A
-// channel whose region caught no valid pixel has num_pixels zero, which is the caller's signal that
-// the mean it wants does not exist rather than a number to divide by.
-struct RegionSpectralBlock {
-    std::size_t first_channel = 0;
-    std::size_t channel_count = 0;
-    std::size_t region_count = 0;
-    // One pointer per region, filled by the loader and read through the two accessors.
-    std::vector<const double*> num_pixels;
-    std::vector<const double*> sums;
-
-    const double* NumPixels(std::size_t region) const {
-        return num_pixels.at(region);
-    }
-    const double* Sum(std::size_t region) const {
-        return sums.at(region);
-    }
-
-    // Whether these values are final. A reduction whose block spans more than one read hands the
-    // block over as it fills, so a caller has something to show long before the last pixel is in;
-    // the same channels arrive again, refined, and a last time with this set. The counts and sums
-    // of an unfinished block are honest over what has been read, but they are not the answer, so a
-    // caller counting off finished channels must not count these.
-    bool complete = true;
-    // The fraction of this block's chunks that are in the values, in [0, 1]. One when complete.
-    double completeness = 1.0;
-};
+class ZarrBatchedReducer;
 
 class FileLoader {
 public:
@@ -177,68 +117,26 @@ public:
         const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {});
     // Check if one can apply swizzled data under such image format and region condition
-    // Basic statistics for every plane of one stokes, in one pass over the pixels.
-    //
-    // The caller's own loop asks plane by plane, and each of those reads a whole plane into a
-    // vector before reducing it. A loader that can walk the cube itself neither materialises a
-    // plane nor reads one twice, which is what this exists for; `plane_callback` receives each
-    // plane as it is finished and returning false from it cancels the walk.
-    //
-    // False means this loader has no such path and the caller should keep its own loop. A loader
-    // that returns false must not have called the callback.
-    virtual bool GetCubeBasicStats(
-        int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
-        return false;
-    }
-    // Bin counts for every plane of one stokes over a fixed range, in one pass over the pixels.
-    //
-    // The companion to GetCubeBasicStats, and there for the same reason: the caller's own loop asks
-    // plane by plane and each of those reads a whole plane into a vector first. `plane_callback`
-    // receives each plane's bins as it is finished and returning false from it cancels.
-    //
-    // False means this loader has no such path. A loader that returns false must not have called
-    // the callback.
-    virtual bool GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
-        const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
-        return false;
-    }
-    // A cube histogram and its statistics from a single pass over the pixels.
-    //
-    // The two-pass shape exists because bin edges come from the data's own extremes. A loader that
-    // can find the range and bin at the same time answers here instead, and says what it did: the
-    // bins are the caller's, the statistics come back alongside because the caller reports them.
-    //
-    // False means this loader will not -- it has no such path, or it was not asked to -- and the
-    // caller keeps its two passes. A loader that returns false must not have called `progress`.
-    virtual bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
-        const std::function<bool(const CubeHistogramUpdate&)>& progress) {
-        return false;
-    }
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
+    // Forget whatever was being kept for a region's spectral walk, because the region is gone.
+    // ALL_REGIONS means all of them. A loader that resumes such a walk keeps state per region and
+    // has nothing else that would tell it; one that keeps nothing does nothing here.
+    virtual void ReleaseRegion(int region_id) {}
     // `partial_callback`, when given, is called while one call is still working, with the profile
     // as it stands and how far along it is. A loader whose call is long enough that the caller's
     // own between-call checks would come too late reports through this instead; returning false
     // from it cancels the call. The values it carries are not final -- counts and sums grow and a
     // mean converges -- which is the same partial answer this interface already returns when it
     // reports progress below one.
-    // Forget whatever was being kept for a region's spectral walk, because the region is gone.
-    // ALL_REGIONS means all of them. A loader that resumes such a walk keeps state per region and
-    // has nothing else that would tell it; one that keeps nothing does nothing here.
-    virtual void ReleaseRegion(int region_id) {}
-
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
         const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {});
-    // Reduce many regions over the same channels in one pass over the pixels, calling the sink with
-    // a run of channels at a time. Returning false from the sink cancels the reduction.
-    //
-    // A position-velocity cut is one box per pixel along the line -- 5,792 of them across a 4096
-    // pixel diagonal -- and they overlap heavily, so asking for them one at a time reads the same
-    // chunks once per box. Default false: a loader whose format has no batched path keeps the
-    // existing route, which is per-region and correct, just proportional to the region count.
-    virtual bool GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
-        const std::function<bool(const RegionSpectralBlock&)>& sink);
+    // The walks a Zarr loader can make over the whole cube or many regions at once, or null for a
+    // loader that has none -- every other one. See ZarrBatchedReducer.
+    virtual ZarrBatchedReducer* ZarrBatched() {
+        return nullptr;
+    }
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual bool GetChunk(

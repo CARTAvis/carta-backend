@@ -1832,38 +1832,25 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
     return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
-bool Frame::GetCubeBasicStats(int stokes, const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
+ZarrBatchedReducer* Frame::ZarrBatched() {
+    return _loader->ZarrBatched();
+}
+
+ZarrBatchOutcome Frame::GetCubeBasicStats(int stokes, const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
+    auto* batched = ZarrBatched();
+    if (!batched) {
+        return ZarrBatchOutcome::failed;
+    }
     // Each plane is cached on the way past, because the per-plane path this replaces cached it and
     // later per-plane requests still look there.
-    return _loader->GetCubeBasicStats(stokes, [&](int z, const BasicStats<float>& stats) {
+    return batched->PlaneStats(stokes, [&](int z, const BasicStats<float>& stats) {
         _image_basic_stats[CacheKey(z, stokes)] = stats;
         return plane_callback(z, stats);
     });
 }
 
-bool Frame::GetCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds,
-    const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
-    // Nothing is cached on the way past here: the per-plane path only caches a histogram for the
-    // image region, and a cube histogram is not that.
-    return _loader->GetCubeHistogram(stokes, num_bins, bounds, plane_callback);
-}
-
-bool Frame::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample,
-    BasicStats<float>& stats, std::vector<int>& bins,
-    const std::function<bool(const CubeHistogramUpdate&)>& progress) {
-    return _loader->GetCubeHistogramOnePass(stokes, num_bins, spatial_sample, stats, bins, progress);
-}
-
 void Frame::ReleaseRegion(int region_id) {
     _loader->ReleaseRegion(region_id);
-}
-
-bool Frame::GetLoaderMultiRegionSpectralData(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
-    const std::function<bool(const RegionSpectralBlock&)>& sink) {
-    // No image mutex: the only loader that answers this reads through immutable carta-zarr handles,
-    // which are safe to call concurrently, and every other loader declines without touching the
-    // image at all.
-    return _loader->GetMultiRegionSpectralData(regions, z_range, stokes, sink);
 }
 
 bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
