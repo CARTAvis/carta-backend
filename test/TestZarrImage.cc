@@ -1301,9 +1301,8 @@ TEST_F(ZarrImageTest, MeasurePlaneReadShapes) {
     const char* mult_env = std::getenv("CARTA_SHAPE_BAND_CHUNKS");
     const int band_chunks = mult_env ? std::max(1, std::stoi(mult_env)) : 1;
     const int band_rows = band * band_chunks;
-    // True means the store varies y fastest while the destination varies x fastest, so filling a
+    // Every XRADIO store varies y fastest while the destination varies x fastest, so filling a
     // plane transposes -- which is the whole reason a destination-shaped read might have helped.
-    std::printf("\nSHAPE transposing=%d\n", image->SpectralRunsAlongY() ? 1 : 0);
 
     const int reps = 5;
     std::vector<double> whole;

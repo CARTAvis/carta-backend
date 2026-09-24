@@ -65,9 +65,6 @@ public:
     // One histogram for the whole cube in a single pass, with the range found on the way.
     carta::zarr::Result<carta::zarr::CubeHistogramResult> ComputeCubeHistogram(
         const carta::zarr::CubeHistogramRequest& request, const carta::zarr::ReadOptions& options = {}) const;
-    // True when this store varies fastest along y, which is the axis a region's runs have to lie
-    // along for ReduceSpectral to take them.
-    bool SpectralRunsAlongY() const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where,
         const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;

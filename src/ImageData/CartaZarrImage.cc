@@ -461,11 +461,6 @@ carta::zarr::Result<carta::zarr::CubeHistogramResult> CartaZarrImage::ComputeCub
     return _zarr_image->ComputeCubeHistogram(request, options);
 }
 
-bool CartaZarrImage::SpectralRunsAlongY() const {
-    return _zarr_image.has_value() &&
-           _zarr_image->chunk_geometry().fastest_spatial_axis == carta::zarr::AxisRole::spatial_y;
-}
-
 bool CartaZarrImage::ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
     const carta::zarr::ReadOptions& options) const {
     if (!_zarr_image) {

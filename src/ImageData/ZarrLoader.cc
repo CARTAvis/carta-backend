@@ -219,17 +219,14 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
 
     // casacore stores a Bool as one byte and an LCRegionFixed's mask contiguously with x fastest,
     // which is what carta-zarr's RegionMask already asks for, so the masks are handed over as they
-    // are rather than converted.
+    // are rather than converted -- and the reduction turns them into the runs it walks, along
+    // whichever axis the store varies fastest, which is nothing this loader has to know.
     static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to borrow a mask");
     std::vector<carta::zarr::RegionMask> zarr_regions;
     zarr_regions.reserve(regions.size());
     for (const auto& region : regions) {
-        auto& spec = zarr_regions.emplace_back(carta::zarr::RegionMask{region.x_start, region.y_start, region.width,
-            region.height, reinterpret_cast<const std::uint8_t*>(region.mask)});
-        spec.row_runs = region.runs;
-        spec.row_run_offsets = region.run_offsets;
-        spec.run_axis =
-            region.runs_along_y ? carta::zarr::AxisRole::spatial_y : carta::zarr::AxisRole::spatial_x;
+        zarr_regions.push_back(carta::zarr::RegionMask{region.x_start, region.y_start, region.width, region.height,
+            reinterpret_cast<const std::uint8_t*>(region.mask)});
     }
 
     carta::zarr::SpectralReduceRequest request;
@@ -427,11 +424,6 @@ bool ZarrLoader::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t
     return true;
 }
 
-bool ZarrLoader::SpectralRunsAlongY() const {
-    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    return image != nullptr && image->SpectralRunsAlongY();
-}
-
 // Zarr has one copy of the pixels, so there is no second layout to choose between and no
 // crossover to find: whatever the region's shape, this loader reads exactly the chunks it covers
 // and accumulates in one pass, where casacore's route iterates cursors and asks for the mask
@@ -490,7 +482,6 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         state.z_range = range;
         state.channels_done = 0;
         state.stats.clear();
-        state.runs = RunsOfMask(mask, image->SpectralRunsAlongY());
         const std::vector<CARTA::StatsType> reported{CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount,
             CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma,
             CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::Extrema};
@@ -507,12 +498,6 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         carta::zarr::RegionMask region{static_cast<std::uint64_t>(origin(0)), static_cast<std::uint64_t>(origin(1)),
             static_cast<std::uint64_t>(mask_shape(0)), static_cast<std::uint64_t>(mask_shape(1)),
             reinterpret_cast<const std::uint8_t*>(mask.asArray().data())};
-        if (!state.runs.Empty()) {
-            region.row_runs = state.runs.runs.data();
-            region.row_run_offsets = state.runs.offsets.data();
-            region.run_axis = image->SpectralRunsAlongY() ? carta::zarr::AxisRole::spatial_y
-                                                          : carta::zarr::AxisRole::spatial_x;
-        }
 
         carta::zarr::SpectralReduceRequest request;
         request.planes.spectral = {static_cast<std::uint64_t>(range.from + state.channels_done),

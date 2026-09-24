@@ -2184,14 +2184,9 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
     // The masks are borrowed for the whole reduction, so they are built first and kept alive here.
     // Reserving exactly is load bearing: a reallocation would move the arrays the specs point into.
     std::vector<casacore::ArrayLattice<casacore::Bool>> masks;
-    std::vector<RegionMaskRuns> mask_runs;
-    // Runs have to lie along the axis the image is contiguous in, and the loader is the only thing
-    // that knows which that is.
-    const bool runs_along_y = frame->SpectralRunsAlongY();
     std::vector<RegionMaskSpec> specs;
     std::vector<std::size_t> spec_to_box;
     masks.reserve(num_profiles);
-    mask_runs.reserve(num_profiles);
     specs.reserve(num_profiles);
     spec_to_box.reserve(num_profiles);
 
@@ -2224,15 +2219,6 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
                 return false;
             }
             spec.mask = mask.asArray().data();
-            // The runs say the same thing in a form the reducer can use without reading the raster
-            // at all, which is what keeps a slanted box from pulling in every chunk of its own
-            // bounding box.
-            mask_runs.push_back(RunsOfMask(mask, runs_along_y));
-            if (!mask_runs.back().Empty()) {
-                spec.runs = mask_runs.back().runs.data();
-                spec.run_offsets = mask_runs.back().offsets.data();
-                spec.runs_along_y = runs_along_y;
-            }
         }
         specs.push_back(spec);
         spec_to_box.push_back(iprofile);

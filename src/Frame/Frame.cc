@@ -1854,10 +1854,6 @@ bool Frame::GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spat
     return _loader->GetCubeHistogramOnePass(stokes, num_bins, spatial_sample, stats, bins, progress);
 }
 
-bool Frame::SpectralRunsAlongY() const {
-    return _loader->SpectralRunsAlongY();
-}
-
 void Frame::ReleaseRegion(int region_id) {
     _loader->ReleaseRegion(region_id);
 }

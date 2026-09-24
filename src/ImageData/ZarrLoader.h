@@ -36,7 +36,6 @@ public:
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) override;
     bool GetCubeHistogramOnePass(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
         const std::function<bool(const CubeHistogramUpdate&)>& progress) override;
-    bool SpectralRunsAlongY() const override;
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
     bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
@@ -67,9 +66,6 @@ protected:
         AxisRange z_range;
         std::size_t channels_done = 0;
         std::map<CARTA::StatsType, std::vector<double>> stats;
-        // Derived once when the region is first seen, not per call: a resumption would otherwise
-        // read the whole raster again to say the same thing about which chunks it occupies.
-        RegionMaskRuns runs;
     };
 
     void AllocateImage(const std::string& hdu) override;
