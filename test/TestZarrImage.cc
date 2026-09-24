@@ -31,6 +31,8 @@
 #include "ImageData/ZarrContext.h"
 #include "Main/ProgramSettings.h"
 #include "ImageData/ZarrLoader.h"
+#include "Cache/FileInfoCache.h"
+#include "FileList/FileInfoLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageStats/StatsCalculator.h"
 #include "Region/RegionAnalysis/LineBoxRegions.h"
@@ -1274,6 +1276,50 @@ TEST_F(ZarrImageTest, BeamsThatDifferPerPlaneStayMany) {
     ASSERT_TRUE(info.hasBeam());
     EXPECT_TRUE(info.hasMultipleBeams()) << "the planes carry different beams";
     EXPECT_EQ(info.getBeamSet().nelements(), 6u);  // three channels by two polarizations
+}
+
+namespace {
+
+std::vector<std::string> ListedImages(const std::filesystem::path& store) {
+    FileInfoCache::Instance().Clear();
+    CARTA::FileInfo file_info;
+    FileInfoLoader(store.string(), CARTA::FileType::ZARR).FillFileInfo(file_info);
+    return {file_info.hdu_list().begin(), file_info.hdu_list().end()};
+}
+
+}  // namespace
+
+// The file list is what a user chooses from, so every image on it has to open. The library's
+// openable flag promises that much of the library; CARTA refuses more than the library does, and
+// the list used to ask only the library.
+TEST_F(ZarrImageTest, EveryListedImageOpens) {
+    const std::filesystem::path fixture{ZARR_XRADIO_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio fixture not found at " << fixture;
+    }
+    const auto listed = ListedImages(fixture);
+    ASSERT_FALSE(listed.empty());
+    for (const auto& id : listed) {
+        EXPECT_NO_THROW(CartaZarrImage(fixture.string(), id)) << id << " was listed";
+    }
+}
+
+// Two times is a valid XRADIO dataset and the library opens every image in it. CARTA displays one
+// time, so it offers none of them -- and the file is still a Zarr dataset, with a reason to give
+// when someone opens it anyway.
+TEST_F(ZarrImageTest, ADatasetWithTwoTimesListsNoImage) {
+    const std::filesystem::path fixture{ZARR_XRADIO_TIME_AXIS_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio time-axis fixture not found at " << fixture;
+    }
+    EXPECT_TRUE(ListedImages(fixture).empty()) << "an image CARTA cannot open should not be offered";
+    try {
+        CartaZarrImage image(fixture.string());
+        ADD_FAILURE() << "an image with two times should not open";
+    } catch (const casacore::AipsError& error) {
+        EXPECT_NE(error.getMesg().find("singleton time axis"), std::string::npos) << error.getMesg();
+    }
+    FileInfoCache::Instance().Clear();
 }
 
 // ---------------------------------------------------------------------------

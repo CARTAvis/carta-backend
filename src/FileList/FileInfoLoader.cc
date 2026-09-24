@@ -17,9 +17,11 @@
 #include <casacore/casa/OS/File.h>
 
 #include <carta-zarr/carta_zarr.h>
+#include <spdlog/spdlog.h>
 
 #include "Util/Casacore.h"
 #include "Util/File.h"
+#include "ImageData/CartaZarrAxes.h"
 #include "ImageData/ZarrContext.h"
 
 using namespace carta;
@@ -140,11 +142,29 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
         entry.size_is_upper_bound = dataset_size.value().basis == carta::zarr::SizeBasis::declared;
     }
 
+    // Offered only if CARTA will open it, which is more than the library promises with openable: the
+    // library opens an image with two times, and CARTA displays one. Knowing that takes the image's
+    // descriptor, so each is opened here; the dataset reads the coordinates they share once, and the
+    // whole entry is cached.
     const auto& images = dataset.value().descriptor().images;
     for (const auto& image : images) {
-        if (image.openable) {
-            entry.hdu_list.push_back(image.id);
+        if (!image.openable) {
+            continue;
         }
+        auto opened = dataset.value().OpenImage(image.id);
+        if (!opened) {
+            // The library said it would open, so this is a store that changed or a read that failed,
+            // not a rule: worth someone seeing.
+            spdlog::warn("Zarr image {} in {} was listed as openable and did not open: {}", image.id, _filename,
+                opened.error().message);
+            continue;
+        }
+        std::string reason;
+        if (!CartaZarrAxes::Of(opened.value().descriptor(), reason)) {
+            spdlog::debug("Not listing Zarr image {} in {}: {}", image.id, _filename, reason);
+            continue;
+        }
+        entry.hdu_list.push_back(image.id);
     }
     entry.complete = !images.empty();
 

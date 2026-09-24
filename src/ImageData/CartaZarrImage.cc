@@ -241,15 +241,32 @@ CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& i
     }
 
     if (image_id.empty()) {
-        const auto& default_image_id = dataset.value().descriptor().default_image_id;
-        if (default_image_id) {
-            _image_id = *default_image_id;
+        // The first image CARTA can display, in the library's order, which puts SKY first. The
+        // library's own default is the first image it will open, and CARTA refuses more than the
+        // library does, so the two can differ. What is said when none will do is why the first one
+        // would not.
+        std::string refusal;
+        for (const auto& entry : dataset.value().descriptor().images) {
+            if (!entry.openable) {
+                continue;
+            }
+            auto candidate = dataset.value().OpenImage(entry.id);
+            std::string reason;
+            if (!candidate) {
+                reason = "Failed to open XRADIO image '" + entry.id + "': " + candidate.error().message;
+            } else if (CartaZarrAxes::Of(candidate.value().descriptor(), reason)) {
+                _image_id = entry.id;
+                break;
+            }
+            if (refusal.empty()) {
+                refusal = reason;
+            }
+        }
+        if (_image_id.empty()) {
+            throw casacore::AipsError(refusal.empty() ? "XRADIO dataset contains no image variables" : refusal);
         }
     } else {
         _image_id = image_id;
-    }
-    if (_image_id.empty()) {
-        throw casacore::AipsError("XRADIO dataset contains no image variables");
     }
 
     auto image = dataset.value().OpenImage(_image_id);
