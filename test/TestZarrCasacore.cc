@@ -74,7 +74,7 @@ std::vector<carta::zarr::Beam> EveryPlane(double major) {
 }  // namespace
 
 TEST(ZarrCasacore, ReferencePixelsAreCountedFromZero) {
-    const auto coordinates = MakeZarrCoordinateSystem(Described());
+    const auto coordinates = MakeZarrCoordinateSystem(Described()).coordinates;
     const auto direction = coordinates.directionCoordinate().referencePixel();
     EXPECT_DOUBLE_EQ(direction[0], 2.0) << "a descriptor counts from one and casacore from zero";
     EXPECT_DOUBLE_EQ(direction[1], 3.0);
@@ -82,7 +82,7 @@ TEST(ZarrCasacore, ReferencePixelsAreCountedFromZero) {
 }
 
 TEST(ZarrCasacore, AnUnnamedFrameIsJ2000AndLsrk) {
-    const auto coordinates = MakeZarrCoordinateSystem(Described());
+    const auto coordinates = MakeZarrCoordinateSystem(Described()).coordinates;
     EXPECT_EQ(coordinates.directionCoordinate().directionType(), casacore::MDirection::J2000);
     EXPECT_EQ(coordinates.spectralCoordinate().frequencySystem(), casacore::MFrequency::LSRK);
 }
@@ -90,11 +90,38 @@ TEST(ZarrCasacore, AnUnnamedFrameIsJ2000AndLsrk) {
 TEST(ZarrCasacore, Fk4IsB1950) {
     auto descriptor = Described();
     descriptor.direction->reference_frame = "FK4";
-    EXPECT_EQ(MakeZarrCoordinateSystem(descriptor).directionCoordinate().directionType(), casacore::MDirection::B1950);
+    EXPECT_EQ(MakeZarrCoordinateSystem(descriptor).coordinates.directionCoordinate().directionType(), casacore::MDirection::B1950);
+}
+
+// casacore's J2000 is FK5 at the equinox of 2000, and there is no other FK5 to ask it for. An image
+// that names another equinox is read as J2000 all the same -- close, and still worth opening -- but
+// the offset is said rather than left for someone to find.
+TEST(ZarrCasacore, AnEquinoxTheFrameCannotHoldIsSaid) {
+    auto described = Described();
+    described.direction->reference_frame = "FK5";
+    described.direction->equinox = 2000.0;
+    const auto at_2000 = MakeZarrCoordinateSystem(described);
+    EXPECT_EQ(at_2000.coordinates.directionCoordinate().directionType(), casacore::MDirection::J2000);
+    EXPECT_TRUE(at_2000.notes.empty()) << "FK5 at 2000 is exactly J2000";
+
+    described.direction->equinox = 1975.0;
+    const auto at_1975 = MakeZarrCoordinateSystem(described);
+    EXPECT_EQ(at_1975.coordinates.directionCoordinate().directionType(), casacore::MDirection::J2000)
+        << "still opened, as the nearest frame casacore has";
+    ASSERT_EQ(at_1975.notes.size(), 1u);
+    EXPECT_NE(at_1975.notes.front().find("1975"), std::string::npos) << at_1975.notes.front();
+
+    described.direction->reference_frame = "FK4";
+    described.direction->equinox = 1950.0;
+    EXPECT_TRUE(MakeZarrCoordinateSystem(described).notes.empty()) << "FK4 at 1950 is exactly B1950";
+
+    described.direction->reference_frame = "ICRS";
+    described.direction->equinox = 1975.0;
+    EXPECT_TRUE(MakeZarrCoordinateSystem(described).notes.empty()) << "ICRS has no equinox to disagree with";
 }
 
 TEST(ZarrCasacore, TheCoordinatesAreInCartasOrder) {
-    const auto coordinates = MakeZarrCoordinateSystem(Described());
+    const auto coordinates = MakeZarrCoordinateSystem(Described()).coordinates;
     ASSERT_EQ(coordinates.nCoordinates(), 3u);
     EXPECT_EQ(coordinates.type(0), casacore::Coordinate::DIRECTION);
     EXPECT_EQ(coordinates.type(1), casacore::Coordinate::SPECTRAL);
@@ -110,7 +137,7 @@ TEST(ZarrCasacore, ASpectralAxisWithNoLinearDescriptionIsTabular) {
     descriptor.spectral->increment.reset();
     descriptor.spectral->channel_frequencies = {1.4e9, 1.401e9, 1.403e9};
 
-    const auto coordinates = MakeZarrCoordinateSystem(descriptor);
+    const auto coordinates = MakeZarrCoordinateSystem(descriptor).coordinates;
     casacore::Double world = 0.0;
     ASSERT_TRUE(coordinates.spectralCoordinate().toWorld(world, 2.0));
     EXPECT_DOUBLE_EQ(world, 1.403e9) << "the last channel is where it was listed, not where a line would put it";
@@ -135,7 +162,7 @@ TEST(ZarrCasacore, TheObservationIsCarried) {
     observation.observatory_position = std::array<double, 3>{1.0, 2.0, 3.0};
     descriptor.observation = observation;
 
-    const auto info = MakeZarrCoordinateSystem(descriptor).obsInfo();
+    const auto info = MakeZarrCoordinateSystem(descriptor).coordinates.obsInfo();
     EXPECT_EQ(info.observer(), "CARTA");
     EXPECT_EQ(info.telescope(), "Test scope");
     EXPECT_DOUBLE_EQ(info.obsDate().get("d").getValue(), 59000.0);

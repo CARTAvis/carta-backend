@@ -27,11 +27,20 @@ namespace carta {
 // to be reachable only by opening a store on disk. Taking descriptors and returning casacore
 // objects, it is checked from values written in a test.
 
+// The coordinate system of an image, and what there was to say about how it was made.
+struct ZarrCoordinates {
+    casacore::CoordinateSystem coordinates;
+    // What a reader should be told, such as an equinox the direction frame cannot hold. Said here
+    // rather than logged so that the caller can say which file it was.
+    std::vector<std::string> notes;
+};
+
 // The coordinate system of an image in CARTA's order -- direction, spectral, Stokes -- with the
-// observation it carries. Throws casacore::AipsError for what casacore cannot express: a frame,
-// projection, Stokes label or time scale it does not know. Only asked of an image CartaZarrAxes
-// accepted, which is what says the three coordinates are there.
-casacore::CoordinateSystem MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor);
+// observation it carries. Throws casacore::AipsError for what casacore cannot express at all: a
+// frame, projection, Stokes label or time scale it does not know. What it can express only nearly,
+// it does, and notes. Only asked of an image CartaZarrAxes accepted, which is what says the three
+// coordinates are there.
+ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor);
 
 // The restoring beams of an image, and what there was to say about the table they came from.
 struct ZarrBeams {

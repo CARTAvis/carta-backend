@@ -381,7 +381,11 @@ std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
 
 void CartaZarrImage::SetUpImage() {
     try {
-        setCoordinateInfo(MakeZarrCoordinateSystem(_descriptor));
+        auto made = MakeZarrCoordinateSystem(_descriptor);
+        for (const auto& note : made.notes) {
+            spdlog::warn("XRADIO {}: {}", _filename, note);
+        }
+        setCoordinateInfo(made.coordinates);
         if (!_descriptor.unit.empty()) {
             setUnits(casacore::Unit(_descriptor.unit));
         }

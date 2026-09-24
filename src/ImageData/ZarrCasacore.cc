@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <sstream>
 
 #include <casacore/casa/Arrays/Matrix.h>
 #include <casacore/casa/Exceptions/Error.h>
@@ -187,12 +188,38 @@ void SetObservationInfo(casacore::CoordinateSystem& coordinate_system,
     coordinate_system.setObsInfo(observation);
 }
 
+// The equinox a casacore direction frame fixes, for the two frames that fix one.
+std::optional<double> EquinoxOf(casacore::MDirection::Types type) {
+    switch (type) {
+        case casacore::MDirection::J2000:
+            return 2000.0;
+        case casacore::MDirection::B1950:
+            return 1950.0;
+        default:
+            return std::nullopt;
+    }
+}
+
 }  // namespace
 
-casacore::CoordinateSystem MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor) {
-    auto coordinate_system = MakeCoordinateSystemOnly(descriptor);
-    SetObservationInfo(coordinate_system, descriptor.observation);
-    return coordinate_system;
+ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor) {
+    ZarrCoordinates made{MakeCoordinateSystemOnly(descriptor), {}};
+    SetObservationInfo(made.coordinates, descriptor.observation);
+
+    // FK5 becomes J2000 and FK4 becomes B1950, which are those frames at one equinox each; casacore
+    // has no FK5 at another. An image naming another is read in the nearest frame there is rather
+    // than refused -- the offset is precession over the years between, small beside refusing to
+    // show the image -- and the note is what says the coordinates are not quite its own.
+    const auto type = made.coordinates.directionCoordinate().directionType();
+    const auto fixed = EquinoxOf(type);
+    const auto& named = descriptor.direction->equinox;
+    if (fixed && named && *named != *fixed) {
+        std::ostringstream note;
+        note << "direction frame " << descriptor.direction->reference_frame << " names equinox " << *named
+             << ", which casacore cannot hold; its coordinates are read as " << casacore::MDirection::showType(type);
+        made.notes.push_back(note.str());
+    }
+    return made;
 }
 
 ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore::uInt channels, casacore::uInt polarizations) {
