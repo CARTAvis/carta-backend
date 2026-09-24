@@ -241,6 +241,7 @@ set(SOURCE_FILES
         src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
+        src/ImageData/CartaZarrAxes.cc
         src/ImageData/CartaZarrImage.cc
         src/ImageData/CompressedFits.cc
         src/ImageData/FileInfo.cc

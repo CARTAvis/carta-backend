@@ -8,6 +8,8 @@
 
 #include <carta-zarr/carta_zarr.h>
 
+#include "CartaZarrAxes.h"
+
 #include <mutex>
 #include <optional>
 #include <string>
@@ -86,7 +88,6 @@ private:
     void SetBeams();
     // The library image, or an exception naming `where` when there is none.
     const carta::zarr::Image& Opened(const char* where) const;
-    static carta::zarr::ReadRequest MakeReadRequest(const casacore::Slicer& section);
 
     // The finiteness mask of the most recent doGetSlice. casacore asks for a cursor's pixels and
     // then that same cursor's mask, so computing the mask while the pixels are still hot turns the
@@ -101,6 +102,8 @@ private:
     std::string _filename;
     std::string _image_id;
     std::optional<carta::zarr::Image> _zarr_image;
+    // Set with _zarr_image, and never without it: an image CARTA cannot display is not opened.
+    std::optional<CartaZarrAxes> _axes;
     carta::zarr::ImageDescriptor _descriptor;
     casacore::IPosition _shape;
 };

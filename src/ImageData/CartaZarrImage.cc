@@ -70,34 +70,6 @@ bool Finished(const carta::zarr::Result<T>& result, const char* where) {
     throw casacore::AipsError(std::string("CartaZarrImage::") + where + " - " + result.error().message);
 }
 
-std::vector<std::uint64_t> CartaShape(const carta::zarr::ImageDescriptor& descriptor) {
-    std::vector<std::uint64_t> shape(4, 0);
-    for (const auto& axis : descriptor.axes) {
-        if (axis.role == carta::zarr::AxisRole::time) {
-            if (axis.length != 1) {
-                throw casacore::AipsError("CARTA backend currently supports only XRADIO images with a singleton time axis");
-            }
-        }
-        switch (axis.role) {
-            case carta::zarr::AxisRole::spatial_x:
-                shape[0] = axis.length;
-                break;
-            case carta::zarr::AxisRole::spatial_y:
-                shape[1] = axis.length;
-                break;
-            case carta::zarr::AxisRole::spectral:
-                shape[2] = axis.length;
-                break;
-            case carta::zarr::AxisRole::polarization:
-                shape[3] = axis.length;
-                break;
-            default:
-                break;
-        }
-    }
-    return shape;
-}
-
 casacore::MDirection::Types DirectionReferenceFrame(const std::string& frame) {
     if (frame.empty() || frame == "FK5") {
         return casacore::MDirection::J2000;
@@ -219,11 +191,8 @@ casacore::StokesCoordinate MakeStokesCoordinate(const carta::zarr::PolarizationC
     return casacore::StokesCoordinate(stokes);
 }
 
+// Only ever asked of an image CartaZarrAxes accepted, which is what says the three are there.
 casacore::CoordinateSystem MakeCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor) {
-    if (!descriptor.direction || !descriptor.spectral || !descriptor.polarization) {
-        throw casacore::AipsError("XRADIO image is missing a required coordinate descriptor");
-    }
-
     casacore::CoordinateSystem coordinate_system;
     // Keep the backend's canonical pixel order: spatial X/Y, spectral, polarization.
     coordinate_system.addCoordinate(MakeDirectionCoordinate(*descriptor.direction));
@@ -290,14 +259,12 @@ CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& i
     _zarr_image = std::move(image.value());
     _descriptor = _zarr_image->descriptor();
 
-    const auto shape = CartaShape(_descriptor);
-    _shape = casacore::IPosition(static_cast<casacore::uInt>(shape.size()));
-    for (casacore::uInt index = 0; index < _shape.size(); ++index) {
-        if (shape[index] > static_cast<std::uint64_t>(std::numeric_limits<casacore::Int>::max())) {
-            throw casacore::AipsError("XRADIO image dimension is too large for casacore");
-        }
-        _shape[index] = static_cast<casacore::Int>(shape[index]);
+    std::string reason;
+    _axes = CartaZarrAxes::Of(_descriptor, reason);
+    if (!_axes) {
+        throw casacore::AipsError(reason);
     }
+    _shape = _axes->Shape();
 
     SetUpImage();
 }
@@ -307,6 +274,7 @@ CartaZarrImage::CartaZarrImage(const CartaZarrImage& other)
       _filename(other._filename),
       _image_id(other._image_id),
       _zarr_image(other._zarr_image),
+      _axes(other._axes),
       _descriptor(other._descriptor),
       _shape(other._shape) {}
 
@@ -362,22 +330,6 @@ casacore::DataType CartaZarrImage::InternalDataType() const {
     }
 }
 
-carta::zarr::ReadRequest CartaZarrImage::MakeReadRequest(const casacore::Slicer& section) {
-    const auto& start = section.start();
-    const auto& length = section.length();
-    const auto& stride = section.stride();
-
-    carta::zarr::ReadRequest request;
-    request.axes.reserve(carta::zarr::kXradioImageAxisOrder.size());
-    for (casacore::uInt axis = 0; axis < start.size(); ++axis) {
-        request.axes.push_back({static_cast<std::uint64_t>(start(axis)),
-            static_cast<std::uint64_t>(length(axis)), static_cast<std::uint64_t>(stride(axis)),
-        });
-    }
-    request.axes.push_back({0, 1, 1});
-    return request;
-}
-
 // casacore's default fills axis 0, which is l - the axis that is not contiguous on disk. On a
 // 7763-wide image that makes every cursor one row spanning about thirty chunks, so a plane's
 // statistics decode the whole plane once per row. Report the chunk instead, the way
@@ -390,10 +342,11 @@ casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels)
     if (!_zarr_image) {
         return casacore::ImageInterface<float>::doNiceCursorShape(max_pixels);
     }
-    const auto& chunk = _zarr_image->chunk_geometry().chunk_shape;
-    if (chunk.size() < static_cast<std::size_t>(_shape.size())) {
+    const auto& own_chunk = _zarr_image->chunk_geometry().chunk_shape;
+    if (own_chunk.size() < _descriptor.axes.size()) {
         return casacore::ImageInterface<float>::doNiceCursorShape(max_pixels);
     }
+    const auto chunk = _axes->InCartaOrder(own_chunk);
 
     casacore::IPosition cursor(_shape.size());
     for (casacore::uInt axis = 0; axis < _shape.size(); ++axis) {
@@ -449,7 +402,7 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
 
     bool delete_storage(false);
     float* storage = buffer.getStorage(delete_storage);
-    auto read = image.Read(MakeReadRequest(section),
+    auto read = image.Read(_axes->Request(section),
         {storage, static_cast<std::size_t>(buffer.nelements())}, options, progress);
     buffer.putStorage(storage, delete_storage);
     return Finished(read, "Read");
@@ -545,29 +498,6 @@ std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
     // comment a consumer should never have to do.
     const auto& storage = _zarr_image->chunk_geometry();
 
-    const auto ordered_shape = [&](const std::vector<std::uint64_t>& values) {
-        std::vector<std::uint64_t> result(4, 1);
-        for (std::size_t index = 0; index < _descriptor.axes.size(); ++index) {
-            const std::uint64_t value = index < values.size() ? values[index] : 1;
-            switch (_descriptor.axes[index].role) {
-                case carta::zarr::AxisRole::spatial_x:
-                    result[0] = value;
-                    break;
-                case carta::zarr::AxisRole::spatial_y:
-                    result[1] = value;
-                    break;
-                case carta::zarr::AxisRole::spectral:
-                    result[2] = value;
-                    break;
-                case carta::zarr::AxisRole::polarization:
-                    result[3] = value;
-                    break;
-                default:
-                    break;
-            }
-        }
-        return result;
-    };
     // The values alone: these are the image's own axes in the image's own order, so the file-info
     // panel labels them the way it labels the image shape rather than naming them a second way.
     const auto format_shape = [](const std::vector<std::uint64_t>& values) {
@@ -583,9 +513,9 @@ std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
 
     std::vector<StorageEntry> entries;
     if (storage.sharded) {
-        entries.push_back({"Shard shape", format_shape(ordered_shape(storage.shard_shape)), true});
+        entries.push_back({"Shard shape", format_shape(_axes->InCartaOrder(storage.shard_shape)), true});
     }
-    entries.push_back({"Chunk shape", format_shape(ordered_shape(storage.chunk_shape)), true});
+    entries.push_back({"Chunk shape", format_shape(_axes->InCartaOrder(storage.chunk_shape)), true});
     if (!storage.compressor.empty()) {
         entries.push_back({"Compressor", storage.compressor, false});
     }
