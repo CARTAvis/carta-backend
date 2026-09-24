@@ -2264,8 +2264,8 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
             }
 
             for (std::size_t r = 0; r < block.region_count; ++r) {
-                const double* counts = block.num_pixels + (r * block.region_stride);
-                const double* sums = block.sum + (r * block.region_stride);
+                const double* counts = block.NumPixels(r);
+                const double* sums = block.Sum(r);
                 const auto iprofile = spec_to_box[r];
                 for (std::size_t c = 0; c < block.channel_count; ++c) {
                     // A channel whose box caught nothing has no mean, and NaN is what the per-box

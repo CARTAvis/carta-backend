@@ -22,37 +22,6 @@ namespace carta {
 
 namespace {
 
-// The accumulators of one block, by name.
-//
-// A block carries whichever statistics were asked for, one after another, and says in `statistics`
-// which slot is which -- so everything in this file has to look them up the same way, and three
-// places did, in three spellings. A null pointer is a statistic this block does not carry; what
-// that means is left to the caller, because the three do not agree about it.
-struct BlockStatistics {
-    const double* num_pixels = nullptr;
-    const double* nan_count = nullptr;
-    const double* sum = nullptr;
-    const double* sum_sq = nullptr;
-    const double* min = nullptr;
-    const double* max = nullptr;
-};
-
-BlockStatistics UnpackStatistics(const carta::zarr::SpectralBlock& block) {
-    BlockStatistics found;
-    for (std::size_t slot = 0; slot < block.statistic_count; ++slot) {
-        const double* values = block.values + (slot * block.statistic_stride);
-        switch (block.statistics[slot]) {
-            case carta::zarr::Statistic::num_pixels: found.num_pixels = values; break;
-            case carta::zarr::Statistic::nan_count: found.nan_count = values; break;
-            case carta::zarr::Statistic::sum: found.sum = values; break;
-            case carta::zarr::Statistic::sum_sq: found.sum_sq = values; break;
-            case carta::zarr::Statistic::min: found.min = values; break;
-            case carta::zarr::Statistic::max: found.max = values; break;
-        }
-    }
-    return found;
-}
-
 // The statistics that are divisions of the counted ones, derived in one place so that a profile
 // and a BasicStats over the same pixels cannot drift apart. Only called with num_pixels above zero.
 //
@@ -80,25 +49,27 @@ DerivedStats Derive(double num_pixels, double sum, double sum_sq, double lone_pi
 // a Zarr profile and an HDF5 profile of the same numbers have to agree to the last bit.
 void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, const carta::zarr::SpectralBlock& block,
     std::size_t channel_offset, double beam_area, bool has_flux) {
-    const auto counted = UnpackStatistics(block);
-    if (!counted.num_pixels || !counted.nan_count || !counted.sum || !counted.sum_sq || !counted.min || !counted.max) {
+    using carta::zarr::Statistic;
+    if (!block.Carries(Statistic::num_pixels | Statistic::nan_count | Statistic::sum | Statistic::sum_sq | Statistic::min |
+                       Statistic::max)) {
         return;
     }
 
     for (std::size_t c = 0; c < static_cast<std::size_t>(block.channel_count); ++c) {
         const auto z = channel_offset + static_cast<std::size_t>(block.first_channel) + c;
-        const double n = counted.num_pixels[c];
+        const auto counted = block.Totals(0, c);
+        const double n = counted.num_pixels;
         stats[CARTA::StatsType::NumPixels][z] = n;
-        stats[CARTA::StatsType::NanCount][z] = counted.nan_count[c];
+        stats[CARTA::StatsType::NanCount][z] = counted.nan_count;
         if (n == 0.0) {
             // Everything but the two counts is undefined for a channel with no valid pixel, and the
             // profile is already NaN there.
             continue;
         }
-        const double sum = counted.sum[c];
-        const double sum_sq = counted.sum_sq[c];
-        const double smallest = counted.min[c];
-        const double largest = counted.max[c];
+        const double sum = counted.sum;
+        const double sum_sq = counted.sum_sq;
+        const double smallest = counted.min;
+        const double largest = counted.max;
         const auto derived = Derive(n, sum, sum_sq, 0.0);
         stats[CARTA::StatsType::Sum][z] = sum;
         stats[CARTA::StatsType::SumSq][z] = sum_sq;
@@ -115,39 +86,28 @@ void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, 
 }
 
 // The six accumulators a reduction produces, as the statistics the caller's own calculator would
-// have produced from the same pixels.
+// have produced from the same pixels. A statistic that was not accumulated reads as SpectralTotals
+// says -- zero for the sums, NaN for the extrema -- which is the value that calculator would have
+// left there.
 //
 // An empty plane is the case worth naming: BasicStatsCalculator leaves its extrema at the
 // identities it started from rather than reporting NaN, and callers compare against those, so the
 // NaN a reduction reports for an untouched extremum is turned back into them here.
-BasicStats<float> PlaneStats(const carta::zarr::SpectralBlock& block, std::size_t channel) {
-    const auto counted = UnpackStatistics(block);
-    // A statistic this block does not carry reads as the value the caller's own calculator would
-    // have left there, which is zero for the sums and NaN for the extrema.
-    const auto at = [&](const double* values, double absent) { return values == nullptr ? absent : values[channel]; };
-
-    const double num_pixels = at(counted.num_pixels, 0.0);
-    const auto count = static_cast<std::size_t>(num_pixels);
+BasicStats<float> PlaneStats(const carta::zarr::SpectralTotals& counted) {
+    const auto count = static_cast<std::size_t>(counted.num_pixels);
     if (count == 0) {
         return BasicStats<float>();
     }
-    const double sum = at(counted.sum, 0.0);
-    const double sum_sq = at(counted.sum_sq, 0.0);
-    const auto derived = Derive(num_pixels, sum, sum_sq, DOUBLE_NAN);
-    return BasicStats<float>{count, sum, derived.mean, derived.sigma, static_cast<float>(at(counted.min, DOUBLE_NAN)),
-        static_cast<float>(at(counted.max, DOUBLE_NAN)), derived.rms, sum_sq};
+    const auto derived = Derive(counted.num_pixels, counted.sum, counted.sum_sq, DOUBLE_NAN);
+    return BasicStats<float>{count, counted.sum, derived.mean, derived.sigma, static_cast<float>(counted.min),
+        static_cast<float>(counted.max), derived.rms, counted.sum_sq};
 }
 
 // The statistics CARTA reports, from what one pass counted. Shared by the answer and by the
 // snapshots handed out on the way, which are the same shape over fewer pixels.
 BasicStats<float> ToBasicStats(const carta::zarr::CubeHistogramResult& computed) {
-    const auto count = static_cast<std::size_t>(computed.num_pixels);
-    if (count == 0) {
-        return BasicStats<float>();
-    }
-    const auto derived = Derive(computed.num_pixels, computed.sum, computed.sum_sq, DOUBLE_NAN);
-    return BasicStats<float>{count, computed.sum, derived.mean, derived.sigma, static_cast<float>(computed.minimum),
-        static_cast<float>(computed.maximum), derived.rms, computed.sum_sq};
+    return PlaneStats(carta::zarr::SpectralTotals{
+        computed.num_pixels, computed.nan_count, computed.sum, computed.sum_sq, computed.minimum, computed.maximum});
 }
 
 }  // namespace
@@ -284,24 +244,26 @@ bool ZarrLoader::GetMultiRegionSpectralData(const std::vector<RegionMaskSpec>& r
     carta::zarr::ReadOptions options;
     options.temporary_memory_limit_bytes = _read_budget_bytes;
 
+    // Made once and refilled for every block, so that handing a block on costs two pointers per
+    // region rather than an allocation.
+    RegionSpectralBlock forwarded;
+    forwarded.region_count = zarr_regions.size();
+    forwarded.num_pixels.resize(zarr_regions.size());
+    forwarded.sums.resize(zarr_regions.size());
+
     try {
         return image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
-            RegionSpectralBlock forwarded;
             forwarded.first_channel = static_cast<std::size_t>(block.first_channel);
             forwarded.channel_count = static_cast<std::size_t>(block.channel_count);
-            forwarded.region_count = zarr_regions.size();
-            forwarded.region_stride = block.region_stride;
             // A block that takes more than one read arrives several times, filling in. The caller
             // needs to know which arrival is the answer, so this is passed on rather than dropped:
             // the generator wants the partials to show progress with.
             forwarded.complete = block.complete;
             forwarded.completeness = block.completeness;
-            // Both statistics live in the one buffer; their slots are what the block declares.
-            const auto counted = UnpackStatistics(block);
-            forwarded.num_pixels = counted.num_pixels;
-            forwarded.sum = counted.sum;
-            if (forwarded.num_pixels == nullptr || forwarded.sum == nullptr) {
-                return false;
+            // Both were asked for above, so the block carries both.
+            for (std::size_t r = 0; r < forwarded.region_count; ++r) {
+                forwarded.num_pixels[r] = block.Series(r, carta::zarr::Statistic::num_pixels);
+                forwarded.sums[r] = block.Series(r, carta::zarr::Statistic::sum);
             }
             return sink(forwarded);
         }, options);
@@ -347,7 +309,7 @@ bool ZarrLoader::GetCubeBasicStats(
             }
             for (std::uint64_t c = 0; c < block.channel_count; ++c) {
                 if (!plane_callback(static_cast<int>(block.first_channel + c),
-                        PlaneStats(block, static_cast<std::size_t>(c)))) {
+                        PlaneStats(block.Totals(0, c)))) {
                     return false;
                 }
             }

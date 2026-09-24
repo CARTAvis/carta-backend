@@ -332,9 +332,9 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataMatchesAPerRegionSum) {
                         const auto z = static_cast<int>(block.first_channel + c);
                         double sum = 0.0;
                         const double count = expected(regions[r], z, stokes, sum);
-                        EXPECT_DOUBLE_EQ(block.num_pixels[(r * block.region_stride) + c], count)
+                        EXPECT_DOUBLE_EQ(block.NumPixels(r)[c], count)
                             << "region " << r << " z=" << z << " stokes=" << stokes;
-                        EXPECT_DOUBLE_EQ(block.sum[(r * block.region_stride) + c], sum)
+                        EXPECT_DOUBLE_EQ(block.Sum(r)[c], sum)
                             << "region " << r << " z=" << z << " stokes=" << stokes;
                     }
                 }
@@ -580,7 +580,7 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataReportsAnEmptyChannel) {
     ASSERT_TRUE(loader->GetMultiRegionSpectralData(regions, AxisRange(0, kDepth - 1), 2,
         [&](const RegionSpectralBlock& block) {
             for (std::size_t c = 0; c < block.channel_count; ++c) {
-                counts.at(block.first_channel + c) = block.num_pixels[c];
+                counts.at(block.first_channel + c) = block.NumPixels(0)[c];
             }
             return true;
         }));

@@ -110,17 +110,26 @@ RegionMaskRuns RunsOfMask(const casacore::ArrayLattice<casacore::Bool>& mask, bo
 
 // One run of channels of a batched reduction, for every region at once.
 //
-// num_pixels and sum are both laid out [region][channel] with region_stride doubles between
-// regions, and point into the loader's own buffer: they are valid only until the callback returns.
-// A channel whose region caught no valid pixel has num_pixels zero, which is the caller's signal
-// that the mean it wants does not exist rather than a number to divide by.
+// NumPixels(r) and Sum(r) are region r's channel_count values, and point into the loader's own
+// buffer: they are valid only until the callback returns. How the loader lays its regions out is
+// its own business, which is why they are asked for by region rather than walked with a stride. A
+// channel whose region caught no valid pixel has num_pixels zero, which is the caller's signal that
+// the mean it wants does not exist rather than a number to divide by.
 struct RegionSpectralBlock {
     std::size_t first_channel = 0;
     std::size_t channel_count = 0;
     std::size_t region_count = 0;
-    std::size_t region_stride = 0;
-    const double* num_pixels = nullptr;
-    const double* sum = nullptr;
+    // One pointer per region, filled by the loader and read through the two accessors.
+    std::vector<const double*> num_pixels;
+    std::vector<const double*> sums;
+
+    const double* NumPixels(std::size_t region) const {
+        return num_pixels.at(region);
+    }
+    const double* Sum(std::size_t region) const {
+        return sums.at(region);
+    }
+
     // Whether these values are final. A reduction whose block spans more than one read hands the
     // block over as it fills, so a caller has something to show long before the last pixel is in;
     // the same channels arrive again, refined, and a last time with this set. The counts and sums
