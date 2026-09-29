@@ -33,14 +33,24 @@ namespace carta {
 // It is also where "can CARTA display this image" is decided, because the answer is the same
 // question: an image whose axes do not map onto CARTA's four has no shape to report. Holding one of
 // these is the proof that the image can be served; Of returns none, and says why, for one that
-// cannot. The file list asks it before offering an image, and the image asks it before opening one,
-// so the two cannot answer differently.
+// cannot. The file list asks it of a listed image's axes before offering it, and the image asks it
+// again of its descriptor before opening, over the same axes, so the two cannot answer differently.
 class CartaZarrAxes {
 public:
     // The axes of an image CARTA can display, or none with `reason` saying why not. CARTA can
     // display an image with exactly one each of the spatial, spectral and polarization axes, no time
-    // axis longer than one, no axis of any other kind, every length within casacore's, and the
-    // direction, spectral and polarization coordinates it builds a coordinate system from.
+    // axis longer than one, no axis of any other kind, and every length above zero and within
+    // casacore's.
+    //
+    // Asked of carta::zarr::ImageEntry::axes, which the listing carries, so that a dataset's images
+    // can be sorted into those CARTA shows without opening any of them.
+    static std::optional<CartaZarrAxes> Of(const std::vector<carta::zarr::AxisDescriptor>& axes, std::string& reason);
+    // The same of an opened image's axes, and also that it has the direction, spectral and
+    // polarization coordinates a coordinate system is built from.
+    //
+    // A listed image that passes the first cannot fail this. carta-zarr opens only a dataset whose
+    // probe found a coordinate for every sky axis, so an openable image in one has all three; the
+    // one exception, a spectral axis of no channels, the first refuses as an empty axis.
     static std::optional<CartaZarrAxes> Of(const carta::zarr::ImageDescriptor& descriptor, std::string& reason);
 
     // The image's shape in CARTA's order.

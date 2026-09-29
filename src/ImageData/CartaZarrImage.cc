@@ -85,16 +85,16 @@ CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& i
         // library's own default is the first image it will open, and CARTA refuses more than the
         // library does, so the two can differ. What is said when none will do is why the first one
         // would not.
+        //
+        // Decided from the listing's axes, as the file list decides what to offer, so that the image
+        // opened here is the first one the file list offered.
         std::string refusal;
         for (const auto& entry : dataset.value().descriptor().images) {
             if (!entry.openable) {
                 continue;
             }
-            auto candidate = dataset.value().OpenImage(entry.id);
             std::string reason;
-            if (!candidate) {
-                reason = "Failed to open XRADIO image '" + entry.id + "': " + candidate.error().message;
-            } else if (CartaZarrAxes::Of(candidate.value().descriptor(), reason)) {
+            if (CartaZarrAxes::Of(entry.axes, reason)) {
                 _image_id = entry.id;
                 break;
             }

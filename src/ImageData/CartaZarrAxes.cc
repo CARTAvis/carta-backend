@@ -28,14 +28,14 @@ std::optional<std::size_t> CartaAxisOf(carta::zarr::AxisRole role) {
 
 }  // namespace
 
-std::optional<CartaZarrAxes> CartaZarrAxes::Of(const carta::zarr::ImageDescriptor& descriptor, std::string& reason) {
+std::optional<CartaZarrAxes> CartaZarrAxes::Of(const std::vector<carta::zarr::AxisDescriptor>& image_axes, std::string& reason) {
     CartaZarrAxes axes;
-    axes._rank = descriptor.axes.size();
+    axes._rank = image_axes.size();
     axes._shape = casacore::IPosition(4, 0);
     std::array<bool, 4> seen{};
 
-    for (std::size_t index = 0; index < descriptor.axes.size(); ++index) {
-        const auto& axis = descriptor.axes[index];
+    for (std::size_t index = 0; index < image_axes.size(); ++index) {
+        const auto& axis = image_axes[index];
         if (axis.role == carta::zarr::AxisRole::time) {
             if (axes._time_index || axis.length != 1) {
                 reason = "CARTA backend currently supports only XRADIO images with a singleton time axis";
@@ -53,6 +53,10 @@ std::optional<CartaZarrAxes> CartaZarrAxes::Of(const carta::zarr::ImageDescripto
             reason = "XRADIO image has two axes playing the part of " + axis.name;
             return std::nullopt;
         }
+        if (axis.length == 0) {
+            reason = "XRADIO image has an empty axis: " + axis.name;
+            return std::nullopt;
+        }
         if (axis.length > static_cast<std::uint64_t>(std::numeric_limits<casacore::Int>::max())) {
             reason = "XRADIO image dimension is too large for casacore";
             return std::nullopt;
@@ -66,6 +70,14 @@ std::optional<CartaZarrAxes> CartaZarrAxes::Of(const carta::zarr::ImageDescripto
             reason = "XRADIO image lacks one of the spatial, spectral and polarization axes CARTA displays";
             return std::nullopt;
         }
+    }
+    return axes;
+}
+
+std::optional<CartaZarrAxes> CartaZarrAxes::Of(const carta::zarr::ImageDescriptor& descriptor, std::string& reason) {
+    auto axes = Of(descriptor.axes, reason);
+    if (!axes) {
+        return std::nullopt;
     }
     if (!descriptor.direction || !descriptor.spectral || !descriptor.polarization) {
         reason = "XRADIO image is missing a required coordinate descriptor";

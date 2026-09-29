@@ -157,3 +157,31 @@ TEST(CartaZarrAxes, AnAxisLongerThanCasacoreCountsIsNotDisplayed) {
     EXPECT_FALSE(CartaZarrAxes::Of(descriptor, reason).has_value());
     EXPECT_NE(reason.find("too large"), std::string::npos) << reason;
 }
+
+// An axis with nothing on it has no plane to show, and it is refused from the axes alone -- which is
+// what keeps a listed image from failing to open for the one reason the axes could not otherwise
+// see: a spectral axis of no channels has no spectral coordinate to build.
+TEST(CartaZarrAxes, AnEmptyAxisIsNotDisplayed) {
+    std::string reason;
+    auto descriptor = XradioOrder();
+    descriptor.axes[2].length = 0;
+    descriptor.spectral.reset();
+    EXPECT_FALSE(CartaZarrAxes::Of(descriptor.axes, reason).has_value());
+    EXPECT_NE(reason.find("empty axis"), std::string::npos) << reason;
+}
+
+// The file list decides from a listed image's axes and the image decides again from its descriptor.
+// The two must agree about every image the first one offers, or the list offers what will not open.
+TEST(CartaZarrAxes, TheAxesAloneAnswerAsTheDescriptorDoes) {
+    for (const auto& descriptor : {XradioOrder(), Shuffled(), XradioOrder(2)}) {
+        std::string from_axes;
+        std::string from_descriptor;
+        const auto listed = CartaZarrAxes::Of(descriptor.axes, from_axes);
+        const auto opened = CartaZarrAxes::Of(descriptor, from_descriptor);
+        ASSERT_EQ(listed.has_value(), opened.has_value()) << from_axes << " / " << from_descriptor;
+        EXPECT_EQ(from_axes, from_descriptor);
+        if (listed) {
+            EXPECT_EQ(listed->Shape(), opened->Shape());
+        }
+    }
+}
