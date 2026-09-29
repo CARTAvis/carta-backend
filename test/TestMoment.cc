@@ -290,7 +290,7 @@ TEST_F(MomentTest, MeasureZarrWalk) {
     }
 
     // Match what Main.cc does at startup. Without this the shared context is built from a
-    // default OpenOptions, which leaves TensorStore's cache pool at its own default of
+    // default ContextOptions, which leaves TensorStore's cache pool at its own default of
     // total_bytes_limit 0 -- no decoded-chunk cache at all. A walk that revisits chunks
     // measured against that is measuring a configuration the server never runs in.
     const std::string cache = FromEnv("CARTA_MOMENT_CACHE_MB");

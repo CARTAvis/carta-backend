@@ -31,7 +31,7 @@ std::optional<carta::zarr::Context>& SharedContext() {
     return context;
 }
 
-carta::zarr::Context CreateContext(const carta::zarr::OpenOptions& options) {
+carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options) {
     auto context_result = carta::zarr::Context::Create(options);
     if (context_result) {
         return *std::move(context_result);
@@ -78,7 +78,7 @@ ZarrHistogramMethod ParseZarrHistogramMethod(const std::string& method) {
 }
 
 void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, int cache_pool_mb, int omp_thread_count) {
-    carta::zarr::OpenOptions options;
+    carta::zarr::ContextOptions options;
     options.io_threads = file_io_concurrency > 0 ? static_cast<unsigned int>(file_io_concurrency) : 0;
 
     // I/O threads are mostly blocked on reads and do not reduce the decode thread budget.
