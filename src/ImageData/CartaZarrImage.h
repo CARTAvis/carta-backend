@@ -67,8 +67,9 @@ public:
         const carta::zarr::ReadOptions& options = {}) const;
     // One histogram for the whole cube in a single pass, with the range found on the way. Reports
     // what the other two do: false when the caller cancelled, an exception when the read failed.
-    bool ComputeCubeHistogram(const carta::zarr::CubeHistogramRequest& request,
-        carta::zarr::CubeHistogramResult& result, const carta::zarr::ReadOptions& options = {}) const;
+    // `progress` is told how far the walk is between reads, as Read's is.
+    bool ComputeCubeHistogram(const carta::zarr::CubeHistogramRequest& request, carta::zarr::CubeHistogramResult& result,
+        const carta::zarr::ReadOptions& options = {}, const carta::zarr::CubeHistogramProgressCallback& progress = {}) const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where,
         const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;

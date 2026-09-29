@@ -271,9 +271,9 @@ bool CartaZarrImage::ComputeHistogram(const carta::zarr::HistogramRequest& reque
     return Finished(Opened("ComputeHistogram").ComputeHistogram(request, sink, options), "ComputeHistogram");
 }
 
-bool CartaZarrImage::ComputeCubeHistogram(const carta::zarr::CubeHistogramRequest& request,
-    carta::zarr::CubeHistogramResult& result, const carta::zarr::ReadOptions& options) const {
-    auto computed = Opened("ComputeCubeHistogram").ComputeCubeHistogram(request, options);
+bool CartaZarrImage::ComputeCubeHistogram(const carta::zarr::CubeHistogramRequest& request, carta::zarr::CubeHistogramResult& result,
+    const carta::zarr::ReadOptions& options, const carta::zarr::CubeHistogramProgressCallback& progress) const {
+    auto computed = Opened("ComputeCubeHistogram").ComputeCubeHistogram(request, options, progress);
     if (!Finished(computed, "ComputeCubeHistogram")) {
         return false;
     }

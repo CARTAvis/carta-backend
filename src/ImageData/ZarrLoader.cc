@@ -413,8 +413,9 @@ ZarrBatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64
     request.planes.polarization = static_cast<std::uint64_t>(stokes);
     request.bins = static_cast<std::uint32_t>(num_bins);
     request.spatial_sample = spatial_sample;
+    carta::zarr::CubeHistogramProgressCallback zarr_progress;
     if (progress) {
-        request.progress = [&progress](const carta::zarr::CubeHistogramProgress& update) {
+        zarr_progress = [&progress](const carta::zarr::CubeHistogramProgress& update) {
             CubeHistogramUpdate reported;
             reported.progress = update.progress;
             // Kept lazy the whole way down: the library only re-aggregates if this is called, and
@@ -436,7 +437,7 @@ ZarrBatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64
 
     carta::zarr::CubeHistogramResult computed;
     try {
-        if (!image->ComputeCubeHistogram(request, computed, options)) {
+        if (!image->ComputeCubeHistogram(request, computed, options, zarr_progress)) {
             return ZarrBatchOutcome::cancelled;
         }
     } catch (const casacore::AipsError& error) {
