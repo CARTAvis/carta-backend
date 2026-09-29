@@ -242,15 +242,17 @@ ZarrBatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& re
     std::vector<carta::zarr::RegionMask> zarr_regions;
     zarr_regions.reserve(regions.size());
     for (const auto& region : regions) {
+        // A RegionMaskSpec's raster describes exactly its bounding box -- RegionHandler refuses one
+        // that does not -- so its length is the box's, and carta-zarr checks it against that.
+        const auto* raster = reinterpret_cast<const std::uint8_t*>(region.mask);
         zarr_regions.push_back(carta::zarr::RegionMask{region.x_start, region.y_start, region.width, region.height,
-            reinterpret_cast<const std::uint8_t*>(region.mask)});
+            {raster, raster != nullptr ? static_cast<std::size_t>(region.width * region.height) : 0}});
     }
 
     carta::zarr::SpectralReduceRequest request;
     request.planes.spectral = {static_cast<std::uint64_t>(z_range.from), static_cast<std::uint64_t>(z_range.to - z_range.from + 1), 1};
     request.planes.polarization = static_cast<std::uint64_t>(stokes);
-    request.regions = zarr_regions.data();
-    request.region_count = zarr_regions.size();
+    request.regions = {zarr_regions.data(), zarr_regions.size()};
     // The generator wants a mean, and a mean is a sum over a count. Nothing else is read, so
     // nothing else is accumulated.
     request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum;
@@ -302,13 +304,12 @@ ZarrBatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>&
     // One region covering the plane, with no mask: the reduction's own six accumulators over the
     // whole image are exactly a plane's basic statistics, so this needs no reduction of its own.
     const carta::zarr::RegionMask region{0, 0, static_cast<std::uint64_t>(_image_shape(0)),
-        static_cast<std::uint64_t>(_image_shape(1)), nullptr};
+        static_cast<std::uint64_t>(_image_shape(1))};
 
     carta::zarr::SpectralReduceRequest request;
     request.planes.spectral = {0, depth, 1};
     request.planes.polarization = static_cast<std::uint64_t>(stokes);
-    request.regions = &region;
-    request.region_count = 1;
+    request.regions = {&region, 1};
     request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum |
                          carta::zarr::Statistic::sum_sq | carta::zarr::Statistic::min |
                          carta::zarr::Statistic::max;
@@ -538,14 +539,13 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to borrow a mask");
         carta::zarr::RegionMask region{static_cast<std::uint64_t>(origin(0)), static_cast<std::uint64_t>(origin(1)),
             static_cast<std::uint64_t>(mask_shape(0)), static_cast<std::uint64_t>(mask_shape(1)),
-            reinterpret_cast<const std::uint8_t*>(mask.asArray().data())};
+            {reinterpret_cast<const std::uint8_t*>(mask.asArray().data()), static_cast<std::size_t>(mask.asArray().nelements())}};
 
         carta::zarr::SpectralReduceRequest request;
         request.planes.spectral = {static_cast<std::uint64_t>(range.from + state.channels_done),
             static_cast<std::uint64_t>(channels - state.channels_done), 1};
         request.planes.polarization = static_cast<std::uint64_t>(stokes);
-        request.regions = &region;
-        request.region_count = 1;
+        request.regions = {&region, 1};
         request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::nan_count |
                              carta::zarr::Statistic::sum | carta::zarr::Statistic::sum_sq |
                              carta::zarr::Statistic::min | carta::zarr::Statistic::max;
