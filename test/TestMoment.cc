@@ -11,7 +11,9 @@
 
 #include <spdlog/spdlog.h>
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <casacore/images/Images/PagedImage.h>
+#include <casacore/images/Images/TempImage.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
 
 #include "ImageData/FileLoader.h"
@@ -24,6 +26,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 
 #include "CommonTestUtilities.h"
 
@@ -107,8 +110,11 @@ public:
         return moments;
     }
 
+    // `configure`, when given, is applied to both generators before either computes anything, so that
+    // a method other than the default can be compared on the same terms.
     static void GenerateMoments(const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis,
-        const casacore::Vector<casacore::Int>& wanted = casacore::Vector<casacore::Int>()) {
+        const casacore::Vector<casacore::Int>& wanted = casacore::Vector<casacore::Int>(),
+        const std::function<void(casa::MomentsBase<float>&)>& configure = {}) {
         ASSERT_TRUE(image) << "Image must not be null";
         // create casa/carta moments generators
         casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
@@ -145,6 +151,11 @@ public:
         casacore::Bool remove_axis(false);
 
         ASSERT_LT(moments_axis, image->shape().size()) << "Moment axis out of range for image shape";
+
+        if (configure) {
+            configure(casa_image_moments);
+            configure(carta_image_moments);
+        }
 
         // calculate moments with casa moment generator
         casa_image_moments.setMoments(moments);
@@ -368,4 +379,38 @@ TEST_F(MomentTest, CheckConsistencyInParallel) {
 
     int moment_axis(2);
     GenerateMoments(image, moment_axis, MomentsWithoutCoordinates());
+}
+
+// The window method runs its collapser on one worker, because MomentWindow keeps the window it finds
+// for a line in function-local statics that every collapser shares. With the coordinate moments left
+// out, as here, the walk would otherwise run on many, and two of them would overwrite each other's
+// window mid-line. casa::ImageMoments runs the same collapser on one thread, so it is the oracle.
+//
+// Made here rather than read from a fixture, because the race only shows when lines want different
+// windows: every fixture in the repository is a few channels deep, where most lines find the same
+// one and overwriting it changes nothing. Here each line's line sits at a channel of its own.
+TEST_F(MomentTest, CheckConsistencyForTheWindowMethod) {
+    const casacore::IPosition shape(3, 48, 48, 64);
+    auto image = std::make_shared<casacore::TempImage<float>>(casacore::TiledShape(shape), casacore::CoordinateUtil::defaultCoords3D());
+    casacore::Array<float> pixels(shape);
+    std::uint32_t state = 12345;
+    const auto noise = [&state]() {
+        state = state * 1664525u + 1013904223u;
+        return (static_cast<float>(state >> 8) / static_cast<float>(1u << 24)) - 0.5f;
+    };
+    for (casacore::Int y = 0; y < shape(1); ++y) {
+        for (casacore::Int x = 0; x < shape(0); ++x) {
+            const float centre = 8.0f + static_cast<float>((x * 7 + y * 13) % 48);
+            const float width = 1.5f + static_cast<float>((x + y) % 4);
+            for (casacore::Int z = 0; z < shape(2); ++z) {
+                const float offset = (static_cast<float>(z) - centre) / width;
+                pixels(casacore::IPosition(3, x, y, z)) = 10.0f * std::exp(-0.5f * offset * offset) + noise();
+            }
+        }
+    }
+    image->put(pixels);
+
+    casacore::Vector<casacore::Int> window(1, casa::MomentsBase<float>::WINDOW);
+    GenerateMoments(image, 2, MomentsWithoutCoordinates(),
+        [&](casa::MomentsBase<float>& moments) { ASSERT_TRUE(moments.setWinFitMethod(window)) << moments.errorMessage(); });
 }

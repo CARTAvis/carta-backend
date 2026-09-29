@@ -426,9 +426,19 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
             break;
         }
     }
-    const std::size_t workers = needs_world_coordinates ? 1 : std::max(1, omp_get_max_threads());
+    //
+    // And only a clipping collapser runs on more than one, because MomentClip is the one whose
+    // multiProcess has been read and measured for it. MomentWindow's keeps the window it finds for a
+    // line in two function-local statics (MomentWindow.tcc:167), which every collapser shares
+    // whatever instance it is, so two workers overwrite each other's window mid-line. MomentFit has
+    // not been shown to be safe either. CARTA asks for neither today -- nothing calls
+    // setWinFitMethod -- which is why this is a guard rather than a fix anyone has seen.
+    const bool clipping = clip_method || smooth_clip_method;
+    const std::size_t workers = (needs_world_coordinates || !clipping) ? 1 : std::max(1, omp_get_max_threads());
     if (needs_world_coordinates) {
         spdlog::debug("moment walk: one worker, because a coordinate moment was asked for");
+    } else if (!clipping) {
+        spdlog::debug("moment walk: one worker, because the window and fit methods are not safe to run in parallel");
     }
     std::vector<std::shared_ptr<casa::MomentCalcBase<T>>> moment_calculators(workers);
     for (std::size_t worker = 0; worker < workers; ++worker) {

@@ -21,6 +21,7 @@
 #include <imageanalysis/ImageAnalysis/MomentsBase.h>
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
 
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -99,8 +100,10 @@ private:
     casacore::IPosition SlabShape(casacore::uInt collapse_axis, const casacore::MaskedLattice<T>& lattice_in,
         casacore::IPosition& axis_path);
 
-    // Stop moment calculation
-    volatile bool _stop;
+    // Stop moment calculation. Set by StopCalculation on another thread, and read by every worker of
+    // the parallel walk as well as by the thread that runs it, so it is atomic: volatile made each
+    // read happen, but not the reads and the write race-free.
+    std::atomic<bool> _stop;
 
     // Number of steps have done for the beam convolution
     casacore::uInt _steps_for_beam_convolution = 0;
