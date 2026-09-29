@@ -10,7 +10,6 @@
 #include <carta-zarr/carta_zarr.h>
 
 #include <cstdint>
-#include <memory>
 #include <string>
 
 namespace carta {
@@ -20,8 +19,9 @@ namespace carta {
 void ConfigureZarrContext(
     int file_io_concurrency, int data_copy_concurrency, int cache_pool_mb, int omp_thread_count);
 
-// Returns the context configured at startup.
-std::shared_ptr<const carta::zarr::Context> GetZarrContext();
+// Returns the context configured at startup. A Context is already a shared handle, so this is a
+// copy of the one handle rather than a pointer to it.
+carta::zarr::Context GetZarrContext();
 
 // How a cube histogram over a Zarr store should be computed.
 //

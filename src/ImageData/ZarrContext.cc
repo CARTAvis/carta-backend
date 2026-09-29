@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <mutex>
+#include <optional>
 
 #include <casacore/casa/Exceptions/Error.h>
 #include <spdlog/spdlog.h>
@@ -23,15 +24,17 @@ std::mutex& ContextMutex() {
     return mutex;
 }
 
-std::shared_ptr<const carta::zarr::Context>& SharedContext() {
-    static std::shared_ptr<const carta::zarr::Context> context;
+// Empty until the first of ConfigureZarrContext and GetZarrContext, which is the only reason this is
+// an optional: a carta-zarr Context always refers to one.
+std::optional<carta::zarr::Context>& SharedContext() {
+    static std::optional<carta::zarr::Context> context;
     return context;
 }
 
-std::shared_ptr<const carta::zarr::Context> CreateContext(const carta::zarr::OpenOptions& options) {
+carta::zarr::Context CreateContext(const carta::zarr::OpenOptions& options) {
     auto context_result = carta::zarr::Context::Create(options);
     if (context_result) {
-        return std::make_shared<const carta::zarr::Context>(std::move(context_result.value()));
+        return *std::move(context_result);
     }
 
     spdlog::warn("Failed to apply requested carta-zarr resource limits ({}); using carta-zarr defaults",
@@ -40,7 +43,7 @@ std::shared_ptr<const carta::zarr::Context> CreateContext(const carta::zarr::Ope
     if (!default_context) {
         throw casacore::AipsError("Failed to create default carta-zarr context: " + default_context.error().message);
     }
-    return std::make_shared<const carta::zarr::Context>(std::move(default_context.value()));
+    return *std::move(default_context);
 }
 
 }  // namespace
@@ -97,12 +100,12 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, in
                   file_io_threads, effective_data_copy_threads, cache_size_mib);
 }
 
-std::shared_ptr<const carta::zarr::Context> GetZarrContext() {
+carta::zarr::Context GetZarrContext() {
     std::scoped_lock lock(ContextMutex());
     if (!SharedContext()) {
         SharedContext() = CreateContext({});
     }
-    return SharedContext();
+    return *SharedContext();
 }
 
 }  // namespace carta

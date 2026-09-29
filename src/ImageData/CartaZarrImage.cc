@@ -75,7 +75,7 @@ bool Finished(const carta::zarr::Result<T>& result, const char* where) {
 
 CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& image_id) : _filename(filename) {
     const auto context = GetZarrContext();
-    auto dataset = carta::zarr::Dataset::Open(*context, filename);
+    auto dataset = carta::zarr::Dataset::Open(context, filename);
     if (!dataset) {
         throw casacore::AipsError("Failed to open XRADIO dataset: " + dataset.error().message);
     }

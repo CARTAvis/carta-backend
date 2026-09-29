@@ -122,7 +122,7 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
     }
 
     const auto context = GetZarrContext();
-    auto dataset = carta::zarr::Dataset::Open(*context, _filename);
+    auto dataset = carta::zarr::Dataset::Open(context, _filename);
     if (!dataset) {
         casacore::Directory cc_dir(cc_file);
         entry.size = cc_dir.size();
