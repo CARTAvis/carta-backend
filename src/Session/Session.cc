@@ -1755,6 +1755,11 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 t_start = t_end;
             };
 
+            // Asked by the loader's own walks between their reads, not only when a plane is done: a
+            // plane of a large image is done only after every read of its chunk layer, and a stop
+            // that waited for it waited that long.
+            const auto histogram_cancelled = [this]() { return _histogram_context.is_group_execution_cancelled(); };
+
             // What one plane costs the caller, shared by the loader's own walk and the per-plane
             // loop below so that the two report progress and stop at the same points.
             auto take_plane_stats = [&](int z, const BasicStats<float>& z_stats) {
@@ -1776,7 +1781,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             // cancelled has nothing more to do.
             if (one_pass_done) {
                 cube_stats = one_pass_stats;
-            } else if (_frames.at(file_id)->GetCubeBasicStats(stokes, take_plane_stats) == ZarrBatchOutcome::failed) {
+            } else if (_frames.at(file_id)->GetCubeBasicStats(stokes, histogram_cancelled, take_plane_stats) == ZarrBatchOutcome::failed) {
                 cube_stats = BasicStats<float>();
                 for (size_t z = 0; z < depth; ++z) {
                     // stats for this z
@@ -1846,11 +1851,12 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 if (one_pass_done) {
                     binned = ZarrBatchOutcome::finished;
                 } else if (zarr_batched) {
-                    binned = zarr_batched->PlaneHistograms(stokes, num_bins, bounds, [&](int z, const std::vector<int>& bins) {
-                        Histogram plane(num_bins, bounds, nullptr, 0);
-                        plane.SetHistogramBins(bins);
-                        return take_plane_histogram(z, plane);
-                    });
+                    binned = zarr_batched->PlaneHistograms(
+                        stokes, num_bins, bounds, histogram_cancelled, [&](int z, const std::vector<int>& bins) {
+                            Histogram plane(num_bins, bounds, nullptr, 0);
+                            plane.SetHistogramBins(bins);
+                            return take_plane_histogram(z, plane);
+                        });
                 }
 
                 if (binned == ZarrBatchOutcome::failed) {

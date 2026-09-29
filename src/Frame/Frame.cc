@@ -1836,14 +1836,15 @@ ZarrBatchedReducer* Frame::ZarrBatched() {
     return _loader->ZarrBatched();
 }
 
-ZarrBatchOutcome Frame::GetCubeBasicStats(int stokes, const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
+ZarrBatchOutcome Frame::GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
+    const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
     auto* batched = ZarrBatched();
     if (!batched) {
         return ZarrBatchOutcome::failed;
     }
     // Each plane is cached on the way past, because the per-plane path this replaces cached it and
     // later per-plane requests still look there.
-    return batched->PlaneStats(stokes, [&](int z, const BasicStats<float>& stats) {
+    return batched->PlaneStats(stokes, cancellation_requested, [&](int z, const BasicStats<float>& stats) {
         _image_basic_stats[CacheKey(z, stokes)] = stats;
         return plane_callback(z, stats);
     });

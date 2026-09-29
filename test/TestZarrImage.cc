@@ -714,11 +714,14 @@ TEST_F(ZarrImageTest, CubeBasicStatsAgreeWithThePerPlaneLoop) {
 
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::map<int, BasicStats<float>> from_loader;
-        ASSERT_EQ(loader->ZarrBatched()->PlaneStats(stokes, [&](int z, const BasicStats<float>& stats) {
-            EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
-            from_loader[z] = stats;
-            return true;
-        }), ZarrBatchOutcome::finished) << "the Zarr loader should serve cube statistics itself";
+        ASSERT_EQ(loader->ZarrBatched()->PlaneStats(stokes, {},
+                      [&](int z, const BasicStats<float>& stats) {
+                          EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
+                          from_loader[z] = stats;
+                          return true;
+                      }),
+            ZarrBatchOutcome::finished)
+            << "the Zarr loader should serve cube statistics itself";
         ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
 
         for (int z = 0; z < kDepth; ++z) {
@@ -764,10 +767,12 @@ TEST_F(ZarrImageTest, CubeBasicStatsAgreeThroughAFrame) {
 
     const int stokes = 1;
     std::map<int, BasicStats<float>> walked;
-    ASSERT_EQ(frame->GetCubeBasicStats(stokes, [&](int z, const BasicStats<float>& stats) {
-        walked[z] = stats;
-        return true;
-    }), ZarrBatchOutcome::finished);
+    ASSERT_EQ(frame->GetCubeBasicStats(stokes, {},
+                  [&](int z, const BasicStats<float>& stats) {
+                      walked[z] = stats;
+                      return true;
+                  }),
+        ZarrBatchOutcome::finished);
     ASSERT_EQ(walked.size(), static_cast<std::size_t>(kDepth));
 
     for (int z = 0; z < kDepth; ++z) {
@@ -793,11 +798,14 @@ TEST_F(ZarrImageTest, CubeHistogramAgreesWithThePerPlaneLoop) {
     const HistogramBounds bounds(0.0, 4000.0);
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::map<int, std::vector<int>> from_loader;
-        ASSERT_EQ(frame->ZarrBatched()->PlaneHistograms(stokes, num_bins, bounds, [&](int z, const std::vector<int>& bins) {
-            EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
-            from_loader[z] = bins;
-            return true;
-        }), ZarrBatchOutcome::finished) << "the Zarr loader should bin the cube itself";
+        ASSERT_EQ(frame->ZarrBatched()->PlaneHistograms(stokes, num_bins, bounds, {},
+                      [&](int z, const std::vector<int>& bins) {
+                          EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
+                          from_loader[z] = bins;
+                          return true;
+                      }),
+            ZarrBatchOutcome::finished)
+            << "the Zarr loader should bin the cube itself";
         ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
 
         for (int z = 0; z < kDepth; ++z) {
@@ -957,8 +965,8 @@ TEST_F(ZarrImageTest, CubeHistogramDeclinesAnEmptyRange) {
         ++calls;
         return true;
     };
-    EXPECT_EQ(loader->ZarrBatched()->PlaneHistograms(0, 8, HistogramBounds(5.0, 5.0), count), ZarrBatchOutcome::failed);
-    EXPECT_EQ(loader->ZarrBatched()->PlaneHistograms(0, 0, HistogramBounds(0.0, 10.0), count), ZarrBatchOutcome::failed);
+    EXPECT_EQ(loader->ZarrBatched()->PlaneHistograms(0, 8, HistogramBounds(5.0, 5.0), {}, count), ZarrBatchOutcome::failed);
+    EXPECT_EQ(loader->ZarrBatched()->PlaneHistograms(0, 0, HistogramBounds(0.0, 10.0), {}, count), ZarrBatchOutcome::failed);
     EXPECT_EQ(calls, 0) << "a declined request should not have reported a plane";
 }
 
@@ -968,11 +976,62 @@ TEST_F(ZarrImageTest, CubeBasicStatsStopWhenTheCallbackDoes) {
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
     int calls = 0;
-    EXPECT_EQ(loader->ZarrBatched()->PlaneStats(0, [&](int, const BasicStats<float>&) {
-        ++calls;
-        return false;
-    }), ZarrBatchOutcome::cancelled);
+    EXPECT_EQ(loader->ZarrBatched()->PlaneStats(0, {},
+                  [&](int, const BasicStats<float>&) {
+                      ++calls;
+                      return false;
+                  }),
+        ZarrBatchOutcome::cancelled);
     EXPECT_EQ(calls, 1) << "a callback that says stop should not be asked again";
+}
+
+// A stop asked for while a plane is still being read ends the walk there, rather than when the plane
+// is finished. On a large image one plane is every read of its chunk layer, seconds of them, and the
+// callback that used to be the only place a stop was noticed is reached only after all of them.
+//
+// A one-byte budget makes every chunk its own read, so the first plane cannot be finished by the
+// first; the cancellation says yes from its second question on, which is after that first read.
+TEST_F(ZarrImageTest, CubeBasicStatsStopBetweenReadsWhenCancelled) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    zarr_loader->SetReadBudgetBytes(1);
+
+    int asked = 0;
+    int planes = 0;
+    EXPECT_EQ(loader->ZarrBatched()->PlaneStats(
+                  0, [&]() { return ++asked > 1; },
+                  [&](int, const BasicStats<float>&) {
+                      ++planes;
+                      return true;
+                  }),
+        ZarrBatchOutcome::cancelled);
+    EXPECT_GT(asked, 1) << "the walk should have asked again after its first read";
+    EXPECT_EQ(planes, 0) << "the stop should have ended the walk before any plane was finished";
+}
+
+// The same for bin counts, which walk the planes the same way and were stopped the same late way.
+TEST_F(ZarrImageTest, CubeHistogramStopsBetweenReadsWhenCancelled) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    zarr_loader->SetReadBudgetBytes(1);
+
+    int asked = 0;
+    int planes = 0;
+    EXPECT_EQ(loader->ZarrBatched()->PlaneHistograms(
+                  0, 9, HistogramBounds(0.0, 4000.0), [&]() { return ++asked > 1; },
+                  [&](int, const std::vector<int>&) {
+                      ++planes;
+                      return true;
+                  }),
+        ZarrBatchOutcome::cancelled);
+    EXPECT_GT(asked, 1) << "the walk should have asked again after its first read";
+    EXPECT_EQ(planes, 0) << "the stop should have ended the walk before any plane was finished";
 }
 
 TEST_F(ZarrImageTest, RegionSpectralDataReportsWhileItIsStillWorking) {

@@ -288,8 +288,8 @@ ZarrBatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& re
     }
 }
 
-ZarrBatchOutcome ZarrLoader::PlaneStats(
-    int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
+ZarrBatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
+    const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
     auto image = ImageForStokes(stokes);
     if (!image || !plane_callback) {
         return ZarrBatchOutcome::failed;
@@ -313,9 +313,13 @@ ZarrBatchOutcome ZarrLoader::PlaneStats(
                          carta::zarr::Statistic::sum_sq | carta::zarr::Statistic::min |
                          carta::zarr::Statistic::max;
 
-    // As above: a scan over the cube should not evict the session's working set.
+    // A scan over the cube should not evict the session's working set; see PlaneHistograms. The
+    // callback below skips every plane that is not finished yet, so it cannot be where a stop is
+    // noticed: that is asked of the walk itself, at every read.
     carta::zarr::ReadOptions options;
     options.control.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.control.cancellation_requested = cancellation_requested;
+    options.temporary_memory_limit_bytes = _read_budget_bytes;
 
     try {
         const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
@@ -338,7 +342,7 @@ ZarrBatchOutcome ZarrLoader::PlaneStats(
 }
 
 ZarrBatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
-    const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
+    const std::function<bool()>& cancellation_requested, const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
     auto image = ImageForStokes(stokes);
     if (!image || !plane_callback) {
         return ZarrBatchOutcome::failed;
@@ -358,9 +362,12 @@ ZarrBatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const His
     request.upper = bounds.max;
 
     // A cube scan touches every chunk once and reuses none of them, so it runs against a pool of
-    // its own that holds nothing rather than evicting whatever the session is looking at.
+    // its own that holds nothing rather than evicting whatever the session is looking at. A stop is
+    // asked of the walk at every read, as in PlaneStats.
     carta::zarr::ReadOptions options;
     options.control.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.control.cancellation_requested = cancellation_requested;
+    options.temporary_memory_limit_bytes = _read_budget_bytes;
 
     std::vector<int> plane_bins(static_cast<std::size_t>(num_bins));
     bool held = false;

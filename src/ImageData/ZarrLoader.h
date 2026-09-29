@@ -38,8 +38,10 @@ public:
     ZarrBatchedReducer* ZarrBatched() override {
         return this;
     }
-    ZarrBatchOutcome PlaneStats(int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) override;
+    ZarrBatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
+        const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) override;
     ZarrBatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
+        const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) override;
     ZarrBatchOutcome CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
         std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override;
@@ -55,8 +57,10 @@ public:
     // The read budget one batched walk may hold, in bytes; zero leaves the library its own.
     // Exists so that a test can make a walk take more than one read, which is what a region
     // covering a large image does and what no fixture small enough to keep in a repository can.
-    // Both the spectral reduction and the one-pass cube histogram honour it; the histogram needs it
-    // for the same reason and for one more, since it only reports its progress between reads.
+    // Every batched walk honours it. The one-pass cube histogram needs it for one more reason, since
+    // it only reports its progress between reads, and the two per-plane walks for another: a
+    // cancellation between reads can only be seen to arrive before a plane is finished if a plane
+    // takes more than one read.
     void SetReadBudgetBytes(std::size_t bytes) {
         _read_budget_bytes = bytes;
     }

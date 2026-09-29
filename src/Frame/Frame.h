@@ -191,7 +191,9 @@ public:
     ZarrBatchedReducer* ZarrBatched();
     // Every plane's basic statistics from the loader's batched walk, cached on the way past as the
     // per-plane path caches them. Failed, without calling the callback, when there is no such walk.
-    ZarrBatchOutcome GetCubeBasicStats(int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback);
+    // `cancellation_requested` is asked between the walk's reads; see ZarrBatchedReducer::PlaneStats.
+    ZarrBatchOutcome GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
+        const std::function<bool(int z, const BasicStats<float>&)>& plane_callback);
     // The bin count a request for AUTO_BIN_SIZE means. Public because the batched paths are handed
     // a resolved count and would decline a request for -1 bins.
     int AutoBinSize();

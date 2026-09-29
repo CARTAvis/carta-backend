@@ -103,12 +103,20 @@ public:
 
     // Basic statistics for every plane of one stokes. `plane_callback` receives each plane as it is
     // finished; returning false from it cancels.
-    virtual ZarrBatchOutcome PlaneStats(int stokes, const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) = 0;
+    //
+    // `cancellation_requested` is asked before and after every read the walk makes, and a yes
+    // cancels too. It is not the callback's job because the callback is only reached when a plane is
+    // finished, and a plane of a large image is finished only after every read of its chunk layer:
+    // a stop that waited for the callback waited seconds. Empty asks nothing.
+    virtual ZarrBatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
+        const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) = 0;
 
     // Bin counts for every plane of one stokes over a fixed range. `plane_callback` receives each
-    // plane's bins as it is finished; returning false from it cancels. An empty or inverted range is
-    // the caller's degenerate case and is not served.
+    // plane's bins as it is finished; returning false from it cancels, and so does a yes from
+    // `cancellation_requested`, asked as PlaneStats asks it. An empty or inverted range is the
+    // caller's degenerate case and is not served.
     virtual ZarrBatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
+        const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) = 0;
 
     // One histogram of the whole cube and its statistics, finding the range as it bins: one pass
