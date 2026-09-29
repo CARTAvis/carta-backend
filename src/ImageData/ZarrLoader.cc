@@ -303,8 +303,7 @@ ZarrBatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>&
 
     // One region covering the plane, with no mask: the reduction's own six accumulators over the
     // whole image are exactly a plane's basic statistics, so this needs no reduction of its own.
-    const carta::zarr::RegionMask region{0, 0, static_cast<std::uint64_t>(_image_shape(0)),
-        static_cast<std::uint64_t>(_image_shape(1))};
+    const carta::zarr::RegionMask region{0, 0, static_cast<std::uint64_t>(_image_shape(0)), static_cast<std::uint64_t>(_image_shape(1))};
 
     carta::zarr::SpectralReduceRequest request;
     request.planes.spectral = {0, depth, 1};
@@ -378,8 +377,7 @@ ZarrBatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const His
                 return true;  // a plane is reported when it is final, not while it fills
             }
             for (std::uint64_t c = 0; c < block.channel_count; ++c) {
-                const auto* row = block.counts + (static_cast<std::size_t>(c) * block.bin_count);
-                held = AssignBinCounts(row, plane_bins.size(), plane_bins) || held;
+                held = AssignBinCounts(block.Counts(c), plane_bins.size(), plane_bins) || held;
                 if (!plane_callback(static_cast<int>(block.first_channel + c), plane_bins)) {
                     return false;
                 }
