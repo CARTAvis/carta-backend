@@ -426,7 +426,7 @@ TEST_F(SessionTest, OnePassProgressCarriesTheHistogramSoFar) {
     auto frame = ZarrFrame(loader);
     ASSERT_TRUE(frame->IsValid());
     session.AdoptFrame(file_id, frame);
-    session._histogram_progress_interval = 0.0;
+    session._histogram_progress_interval = std::chrono::milliseconds(0);
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
 
@@ -470,7 +470,7 @@ TEST_F(SessionTest, TwoPassProgressCarriesTheHistogramSoFar) {
     auto frame = ZarrFrame(loader);
     ASSERT_TRUE(frame->IsValid());
     session.AdoptFrame(file_id, frame);
-    session._histogram_progress_interval = 0.0;
+    session._histogram_progress_interval = std::chrono::milliseconds(0);
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
 
@@ -540,7 +540,7 @@ TEST_F(SessionTest, ASecondCubeHistogramRequestIsAnsweredFromTheCache) {
     session.AdoptFrame(file_id, frame);
 
     // Reporting on every block, so that a walk is loud and a cached answer is a single message.
-    session._histogram_progress_interval = 0.0;
+    session._histogram_progress_interval = std::chrono::milliseconds(0);
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
     const auto first_messages = session.TakeHistograms();
@@ -577,7 +577,7 @@ TEST_F(SessionTest, ASecondCubeHistogramRequestIsAnsweredFromTheCacheForFits) {
     ASSERT_NE(frame, nullptr);
     ASSERT_TRUE(frame->IsValid());
     session.AdoptFrame(file_id, frame);
-    session._histogram_progress_interval = 0.0;
+    session._histogram_progress_interval = std::chrono::milliseconds(0);
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, num_bins), 1);
     const auto first_messages = session.TakeHistograms();
@@ -605,7 +605,7 @@ TEST_F(SessionTest, AnHdf5CubeHistogramComesFromItsOwnStatisticsWithoutAWalk) {
     ASSERT_NE(frame, nullptr);
     ASSERT_TRUE(frame->IsValid());
     session.AdoptFrame(file_id, frame);
-    session._histogram_progress_interval = 0.0;
+    session._histogram_progress_interval = std::chrono::milliseconds(0);
 
     // The sidecar decides the bin count, so the request has to be the one that accepts it.
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, AUTO_BIN_SIZE), 1);
@@ -631,7 +631,7 @@ TEST_F(SessionTest, ACubeHistogramWithADifferentBinCountIsRecalculated) {
     auto frame = ZarrFrame(loader);
     ASSERT_TRUE(frame->IsValid());
     session.AdoptFrame(file_id, frame);
-    session._histogram_progress_interval = 0.0;
+    session._histogram_progress_interval = std::chrono::milliseconds(0);
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, 7), 1);
     const auto seven_messages = session.TakeHistograms();

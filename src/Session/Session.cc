@@ -34,6 +34,7 @@
 #include "Util/File.h"
 #include "Util/Message.h"
 #include "Util/RemoteFiles.h"
+#include "Util/ReportCadence.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
@@ -1666,17 +1667,17 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // To send periodic updates
             _histogram_progress = 0.0;
-            auto t_start = std::chrono::high_resolution_clock::now();
+            ReportCadence progress_updates(_histogram_progress_interval);
             int request_id(0);
 
             // What the calculation sends while it works, on one clock. The report between its two
             // passes is sent whatever the clock says and does not restart it, as it always was; the
             // histogram so far is asked for only when a message is about to go, because on one pass
             // building it is not free.
+            // The finished histogram goes out once the calculation returns, so only the interval
+            // decides; a milestone goes out without asking, and so leaves the interval running.
             auto report_progress = [&](const CubeHistogramProgress& update) {
-                auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                if (!update.milestone && ((dt / 1e6) <= _histogram_progress_interval)) {
+                if (!update.milestone && !progress_updates.Due()) {
                     return true;
                 }
                 _histogram_progress = update.progress;
@@ -1689,9 +1690,6 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     FillHistogram(message_histogram, partial_stats, partial);
                 }
                 SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
-                if (!update.milestone) {
-                    t_start = t_end;
-                }
                 return true;
             };
 

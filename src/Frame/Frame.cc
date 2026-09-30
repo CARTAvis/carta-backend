@@ -1602,15 +1602,13 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             // below, so that a loader reading directly behaves like one reading in slices: a curve
             // that grows, and a cursor move that stops it. A loader with nothing partial to offer
             // simply never calls this.
-            auto t_start_profile = std::chrono::high_resolution_clock::now();
+            ReportCadence partial_updates(std::chrono::milliseconds(TARGET_PARTIAL_CURSOR_TIME));
             auto publish_partial = [&](float progress) {
                 if (profile_cancelled()) {
                     return false;
                 }
-                auto t_now = std::chrono::high_resolution_clock::now();
-                if (progress < 1.0f &&
-                    std::chrono::duration<double, std::milli>(t_now - t_start_profile).count() > TARGET_PARTIAL_CURSOR_TIME) {
-                    t_start_profile = t_now;
+                // The final profile goes out below, once the read has returned.
+                if (progress < 1.0f && partial_updates.Due()) {
                     auto partial_message = Message::SpectralProfileData(CurrentStokes(), progress);
                     Message::AddProfile(partial_message, config.coordinate, config.all_stats[0], spectral_data);
                     cb(partial_message);

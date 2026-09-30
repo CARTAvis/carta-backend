@@ -1655,9 +1655,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         // Get mask; LCRegion for file id is cached
         casacore::ArrayLattice<casacore::Bool> mask = region->GetImageRegionMask(file_id);
         if (!mask.shape().empty()) {
-            // start the timer
-            auto t_start = std::chrono::high_resolution_clock::now();
-            auto t_latest = t_start;
+            // One cadence for the reports sent from inside a loader's call and for those sent
+            // between calls, so that a profile arriving through one does not also arrive through the
+            // other.
+            ReportCadence partial_updates(std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME));
 
             // The reasons to stop, asked in one place so that a loader whose call is long enough to
             // outlast them can ask too.
@@ -1667,14 +1668,13 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                        HasSpectralRequirements(region_id, file_id, coordinate, required_stats);
             };
 
-            // Sending on the same clock as the loop below, and resetting the same timer, so that a
-            // profile arriving through this one does not also arrive through the other.
+            // What a loader sends from inside its call is never the final profile: that comes back
+            // from the call, and goes out below.
             auto send_partial = [&](const ProfilesMap& partial, float partial_progress) {
                 if (!still_wanted()) {
                     return false;
                 }
-                auto t_now = std::chrono::high_resolution_clock::now();
-                if (std::chrono::duration<double, std::milli>(t_now - t_latest).count() <= TARGET_PARTIAL_REGION_TIME) {
+                if (!partial_updates.Due()) {
                     return true;
                 }
                 for (const auto& profile : partial) {
@@ -1682,7 +1682,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                         results[profile.first] = profile.second;
                     }
                 }
-                t_latest = t_now;
                 partial_results_callback(results, partial_progress);
                 return true;
             };
@@ -1713,11 +1712,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                     }
                 }
 
-                // get the time elapse for this step
-                auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
-
-                if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= 1.0)) {
+                if (partial_updates.Due(progress)) {
                     // Copy partial profile to results
                     for (const auto& profile : partial_profiles) {
                         auto stats_type = profile.first;
@@ -1725,9 +1720,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                             results[stats_type] = profile.second;
                         }
                     }
-
-                    // restart timer
-                    t_latest = t_end;
 
                     // send partial result
                     partial_results_callback(results, progress);
@@ -2258,13 +2250,9 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         }
         return false;
     };
-    auto t_start = std::chrono::high_resolution_clock::now();
+    ReportCadence progress_updates(_line_profile_progress_interval);
     control.progress = [&](float progress) {
-        // Update progress if time interval elapsed
-        auto t_end = std::chrono::high_resolution_clock::now();
-        auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-        if ((dt > _line_profile_progress_interval) || (progress >= 1.0)) {
-            t_start = t_end;
+        if (progress_updates.Due(progress)) {
             progress_callback(progress);
         }
     };

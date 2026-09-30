@@ -9,6 +9,7 @@
 #ifndef CARTA_SRC_REGION_REGIONHANDLER_H_
 #define CARTA_SRC_REGION_REGIONHANDLER_H_
 
+#include <chrono>
 #include <mutex>
 #include <vector>
 
@@ -25,7 +26,7 @@
 namespace carta {
 
 // How often a line profile walk reports progress by default, in milliseconds.
-inline constexpr double kLineProfileProgressInterval = 500.0;
+inline constexpr std::chrono::milliseconds kLineProfileProgressInterval{500};
 
 class RegionHandler {
 public:
@@ -104,7 +105,7 @@ protected:
     // How often a line profile walk reports progress, in milliseconds. A field rather than the
     // constant it starts at because the partial reports are only reachable after that long, which
     // is the same reason they went untested: a test cannot wait half a second per assertion.
-    double _line_profile_progress_interval = kLineProfileProgressInterval;
+    std::chrono::milliseconds _line_profile_progress_interval = kLineProfileProgressInterval;
 
 private:
     // Region ID handling

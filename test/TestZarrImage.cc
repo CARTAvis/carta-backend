@@ -594,7 +594,7 @@ TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
     const int file_id = 0;
     handler._frames[file_id] = frame;
     // Report on every arrival rather than twice a second, so the partials are visible at all.
-    handler._line_profile_progress_interval = 0.0;
+    handler._line_profile_progress_interval = std::chrono::milliseconds(0);
 
     auto csys = frame->CoordinateSystem();
     std::vector<CARTA::Point> control_points{
