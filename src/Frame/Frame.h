@@ -30,6 +30,7 @@
 #include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/CubeHistogramMethod.h"
+#include "ImageStats/CubeReducer.h"
 #include "ImageStats/Histogram.h"
 #include "Region/Region.h"
 #include "Util/Concurrency.h"
@@ -166,7 +167,7 @@ public:
     // and whether the bounds are fixed; `method` whether one pass may be taken, which it is only when
     // the loader has such a walk and the bounds are not fixed, since one pass finds its own range.
     //
-    // The loader's batched walks are asked first, and planes are read one at a time only when the
+    // The loader's walks are asked first, and planes are read one at a time only when the
     // loader has none or declines, so every loader answers through this. `cancellation_requested`
     // is asked between the walks' reads and between planes; `progress` is told how far along the
     // calculation is, and returning false from it cancels too.
@@ -296,9 +297,9 @@ protected:
     void CacheCubeHistogram(int stokes, Histogram& hist);
     // The bin count a request for AUTO_BIN_SIZE means.
     int AutoBinSize();
-    // Every plane's basic statistics from the loader's batched walk, cached on the way past as the
+    // Every plane's basic statistics from the loader's walk, cached on the way past as the
     // per-plane path caches them. Declined, without calling the callback, when there is no such walk.
-    // `cancellation_requested` is asked between the walk's reads; see BatchedReducer::PlaneStats.
+    // `cancellation_requested` is asked between the walk's reads; see CubeReducer::PlaneStats.
     BatchOutcome GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const BasicStats<float>&)>& plane_callback);
 

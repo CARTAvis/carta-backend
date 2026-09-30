@@ -8,6 +8,7 @@
 
 #include "BatchedReducer.h"
 #include "FileLoader.h"
+#include "ImageStats/CubeReducer.h"
 
 #include <chrono>
 #include <cstdint>
@@ -26,7 +27,7 @@ class CartaZarrImage;
 // would inherit. Returns whether any count was held.
 bool AssignBinCounts(const std::uint64_t* counts, std::size_t size, std::vector<int>& bins);
 
-class ZarrLoader : public FileLoader, public BatchedReducer {
+class ZarrLoader : public FileLoader, public BatchedReducer, public CubeReducer {
 public:
     explicit ZarrLoader(const std::string& filename);
 
@@ -35,6 +36,9 @@ public:
         const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {}) override;
 
+    CubeReducer* CubeWalk() override {
+        return this;
+    }
     BatchedReducer* Batched() override {
         return this;
     }
@@ -43,8 +47,8 @@ public:
     BatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) override;
-    BatchOutcome CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
-        const std::function<bool(const CubeHistogramUpdate&)>& progress) override;
+    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
+        std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override;
     BatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override;
 

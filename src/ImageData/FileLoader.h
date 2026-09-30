@@ -46,6 +46,7 @@ struct StokesRegion {
 };
 
 class BatchedReducer;
+class CubeReducer;
 
 class FileLoader {
 public:
@@ -132,8 +133,13 @@ public:
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
         const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {});
-    // The walks this loader can make over the whole cube or many regions at once, or null for a
-    // loader that has none -- every one but the Zarr loader. See BatchedReducer.
+    // The walk this loader can make over the whole cube, or null for a loader that has none -- every
+    // one but the Zarr loader. See CubeReducer.
+    virtual CubeReducer* CubeWalk() {
+        return nullptr;
+    }
+    // The walk this loader can make over many regions at once, or null for a loader that has none --
+    // every one but the Zarr loader. See BatchedReducer.
     virtual BatchedReducer* Batched() {
         return nullptr;
     }

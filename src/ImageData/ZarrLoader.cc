@@ -394,7 +394,7 @@ BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const Histogr
     return outcome;
 }
 
-BatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
+BatchOutcome ZarrLoader::OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
     std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) {
     auto image = ImageForStokes(stokes);
     if (!image || num_bins <= 0 || spatial_sample == 0) {

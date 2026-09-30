@@ -67,6 +67,10 @@ public:
 
     int one_pass_calls = 0;
 
+    CubeReducer* CubeWalk() override {
+        return _script == Script::no_walks ? nullptr : this;
+    }
+
     BatchedReducer* Batched() override {
         return _script == Script::no_walks ? nullptr : this;
     }
@@ -117,8 +121,8 @@ public:
         return ZarrLoader::PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, plane_callback);
     }
 
-    BatchOutcome CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
-        const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
+    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
+        std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
         ++one_pass_calls;
         if (_script == Script::decline) {
             return BatchOutcome::declined;
@@ -126,7 +130,7 @@ public:
         if (_script == Script::fail_after_first_plane) {
             return BatchOutcome::failed;
         }
-        return ZarrLoader::CubeHistogram(stokes, num_bins, spatial_sample, stats, bins, progress);
+        return ZarrLoader::OnePassCubeHistogram(stokes, num_bins, spatial_sample, stats, bins, progress);
     }
 
 private:
@@ -950,7 +954,7 @@ TEST_F(ZarrImageTest, CubeBasicStatsAgreeWithThePerPlaneLoop) {
 
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::map<int, BasicStats<float>> from_loader;
-        ASSERT_EQ(loader->Batched()->PlaneStats(stokes, {},
+        ASSERT_EQ(loader->CubeWalk()->PlaneStats(stokes, {},
                       [&](int z, const BasicStats<float>& stats) {
                           EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
                           from_loader[z] = stats;
@@ -1195,7 +1199,7 @@ TEST_F(ZarrImageTest, CubeHistogramAgreesWithThePerPlaneLoop) {
     const HistogramBounds bounds(0.0, 4000.0);
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::map<int, std::vector<int>> from_loader;
-        ASSERT_EQ(loader->Batched()->PlaneHistograms(stokes, num_bins, bounds, {},
+        ASSERT_EQ(loader->CubeWalk()->PlaneHistograms(stokes, num_bins, bounds, {},
                       [&](int z, const std::vector<int>& bins) {
                           EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
                           from_loader[z] = bins;
@@ -1231,10 +1235,10 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassAgreesWithTwo) {
     const int stokes = 1;
     BasicStats<float> stats;
     std::vector<int> bins;
-    EXPECT_EQ(loader->Batched()->CubeHistogram(stokes, num_bins, 0, stats, bins, {}), BatchOutcome::declined)
+    EXPECT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 0, stats, bins, {}), BatchOutcome::declined)
         << "a stride of zero reads no pixel, and it no longer means 'whatever the settings say'";
 
-    ASSERT_EQ(loader->Batched()->CubeHistogram(stokes, num_bins, 1, stats, bins, {}), BatchOutcome::finished);
+    ASSERT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 1, stats, bins, {}), BatchOutcome::finished);
     ASSERT_EQ(bins.size(), static_cast<std::size_t>(num_bins));
 
     // The two-pass answer over the range the one pass found.
@@ -1297,7 +1301,7 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     int updates = 0;
     double last_progress = -1.0;
     std::size_t last_pixels = 0;
-    ASSERT_EQ(loader->Batched()->CubeHistogram(stokes, num_bins, 1, stats, bins,
+    ASSERT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 1, stats, bins,
                   [&](const CubeHistogramUpdate& update) {
                       ++updates;
                       EXPECT_GT(update.progress, last_progress) << "progress should not go backwards";
@@ -1328,7 +1332,7 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     // And saying stop ends the walk, which the loader reports as having no answer.
     BasicStats<float> ignored_stats;
     std::vector<int> ignored_bins;
-    EXPECT_EQ(loader->Batched()->CubeHistogram(
+    EXPECT_EQ(loader->CubeWalk()->OnePassCubeHistogram(
                   stokes, num_bins, 1, ignored_stats, ignored_bins, [](const CubeHistogramUpdate&) { return false; }),
         BatchOutcome::cancelled);
 }
@@ -1344,8 +1348,8 @@ TEST_F(ZarrImageTest, CubeHistogramDeclinesAnEmptyRange) {
         ++calls;
         return true;
     };
-    EXPECT_EQ(loader->Batched()->PlaneHistograms(0, 8, HistogramBounds(5.0, 5.0), {}, count), BatchOutcome::declined);
-    EXPECT_EQ(loader->Batched()->PlaneHistograms(0, 0, HistogramBounds(0.0, 10.0), {}, count), BatchOutcome::declined);
+    EXPECT_EQ(loader->CubeWalk()->PlaneHistograms(0, 8, HistogramBounds(5.0, 5.0), {}, count), BatchOutcome::declined);
+    EXPECT_EQ(loader->CubeWalk()->PlaneHistograms(0, 0, HistogramBounds(0.0, 10.0), {}, count), BatchOutcome::declined);
     EXPECT_EQ(calls, 0) << "a declined request should not have reported a plane";
 }
 
@@ -1355,7 +1359,7 @@ TEST_F(ZarrImageTest, CubeBasicStatsStopWhenTheCallbackDoes) {
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
     int calls = 0;
-    EXPECT_EQ(loader->Batched()->PlaneStats(0, {},
+    EXPECT_EQ(loader->CubeWalk()->PlaneStats(0, {},
                   [&](int, const BasicStats<float>&) {
                       ++calls;
                       return false;
@@ -1380,7 +1384,7 @@ TEST_F(ZarrImageTest, CubeBasicStatsStopBetweenReadsWhenCancelled) {
 
     int asked = 0;
     int planes = 0;
-    EXPECT_EQ(loader->Batched()->PlaneStats(
+    EXPECT_EQ(loader->CubeWalk()->PlaneStats(
                   0, [&]() { return ++asked > 1; },
                   [&](int, const BasicStats<float>&) {
                       ++planes;
@@ -1402,7 +1406,7 @@ TEST_F(ZarrImageTest, CubeHistogramStopsBetweenReadsWhenCancelled) {
 
     int asked = 0;
     int planes = 0;
-    EXPECT_EQ(loader->Batched()->PlaneHistograms(
+    EXPECT_EQ(loader->CubeWalk()->PlaneHistograms(
                   0, 9, HistogramBounds(0.0, 4000.0), [&]() { return ++asked > 1; },
                   [&](int, const std::vector<int>&) {
                       ++planes;

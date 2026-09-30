@@ -1020,12 +1020,12 @@ void Frame::CacheCubeHistogram(int stokes, Histogram& hist) {
 BatchOutcome Frame::CalculateCubeHistogram(int stokes, const HistogramConfig& config, const CubeHistogramMethod& method,
     const std::function<bool()>& cancellation_requested, const std::function<bool(const CubeHistogramProgress&)>& progress,
     BasicStats<float>& stats, Histogram& histogram) {
-    // Resolved here rather than left to CalculateHistogram, because the batched walks are handed this
+    // Resolved here rather than left to CalculateHistogram, because the loader's walks are handed this
     // value directly and a request for -1 bins is one they decline.
     const int num_bins = config.num_bins == AUTO_BIN_SIZE ? AutoBinSize() : config.num_bins;
     const auto stopped = [&]() { return cancellation_requested && cancellation_requested(); };
     const auto report = [&](const CubeHistogramProgress& update) { return !progress || progress(update); };
-    auto* batched = _loader->Batched();
+    auto* walk = _loader->CubeWalk();
 
     // A loader that can find the range and bin at the same time answers both passes at once, when
     // the method asks for it; exact is the default, and then the two passes below are all there is.
@@ -1035,10 +1035,10 @@ BatchOutcome Frame::CalculateCubeHistogram(int stokes, const HistogramConfig& co
     // hand it a range it was not given. Labelling those counts with the requested edges would publish
     // counts of one thing as counts of another. The two passes have the range before they bin, so
     // they are the ones that can answer this.
-    if (batched && method.one_pass && !config.fixed_bounds) {
+    if (walk && method.one_pass && !config.fixed_bounds) {
         BasicStats<float> one_pass_stats;
         std::vector<int> one_pass_bins;
-        const auto one_pass = batched->CubeHistogram(
+        const auto one_pass = walk->OnePassCubeHistogram(
             stokes, num_bins, method.spatial_sample, one_pass_stats, one_pass_bins, [&](const CubeHistogramUpdate& update) {
                 if (stopped()) {
                     return false;
@@ -1155,8 +1155,8 @@ BatchOutcome Frame::CalculateCubeHistogram(int stokes, const HistogramConfig& co
     // The loader hands back bin counts rather than a Histogram because binning is all it did; the
     // bounds and the bin count came from here in the first place.
     auto binned = BatchOutcome::declined;
-    if (batched) {
-        binned = batched->PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, [&](int z, const std::vector<int>& bins) {
+    if (walk) {
+        binned = walk->PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, [&](int z, const std::vector<int>& bins) {
             Histogram plane(num_bins, bounds, nullptr, 0);
             plane.SetHistogramBins(bins);
             return take_plane_histogram(z, plane);
@@ -2013,13 +2013,13 @@ BatchOutcome Frame::RegionSpectra(const std::function<bool(std::vector<RegionMas
 
 BatchOutcome Frame::GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
     const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
-    auto* batched = _loader->Batched();
-    if (!batched) {
+    auto* walk = _loader->CubeWalk();
+    if (!walk) {
         return BatchOutcome::declined;
     }
     // Each plane is cached on the way past, because the per-plane path this replaces cached it and
     // later per-plane requests still look there.
-    return batched->PlaneStats(stokes, cancellation_requested, [&](int z, const BasicStats<float>& stats) {
+    return walk->PlaneStats(stokes, cancellation_requested, [&](int z, const BasicStats<float>& stats) {
         _image_basic_stats[CacheKey(z, stokes)] = stats;
         return plane_callback(z, stats);
     });
