@@ -65,3 +65,12 @@ The sigma reported when exactly one pixel is valid, where the sample standard de
 definition. What to report is the consumer's policy, not a fact about the pixels: a spectral profile
 reports zero, and a plane or a cube reports NaN.
 _Avoid_: single-pixel sigma, n=1 case
+
+### Moments
+
+**Slab**:
+What a moment holds at a time as it steps through the image: whole lines along the moment axis, over
+as much of the other axes as it can afford. Its shape is chosen to match what the image decodes
+together, so that each chunk is decoded as few times as the memory allows. Stepping through the image
+this way is not a **Walk**: the image is read through casacore, not by a loader's own means.
+_Avoid_: chunk (the image's unit, not the moment's), cursor
