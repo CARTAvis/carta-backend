@@ -39,8 +39,10 @@ struct CubeHistogramUpdate {
 // optional raster mask laid out row-major with x fastest, exactly as casacore's LCRegionFixed
 // stores one. Both the mask and this struct are borrowed for the duration of the call.
 //
-// A null mask selects the whole bounding box, and that is a required case rather than a shortcut:
-// an unrotated rectangle becomes an LCBox, whose getMask() is empty.
+// A null mask selects the whole bounding box, for a caller that knows its region is exactly that.
+// RegionHandler never passes one: every closed region reaches it as an LCPolygon with a raster,
+// rotated or not, and one that arrived without a raster would be declined there rather than taken
+// for its whole box.
 struct RegionMaskSpec {
     std::uint64_t x_start = 0;
     std::uint64_t y_start = 0;

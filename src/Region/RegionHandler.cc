@@ -2225,15 +2225,15 @@ BatchOutcome RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, R
             spec.y_start = static_cast<std::uint64_t>(bounding_box.start()(1));
             spec.width = static_cast<std::uint64_t>(bounding_box.length()(0));
             spec.height = static_cast<std::uint64_t>(bounding_box.length()(1));
-            if (!mask.shape().empty()) {
-                // An unrotated rectangle arrives as an LCBox with no raster mask at all, and its
-                // bounding box is the region. Anything else must describe exactly that bounding box.
-                if (mask.shape().size() != 2 || mask.shape()(0) != bounding_box.length()(0) ||
-                    mask.shape()(1) != bounding_box.length()(1) || !mask.asArray().contiguousStorage()) {
-                    return false;
-                }
-                spec.mask = mask.asArray().data();
+            // A box reaches here as an LCPolygon, rotated or not, whose raster describes exactly its
+            // bounding box. One without a raster is a region whose shape this walk cannot see, and
+            // taking it for its whole box would count pixels it does not cover, so the boxes are
+            // declined and the loop that reads them one at a time answers instead.
+            if (mask.shape().size() != 2 || mask.shape()(0) != bounding_box.length()(0) || mask.shape()(1) != bounding_box.length()(1) ||
+                !mask.asArray().contiguousStorage()) {
+                return false;
             }
+            spec.mask = mask.asArray().data();
             specs.push_back(spec);
             spec_to_box.push_back(iprofile);
         }

@@ -631,6 +631,37 @@ TEST_F(ZarrImageTest, APvImageWhoseWalkFailsPartwayIsNotRetried) {
     EXPECT_FALSE(response.cancel());
 }
 
+// A rectangle's spectral profile is read by the loader, as every closed region's is. RegionHandler
+// hands the loader a region only when it has a raster mask, and a rectangle was once thought to
+// arrive as an LCBox without one and so to fall through to casacore's plane by plane statistics;
+// it arrives as an LCPolygon with its raster, rotated or not.
+TEST_F(ZarrImageTest, ARectanglesSpectralProfileIsReadByTheLoader) {
+    for (const float rotation : {0.0f, 30.0f}) {
+        auto loader = std::make_shared<PeekableZarrLoader>(kZarrFixture.string());
+        loader->OpenFile("");
+        std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+        ASSERT_TRUE(frame->IsValid());
+
+        carta::RegionHandler handler;
+        const int file_id = 0;
+        int region_id = -1;
+        std::vector<CARTA::Point> control_points{Message::Point(1.5, 2.0), Message::Point(3.0, 4.0)};
+        RegionState rectangle(file_id, CARTA::RegionType::RECTANGLE, control_points, rotation);
+        ASSERT_TRUE(handler.SetRegion(region_id, rectangle, frame->CoordinateSystem()));
+
+        CARTA::SetSpectralRequirements_SpectralConfig config;
+        config.set_coordinate("z");
+        config.add_stats_types(CARTA::StatsType::Mean);
+        ASSERT_TRUE(handler.SetSpectralRequirements(region_id, file_id, frame, {config}));
+        CARTA::SpectralProfileData profile;
+        ASSERT_TRUE(handler.FillSpectralProfileData([&](CARTA::SpectralProfileData data) { profile = data; }, region_id, file_id, false));
+
+        EXPECT_EQ(loader->RegionStateCount(), 1u) << "rotation " << rotation << ": the profile should have been the loader's walk";
+        EXPECT_FLOAT_EQ(profile.progress(), 1.0f);
+        ASSERT_EQ(profile.profiles_size(), 1);
+    }
+}
+
 // A region's spectral walk is resumable, so the loader keeps where it got to -- keyed by region and
 // stokes, and until now never erased. Every region a user drew and deleted left its channels behind
 // for the life of the loader, which outlives the file: Session keeps a cache of them.
