@@ -75,6 +75,23 @@ protected:
     // answer. A whole-cube profile is seconds of work, so it has to be interruptible somewhere, and
     // the seam between calls is the only one the interface offers.
     //
+    // It looks like a second way to stop beside partial_callback, and it is not one to remove. Two
+    // callers depend on it that the callback cannot serve:
+    //
+    // - A computed stokes profile (Ptotal, Plinear, Pangle and the fractional ones) asks for Q, U
+    //   and sometimes I and V one after another with no partial_callback, since no single stokes'
+    //   partial makes a partial of theirs. RegionHandler::GetComputedStokesProfiles gets its partials
+    //   and its between-call checks only because each call returns after one slice: the loop
+    //   advances every stokes a slice at a time. Run to completion, it would read them whole in turn
+    //   with nothing shown and no way to stop.
+    // - A finished state is the loader path's only answer cache. RegionHandler fills its own
+    //   spectral cache only on the route that reads through casacore, so a second request for the
+    //   same region and stokes -- a statistic added, another profile of it -- is free only because
+    //   channels_done already covers the range.
+    //
+    // Hdf5Loader keeps the same per-region, per-stokes state for the same two reasons: it is how
+    // FileLoader::GetRegionSpectralData is meant to be implemented, not something this loader added.
+    //
     // Each state has its own lock, held for the whole of one call's walk, so that two calls for the
     // same region and stokes take turns rather than both writing its stats.
     struct RegionSpectralState {
