@@ -53,13 +53,17 @@ public:
     virtual BatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) = 0;
 
-    // Bin counts for every plane of one stokes over a fixed range. `plane_callback` receives each
-    // plane's bins as it is finished; returning false from it cancels, and so does a yes from
-    // `cancellation_requested`, asked as PlaneStats asks it. An empty or inverted range is the
-    // caller's degenerate case and is declined.
+    // A histogram of every plane of one stokes over a fixed range. `plane_callback` receives each
+    // plane's histogram as it is finished; returning false from it cancels, and so does a yes from
+    // `cancellation_requested`, asked as PlaneStats asks it.
+    //
+    // A histogram, not its bin counts, because a route may answer with a shape the request did not
+    // ask for. An empty or inverted range is the caller's degenerate case, and is answered with a
+    // single bin over [0, 0] by whatever can produce one -- CalcHistogram does. A walk cannot, and
+    // declines it. Every plane's histogram must be one the others can be added to.
     virtual BatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool()>& cancellation_requested,
-        const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) = 0;
+        const std::function<bool(int z, const Histogram& histogram)>& plane_callback) = 0;
 
     // One histogram of the whole cube and its statistics, finding the range as it bins: one pass
     // rather than two, at the cost of where the bin edges land. `spatial_sample` reads every nth

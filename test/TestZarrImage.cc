@@ -107,13 +107,13 @@ public:
 
     BatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool()>& cancellation_requested,
-        const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) override {
+        const std::function<bool(int z, const Histogram& histogram)>& plane_callback) override {
         if (_script == Script::decline) {
             return BatchOutcome::declined;
         }
         if (_script == Script::fail_after_first_plane) {
-            ZarrLoader::PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, [&](int z, const std::vector<int>& bins) {
-                plane_callback(z, bins);
+            ZarrLoader::PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, [&](int z, const Histogram& histogram) {
+                plane_callback(z, histogram);
                 return false;
             });
             return BatchOutcome::failed;
@@ -1200,9 +1200,11 @@ TEST_F(ZarrImageTest, CubeHistogramAgreesWithThePerPlaneLoop) {
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::map<int, std::vector<int>> from_loader;
         ASSERT_EQ(loader->CubeWalk()->PlaneHistograms(stokes, num_bins, bounds, {},
-                      [&](int z, const std::vector<int>& bins) {
+                      [&](int z, const Histogram& histogram) {
                           EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
-                          from_loader[z] = bins;
+                          EXPECT_EQ(histogram.GetNbins(), static_cast<std::size_t>(num_bins));
+                          EXPECT_EQ(histogram.GetBounds(), bounds) << "laid over the bounds it was asked to bin over";
+                          from_loader[z] = histogram.GetHistogramBins();
                           return true;
                       }),
             BatchOutcome::finished)
@@ -1344,7 +1346,7 @@ TEST_F(ZarrImageTest, CubeHistogramDeclinesAnEmptyRange) {
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
     int calls = 0;
-    auto count = [&](int, const std::vector<int>&) {
+    auto count = [&](int, const Histogram&) {
         ++calls;
         return true;
     };
@@ -1408,7 +1410,7 @@ TEST_F(ZarrImageTest, CubeHistogramStopsBetweenReadsWhenCancelled) {
     int planes = 0;
     EXPECT_EQ(loader->CubeWalk()->PlaneHistograms(
                   0, 9, HistogramBounds(0.0, 4000.0), [&]() { return ++asked > 1; },
-                  [&](int, const std::vector<int>&) {
+                  [&](int, const Histogram&) {
                       ++planes;
                       return true;
                   }),

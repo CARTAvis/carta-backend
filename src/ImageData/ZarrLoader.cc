@@ -345,7 +345,7 @@ BatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& can
 }
 
 BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
-    const std::function<bool()>& cancellation_requested, const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
+    const std::function<bool()>& cancellation_requested, const std::function<bool(int z, const Histogram& histogram)>& plane_callback) {
     auto image = ImageForStokes(stokes);
     if (!image || !plane_callback) {
         return BatchOutcome::declined;
@@ -380,7 +380,10 @@ BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const Histogr
         }
         for (std::uint64_t c = 0; c < block.channel_count; ++c) {
             held = AssignBinCounts(block.Counts(c), plane_bins.size(), plane_bins) || held;
-            if (!plane_callback(static_cast<int>(block.first_channel + c), plane_bins)) {
+            // Over the bounds it was asked to bin over, which is the only shape this walk produces.
+            Histogram plane(num_bins, bounds, nullptr, 0);
+            plane.SetHistogramBins(plane_bins);
+            if (!plane_callback(static_cast<int>(block.first_channel + c), plane)) {
                 return false;
             }
         }

@@ -1152,15 +1152,9 @@ BatchOutcome Frame::CalculateCubeHistogram(int stokes, const HistogramConfig& co
         return report(reported);
     };
 
-    // The loader hands back bin counts rather than a Histogram because binning is all it did; the
-    // bounds and the bin count came from here in the first place.
     auto binned = BatchOutcome::declined;
     if (walk) {
-        binned = walk->PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, [&](int z, const std::vector<int>& bins) {
-            Histogram plane(num_bins, bounds, nullptr, 0);
-            plane.SetHistogramBins(bins);
-            return take_plane_histogram(z, plane);
-        });
+        binned = walk->PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, take_plane_histogram);
     }
     if (binned == BatchOutcome::failed || binned == BatchOutcome::cancelled) {
         return binned;
