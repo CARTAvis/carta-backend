@@ -259,8 +259,8 @@ TEST_F(Hdf5ImageTest, AProfileIsNotResumedOverOtherChannels) {
     std::mutex image_mutex;
     ProfilesMap left_over;
     float progress = 0.0f;
-    ASSERT_TRUE(loader->GetRegionSpectralData(TEMP_REGION_ID, AxisRange(0, 0), 0, lattice, casacore::IPosition(2, 100, 100), image_mutex,
-        left_over, progress));
+    ASSERT_TRUE(loader->GetRegionSpectralData(
+        TEMP_REGION_ID, AxisRange(0, 0), 0, lattice, casacore::IPosition(2, 100, 100), image_mutex, left_over, progress));
     ASSERT_LT(progress, 1.0f) << "the test needs a walk left unfinished";
 
     // More channels, somewhere else.
@@ -273,12 +273,53 @@ TEST_F(Hdf5ImageTest, AProfileIsNotResumedOverOtherChannels) {
     // More channels in the same place, which only the channels tell apart from a continuation.
     ProfilesMap first;
     progress = 0.0f;
-    ASSERT_TRUE(loader->GetRegionSpectralData(TEMP_REGION_ID, AxisRange(0, 0), 0, lattice, casacore::IPosition(2, 300, 300), image_mutex,
-        first, progress));
+    ASSERT_TRUE(loader->GetRegionSpectralData(
+        TEMP_REGION_ID, AxisRange(0, 0), 0, lattice, casacore::IPosition(2, 300, 300), image_mutex, first, progress));
     ASSERT_LT(progress, 1.0f);
     const auto both = LoaderProfile(*loader, TEMP_REGION_ID, AxisRange(0, 1), box, casacore::IPosition(2, 300, 300));
     ASSERT_EQ(both.at(CARTA::StatsType::NumPixels).size(), 2u);
     for (int channel = 0; channel < 2; ++channel) {
         EXPECT_EQ(both.at(CARTA::StatsType::NumPixels).at(channel), FinitePixels(path, 300, 300, width, height, channel)) << channel;
+    }
+}
+
+// Each column read holds every channel of the image, not only those asked for, and a profile of some
+// of them read its pixels as though it held only those: the first channel asked for was taken from
+// the next row down, and the rest from further on.
+TEST_F(Hdf5ImageTest, AProfileOfSomeOfTheChannelsCountsThoseChannels) {
+    const auto path = Hdf5Images() / "10x10x10.hdf5";
+    auto loader = carta::FileLoader::GetLoader(path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    ASSERT_TRUE(frame->IsValid());
+
+    // The copy a profile is read from, which in this fixture is not the plane data: x, then y, then
+    // the channel varying fastest.
+    H5::H5File file(path.string(), H5F_ACC_RDONLY);
+    auto swizzled = file.openDataSet("/0/PermutedData/ZYX");
+    const auto sum_of = [&](int channel) {
+        const hsize_t start[3] = {2, 5, static_cast<hsize_t>(channel)};
+        const hsize_t count[3] = {4, 3, 1};
+        auto file_space = swizzled.getSpace();
+        file_space.selectHyperslab(H5S_SELECT_SET, count, start);
+        hsize_t size = 12;
+        std::vector<float> pixels(size);
+        H5::DataSpace memory_space(1, &size);
+        swizzled.read(pixels.data(), H5::PredType::NATIVE_FLOAT, memory_space, file_space);
+        double sum = 0.0;
+        for (const float pixel : pixels) {
+            sum += pixel;
+        }
+        return sum;
+    };
+    casacore::Array<casacore::Bool> box(casacore::IPosition(2, 4, 3), true);
+    int region_id = 1;
+    for (const auto& channels : {AxisRange(0, 0), AxisRange(3, 5), AxisRange(9, 9)}) {
+        const auto profile = LoaderProfile(*loader, region_id++, channels, box, casacore::IPosition(2, 2, 5));
+        const auto count = static_cast<std::size_t>(channels.to - channels.from + 1);
+        ASSERT_EQ(profile.at(CARTA::StatsType::Sum).size(), count);
+        for (std::size_t c = 0; c < count; ++c) {
+            const auto channel = channels.from + static_cast<int>(c);
+            EXPECT_NEAR(profile.at(CARTA::StatsType::Sum).at(c), sum_of(channel), 1e-5) << "channel " << channel;
+        }
     }
 }

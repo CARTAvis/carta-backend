@@ -407,8 +407,9 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
                 continue;
             }
 
+            // A column read holds every channel of the image, whichever were asked for.
             for (size_t z = z_range.from; z < z_range.to + 1; z++) {
-                double v = slice_data[y * depth + z];
+                double v = slice_data[y * _dims.depth + z];
 
                 // skip all NaN pixels
                 if (std::isfinite(v)) {
