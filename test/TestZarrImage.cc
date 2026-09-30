@@ -114,8 +114,8 @@ public:
 };
 
 // A frame over the pixel fixture whose loader walks as `script` says.
-std::shared_ptr<Frame> ScriptedFrame(ScriptedZarrLoader::Script script) {
-    auto loader = std::make_shared<ScriptedZarrLoader>(kZarrFixture.string(), script);
+std::shared_ptr<Frame> ScriptedFrame(ScriptedZarrLoader::Script script, const std::filesystem::path& path = kZarrFixture) {
+    auto loader = std::make_shared<ScriptedZarrLoader>(path.string(), script);
     loader->OpenFile("");
     return std::make_shared<Frame>(0, loader, "");
 }
@@ -1054,6 +1054,50 @@ TEST_F(ZarrImageTest, PlaneStatisticsOfALonePixelAgreeWithThePerPlaneLoop) {
     fixture.Put(0, 2, 0, 2, 1.5f);
     fixture.Put(3, 2, 1, 2, 3.0f);
     ExpectPlaneStatsAgreeWithThePerPlaneLoop(fixture.Write());
+}
+
+// A copy of the fixture with planes that have no valid pixel: one beside a plane that has some, and a
+// whole stokes of them.
+std::filesystem::path FixtureWithEmptyPlanes() {
+    WrittenZarrFixture fixture("empty_planes.zarr");
+    fixture.Put(0, 1, 1, 0, 1.0f);
+    fixture.Put(0, 2, 1, 0, -2.0f);
+    fixture.Put(0, 1, 0, 2, 0.5f);
+    fixture.Put(3, 2, 0, 2, 4.0f);
+    fixture.Put(0, 2, 1, 2, 3.0f);
+    return fixture.Write();
+}
+
+// And for planes with no valid pixel, whose mean, sigma and RMS are undefined whichever route found it.
+TEST_F(ZarrImageTest, PlaneStatisticsOfAnEmptyPlaneAgreeWithThePerPlaneLoop) {
+    ExpectPlaneStatsAgreeWithThePerPlaneLoop(FixtureWithEmptyPlanes());
+}
+
+// A cube with no valid pixel has nothing derived either, and says so the same way whether its
+// statistics came from the loader's walk, from the planes one at a time, or from one pass.
+TEST_F(ZarrImageTest, ACubeWithNoValidPixelHasTheSameStatisticsWhicheverRouteMadeIt) {
+    const auto path = FixtureWithEmptyPlanes();
+    constexpr int kEmptyStokes = 1;
+    CubeHistogramMethod one_pass;
+    one_pass.one_pass = true;
+
+    const std::vector<std::pair<std::string, std::pair<ScriptedZarrLoader::Script, CubeHistogramMethod>>> routes = {
+        {"walk", {ScriptedZarrLoader::Script::walk, CubeHistogramMethod()}},
+        {"plane by plane", {ScriptedZarrLoader::Script::no_walks, CubeHistogramMethod()}},
+        {"one pass", {ScriptedZarrLoader::Script::walk, one_pass}}};
+    for (const auto& [name, route] : routes) {
+        auto frame = ScriptedFrame(route.first, path);
+        ASSERT_TRUE(frame->IsValid()) << name;
+        BasicStats<float> stats;
+        Histogram histogram;
+        ASSERT_EQ(frame->CalculateCubeHistogram(kEmptyStokes, CubeConfig(9), route.second, {}, {}, stats, histogram),
+            CubeHistogramOutcome::finished)
+            << name;
+        EXPECT_EQ(stats.num_pixels, 0u) << name;
+        EXPECT_TRUE(std::isnan(stats.mean)) << name << ": mean is " << stats.mean;
+        EXPECT_TRUE(std::isnan(stats.stdDev)) << name << ": sigma is " << stats.stdDev;
+        EXPECT_TRUE(std::isnan(stats.rms)) << name << ": rms is " << stats.rms;
+    }
 }
 
 // A cube histogram is the same whichever route made it: the loader's two walks, or the planes read

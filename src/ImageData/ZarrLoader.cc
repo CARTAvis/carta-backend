@@ -73,9 +73,9 @@ void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, 
 // A plane's totals and a cube histogram's are the same type, so this is also what turns a one-pass
 // cube histogram, and each snapshot it hands out on the way, into the statistics CARTA reports.
 //
-// An empty plane is the case worth naming: BasicStatsCalculator leaves its extrema at the
-// identities it started from rather than reporting NaN, and callers compare against those, so the
-// NaN a reduction reports for an untouched extremum is turned back into them here.
+// An empty plane is the case worth naming, and it is what BasicStats() is: nothing derived, as the
+// calculator says, and the extrema at the identities it started from rather than the NaN a reduction
+// reports for an untouched extremum, since callers compare against those.
 BasicStats<float> ToPlaneStats(const carta::zarr::SpectralTotals& counted) {
     const auto count = static_cast<std::size_t>(counted.num_pixels);
     if (count == 0) {
