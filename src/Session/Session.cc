@@ -1700,11 +1700,11 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             const auto outcome = _frames.at(file_id)->CalculateCubeHistogram(
                 stokes, cube_histogram_config, _cube_histogram_method,
                 [this]() { return _histogram_context.is_group_execution_cancelled(); }, report_progress, cube_stats, cube_histogram);
-            if (outcome == BatchOutcome::failed) {
+            if (outcome == CubeHistogramOutcome::failed) {
                 return calculated;
             }
 
-            if (outcome == BatchOutcome::finished) {
+            if (outcome == CubeHistogramOutcome::finished) {
                 cube_histogram_message.set_file_id(file_id);
                 cube_histogram_message.set_region_id(CUBE_REGION_ID);
                 cube_histogram_message.set_channel(ALL_Z);

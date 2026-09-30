@@ -162,6 +162,15 @@ public:
     using carta::RegionHandler::_line_profile_progress_interval;
 };
 
+// Frame keeps each plane's statistics to itself, and what a cube histogram leaves of them is a promise
+// a request for one plane relies on.
+class PeekableFrame : public carta::Frame {
+public:
+    using carta::Frame::CacheKey;
+    using carta::Frame::Frame;
+    using carta::Frame::_image_basic_stats;
+};
+
 // Bytes this process has been handed by read(), page-cache hits included: what the walk asked the
 // filesystem for, as opposed to what reached the disk.
 struct PlaneIo {
@@ -1009,9 +1018,9 @@ TEST_F(ZarrImageTest, ACubeHistogramIsTheSameWhicheverRouteMadeIt) {
         BasicStats<float> walked_stats, looped_stats;
         Histogram walked, looped;
         ASSERT_EQ(walked_frame->CalculateCubeHistogram(stokes, config, CubeHistogramMethod(), {}, {}, walked_stats, walked),
-            BatchOutcome::finished);
+            CubeHistogramOutcome::finished);
         ASSERT_EQ(looped_frame->CalculateCubeHistogram(stokes, config, CubeHistogramMethod(), {}, {}, looped_stats, looped),
-            BatchOutcome::finished)
+            CubeHistogramOutcome::finished)
             << "a loader that declines is answered plane by plane, not refused";
 
         EXPECT_EQ(walked_stats.num_pixels, looped_stats.num_pixels) << "stokes " << stokes;
@@ -1055,7 +1064,7 @@ TEST_F(ZarrImageTest, ACubeHistogramReportsItsHalvesWhicheverRouteMadeIt) {
                           return true;
                       },
                       stats, histogram),
-            BatchOutcome::finished);
+            CubeHistogramOutcome::finished);
 
         const auto milestone = std::find_if(reports.begin(), reports.end(), [](const Report& r) { return r.milestone; });
         ASSERT_NE(milestone, reports.end());
@@ -1087,7 +1096,7 @@ TEST_F(ZarrImageTest, ACubeHistogramReportsItsHalvesWhicheverRouteMadeIt) {
                       return true;
                   },
                   stats, histogram),
-        BatchOutcome::finished);
+        CubeHistogramOutcome::finished);
     EXPECT_FALSE(saw_milestone);
 }
 
@@ -1107,7 +1116,7 @@ TEST_F(ZarrImageTest, ACubeHistogramWhoseWalkFailsPartwayIsNotRetried) {
                       return true;
                   },
                   stats, histogram),
-        BatchOutcome::failed);
+        CubeHistogramOutcome::failed);
     EXPECT_EQ(reports, 1) << "the plane the walk handed over, and no plane read after it";
 
     BasicStats<float> cached;
@@ -1115,7 +1124,7 @@ TEST_F(ZarrImageTest, ACubeHistogramWhoseWalkFailsPartwayIsNotRetried) {
 
     CubeHistogramMethod one_pass;
     one_pass.one_pass = true;
-    EXPECT_EQ(frame->CalculateCubeHistogram(stokes, CubeConfig(9), one_pass, {}, {}, stats, histogram), BatchOutcome::failed)
+    EXPECT_EQ(frame->CalculateCubeHistogram(stokes, CubeConfig(9), one_pass, {}, {}, stats, histogram), CubeHistogramOutcome::failed)
         << "one pass that fails does not become two";
 }
 
@@ -1135,18 +1144,79 @@ TEST_F(ZarrImageTest, ACancelledCubeHistogramCachesNothing) {
                           return true;
                       },
                       stats, histogram),
-            BatchOutcome::cancelled);
+            CubeHistogramOutcome::cancelled);
 
         auto by_callback = ScriptedFrame(script);
         EXPECT_EQ(
             by_callback->CalculateCubeHistogram(
                 stokes, CubeConfig(9), CubeHistogramMethod(), {}, [](const CubeHistogramProgress&) { return false; }, stats, histogram),
-            BatchOutcome::cancelled);
+            CubeHistogramOutcome::cancelled);
 
         for (const auto& frame : {by_predicate, by_callback}) {
             BasicStats<float> cached;
             EXPECT_FALSE(frame->GetBasicStats(ALL_Z, stokes, cached));
         }
+    }
+}
+
+// A stop during the bins leaves the statistics found in the first half no more cached than a stop
+// during the first half does: a cube histogram is made whole or not at all.
+TEST_F(ZarrImageTest, ACubeHistogramCancelledDuringItsBinsCachesNothing) {
+    const int stokes = 1;
+    for (auto script : {ScriptedZarrLoader::Script::walk, ScriptedZarrLoader::Script::decline}) {
+        auto frame = ScriptedFrame(script);
+        bool halfway = false;
+        BasicStats<float> stats;
+        Histogram histogram;
+        EXPECT_EQ(frame->CalculateCubeHistogram(
+                      stokes, CubeConfig(9), CubeHistogramMethod(), {},
+                      [&](const CubeHistogramProgress& update) {
+                          if (halfway) {
+                              return false;
+                          }
+                          halfway = update.milestone;
+                          return true;
+                      },
+                      stats, histogram),
+            CubeHistogramOutcome::cancelled);
+        EXPECT_TRUE(halfway) << "the stop came after the statistics were found";
+
+        BasicStats<float> cached;
+        EXPECT_FALSE(frame->GetBasicStats(ALL_Z, stokes, cached));
+    }
+}
+
+// Each plane's statistics are kept on the way past, whichever route found them: the plane by plane
+// route keeps them, and the walk that stands in for it has to, since a request for one plane looks
+// there before it reads the plane.
+TEST_F(ZarrImageTest, ACubeHistogramLeavesEachPlanesStatisticsWhicheverRouteMadeIt) {
+    const int stokes = 1;
+    std::map<ScriptedZarrLoader::Script, std::shared_ptr<PeekableFrame>> frames;
+    for (auto script : {ScriptedZarrLoader::Script::walk, ScriptedZarrLoader::Script::decline}) {
+        auto loader = std::make_shared<ScriptedZarrLoader>(kZarrFixture.string(), script);
+        loader->OpenFile("");
+        auto frame = std::make_shared<PeekableFrame>(0, loader, "");
+        ASSERT_TRUE(frame->IsValid());
+
+        BasicStats<float> stats;
+        Histogram histogram;
+        ASSERT_EQ(frame->CalculateCubeHistogram(stokes, CubeConfig(9), CubeHistogramMethod(), {}, {}, stats, histogram),
+            CubeHistogramOutcome::finished);
+        EXPECT_EQ(frame->_image_basic_stats.size(), static_cast<std::size_t>(kDepth));
+        for (int z = 0; z < kDepth; ++z) {
+            EXPECT_EQ(frame->_image_basic_stats.count(frame->CacheKey(z, stokes)), 1u) << "plane " << z;
+        }
+        frames[script] = frame;
+    }
+
+    for (int z = 0; z < kDepth; ++z) {
+        const auto key = frames[ScriptedZarrLoader::Script::walk]->CacheKey(z, stokes);
+        const auto& walked = frames[ScriptedZarrLoader::Script::walk]->_image_basic_stats.at(key);
+        const auto& looped = frames[ScriptedZarrLoader::Script::decline]->_image_basic_stats.at(key);
+        EXPECT_EQ(walked.num_pixels, looped.num_pixels) << "plane " << z;
+        EXPECT_FLOAT_EQ(walked.min_val, looped.min_val) << "plane " << z;
+        EXPECT_FLOAT_EQ(walked.max_val, looped.max_val) << "plane " << z;
+        EXPECT_NEAR(walked.sum, looped.sum, 1e-6 * (1.0 + std::abs(looped.sum))) << "plane " << z;
     }
 }
 
@@ -1165,11 +1235,11 @@ TEST_F(ZarrImageTest, ACubeHistogramTakesOnePassOnlyWhenAskedAndTheBoundsAreFree
     std::shared_ptr<ScriptedZarrLoader> loader;
     auto frame = ScriptedFrame(ScriptedZarrLoader::Script::walk, &loader);
     ASSERT_EQ(
-        frame->CalculateCubeHistogram(stokes, CubeConfig(9), CubeHistogramMethod(), {}, {}, stats, histogram), BatchOutcome::finished);
+        frame->CalculateCubeHistogram(stokes, CubeConfig(9), CubeHistogramMethod(), {}, {}, stats, histogram), CubeHistogramOutcome::finished);
     EXPECT_EQ(loader->one_pass_calls, 0) << "exact is two passes";
-    ASSERT_EQ(frame->CalculateCubeHistogram(stokes, fixed, one_pass, {}, {}, stats, histogram), BatchOutcome::finished);
+    ASSERT_EQ(frame->CalculateCubeHistogram(stokes, fixed, one_pass, {}, {}, stats, histogram), CubeHistogramOutcome::finished);
     EXPECT_EQ(loader->one_pass_calls, 0) << "fixed bounds are two passes";
-    ASSERT_EQ(frame->CalculateCubeHistogram(stokes, CubeConfig(9), one_pass, {}, {}, stats, histogram), BatchOutcome::finished);
+    ASSERT_EQ(frame->CalculateCubeHistogram(stokes, CubeConfig(9), one_pass, {}, {}, stats, histogram), CubeHistogramOutcome::finished);
     EXPECT_EQ(loader->one_pass_calls, 1);
 
     auto declining = ScriptedFrame(ScriptedZarrLoader::Script::decline, &loader);
@@ -1181,7 +1251,7 @@ TEST_F(ZarrImageTest, ACubeHistogramTakesOnePassOnlyWhenAskedAndTheBoundsAreFree
                       return true;
                   },
                   stats, histogram),
-        BatchOutcome::finished);
+        CubeHistogramOutcome::finished);
     EXPECT_EQ(loader->one_pass_calls, 1);
     EXPECT_TRUE(saw_milestone) << "a declined pass is answered by the two";
 }

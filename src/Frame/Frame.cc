@@ -10,7 +10,9 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <optional>
 #include <thread>
+#include <utility>
 
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/WCBox.h>
@@ -1017,164 +1019,119 @@ void Frame::CacheCubeHistogram(int stokes, Histogram& hist) {
     _cube_histograms[stokes].push_back(hist);
 }
 
-BatchOutcome Frame::CalculateCubeHistogram(int stokes, const HistogramConfig& config, const CubeHistogramMethod& method,
+// The planes of a cube one at a time, as Frame reads any plane. Whatever the loader is, this can answer,
+// which is why it goes last among the routes -- except in one pass, which it cannot make.
+class Frame::PlaneByPlane final : public CubeReducer {
+public:
+    explicit PlaneByPlane(Frame& frame) : _frame(frame) {}
+
+    BatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
+        const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) override {
+        const auto depth = static_cast<int>(_frame.Depth());
+        for (int z = 0; z < depth; ++z) {
+            if (cancellation_requested && cancellation_requested()) {
+                return BatchOutcome::cancelled;
+            }
+            BasicStats<float> z_stats;
+            if (!_frame.GetBasicStats(z, stokes, z_stats)) {
+                return BatchOutcome::failed;
+            }
+            if (!plane_callback(z, z_stats)) {
+                return BatchOutcome::cancelled;
+            }
+        }
+        return BatchOutcome::finished;
+    }
+
+    BatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
+        const std::function<bool()>& cancellation_requested,
+        const std::function<bool(int z, const Histogram& histogram)>& plane_callback) override {
+        const auto depth = static_cast<int>(_frame.Depth());
+        for (int z = 0; z < depth; ++z) {
+            if (cancellation_requested && cancellation_requested()) {
+                return BatchOutcome::cancelled;
+            }
+            Histogram z_histogram;
+            if (!_frame.CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
+                return BatchOutcome::failed;
+            }
+            if (!plane_callback(z, z_histogram)) {
+                return BatchOutcome::cancelled;
+            }
+        }
+        return BatchOutcome::finished;
+    }
+
+    BatchOutcome OnePassCubeHistogram(int /*stokes*/, int /*num_bins*/, std::uint64_t /*spatial_sample*/, BasicStats<float>& /*stats*/,
+        std::vector<int>& /*bins*/, const std::function<bool(const CubeHistogramUpdate&)>& /*progress*/) override {
+        return BatchOutcome::declined;
+    }
+
+private:
+    Frame& _frame;
+};
+
+// The loader's walk over the cube, with what Frame does with any plane's statistics it is handed on the
+// way past: keeps them, because the plane by plane route keeps them and later requests for a plane
+// still look there.
+class Frame::LoaderWalk final : public CubeReducer {
+public:
+    LoaderWalk(Frame& frame, CubeReducer& walk) : _frame(frame), _walk(walk) {}
+
+    BatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
+        const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) override {
+        return _walk.PlaneStats(stokes, cancellation_requested, [&](int z, const BasicStats<float>& stats) {
+            _frame._image_basic_stats[_frame.CacheKey(z, stokes)] = stats;
+            return plane_callback(z, stats);
+        });
+    }
+
+    BatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
+        const std::function<bool()>& cancellation_requested,
+        const std::function<bool(int z, const Histogram& histogram)>& plane_callback) override {
+        return _walk.PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, plane_callback);
+    }
+
+    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
+        std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
+        return _walk.OnePassCubeHistogram(stokes, num_bins, spatial_sample, stats, bins, progress);
+    }
+
+private:
+    Frame& _frame;
+    CubeReducer& _walk;
+};
+
+CubeHistogramOutcome Frame::CalculateCubeHistogram(int stokes, const HistogramConfig& config, const CubeHistogramMethod& method,
     const std::function<bool()>& cancellation_requested, const std::function<bool(const CubeHistogramProgress&)>& progress,
     BasicStats<float>& stats, Histogram& histogram) {
+    CubeHistogramRequest request;
+    request.stokes = stokes;
+    request.config = config;
     // Resolved here rather than left to CalculateHistogram, because the loader's walks are handed this
     // value directly and a request for -1 bins is one they decline.
-    const int num_bins = config.num_bins == AUTO_BIN_SIZE ? AutoBinSize() : config.num_bins;
-    const auto stopped = [&]() { return cancellation_requested && cancellation_requested(); };
-    const auto report = [&](const CubeHistogramProgress& update) { return !progress || progress(update); };
-    auto* walk = _loader->CubeWalk();
+    request.config.num_bins = config.num_bins == AUTO_BIN_SIZE ? AutoBinSize() : config.num_bins;
+    request.method = method;
 
-    // A loader that can find the range and bin at the same time answers both passes at once, when
-    // the method asks for it; exact is the default, and then the two passes below are all there is.
-    //
-    // Not for a request that fixes the bounds. The walk finds the range as it goes and re-aggregates
-    // onto what it found, so its counts belong to the data's own extremes and there is nowhere to
-    // hand it a range it was not given. Labelling those counts with the requested edges would publish
-    // counts of one thing as counts of another. The two passes have the range before they bin, so
-    // they are the ones that can answer this.
-    if (walk && method.one_pass && !config.fixed_bounds) {
-        BasicStats<float> one_pass_stats;
-        std::vector<int> one_pass_bins;
-        const auto one_pass = walk->OnePassCubeHistogram(
-            stokes, num_bins, method.spatial_sample, one_pass_stats, one_pass_bins, [&](const CubeHistogramUpdate& update) {
-                if (stopped()) {
-                    return false;
-                }
-                CubeHistogramProgress reported;
-                // One pass, so the whole bar belongs to it rather than its second half.
-                reported.progress = static_cast<float>(update.progress);
-                // The histogram of what has been read so far, which is what the two passes show from
-                // their halfway mark on. The bounds widen as the walk goes, so they come from the
-                // snapshot rather than from the cube's, which are not known yet.
-                reported.partial = [&](BasicStats<float>& partial_stats, Histogram& partial) {
-                    std::vector<int> partial_bins;
-                    update.snapshot(partial_stats, partial_bins);
-                    if (partial_bins.empty() || partial_stats.num_pixels == 0) {
-                        return false;
-                    }
-                    partial = Histogram(num_bins, HistogramBounds(partial_stats.min_val, partial_stats.max_val), nullptr, 0);
-                    partial.SetHistogramBins(partial_bins);
-                    return true;
-                };
-                return report(reported);
-            });
-        if (one_pass != BatchOutcome::declined) {
-            if (one_pass != BatchOutcome::finished) {
-                return one_pass;
-            }
-            if (stopped()) {
-                return BatchOutcome::cancelled;
-            }
-            stats = one_pass_stats;
-            CacheCubeStats(stokes, stats);
-            histogram = Histogram(num_bins, config.GetBounds(stats), nullptr, 0);
-            histogram.SetHistogramBins(one_pass_bins);
-            if (stopped()) {
-                return BatchOutcome::cancelled;
-            }
-            CacheCubeHistogram(stokes, histogram);
-            return BatchOutcome::finished;
-        }
+    // The loader's walk first, if it has one, and planes one at a time for whatever it declines.
+    std::optional<LoaderWalk> loader_walk;
+    std::vector<CubeRoute> routes;
+    if (auto* walk = _loader->CubeWalk()) {
+        loader_walk.emplace(*this, *walk);
+        routes.push_back({"loader walk", &*loader_walk});
     }
+    PlaneByPlane plane_by_plane(*this);
+    routes.push_back({"plane by plane", &plane_by_plane});
 
-    // Two passes, each asked of the loader's walk first and read plane by plane when it declines. The
-    // two routes report progress and stop at the same points, because they share what one plane
-    // costs: the statistics are the first half of the bar and the bins the second.
-    const size_t depth(Depth());
-    const size_t total_z(depth * 2);
-
-    stats = BasicStats<float>();
-    auto take_plane_stats = [&](int z, const BasicStats<float>& z_stats) {
-        stats.join(z_stats);
-        if (stopped()) {
-            return false;
-        }
-        float this_z(z);
-        CubeHistogramProgress reported;
-        reported.progress = this_z / total_z;
-        return report(reported);
-    };
-
-    // A loader that can walk the cube itself neither materialises a plane nor reads each one twice.
-    const auto walked = GetCubeBasicStats(stokes, cancellation_requested, take_plane_stats);
-    if (walked == BatchOutcome::failed || walked == BatchOutcome::cancelled) {
-        return walked;
+    CubeHistogram made;
+    const auto outcome = CubeHistogramCalculator(std::move(routes), Depth()).Calculate(request, {cancellation_requested, progress}, made);
+    if (outcome == CubeHistogramOutcome::finished) {
+        CacheCubeStats(stokes, made.stats);
+        CacheCubeHistogram(stokes, made.histogram);
+        stats = made.stats;
+        histogram = made.histogram;
     }
-    if (walked == BatchOutcome::declined) {
-        for (size_t z = 0; z < depth; ++z) {
-            BasicStats<float> z_stats;
-            if (!GetBasicStats(z, stokes, z_stats)) {
-                return BatchOutcome::failed;
-            }
-            if (!take_plane_stats(static_cast<int>(z), z_stats)) {
-                return BatchOutcome::cancelled;
-            }
-        }
-    }
-    if (stopped()) {
-        return BatchOutcome::cancelled;
-    }
-    CacheCubeStats(stokes, stats);
-
-    const auto bounds = config.GetBounds(stats);
-    CubeHistogramProgress halfway;
-    halfway.progress = 0.5;
-    halfway.milestone = true;
-    if (!report(halfway)) {
-        return BatchOutcome::cancelled;
-    }
-
-    // What one plane's bins cost, shared as the statistics' was. From here there is a histogram to
-    // show: the planes binned so far, over the statistics of the whole cube.
-    histogram = Histogram();
-    bool have_histogram(false);
-    auto take_plane_histogram = [&](int z, const Histogram& plane) {
-        if (!have_histogram) {
-            histogram = plane;
-            have_histogram = true;
-        } else {
-            histogram.Add(plane);
-        }
-        if (stopped()) {
-            return false;
-        }
-        float this_z(z);
-        CubeHistogramProgress reported;
-        reported.progress = 0.5 + (this_z / total_z);
-        reported.partial = [&](BasicStats<float>& partial_stats, Histogram& partial) {
-            partial_stats = stats;
-            partial = histogram;
-            return true;
-        };
-        return report(reported);
-    };
-
-    auto binned = BatchOutcome::declined;
-    if (walk) {
-        binned = walk->PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, take_plane_histogram);
-    }
-    if (binned == BatchOutcome::failed || binned == BatchOutcome::cancelled) {
-        return binned;
-    }
-    if (binned == BatchOutcome::declined) {
-        Histogram z_histogram;
-        for (size_t z = 0; z < depth; ++z) {
-            if (!CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
-                return BatchOutcome::failed;
-            }
-            if (!take_plane_histogram(static_cast<int>(z), z_histogram)) {
-                return BatchOutcome::cancelled;
-            }
-        }
-    }
-    if (stopped()) {
-        return BatchOutcome::cancelled;
-    }
-    CacheCubeHistogram(stokes, histogram);
-    return BatchOutcome::finished;
+    return outcome;
 }
 
 // ****************************************************
@@ -2003,20 +1960,6 @@ BatchOutcome Frame::RegionSpectra(const std::function<bool(std::vector<RegionMas
         return BatchOutcome::declined;
     }
     return batched->RegionSpectra(regions, z_range, stokes, sink);
-}
-
-BatchOutcome Frame::GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
-    const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
-    auto* walk = _loader->CubeWalk();
-    if (!walk) {
-        return BatchOutcome::declined;
-    }
-    // Each plane is cached on the way past, because the per-plane path this replaces cached it and
-    // later per-plane requests still look there.
-    return walk->PlaneStats(stokes, cancellation_requested, [&](int z, const BasicStats<float>& stats) {
-        _image_basic_stats[CacheKey(z, stokes)] = stats;
-        return plane_callback(z, stats);
-    });
 }
 
 void Frame::ReleaseRegion(int region_id) {
