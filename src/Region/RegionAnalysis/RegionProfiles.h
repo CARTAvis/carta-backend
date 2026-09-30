@@ -51,6 +51,14 @@ using RegionProfileReport =
 // asking again is answered from it.
 //
 // The statistics are made here from the totals the reader keeps, whichever reader it was.
+//
+// Making a profile in steps looks like a second way to stop beside the report a reader makes inside a
+// step, and it is not one to remove. A profile of a computed stokes (Ptotal, Plinear, Pangle and the
+// fractional ones) is made of two to four stokes' profiles with no report, since no single stokes'
+// partial makes one of theirs: it is shown as it grows, and can be stopped, only because each stokes
+// goes one step at a time in turn. And a finished profile kept here is the only answer cache there is
+// for a region read by its loader, so a second request for it -- a statistic added, another profile of
+// the same region -- is free.
 class RegionProfiles {
 public:
     // One step on, of at most `step` if the reader can stop that soon. When the outcome is finished,

@@ -39,6 +39,7 @@
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageStats/StatsCalculator.h"
 #include "Region/RegionAnalysis/LineBoxRegions.h"
+#include "Region/RegionAnalysis/RegionProfiles.h"
 #include "Region/RegionHandler.h"
 #include "Util/Message.h"
 #include "src/Frame/Frame.h"
@@ -50,15 +51,6 @@ using namespace carta;
 namespace {
 
 const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
-
-// The loader keeps a region's spectral walk where only a subclass can see it.
-class PeekableZarrLoader : public carta::ZarrLoader {
-public:
-    using carta::ZarrLoader::ZarrLoader;
-    std::size_t RegionStateCount() const {
-        return _region_spectral.size();
-    }
-};
 
 // A Zarr loader whose walk over regions does as a test says: walk as the real one does, decline before
 // starting, fail once the first block has been handed over -- which no store on disk can be made to do
@@ -179,6 +171,39 @@ constexpr int kWidth = 4;
 constexpr int kHeight = 5;
 constexpr int kDepth = 2;
 constexpr int kStokes = 3;
+
+using ProfilesMap = std::map<CARTA::StatsType, std::vector<double>>;
+
+// One step of a region's profile through the loader's own reading of it, of at most `step`.
+BatchOutcome ProfileStep(RegionProfiles& profiles, FileLoader& loader, int region_id, int stokes,
+    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, ProfilesMap& profile, float& progress,
+    const RegionProfileReport& report = {}, std::chrono::milliseconds step = std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME)) {
+    static std::mutex image_mutex;
+    RegionProfileRequest request;
+    request.origin = origin;
+    request.mask = &mask;
+    request.channels = AxisRange(0, kDepth - 1);
+    request.stokes = stokes;
+    auto* reader = loader.ProfileReader();
+    if (!reader) {
+        return BatchOutcome::declined;
+    }
+    return profiles.Continue({0, region_id, stokes}, request, *reader, image_mutex, step, report, profile, progress);
+}
+
+// A region's profile made to the end, over every channel of the fixture.
+bool WholeProfile(RegionProfiles& profiles, FileLoader& loader, int region_id, int stokes,
+    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, ProfilesMap& profile,
+    const RegionProfileReport& report = {}) {
+    float progress = 0.0f;
+    for (int steps = 0; progress < 1.0f; ++steps) {
+        if (steps >= 200 ||
+            ProfileStep(profiles, loader, region_id, stokes, mask, origin, profile, progress, report) != BatchOutcome::finished) {
+            return false;
+        }
+    }
+    return true;
+}
 
 float ExpectedValue(int x, int y, int z, int stokes) {
     return static_cast<float>((z * 1000) + (stokes * 100) + (x * 10) + y);
@@ -733,7 +758,7 @@ TEST_F(ZarrImageTest, APvImageWhoseWalkFailsPartwayIsNotRetried) {
 // it arrives as an LCPolygon with its raster, rotated or not.
 TEST_F(ZarrImageTest, ARectanglesSpectralProfileIsReadByTheLoader) {
     for (const float rotation : {0.0f, 30.0f}) {
-        auto loader = std::make_shared<PeekableZarrLoader>(kZarrFixture.string());
+        auto loader = FileLoader::GetLoader(kZarrFixture.string());
         loader->OpenFile("");
         std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
         ASSERT_TRUE(frame->IsValid());
@@ -758,45 +783,10 @@ TEST_F(ZarrImageTest, ARectanglesSpectralProfileIsReadByTheLoader) {
     }
 }
 
-// A region's spectral walk is resumable, so the loader keeps where it got to -- keyed by region and
-// stokes, and until now never erased. Every region a user drew and deleted left its channels behind
-// for the life of the loader, which outlives the file: Session keeps a cache of them.
-TEST_F(ZarrImageTest, RemovingARegionReleasesWhatTheLoaderKeptForIt) {
-    auto loader = std::make_shared<PeekableZarrLoader>(kZarrFixture.string());
-    loader->OpenFile("");
-    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
-    ASSERT_TRUE(frame->IsValid());
-    ASSERT_EQ(loader->RegionStateCount(), 0u);
-
-    casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, kWidth, kHeight), true);
-    casacore::ArrayLattice<casacore::Bool> mask(mask_2d);
-    const casacore::IPosition origin(2, 0, 0);
-    std::mutex image_mutex;
-
-    // Two regions, two stokes each, so the entries are keyed on both and removing one leaves three.
-    for (const int region_id : {1, 2}) {
-        for (const int stokes : {0, 1}) {
-            std::map<CARTA::StatsType, std::vector<double>> results;
-            float progress = 0.0f;
-            ASSERT_TRUE(loader->GetRegionSpectralData(
-                region_id, AxisRange(0, kDepth - 1), stokes, mask, origin, image_mutex, results, progress))
-                << "region " << region_id << " stokes " << stokes;
-        }
-    }
-    ASSERT_EQ(loader->RegionStateCount(), 4u);
-
-    frame->ReleaseRegion(1);
-    EXPECT_EQ(loader->RegionStateCount(), 2u) << "both stokes of that region should have gone, and only those";
-
-    frame->ReleaseRegion(ALL_REGIONS);
-    EXPECT_EQ(loader->RegionStateCount(), 0u);
-}
-
-// And through the seam that actually runs in production. The test above calls the loader's release
-// by hand, which says nothing about whether anything ever calls it: RegionHandler is what learns
-// that a region is gone, and it has to pass that on to every frame's loader.
-TEST_F(ZarrImageTest, RemovingARegionThroughTheHandlerReachesTheLoader) {
-    auto loader = std::make_shared<PeekableZarrLoader>(kZarrFixture.string());
+// A region profile is resumed between steps and kept once made, until RegionHandler, which is what
+// learns that a region is gone, lets it go.
+TEST_F(ZarrImageTest, RemovingARegionThroughTheHandlerLetsItsProfileGo) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
     loader->OpenFile("");
     std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
     ASSERT_TRUE(frame->IsValid());
@@ -812,25 +802,20 @@ TEST_F(ZarrImageTest, RemovingARegionThroughTheHandlerReachesTheLoader) {
 
     casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, kWidth, kHeight), true);
     casacore::ArrayLattice<casacore::Bool> mask(mask_2d);
-    const casacore::IPosition origin(2, 0, 0);
-    std::mutex image_mutex;
-    std::map<CARTA::StatsType, std::vector<double>> results;
-    float progress = 0.0f;
-    ASSERT_TRUE(loader->GetRegionSpectralData(
-        region_id, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress));
-    ASSERT_EQ(loader->RegionStateCount(), 1u);
+    ProfilesMap profile;
+    ASSERT_TRUE(WholeProfile(handler._region_profiles, *loader, region_id, 0, mask, casacore::IPosition(2, 0, 0), profile));
+    ASSERT_EQ(handler._region_profiles.Size(), 1u);
 
     handler.RemoveRegion(region_id);
-    EXPECT_EQ(loader->RegionStateCount(), 0u) << "removing a region should reach the loader that kept its walk";
+    EXPECT_EQ(handler._region_profiles.Size(), 0u) << "removing a region should let its profile go";
 }
 
 // An edit that leaves the region's bounding box and channel range alone still makes a different
-// mask of them -- rotating a rectangle, dragging one vertex of a polygon inward -- and the loader
-// keeps its answer against that box and range. Nothing told it the mask underneath had changed, so
-// a finished walk was handed back as it stood and a half-finished one was resumed against the runs
-// of the mask before the edit.
-TEST_F(ZarrImageTest, EditingARegionThroughTheHandlerReachesTheLoader) {
-    auto loader = std::make_shared<PeekableZarrLoader>(kZarrFixture.string());
+// mask of them -- rotating a rectangle, dragging one vertex of a polygon inward -- and a profile is
+// kept against that box and range. Unless the edit lets it go, a finished profile is handed back as it
+// stood and a half-finished one resumed against the runs of the mask before the edit.
+TEST_F(ZarrImageTest, EditingARegionThroughTheHandlerLetsItsProfileGo) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
     loader->OpenFile("");
     std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
     ASSERT_TRUE(frame->IsValid());
@@ -853,14 +838,11 @@ TEST_F(ZarrImageTest, EditingARegionThroughTheHandlerReachesTheLoader) {
     casacore::ArrayLattice<casacore::Bool> whole(whole_2d);
     casacore::ArrayLattice<casacore::Bool> column(column_2d);
     const casacore::IPosition origin(2, 0, 0);
-    std::mutex image_mutex;
+    auto& profiles = handler._region_profiles;
 
-    std::map<CARTA::StatsType, std::vector<double>> before;
-    float progress = 0.0f;
-    ASSERT_TRUE(loader->GetRegionSpectralData(
-        region_id, AxisRange(0, kDepth - 1), 0, whole, origin, image_mutex, before, progress));
-    ASSERT_EQ(progress, 1.0f);
-    ASSERT_EQ(loader->RegionStateCount(), 1u);
+    ProfilesMap before;
+    ASSERT_TRUE(WholeProfile(profiles, *loader, region_id, 0, whole, origin, before));
+    ASSERT_EQ(profiles.Size(), 1u);
     ASSERT_EQ(before[CARTA::StatsType::NumPixels].size(), static_cast<std::size_t>(kDepth));
     ASSERT_EQ(before[CARTA::StatsType::NumPixels][0], static_cast<double>(CountUnflagged(whole_2d)));
 
@@ -868,13 +850,10 @@ TEST_F(ZarrImageTest, EditingARegionThroughTheHandlerReachesTheLoader) {
     // rotation is what a user does to a region without moving or resizing it.
     RegionState rotated(file_id, CARTA::RegionType::RECTANGLE, control_points, 45.0);
     ASSERT_TRUE(handler.SetRegion(region_id, rotated, frame->CoordinateSystem()));
-    EXPECT_EQ(loader->RegionStateCount(), 0u) << "editing a region should reach the loader that kept its walk";
+    EXPECT_EQ(profiles.Size(), 0u) << "editing a region should let its profile go";
 
-    std::map<CARTA::StatsType, std::vector<double>> after;
-    progress = 0.0f;
-    ASSERT_TRUE(loader->GetRegionSpectralData(
-        region_id, AxisRange(0, kDepth - 1), 0, column, origin, image_mutex, after, progress));
-    ASSERT_EQ(progress, 1.0f);
+    ProfilesMap after;
+    ASSERT_TRUE(WholeProfile(profiles, *loader, region_id, 0, column, origin, after));
     ASSERT_EQ(after[CARTA::StatsType::NumPixels].size(), static_cast<std::size_t>(kDepth));
     EXPECT_EQ(after[CARTA::StatsType::NumPixels][0], static_cast<double>(CountUnflagged(column_2d)))
         << "the profile after the edit should count the pixels of the mask it was given";
@@ -1517,19 +1496,14 @@ TEST_F(ZarrImageTest, RegionSpectralDataReportsWhileItIsStillWorking) {
     std::mutex image_mutex;
 
     std::vector<float> reported;
-    std::map<CARTA::StatsType, std::vector<double>> from_loader;
-    float progress = 0.0;
-    int rounds = 0;
-    while (progress < 1.0) {
-        ASSERT_TRUE(loader->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask_lattice, origin, image_mutex,
-            from_loader, progress,
-            [&](const std::map<CARTA::StatsType, std::vector<double>>& partial, float partial_progress) {
-                EXPECT_EQ(partial.count(CARTA::StatsType::Sum), 1u) << "a partial profile should carry the stats";
-                reported.push_back(partial_progress);
-                return true;
-            }));
-        ASSERT_LT(++rounds, 200) << "the loader profile never completed";
-    }
+    ProfilesMap from_loader;
+    RegionProfiles profiles;
+    const RegionProfileReport report = [&](float partial_progress, const std::function<ProfilesMap()>& partial) {
+        EXPECT_EQ(partial().count(CARTA::StatsType::Sum), 1u) << "a partial profile should carry the stats";
+        reported.push_back(partial_progress);
+        return true;
+    };
+    ASSERT_TRUE(WholeProfile(profiles, *loader, 0, 0, mask_lattice, origin, from_loader, report)) << "the loader profile never completed";
     ASSERT_FALSE(reported.empty()) << "a one-byte budget should have made the reduction report on the way";
     for (const float value : reported) {
         EXPECT_GE(value, 0.0f);
@@ -1539,12 +1513,9 @@ TEST_F(ZarrImageTest, RegionSpectralDataReportsWhileItIsStillWorking) {
     // The same profile without ever looking at it.
     auto reference_loader = FileLoader::GetLoader(kZarrFixture.string());
     reference_loader->OpenFile("");
-    std::map<CARTA::StatsType, std::vector<double>> reference;
-    float reference_progress = 0.0;
-    while (reference_progress < 1.0) {
-        ASSERT_TRUE(reference_loader->GetRegionSpectralData(
-            0, AxisRange(0, kDepth - 1), 0, mask_lattice, origin, image_mutex, reference, reference_progress));
-    }
+    RegionProfiles reference_profiles;
+    ProfilesMap reference;
+    ASSERT_TRUE(WholeProfile(reference_profiles, *reference_loader, 0, 0, mask_lattice, origin, reference));
     for (const auto& [stat, values] : reference) {
         ASSERT_EQ(from_loader[stat].size(), values.size()) << "stat=" << static_cast<int>(stat);
         for (std::size_t z = 0; z < values.size(); ++z) {
@@ -1553,6 +1524,46 @@ TEST_F(ZarrImageTest, RegionSpectralDataReportsWhileItIsStillWorking) {
                 EXPECT_TRUE(std::isnan(from_loader[stat][z])) << where;
             } else {
                 EXPECT_NEAR(from_loader[stat][z], values[z], 1e-9 * (1.0 + std::abs(values[z]))) << where;
+            }
+        }
+    }
+}
+
+// A step pauses at the end of a run once its time is up, and the next goes on from there: a profile
+// made in the shortest steps there are is the profile made in one.
+TEST_F(ZarrImageTest, AProfileMadeInTheShortestStepsIsTheSameProfile) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
+    ASSERT_NE(zarr_loader, nullptr);
+    // One byte, so that every channel is a run of its own and there is somewhere to pause.
+    zarr_loader->SetReadBudgetBytes(1);
+
+    casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, 3, 4), true);
+    casacore::ArrayLattice<casacore::Bool> mask(mask_2d);
+    const casacore::IPosition origin(2, 1, 1);
+
+    RegionProfiles profiles;
+    ProfilesMap stepped;
+    float progress = 0.0f;
+    int steps = 0;
+    while (progress < 1.0f) {
+        ASSERT_EQ(ProfileStep(profiles, *loader, 0, 2, mask, origin, stepped, progress, {}, std::chrono::milliseconds(0)),
+            BatchOutcome::finished);
+        ASSERT_LT(++steps, 100) << "the profile never completed";
+    }
+    EXPECT_GT(steps, 1) << "a step with no time to spare should have paused before the last channel";
+
+    RegionProfiles whole_profiles;
+    ProfilesMap whole;
+    ASSERT_TRUE(WholeProfile(whole_profiles, *loader, 0, 2, mask, origin, whole));
+    for (const auto& [stat, values] : whole) {
+        for (std::size_t z = 0; z < values.size(); ++z) {
+            if (std::isnan(values[z])) {
+                EXPECT_TRUE(std::isnan(stepped.at(stat)[z])) << "stat=" << static_cast<int>(stat) << " z=" << z;
+            } else {
+                EXPECT_EQ(stepped.at(stat)[z], values[z]) << "stat=" << static_cast<int>(stat) << " z=" << z;
             }
         }
     }
@@ -1572,20 +1583,21 @@ TEST_F(ZarrImageTest, RegionSpectralDataStopsWhenTheCallbackDoes) {
     casacore::ArrayLattice<casacore::Bool> mask_lattice(mask_2d);
     std::mutex image_mutex;
 
-    std::map<CARTA::StatsType, std::vector<double>> from_loader;
+    ProfilesMap from_loader;
     float progress = 0.0;
     int calls = 0;
-    EXPECT_FALSE(loader->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask_lattice,
-        casacore::IPosition(2, 1, 1), image_mutex, from_loader, progress,
-        [&](const std::map<CARTA::StatsType, std::vector<double>>&, float) {
-            ++calls;
-            return false;
-        }));
+    RegionProfiles profiles;
+    EXPECT_EQ(ProfileStep(profiles, *loader, 0, 0, mask_lattice, casacore::IPosition(2, 1, 1), from_loader, progress,
+                  [&](float, const std::function<ProfilesMap()>&) {
+                      ++calls;
+                      return false;
+                  }),
+        BatchOutcome::cancelled);
     EXPECT_EQ(calls, 1) << "a callback that says stop should not be asked again";
 }
 
-// A walk takes up to TARGET_PARTIAL_REGION_TIME between returns, and the loader used to hold one
-// lock over every region's state for all of it. Removing or editing any other region then waited
+// A step takes up to TARGET_PARTIAL_REGION_TIME, and the loader used to hold one lock over every
+// region's state for all of it. Removing or editing any other region then waited
 // for that walk, and so did every other region's profile. Released from another thread because on
 // this one the old lock was not merely slow but a self-deadlock.
 TEST_F(ZarrImageTest, ReleasingARegionDoesNotWaitForAnotherRegionsWalk) {
@@ -1605,21 +1617,17 @@ TEST_F(ZarrImageTest, ReleasingARegionDoesNotWaitForAnotherRegionsWalk) {
     // inside the callback, a release that is stuck behind the walk would stall the walk itself.
     std::vector<std::future<void>> releases;
     bool released_in_time = true;
-    std::map<CARTA::StatsType, std::vector<double>> from_loader;
-    float progress = 0.0;
-    int rounds = 0;
-    while (progress < 1.0) {
-        ASSERT_TRUE(loader->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask_lattice,
-            casacore::IPosition(2, 0, 0), image_mutex, from_loader, progress,
-            [&](const std::map<CARTA::StatsType, std::vector<double>>&, float) {
-                releases.push_back(std::async(std::launch::async, [&] { loader->ReleaseRegion(1); }));
-                if (releases.back().wait_for(std::chrono::seconds(2)) != std::future_status::ready) {
-                    released_in_time = false;
-                }
-                return true;
-            }));
-        ASSERT_LT(++rounds, 200) << "the loader profile never completed";
-    }
+    RegionProfiles profiles;
+    ProfilesMap from_loader;
+    ASSERT_TRUE(WholeProfile(profiles, *loader, 0, 0, mask_lattice, casacore::IPosition(2, 0, 0), from_loader,
+        [&](float, const std::function<ProfilesMap()>&) {
+            releases.push_back(std::async(std::launch::async, [&] { profiles.Release(1); }));
+            if (releases.back().wait_for(std::chrono::seconds(2)) != std::future_status::ready) {
+                released_in_time = false;
+            }
+            return true;
+        }))
+        << "the loader profile never completed";
     ASSERT_FALSE(releases.empty()) << "a one-byte budget should have made the walk report on the way";
     EXPECT_TRUE(released_in_time) << "releasing region 1 should not wait for region 0's walk";
 }
@@ -1652,19 +1660,11 @@ TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {
         CARTA::StatsType::Max};
 
     for (int stokes = 0; stokes < kStokes; ++stokes) {
-        std::mutex image_mutex;
-        EXPECT_TRUE(loader->UseRegionSpectralData(casacore::IPosition(2, region_width, region_height), image_mutex))
-            << "the Zarr loader should serve region profiles itself";
-
-        std::map<CARTA::StatsType, std::vector<double>> from_loader;
-        float progress = 0.0;
-        int rounds = 0;
-        while (progress < 1.0) {
-            ASSERT_TRUE(loader->GetRegionSpectralData(stokes, AxisRange(0, kDepth - 1), stokes, mask_lattice,
-                casacore::IPosition(2, x0, y0), image_mutex, from_loader, progress))
-                << "the loader profile failed at stokes=" << stokes;
-            ASSERT_LT(++rounds, 100) << "the loader profile never completed";
-        }
+        ASSERT_NE(loader->ProfileReader(), nullptr) << "the Zarr loader should read region profiles itself";
+        RegionProfiles profiles;
+        ProfilesMap from_loader;
+        ASSERT_TRUE(WholeProfile(profiles, *loader, stokes, stokes, mask_lattice, casacore::IPosition(2, x0, y0), from_loader))
+            << "the loader profile failed at stokes=" << stokes;
 
         for (int z = 0; z < kDepth; ++z) {
             casacore::LCBox box(casacore::IPosition(4, x0, y0, z, stokes),

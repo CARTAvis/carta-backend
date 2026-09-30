@@ -24,47 +24,6 @@ namespace carta {
 
 namespace {
 
-// CARTA asks for eleven statistics; carta-zarr accumulates the six they are all made of. The
-// derived ones are made by DeriveStatistics, as Hdf5Loader makes its own, so a Zarr profile and an
-// HDF5 profile of the same numbers agree to the last bit, and a profile says zero for a lone pixel.
-void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, const carta::zarr::SpectralBlock& block,
-    std::size_t channel_offset, double beam_area, bool has_flux) {
-    using carta::zarr::Statistic;
-    if (!block.Carries(Statistic::num_pixels | Statistic::nan_count | Statistic::sum | Statistic::sum_sq | Statistic::min |
-                       Statistic::max)) {
-        return;
-    }
-
-    for (std::size_t c = 0; c < static_cast<std::size_t>(block.channel_count); ++c) {
-        const auto z = channel_offset + static_cast<std::size_t>(block.first_channel) + c;
-        const auto counted = block.Totals(0, c);
-        const double n = counted.num_pixels;
-        stats[CARTA::StatsType::NumPixels][z] = n;
-        stats[CARTA::StatsType::NanCount][z] = counted.nan_count;
-        if (n == 0.0) {
-            // Everything but the two counts is undefined for a channel with no valid pixel, and the
-            // profile is already NaN there.
-            continue;
-        }
-        const double sum = counted.sum;
-        const double sum_sq = counted.sum_sq;
-        const double smallest = counted.min;
-        const double largest = counted.max;
-        const auto derived = DeriveStatistics({n, sum, sum_sq, smallest, largest}, LonePixelSigma::zero);
-        stats[CARTA::StatsType::Sum][z] = sum;
-        stats[CARTA::StatsType::SumSq][z] = sum_sq;
-        stats[CARTA::StatsType::Min][z] = smallest;
-        stats[CARTA::StatsType::Max][z] = largest;
-        stats[CARTA::StatsType::Mean][z] = derived.mean;
-        stats[CARTA::StatsType::RMS][z] = derived.rms;
-        stats[CARTA::StatsType::Sigma][z] = derived.sigma;
-        stats[CARTA::StatsType::Extrema][z] = derived.extrema;
-        if (has_flux) {
-            stats[CARTA::StatsType::FluxDensity][z] = sum / beam_area;
-        }
-    }
-}
-
 // The six accumulators a reduction produces, as the statistics the caller's own calculator would
 // have produced from the same pixels. A statistic that was not accumulated reads as SpectralTotals
 // says -- zero for the sums, NaN for the extrema -- which is the value that calculator would have
@@ -203,18 +162,6 @@ bool ZarrLoader::GetCursorSpectralData(
 // The batched path exists for the position-velocity generator, which asks for one small box per
 // pixel along a line. carta-zarr walks the chunks once and accumulates whichever boxes land on
 // each, so the cost follows the chunks the boxes cover rather than the number of boxes.
-void ZarrLoader::ReleaseRegion(int region_id) {
-    std::scoped_lock lock(_region_spectral_mutex);
-    if (region_id == ALL_REGIONS) {
-        _region_spectral.clear();
-        return;
-    }
-    // Keyed by region and stokes both, so one region is several entries.
-    for (auto it = _region_spectral.begin(); it != _region_spectral.end();) {
-        it = it->first.first == region_id ? _region_spectral.erase(it) : std::next(it);
-    }
-}
-
 BatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
     const std::function<bool(const RegionSpectralBlock&)>& sink) {
     auto image = ImageForStokes(stokes);
@@ -437,142 +384,6 @@ BatchOutcome ZarrLoader::OnePassCubeHistogram(int stokes, int num_bins, std::uin
 // does have two datasets on disk and picking the wrong one is expensive.
 bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& /*image_mutex*/) {
     return _zarr_image != nullptr && _num_dims == 4 && region_shape.size() >= 2;
-}
-
-// One region's spectral profile, resumed where the last call left off.
-//
-// The caller loops until progress reaches 1, checking between calls whether the region still
-// exists and whether the user still wants the answer, so each call does a bounded amount of work
-// and returns. The pause happens at a block boundary, and blocks are aligned to whole spectral
-// chunks, so resuming decodes nothing twice.
-//
-// The hint is left at zero on purpose: the library then emits once per read budget, which is as
-// often as it can without making the reads smaller. That is what gives the deadline below somewhere
-// to fire -- asking for one block at the end would make this loop a single call however long it ran.
-//
-// Channels are finished in order rather than all of them being refined together: a channel this
-// call reports is final, and the ones after it stay NaN until their turn.
-bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
-    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& /*image_mutex*/,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
-    const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback) {
-    auto image = ImageForStokes(stokes);
-    if (!image) {
-        return false;
-    }
-    const auto mask_shape = mask.shape();
-    if (mask_shape.size() != 2 || origin.size() < 2 || !mask.asArray().contiguousStorage()) {
-        return false;
-    }
-
-    const int depth = _image_shape(2);
-    AxisRange range(z_range.from, z_range.to == ALL_Z ? depth - 1 : z_range.to);
-    if (range.from < 0 || range.to < range.from || range.to >= depth) {
-        return false;
-    }
-    const auto channels = static_cast<std::size_t>(range.to - range.from + 1);
-
-    const double beam_area = CalculateBeamArea();
-    const bool has_flux = !std::isnan(beam_area);
-
-    std::shared_ptr<RegionSpectralState> held;
-    {
-        std::scoped_lock lock(_region_spectral_mutex);
-        auto& entry = _region_spectral[{region_id, stokes}];
-        if (!entry) {
-            entry = std::make_shared<RegionSpectralState>();
-        }
-        held = entry;
-    }
-    // Only this region's lock from here on. The walk below runs for up to TARGET_PARTIAL_REGION_TIME
-    // and calls partial_callback as it goes; under the map's lock that stalled every other region's
-    // profile and every ReleaseRegion, and a callback that released a region deadlocked.
-    std::scoped_lock state_lock(held->mutex);
-    auto& state = *held;
-    // Compared size first: casacore's IPosition comparison throws rather than returning false when
-    // the two do not conform, and the stored one is empty until the first call.
-    const bool same_region = state.origin.size() == origin.size() && state.shape.size() == mask_shape.size() &&
-                             state.origin == origin && state.shape == mask_shape;
-    if (!same_region || state.z_range.from != range.from || state.z_range.to != range.to) {
-        // A moved or resized region is a different question, not a continuation of this one.
-        state.origin = origin;
-        state.shape = mask_shape;
-        state.z_range = range;
-        state.channels_done = 0;
-        state.stats.clear();
-        const std::vector<CARTA::StatsType> reported{CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount,
-            CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma,
-            CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::Extrema};
-        for (const auto stat : reported) {
-            state.stats[stat] = std::vector<double>(channels, DOUBLE_NAN);
-        }
-        if (has_flux) {
-            state.stats[CARTA::StatsType::FluxDensity] = std::vector<double>(channels, DOUBLE_NAN);
-        }
-    }
-
-    if (state.channels_done < channels) {
-        static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to borrow a mask");
-        carta::zarr::RegionMask region{static_cast<std::uint64_t>(origin(0)), static_cast<std::uint64_t>(origin(1)),
-            static_cast<std::uint64_t>(mask_shape(0)), static_cast<std::uint64_t>(mask_shape(1)),
-            {reinterpret_cast<const std::uint8_t*>(mask.asArray().data()), static_cast<std::size_t>(mask.asArray().nelements())}};
-
-        carta::zarr::SpectralReduceRequest request;
-        request.planes.spectral = {static_cast<std::uint64_t>(range.from + state.channels_done),
-            static_cast<std::uint64_t>(channels - state.channels_done), 1};
-        request.planes.polarization = static_cast<std::uint64_t>(stokes);
-        request.regions = {&region, 1};
-        request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::nan_count |
-                             carta::zarr::Statistic::sum | carta::zarr::Statistic::sum_sq |
-                             carta::zarr::Statistic::min | carta::zarr::Statistic::max;
-
-        const auto first_channel = state.channels_done;
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME);
-        bool paused = false;
-        const auto report = [&](double done) {
-            return !partial_callback ||
-                   partial_callback(state.stats, static_cast<float>(done / static_cast<double>(channels)));
-        };
-        carta::zarr::ReadOptions options;
-        options.read_budget_bytes = _read_budget_bytes;
-        const auto store = [&](const carta::zarr::SpectralBlock& block) {
-            StoreSpectralBlock(state.stats, block, first_channel, beam_area, has_flux);
-            if (!block.complete) {
-                // Partial sums over the chunks read so far. Forwarding them is the whole point
-                // of the callback: one chunk layer of a region covering a large image is tens of
-                // seconds, and this is the only thing the caller sees while it is being read.
-                // Nothing is finished, so channels_done does not move and the same channels
-                // arrive again.
-                return report(static_cast<double>(first_channel + block.first_channel) +
-                              (block.completeness * static_cast<double>(block.channel_count)));
-            }
-            state.channels_done = first_channel + static_cast<std::size_t>(block.first_channel + block.channel_count);
-            if (state.channels_done >= channels) {
-                return true;
-            }
-            if (!report(static_cast<double>(state.channels_done))) {
-                return false;
-            }
-            if (std::chrono::steady_clock::now() >= deadline) {
-                // Hand back what is finished so the caller can show it and decide whether this
-                // profile is still wanted. Only ever at a block boundary: a pause inside one
-                // would throw away the partial sums, and the next call would read them again.
-                paused = true;
-                return false;
-            }
-            return true;
-        };
-        const auto outcome = Outcome(image->Library().ReduceSpectral(request, store, options), "reduce a region over the spectrum");
-        // A pause is this loader's own stop, and the library reports it as any other; the flag
-        // is what tells the two apart (ADR 0011 in carta-zarr).
-        if (outcome == BatchOutcome::failed || (outcome == BatchOutcome::cancelled && !paused)) {
-            return false;
-        }
-    }
-
-    results = state.stats;
-    progress = float(state.channels_done) / float(channels);
-    return true;
 }
 
 // A region's profile a run of whole channels at a time, finished in order: a channel reported
