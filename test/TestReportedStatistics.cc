@@ -550,6 +550,37 @@ TEST_F(BasicStatsDerivedTest, APlaneWithNoValidPixelIsUndefined) {
     EXPECT_TRUE(std::isnan(stats.rms));
 }
 
+TEST_F(BasicStatsDerivedTest, StatisticsOfNoPixelsYetHaveNothingDerived) {
+    const BasicStats<float> nothing;
+    EXPECT_EQ(nothing.num_pixels, 0u);
+    EXPECT_EQ(nothing.sum, 0.0);
+    EXPECT_EQ(nothing.sumSq, 0.0);
+    EXPECT_TRUE(std::isnan(nothing.mean));
+    EXPECT_TRUE(std::isnan(nothing.stdDev));
+    EXPECT_TRUE(std::isnan(nothing.rms));
+    // The extremes stay the identities a join starts from.
+    EXPECT_EQ(nothing.min_val, std::numeric_limits<float>::max());
+    EXPECT_EQ(nothing.max_val, std::numeric_limits<float>::lowest());
+}
+
+// A cube of planes with no valid pixel says what each of its planes says.
+TEST_F(BasicStatsDerivedTest, PlanesWithNoValidPixelJoinedAreUndefinedAsEachOfThemIs) {
+    const std::vector<float> pixels = {std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::infinity()};
+    BasicStatsCalculator<float> calculator(pixels.data(), pixels.size());
+    calculator.reduce();
+    const auto plane = calculator.GetStats();
+
+    BasicStats<float> joined;
+    joined.join(plane);
+    joined.join(plane);
+    ASSERT_EQ(joined.num_pixels, 0u);
+    for (const auto& [name, value] : std::map<std::string, std::pair<double, double>>{
+             {"mean", {joined.mean, plane.mean}}, {"stdDev", {joined.stdDev, plane.stdDev}}, {"rms", {joined.rms, plane.rms}}}) {
+        EXPECT_TRUE(std::isnan(value.first)) << name << " of the cube is " << value.first;
+        EXPECT_TRUE(std::isnan(value.second)) << name << " of a plane is " << value.second;
+    }
+}
+
 TEST_F(BasicStatsDerivedTest, PlanesJoinedAreDerivedFromTheirTotalsAsTheyGrow) {
     std::mt19937 random(11);
     BasicStats<float> joined;

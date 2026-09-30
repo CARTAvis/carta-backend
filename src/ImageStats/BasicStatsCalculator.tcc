@@ -36,15 +36,17 @@ template <typename T>
 BasicStats<T>::BasicStats(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq)
     : num_pixels(num_pixels), sum(sum), mean(mean), stdDev(stdDev), min_val(min_val), max_val(max_val), rms(rms), sumSq(sumSq) {}
 
+// No pixel yet: nothing is derived, as for a plane with no valid pixel, and the extremes are the
+// identities a join starts from.
 template <typename T>
 BasicStats<T>::BasicStats()
     : num_pixels(0),
       sum(0),
-      mean(0),
-      stdDev(0),
+      mean(DOUBLE_NAN),
+      stdDev(DOUBLE_NAN),
       min_val(std::numeric_limits<T>::max()),
       max_val(std::numeric_limits<T>::lowest()),
-      rms(0),
+      rms(DOUBLE_NAN),
       sumSq(0) {}
 
 template <typename T>
