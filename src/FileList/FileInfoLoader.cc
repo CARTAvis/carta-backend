@@ -23,6 +23,7 @@
 #include "Util/File.h"
 #include "ImageData/CartaZarrAxes.h"
 #include "ImageData/ZarrContext.h"
+#include "ImageData/ZarrStores.h"
 
 using namespace carta;
 
@@ -73,6 +74,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
         }
 
         file_info.set_type(entry->type);
+        _message = entry->message;
         file_info.set_size(entry->size);
         file_info.set_size_is_upper_bound(entry->size_is_upper_bound);
         for (const auto& hdu : entry->hdu_list) {
@@ -121,20 +123,19 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
         return entry;
     }
 
-    const auto context = GetZarrContext();
-    auto dataset = carta::zarr::Dataset::Open(context, _filename);
-    if (!dataset) {
-        // Not an error for a listing: the store is shown as the directory it is, with no images, and
-        // opening it reports the same failure to whoever tries. But it is the only place the reason
-        // would otherwise be dropped on the way.
-        spdlog::debug("Not listing the images of Zarr store {}: {}", _filename, dataset.error().message);
+    const auto look = ZarrStores::Instance().Look(_filename);
+    if (!look->dataset) {
+        // A store that will not open has no images to list, and the reason goes back with the answer
+        // for whoever selected it. Opening it says the same.
         casacore::Directory cc_dir(cc_file);
         entry.size = cc_dir.size();
+        entry.message = look->reason;
         return entry;
     }
+    const auto& dataset = look->dataset;
 
     entry.size = cc_file.size();
-    auto dataset_size = dataset.value().Size();
+    auto dataset_size = dataset->Size();
     if (dataset_size && dataset_size.value().bytes <= static_cast<std::uint64_t>(std::numeric_limits<int64_t>::max())) {
         entry.size = static_cast<int64_t>(dataset_size.value().bytes);
         // The library says which of two questions it answered, not how the answers compare -- see
@@ -147,16 +148,13 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
     }
 
     // Offered only if CARTA will open it, which is more than the library promises with openable: the
-    // library opens an image with two times, and CARTA displays one. OfferedImages answers from the
-    // listing's axes, so nothing here is opened, and it is the answer CartaZarrImage takes its
-    // default image from.
-    const auto& images = dataset.value().descriptor().images;
-    auto offer = OfferedImages(dataset.value().descriptor());
-    for (const auto& refused : offer.refused) {
-        spdlog::debug("Not listing Zarr image {} in {}: {}", refused.id, _filename, refused.reason);
+    // library opens an image with two times, and CARTA displays one. The same offer is what
+    // CartaZarrImage takes its default image from.
+    entry.hdu_list = look->offered;
+    entry.complete = !dataset->descriptor().images.empty();
+    if (entry.hdu_list.empty()) {
+        entry.message = look->why_none;
     }
-    entry.hdu_list = std::move(offer.ids);
-    entry.complete = !images.empty();
 
     return entry;
 }
@@ -166,7 +164,7 @@ CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
     if (IsCompressedFits(filename)) {
         return CARTA::FileType::FITS;
     }
-    if (IsZarr(filename)) {
+    if (ZarrStores::Instance().Look(filename)->IsZarr()) {
         return CARTA::FileType::ZARR;
     }
 

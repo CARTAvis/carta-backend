@@ -56,19 +56,20 @@ public:
         bool size_is_upper_bound = false;
         std::vector<std::string> hdu_list;
         bool complete = false;
+        // Why there is nothing to open, when there is nothing: the library's reason for a store that
+        // will not open, or CARTA's for one with no image it will display.
+        std::string message;
     };
 
     // What the filesystem will say about the image without being walked. Two stamps that differ
     // prove the image changed; two that match prove nothing, which is what the TTL is for.
+    //
+    // Only the directory's own timestamp. A Zarr store's root metadata is rewritten in place, which
+    // this does not see, and reading it would be the backend knowing where a store keeps its
+    // metadata, which is the library's business (ADR 0004 in carta-zarr). The TTL covers it, as it
+    // covers every other write this cannot see.
     struct Stamp {
         int64_t directory_mtime = 0;
-        // A Zarr store keeps the schema that decides its type and its image list in one file at
-        // its root. That file is rewritten in place, which the directory's own timestamp does not
-        // see, so read it too -- for every directory, since whether this one is a store is itself
-        // one of the answers being cached. A directory without it stamps as absent, which is
-        // stable and correct.
-        int64_t metadata_mtime = 0;
-        int64_t metadata_size = -1;
 
         bool operator==(const Stamp& other) const;
     };

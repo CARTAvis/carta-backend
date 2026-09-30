@@ -12,6 +12,7 @@
 #include <casacore/casa/Quanta/UnitMap.h>
 
 #include "ImageData/CartaMiriadImage.h"
+#include "ImageData/ZarrStores.h"
 #include "Logger/Logger.h"
 #include "Util/File.h"
 
@@ -77,7 +78,9 @@ CARTA::FileType FolderImageType(const std::string& folder_path, std::string& mes
         return carta_type;
     }
 
-    if (IsZarr(folder_path)) {
+    // A malformed image store is listed as the image it was meant to be, so that opening it says why
+    // it will not open, rather than as a folder that nothing recognised.
+    if (carta::ZarrStores::Instance().Look(folder_path)->IsZarr()) {
         return CARTA::FileType::ZARR;
     }
 

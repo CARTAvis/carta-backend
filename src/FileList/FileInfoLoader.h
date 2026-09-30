@@ -23,6 +23,10 @@ public:
     FileInfoLoader(const std::string& filename, const CARTA::FileType& type);
 
     bool FillFileInfo(CARTA::FileInfo& file_info);
+    // Why the last FillFileInfo found nothing to open, when it knows: empty otherwise.
+    const std::string& Message() const {
+        return _message;
+    }
 
 private:
     // The type the caller gave us, or the one the file is asked for on first use. Deciding it
@@ -38,6 +42,7 @@ private:
     std::string _filename;
     CARTA::FileType _type;
     bool _type_known;
+    std::string _message;
 };
 
 } // namespace carta

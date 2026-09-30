@@ -7,6 +7,7 @@
 
 #include "ZarrCasacore.h"
 #include "ZarrContext.h"
+#include "ZarrStores.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -68,26 +69,25 @@ void ThrowIfUnread(const carta::zarr::Result<std::size_t>& read, const char* whe
 }  // namespace
 
 CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& image_id) : _filename(filename) {
-    const auto context = GetZarrContext();
-    auto dataset = carta::zarr::Dataset::Open(context, filename);
-    if (!dataset) {
-        throw casacore::AipsError("Failed to open XRADIO dataset: " + dataset.error().message);
+    // The store the file list and the file info looked at, not opened again: opening it walks it.
+    const auto look = ZarrStores::Instance().Look(filename);
+    if (!look->dataset) {
+        throw casacore::AipsError("Failed to open XRADIO dataset: " + (look->reason.empty() ? "not an image store" : look->reason));
     }
 
     if (image_id.empty()) {
         // The first image the file list offers. The library's own default is the first image it will
-        // open, and CARTA refuses more than the library does, so the two can differ; OfferedImages is
-        // what the file list shows, so asking it here is what makes the two agree.
-        const auto offer = OfferedImages(dataset.value().descriptor());
-        if (offer.ids.empty()) {
-            throw casacore::AipsError(offer.why_none);
+        // open, and CARTA refuses more than the library does, so the two can differ; the offer is
+        // what the file list shows, so opening its first is what makes the two agree.
+        if (look->offered.empty()) {
+            throw casacore::AipsError(look->why_none);
         }
-        _image_id = offer.ids.front();
+        _image_id = look->offered.front();
     } else {
         _image_id = image_id;
     }
 
-    auto image = dataset.value().OpenImage(_image_id);
+    auto image = look->dataset->OpenImage(_image_id);
     if (!image) {
         throw casacore::AipsError("Failed to open XRADIO image '" + _image_id + "': " + image.error().message);
     }

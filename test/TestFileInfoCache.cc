@@ -12,6 +12,7 @@
 
 #include "Cache/FileInfoCache.h"
 #include "FileList/FileInfoLoader.h"
+#include "ImageData/ZarrStores.h"
 
 using namespace carta;
 
@@ -57,11 +58,11 @@ public:
         _store = fs::temp_directory_path() / ("carta_file_info_cache_" + std::to_string(::getpid()));
         fs::remove_all(_store);
         fs::copy(kZarrFixture, _store, fs::copy_options::recursive);
-        FileInfoCache::Instance().Clear();
+        ForgetEverything();
     }
 
     void TearDown() override {
-        FileInfoCache::Instance().Clear();
+        ForgetEverything();
         std::error_code error;
         fs::remove_all(_store, error);
     }
@@ -90,6 +91,12 @@ public:
         ASSERT_FALSE(chunk.empty());
         std::ofstream stream(chunk, std::ios::binary | std::ios::app);
         stream << std::string(bytes, 'x');
+    }
+
+    // Both answers about a directory image: what the file info derived, and what the store was.
+    static void ForgetEverything() {
+        FileInfoCache::Instance().Clear();
+        ZarrStores::Instance().Clear();
     }
 
     fs::path _store;
@@ -136,22 +143,25 @@ TEST_F(FileInfoCacheTest, TheTypeIsAnsweredFromTheCacheToo) {
     EXPECT_EQ(second.size(), first.size());
     EXPECT_EQ(second.hdu_list_size(), first.hdu_list_size());
 
-    // And once the cache is out of the way, the damage shows -- proving the store really was
+    // And once the caches are out of the way, the damage shows -- proving the store really was
     // unreadable for the whole of the check above.
-    FileInfoCache::Instance().Clear();
+    ForgetEverything();
     EXPECT_NE(FillWithoutType().type(), CARTA::FileType::ZARR);
 }
 
-// The stamp catches what it can: rewriting the root metadata is invisible to the directory's own
-// timestamp, so the cache reads the metadata file's instead.
-TEST_F(FileInfoCacheTest, RootMetadataRewriteIsNoticed) {
+// Rewriting a store's root metadata in place is invisible to the directory's own timestamp, and the
+// cache does not read the metadata to find out: where a store keeps it is the library's business. The
+// time a answer is kept for is what bounds it, as it bounds every other write this cannot see.
+TEST_F(FileInfoCacheTest, RootMetadataRewriteWaitsForTheTtl) {
     const int64_t first = FillSize();
     GrowAChunk(4096);
 
     const auto metadata = _store / "zarr.json";
     const auto before = fs::last_write_time(metadata);
     fs::last_write_time(metadata, before + std::chrono::seconds(2));
+    EXPECT_EQ(FillSize(), first);
 
+    ForgetEverything();
     EXPECT_EQ(FillSize(), first + 4096);
 }
 

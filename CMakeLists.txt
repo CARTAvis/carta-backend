@@ -256,6 +256,7 @@ set(SOURCE_FILES
         src/ImageData/StokesFilesConnector.cc
         src/ImageData/ZarrContext.cc
         src/ImageData/ZarrLoader.cc
+        src/ImageData/ZarrStores.cc
         src/ImageFitting/ImageFitter.cc
         src/ImageFitting/InitialValueCalculator.cc
         src/ImageGenerators/MomentGenerator.cc

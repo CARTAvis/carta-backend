@@ -16,9 +16,6 @@ using namespace carta;
 
 namespace {
 
-// The root metadata of a Zarr store. Only format 3 is supported, so this is the only name.
-constexpr const char* kZarrRootMetadata = "zarr.json";
-
 int64_t LastWriteTime(const fs::path& path) {
     std::error_code error;
     const auto time = fs::last_write_time(path, error);
@@ -32,7 +29,7 @@ int64_t LastWriteTime(const fs::path& path) {
 } // namespace
 
 bool FileInfoCache::Stamp::operator==(const Stamp& other) const {
-    return directory_mtime == other.directory_mtime && metadata_mtime == other.metadata_mtime && metadata_size == other.metadata_size;
+    return directory_mtime == other.directory_mtime;
 }
 
 FileInfoCache::FileInfoCache(std::size_t capacity, std::chrono::seconds ttl) : _capacity(std::max<std::size_t>(capacity, 1)), _ttl(ttl) {}
@@ -57,13 +54,6 @@ FileInfoCache::Stamp FileInfoCache::StampFor(const std::string& key) {
     const fs::path root(key);
     Stamp stamp;
     stamp.directory_mtime = LastWriteTime(root);
-
-    const fs::path metadata = root / kZarrRootMetadata;
-    stamp.metadata_mtime = LastWriteTime(metadata);
-    std::error_code error;
-    const auto size = fs::file_size(metadata, error);
-    stamp.metadata_size = error ? -1 : static_cast<int64_t>(size);
-
     return stamp;
 }
 
