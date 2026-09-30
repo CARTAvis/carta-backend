@@ -7,6 +7,7 @@
 #include "Hdf5Loader.h"
 
 #include "../Logger/Logger.h"
+#include "ImageStats/DerivedStatistics.h"
 #include "Util/Image.h"
 #include "Util/Nan.h"
 
@@ -360,10 +361,12 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
                 sum_sq_z = sum_sq[z];
                 num_pixels_z = num_pixels[z];
 
-                mean[z] = sum_z / num_pixels_z;
-                rms[z] = sqrt(sum_sq_z / num_pixels_z);
-                sigma[z] = num_pixels_z > 1 ? sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1)) : 0;
-                extrema[z] = (abs(min[z]) > abs(max[z]) ? min[z] : max[z]);
+                const auto derived =
+                    DeriveStatistics({static_cast<double>(num_pixels_z), sum_z, sum_sq_z, min[z], max[z]}, LonePixelSigma::zero);
+                mean[z] = derived.mean;
+                rms[z] = derived.rms;
+                sigma[z] = derived.sigma;
+                extrema[z] = derived.extrema;
 
                 if (has_flux) {
                     flux[z] = sum_z / beam_area;
