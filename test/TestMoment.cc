@@ -248,7 +248,9 @@ TEST_F(MomentTest, CheckConsistencyForChunkedHdf5) {
 //
 //   CARTA_MOMENT_STORE=<path>     the image to walk
 //   CARTA_MOMENT_CHANNELS=<n>     use only the first n channels (default: all)
-//   CARTA_MOMENT_XY=<w>x<h>       use only a w x h corner (default: all)
+//   CARTA_MOMENT_XY=<w>x<h>       use only a w x h box (default: all)
+//   CARTA_MOMENT_ORIGIN=<x>,<y>   put the box's corner here (default: 0,0), which is how a region
+//                                 that does not start on a chunk boundary is measured
 //
 // Reports wall time next to what the process actually read, because the thing
 // under suspicion is read amplification: the walk asks for a full-depth pencil
@@ -322,6 +324,17 @@ TEST_F(MomentTest, MeasureZarrWalk) {
         length(0) = std::min<ssize_t>(full(0), std::stoll(xy.substr(0, cross)));
         length(1) = std::min<ssize_t>(full(1), std::stoll(xy.substr(cross + 1)));
     }
+    const std::string origin_env = FromEnv("CARTA_MOMENT_ORIGIN");
+    if (!origin_env.empty()) {
+        const auto comma = origin_env.find(',');
+        ASSERT_NE(comma, std::string::npos) << "CARTA_MOMENT_ORIGIN wants <x>,<y>";
+        start(0) = std::stoll(origin_env.substr(0, comma));
+        start(1) = std::stoll(origin_env.substr(comma + 1));
+        length(0) = std::min<ssize_t>(length(0), full(0) - start(0));
+        length(1) = std::min<ssize_t>(length(1), full(1) - start(1));
+        ASSERT_GT(length(0), 0) << "the origin is past the image";
+        ASSERT_GT(length(1), 0) << "the origin is past the image";
+    }
 
     casacore::Slicer section(start, length);
     auto sub = std::make_shared<casacore::SubImage<float>>(*image, section);
@@ -355,10 +368,10 @@ TEST_F(MomentTest, MeasureZarrWalk) {
     const double mib = 1024.0 * 1024.0;
 
     std::printf(
-        "\nMOMENT store=%s shape=%lldx%lldx%lldx%lld seconds=%.2f wanted_MiB=%.1f "
+        "\nMOMENT store=%s origin=%lld,%lld shape=%lldx%lldx%lldx%lld cache_MiB=%d seconds=%.2f wanted_MiB=%.1f "
         "rchar_MiB=%.1f disk_MiB=%.1f amplification=%.1fx\n",
-        store.c_str(), (long long)length(0), (long long)length(1), (long long)length(2),
-        (long long)length(3), cache_mb, seconds, wanted_bytes / mib, rchar / mib, disk / mib,
+        store.c_str(), (long long)start(0), (long long)start(1), (long long)length(0), (long long)length(1),
+        (long long)length(2), (long long)length(3), cache_mb, seconds, wanted_bytes / mib, rchar / mib, disk / mib,
         wanted_bytes > 0 ? rchar / wanted_bytes : 0.0);
     std::fflush(stdout);
 }
