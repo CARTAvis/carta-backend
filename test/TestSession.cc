@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -17,12 +18,14 @@
 #include <utility>
 #include <vector>
 
+#include "Cache/FileInfoCache.h"
 #include "CommonTestUtilities.h"
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
 #include "ImageData/FileLoader.h"
 #include "ImageData/ZarrContext.h"
 #include "ImageData/ZarrLoader.h"
+#include "ImageData/ZarrStores.h"
 #include "Session/Session.h"
 #include "Util/Message.h"
 
@@ -904,6 +907,62 @@ TEST_F(SessionTest, MeasureRepeatedCubeHistogram) {
     std::printf("measure: shape %s bins %d -- first %.3f s (%zu messages), repeat %.6f s (%zu messages), %.0fx\n",
         frame->Depth() > 0 ? "cube" : "plane", answer->histograms().bins_size(), first, first_messages.size(), second,
         second_messages.size(), second > 0.0 ? first / second : 0.0);
+}
+
+// What listing, selecting and opening a store costs, each by a session of its own with nothing
+// remembered, the way a user comes to it. Skipped unless asked:
+//
+//   CARTA_BROWSE_STORE=/path/to/store.zarr CARTA_BROWSE_REPEATS=5 \
+//     ./carta_backend_tests --gtest_filter='SessionTest.MeasureBrowsingAStore'
+TEST_F(SessionTest, MeasureBrowsingAStore) {
+    const char* store_env = std::getenv("CARTA_BROWSE_STORE");
+    if (store_env == nullptr) {
+        GTEST_SKIP() << "set CARTA_BROWSE_STORE to measure";
+    }
+    const std::filesystem::path store(store_env);
+    const char* repeats_env = std::getenv("CARTA_BROWSE_REPEATS");
+    const int repeats = repeats_env != nullptr ? std::atoi(repeats_env) : 5;
+
+    auto timed = [](const std::function<void()>& work) {
+        const auto start = std::chrono::steady_clock::now();
+        work();
+        return std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+    };
+    auto forget = [] {
+        FileInfoCache::Instance().Clear();
+        ZarrStores::Instance().Clear();
+    };
+    auto median = [](std::vector<double> times) {
+        std::sort(times.begin(), times.end());
+        return times[times.size() / 2];
+    };
+
+    std::vector<double> walk, list, select, open, all;
+    for (int repeat = 0; repeat < repeats; ++repeat) {
+        walk.push_back(timed([&] { ASSERT_TRUE(carta::zarr::Dataset::Open(GetZarrContext(), store.string())); }));
+
+        forget();
+        HeadlessSession session;
+        CARTA::FileListRequest list_request;
+        list_request.set_directory(store.parent_path().string());
+        list.push_back(timed([&] { session.OnFileListRequest(list_request, 1); }));
+
+        CARTA::FileInfoRequest info_request;
+        info_request.set_directory(store.parent_path().string());
+        info_request.set_file(store.filename().string());
+        select.push_back(timed([&] { session.OnFileInfoRequest(info_request, 2); }));
+
+        auto open_request = Message::OpenFile(store.parent_path().string(), store.filename().string(), false, "", 0, false);
+        open.push_back(timed([&] { ASSERT_TRUE(session.OnOpenFile(open_request, 3)); }));
+        all.push_back(list.back() + select.back() + open.back());
+
+        auto infos = session.TakeMessagesOfType<CARTA::FileInfoResponse>(CARTA::EventType::FILE_INFO_RESPONSE);
+        ASSERT_EQ(infos.size(), 1u);
+        ASSERT_TRUE(infos[0].success()) << infos[0].message();
+    }
+
+    std::printf("measure: %d repeats, medians in ms -- one open %.2f; list %.2f, select %.2f, open %.2f, all three %.2f\n",
+        repeats, 1e3 * median(walk), 1e3 * median(list), 1e3 * median(select), 1e3 * median(open), 1e3 * median(all));
 }
 
 } // namespace
