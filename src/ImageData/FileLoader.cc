@@ -11,6 +11,7 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
+#include "ImageStats/DerivedStatistics.h"
 #include "Logger/Logger.h"
 #include "Util/File.h"
 #include "Util/Nan.h"
@@ -747,6 +748,28 @@ void FileLoader::LoadStats3DPercent() {
     }
 }
 
+namespace {
+
+// The statistics a file that stores its totals is asked for, made from the totals it stored. The file
+// never says how many pixels were valid, only how many were not; the caller has subtracted.
+void DeriveStoredStats(std::map<CARTA::StatsType, double>& stats, uint64_t num_pixels, double beam_area, bool has_flux) {
+    const double sum = stats[CARTA::StatsType::Sum];
+    const auto derived = DeriveStatistics(
+        {static_cast<double>(num_pixels), sum, stats[CARTA::StatsType::SumSq], stats[CARTA::StatsType::Min], stats[CARTA::StatsType::Max]},
+        LonePixelSigma::nan);
+
+    stats[CARTA::StatsType::NumPixels] = num_pixels;
+    stats[CARTA::StatsType::Mean] = derived.mean;
+    stats[CARTA::StatsType::Sigma] = derived.sigma;
+    stats[CARTA::StatsType::RMS] = derived.rms;
+    stats[CARTA::StatsType::Extrema] = derived.extrema;
+    if (has_flux) {
+        stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
+    }
+}
+
+} // namespace
+
 void FileLoader::LoadImageStats(bool load_percentiles) {
     _z_stats.resize(_dims.num_stokes);
     for (size_t s = 0; s < _dims.num_stokes; s++) {
@@ -757,8 +780,6 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
     // Remove this check when we drop support for the old schema.
     // We assume that checking for only one of these datasets is sufficient.
     bool full(HasData(FileInfo::Data::STATS_2D_SUM));
-    double sum, sum_sq, min, max;
-    uint64_t num_pixels;
 
     if (HasData(FileInfo::Data::STATS)) {
         if (HasData(FileInfo::Data::STATS_2D)) {
@@ -785,21 +806,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                 for (size_t z = 0; z < _dims.depth; z++) {
                     auto& stats = _z_stats[s][z].basic_stats;
                     if (full) {
-                        num_pixels = image_plane_size - stats[CARTA::StatsType::NanCount];
-                        sum = stats[CARTA::StatsType::Sum];
-                        sum_sq = stats[CARTA::StatsType::SumSq];
-                        min = stats[CARTA::StatsType::Min];
-                        max = stats[CARTA::StatsType::Max];
-
-                        stats[CARTA::StatsType::NumPixels] = num_pixels;
-                        stats[CARTA::StatsType::Mean] = sum / num_pixels;
-                        stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
-                        stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
-                        stats[CARTA::StatsType::Extrema] = (abs(min) > abs(max) ? min : max);
-                        if (has_flux) {
-                            stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
-                        }
-
+                        DeriveStoredStats(stats, image_plane_size - stats[CARTA::StatsType::NanCount], beam_area, has_flux);
                         _z_stats[s][z].full = true;
                     }
                     _z_stats[s][z].valid = true;
@@ -830,21 +837,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
             for (size_t s = 0; s < _dims.num_stokes; s++) {
                 auto& stats = _cube_stats[s].basic_stats;
                 if (full) {
-                    num_pixels = image_cube_size - stats[CARTA::StatsType::NanCount];
-                    sum = stats[CARTA::StatsType::Sum];
-                    sum_sq = stats[CARTA::StatsType::SumSq];
-                    min = stats[CARTA::StatsType::Min];
-                    max = stats[CARTA::StatsType::Max];
-
-                    stats[CARTA::StatsType::NumPixels] = num_pixels;
-                    stats[CARTA::StatsType::Mean] = sum / num_pixels;
-                    stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
-                    stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
-                    stats[CARTA::StatsType::Extrema] = (abs(min) > abs(max) ? min : max);
-                    if (has_flux) {
-                        stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
-                    }
-
+                    DeriveStoredStats(stats, image_cube_size - stats[CARTA::StatsType::NanCount], beam_area, has_flux);
                     _cube_stats[s].full = true;
                 }
                 _cube_stats[s].valid = true;

@@ -566,3 +566,108 @@ TEST_F(BasicStatsDerivedTest, PlanesJoinedAreDerivedFromTheirTotalsAsTheyGrow) {
     }
     EXPECT_GT(joined.num_pixels, 1u);
 }
+
+// A file that keeps statistics for no valid pixel and for one, which none of the fixtures does.
+//
+// The statistics stored in the file are all a loader has to go on -- it never sees the pixels -- so
+// they are rewritten here on a copy of a fixture, and what it reports is what it makes of them.
+
+namespace {
+
+struct StoredTotals {
+    double nan_count;
+    double sum;
+    double sum_sq;
+    double min;
+    double max;
+};
+
+// What a plane or a cube with no valid pixel is stored as: the count of every pixel as not a number,
+// and the extremes left as the identities they started from.
+StoredTotals NoValidPixel(double pixels) {
+    return {pixels, 0.0, 0.0, std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()};
+}
+
+// One valid pixel, of value 0.5, which a float holds exactly along with its square.
+StoredTotals ThePixelHalf(double pixels) {
+    return {pixels - 1.0, 0.5, 0.25, 0.5, 0.5};
+}
+
+void StoreTotals(H5::H5File& file, const std::string& group, const std::vector<StoredTotals>& totals) {
+    const auto store = [&](const std::string& name, double StoredTotals::* member) {
+        std::vector<double> values;
+        for (const auto& one : totals) {
+            values.push_back(one.*member);
+        }
+        file.openDataSet("/0/Statistics/" + group + "/" + name).write(values.data(), H5::PredType::NATIVE_DOUBLE);
+    };
+    store("NAN_COUNT", &StoredTotals::nan_count);
+    store("SUM", &StoredTotals::sum);
+    store("SUM_SQ", &StoredTotals::sum_sq);
+    store("MIN", &StoredTotals::min);
+    store("MAX", &StoredTotals::max);
+}
+
+// A copy of 10x10x2_nans.hdf5, whose two planes and whose cube say what they are given.
+fs::path FileStoring(const std::string& name, const StoredTotals& first_plane, const StoredTotals& second_plane, const StoredTotals& cube) {
+    const auto copy = TestRoot() / "data" / "generated" / name;
+    fs::copy_file(Hdf5Images() / "10x10x2_nans.hdf5", copy, fs::copy_options::overwrite_existing);
+    H5::H5File file(copy.string(), H5F_ACC_RDWR);
+    StoreTotals(file, "XY", {first_plane, second_plane});
+    StoreTotals(file, "XYZ", {cube});
+    return copy;
+}
+
+} // namespace
+
+class StoredStatsAtTheEdgeTest : public ::testing::Test {};
+
+TEST_F(StoredStatsAtTheEdgeTest, APlaneWithNoValidPixelHasNothingToDerive) {
+    const auto path = FileStoring("stored_no_valid_pixel_in_a_plane.hdf5", NoValidPixel(100), ThePixelHalf(100), NoValidPixel(200));
+    StoredStats stored(path);
+    ASSERT_TRUE(stored.IsValid());
+    const auto empty = stored.At(0);
+
+    EXPECT_EQ(empty.at(CARTA::StatsType::NumPixels), 0.0);
+    for (const auto stat : {CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::Extrema}) {
+        EXPECT_TRUE(std::isnan(empty.at(stat))) << "stat=" << static_cast<int>(stat);
+    }
+}
+
+TEST_F(StoredStatsAtTheEdgeTest, APlaneWithOneValidPixelHasNoSigma) {
+    const auto path = FileStoring("stored_one_valid_pixel_in_a_plane.hdf5", NoValidPixel(100), ThePixelHalf(100), NoValidPixel(200));
+    StoredStats stored(path);
+    ASSERT_TRUE(stored.IsValid());
+    const auto lone = stored.At(1);
+
+    EXPECT_EQ(lone.at(CARTA::StatsType::NumPixels), 1.0);
+    EXPECT_EQ(lone.at(CARTA::StatsType::Mean), 0.5);
+    EXPECT_EQ(lone.at(CARTA::StatsType::RMS), 0.5);
+    EXPECT_EQ(lone.at(CARTA::StatsType::Extrema), 0.5);
+    EXPECT_TRUE(std::isnan(lone.at(CARTA::StatsType::Sigma))) << "a plane says NaN, unlike a profile";
+}
+
+TEST_F(StoredStatsAtTheEdgeTest, ACubeWithNoValidPixelHasNothingToDerive) {
+    const auto path = FileStoring("stored_no_valid_pixel_in_a_cube.hdf5", NoValidPixel(100), NoValidPixel(100), NoValidPixel(200));
+    StoredStats stored(path);
+    ASSERT_TRUE(stored.IsValid());
+    const auto empty = stored.At(-1);
+
+    EXPECT_EQ(empty.at(CARTA::StatsType::NumPixels), 0.0);
+    for (const auto stat : {CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::Extrema}) {
+        EXPECT_TRUE(std::isnan(empty.at(stat))) << "stat=" << static_cast<int>(stat);
+    }
+}
+
+TEST_F(StoredStatsAtTheEdgeTest, ACubeWithOneValidPixelHasNoSigma) {
+    const auto path = FileStoring("stored_one_valid_pixel_in_a_cube.hdf5", NoValidPixel(100), NoValidPixel(100), ThePixelHalf(200));
+    StoredStats stored(path);
+    ASSERT_TRUE(stored.IsValid());
+    const auto lone = stored.At(-1);
+
+    EXPECT_EQ(lone.at(CARTA::StatsType::NumPixels), 1.0);
+    EXPECT_EQ(lone.at(CARTA::StatsType::Mean), 0.5);
+    EXPECT_EQ(lone.at(CARTA::StatsType::RMS), 0.5);
+    EXPECT_EQ(lone.at(CARTA::StatsType::Extrema), 0.5);
+    EXPECT_TRUE(std::isnan(lone.at(CARTA::StatsType::Sigma)));
+}
