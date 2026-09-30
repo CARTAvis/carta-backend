@@ -91,6 +91,9 @@ void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, 
 // says -- zero for the sums, NaN for the extrema -- which is the value that calculator would have
 // left there.
 //
+// A plane's totals and a cube histogram's are the same type, so this is also what turns a one-pass
+// cube histogram, and each snapshot it hands out on the way, into the statistics CARTA reports.
+//
 // An empty plane is the case worth naming: BasicStatsCalculator leaves its extrema at the
 // identities it started from rather than reporting NaN, and callers compare against those, so the
 // NaN a reduction reports for an untouched extremum is turned back into them here.
@@ -102,13 +105,6 @@ BasicStats<float> ToPlaneStats(const carta::zarr::SpectralTotals& counted) {
     const auto derived = Derive(counted.num_pixels, counted.sum, counted.sum_sq, DOUBLE_NAN);
     return BasicStats<float>{count, counted.sum, derived.mean, derived.sigma, static_cast<float>(counted.min),
         static_cast<float>(counted.max), derived.rms, counted.sum_sq};
-}
-
-// The statistics CARTA reports, from what one pass counted. Shared by the answer and by the
-// snapshots handed out on the way, which are the same shape over fewer pixels.
-BasicStats<float> ToBasicStats(const carta::zarr::CubeHistogramResult& computed) {
-    return ToPlaneStats(carta::zarr::SpectralTotals{
-        computed.num_pixels, computed.nan_count, computed.sum, computed.sum_sq, computed.minimum, computed.maximum});
 }
 
 // What this loader makes of a library call, said once. The library already tells a caller's stop
@@ -423,7 +419,7 @@ BatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t s
             // this is only called if the caller asks.
             reported.snapshot = [&update](BasicStats<float>& partial_stats, std::vector<int>& partial_bins) {
                 const auto so_far = update.snapshot();
-                partial_stats = ToBasicStats(so_far);
+                partial_stats = ToPlaneStats(so_far.totals);
                 // Not warned about here: a partial count only grows into the final one, which is.
                 AssignBinCounts(so_far.counts.data(), so_far.counts.size(), partial_bins);
             };
@@ -443,7 +439,7 @@ BatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t s
     }
 
     const auto& computed = result.value();
-    stats = ToBasicStats(computed);
+    stats = ToPlaneStats(computed.totals);
     if (AssignBinCounts(computed.counts.data(), computed.counts.size(), bins)) {
         spdlog::warn("A Zarr cube histogram has a bin past {} pixels; it is reported as that many",
             std::numeric_limits<int>::max());
