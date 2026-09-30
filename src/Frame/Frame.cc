@@ -1025,7 +1025,7 @@ BatchOutcome Frame::CalculateCubeHistogram(int stokes, const HistogramConfig& co
     const int num_bins = config.num_bins == AUTO_BIN_SIZE ? AutoBinSize() : config.num_bins;
     const auto stopped = [&]() { return cancellation_requested && cancellation_requested(); };
     const auto report = [&](const CubeHistogramProgress& update) { return !progress || progress(update); };
-    auto* batched = Batched();
+    auto* batched = _loader->Batched();
 
     // A loader that can find the range and bin at the same time answers both passes at once, when
     // the method asks for it; exact is the default, and then the two passes below are all there is.
@@ -1998,13 +1998,22 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
     return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
-BatchedReducer* Frame::Batched() {
-    return _loader->Batched();
+BatchOutcome Frame::RegionSpectra(const std::function<bool(std::vector<RegionMaskSpec>& regions)>& describe_regions,
+    const AxisRange& z_range, int stokes, const std::function<bool(const RegionSpectralBlock&)>& sink) {
+    auto* batched = _loader->Batched();
+    if (!batched) {
+        return BatchOutcome::declined;
+    }
+    std::vector<RegionMaskSpec> regions;
+    if (!describe_regions(regions)) {
+        return BatchOutcome::declined;
+    }
+    return batched->RegionSpectra(regions, z_range, stokes, sink);
 }
 
 BatchOutcome Frame::GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
     const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
-    auto* batched = Batched();
+    auto* batched = _loader->Batched();
     if (!batched) {
         return BatchOutcome::declined;
     }

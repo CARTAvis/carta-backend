@@ -56,15 +56,35 @@ public:
 };
 
 // A Zarr loader whose batched walks do as a test says: walk as the real one does, decline before
-// starting, or fail once the first plane has been handed over -- which no store on disk can be made
-// to do on cue, and which is the case a caller must not answer by reading plane by plane.
+// starting, fail once the first plane or block has been handed over -- which no store on disk can be
+// made to do on cue, and which is the case a caller must not answer by reading plane by plane -- or
+// have no walks at all, as every other loader has none.
 class ScriptedZarrLoader : public carta::ZarrLoader {
 public:
-    enum class Script { walk, decline, fail_after_first_plane };
+    enum class Script { walk, decline, fail_after_first_plane, no_walks };
 
     ScriptedZarrLoader(const std::string& filename, Script script) : ZarrLoader(filename), _script(script) {}
 
     int one_pass_calls = 0;
+
+    BatchedReducer* Batched() override {
+        return _script == Script::no_walks ? nullptr : this;
+    }
+
+    BatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
+        const std::function<bool(const RegionSpectralBlock&)>& sink) override {
+        if (_script == Script::decline) {
+            return BatchOutcome::declined;
+        }
+        if (_script == Script::fail_after_first_plane) {
+            ZarrLoader::RegionSpectra(regions, z_range, stokes, [&](const RegionSpectralBlock& block) {
+                sink(block);
+                return false;
+            });
+            return BatchOutcome::failed;
+        }
+        return ZarrLoader::RegionSpectra(regions, z_range, stokes, sink);
+    }
 
     BatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) override {
@@ -511,17 +531,104 @@ TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
         highest_progress = std::max(highest_progress, progress);
     };
     casacore::Matrix<float> profiles;
-    bool cancelled = false;
-    EXPECT_TRUE(handler.TryBatchedLineProfiles(file_id, region_id, line_state, box_regions, csys,
-        AxisRange(0, kDepth - 1), 0, progress_callback, profiles, false, cancelled))
+    EXPECT_EQ(handler.TryBatchedLineProfiles(
+                  file_id, region_id, line_state, box_regions, csys, AxisRange(0, kDepth - 1), 0, progress_callback, profiles, false),
+        BatchOutcome::finished)
         << "a reduction split across reads should still produce a complete set of profiles";
-    EXPECT_FALSE(cancelled);
     ASSERT_EQ(profiles.shape().size(), 2u);
     EXPECT_EQ(profiles.shape()(0), static_cast<casacore::Int>(box_regions.size()));
     EXPECT_EQ(profiles.shape()(1), kDepth);
     EXPECT_FLOAT_EQ(highest_progress, 1.0f) << "progress should reach one, and counting partials drove it past";
     EXPECT_TRUE(saw_step_finer_than_a_channel)
         << "without a block that arrives in pieces this test proves nothing, so the split is asserted too";
+}
+
+// The regions of a batched reduction are described only for a loader that has a walk to hand them
+// to, because describing them means a mask per box and a declined caller builds its own again. A
+// description that gives up declines just as a loader without a walk does, and reads nothing.
+TEST_F(ZarrImageTest, RegionSpectraDescribesTheRegionsOnlyForALoaderWithAWalk) {
+    const AxisRange channels(0, kDepth - 1);
+    int blocks = 0;
+    auto count_blocks = [&](const RegionSpectralBlock&) {
+        ++blocks;
+        return true;
+    };
+
+    auto without = ScriptedFrame(ScriptedZarrLoader::Script::no_walks);
+    bool described = false;
+    EXPECT_EQ(without->RegionSpectra(
+                  [&](std::vector<RegionMaskSpec>&) {
+                      described = true;
+                      return true;
+                  },
+                  channels, 0, count_blocks),
+        BatchOutcome::declined);
+    EXPECT_FALSE(described) << "a loader without a walk should not cost the caller its masks";
+
+    auto with = ScriptedFrame(ScriptedZarrLoader::Script::walk);
+    EXPECT_EQ(with->RegionSpectra([](std::vector<RegionMaskSpec>&) { return false; }, channels, 0, count_blocks), BatchOutcome::declined);
+    EXPECT_EQ(blocks, 0) << "a description that gave up should not have been walked";
+
+    EXPECT_EQ(with->RegionSpectra(
+                  [](std::vector<RegionMaskSpec>& regions) {
+                      regions.push_back({0, 0, kWidth, kHeight, nullptr});
+                      return true;
+                  },
+                  channels, 0, count_blocks),
+        BatchOutcome::finished);
+    EXPECT_GT(blocks, 0);
+}
+
+// A position-velocity image made through the handler's public request, over a frame whose loader
+// walks as `script` says. The image's pixels, or nothing if it was not made.
+std::vector<float> PvImagePixels(ScriptedZarrLoader::Script script, CARTA::PvResponse& response) {
+    auto frame = ScriptedFrame(script);
+    carta::RegionHandler handler;
+    const int file_id = 0;
+    int region_id = -1;
+    std::vector<CARTA::Point> control_points{Message::Point(0.0, 0.0), Message::Point(kWidth - 1.0, kHeight - 1.0)};
+    RegionState line_state(file_id, CARTA::RegionType::LINE, control_points, 0.0);
+    if (!handler.SetRegion(region_id, line_state, frame->CoordinateSystem())) {
+        return {};
+    }
+    CARTA::PvRequest request;
+    request.set_file_id(file_id);
+    request.set_region_id(region_id);
+    request.set_width(3);
+    GeneratedImage pv_image;
+    handler.CalculatePvImage(request, frame, [](float) {}, response, pv_image);
+    if (!pv_image.image) {
+        return {};
+    }
+    const auto pixels = pv_image.image->get();
+    return {pixels.begin(), pixels.end()};
+}
+
+// A loader that declines the boxes is answered one box at a time, and the image is the same.
+TEST_F(ZarrImageTest, APvImageIsTheSameWhenTheLoaderDeclinesItsBoxes) {
+    CARTA::PvResponse walked_response;
+    CARTA::PvResponse looped_response;
+    const auto walked = PvImagePixels(ScriptedZarrLoader::Script::walk, walked_response);
+    const auto looped = PvImagePixels(ScriptedZarrLoader::Script::decline, looped_response);
+    ASSERT_TRUE(walked_response.success()) << walked_response.message();
+    ASSERT_TRUE(looped_response.success()) << looped_response.message();
+    ASSERT_FALSE(walked.empty());
+    ASSERT_EQ(walked.size(), looped.size());
+    for (std::size_t i = 0; i < walked.size(); ++i) {
+        if (std::isnan(looped[i])) {
+            EXPECT_TRUE(std::isnan(walked[i])) << "pixel " << i;
+        } else {
+            EXPECT_FLOAT_EQ(walked[i], looped[i]) << "pixel " << i;
+        }
+    }
+}
+
+// A walk that fails once it has begun leaves no image, rather than one made again box by box.
+TEST_F(ZarrImageTest, APvImageWhoseWalkFailsPartwayIsNotRetried) {
+    CARTA::PvResponse response;
+    EXPECT_TRUE(PvImagePixels(ScriptedZarrLoader::Script::fail_after_first_plane, response).empty());
+    EXPECT_FALSE(response.success());
+    EXPECT_FALSE(response.cancel());
 }
 
 // A region's spectral walk is resumable, so the loader keeps where it got to -- keyed by region and
@@ -1037,7 +1144,7 @@ TEST_F(ZarrImageTest, CubeHistogramAgreesWithThePerPlaneLoop) {
     const HistogramBounds bounds(0.0, 4000.0);
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::map<int, std::vector<int>> from_loader;
-        ASSERT_EQ(frame->Batched()->PlaneHistograms(stokes, num_bins, bounds, {},
+        ASSERT_EQ(loader->Batched()->PlaneHistograms(stokes, num_bins, bounds, {},
                       [&](int z, const std::vector<int>& bins) {
                           EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
                           from_loader[z] = bins;

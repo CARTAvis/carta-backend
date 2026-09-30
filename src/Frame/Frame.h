@@ -215,10 +215,17 @@ public:
     // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
-    // The loader's batched walks, or null when it has none; see BatchedReducer. No image mutex
-    // is taken for them: the only loader with any reads through immutable carta-zarr handles, which
-    // are safe to call concurrently.
-    BatchedReducer* Batched();
+    // Many regions reduced over the same channels in one walk of the loader's, for a caller that
+    // would otherwise reduce them one at a time; see BatchedReducer::RegionSpectra, whose sink this
+    // is. `describe_regions` fills in the regions, and is called only when the loader has such a
+    // walk, since describing them is not free and a caller that is declined describes them again its
+    // own way. Returning false from it declines, as a loader with no walk does, and in both nothing
+    // else is called. The specs may point into masks the caller holds, which must outlive this call.
+    //
+    // No image mutex is taken: the only loader with such a walk reads through immutable carta-zarr
+    // handles, which are safe to call concurrently.
+    BatchOutcome RegionSpectra(const std::function<bool(std::vector<RegionMaskSpec>& regions)>& describe_regions, const AxisRange& z_range,
+        int stokes, const std::function<bool(const RegionSpectralBlock&)>& sink);
     // Tell the loader a region is gone, so it can drop whatever it kept for that region's walk.
     void ReleaseRegion(int region_id);
     bool GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

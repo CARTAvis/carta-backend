@@ -89,17 +89,18 @@ public:
         GeneratedImage& model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback);
 
 protected:
-    // Reduce every box of a line in one pass over the pixels, when the file's loader can. Returns
-    // whether it produced a complete set of profiles; the caller falls back to one box at a time
-    // otherwise, which is slower but always available.
+    // Reduce every box of a line in one pass over the pixels, when the file's loader can. Finished
+    // means `profiles` holds every box's profile. Declined means nothing was read and the caller
+    // walks the boxes one at a time instead, which is slower but always available; failed and
+    // cancelled are the caller's own answer.
     //
     // Reachable by a subclass rather than private, with the frames it works over, because its one
-    // caller swallows its answer: a false sends the caller down the slow path, which produces the
-    // same profiles, so nothing downstream can tell whether this ever ran.
-    bool TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
+    // caller swallows a decline: the slow path produces the same profiles, so nothing downstream can
+    // tell whether this ever ran.
+    BatchOutcome TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
         const std::vector<RegionState>& box_regions, const std::shared_ptr<casacore::CoordinateSystem>& line_coord_sys,
-        const AxisRange& z_range, int stokes_index, const std::function<void(float)>& progress_callback,
-        casacore::Matrix<float>& profiles, bool reverse, bool& cancelled);
+        const AxisRange& z_range, int stokes_index, const std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
+        bool reverse);
 
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
