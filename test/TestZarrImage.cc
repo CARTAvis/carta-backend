@@ -10,16 +10,16 @@
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 #include <casacore/measures/Measures/MPosition.h>
 
-#include <cmath>
-#include <cstdint>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <future>
 #include <limits>
-#include <fstream>
 #include <regex>
 #include <sstream>
 #include <tuple>
@@ -135,9 +135,9 @@ HistogramConfig CubeConfig(int num_bins) {
 // RegionHandler keeps its line profiles to itself, and the frames it works over too.
 class PeekableRegionHandler : public carta::RegionHandler {
 public:
-    using carta::RegionHandler::GetLineProfiles;
     using carta::RegionHandler::_frames;
     using carta::RegionHandler::_line_profile_progress_interval;
+    using carta::RegionHandler::GetLineProfiles;
 };
 
 // Frame keeps each plane's statistics to itself, and what a cube histogram leaves of them is a promise
@@ -248,13 +248,12 @@ public:
         std::stringstream text;
         text << std::ifstream(metadata).rdbuf();
         const std::regex codecs(R"("codecs"\s*:\s*\[[^\]]*\])");
-        std::ofstream(metadata, std::ios::trunc) << std::regex_replace(
-            text.str(), codecs, R"("codecs": [{"name": "bytes", "configuration": {"endian": "little"}}])");
+        std::ofstream(metadata, std::ios::trunc)
+            << std::regex_replace(text.str(), codecs, R"("codecs": [{"name": "bytes", "configuration": {"endian": "little"}}])");
 
         for (const auto& [key, pixels] : _chunks) {
             const auto& [z, stokes, column_pair] = key;
-            const auto chunk =
-                _path / "SKY" / "c" / "0" / std::to_string(z) / std::to_string(stokes) / std::to_string(column_pair) / "0";
+            const auto chunk = _path / "SKY" / "c" / "0" / std::to_string(z) / std::to_string(stokes) / std::to_string(column_pair) / "0";
             std::filesystem::create_directories(chunk.parent_path());
             std::ofstream(chunk, std::ios::binary)
                 .write(reinterpret_cast<const char*>(pixels.data()), static_cast<std::streamsize>(pixels.size() * sizeof(float)));
@@ -292,8 +291,7 @@ void ExpectPlaneStatsAgreeWithThePerPlaneLoop(const std::filesystem::path& path)
         ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
 
         for (int z = 0; z < kDepth; ++z) {
-            casacore::Slicer slicer(casacore::IPosition(4, 0, 0, z, stokes),
-                casacore::IPosition(4, kWidth, kHeight, 1, 1));
+            casacore::Slicer slicer(casacore::IPosition(4, 0, 0, z, stokes), casacore::IPosition(4, kWidth, kHeight, 1, 1));
             // doGetSlice's Bool says whether the array references the lattice, not whether it
             // succeeded, so it is the shape that is checked here.
             casacore::Array<float> plane;
@@ -307,10 +305,9 @@ void ExpectPlaneStatsAgreeWithThePerPlaneLoop(const std::filesystem::path& path)
             EXPECT_EQ(actual.num_pixels, reference.num_pixels) << where;
             EXPECT_FLOAT_EQ(actual.min_val, reference.min_val) << where;
             EXPECT_FLOAT_EQ(actual.max_val, reference.max_val) << where;
-            for (const auto& [name, pair] : std::map<std::string, std::pair<double, double>>{
-                     {"sum", {actual.sum, reference.sum}}, {"sumSq", {actual.sumSq, reference.sumSq}},
-                     {"mean", {actual.mean, reference.mean}}, {"rms", {actual.rms, reference.rms}},
-                     {"stdDev", {actual.stdDev, reference.stdDev}}}) {
+            for (const auto& [name, pair] : std::map<std::string, std::pair<double, double>>{{"sum", {actual.sum, reference.sum}},
+                     {"sumSq", {actual.sumSq, reference.sumSq}}, {"mean", {actual.mean, reference.mean}},
+                     {"rms", {actual.rms, reference.rms}}, {"stdDev", {actual.stdDev, reference.stdDev}}}) {
                 if (std::isnan(pair.second)) {
                     EXPECT_TRUE(std::isnan(pair.first)) << name << where << " is " << pair.first;
                 } else {
@@ -625,8 +622,8 @@ TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
     casacore::Quantity increment;
     bool cancelled = false;
     std::string message;
-    EXPECT_TRUE(handler.GetLineProfiles(file_id, region_id, 3, AxisRange(0, kDepth - 1), 0, "", progress_callback, profiles, increment,
-        cancelled, message, false))
+    EXPECT_TRUE(handler.GetLineProfiles(
+        file_id, region_id, 3, AxisRange(0, kDepth - 1), 0, "", progress_callback, profiles, increment, cancelled, message, false))
         << message;
     // The boxes one at a time move progress by a box, which can be finer than a channel too, so
     // the walk is asked whether it was the one that answered.
