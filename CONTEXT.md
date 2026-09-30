@@ -42,7 +42,8 @@ _Avoid_: PV data, box profiles
 The spectral profile of a closed region in one Stokes: for each channel, the statistics of the
 region's valid pixels. Made in steps, and resumed from one step to the next for as long as the region,
 its mask and the channels asked for stay the same; kept once made, until the region is edited or
-removed.
+removed. A point has none: there are no statistics of one pixel, and a point's profile is that pixel's
+spectrum, whichever statistic is asked for.
 _Avoid_: region spectral data, region spectral stats
 
 ### Reported statistics
