@@ -1,9 +1,9 @@
 # carta-backend
 
 The server behind the CARTA image viewer: it opens images through loaders and answers the frontend's
-requests about them. This file holds only the language settled so far, around the cube histogram and
-the statistics reported from a plane, a cube or a region; the rest of the backend's vocabulary is not
-written down here yet.
+requests about them. This file holds only the language settled so far, around the cube histogram, line
+profiles and the statistics reported from a plane, a cube or a region; the rest of the backend's
+vocabulary is not written down here yet.
 
 ## Language
 
@@ -21,11 +21,20 @@ one, and one that has may decline a particular request.
 _Avoid_: batched walk, fast path, accelerator
 
 **Route**:
-How one half of a cube histogram is made: by a loader's walk, or plane by plane. The statistics and
-the bins each take their own route, so a loader that walks the first may decline the second -- a cube
-of one constant value, whose range is empty, is the case that does. A one-pass cube histogram has one
-route and no halves.
+How an answer about many pixels is made: by a loader's walk, or a piece at a time -- plane by plane
+for a cube histogram, box by box for line profiles. The routes are asked in turn, and one that
+declines leaves the answer to the next. Each half of a cube histogram takes its own route, so a loader
+that walks the statistics may decline the bins -- a cube of one constant value, whose range is empty,
+is the case that does. A one-pass cube histogram has one route and no halves.
 _Avoid_: path, strategy, method
+
+### Line profiles
+
+**Line profiles**:
+The mean spectrum of each of the boxes that approximate a line of some width, side by side along it:
+what a position-velocity image is made from. A box that catches no valid pixel in a channel has no
+mean there.
+_Avoid_: PV data, box profiles
 
 ### Reported statistics
 
