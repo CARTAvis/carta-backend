@@ -24,12 +24,15 @@
 #include <utility>
 #include <vector>
 
+#include <casacore/images/Images/SubImage.h>
+#include <casacore/lattices/LRegions/LCBox.h>
 #include <casacore/lattices/Lattices/ArrayLattice.h>
 #include <gtest/gtest.h>
 
 #include "ImageData/FileLoader.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/DerivedStatistics.h"
+#include "ImageStats/StatsCalculator.h"
 #include "src/Frame/Frame.h"
 
 #include "CommonTestUtilities.h"
@@ -314,6 +317,26 @@ TEST_F(ReportedStatisticsTest, ExtremaIsTheExtremeOfLargerMagnitude) {
     ExpectProfileIsDerivedFromItsTotals(Hdf5Images() / "10x10x2_nans.hdf5", 2, 6, 7, 4, 1);
 }
 
+// Region statistics are made by casacore rather than from totals, and their extrema is the same rule.
+TEST_F(ReportedStatisticsTest, RegionStatisticsExtremaIsTheExtremeOfLargerMagnitude) {
+    OpenedImage image(Hdf5Images() / "10x10x2_nans.hdf5");
+    ASSERT_TRUE(image.IsValid());
+    auto pixels = image.loader->GetImage();
+    ASSERT_NE(pixels, nullptr);
+
+    const auto extrema_of = [&](int x_min, int x_count, int y, int z) {
+        const casacore::Slicer box(casacore::IPosition(3, x_min, y, z), casacore::IPosition(3, x_count, 1, 1));
+        casacore::SubImage<float> region(*pixels, casacore::LCBox(box, pixels->shape()), false);
+        std::map<CARTA::StatsType, std::vector<double>> stats;
+        EXPECT_TRUE(CalcStatsValues(stats, {CARTA::StatsType::Extrema}, region, false));
+        return stats[CARTA::StatsType::Extrema].at(0);
+    };
+    // -0.661528, 0.93505, 0.0490546 and 2.00239: the largest outweighs the smallest.
+    EXPECT_NEAR(extrema_of(6, 4, 7, 0), 2.00239, 1e-5);
+    // -1.47389 and 1.02885: the smallest outweighs the largest, and is a fraction.
+    EXPECT_NEAR(extrema_of(6, 2, 7, 1), -1.47389, 1e-5);
+}
+
 // A file that keeps its statistics is trusted for its totals and derived from them.
 
 TEST_F(ReportedStatisticsTest, StoredPlaneStatisticsAreDerivedFromTheirTotals) {
@@ -443,6 +466,7 @@ TEST_F(DerivedStatisticsTest, ExtremaIsTheExtremeOfLargerMagnitudeAndTheLargestW
              Case{0.0, 0.0, 0.0}, Case{-0.75, 0.5, -0.75}, Case{-0.5, 0.75, 0.75}, Case{-0.75, 0.75, 0.75}}) {
         const auto derived = DeriveStatistics({4.0, 1.0, 1.0, c.min, c.max}, LonePixelSigma::nan);
         EXPECT_EQ(derived.extrema, c.expected) << "min=" << c.min << " max=" << c.max;
+        EXPECT_EQ(Extrema(c.min, c.max), c.expected) << "min=" << c.min << " max=" << c.max;
     }
 }
 

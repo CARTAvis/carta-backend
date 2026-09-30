@@ -10,6 +10,7 @@
 
 #include <casacore/casa/Arrays/ArrayMath.h>
 
+#include "DerivedStatistics.h"
 #include "Logger/Logger.h"
 #include "Util/Nan.h"
 
@@ -106,7 +107,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
                                     result.tovector(max_result);
                                     // Result is greater of abs(MIN) and abs(MAX), inserted in dbl_result
                                     std::transform(min_result.begin(), min_result.end(), max_result.begin(), std::back_inserter(dbl_result),
-                                        [](double min, double max) { return (abs(min) > abs(max) ? min : max); });
+                                        [](double min, double max) { return Extrema(min, max); });
                                 }
                             } else {
                                 result.tovector(dbl_result);

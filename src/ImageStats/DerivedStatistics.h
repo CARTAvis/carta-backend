@@ -34,11 +34,15 @@ struct DerivedStatistics {
     double extrema;
 };
 
+// Whichever of the smallest and the largest has the larger magnitude, the largest when they tie. It is
+// the extrema of the Derived statistics, and here on its own for a caller that has the extremes and not
+// the totals: region statistics, which casacore makes.
+double Extrema(double min, double max);
+
 // Derives the statistics from the totals, and from nothing else.
 //
 // With no valid pixel there is nothing to derive, and all four are NaN; a caller need not ask first,
-// though it may have reasons of its own to. Extrema is whichever of `min` and `max` has the larger
-// magnitude, `max` when they tie.
+// though it may have reasons of its own to. The extrema is Extrema(min, max).
 //
 // The arithmetic is the same however the totals arrived, so two loaders that count the same pixels
 // report the same bits. Sigma is `sqrt((sum_sq - sum * sum / n) / (n - 1))`, whose radicand can come

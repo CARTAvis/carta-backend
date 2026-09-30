@@ -10,6 +10,10 @@
 
 namespace carta {
 
+double Extrema(double min, double max) {
+    return std::abs(min) > std::abs(max) ? min : max;
+}
+
 DerivedStatistics DeriveStatistics(const Totals& totals, LonePixelSigma lone_pixel_sigma) {
     constexpr double undefined = std::numeric_limits<double>::quiet_NaN();
 
@@ -27,7 +31,7 @@ DerivedStatistics DeriveStatistics(const Totals& totals, LonePixelSigma lone_pix
     } else {
         derived.sigma = lone_pixel_sigma == LonePixelSigma::zero ? 0.0 : undefined;
     }
-    derived.extrema = std::abs(totals.min) > std::abs(totals.max) ? totals.min : totals.max;
+    derived.extrema = Extrema(totals.min, totals.max);
     return derived;
 }
 
