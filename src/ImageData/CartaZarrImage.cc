@@ -75,30 +75,14 @@ CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& i
     }
 
     if (image_id.empty()) {
-        // The first image CARTA can display, in the library's order, which puts SKY first. The
-        // library's own default is the first image it will open, and CARTA refuses more than the
-        // library does, so the two can differ. What is said when none will do is why the first one
-        // would not.
-        //
-        // Decided from the listing's axes, as the file list decides what to offer, so that the image
-        // opened here is the first one the file list offered.
-        std::string refusal;
-        for (const auto& entry : dataset.value().descriptor().images) {
-            if (!entry.openable) {
-                continue;
-            }
-            std::string reason;
-            if (CartaZarrAxes::Of(entry.axes, reason)) {
-                _image_id = entry.id;
-                break;
-            }
-            if (refusal.empty()) {
-                refusal = reason;
-            }
+        // The first image the file list offers. The library's own default is the first image it will
+        // open, and CARTA refuses more than the library does, so the two can differ; OfferedImages is
+        // what the file list shows, so asking it here is what makes the two agree.
+        const auto offer = OfferedImages(dataset.value().descriptor());
+        if (offer.ids.empty()) {
+            throw casacore::AipsError(offer.why_none);
         }
-        if (_image_id.empty()) {
-            throw casacore::AipsError(refusal.empty() ? "XRADIO dataset contains no image variables" : refusal);
-        }
+        _image_id = offer.ids.front();
     } else {
         _image_id = image_id;
     }

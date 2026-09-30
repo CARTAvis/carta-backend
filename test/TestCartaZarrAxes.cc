@@ -185,3 +185,60 @@ TEST(CartaZarrAxes, TheAxesAloneAnswerAsTheDescriptorDoes) {
         }
     }
 }
+
+namespace {
+
+carta::zarr::ImageEntry Listed(std::string id, bool openable, std::vector<carta::zarr::AxisDescriptor> axes,
+    std::string diagnostic = {}) {
+    carta::zarr::ImageEntry entry;
+    entry.id = std::move(id);
+    entry.openable = openable;
+    entry.axes = std::move(axes);
+    if (!diagnostic.empty()) {
+        carta::zarr::Diagnostic said;
+        said.message = std::move(diagnostic);
+        entry.diagnostics.push_back(std::move(said));
+    }
+    return entry;
+}
+
+}  // namespace
+
+// What the file list shows and what an image opened without an id opens are both this answer, so it
+// keeps the library's order and passes over the images either side refuses.
+TEST(CartaZarrAxes, TheOfferedImagesAreTheOnesCartaDisplaysInTheLibrarysOrder) {
+    carta::zarr::DatasetDescriptor dataset;
+    dataset.images = {Listed("APERTURE", false, {}, "an aperture-plane image is not opened"),
+        Listed("TWO_TIMES", true, XradioOrder(2).axes), Listed("SKY", true, XradioOrder().axes),
+        Listed("MODEL", true, Shuffled().axes)};
+
+    const auto offer = carta::OfferedImages(dataset);
+    EXPECT_EQ(offer.ids, (std::vector<std::string>{"SKY", "MODEL"}));
+    ASSERT_EQ(offer.refused.size(), 2u);
+    EXPECT_EQ(offer.refused[0].id, "APERTURE");
+    EXPECT_EQ(offer.refused[0].reason, "an aperture-plane image is not opened");
+    EXPECT_EQ(offer.refused[1].id, "TWO_TIMES");
+    EXPECT_NE(offer.refused[1].reason.find("singleton time axis"), std::string::npos) << offer.refused[1].reason;
+    EXPECT_TRUE(offer.why_none.empty()) << "something is offered";
+}
+
+// When nothing is offered, what is said is CARTA's own reason if it has one: an image the library
+// would open and CARTA will not display is the likelier surprise.
+TEST(CartaZarrAxes, NothingOfferedSaysCartasReasonBeforeTheLibrarys) {
+    carta::zarr::DatasetDescriptor dataset;
+    dataset.images = {Listed("APERTURE", false, {}, "an aperture-plane image is not opened"),
+        Listed("TWO_TIMES", true, XradioOrder(2).axes)};
+    const auto offer = carta::OfferedImages(dataset);
+    EXPECT_TRUE(offer.ids.empty());
+    EXPECT_NE(offer.why_none.find("singleton time axis"), std::string::npos) << offer.why_none;
+}
+
+// With only the library's refusals, its reason is the one given -- where this used to say the
+// dataset had no image variables, which was not so.
+TEST(CartaZarrAxes, NothingOfferedByTheLibrarySaysTheLibrarysReason) {
+    carta::zarr::DatasetDescriptor dataset;
+    dataset.images = {Listed("APERTURE", false, {}, "an aperture-plane image is not opened")};
+    EXPECT_EQ(carta::OfferedImages(dataset).why_none, "an aperture-plane image is not opened");
+
+    EXPECT_EQ(carta::OfferedImages(carta::zarr::DatasetDescriptor{}).why_none, "XRADIO dataset contains no image variables");
+}

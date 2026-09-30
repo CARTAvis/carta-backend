@@ -114,4 +114,37 @@ std::vector<std::uint64_t> CartaZarrAxes::InCartaOrder(const std::vector<std::ui
     return result;
 }
 
+ZarrOffer OfferedImages(const carta::zarr::DatasetDescriptor& dataset) {
+    ZarrOffer offer;
+    std::string carta_refusal;
+    std::string library_refusal;
+    for (const auto& entry : dataset.images) {
+        if (!entry.openable) {
+            // The library says why in its diagnostics; the first is the one it leads with.
+            auto reason = entry.diagnostics.empty() ? std::string("carta-zarr will not open it")
+                                                    : entry.diagnostics.front().message;
+            if (library_refusal.empty()) {
+                library_refusal = reason;
+            }
+            offer.refused.push_back({entry.id, std::move(reason)});
+            continue;
+        }
+        std::string reason;
+        if (CartaZarrAxes::Of(entry.axes, reason)) {
+            offer.ids.push_back(entry.id);
+            continue;
+        }
+        if (carta_refusal.empty()) {
+            carta_refusal = reason;
+        }
+        offer.refused.push_back({entry.id, std::move(reason)});
+    }
+    if (offer.ids.empty()) {
+        offer.why_none = !carta_refusal.empty()    ? carta_refusal
+                         : !library_refusal.empty() ? library_refusal
+                                                    : std::string("XRADIO dataset contains no image variables");
+    }
+    return offer;
+}
+
 }  // namespace carta

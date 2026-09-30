@@ -76,6 +76,30 @@ private:
     casacore::IPosition _shape;
 };
 
+// The images of a dataset CARTA offers, and why it offers none when it offers none.
+//
+// The file list shows these, and an image opened without an id opens the first of them, so the two
+// have to agree: a user who opens a store without choosing gets the image the list put first. Both
+// used to ask openable and then CartaZarrAxes::Of for themselves, which agreed only because the two
+// copies happened to be written the same way. Asked of the listing alone, so nothing is opened.
+struct ZarrOffer {
+    struct Refused {
+        std::string id;
+        std::string reason;
+    };
+
+    // The images CARTA can display, in the library's order, which puts SKY first.
+    std::vector<std::string> ids;
+    // Every other image, with why it is not offered.
+    std::vector<Refused> refused;
+    // Why nothing is offered, when nothing is; empty otherwise. CARTA's own reason comes first when
+    // it has one -- an image the library would open and CARTA will not display is the likelier
+    // surprise -- then the library's, then that the dataset lists no image at all.
+    std::string why_none;
+};
+
+ZarrOffer OfferedImages(const carta::zarr::DatasetDescriptor& dataset);
+
 }  // namespace carta
 
 #endif  // CARTA_SRC_IMAGEDATA_CARTAZARRAXES_H_

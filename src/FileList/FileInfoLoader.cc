@@ -124,6 +124,10 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
     const auto context = GetZarrContext();
     auto dataset = carta::zarr::Dataset::Open(context, _filename);
     if (!dataset) {
+        // Not an error for a listing: the store is shown as the directory it is, with no images, and
+        // opening it reports the same failure to whoever tries. But it is the only place the reason
+        // would otherwise be dropped on the way.
+        spdlog::debug("Not listing the images of Zarr store {}: {}", _filename, dataset.error().message);
         casacore::Directory cc_dir(cc_file);
         entry.size = cc_dir.size();
         return entry;
@@ -143,21 +147,15 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
     }
 
     // Offered only if CARTA will open it, which is more than the library promises with openable: the
-    // library opens an image with two times, and CARTA displays one. The listing carries each image's
-    // axes, which is all that question asks, so nothing here is opened -- opening one read every
-    // coordinate value to answer a question about shapes.
+    // library opens an image with two times, and CARTA displays one. OfferedImages answers from the
+    // listing's axes, so nothing here is opened, and it is the answer CartaZarrImage takes its
+    // default image from.
     const auto& images = dataset.value().descriptor().images;
-    for (const auto& image : images) {
-        if (!image.openable) {
-            continue;
-        }
-        std::string reason;
-        if (!CartaZarrAxes::Of(image.axes, reason)) {
-            spdlog::debug("Not listing Zarr image {} in {}: {}", image.id, _filename, reason);
-            continue;
-        }
-        entry.hdu_list.push_back(image.id);
+    auto offer = OfferedImages(dataset.value().descriptor());
+    for (const auto& refused : offer.refused) {
+        spdlog::debug("Not listing Zarr image {} in {}: {}", refused.id, _filename, refused.reason);
     }
+    entry.hdu_list = std::move(offer.ids);
     entry.complete = !images.empty();
 
     return entry;
