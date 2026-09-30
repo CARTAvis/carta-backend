@@ -50,8 +50,10 @@ struct ZarrStoreLook {
 // The Zarr stores this process has looked at, each looked at once for a while.
 //
 // Whether a path is a Zarr image store, and what it offers, is asked by the file list, by the file
-// info, by the choice of loader and by the image when it opens -- and each answer walks the whole
-// store, since the library learns what a store holds by listing every node in it. So a path is looked
+// info, by the choice of loader and by the image when it opens -- and each answer opens the store,
+// since the library learns what a store holds by listing every node in it and reading each node's
+// metadata. It does not go below an array, so this costs what the store's nodes do, not what its
+// chunks do; what walks the chunks is the store's size, which the file info keeps. So a path is looked
 // at once, by opening it, and the opened store is what every one of those questions is answered from,
 // the image's included.
 //
