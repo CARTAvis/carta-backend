@@ -293,36 +293,38 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
         z_range.to = _dims.depth - 1;
     }
 
-    // Check if region stats calculated; always false for temporary regions for spatial profile and pv image
     auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
     casacore::IPosition mask_shape(mask.shape());
-    if (_region_stats.count(region_stats_id) && _region_stats[region_stats_id].IsValid(origin, mask_shape) && all_z &&
-        _region_stats[region_stats_id].IsCompleted()) {
-        results = _region_stats[region_stats_id].stats;
-        progress = 1.0;
-        return true;
-    }
-
     int width = mask_shape(0);
     int height = mask_shape(1);
     int depth = z_range.to - z_range.from + 1;
     double beam_area = CalculateBeamArea();
     bool has_flux = !std::isnan(beam_area);
 
-    if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
-        _region_stats.emplace(
-            std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask_shape, depth, has_flux));
-    } else if (!_region_stats[region_stats_id].IsValid(origin, mask_shape)) { // region stats expired
-        _region_stats[region_stats_id].origin = origin;
-        _region_stats[region_stats_id].shape = mask_shape;
-        _region_stats[region_stats_id].completed = false;
-        _region_stats[region_stats_id].latest_x = 0;
+    // The region's profile so far, or a new one if this is not a continuation of it.
+    std::shared_ptr<FileInfo::RegionSpectralStats> held;
+    {
+        std::scoped_lock lock(_region_stats_mutex);
+        auto& entry = _region_stats[region_stats_id];
+        if (!entry || !entry->IsValid(origin, mask_shape, z_range.from, z_range.to)) {
+            entry = std::make_shared<FileInfo::RegionSpectralStats>(origin, mask_shape, z_range.from, z_range.to, has_flux);
+        }
+        held = entry;
+    }
+    std::scoped_lock state_lock(held->mutex);
+    auto& region_stats = *held;
+
+    // Return the calculated stats if complete; never for a temporary region, whose are dropped as they complete
+    if (all_z && region_stats.IsCompleted()) {
+        results = region_stats.stats;
+        progress = 1.0;
+        return true;
     }
 
     int x_min = origin(0);
     int y_min = origin(1);
 
-    auto& stats = _region_stats[region_stats_id].stats;
+    auto& stats = region_stats.stats;
     auto& num_pixels = stats[CARTA::StatsType::NumPixels];
     auto& nan_count = stats[CARTA::StatsType::NanCount];
     auto& sum = stats[CARTA::StatsType::Sum];
@@ -336,7 +338,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
     double* flux = has_flux ? stats[CARTA::StatsType::FluxDensity].data() : nullptr;
 
     // get the start of X
-    size_t x_start = _region_stats[region_stats_id].latest_x;
+    size_t x_start = region_stats.latest_x;
 
     // Set initial values of stats, or those set to NAN in previous iterations
     for (size_t z = 0; z < depth; z++) {
@@ -424,7 +426,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
     // Calculate partial stats
     calculate_stats();
 
-    results = _region_stats[region_stats_id].stats;
+    results = region_stats.stats;
     if (max_x == width) {
         progress = 1.0;
     } else {
@@ -432,19 +434,34 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
     }
 
     // Update starting x for next time
-    _region_stats[region_stats_id].latest_x = max_x;
+    region_stats.latest_x = max_x;
 
     if (progress >= 1.0) {
+        region_stats.completed = true;
         if (region_id <= TEMP_REGION_ID) {
-            // clear for next temp region
-            _region_stats.erase(region_stats_id);
-        } else {
-            // the stats calculation is completed
-            _region_stats[region_stats_id].completed = true;
+            // clear for next temp region, unless another has taken its place already
+            std::scoped_lock lock(_region_stats_mutex);
+            auto entry = _region_stats.find(region_stats_id);
+            if (entry != _region_stats.end() && entry->second == held) {
+                _region_stats.erase(entry);
+            }
         }
     }
 
     return true;
+}
+
+// A region that has gone or changed is not continued: RegionHandler says so here, since only it knows.
+void Hdf5Loader::ReleaseRegion(int region_id) {
+    std::scoped_lock lock(_region_stats_mutex);
+    if (region_id == ALL_REGIONS) {
+        _region_stats.clear();
+        return;
+    }
+    // Keyed by region and stokes both, so one region is several entries.
+    for (auto it = _region_stats.begin(); it != _region_stats.end();) {
+        it = it->first.region_id == region_id ? _region_stats.erase(it) : std::next(it);
+    }
 }
 
 bool Hdf5Loader::GetDownsampledRasterData(
