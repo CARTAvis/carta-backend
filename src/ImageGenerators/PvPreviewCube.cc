@@ -15,6 +15,7 @@
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 #include "Util/Nan.h"
+#include "Util/ReportCadence.h"
 
 #define LOAD_DATA_PROGRESS_INTERVAL 1000
 
@@ -246,8 +247,7 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
         size_t rebin_channel_size = rebin_width * rebin_height;
         size_t new_chan(0);
 
-        // Timer for progress updates
-        auto t_start = std::chrono::high_resolution_clock::now();
+        ReportCadence progress_updates(std::chrono::milliseconds(LOAD_DATA_PROGRESS_INTERVAL));
         for (auto ichan = 0; ichan < nchan; ichan += rebin_z) {
             // Check for cancel
             if (_stop_cube) {
@@ -296,10 +296,7 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
 
             // Update progress at interval
             float progress = (float)ichan / (float)nchan;
-            auto t_end = std::chrono::high_resolution_clock::now();
-            auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-            if ((dt > LOAD_DATA_PROGRESS_INTERVAL) || (progress >= 1.0)) {
-                t_start = t_end;
+            if (progress_updates.Due(progress)) {
                 progress_callback(progress);
             }
         }

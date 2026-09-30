@@ -24,6 +24,7 @@
 #include "Util/File.h"
 #include "Util/Image.h"
 #include "Util/Nan.h"
+#include "Util/ReportCadence.h"
 
 
 namespace carta {
@@ -1748,7 +1749,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     size_t start_z(z_range.from), count(0), end_z(0), profile_start(0);
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
-    auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
+    ReportCadence partial_updates(std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME));
 
     if (Stokes::IsComputed(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
         lc_region = nullptr;
@@ -1810,7 +1811,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         // get the time elapse for this step
         auto t_end = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-        auto dt_partial_profile = std::chrono::duration<double, std::milli>(t_end - t_partial_profile_start).count();
 
         // adjust the increment of z according to the time elapse
         delta_z *= dt_target / dt;
@@ -1838,8 +1838,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         }
 
         // send partial result by the callback function
-        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= 1.0) {
-            t_partial_profile_start = std::chrono::high_resolution_clock::now();
+        if (partial_updates.Due(progress)) {
             partial_results_callback(results, progress);
             if (progress >= 1.0) {
                 // cache results for all stats types

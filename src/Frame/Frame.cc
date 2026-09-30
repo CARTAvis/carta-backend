@@ -29,6 +29,7 @@
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 #include "Util/Nan.h"
+#include "Util/ReportCadence.h"
 
 namespace carta {
 
@@ -1657,13 +1658,12 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                 // Send incremental spectral profile when reach delta z or delta time
                 size_t delta_z = INIT_DELTA_Z;                         // the increment of channels for each slice (to be adjusted)
-                size_t dt_slice_target = TARGET_DELTA_TIME;            // target time elapse for each slice, in milliseconds
-                size_t dt_partial_update = TARGET_PARTIAL_CURSOR_TIME; // time increment to send an update
-                size_t profile_size = Depth();                         // profile vector size
+                size_t dt_slice_target = TARGET_DELTA_TIME; // target time elapse for each slice, in milliseconds
+                size_t profile_size = Depth();              // profile vector size
                 spectral_data.resize(profile_size, FLOAT_NAN);
                 float progress(0.0);
 
-                auto t_start_profile = std::chrono::high_resolution_clock::now();
+                ReportCadence partial_updates(std::chrono::milliseconds(TARGET_PARTIAL_CURSOR_TIME));
 
                 while (progress < 1.0) {
                     // start timer for slice
@@ -1690,7 +1690,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     // get the time elapse for this slice
                     auto t_end_slice = std::chrono::high_resolution_clock::now();
                     auto dt_slice = std::chrono::duration<double, std::milli>(t_end_slice - t_start_slice).count();
-                    auto dt_profile = std::chrono::duration<double, std::milli>(t_end_slice - t_start_profile).count();
 
                     // adjust delta z per slice according to the time elapse,
                     // to achieve target elapsed time per slice TARGET_DELTA_TIME (used to check for cancel)
@@ -1719,10 +1718,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         Message::AddProfile(profile_message, config.coordinate, config.all_stats[0], spectral_data);
 
                         cb(profile_message);
-                    } else if (dt_profile > dt_partial_update) {
-                        // reset profile timer and send partial profile message
-                        t_start_profile = t_end_slice;
-
+                    } else if (partial_updates.Due()) {
+                        // send partial profile message
                         auto profile_message = Message::SpectralProfileData(CurrentStokes(), progress);
                         Message::AddProfile(profile_message, config.coordinate, config.all_stats[0], spectral_data);
 
