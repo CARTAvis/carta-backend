@@ -512,7 +512,7 @@ bool RegionHandler::SetStatsRequirements(
 void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for all regions or a specific region
 
-    ReleaseRegionFromLoaders(region_id);
+    ReleaseRegionProfiles(region_id);
 
     if (region_id == ALL_REGIONS) {
         _region_histograms.clear();
@@ -660,26 +660,21 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
     }
 }
 
-// A loader that can resume a region's spectral walk keeps its own state for that region, and this
-// handler is the only thing that knows the region has gone or changed underneath it.
-void RegionHandler::ReleaseRegionFromLoaders(int region_id) {
+// A region profile is kept against the region's box and channels, and this handler is the only thing
+// that knows the region has gone or changed underneath it.
+void RegionHandler::ReleaseRegionProfiles(int region_id) {
     _region_profiles.Release(region_id);
-    for (auto& frame : _frames) {
-        if (frame.second) {
-            frame.second->ReleaseRegion(region_id);
-        }
-    }
 }
 
 void RegionHandler::ClearRegionCache(int region_id) {
     // Remove cached data when region changes
 
-    // The loader's state for this region is cached data too, and the cheapest thing it keeps is the
-    // answer itself. It is kept against the region's bounding box and channel range, which an edit
-    // need not change: rotating a rectangle or dragging one vertex of a polygon inward leaves both
-    // alone while making a different mask of them, and the walk would then be resumed -- or skipped
-    // outright, if it had finished -- against the mask before the edit.
-    ReleaseRegionFromLoaders(region_id);
+    // The region's profiles are cached data too, and the cheapest thing kept is the answer itself. It
+    // is kept against the region's bounding box and channel range, which an edit need not change:
+    // rotating a rectangle or dragging one vertex of a polygon inward leaves both alone while making a
+    // different mask of them, and the profile would then be resumed -- or handed back outright, if it
+    // had finished -- against the mask before the edit.
+    ReleaseRegionProfiles(region_id);
 
     if (_region_histograms.find(region_id) != _region_histograms.end()) {
         _region_histograms[region_id]->ClearCache();
@@ -1614,10 +1609,12 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     // Get initial region info to cancel profile if it changes
     RegionState initial_region_state = region->GetRegionState();
 
-    // Use loader swizzled data for efficiency
-    if (frame->UseLoaderSpectralData(lc_region->shape())) {
-        // Use cursor spectral profile for point region
-        if (initial_region_state.type == CARTA::RegionType::POINT) {
+    // A point's profile is its pixel's spectrum, which a loader that reads spectra itself reads in one
+    // piece. Any other region's is made in steps from a loader's own reading of region profiles, and
+    // by casacore, below, where the loader has none or declines this one.
+    const bool point = initial_region_state.type == CARTA::RegionType::POINT;
+    if (!point || frame->UseLoaderSpectralData(lc_region->shape())) {
+        if (point) {
             casacore::IPosition origin = lc_region->boundingBox().start();
             auto point = Message::Point(origin(0), origin(1));
 
@@ -1652,7 +1649,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             return true;
         }
 
-        // Get 2D origin and 2D mask for Hdf5Loader
+        // Get 2D origin and 2D mask for the loader
         casacore::IPosition origin = lc_region->boundingBox().start();
         casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1)); // keep first two axes only
 
@@ -1682,16 +1679,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 }
                 partial_results_callback(results, partial_progress);
             };
-            auto send_partial = [&](const ProfilesMap& partial, float partial_progress) {
-                if (!still_wanted()) {
-                    return false;
-                }
-                if (partial_updates.Due()) {
-                    publish_partial(partial, partial_progress);
-                }
-                return true;
-            };
-            // The same, for a profile made here: the partial is made only if it is going out.
+            // The partial is made only if it is going out.
             const RegionProfileReport report_partial = [&](float partial_progress, const std::function<ProfilesMap()>& partial) {
                 if (!still_wanted()) {
                     return false;
@@ -1702,29 +1690,22 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 return true;
             };
 
-            // One step on for one stokes: made here from the loader's own reading, where it has one,
-            // and otherwise kept by the loader itself. A reader that declines leaves the profile to
-            // casacore, below.
+            // One step on for one stokes. A loader without a reading of its own, or one that declines
+            // this region, leaves the profile to casacore, below.
             RegionProfileRequest request;
             request.origin = xy_origin;
             request.mask = &mask;
             request.channels = z_range;
             bool declined = false;
             auto step_on = [&](int tmp_stokes_index, ProfilesMap& tmp_results, bool with_partials) {
-                if (frame->HasProfileReader()) {
-                    request.stokes = tmp_stokes_index;
-                    const auto outcome = frame->WithProfileReader([&](RegionProfileReader& reader, std::mutex& image_mutex) {
-                        return _region_profiles.Continue({file_id, region_id, tmp_stokes_index}, request, reader, image_mutex,
-                            std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME), with_partials ? report_partial : RegionProfileReport(),
-                            tmp_results, progress);
-                    });
-                    declined = declined || outcome == BatchOutcome::declined;
-                    return outcome == BatchOutcome::finished;
-                }
-                if (with_partials) {
-                    return frame->GetLoaderSpectralData(region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress, send_partial);
-                }
-                return frame->GetLoaderSpectralData(region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress);
+                request.stokes = tmp_stokes_index;
+                const auto outcome = frame->WithProfileReader([&](RegionProfileReader& reader, std::mutex& image_mutex) {
+                    return _region_profiles.Continue({file_id, region_id, tmp_stokes_index}, request, reader, image_mutex,
+                        std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME), with_partials ? report_partial : RegionProfileReport(),
+                        tmp_results, progress);
+                });
+                declined = declined || outcome == BatchOutcome::declined;
+                return outcome == BatchOutcome::finished;
             };
 
             // Get partial profiles until complete (do once if cached)

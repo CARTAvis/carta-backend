@@ -118,22 +118,10 @@ public:
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
         const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {});
-    // Check if one can apply swizzled data under such image format and region condition
+    // Whether this loader reads the spectra of a region of this shape itself, rather than leaving them
+    // to casacore: a point's through GetCursorSpectralData, and any other region's through its
+    // ProfileReader, which asks this too.
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
-    // Forget whatever was being kept for a region's spectral walk, because the region is gone.
-    // ALL_REGIONS means all of them. A loader that resumes such a walk keeps state per region and
-    // has nothing else that would tell it; one that keeps nothing does nothing here.
-    virtual void ReleaseRegion(int region_id) {}
-    // `partial_callback`, when given, is called while one call is still working, with the profile
-    // as it stands and how far along it is. A loader whose call is long enough that the caller's
-    // own between-call checks would come too late reports through this instead; returning false
-    // from it cancels the call. The values it carries are not final -- counts and sums grow and a
-    // mean converges -- which is the same partial answer this interface already returns when it
-    // reports progress below one.
-    virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
-        const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
-        const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {});
     // This loader's own reading of region profiles, or null for a loader that has none. See
     // RegionProfileReader.
     virtual RegionProfileReader* ProfileReader() {

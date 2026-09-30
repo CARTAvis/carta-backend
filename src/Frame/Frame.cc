@@ -1957,28 +1957,12 @@ BatchOutcome Frame::RegionSpectra(const std::function<bool(std::vector<RegionMas
     return walk->RegionSpectra(regions, z_range, stokes, sink);
 }
 
-void Frame::ReleaseRegion(int region_id) {
-    _loader->ReleaseRegion(region_id);
-}
-
 BatchOutcome Frame::WithProfileReader(const std::function<BatchOutcome(RegionProfileReader& reader, std::mutex& image_mutex)>& ask) {
     auto* reader = _loader->ProfileReader();
     if (!reader) {
         return BatchOutcome::declined;
     }
     return ask(*reader, _image_mutex);
-}
-
-bool Frame::HasProfileReader() {
-    return _loader->ProfileReader() != nullptr;
-}
-
-bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
-    const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback) {
-    // Get spectral data from loader (add image mutex for swizzled data)
-    return _loader->GetRegionSpectralData(
-        region_id, z_range, stokes, mask, origin, _image_mutex, results, progress, partial_callback);
 }
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,

@@ -214,16 +214,9 @@ public:
     // handles, which are safe to call concurrently.
     BatchOutcome RegionSpectra(const std::function<bool(std::vector<RegionMaskSpec>& regions)>& describe_regions, const AxisRange& z_range,
         int stokes, const std::function<bool(const RegionSpectralBlock&)>& sink);
-    // Tell the loader a region is gone, so it can drop whatever it kept for that region's walk.
-    void ReleaseRegion(int region_id);
     // Asks `ask` of the loader's own reading of region profiles, with the lock over the image it reads
     // under. Declined when the loader has none.
     BatchOutcome WithProfileReader(const std::function<BatchOutcome(RegionProfileReader& reader, std::mutex& image_mutex)>& ask);
-    // Whether the loader has one. For as long as a loader may keep its region profiles itself instead.
-    bool HasProfileReader();
-    bool GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
-        const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {});
 
     // Moments calculation
     bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
