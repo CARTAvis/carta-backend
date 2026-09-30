@@ -6,6 +6,7 @@
 #include "ZarrLoader.h"
 
 #include "CartaZarrImage.h"
+#include "ImageStats/DerivedStatistics.h"
 #include "ZarrContext.h"
 #include "Util/Nan.h"
 
@@ -23,31 +24,9 @@ namespace carta {
 
 namespace {
 
-// The statistics that are divisions of the counted ones, derived in one place so that a profile
-// and a BasicStats over the same pixels cannot drift apart. Only called with num_pixels above zero.
-//
-// `lone_pixel_sigma` is what a single valid pixel reports, where the sample standard deviation is
-// undefined, and it is a parameter because the callers genuinely differ rather than by oversight:
-// a profile answers zero, because Hdf5Loader does (Hdf5Loader.cc:365) and StoreSpectralBlock's
-// promise below is about exactly that; a BasicStats answers NaN, because BasicStatsCalculator does.
-struct DerivedStats {
-    double mean = 0.0;
-    double rms = 0.0;
-    double sigma = 0.0;
-};
-
-DerivedStats Derive(double num_pixels, double sum, double sum_sq, double lone_pixel_sigma) {
-    DerivedStats derived;
-    derived.mean = sum / num_pixels;
-    derived.rms = std::sqrt(sum_sq / num_pixels);
-    derived.sigma = num_pixels > 1.0 ? std::sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1.0))
-                                     : lone_pixel_sigma;
-    return derived;
-}
-
 // CARTA asks for eleven statistics; carta-zarr accumulates the six they are all made of. The
-// derivations here are the same ones Hdf5Loader performs on its own accumulators, deliberately so:
-// a Zarr profile and an HDF5 profile of the same numbers have to agree to the last bit.
+// derived ones are made by DeriveStatistics, as Hdf5Loader makes its own, so a Zarr profile and an
+// HDF5 profile of the same numbers agree to the last bit, and a profile says zero for a lone pixel.
 void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, const carta::zarr::SpectralBlock& block,
     std::size_t channel_offset, double beam_area, bool has_flux) {
     using carta::zarr::Statistic;
@@ -71,7 +50,7 @@ void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, 
         const double sum_sq = counted.sum_sq;
         const double smallest = counted.min;
         const double largest = counted.max;
-        const auto derived = Derive(n, sum, sum_sq, 0.0);
+        const auto derived = DeriveStatistics({n, sum, sum_sq, smallest, largest}, LonePixelSigma::zero);
         stats[CARTA::StatsType::Sum][z] = sum;
         stats[CARTA::StatsType::SumSq][z] = sum_sq;
         stats[CARTA::StatsType::Min][z] = smallest;
@@ -79,7 +58,7 @@ void StoreSpectralBlock(std::map<CARTA::StatsType, std::vector<double>>& stats, 
         stats[CARTA::StatsType::Mean][z] = derived.mean;
         stats[CARTA::StatsType::RMS][z] = derived.rms;
         stats[CARTA::StatsType::Sigma][z] = derived.sigma;
-        stats[CARTA::StatsType::Extrema][z] = std::abs(smallest) > std::abs(largest) ? smallest : largest;
+        stats[CARTA::StatsType::Extrema][z] = derived.extrema;
         if (has_flux) {
             stats[CARTA::StatsType::FluxDensity][z] = sum / beam_area;
         }
@@ -102,7 +81,8 @@ BasicStats<float> ToPlaneStats(const carta::zarr::SpectralTotals& counted) {
     if (count == 0) {
         return BasicStats<float>();
     }
-    const auto derived = Derive(counted.num_pixels, counted.sum, counted.sum_sq, DOUBLE_NAN);
+    const auto derived =
+        DeriveStatistics({counted.num_pixels, counted.sum, counted.sum_sq, counted.min, counted.max}, LonePixelSigma::nan);
     return BasicStats<float>{count, counted.sum, derived.mean, derived.sigma, static_cast<float>(counted.min),
         static_cast<float>(counted.max), derived.rms, counted.sum_sq};
 }
