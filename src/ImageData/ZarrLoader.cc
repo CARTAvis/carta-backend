@@ -17,7 +17,6 @@
 #include <map>
 #include <vector>
 
-#include <casacore/casa/Exceptions/Error.h>
 #include <spdlog/spdlog.h>
 
 namespace carta {
@@ -213,20 +212,16 @@ bool ZarrLoader::GetCursorSpectralData(
         };
     }
 
-    try {
-        // carta-zarr Image handles are immutable and safe for concurrent reads. The backend
-        // mutex is intentionally not held across this I/O operation.
-        if (image->Read(destination, section, options, progress)) {
-            return true;
-        }
-        // Stopped by the cursor moving on: what is in the buffer is a prefix nobody wants now.
-        data.clear();
-        return false;
-    } catch (const casacore::AipsError& error) {
-        spdlog::warn("Could not load cursor spectral data from Zarr dataset: {}", error.getMesg());
-        data.clear();
-        return false;
+    // carta-zarr Image handles are immutable and safe for concurrent reads. The backend mutex is
+    // intentionally not held across this I/O operation.
+    if (Outcome(image->Read(destination, section, options, progress), "read the cursor spectrum") ==
+        BatchOutcome::finished) {
+        return true;
     }
+    // Stopped by the cursor moving on, or failed: either way what is in the buffer is a prefix
+    // nobody wants now.
+    data.clear();
+    return false;
 }
 
 // The batched path exists for the position-velocity generator, which asks for one small box per

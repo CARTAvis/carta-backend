@@ -904,17 +904,18 @@ TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenTheCallbackDoes) {
 }
 
 // A read the caller cancelled is the caller's own decision, not a failure of the image. It used to
-// be thrown like one, so every cursor move that stopped a profile part-way logged a warning.
-TEST_F(ZarrImageTest, ACancelledReadIsNotAnError) {
+// be thrown like one, so every cursor move that stopped a profile part-way logged a warning. Read
+// now hands back what the library said, and the library says which of the two it was.
+TEST_F(ZarrImageTest, ACancelledReadSaysItWasCancelled) {
     CartaZarrImage image(kZarrFixture.string());
     carta::zarr::ReadOptions options;
     options.control.cancellation_requested = [] { return true; };
     casacore::Array<float> buffer;
     const casacore::Slicer section(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, 1, 1, kDepth, 1));
 
-    bool finished = true;
-    EXPECT_NO_THROW(finished = image.Read(buffer, section, options));
-    EXPECT_FALSE(finished) << "a cancelled read should say it did not finish";
+    const auto read = image.Read(buffer, section, options);
+    ASSERT_FALSE(read) << "a cancelled read should say it did not finish";
+    EXPECT_EQ(read.error().code, carta::zarr::ErrorCode::cancelled);
 }
 
 // A whole-cube histogram counts in 64 bits and the backend holds a bin as an int. A 2.9e11-pixel

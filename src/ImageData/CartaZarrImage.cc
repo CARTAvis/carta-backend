@@ -55,19 +55,14 @@ constexpr casacore::Int kMaskCacheMaxPixels = 1 << 22;
 // 512x107x7776 slabs, 426 mebipixels each, and missing here made it decode the whole cube twice.
 constexpr casacore::Int kMaskCacheMaxCubePixels = 1 << 30;
 
-// What Read makes of a library read that did not succeed. A cancellation is the caller's own
-// decision arriving back -- a progress callback that said stop, or a cancellation_requested that
-// said yes -- so it is false rather than an error to report upwards. Anything else is thrown, which
-// is how a casacore image reports failure.
-template <typename T>
-bool Finished(const carta::zarr::Result<T>& result, const char* where) {
-    if (result) {
-        return true;
+// What casacore hears of a read that did not succeed: an exception, which is how a casacore image
+// reports failure. A cancellation is thrown as well. Neither override hands the read a way to stop,
+// so none can arrive today; if one did, the buffer would hold a prefix, and passing that to casacore
+// as the section's pixels would be worse than saying so.
+void ThrowIfUnread(const carta::zarr::Result<std::size_t>& read, const char* where) {
+    if (!read) {
+        throw casacore::AipsError(std::string("CartaZarrImage::") + where + " - " + read.error().message);
     }
-    if (result.error().code == carta::zarr::ErrorCode::cancelled) {
-        return false;
-    }
-    throw casacore::AipsError(std::string("CartaZarrImage::") + where + " - " + result.error().message);
 }
 
 }  // namespace
@@ -229,7 +224,7 @@ casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels)
 }
 
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
-    Read(buffer, section);
+    ThrowIfUnread(Read(buffer, section), "doGetSlice");
 
     const auto length = section.length();
     const bool one_plane = length.size() < 3 || (length(2) <= 1 && (length.size() < 4 || length(3) <= 1));
@@ -252,7 +247,7 @@ const carta::zarr::Image& CartaZarrImage::Opened(const char* where) const {
     return *_zarr_image;
 }
 
-bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
+carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
     const carta::zarr::ReadOptions& options, const carta::zarr::ProgressCallback& progress) const {
     const auto& image = Opened("Read");
     buffer.resize(section.length());
@@ -262,7 +257,7 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
     auto read = image.Read(_axes->Request(section),
         {storage, static_cast<std::size_t>(buffer.nelements())}, options, progress);
     buffer.putStorage(storage, delete_storage);
-    return Finished(read, "Read");
+    return read;
 }
 
 const carta::zarr::Image& CartaZarrImage::Library() const {
@@ -317,7 +312,7 @@ casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& b
     }
 
     casacore::Array<float> pixels;
-    Read(pixels, section);
+    ThrowIfUnread(Read(pixels, section), "doGetMaskSlice");
     buffer.resize(section.length());
     buffer = isFinite(pixels);
     return false;

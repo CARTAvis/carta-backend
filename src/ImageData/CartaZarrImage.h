@@ -53,7 +53,10 @@ public:
     casacore::DataType InternalDataType() const;
     casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) override;
     casacore::IPosition doNiceCursorShape(casacore::uInt max_pixels) const override;
-    bool Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
+    // The pixels of `section`, which is in CARTA's axis order. What the library said is returned
+    // as it said it: the casacore overrides below throw on anything but success, because that is
+    // how casacore hears of a failure, and ZarrLoader reads it as it reads its walks.
+    carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {},
         const carta::zarr::ProgressCallback& progress = {}) const;
     // The library's own image, for the walks casacore has no call for: a Lattice is asked for
