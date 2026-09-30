@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
+#include "ImageStats/CubeHistogramMethod.h"
 #include "ImageStats/Histogram.h"
 #include "ThreadManager/ThreadManager.h"
 
@@ -147,3 +148,23 @@ TEST_F(HistogramTest, TestMultithreadingPerformance) {
 }
 
 #endif
+
+// The setting a session reads to decide how a cube histogram is made. A typo is two passes rather
+// than a silently sampled answer.
+TEST(CubeHistogramMethod, TheSettingSaysWhetherToMakeOnePassAndOverWhichPixels) {
+    const auto exact = ParseCubeHistogramMethod("exact");
+    EXPECT_FALSE(exact.one_pass);
+    EXPECT_FALSE(ParseCubeHistogramMethod("").one_pass) << "no setting is exact";
+
+    const auto binned = ParseCubeHistogramMethod("binned");
+    EXPECT_TRUE(binned.one_pass);
+    EXPECT_EQ(binned.spatial_sample, 1u) << "binned reads every pixel";
+
+    EXPECT_TRUE(ParseCubeHistogramMethod("sampled").one_pass);
+    EXPECT_EQ(ParseCubeHistogramMethod("sampled").spatial_sample, 4u) << "sampled on its own takes every fourth";
+    EXPECT_EQ(ParseCubeHistogramMethod("sampled:8").spatial_sample, 8u);
+    EXPECT_EQ(ParseCubeHistogramMethod("sampled:x").spatial_sample, 4u) << "a stride that is not a number is ignored";
+    EXPECT_EQ(ParseCubeHistogramMethod("sampled:0").spatial_sample, 4u) << "and so is one that reads nothing";
+
+    EXPECT_FALSE(ParseCubeHistogramMethod("bined").one_pass) << "a misspelling is exact";
+}

@@ -1017,6 +1017,172 @@ void Frame::CacheCubeHistogram(int stokes, Histogram& hist) {
     _cube_histograms[stokes].push_back(hist);
 }
 
+BatchOutcome Frame::CalculateCubeHistogram(int stokes, const HistogramConfig& config, const CubeHistogramMethod& method,
+    const std::function<bool()>& cancellation_requested, const std::function<bool(const CubeHistogramProgress&)>& progress,
+    BasicStats<float>& stats, Histogram& histogram) {
+    // Resolved here rather than left to CalculateHistogram, because the batched walks are handed this
+    // value directly and a request for -1 bins is one they decline.
+    const int num_bins = config.num_bins == AUTO_BIN_SIZE ? AutoBinSize() : config.num_bins;
+    const auto stopped = [&]() { return cancellation_requested && cancellation_requested(); };
+    const auto report = [&](const CubeHistogramProgress& update) { return !progress || progress(update); };
+    auto* batched = Batched();
+
+    // A loader that can find the range and bin at the same time answers both passes at once, when
+    // the method asks for it; exact is the default, and then the two passes below are all there is.
+    //
+    // Not for a request that fixes the bounds. The walk finds the range as it goes and re-aggregates
+    // onto what it found, so its counts belong to the data's own extremes and there is nowhere to
+    // hand it a range it was not given. Labelling those counts with the requested edges would publish
+    // counts of one thing as counts of another. The two passes have the range before they bin, so
+    // they are the ones that can answer this.
+    if (batched && method.one_pass && !config.fixed_bounds) {
+        BasicStats<float> one_pass_stats;
+        std::vector<int> one_pass_bins;
+        const auto one_pass = batched->CubeHistogram(
+            stokes, num_bins, method.spatial_sample, one_pass_stats, one_pass_bins, [&](const CubeHistogramUpdate& update) {
+                if (stopped()) {
+                    return false;
+                }
+                CubeHistogramProgress reported;
+                // One pass, so the whole bar belongs to it rather than its second half.
+                reported.progress = static_cast<float>(update.progress);
+                // The histogram of what has been read so far, which is what the two passes show from
+                // their halfway mark on. The bounds widen as the walk goes, so they come from the
+                // snapshot rather than from the cube's, which are not known yet.
+                reported.partial = [&](BasicStats<float>& partial_stats, Histogram& partial) {
+                    std::vector<int> partial_bins;
+                    update.snapshot(partial_stats, partial_bins);
+                    if (partial_bins.empty() || partial_stats.num_pixels == 0) {
+                        return false;
+                    }
+                    partial = Histogram(num_bins, HistogramBounds(partial_stats.min_val, partial_stats.max_val), nullptr, 0);
+                    partial.SetHistogramBins(partial_bins);
+                    return true;
+                };
+                return report(reported);
+            });
+        if (one_pass != BatchOutcome::declined) {
+            if (one_pass != BatchOutcome::finished) {
+                return one_pass;
+            }
+            if (stopped()) {
+                return BatchOutcome::cancelled;
+            }
+            stats = one_pass_stats;
+            CacheCubeStats(stokes, stats);
+            histogram = Histogram(num_bins, config.GetBounds(stats), nullptr, 0);
+            histogram.SetHistogramBins(one_pass_bins);
+            if (stopped()) {
+                return BatchOutcome::cancelled;
+            }
+            CacheCubeHistogram(stokes, histogram);
+            return BatchOutcome::finished;
+        }
+    }
+
+    // Two passes, each asked of the loader's walk first and read plane by plane when it declines. The
+    // two routes report progress and stop at the same points, because they share what one plane
+    // costs: the statistics are the first half of the bar and the bins the second.
+    const size_t depth(Depth());
+    const size_t total_z(depth * 2);
+
+    stats = BasicStats<float>();
+    auto take_plane_stats = [&](int z, const BasicStats<float>& z_stats) {
+        stats.join(z_stats);
+        if (stopped()) {
+            return false;
+        }
+        float this_z(z);
+        CubeHistogramProgress reported;
+        reported.progress = this_z / total_z;
+        return report(reported);
+    };
+
+    // A loader that can walk the cube itself neither materialises a plane nor reads each one twice.
+    const auto walked = GetCubeBasicStats(stokes, cancellation_requested, take_plane_stats);
+    if (walked == BatchOutcome::failed || walked == BatchOutcome::cancelled) {
+        return walked;
+    }
+    if (walked == BatchOutcome::declined) {
+        for (size_t z = 0; z < depth; ++z) {
+            BasicStats<float> z_stats;
+            if (!GetBasicStats(z, stokes, z_stats)) {
+                return BatchOutcome::failed;
+            }
+            if (!take_plane_stats(static_cast<int>(z), z_stats)) {
+                return BatchOutcome::cancelled;
+            }
+        }
+    }
+    if (stopped()) {
+        return BatchOutcome::cancelled;
+    }
+    CacheCubeStats(stokes, stats);
+
+    const auto bounds = config.GetBounds(stats);
+    CubeHistogramProgress halfway;
+    halfway.progress = 0.5;
+    halfway.milestone = true;
+    if (!report(halfway)) {
+        return BatchOutcome::cancelled;
+    }
+
+    // What one plane's bins cost, shared as the statistics' was. From here there is a histogram to
+    // show: the planes binned so far, over the statistics of the whole cube.
+    histogram = Histogram();
+    bool have_histogram(false);
+    auto take_plane_histogram = [&](int z, const Histogram& plane) {
+        if (!have_histogram) {
+            histogram = plane;
+            have_histogram = true;
+        } else {
+            histogram.Add(plane);
+        }
+        if (stopped()) {
+            return false;
+        }
+        float this_z(z);
+        CubeHistogramProgress reported;
+        reported.progress = 0.5 + (this_z / total_z);
+        reported.partial = [&](BasicStats<float>& partial_stats, Histogram& partial) {
+            partial_stats = stats;
+            partial = histogram;
+            return true;
+        };
+        return report(reported);
+    };
+
+    // The loader hands back bin counts rather than a Histogram because binning is all it did; the
+    // bounds and the bin count came from here in the first place.
+    auto binned = BatchOutcome::declined;
+    if (batched) {
+        binned = batched->PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, [&](int z, const std::vector<int>& bins) {
+            Histogram plane(num_bins, bounds, nullptr, 0);
+            plane.SetHistogramBins(bins);
+            return take_plane_histogram(z, plane);
+        });
+    }
+    if (binned == BatchOutcome::failed || binned == BatchOutcome::cancelled) {
+        return binned;
+    }
+    if (binned == BatchOutcome::declined) {
+        Histogram z_histogram;
+        for (size_t z = 0; z < depth; ++z) {
+            if (!CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
+                return BatchOutcome::failed;
+            }
+            if (!take_plane_histogram(static_cast<int>(z), z_histogram)) {
+                return BatchOutcome::cancelled;
+            }
+        }
+    }
+    if (stopped()) {
+        return BatchOutcome::cancelled;
+    }
+    CacheCubeHistogram(stokes, histogram);
+    return BatchOutcome::finished;
+}
+
 // ****************************************************
 // Stats Requirements and Data
 

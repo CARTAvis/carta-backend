@@ -266,7 +266,7 @@ TEST_F(SessionTest, CubeHistogramRequirementsProduceAHistogram) {
     EXPECT_EQ(session._histogram_progress, 1.0);
 }
 
-// A request for -1 bins means "decide for me". Session resolves it before handing the number on,
+// A request for -1 bins means "decide for me". Frame resolves it before handing the number on,
 // because the batched paths are given it directly and decline a request for -1 bins. That resolve
 // was missing once and the bug lived three commits.
 //
@@ -282,7 +282,6 @@ TEST_F(SessionTest, CubeHistogramResolvesAutoBinSizeBeforeOfferingItToTheBatched
     ASSERT_NE(loader, nullptr);
     auto frame = ZarrFrame(loader);
     ASSERT_TRUE(frame->IsValid());
-    ASSERT_EQ(frame->AutoBinSize(), kAutoBins);
     session.AdoptFrame(file_id, frame);
 
     session.OnSetHistogramRequirements(CubeHistogramRequirements(file_id, AUTO_BIN_SIZE), 1);
@@ -525,8 +524,8 @@ TEST_F(SessionTest, CancelledCubeHistogramSendsNoFinalMessage) {
 
 // A second request is answered from the cache rather than by walking the cube again.
 //
-// Session caches the finished histogram with Frame::CacheCubeHistogram and the statistics it was
-// binned under with CacheCubeStats. Frame::FillRegionHistogramData used to return early for
+// Frame caches the finished histogram and the statistics it was binned under once it has made
+// them. Frame::FillRegionHistogramData used to return early for
 // CUBE_REGION_ID before it reached either, so the only cache a cube histogram could be served from
 // was the loader's own precomputed statistics -- which only HDF5 with a stats sidecar has. Every
 // other format re-walked the whole cube on every request, which on a large store is minutes.

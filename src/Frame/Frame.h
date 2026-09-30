@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -28,6 +29,7 @@
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"
+#include "ImageStats/CubeHistogramMethod.h"
 #include "ImageStats/Histogram.h"
 #include "Region/Region.h"
 #include "Util/Concurrency.h"
@@ -76,6 +78,20 @@ struct ContourSettings {
 static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileType::CASA, "CASA"}, {CARTA::FileType::CRTF, "CRTF"},
     {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
     {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::ZARR, "ZARR"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
+
+// How far Frame::CalculateCubeHistogram has got, as it tells its caller.
+struct CubeHistogramProgress {
+    // The fraction of the whole calculation that is done.
+    float progress = 0.0;
+    // The report between the two passes of an exact histogram, which has always been sent whether or
+    // not the caller's reporting interval had elapsed, and has never restarted it.
+    bool milestone = false;
+    // The histogram binned so far and the statistics to show it with, filled only if this returns
+    // true. Empty until there is something to show: the first of two passes has only found a range.
+    // Not free on one pass, where it re-aggregates the walk's provisional histograms, so a caller
+    // asks only when it is about to report. Valid only for the call it arrives with.
+    std::function<bool(BasicStats<float>& stats, Histogram& histogram)> partial;
+};
 
 class Frame {
 public:
@@ -145,8 +161,22 @@ public:
     bool GetBasicStats(int z, int stokes, BasicStats<float>& stats);
     bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
-    void CacheCubeStats(int stokes, BasicStats<float>& stats);
-    void CacheCubeHistogram(int stokes, Histogram& hist);
+    // A histogram of the whole cube for one stokes, and the statistics it was binned against, both
+    // cached here once they are final. `config` says how many bins (AUTO_BIN_SIZE is resolved here)
+    // and whether the bounds are fixed; `method` whether one pass may be taken, which it is only when
+    // the loader has such a walk and the bounds are not fixed, since one pass finds its own range.
+    //
+    // The loader's batched walks are asked first, and planes are read one at a time only when the
+    // loader has none or declines, so every loader answers through this. `cancellation_requested`
+    // is asked between the walks' reads and between planes; `progress` is told how far along the
+    // calculation is, and returning false from it cancels too.
+    //
+    // Never declined. Failed when a plane could not be read or a walk that had begun did not
+    // finish, which is not retried plane by plane: that reads the same pixels the same way. Nothing
+    // is cached unless it is finished.
+    BatchOutcome CalculateCubeHistogram(int stokes, const HistogramConfig& config, const CubeHistogramMethod& method,
+        const std::function<bool()>& cancellation_requested, const std::function<bool(const CubeHistogramProgress&)>& progress,
+        BasicStats<float>& stats, Histogram& histogram);
 
     // Stats: image
     bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs);
@@ -189,14 +219,6 @@ public:
     // is taken for them: the only loader with any reads through immutable carta-zarr handles, which
     // are safe to call concurrently.
     BatchedReducer* Batched();
-    // Every plane's basic statistics from the loader's batched walk, cached on the way past as the
-    // per-plane path caches them. Declined, without calling the callback, when there is no such walk.
-    // `cancellation_requested` is asked between the walk's reads; see BatchedReducer::PlaneStats.
-    BatchOutcome GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
-        const std::function<bool(int z, const BasicStats<float>&)>& plane_callback);
-    // The bin count a request for AUTO_BIN_SIZE means. Public because the batched paths are handed
-    // a resolved count and would decline a request for -1 bins.
-    int AutoBinSize();
     // Tell the loader a region is gone, so it can drop whatever it kept for that region's walk.
     void ReleaseRegion(int region_id);
     bool GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
@@ -263,6 +285,15 @@ protected:
         int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram);              // histogram message
     bool GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist); // internal histogram
     bool GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);         // internal histogram
+    void CacheCubeStats(int stokes, BasicStats<float>& stats);
+    void CacheCubeHistogram(int stokes, Histogram& hist);
+    // The bin count a request for AUTO_BIN_SIZE means.
+    int AutoBinSize();
+    // Every plane's basic statistics from the loader's batched walk, cached on the way past as the
+    // per-plane path caches them. Declined, without calling the callback, when there is no such walk.
+    // `cancellation_requested` is asked between the walk's reads; see BatchedReducer::PlaneStats.
+    BatchOutcome GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
+        const std::function<bool(int z, const BasicStats<float>&)>& plane_callback);
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
