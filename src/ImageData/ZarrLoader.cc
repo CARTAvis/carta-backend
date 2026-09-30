@@ -271,7 +271,7 @@ BatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& region
     request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum;
 
     carta::zarr::ReadOptions options;
-    options.temporary_memory_limit_bytes = _read_budget_bytes;
+    options.read_budget_bytes = _read_budget_bytes;
 
     // Made once and refilled for every block, so that handing a block on costs two pointers per
     // region rather than an allocation.
@@ -327,7 +327,7 @@ BatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& can
     carta::zarr::ReadOptions options;
     options.control.cache_policy = carta::zarr::CachePolicy::bypass;
     options.control.cancellation_requested = cancellation_requested;
-    options.temporary_memory_limit_bytes = _read_budget_bytes;
+    options.read_budget_bytes = _read_budget_bytes;
 
     const auto report_plane = [&](const carta::zarr::SpectralBlock& block) {
         if (!block.complete) {
@@ -370,7 +370,7 @@ BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const Histogr
     carta::zarr::ReadOptions options;
     options.control.cache_policy = carta::zarr::CachePolicy::bypass;
     options.control.cancellation_requested = cancellation_requested;
-    options.temporary_memory_limit_bytes = _read_budget_bytes;
+    options.read_budget_bytes = _read_budget_bytes;
 
     std::vector<int> plane_bins(static_cast<std::size_t>(num_bins));
     bool held = false;
@@ -430,7 +430,7 @@ BatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t s
     // As with the other cube walks: read every chunk once, keep none of them.
     carta::zarr::ReadOptions options;
     options.control.cache_policy = carta::zarr::CachePolicy::bypass;
-    options.temporary_memory_limit_bytes = _read_budget_bytes;
+    options.read_budget_bytes = _read_budget_bytes;
 
     auto result = image->Library().ComputeCubeHistogram(request, options, zarr_progress);
     const auto outcome = Outcome(result, "bin the cube in one pass");
@@ -551,7 +551,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
                    partial_callback(state.stats, static_cast<float>(done / static_cast<double>(channels)));
         };
         carta::zarr::ReadOptions options;
-        options.temporary_memory_limit_bytes = _read_budget_bytes;
+        options.read_budget_bytes = _read_budget_bytes;
         const auto store = [&](const carta::zarr::SpectralBlock& block) {
             StoreSpectralBlock(state.stats, block, first_channel, beam_area, has_flux);
             if (!block.complete) {
