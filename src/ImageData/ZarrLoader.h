@@ -58,10 +58,10 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
         const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {}) override;
 
-    // The read budget one batched walk may hold, in bytes; zero leaves the library its own.
+    // The read budget one walk may hold, in bytes; zero leaves the library its own.
     // Exists so that a test can make a walk take more than one read, which is what a region
     // covering a large image does and what no fixture small enough to keep in a repository can.
-    // Every batched walk honours it. The one-pass cube histogram needs it for one more reason, since
+    // Every walk honours it. The one-pass cube histogram needs it for one more reason, since
     // it only reports its progress between reads, and the two per-plane walks for another: a
     // cancellation between reads can only be seen to arrive before a plane is finished if a plane
     // takes more than one read.
