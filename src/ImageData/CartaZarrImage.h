@@ -53,6 +53,9 @@ public:
     casacore::DataType InternalDataType() const;
     casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) override;
     casacore::IPosition doNiceCursorShape(casacore::uInt max_pixels) const override;
+    // The shape of a chunk of the store, in CARTA's axis order: what the image decodes together, where
+    // the cursor advice above is grown past it. Empty when there is no image.
+    casacore::IPosition ChunkShape() const;
     // The pixels of `section`, which is in CARTA's axis order. What the library said is returned
     // as it said it: the casacore overrides below throw on anything but success, because that is
     // how casacore hears of a failure, and ZarrLoader reads it as it reads its walks.

@@ -71,6 +71,15 @@ public:
     // Stop the calculation
     void StopCalculation();
 
+    // The chunk grid of the image this was made from: the shape of a chunk, and where this image's
+    // corner lies among them, both in this image's axis order. With it the moment reads slabs cut on
+    // that grid (see SlabPlan). Kept only while the image collapsed is that image: one convolved from
+    // it is held in memory, and decodes in no chunks.
+    void SetChunkGrid(const casacore::IPosition& unit, const casacore::IPosition& origin) {
+        _chunk_grid_unit = unit;
+        _chunk_grid_origin = origin;
+    }
+
 private:
     SPCIIT _image = SPCIIT(nullptr);
     std::unique_ptr<casa::ImageMomentsProgress> _progress_monitor;
@@ -99,6 +108,10 @@ private:
 
     // Number of steps have done for the beam convolution
     casacore::uInt _steps_for_beam_convolution = 0;
+
+    // See SetChunkGrid. Empty when not known.
+    casacore::IPosition _chunk_grid_unit;
+    casacore::IPosition _chunk_grid_origin;
 
 protected:
     using casa::MomentsBase<T>::os_p;

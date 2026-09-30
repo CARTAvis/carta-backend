@@ -174,15 +174,27 @@ casacore::DataType CartaZarrImage::InternalDataType() const {
 // max_pixels is advice, and it is followed only as far as it helps: a cursor smaller than one
 // chunk decodes exactly as much as a whole chunk does, so the non-spatial axes are collapsed to
 // fit and the spatial chunk itself is reported even when it is larger than the advice.
-casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels) const {
+casacore::IPosition CartaZarrImage::ChunkShape() const {
     if (!_zarr_image) {
-        return casacore::ImageInterface<float>::doNiceCursorShape(max_pixels);
+        return {};
     }
     const auto& own_chunk = _zarr_image->chunk_geometry().chunk_shape;
     if (own_chunk.size() < _descriptor.axes.size()) {
-        return casacore::ImageInterface<float>::doNiceCursorShape(max_pixels);
+        return {};
     }
     const auto chunk = _axes->InCartaOrder(own_chunk);
+    casacore::IPosition shape(_shape.size());
+    for (casacore::uInt axis = 0; axis < _shape.size(); ++axis) {
+        shape(axis) = static_cast<ssize_t>(chunk[axis]);
+    }
+    return shape;
+}
+
+casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels) const {
+    const auto chunk = ChunkShape();
+    if (chunk.empty()) {
+        return casacore::ImageInterface<float>::doNiceCursorShape(max_pixels);
+    }
 
     casacore::IPosition cursor(_shape.size());
     for (casacore::uInt axis = 0; axis < _shape.size(); ++axis) {

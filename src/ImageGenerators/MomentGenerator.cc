@@ -7,6 +7,7 @@
 #include "MomentGenerator.h"
 
 #include "../Logger/Logger.h"
+#include "ImageData/CartaZarrImage.h"
 #include "ImageGenerator.h"
 
 using namespace carta;
@@ -200,6 +201,26 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
 
     // Make an ImageMoments object and overwrite the output file if it already exists
     _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this, true));
+
+    casacore::IPosition unit;
+    casacore::IPosition origin;
+    if (ChunkGridOf(*_image, *_sub_image, unit, origin)) {
+        _image_moments->SetChunkGrid(unit, origin);
+    }
+}
+
+bool carta::ChunkGridOf(const casacore::ImageInterface<float>& image, const casacore::SubImage<float>& region, casacore::IPosition& unit,
+    casacore::IPosition& origin) {
+    // A Zarr store decodes in chunks, and the moment reads fastest in slabs cut on them. Only the image
+    // knows the chunks, and only the region knows where it starts among them; any other image says
+    // what it can through its cursor advice.
+    const auto* zarr = dynamic_cast<const CartaZarrImage*>(&image);
+    if (zarr == nullptr) {
+        return false;
+    }
+    unit = zarr->ChunkShape();
+    origin = region.region().slicer().start();
+    return !unit.empty() && origin.size() == unit.size() && region.shape().size() == unit.size();
 }
 
 void MomentGenerator::SetImageRestFrequency(double rest_frequency) {

@@ -90,6 +90,12 @@ private:
     bool _first_report_made;
 };
 
+// The chunk grid `region` of `image` lies on: the shape of a chunk, and where the region's corner is
+// among them, for ImageMoments::SetChunkGrid. False for an image that does not decode in chunks it can
+// name, which is every image but a Zarr store's.
+bool ChunkGridOf(const casacore::ImageInterface<float>& image, const casacore::SubImage<float>& region, casacore::IPosition& unit,
+    casacore::IPosition& origin);
+
 } // namespace carta
 
 #endif // CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_
