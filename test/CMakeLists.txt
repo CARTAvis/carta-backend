@@ -51,6 +51,7 @@ set(TEST_SOURCES
         TestCartaZarrAxes.cc
         TestCubeHistogramCalculator.cc
         TestCursorSpatialProfiles.cc
+        TestCursorSpectralRoutes.cc
         TestExprImage.cc
         TestFileInfo.cc
         TestFileInfoCache.cc
