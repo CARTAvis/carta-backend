@@ -20,6 +20,9 @@
 #include <future>
 #include <limits>
 #include <fstream>
+#include <regex>
+#include <sstream>
+#include <tuple>
 #include <vector>
 
 #include <casacore/images/Images/SubImage.h>
@@ -39,6 +42,8 @@
 #include "Region/RegionHandler.h"
 #include "Util/Message.h"
 #include "src/Frame/Frame.h"
+
+#include "CommonTestUtilities.h"
 
 using namespace carta;
 
@@ -202,6 +207,116 @@ protected:
         }
     }
 };
+
+namespace {
+
+// A copy of the pixel fixture that holds the pixels a test puts in it and no others.
+//
+// The copy's sky is stored raw rather than compressed, so that a test can write it without a codec.
+// A chunk nothing was put in is absent and reads as NaN, as the fill value says, so a plane is empty
+// until a test puts something in it. The flags are the fixture's own: a pixel ExpectedFlag does not
+// keep reads as NaN whatever is put there, and putting one is a mistake in the test.
+class WrittenZarrFixture {
+public:
+    explicit WrittenZarrFixture(const std::string& name) : _path(TestRoot() / "data" / "generated" / name) {}
+
+    void Put(int x, int y, int z, int stokes, float value) {
+        if (!ExpectedFlag(x, y)) {
+            ADD_FAILURE() << "the fixture flags x=" << x << " y=" << y << ", so nothing put there is read";
+            return;
+        }
+        auto& chunk = _chunks[{z, stokes, x / 2}];
+        if (chunk.empty()) {
+            chunk.assign(2 * kHeight, std::numeric_limits<float>::quiet_NaN());
+        }
+        // Two columns to a chunk, the first column's rows first.
+        chunk[(x % 2) * kHeight + y] = value;
+    }
+
+    // Writes the copy with what has been put in it, and says where it is.
+    std::filesystem::path Write() const {
+        std::filesystem::remove_all(_path);
+        std::filesystem::copy(kZarrFixture, _path, std::filesystem::copy_options::recursive);
+        std::filesystem::remove_all(_path / "SKY" / "c");
+
+        const auto metadata = _path / "SKY" / "zarr.json";
+        std::stringstream text;
+        text << std::ifstream(metadata).rdbuf();
+        const std::regex codecs(R"("codecs"\s*:\s*\[[^\]]*\])");
+        std::ofstream(metadata, std::ios::trunc) << std::regex_replace(
+            text.str(), codecs, R"("codecs": [{"name": "bytes", "configuration": {"endian": "little"}}])");
+
+        for (const auto& [key, pixels] : _chunks) {
+            const auto& [z, stokes, column_pair] = key;
+            const auto chunk =
+                _path / "SKY" / "c" / "0" / std::to_string(z) / std::to_string(stokes) / std::to_string(column_pair) / "0";
+            std::filesystem::create_directories(chunk.parent_path());
+            std::ofstream(chunk, std::ios::binary)
+                .write(reinterpret_cast<const char*>(pixels.data()), static_cast<std::streamsize>(pixels.size() * sizeof(float)));
+        }
+        return _path;
+    }
+
+private:
+    std::filesystem::path _path;
+    // By plane, stokes and pair of columns.
+    std::map<std::tuple<int, int, int>, std::vector<float>> _chunks;
+};
+
+// Every plane's statistics from the loader's walk, against the loop the caller would otherwise run:
+// read the plane, then reduce it. The comparison is the point -- the walk exists to avoid
+// materialising a plane and to avoid reading each one twice, and neither is worth anything if it
+// disagrees.
+void ExpectPlaneStatsAgreeWithThePerPlaneLoop(const std::filesystem::path& path) {
+    auto loader = FileLoader::GetLoader(path.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto image = loader->GetImage();
+    ASSERT_NE(image, nullptr);
+
+    for (int stokes = 0; stokes < kStokes; ++stokes) {
+        std::map<int, BasicStats<float>> from_loader;
+        ASSERT_EQ(loader->CubeWalk()->PlaneStats(stokes, {},
+                      [&](int z, const BasicStats<float>& stats) {
+                          EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
+                          from_loader[z] = stats;
+                          return true;
+                      }),
+            BatchOutcome::finished)
+            << "the Zarr loader should serve cube statistics itself";
+        ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
+
+        for (int z = 0; z < kDepth; ++z) {
+            casacore::Slicer slicer(casacore::IPosition(4, 0, 0, z, stokes),
+                casacore::IPosition(4, kWidth, kHeight, 1, 1));
+            // doGetSlice's Bool says whether the array references the lattice, not whether it
+            // succeeded, so it is the shape that is checked here.
+            casacore::Array<float> plane;
+            image->doGetSlice(plane, slicer);
+            ASSERT_EQ(plane.nelements(), static_cast<std::size_t>(kWidth) * kHeight);
+            BasicStats<float> reference;
+            CalcBasicStats(reference, plane.data(), plane.nelements());
+
+            const std::string where = " z=" + std::to_string(z) + " stokes=" + std::to_string(stokes);
+            const auto& actual = from_loader[z];
+            EXPECT_EQ(actual.num_pixels, reference.num_pixels) << where;
+            EXPECT_FLOAT_EQ(actual.min_val, reference.min_val) << where;
+            EXPECT_FLOAT_EQ(actual.max_val, reference.max_val) << where;
+            for (const auto& [name, pair] : std::map<std::string, std::pair<double, double>>{
+                     {"sum", {actual.sum, reference.sum}}, {"sumSq", {actual.sumSq, reference.sumSq}},
+                     {"mean", {actual.mean, reference.mean}}, {"rms", {actual.rms, reference.rms}},
+                     {"stdDev", {actual.stdDev, reference.stdDev}}}) {
+                if (std::isnan(pair.second)) {
+                    EXPECT_TRUE(std::isnan(pair.first)) << name << where << " is " << pair.first;
+                } else {
+                    EXPECT_NEAR(pair.first, pair.second, 1e-9 * (1.0 + std::abs(pair.second))) << name << where;
+                }
+            }
+        }
+    }
+}
+
+} // namespace
 
 TEST_F(ZarrImageTest, LoaderIsSelectedAndShapeIsCarta) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
@@ -919,56 +1034,26 @@ TEST(ZarrBinCounts, ACountPastIntMaxIsHeldThereRatherThanWrapped) {
 // checks between calls all come too late. The loader reports through the callback while the call is
 // still working, carrying partial sums that converge; the finished profile must be unaffected by
 // having been looked at on the way.
-// Every plane's statistics in one pass, against the loop the caller would otherwise run: read the
-// plane, then reduce it. The comparison is the point -- this path exists to avoid materialising a
-// plane and to avoid reading each one twice, and neither is worth anything if it disagrees.
+// Every plane's statistics in one pass agree with reading each plane and reducing it.
 TEST_F(ZarrImageTest, CubeBasicStatsAgreeWithThePerPlaneLoop) {
-    auto loader = FileLoader::GetLoader(kZarrFixture.string());
-    ASSERT_NE(loader, nullptr);
-    loader->OpenFile("");
-    auto image = loader->GetImage();
-    ASSERT_NE(image, nullptr);
+    ExpectPlaneStatsAgreeWithThePerPlaneLoop(kZarrFixture);
+}
 
-    for (int stokes = 0; stokes < kStokes; ++stokes) {
-        std::map<int, BasicStats<float>> from_loader;
-        ASSERT_EQ(loader->CubeWalk()->PlaneStats(stokes, {},
-                      [&](int z, const BasicStats<float>& stats) {
-                          EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
-                          from_loader[z] = stats;
-                          return true;
-                      }),
-            BatchOutcome::finished)
-            << "the Zarr loader should serve cube statistics itself";
-        ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
-
-        for (int z = 0; z < kDepth; ++z) {
-            casacore::Slicer slicer(casacore::IPosition(4, 0, 0, z, stokes),
-                casacore::IPosition(4, kWidth, kHeight, 1, 1));
-            // doGetSlice's Bool says whether the array references the lattice, not whether it
-            // succeeded, so it is the shape that is checked here.
-            casacore::Array<float> plane;
-            image->doGetSlice(plane, slicer);
-            ASSERT_EQ(plane.nelements(), static_cast<std::size_t>(kWidth) * kHeight);
-            BasicStats<float> reference;
-            CalcBasicStats(reference, plane.data(), plane.nelements());
-
-            const std::string where = " z=" + std::to_string(z) + " stokes=" + std::to_string(stokes);
-            const auto& actual = from_loader[z];
-            EXPECT_EQ(actual.num_pixels, reference.num_pixels) << where;
-            EXPECT_FLOAT_EQ(actual.min_val, reference.min_val) << where;
-            EXPECT_FLOAT_EQ(actual.max_val, reference.max_val) << where;
-            for (const auto& [name, pair] : std::map<std::string, std::pair<double, double>>{
-                     {"sum", {actual.sum, reference.sum}}, {"sumSq", {actual.sumSq, reference.sumSq}},
-                     {"mean", {actual.mean, reference.mean}}, {"rms", {actual.rms, reference.rms}},
-                     {"stdDev", {actual.stdDev, reference.stdDev}}}) {
-                if (std::isnan(pair.second)) {
-                    EXPECT_TRUE(std::isnan(pair.first)) << name << where;
-                } else {
-                    EXPECT_NEAR(pair.first, pair.second, 1e-9 * (1.0 + std::abs(pair.second))) << name << where;
-                }
-            }
-        }
-    }
+// The same for planes at the edges of what can be derived: one valid pixel, whose sigma a plane
+// reports as NaN where a profile would say zero, two that are equal, and a few.
+TEST_F(ZarrImageTest, PlaneStatisticsOfALonePixelAgreeWithThePerPlaneLoop) {
+    WrittenZarrFixture fixture("lone_pixel_planes.zarr");
+    fixture.Put(0, 1, 0, 0, 0.5f);
+    fixture.Put(0, 1, 1, 0, 1.0f);
+    fixture.Put(0, 2, 1, 0, 2.0f);
+    fixture.Put(1, 4, 1, 0, 4.0f);
+    fixture.Put(3, 1, 1, 0, -3.0f);
+    fixture.Put(3, 2, 0, 1, -0.25f);
+    fixture.Put(0, 2, 1, 1, 6.0f);
+    fixture.Put(0, 1, 0, 2, 1.5f);
+    fixture.Put(0, 2, 0, 2, 1.5f);
+    fixture.Put(3, 2, 1, 2, 3.0f);
+    ExpectPlaneStatsAgreeWithThePerPlaneLoop(fixture.Write());
 }
 
 // A cube histogram is the same whichever route made it: the loader's two walks, or the planes read
