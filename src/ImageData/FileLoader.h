@@ -45,7 +45,7 @@ struct StokesRegion {
         : stokes_source(stokes_source_), image_region(image_region_) {}
 };
 
-class BatchedReducer;
+class RegionReducer;
 class CubeReducer;
 
 class FileLoader {
@@ -139,8 +139,8 @@ public:
         return nullptr;
     }
     // The walk this loader can make over many regions at once, or null for a loader that has none --
-    // every one but the Zarr loader. See BatchedReducer.
-    virtual BatchedReducer* Batched() {
+    // every one but the Zarr loader. See RegionReducer.
+    virtual RegionReducer* RegionWalk() {
         return nullptr;
     }
     virtual bool GetDownsampledRasterData(

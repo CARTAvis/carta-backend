@@ -1951,15 +1951,15 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
 
 BatchOutcome Frame::RegionSpectra(const std::function<bool(std::vector<RegionMaskSpec>& regions)>& describe_regions,
     const AxisRange& z_range, int stokes, const std::function<bool(const RegionSpectralBlock&)>& sink) {
-    auto* batched = _loader->Batched();
-    if (!batched) {
+    auto* walk = _loader->RegionWalk();
+    if (!walk) {
         return BatchOutcome::declined;
     }
     std::vector<RegionMaskSpec> regions;
     if (!describe_regions(regions)) {
         return BatchOutcome::declined;
     }
-    return batched->RegionSpectra(regions, z_range, stokes, sink);
+    return walk->RegionSpectra(regions, z_range, stokes, sink);
 }
 
 void Frame::ReleaseRegion(int region_id) {

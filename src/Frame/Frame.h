@@ -23,7 +23,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
-#include "ImageData/BatchedReducer.h"
+#include "ImageStats/RegionReducer.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitting/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -203,7 +203,7 @@ public:
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
     // Many regions reduced over the same channels in one walk of the loader's, for a caller that
-    // would otherwise reduce them one at a time; see BatchedReducer::RegionSpectra, whose sink this
+    // would otherwise reduce them one at a time; see RegionReducer::RegionSpectra, whose sink this
     // is. `describe_regions` fills in the regions, and is called only when the loader has such a
     // walk, since describing them is not free and a caller that is declined describes them again its
     // own way. Returning false from it declines, as a loader with no walk does, and in both nothing

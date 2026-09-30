@@ -97,7 +97,7 @@ protected:
     // Reachable by a subclass rather than private, with the frames it works over, because its one
     // caller swallows a decline: the slow path produces the same profiles, so nothing downstream can
     // tell whether this ever ran.
-    BatchOutcome TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
+    BatchOutcome LineProfilesByWalk(int file_id, int region_id, RegionState& line_region_state,
         const std::vector<RegionState>& box_regions, const std::shared_ptr<casacore::CoordinateSystem>& line_coord_sys,
         const AxisRange& z_range, int stokes_index, const std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
         bool reverse);

@@ -2095,7 +2095,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     if (line_box_regions.GetLineBoxRegions(line_region_state, line_coord_sys, width, increment, box_regions, message)) {
         // Every box in one pass over the pixels, where the loader can do that. The boxes overlap
         // heavily, so the loop below reads the same chunks once per box; this reads each once.
-        switch (TryBatchedLineProfiles(file_id, region_id, line_region_state, box_regions, line_coord_sys, z_range, stokes_index,
+        switch (LineProfilesByWalk(file_id, region_id, line_region_state, box_regions, line_coord_sys, z_range, stokes_index,
             progress_callback, profiles, reverse)) {
             case BatchOutcome::finished:
                 return !allEQ(profiles, FLOAT_NAN);
@@ -2170,10 +2170,10 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
 // A loader that can take them all at once reads each covered chunk once and accumulates whichever
 // boxes land on it.
 //
-// This is an accelerator, not a replacement: it declines whenever it meets something it does not
-// handle, and the caller then walks the boxes one at a time as before. Once the walk has begun it
+// This is one route, not a replacement: it declines whenever it meets something it does not handle,
+// and the caller then takes the boxes one at a time as before. Once the walk has begun it
 // no longer declines, and a failure is the caller's failure: its own loop reads the same pixels.
-BatchOutcome RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionState& line_region_state,
+BatchOutcome RegionHandler::LineProfilesByWalk(int file_id, int region_id, RegionState& line_region_state,
     const std::vector<RegionState>& box_regions, const std::shared_ptr<casacore::CoordinateSystem>& line_coord_sys,
     const AxisRange& z_range, int stokes_index, const std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
     bool reverse) {

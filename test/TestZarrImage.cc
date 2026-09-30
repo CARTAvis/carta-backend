@@ -76,7 +76,7 @@ public:
         return _script == Script::no_walks ? nullptr : this;
     }
 
-    BatchedReducer* Batched() override {
+    RegionReducer* RegionWalk() override {
         return _script == Script::no_walks ? nullptr : this;
     }
 
@@ -130,7 +130,7 @@ HistogramConfig CubeConfig(int num_bins) {
 // RegionHandler keeps the batched line path to itself, and the frames it works over too.
 class PeekableRegionHandler : public carta::RegionHandler {
 public:
-    using carta::RegionHandler::TryBatchedLineProfiles;
+    using carta::RegionHandler::LineProfilesByWalk;
     using carta::RegionHandler::_frames;
     using carta::RegionHandler::_line_profile_progress_interval;
 };
@@ -520,7 +520,7 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataMatchesAPerRegionSum) {
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::size_t channels_seen = 0;
         const bool reduced =
-            loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), stokes, [&](const RegionSpectralBlock& block) {
+            loader->RegionWalk()->RegionSpectra(regions, AxisRange(0, kDepth - 1), stokes, [&](const RegionSpectralBlock& block) {
                 EXPECT_EQ(block.region_count, regions.size());
                 for (std::size_t r = 0; r < block.region_count; ++r) {
                     for (std::size_t c = 0; c < block.channel_count; ++c) {
@@ -557,7 +557,7 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataMarksPartialBlocks) {
     std::size_t partials = 0;
     std::size_t complete_channels = 0;
     std::size_t every_arrival = 0;
-    ASSERT_EQ(loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
+    ASSERT_EQ(loader->RegionWalk()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
                   [&](const RegionSpectralBlock& block) {
                       every_arrival += block.channel_count;
                       if (block.complete) {
@@ -627,7 +627,7 @@ TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
         highest_progress = std::max(highest_progress, progress);
     };
     casacore::Matrix<float> profiles;
-    EXPECT_EQ(handler.TryBatchedLineProfiles(
+    EXPECT_EQ(handler.LineProfilesByWalk(
                   file_id, region_id, line_state, box_regions, csys, AxisRange(0, kDepth - 1), 0, progress_callback, profiles, false),
         BatchOutcome::finished)
         << "a reduction split across reads should still produce a complete set of profiles";
@@ -891,7 +891,7 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataReportsAnEmptyChannel) {
 
     const std::vector<RegionMaskSpec> regions{{2, 0, 2, kHeight, nullptr}};
     std::vector<double> counts(kDepth, -1.0);
-    ASSERT_EQ(loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 2,
+    ASSERT_EQ(loader->RegionWalk()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 2,
                   [&](const RegionSpectralBlock& block) {
                       for (std::size_t c = 0; c < block.channel_count; ++c) {
                           counts.at(block.first_channel + c) = block.NumPixels(0)[c];
@@ -911,7 +911,7 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataStopsWhenTheSinkDoes) {
 
     const std::vector<RegionMaskSpec> regions{{0, 0, kWidth, kHeight, nullptr}};
     int blocks = 0;
-    EXPECT_EQ(loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
+    EXPECT_EQ(loader->RegionWalk()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
                   [&](const RegionSpectralBlock&) {
                       ++blocks;
                       return false;
@@ -930,7 +930,7 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataTheLibraryRefusesHasFailed) {
 
     const std::vector<RegionMaskSpec> regions{{kWidth - 1, 0, 2, kHeight, nullptr}};
     int blocks = 0;
-    EXPECT_EQ(loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
+    EXPECT_EQ(loader->RegionWalk()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
                   [&](const RegionSpectralBlock&) {
                       ++blocks;
                       return true;

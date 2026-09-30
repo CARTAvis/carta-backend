@@ -3,8 +3,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_BATCHEDREDUCER_H_
-#define CARTA_SRC_IMAGEDATA_BATCHEDREDUCER_H_
+#ifndef CARTA_SRC_IMAGESTATS_REGIONREDUCER_H_
+#define CARTA_SRC_IMAGESTATS_REGIONREDUCER_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -18,7 +18,7 @@
 
 namespace carta {
 
-// One 2D region of a batched spectral reduction: its bounding box in image pixels, plus an
+// One 2D region of a walk over many regions: its bounding box in image pixels, plus an
 // optional raster mask laid out row-major with x fastest, exactly as casacore's LCRegionFixed
 // stores one. Both the mask and this struct are borrowed for the duration of the call.
 //
@@ -34,7 +34,7 @@ struct RegionMaskSpec {
     const casacore::Bool* mask = nullptr;
 };
 
-// One run of channels of a batched reduction, for every region at once.
+// One run of channels of a walk over many regions, for every region at once.
 //
 // NumPixels(r) and Sum(r) are region r's channel_count values, and point into the loader's own
 // buffer: they are valid only until the callback returns. How the loader lays its regions out is
@@ -70,11 +70,11 @@ struct RegionSpectralBlock {
 // region's question from them. The caller's own route asks region by region, and each of those reads
 // the same chunks again; this reads each chunk once. The whole-cube half is CubeReducer.
 //
-// Reached through FileLoader::Batched(), which is null for a loader that has no such walk. Only
+// Reached through FileLoader::RegionWalk(), which is null for a loader that has no such walk. Only
 // the Zarr loader has one today; nothing in the signature is particular to Zarr.
-class BatchedReducer {
+class RegionReducer {
 public:
-    virtual ~BatchedReducer() = default;
+    virtual ~RegionReducer() = default;
 
     // Many regions reduced over the same channels, a run of channels at a time. A position-velocity
     // cut is one box per pixel along the line -- 5,792 of them across a 4096 pixel diagonal -- and they
@@ -86,4 +86,4 @@ public:
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEDATA_BATCHEDREDUCER_H_
+#endif // CARTA_SRC_IMAGESTATS_REGIONREDUCER_H_

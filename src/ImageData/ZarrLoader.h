@@ -6,9 +6,9 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARRLOADER_H_
 #define CARTA_SRC_IMAGEDATA_ZARRLOADER_H_
 
-#include "BatchedReducer.h"
 #include "FileLoader.h"
 #include "ImageStats/CubeReducer.h"
+#include "ImageStats/RegionReducer.h"
 
 #include <chrono>
 #include <cstdint>
@@ -27,7 +27,7 @@ class CartaZarrImage;
 // would inherit. Returns whether any count was held.
 bool AssignBinCounts(const std::uint64_t* counts, std::size_t size, std::vector<int>& bins);
 
-class ZarrLoader : public FileLoader, public BatchedReducer, public CubeReducer {
+class ZarrLoader : public FileLoader, public RegionReducer, public CubeReducer {
 public:
     explicit ZarrLoader(const std::string& filename);
 
@@ -39,7 +39,7 @@ public:
     CubeReducer* CubeWalk() override {
         return this;
     }
-    BatchedReducer* Batched() override {
+    RegionReducer* RegionWalk() override {
         return this;
     }
     BatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
