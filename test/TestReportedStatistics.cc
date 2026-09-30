@@ -3,7 +3,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-// The statistics CARTA reports, and that they are made of the totals the same call reports beside them.
+// The statistics CARTA reports, and that they are made of the totals the same call reports beside them,
+// and the module that makes them.
 //
 // Each loader that derives them says so in its own code, and this is what they have to keep saying
 // however that code is arranged: the mean, RMS, sigma and extrema of a plane, a cube or a region's
@@ -18,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
@@ -26,6 +28,7 @@
 #include <gtest/gtest.h>
 
 #include "ImageData/FileLoader.h"
+#include "ImageStats/DerivedStatistics.h"
 #include "src/Frame/Frame.h"
 
 #include "CommonTestUtilities.h"
@@ -352,5 +355,126 @@ TEST_F(ReportedStatisticsTest, StoredCubeStatisticsAreDerivedFromTheirTotals) {
             cube.max = std::max(cube.max, plane.max);
         }
         ExpectStoredDerivedFromItsTotals(stored.At(-1), cube, std::string("cube of ") + name);
+    }
+}
+
+// The module the loaders make them with. Nothing here needs a file: the interface is the totals.
+
+namespace {
+
+Totals TotalsOf(const CountedTotals& counted) {
+    return {counted.num_pixels, counted.sum, counted.sum_sq, counted.min, counted.max};
+}
+
+void ExpectSameAsWrittenOut(const DerivedStatistics& derived, const Reported& expected, const std::string& where) {
+    ExpectSame(derived.mean, expected.mean, where + " mean");
+    ExpectSame(derived.rms, expected.rms, where + " rms");
+    ExpectSame(derived.sigma, expected.sigma, where + " sigma");
+    ExpectSame(derived.extrema, expected.extrema, where + " extrema");
+}
+
+} // namespace
+
+class DerivedStatisticsTest : public ::testing::Test {};
+
+TEST_F(DerivedStatisticsTest, TwoPixelsComeToWhatOneWorksOutByHand) {
+    // The pixels 1 and 3.
+    const auto derived = DeriveStatistics({2.0, 4.0, 10.0, 1.0, 3.0}, LonePixelSigma::nan);
+    EXPECT_EQ(derived.mean, 2.0);
+    EXPECT_EQ(derived.rms, std::sqrt(5.0));
+    EXPECT_EQ(derived.sigma, std::sqrt(2.0));
+    EXPECT_EQ(derived.extrema, 3.0);
+}
+
+TEST_F(DerivedStatisticsTest, NoValidPixelLeavesNothingToDeriveWhateverElseIsSaid) {
+    for (const auto policy : {LonePixelSigma::zero, LonePixelSigma::nan}) {
+        // A caller that never zeroed its sums, and one that never reset its extremes.
+        for (const auto& totals : {Totals{}, Totals{0.0, 12.5, 30.0, -4.0, 9.0},
+                 Totals{0.0, 0.0, 0.0, std::numeric_limits<double>::max(), std::numeric_limits<double>::lowest()}}) {
+            const auto derived = DeriveStatistics(totals, policy);
+            EXPECT_TRUE(std::isnan(derived.mean));
+            EXPECT_TRUE(std::isnan(derived.rms));
+            EXPECT_TRUE(std::isnan(derived.sigma));
+            EXPECT_TRUE(std::isnan(derived.extrema));
+        }
+    }
+}
+
+TEST_F(DerivedStatisticsTest, ACountThatIsNotACountLeavesNothingToDeriveEither) {
+    for (const double count : {kNaN, -1.0}) {
+        const auto derived = DeriveStatistics({count, 3.0, 9.0, 3.0, 3.0}, LonePixelSigma::zero);
+        EXPECT_TRUE(std::isnan(derived.mean)) << count;
+        EXPECT_TRUE(std::isnan(derived.sigma)) << count;
+    }
+}
+
+TEST_F(DerivedStatisticsTest, OnePixelIsTheConsumersPolicyForSigmaAndNothingElse) {
+    // The pixel -2.5.
+    const Totals lone{1.0, -2.5, 6.25, -2.5, -2.5};
+    const auto zero = DeriveStatistics(lone, LonePixelSigma::zero);
+    const auto nan = DeriveStatistics(lone, LonePixelSigma::nan);
+
+    EXPECT_EQ(zero.sigma, 0.0);
+    EXPECT_TRUE(std::isnan(nan.sigma));
+    for (const auto& derived : {zero, nan}) {
+        EXPECT_EQ(derived.mean, -2.5);
+        EXPECT_EQ(derived.rms, 2.5);
+        EXPECT_EQ(derived.extrema, -2.5);
+    }
+}
+
+TEST_F(DerivedStatisticsTest, TheSecondPixelIsWhereSigmaStopsBeingAPolicy) {
+    // Two pixels that are equal have a spread of zero, which is a fact about them and not a choice.
+    for (const auto policy : {LonePixelSigma::zero, LonePixelSigma::nan}) {
+        const auto derived = DeriveStatistics({2.0, 6.0, 18.0, 3.0, 3.0}, policy);
+        EXPECT_EQ(derived.sigma, 0.0);
+    }
+}
+
+TEST_F(DerivedStatisticsTest, ExtremaIsTheExtremeOfLargerMagnitudeAndTheLargestWhenTheyTie) {
+    struct Case {
+        double min;
+        double max;
+        double expected;
+    };
+    // Fractions among them, which is what an integer absolute value would get wrong.
+    for (const auto& c : {Case{-3.0, 2.0, -3.0}, Case{-2.0, 3.0, 3.0}, Case{-2.0, 2.0, 2.0}, Case{-5.0, -1.0, -5.0},
+             Case{1.0, 4.0, 4.0}, Case{0.0, 0.0, 0.0}, Case{-0.75, 0.5, -0.75}, Case{-0.5, 0.75, 0.75}, Case{-0.75, 0.75, 0.75}}) {
+        const auto derived = DeriveStatistics({4.0, 1.0, 1.0, c.min, c.max}, LonePixelSigma::nan);
+        EXPECT_EQ(derived.extrema, c.expected) << "min=" << c.min << " max=" << c.max;
+    }
+}
+
+TEST_F(DerivedStatisticsTest, TheSpreadAndTheMeanAreMadeOfTheSumsAlone) {
+    const auto narrow = DeriveStatistics({5.0, 10.0, 30.0, 1.0, 3.0}, LonePixelSigma::nan);
+    const auto wide = DeriveStatistics({5.0, 10.0, 30.0, -100.0, 100.0}, LonePixelSigma::nan);
+    EXPECT_EQ(narrow.mean, wide.mean);
+    EXPECT_EQ(narrow.rms, wide.rms);
+    EXPECT_EQ(narrow.sigma, wide.sigma);
+}
+
+// The formulas as they were written out where a loader made them itself, against every kind of
+// totals that a set of pixels comes to: none, one, a few and many, close to zero and far from it,
+// and with pixels that are not finite among them.
+TEST_F(DerivedStatisticsTest, MakesTheSameBitsAsTheFormulasItReplaces) {
+    std::mt19937 random(20260930);
+    std::uniform_real_distribution<float> spread(-1.0f, 1.0f);
+    std::uniform_int_distribution<int> one_in_seven(0, 6);
+
+    for (const std::size_t size : {0u, 1u, 2u, 3u, 10u, 101u, 5000u}) {
+        for (const float offset : {0.0f, 3.0f, -1000.0f, 5.0e4f}) {
+            std::vector<float> pixels(size);
+            for (auto& pixel : pixels) {
+                pixel = offset + spread(random);
+                if (one_in_seven(random) == 0) {
+                    pixel = std::numeric_limits<float>::quiet_NaN();
+                }
+            }
+            const auto counted = CountPixels(pixels);
+            const std::string where = "size=" + std::to_string(size) + " offset=" + std::to_string(offset);
+
+            ExpectSameAsWrittenOut(DeriveStatistics(TotalsOf(counted), LonePixelSigma::zero), ReportedFrom(counted, 0.0), where + " zero");
+            ExpectSameAsWrittenOut(DeriveStatistics(TotalsOf(counted), LonePixelSigma::nan), ReportedFrom(counted, kNaN), where + " nan");
+        }
     }
 }

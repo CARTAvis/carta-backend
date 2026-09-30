@@ -264,6 +264,7 @@ set(SOURCE_FILES
         src/ImageGenerators/PvPreviewCut.cc
         src/ImageStats/CubeHistogramCalculator.cc
         src/ImageStats/CubeHistogramMethod.cc
+        src/ImageStats/DerivedStatistics.cc
         src/ImageStats/Histogram.cc
         src/ImageStats/StatsCalculator.cc
         src/Logger/CartaLogSink.cc
