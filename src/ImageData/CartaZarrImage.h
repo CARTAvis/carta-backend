@@ -56,20 +56,11 @@ public:
     bool Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {},
         const carta::zarr::ProgressCallback& progress = {}) const;
-    // Reduce many 2D regions over a run of channels in one pass over the pixels. Exposed here
-    // rather than through the casacore interface because casacore has no such call: a Lattice is
-    // asked for pixels, and every reduction it offers is one region at a time.
-    bool ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
-        const carta::zarr::ReadOptions& options = {}) const;
-    // Bin every plane over a fixed range in one pass. Exposed here for the same reason
-    // ReduceSpectral is: casacore has no such call.
-    bool ComputeHistogram(const carta::zarr::HistogramRequest& request, const carta::zarr::HistogramSink& sink,
-        const carta::zarr::ReadOptions& options = {}) const;
-    // One histogram for the whole cube in a single pass, with the range found on the way. Reports
-    // what the other two do: false when the caller cancelled, an exception when the read failed.
-    // `progress` is told how far the walk is between reads, as Read's is.
-    bool ComputeCubeHistogram(const carta::zarr::CubeHistogramRequest& request, carta::zarr::CubeHistogramResult& result,
-        const carta::zarr::ReadOptions& options = {}, const carta::zarr::CubeHistogramProgressCallback& progress = {}) const;
+    // The library's own image, for the walks casacore has no call for: a Lattice is asked for
+    // pixels, and every reduction it offers is one region at a time. Those walks name their axes by
+    // role, so unlike Read they need nothing from this image's mapping onto CARTA's order, and
+    // passing them through here only turned the library's Result into something else on the way.
+    const carta::zarr::Image& Library() const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where,
         const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;

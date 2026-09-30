@@ -92,6 +92,9 @@ protected:
     // cannot, which every entry point here reports as false or as BatchOutcome::declined.
     std::shared_ptr<CartaZarrImage> ImageForStokes(int stokes) const;
 
+    // _image, as the type it always is here. Set with it, so that asking for the library's walks
+    // is not a cast on every call.
+    std::shared_ptr<CartaZarrImage> _zarr_image;
     std::size_t _read_budget_bytes = 0;
     // Guards the map and nothing in it: held only to find, add, or drop an entry, never across a
     // walk. A walk holds its state through the shared_ptr, so a release that drops the entry while

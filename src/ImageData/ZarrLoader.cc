@@ -112,6 +112,28 @@ BasicStats<float> ToBasicStats(const carta::zarr::CubeHistogramResult& computed)
         computed.num_pixels, computed.nan_count, computed.sum, computed.sum_sq, computed.minimum, computed.maximum});
 }
 
+// What this loader makes of a library call, said once. The library already tells a caller's stop
+// apart from a failure (ADR 0011 in carta-zarr) and reports every failure as a Result rather than
+// an exception, including one thrown by the sink it was handed -- so there is nothing to catch here,
+// and nothing to rebuild from a bool. A failure is logged with what was being done, which the
+// library's message does not know.
+template <typename T>
+BatchOutcome Outcome(const carta::zarr::Result<T>& result, const char* what) {
+    if (result) {
+        return BatchOutcome::finished;
+    }
+    const auto& error = result.error();
+    if (error.code == carta::zarr::ErrorCode::cancelled) {
+        return BatchOutcome::cancelled;
+    }
+    if (error.node_path.empty()) {
+        spdlog::warn("Could not {} of a Zarr dataset: {}", what, error.message);
+    } else {
+        spdlog::warn("Could not {} of a Zarr dataset: {} ({})", what, error.message, error.node_path);
+    }
+    return BatchOutcome::failed;
+}
+
 }  // namespace
 
 bool AssignBinCounts(const std::uint64_t* counts, std::size_t size, std::vector<int>& bins) {
@@ -132,11 +154,10 @@ ZarrLoader::ZarrLoader(const std::string& filename) : FileLoader(filename) {}
 // was refused for being out of range or accepted and then refused for something else depended on
 // which one you were reading.
 std::shared_ptr<CartaZarrImage> ZarrLoader::ImageForStokes(int stokes) const {
-    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    if (!image || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
+    if (!_zarr_image || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
         return nullptr;
     }
-    return image;
+    return _zarr_image;
 }
 
 void ZarrLoader::AllocateImage(const std::string& hdu) {
@@ -146,6 +167,7 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
 
     auto image = std::make_shared<CartaZarrImage>(_filename, hdu);
     _image = image;
+    _zarr_image = image;
     _hdu = hdu;
     _image_shape = image->shape();
     _num_dims = _image_shape.size();
@@ -267,27 +289,22 @@ BatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& region
     forwarded.num_pixels.resize(zarr_regions.size());
     forwarded.sums.resize(zarr_regions.size());
 
-    try {
-        const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
-            forwarded.first_channel = static_cast<std::size_t>(block.first_channel);
-            forwarded.channel_count = static_cast<std::size_t>(block.channel_count);
-            // A block that takes more than one read arrives several times, filling in. The caller
-            // needs to know which arrival is the answer, so this is passed on rather than dropped:
-            // the generator wants the partials to show progress with.
-            forwarded.complete = block.complete;
-            forwarded.completeness = block.completeness;
-            // Both were asked for above, so the block carries both.
-            for (std::size_t r = 0; r < forwarded.region_count; ++r) {
-                forwarded.num_pixels[r] = block.Series(r, carta::zarr::Statistic::num_pixels);
-                forwarded.sums[r] = block.Series(r, carta::zarr::Statistic::sum);
-            }
-            return sink(forwarded);
-        }, options);
-        return finished ? BatchOutcome::finished : BatchOutcome::cancelled;
-    } catch (const casacore::AipsError& error) {
-        spdlog::warn("Could not reduce regions over the spectrum of a Zarr dataset: {}", error.getMesg());
-        return BatchOutcome::failed;
-    }
+    const auto forward = [&](const carta::zarr::SpectralBlock& block) {
+        forwarded.first_channel = static_cast<std::size_t>(block.first_channel);
+        forwarded.channel_count = static_cast<std::size_t>(block.channel_count);
+        // A block that takes more than one read arrives several times, filling in. The caller
+        // needs to know which arrival is the answer, so this is passed on rather than dropped:
+        // the generator wants the partials to show progress with.
+        forwarded.complete = block.complete;
+        forwarded.completeness = block.completeness;
+        // Both were asked for above, so the block carries both.
+        for (std::size_t r = 0; r < forwarded.region_count; ++r) {
+            forwarded.num_pixels[r] = block.Series(r, carta::zarr::Statistic::num_pixels);
+            forwarded.sums[r] = block.Series(r, carta::zarr::Statistic::sum);
+        }
+        return sink(forwarded);
+    };
+    return Outcome(image->Library().ReduceSpectral(request, forward, options), "reduce regions over the spectrum");
 }
 
 BatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
@@ -321,24 +338,19 @@ BatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& can
     options.control.cancellation_requested = cancellation_requested;
     options.temporary_memory_limit_bytes = _read_budget_bytes;
 
-    try {
-        const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
-            if (!block.complete) {
-                return true;  // a plane is reported when it is final, not while it fills
+    const auto report_plane = [&](const carta::zarr::SpectralBlock& block) {
+        if (!block.complete) {
+            return true;  // a plane is reported when it is final, not while it fills
+        }
+        for (std::uint64_t c = 0; c < block.channel_count; ++c) {
+            if (!plane_callback(static_cast<int>(block.first_channel + c),
+                    ToPlaneStats(block.Totals(0, c)))) {
+                return false;
             }
-            for (std::uint64_t c = 0; c < block.channel_count; ++c) {
-                if (!plane_callback(static_cast<int>(block.first_channel + c),
-                        ToPlaneStats(block.Totals(0, c)))) {
-                    return false;
-                }
-            }
-            return true;
-        }, options);
-        return finished ? BatchOutcome::finished : BatchOutcome::cancelled;
-    } catch (const casacore::AipsError& error) {
-        spdlog::warn("Could not reduce the planes of a Zarr dataset: {}", error.getMesg());
-        return BatchOutcome::failed;
-    }
+        }
+        return true;
+    };
+    return Outcome(image->Library().ReduceSpectral(request, report_plane, options), "reduce the planes");
 }
 
 BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
@@ -371,28 +383,24 @@ BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const Histogr
 
     std::vector<int> plane_bins(static_cast<std::size_t>(num_bins));
     bool held = false;
-    try {
-        const bool finished = image->ComputeHistogram(request, [&](const carta::zarr::HistogramBlock& block) {
-            if (!block.complete) {
-                return true;  // a plane is reported when it is final, not while it fills
-            }
-            for (std::uint64_t c = 0; c < block.channel_count; ++c) {
-                held = AssignBinCounts(block.Counts(c), plane_bins.size(), plane_bins) || held;
-                if (!plane_callback(static_cast<int>(block.first_channel + c), plane_bins)) {
-                    return false;
-                }
-            }
-            return true;
-        }, options);
-        if (held) {
-            spdlog::warn("A Zarr plane histogram has a bin past {} pixels; it is reported as that many",
-                std::numeric_limits<int>::max());
+    const auto report_plane = [&](const carta::zarr::HistogramBlock& block) {
+        if (!block.complete) {
+            return true;  // a plane is reported when it is final, not while it fills
         }
-        return finished ? BatchOutcome::finished : BatchOutcome::cancelled;
-    } catch (const casacore::AipsError& error) {
-        spdlog::warn("Could not bin the planes of a Zarr dataset: {}", error.getMesg());
-        return BatchOutcome::failed;
+        for (std::uint64_t c = 0; c < block.channel_count; ++c) {
+            held = AssignBinCounts(block.Counts(c), plane_bins.size(), plane_bins) || held;
+            if (!plane_callback(static_cast<int>(block.first_channel + c), plane_bins)) {
+                return false;
+            }
+        }
+        return true;
+    };
+    const auto outcome = Outcome(image->Library().ComputeHistogram(request, report_plane, options), "bin the planes");
+    if (held) {
+        spdlog::warn("A Zarr plane histogram has a bin past {} pixels; it is reported as that many",
+            std::numeric_limits<int>::max());
     }
+    return outcome;
 }
 
 BatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
@@ -433,16 +441,13 @@ BatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t s
     options.control.cache_policy = carta::zarr::CachePolicy::bypass;
     options.temporary_memory_limit_bytes = _read_budget_bytes;
 
-    carta::zarr::CubeHistogramResult computed;
-    try {
-        if (!image->ComputeCubeHistogram(request, computed, options, zarr_progress)) {
-            return BatchOutcome::cancelled;
-        }
-    } catch (const casacore::AipsError& error) {
-        spdlog::warn("Could not compute a Zarr cube histogram in one pass: {}", error.getMesg());
-        return BatchOutcome::failed;
+    auto result = image->Library().ComputeCubeHistogram(request, options, zarr_progress);
+    const auto outcome = Outcome(result, "bin the cube in one pass");
+    if (outcome != BatchOutcome::finished) {
+        return outcome;
     }
 
+    const auto& computed = result.value();
     stats = ToBasicStats(computed);
     if (AssignBinCounts(computed.counts.data(), computed.counts.size(), bins)) {
         spdlog::warn("A Zarr cube histogram has a bin past {} pixels; it is reported as that many",
@@ -457,7 +462,7 @@ BatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t s
 // separately. The HDF5 heuristic this replaces (height * depth < width) exists because HDF5 really
 // does have two datasets on disk and picking the wrong one is expensive.
 bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& /*image_mutex*/) {
-    return std::dynamic_pointer_cast<CartaZarrImage>(_image) != nullptr && _num_dims == 4 && region_shape.size() >= 2;
+    return _zarr_image != nullptr && _num_dims == 4 && region_shape.size() >= 2;
 }
 
 // One region's spectral profile, resumed where the last call left off.
@@ -550,45 +555,43 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         const auto first_channel = state.channels_done;
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME);
         bool paused = false;
-        try {
-            const auto report = [&](double done) {
-                return !partial_callback ||
-                       partial_callback(state.stats, static_cast<float>(done / static_cast<double>(channels)));
-            };
-            carta::zarr::ReadOptions options;
-            options.temporary_memory_limit_bytes = _read_budget_bytes;
-            const bool finished = image->ReduceSpectral(request, [&](const carta::zarr::SpectralBlock& block) {
-                StoreSpectralBlock(state.stats, block, first_channel, beam_area, has_flux);
-                if (!block.complete) {
-                    // Partial sums over the chunks read so far. Forwarding them is the whole point
-                    // of the callback: one chunk layer of a region covering a large image is tens of
-                    // seconds, and this is the only thing the caller sees while it is being read.
-                    // Nothing is finished, so channels_done does not move and the same channels
-                    // arrive again.
-                    return report(static_cast<double>(first_channel + block.first_channel) +
-                                  (block.completeness * static_cast<double>(block.channel_count)));
-                }
-                state.channels_done = first_channel + static_cast<std::size_t>(block.first_channel + block.channel_count);
-                if (state.channels_done >= channels) {
-                    return true;
-                }
-                if (!report(static_cast<double>(state.channels_done))) {
-                    return false;
-                }
-                if (std::chrono::steady_clock::now() >= deadline) {
-                    // Hand back what is finished so the caller can show it and decide whether this
-                    // profile is still wanted. Only ever at a block boundary: a pause inside one
-                    // would throw away the partial sums, and the next call would read them again.
-                    paused = true;
-                    return false;
-                }
+        const auto report = [&](double done) {
+            return !partial_callback ||
+                   partial_callback(state.stats, static_cast<float>(done / static_cast<double>(channels)));
+        };
+        carta::zarr::ReadOptions options;
+        options.temporary_memory_limit_bytes = _read_budget_bytes;
+        const auto store = [&](const carta::zarr::SpectralBlock& block) {
+            StoreSpectralBlock(state.stats, block, first_channel, beam_area, has_flux);
+            if (!block.complete) {
+                // Partial sums over the chunks read so far. Forwarding them is the whole point
+                // of the callback: one chunk layer of a region covering a large image is tens of
+                // seconds, and this is the only thing the caller sees while it is being read.
+                // Nothing is finished, so channels_done does not move and the same channels
+                // arrive again.
+                return report(static_cast<double>(first_channel + block.first_channel) +
+                              (block.completeness * static_cast<double>(block.channel_count)));
+            }
+            state.channels_done = first_channel + static_cast<std::size_t>(block.first_channel + block.channel_count);
+            if (state.channels_done >= channels) {
                 return true;
-            }, options);
-            if (!finished && !paused) {
+            }
+            if (!report(static_cast<double>(state.channels_done))) {
                 return false;
             }
-        } catch (const casacore::AipsError& error) {
-            spdlog::warn("Could not reduce a region over the spectrum of a Zarr dataset: {}", error.getMesg());
+            if (std::chrono::steady_clock::now() >= deadline) {
+                // Hand back what is finished so the caller can show it and decide whether this
+                // profile is still wanted. Only ever at a block boundary: a pause inside one
+                // would throw away the partial sums, and the next call would read them again.
+                paused = true;
+                return false;
+            }
+            return true;
+        };
+        const auto outcome = Outcome(image->Library().ReduceSpectral(request, store, options), "reduce a region over the spectrum");
+        // A pause is this loader's own stop, and the library reports it as any other; the flag
+        // is what tells the two apart (ADR 0011 in carta-zarr).
+        if (outcome == BatchOutcome::failed || (outcome == BatchOutcome::cancelled && !paused)) {
             return false;
         }
     }

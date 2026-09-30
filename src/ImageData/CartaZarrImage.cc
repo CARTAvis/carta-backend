@@ -55,11 +55,10 @@ constexpr casacore::Int kMaskCacheMaxPixels = 1 << 22;
 // 512x107x7776 slabs, 426 mebipixels each, and missing here made it decode the whole cube twice.
 constexpr casacore::Int kMaskCacheMaxCubePixels = 1 << 30;
 
-// What the backend makes of a library call that did not succeed, said once for every call this
-// image passes through. A cancellation is the caller's own decision arriving back -- a sink or a
-// progress callback that said stop, or a cancellation_requested that said yes -- so it is false
-// rather than an error to report upwards. Anything else is thrown, which is how a casacore image
-// reports failure.
+// What Read makes of a library read that did not succeed. A cancellation is the caller's own
+// decision arriving back -- a progress callback that said stop, or a cancellation_requested that
+// said yes -- so it is false rather than an error to report upwards. Anything else is thrown, which
+// is how a casacore image reports failure.
 template <typename T>
 bool Finished(const carta::zarr::Result<T>& result, const char* where) {
     if (result) {
@@ -266,24 +265,8 @@ bool CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer
     return Finished(read, "Read");
 }
 
-bool CartaZarrImage::ComputeHistogram(const carta::zarr::HistogramRequest& request,
-    const carta::zarr::HistogramSink& sink, const carta::zarr::ReadOptions& options) const {
-    return Finished(Opened("ComputeHistogram").ComputeHistogram(request, sink, options), "ComputeHistogram");
-}
-
-bool CartaZarrImage::ComputeCubeHistogram(const carta::zarr::CubeHistogramRequest& request, carta::zarr::CubeHistogramResult& result,
-    const carta::zarr::ReadOptions& options, const carta::zarr::CubeHistogramProgressCallback& progress) const {
-    auto computed = Opened("ComputeCubeHistogram").ComputeCubeHistogram(request, options, progress);
-    if (!Finished(computed, "ComputeCubeHistogram")) {
-        return false;
-    }
-    result = std::move(computed).value();
-    return true;
-}
-
-bool CartaZarrImage::ReduceSpectral(const carta::zarr::SpectralReduceRequest& request, const carta::zarr::SpectralSink& sink,
-    const carta::zarr::ReadOptions& options) const {
-    return Finished(Opened("ReduceSpectral").ReduceSpectral(request, sink, options), "ReduceSpectral");
+const carta::zarr::Image& CartaZarrImage::Library() const {
+    return Opened("Library");
 }
 
 void CartaZarrImage::doPutSlice(const casacore::Array<float>& /*buffer*/, const casacore::IPosition& /*where*/, const casacore::IPosition& /*stride*/) {

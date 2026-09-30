@@ -824,6 +824,25 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataStopsWhenTheSinkDoes) {
     EXPECT_EQ(blocks, 1);
 }
 
+// A walk the library refuses is a failure, not a stop and not a refusal of the loader's own: the
+// loader passed the box on, and it is the library that finds it runs off the image. Nothing is
+// handed to the sink, because nothing was read.
+TEST_F(ZarrImageTest, MultiRegionSpectralDataTheLibraryRefusesHasFailed) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+
+    const std::vector<RegionMaskSpec> regions{{kWidth - 1, 0, 2, kHeight, nullptr}};
+    int blocks = 0;
+    EXPECT_EQ(loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
+                  [&](const RegionSpectralBlock&) {
+                      ++blocks;
+                      return true;
+                  }),
+        BatchOutcome::failed);
+    EXPECT_EQ(blocks, 0);
+}
+
 // The batched path and the per-box path have to be the same answer, not just each plausible on its
 // own. Both frames below read the same Zarr file: the first through ZarrLoader, which reduces every
 // box at once, and the second through a loader holding the same CartaZarrImage, which has no
