@@ -47,6 +47,7 @@ struct StokesRegion {
 
 class RegionReducer;
 class CubeReducer;
+class RegionProfileReader;
 
 class FileLoader {
 public:
@@ -133,6 +134,11 @@ public:
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
         const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {});
+    // This loader's own reading of region profiles, or null for a loader that has none. See
+    // RegionProfileReader.
+    virtual RegionProfileReader* ProfileReader() {
+        return nullptr;
+    }
     // The walk this loader can make over the whole cube, or null for a loader that has none -- every
     // one but the Zarr loader. See CubeReducer.
     virtual CubeReducer* CubeWalk() {

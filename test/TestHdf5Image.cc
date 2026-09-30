@@ -12,6 +12,7 @@
 #include <gtest/gtest.h>
 
 #include "ImageData/FileLoader.h"
+#include "Region/RegionAnalysis/RegionProfiles.h"
 #include "Region/RegionHandler.h"
 #include "Util/Message.h"
 #include "src/Frame/Frame.h"
@@ -152,21 +153,34 @@ namespace {
 
 using ProfilesMap = std::map<CARTA::StatsType, std::vector<double>>;
 
-// The handler keeps the frames it works over to itself.
+// The handler keeps the frames it works over to itself, and the region profiles it makes of them.
 class Hdf5RegionHandler : public carta::RegionHandler {
 public:
     using carta::RegionHandler::_frames;
+    using carta::RegionHandler::_region_profiles;
 };
 
-// A region's profile read by the loader to the end.
-ProfilesMap LoaderProfile(FileLoader& loader, int region_id, const AxisRange& channels, const casacore::Array<casacore::Bool>& mask,
-    const casacore::IPosition& origin) {
+// One step of a region's profile, of at most `step`.
+BatchOutcome StepOn(RegionProfiles& profiles, FileLoader& loader, int region_id, const AxisRange& channels,
+    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::chrono::milliseconds step,
+    ProfilesMap& profile, float& progress) {
+    static std::mutex image_mutex;
+    RegionProfileRequest request;
+    request.origin = origin;
+    request.mask = &mask;
+    request.channels = channels;
+    return profiles.Continue({0, region_id, 0}, request, *loader.ProfileReader(), image_mutex, step, {}, profile, progress);
+}
+
+// A region's profile made to the end.
+ProfilesMap LoaderProfile(RegionProfiles& profiles, FileLoader& loader, int region_id, const AxisRange& channels,
+    const casacore::Array<casacore::Bool>& mask, const casacore::IPosition& origin) {
     casacore::ArrayLattice<casacore::Bool> lattice(mask);
-    std::mutex image_mutex;
     ProfilesMap profile;
     float progress = 0.0f;
-    for (int calls = 0; progress < 1.0f && calls < 1000; ++calls) {
-        if (!loader.GetRegionSpectralData(region_id, channels, 0, lattice, origin, image_mutex, profile, progress)) {
+    for (int steps = 0; progress < 1.0f && steps < 1000; ++steps) {
+        if (StepOn(profiles, loader, region_id, channels, lattice, origin, std::chrono::milliseconds(1000), profile, progress) !=
+            BatchOutcome::finished) {
             return {};
         }
     }
@@ -212,13 +226,15 @@ TEST_F(Hdf5ImageTest, EditingARegionThroughTheHandlerReachesTheLoader) {
     ASSERT_TRUE(handler.SetRegion(region_id, rectangle, frame->CoordinateSystem()));
 
     const casacore::IPosition origin(2, 2, 2);
-    const auto before = LoaderProfile(*loader, region_id, AxisRange(0, 9), WholeBox(), origin);
+    const auto before = LoaderProfile(handler._region_profiles, *loader, region_id, AxisRange(0, 9), WholeBox(), origin);
     ASSERT_EQ(before.at(CARTA::StatsType::NumPixels).at(0), 16.0);
+    ASSERT_EQ(handler._region_profiles.Size(), 1u);
 
     // A square turned a quarter keeps its bounding box.
     RegionState turned(file_id, CARTA::RegionType::RECTANGLE, control_points, 90.0);
     ASSERT_TRUE(handler.SetRegion(region_id, turned, frame->CoordinateSystem()));
-    const auto after = LoaderProfile(*loader, region_id, AxisRange(0, 9), FirstColumn(), origin);
+    EXPECT_EQ(handler._region_profiles.Size(), 0u) << "editing a region should let its profile go";
+    const auto after = LoaderProfile(handler._region_profiles, *loader, region_id, AxisRange(0, 9), FirstColumn(), origin);
     EXPECT_EQ(after.at(CARTA::StatsType::NumPixels).at(0), 4.0) << "the profile after the edit should count the pixels of its own mask";
 }
 
@@ -236,11 +252,14 @@ TEST_F(Hdf5ImageTest, RemovingARegionThroughTheHandlerReachesTheLoader) {
     ASSERT_TRUE(handler.SetRegion(region_id, rectangle, frame->CoordinateSystem()));
 
     const casacore::IPosition origin(2, 2, 2);
-    ASSERT_EQ(LoaderProfile(*loader, region_id, AxisRange(0, 9), WholeBox(), origin).at(CARTA::StatsType::NumPixels).at(0), 16.0);
+    auto& profiles = handler._region_profiles;
+    ASSERT_EQ(LoaderProfile(profiles, *loader, region_id, AxisRange(0, 9), WholeBox(), origin).at(CARTA::StatsType::NumPixels).at(0), 16.0);
 
     // The next region to be given this id is another region.
     handler.RemoveRegion(region_id);
-    EXPECT_EQ(LoaderProfile(*loader, region_id, AxisRange(0, 9), FirstColumn(), origin).at(CARTA::StatsType::NumPixels).at(0), 4.0)
+    EXPECT_EQ(profiles.Size(), 0u) << "removing a region should let its profile go";
+    EXPECT_EQ(
+        LoaderProfile(profiles, *loader, region_id, AxisRange(0, 9), FirstColumn(), origin).at(CARTA::StatsType::NumPixels).at(0), 4.0)
         << "a removed region's profile should not be handed to the next one with its id";
 }
 
@@ -252,19 +271,23 @@ TEST_F(Hdf5ImageTest, AProfileIsNotResumedOverOtherChannels) {
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     ASSERT_TRUE(frame->IsValid());
 
-    // Wider than the columns one call reads, so that the first call leaves the walk unfinished.
-    const int width = 20, height = 3;
+    // More than one column, so that a step of one leaves the profile unfinished, and no wider than it
+    // is tall times deep, or it would be left to casacore.
+    const int width = 12, height = 6;
     casacore::Array<casacore::Bool> box(casacore::IPosition(2, width, height), true);
     casacore::ArrayLattice<casacore::Bool> lattice(box);
-    std::mutex image_mutex;
+    RegionProfiles profiles;
+    // A step of no time at all reads one column and stops.
+    const std::chrono::milliseconds no_time(0);
     ProfilesMap left_over;
     float progress = 0.0f;
-    ASSERT_TRUE(loader->GetRegionSpectralData(
-        TEMP_REGION_ID, AxisRange(0, 0), 0, lattice, casacore::IPosition(2, 100, 100), image_mutex, left_over, progress));
-    ASSERT_LT(progress, 1.0f) << "the test needs a walk left unfinished";
+    ASSERT_EQ(
+        StepOn(profiles, *loader, TEMP_REGION_ID, AxisRange(0, 0), lattice, casacore::IPosition(2, 100, 100), no_time, left_over, progress),
+        BatchOutcome::finished);
+    ASSERT_LT(progress, 1.0f) << "the test needs a profile left unfinished";
 
     // More channels, somewhere else.
-    const auto more = LoaderProfile(*loader, TEMP_REGION_ID, AxisRange(0, 1), box, casacore::IPosition(2, 200, 200));
+    const auto more = LoaderProfile(profiles, *loader, TEMP_REGION_ID, AxisRange(0, 1), box, casacore::IPosition(2, 200, 200));
     ASSERT_EQ(more.at(CARTA::StatsType::NumPixels).size(), 2u) << "a profile of two channels should have two";
     for (int channel = 0; channel < 2; ++channel) {
         EXPECT_EQ(more.at(CARTA::StatsType::NumPixels).at(channel), FinitePixels(path, 200, 200, width, height, channel)) << channel;
@@ -273,10 +296,11 @@ TEST_F(Hdf5ImageTest, AProfileIsNotResumedOverOtherChannels) {
     // More channels in the same place, which only the channels tell apart from a continuation.
     ProfilesMap first;
     progress = 0.0f;
-    ASSERT_TRUE(loader->GetRegionSpectralData(
-        TEMP_REGION_ID, AxisRange(0, 0), 0, lattice, casacore::IPosition(2, 300, 300), image_mutex, first, progress));
+    ASSERT_EQ(
+        StepOn(profiles, *loader, TEMP_REGION_ID, AxisRange(0, 0), lattice, casacore::IPosition(2, 300, 300), no_time, first, progress),
+        BatchOutcome::finished);
     ASSERT_LT(progress, 1.0f);
-    const auto both = LoaderProfile(*loader, TEMP_REGION_ID, AxisRange(0, 1), box, casacore::IPosition(2, 300, 300));
+    const auto both = LoaderProfile(profiles, *loader, TEMP_REGION_ID, AxisRange(0, 1), box, casacore::IPosition(2, 300, 300));
     ASSERT_EQ(both.at(CARTA::StatsType::NumPixels).size(), 2u);
     for (int channel = 0; channel < 2; ++channel) {
         EXPECT_EQ(both.at(CARTA::StatsType::NumPixels).at(channel), FinitePixels(path, 300, 300, width, height, channel)) << channel;
@@ -314,7 +338,8 @@ TEST_F(Hdf5ImageTest, AProfileOfSomeOfTheChannelsCountsThoseChannels) {
     casacore::Array<casacore::Bool> box(casacore::IPosition(2, 4, 3), true);
     int region_id = 1;
     for (const auto& channels : {AxisRange(0, 0), AxisRange(3, 5), AxisRange(9, 9)}) {
-        const auto profile = LoaderProfile(*loader, region_id++, channels, box, casacore::IPosition(2, 2, 5));
+        RegionProfiles profiles;
+        const auto profile = LoaderProfile(profiles, *loader, region_id++, channels, box, casacore::IPosition(2, 2, 5));
         const auto count = static_cast<std::size_t>(channels.to - channels.from + 1);
         ASSERT_EQ(profile.at(CARTA::StatsType::Sum).size(), count);
         for (std::size_t c = 0; c < count; ++c) {

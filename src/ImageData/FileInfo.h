@@ -8,7 +8,6 @@
 #define CARTA_SRC_IMAGEDATA_FILEINFO_H_
 
 #include <map>
-#include <mutex>
 #include <vector>
 
 #include <casacore/images/Images/ImageInterface.h>
@@ -29,58 +28,6 @@ struct ImageStats {
     bool valid = false;
     // Remove this check when we drop support for the old schema.
     bool full;
-};
-
-struct RegionStatsId {
-    int region_id;
-    int stokes;
-
-    RegionStatsId() {}
-
-    RegionStatsId(int region_id, int stokes) : region_id(region_id), stokes(stokes) {}
-
-    bool operator<(const RegionStatsId& rhs) const {
-        return (region_id < rhs.region_id) || ((region_id == rhs.region_id) && (stokes < rhs.stokes));
-    }
-};
-
-// What a region's spectral profile has accumulated so far, for the loader that resumes it. It belongs
-// to one box and mask extent over one run of channels, and to nothing else.
-struct RegionSpectralStats {
-    casacore::IPosition origin;
-    casacore::IPosition shape;
-    int z_from = 0;
-    int z_to = 0;
-    std::map<CARTA::StatsType, std::vector<double>> stats;
-    volatile bool completed = false;
-    size_t latest_x = 0;
-    // Held for the whole of one call, so that two calls for the same region and stokes take turns.
-    std::mutex mutex;
-
-    RegionSpectralStats(casacore::IPosition origin, casacore::IPosition shape, int z_from, int z_to, bool has_flux = false)
-        : origin(origin), shape(shape), z_from(z_from), z_to(z_to) {
-        const int num_channels = z_to - z_from + 1;
-        std::vector<CARTA::StatsType> supported_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
-            CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
-            CARTA::StatsType::Max, CARTA::StatsType::Extrema};
-
-        if (has_flux) {
-            supported_stats.push_back(CARTA::StatsType::FluxDensity);
-        }
-
-        for (auto& s : supported_stats) {
-            stats.emplace(std::piecewise_construct, std::make_tuple(s), std::make_tuple(num_channels));
-        }
-    }
-
-    // Whether a request is a continuation of this one. A different box, mask extent or run of channels
-    // is a different question, whose answer would otherwise be resumed from this one's columns.
-    bool IsValid(const casacore::IPosition& origin, const casacore::IPosition& shape, int z_from, int z_to) const {
-        return origin.isEqual(this->origin) && shape.isEqual(this->shape) && z_from == this->z_from && z_to == this->z_to;
-    }
-    bool IsCompleted() {
-        return completed;
-    }
 };
 
 enum class Data : uint32_t {

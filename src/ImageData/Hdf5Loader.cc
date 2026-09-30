@@ -269,200 +269,69 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_range, int stokes,
-    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
-    const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback/*unused*/) {
-    // A call here is bounded by INIT_DELTA_Z columns, so the caller's own checks between calls are
-    // timely and there is nothing this would say sooner.
-    // Return calculated stats if valid and complete,
-    // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
-    // Calling function should check for complete progress when x-range of region is complete
-    // Mask is 2D mask for region only
-
-    std::unique_lock<std::mutex> ulock(image_mutex);
-    bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
-    ulock.unlock();
-    if (!has_swizzled) {
-        return false;
+// A region's profile from the swizzled copy, a column of the region at a time: each column read is
+// every channel of that column, so every channel asked for fills in together as the columns go by.
+BatchOutcome Hdf5Loader::ReadOn(const RegionProfileRequest& request, std::mutex& image_mutex, RegionProfileProgress& progress,
+    std::chrono::steady_clock::time_point deadline, const std::function<bool(double fraction)>& /*report*/) {
+    // A column is read in one operation, so there is nothing to report while one is being read.
+    if (!request.mask || request.origin.size() < 2) {
+        return BatchOutcome::declined;
+    }
+    const auto& mask = *request.mask;
+    const casacore::IPosition mask_shape(mask.shape());
+    if (mask_shape.size() != 2 || !UseRegionSpectralData(mask_shape, image_mutex)) {
+        return BatchOutcome::declined;
+    }
+    const auto& channels = request.channels;
+    if (channels.from < 0 || channels.to < channels.from || channels.to >= static_cast<int>(_dims.depth) ||
+        progress.channels.size() != static_cast<std::size_t>(channels.to - channels.from + 1)) {
+        return BatchOutcome::declined;
     }
 
-    bool all_z = spectral_range.from == 0 && (spectral_range.to == ALL_Z || spectral_range.to == _dims.depth - 1);
-    AxisRange z_range(spectral_range.from, spectral_range.to);
-    if (all_z) {
-        z_range.to = _dims.depth - 1;
-    }
-
-    auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
-    casacore::IPosition mask_shape(mask.shape());
-    int width = mask_shape(0);
-    int height = mask_shape(1);
-    int depth = z_range.to - z_range.from + 1;
-    double beam_area = CalculateBeamArea();
-    bool has_flux = !std::isnan(beam_area);
-
-    // The region's profile so far, or a new one if this is not a continuation of it.
-    std::shared_ptr<FileInfo::RegionSpectralStats> held;
-    {
-        std::scoped_lock lock(_region_stats_mutex);
-        auto& entry = _region_stats[region_stats_id];
-        if (!entry || !entry->IsValid(origin, mask_shape, z_range.from, z_range.to)) {
-            entry = std::make_shared<FileInfo::RegionSpectralStats>(origin, mask_shape, z_range.from, z_range.to, has_flux);
-        }
-        held = entry;
-    }
-    std::scoped_lock state_lock(held->mutex);
-    auto& region_stats = *held;
-
-    // Return the calculated stats if complete; never for a temporary region, whose are dropped as they complete
-    if (all_z && region_stats.IsCompleted()) {
-        results = region_stats.stats;
-        progress = 1.0;
-        return true;
-    }
-
-    int x_min = origin(0);
-    int y_min = origin(1);
-
-    auto& stats = region_stats.stats;
-    auto& num_pixels = stats[CARTA::StatsType::NumPixels];
-    auto& nan_count = stats[CARTA::StatsType::NanCount];
-    auto& sum = stats[CARTA::StatsType::Sum];
-    auto& mean = stats[CARTA::StatsType::Mean];
-    auto& rms = stats[CARTA::StatsType::RMS];
-    auto& sigma = stats[CARTA::StatsType::Sigma];
-    auto& sum_sq = stats[CARTA::StatsType::SumSq];
-    auto& min = stats[CARTA::StatsType::Min];
-    auto& max = stats[CARTA::StatsType::Max];
-    auto& extrema = stats[CARTA::StatsType::Extrema];
-    double* flux = has_flux ? stats[CARTA::StatsType::FluxDensity].data() : nullptr;
-
-    // get the start of X
-    size_t x_start = region_stats.latest_x;
-
-    // Set initial values of stats, or those set to NAN in previous iterations
-    for (size_t z = 0; z < depth; z++) {
-        if ((x_start == 0) || (num_pixels[z] == 0)) {
-            min[z] = std::numeric_limits<float>::max();
-            max[z] = std::numeric_limits<float>::lowest();
-            num_pixels[z] = 0;
-            nan_count[z] = 0;
-            sum[z] = 0;
-            sum_sq[z] = 0;
+    const int width = mask_shape(0);
+    const int height = mask_shape(1);
+    const int x_min = request.origin(0);
+    const int y_min = request.origin(1);
+    if (progress.total == 0) {
+        progress.total = static_cast<std::uint64_t>(width);
+        for (auto& channel : progress.channels) {
+            channel.read = true;
         }
     }
 
-    // Lambda to calculate additional stats
-    auto calculate_stats = [&]() {
-        double sum_z, sum_sq_z;
-        uint64_t num_pixels_z;
-
-        for (size_t z = 0; z < depth; z++) {
-            if (num_pixels[z]) {
-                sum_z = sum[z];
-                sum_sq_z = sum_sq[z];
-                num_pixels_z = num_pixels[z];
-
-                const auto derived =
-                    DeriveStatistics({static_cast<double>(num_pixels_z), sum_z, sum_sq_z, min[z], max[z]}, LonePixelSigma::zero);
-                mean[z] = derived.mean;
-                rms[z] = derived.rms;
-                sigma[z] = derived.sigma;
-                extrema[z] = derived.extrema;
-
-                if (has_flux) {
-                    flux[z] = sum_z / beam_area;
-                }
-            } else {
-                // if there are no valid values, set all stats to NaN except the value and NaN counts
-                for (auto& kv : stats) {
-                    switch (kv.first) {
-                        case CARTA::StatsType::NanCount:
-                        case CARTA::StatsType::NumPixels:
-                            break;
-                        default:
-                            kv.second[z] = DOUBLE_NAN;
-                            break;
-                    }
-                }
-            }
-        }
-    };
-
-    size_t delta_x = INIT_DELTA_Z; // since data is swizzled, third axis is x not z
-    size_t max_x = x_start + delta_x;
-    if (max_x > width) {
-        max_x = width;
-    }
     std::vector<float> slice_data;
-
-    for (size_t x = x_start; x < max_x; ++x) {
-        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, height, image_mutex)) {
-            return false;
+    do {
+        const auto x = static_cast<int>(progress.done);
+        if (!GetCursorSpectralData(slice_data, request.stokes, x + x_min, 1, y_min, height, image_mutex)) {
+            return BatchOutcome::failed;
         }
-
-        for (size_t y = 0; y < height; y++) {
+        for (int y = 0; y < height; ++y) {
             // skip all Z values for masked pixels
             if (!mask.getAt(casacore::IPosition(2, x, y))) {
                 continue;
             }
-
             // A column read holds every channel of the image, whichever were asked for.
-            for (size_t z = z_range.from; z < z_range.to + 1; z++) {
-                double v = slice_data[y * _dims.depth + z];
-
-                // skip all NaN pixels
+            for (int z = channels.from; z <= channels.to; ++z) {
+                const double v = slice_data[(static_cast<std::size_t>(y) * _dims.depth) + z];
+                auto& channel = progress.channels[z - channels.from];
                 if (std::isfinite(v)) {
-                    size_t z_index = z - z_range.from;
-                    num_pixels[z_index] += 1;
-                    sum[z_index] += v;
-                    sum_sq[z_index] += v * v;
-                    min[z_index] = std::min(min[z_index], v);
-                    max[z_index] = std::max(max[z_index], v);
+                    channel.num_pixels += 1;
+                    channel.sum += v;
+                    channel.sum_sq += v * v;
+                    channel.min = std::min(channel.min, v);
+                    channel.max = std::max(channel.max, v);
+                } else {
+                    channel.nan_count += 1;
                 }
             }
         }
-    }
-
-    // Calculate partial stats
-    calculate_stats();
-
-    results = region_stats.stats;
-    if (max_x == width) {
-        progress = 1.0;
-    } else {
-        progress = (float)max_x / width;
-    }
-
-    // Update starting x for next time
-    region_stats.latest_x = max_x;
-
-    if (progress >= 1.0) {
-        region_stats.completed = true;
-        if (region_id <= TEMP_REGION_ID) {
-            // clear for next temp region, unless another has taken its place already
-            std::scoped_lock lock(_region_stats_mutex);
-            auto entry = _region_stats.find(region_stats_id);
-            if (entry != _region_stats.end() && entry->second == held) {
-                _region_stats.erase(entry);
-            }
-        }
-    }
-
-    return true;
+        ++progress.done;
+    } while (!progress.Complete() && std::chrono::steady_clock::now() < deadline);
+    return BatchOutcome::finished;
 }
 
-// A region that has gone or changed is not continued: RegionHandler says so here, since only it knows.
-void Hdf5Loader::ReleaseRegion(int region_id) {
-    std::scoped_lock lock(_region_stats_mutex);
-    if (region_id == ALL_REGIONS) {
-        _region_stats.clear();
-        return;
-    }
-    // Keyed by region and stokes both, so one region is several entries.
-    for (auto it = _region_stats.begin(); it != _region_stats.end();) {
-        it = it->first.region_id == region_id ? _region_stats.erase(it) : std::next(it);
-    }
+double Hdf5Loader::BeamArea() {
+    return CalculateBeamArea();
 }
 
 bool Hdf5Loader::GetDownsampledRasterData(

@@ -2,8 +2,8 @@
 
 The server behind the CARTA image viewer: it opens images through loaders and answers the frontend's
 requests about them. This file holds only the language settled so far, around the cube histogram, line
-profiles and the statistics reported from a plane, a cube or a region; the rest of the backend's
-vocabulary is not written down here yet.
+profiles, region profiles and the statistics reported from a plane, a cube or a region; the rest of the
+backend's vocabulary is not written down here yet.
 
 ## Language
 
@@ -35,6 +35,15 @@ The mean spectrum of each of the boxes that approximate a line of some width, si
 what a position-velocity image is made from. A box that catches no valid pixel in a channel has no
 mean there.
 _Avoid_: PV data, box profiles
+
+### Region profiles
+
+**Region profile**:
+The spectral profile of a closed region in one Stokes: for each channel, the statistics of the
+region's valid pixels. Made in steps, and resumed from one step to the next for as long as the region,
+its mask and the channels asked for stay the same; kept once made, until the region is edited or
+removed.
+_Avoid_: region spectral data, region spectral stats
 
 ### Reported statistics
 

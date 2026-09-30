@@ -23,7 +23,6 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
-#include "ImageStats/RegionReducer.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitting/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -32,6 +31,8 @@
 #include "ImageStats/CubeHistogramCalculator.h"
 #include "ImageStats/CubeHistogramMethod.h"
 #include "ImageStats/Histogram.h"
+#include "ImageStats/RegionProfileReader.h"
+#include "ImageStats/RegionReducer.h"
 #include "Region/Region.h"
 #include "Util/Concurrency.h"
 #include "Util/FileSystem.h"
@@ -215,6 +216,11 @@ public:
         int stokes, const std::function<bool(const RegionSpectralBlock&)>& sink);
     // Tell the loader a region is gone, so it can drop whatever it kept for that region's walk.
     void ReleaseRegion(int region_id);
+    // Asks `ask` of the loader's own reading of region profiles, with the lock over the image it reads
+    // under. Declined when the loader has none.
+    BatchOutcome WithProfileReader(const std::function<BatchOutcome(RegionProfileReader& reader, std::mutex& image_mutex)>& ask);
+    // Whether the loader has one. For as long as a loader may keep its region profiles itself instead.
+    bool HasProfileReader();
     bool GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
         const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {});

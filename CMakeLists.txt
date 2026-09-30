@@ -279,6 +279,7 @@ set(SOURCE_FILES
         src/Region/RegionAnalysis/LineBoxRegions.cc
         src/Region/RegionAnalysis/LineProfileCalculator.cc
         src/Region/RegionAnalysis/RegionHistogram.cc
+        src/Region/RegionAnalysis/RegionProfiles.cc
         src/Region/RegionAnalysis/RegionSpatialProfile.cc
         src/Region/RegionAnalysis/RegionStatistics.cc
         src/Region/RegionImportExport/CrtfExporter.cc

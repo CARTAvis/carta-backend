@@ -33,6 +33,7 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/DerivedStatistics.h"
 #include "ImageStats/StatsCalculator.h"
+#include "Region/RegionAnalysis/RegionProfiles.h"
 #include "src/Frame/Frame.h"
 
 #include "CommonTestUtilities.h"
@@ -158,15 +159,23 @@ bool ProfileOf(const fs::path& path, int depth, int x_min, int y_min, int width,
 
     casacore::Array<casacore::Bool> mask_2d(casacore::IPosition(2, width, height), true);
     casacore::ArrayLattice<casacore::Bool> mask(mask_2d);
-    const casacore::IPosition origin(2, x_min, y_min);
+    RegionProfileRequest request;
+    request.origin = casacore::IPosition(2, x_min, y_min);
+    request.mask = &mask;
+    request.channels = AxisRange(0, depth - 1);
+    auto* reader = image.loader->ProfileReader();
+    if (!reader) {
+        return false;
+    }
+    RegionProfiles profiles;
     std::mutex image_mutex;
 
-    // A call takes as many columns as it takes, and says how far it has got.
-    constexpr int kMostCalls = 1000;
+    // A step takes as many columns as it takes, and says how far it has got.
+    constexpr int kMostSteps = 1000;
     float progress = 0.0;
-    for (int calls = 0; progress < 1.0; ++calls) {
-        if (calls > kMostCalls ||
-            !image.loader->GetRegionSpectralData(1, AxisRange(0, depth - 1), 0, mask, origin, image_mutex, profile, progress)) {
+    for (int steps = 0; progress < 1.0; ++steps) {
+        if (steps > kMostSteps || profiles.Continue({0, 1, 0}, request, *reader, image_mutex, std::chrono::milliseconds(1000), {}, profile,
+                                      progress) != BatchOutcome::finished) {
             return false;
         }
     }
@@ -185,6 +194,7 @@ void ExpectProfileIsDerivedFromItsTotals(const fs::path& path, int depth, int x,
         const auto at = [&](CARTA::StatsType stat) { return profile.at(stat).at(z); };
 
         ASSERT_EQ(at(CARTA::StatsType::NumPixels), pixels.num_pixels) << where;
+        EXPECT_EQ(at(CARTA::StatsType::NanCount), (width * height) - pixels.num_pixels) << where;
 
         CountedTotals reported;
         reported.num_pixels = at(CARTA::StatsType::NumPixels);
@@ -294,12 +304,13 @@ TEST_F(ReportedStatisticsTest, AProfileOfOnePixelHasSigmaZero) {
 }
 
 TEST_F(ReportedStatisticsTest, AProfileChannelWithNoValidPixelIsUndefinedBesideOneThatHasSome) {
-    // The fourth row of the first plane is all NaN; the same row of the second is not.
+    // The fourth row of the first plane is all NaN; the same row of the second is not. Two pixels of
+    // it, since a region much wider than it is tall times deep is left to casacore.
     const auto path = Hdf5Images() / "10x10x2_nans.hdf5";
-    ExpectProfileIsDerivedFromItsTotals(path, 2, 0, 3, 10, 1);
+    ExpectProfileIsDerivedFromItsTotals(path, 2, 0, 3, 2, 1);
 
     std::map<CARTA::StatsType, std::vector<double>> profile;
-    ASSERT_TRUE(ProfileOf(path, 2, 0, 3, 10, 1, profile));
+    ASSERT_TRUE(ProfileOf(path, 2, 0, 3, 2, 1, profile));
     EXPECT_EQ(profile.at(CARTA::StatsType::NumPixels).at(0), 0.0);
     EXPECT_GT(profile.at(CARTA::StatsType::NumPixels).at(1), 0.0);
 }
@@ -307,14 +318,13 @@ TEST_F(ReportedStatisticsTest, AProfileChannelWithNoValidPixelIsUndefinedBesideO
 // The extreme of larger magnitude wins, whichever end of the range it is at.
 
 TEST_F(ReportedStatisticsTest, ExtremaIsTheExtremeOfLargerMagnitude) {
-    // Four pixels along one row: the first plane's are -0.661528, 0.93505, 0.0490546 and 2.00239, so its
-    // largest outweighs its smallest; the second's are -1.47389, 1.02885, NaN and -0.239937, so its
-    // smallest outweighs its largest.
+    // Two pixels along one row: the first plane's are -0.661528 and 0.93505, so its largest outweighs
+    // its smallest; the second's are -1.47389 and 1.02885, so its smallest outweighs its largest.
     std::map<CARTA::StatsType, std::vector<double>> profile;
-    ASSERT_TRUE(ProfileOf(Hdf5Images() / "10x10x2_nans.hdf5", 2, 6, 7, 4, 1, profile));
-    EXPECT_NEAR(profile.at(CARTA::StatsType::Extrema).at(0), 2.00239, 1e-5);
+    ASSERT_TRUE(ProfileOf(Hdf5Images() / "10x10x2_nans.hdf5", 2, 6, 7, 2, 1, profile));
+    EXPECT_NEAR(profile.at(CARTA::StatsType::Extrema).at(0), 0.93505, 1e-5);
     EXPECT_NEAR(profile.at(CARTA::StatsType::Extrema).at(1), -1.47389, 1e-5);
-    ExpectProfileIsDerivedFromItsTotals(Hdf5Images() / "10x10x2_nans.hdf5", 2, 6, 7, 4, 1);
+    ExpectProfileIsDerivedFromItsTotals(Hdf5Images() / "10x10x2_nans.hdf5", 2, 6, 7, 2, 1);
 }
 
 // Region statistics are made by casacore rather than from totals, and their extrema is the same rule.

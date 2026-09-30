@@ -1961,6 +1961,18 @@ void Frame::ReleaseRegion(int region_id) {
     _loader->ReleaseRegion(region_id);
 }
 
+BatchOutcome Frame::WithProfileReader(const std::function<BatchOutcome(RegionProfileReader& reader, std::mutex& image_mutex)>& ask) {
+    auto* reader = _loader->ProfileReader();
+    if (!reader) {
+        return BatchOutcome::declined;
+    }
+    return ask(*reader, _image_mutex);
+}
+
+bool Frame::HasProfileReader() {
+    return _loader->ProfileReader() != nullptr;
+}
+
 bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
     const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback) {

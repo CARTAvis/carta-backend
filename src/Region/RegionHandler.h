@@ -20,6 +20,7 @@
 #include "ImageGenerators/PvPreviewCut.h"
 #include "Region.h"
 #include "RegionAnalysis/RegionHistogram.h"
+#include "RegionAnalysis/RegionProfiles.h"
 #include "RegionAnalysis/RegionSpatialProfile.h"
 #include "RegionAnalysis/RegionStatistics.h"
 
@@ -101,6 +102,11 @@ protected:
 
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
+
+    // The region profiles made from a loader's own reading of them, kept between steps and once made.
+    // Reachable by a subclass because a region's edit or removal letting its profile go is visible
+    // nowhere else: the next profile of it is made again either way.
+    RegionProfiles _region_profiles;
 
     // How often a line profile walk reports progress, in milliseconds. A field rather than the
     // constant it starts at because the partial reports are only reachable after that long, which

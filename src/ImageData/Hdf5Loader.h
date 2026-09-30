@@ -18,10 +18,11 @@
 #include "CartaHdf5Image.h"
 #include "FileLoader.h"
 #include "Hdf5Attributes.h"
+#include "ImageStats/RegionProfileReader.h"
 
 namespace carta {
 
-class Hdf5Loader : public FileLoader {
+class Hdf5Loader : public FileLoader, public RegionProfileReader {
 public:
     Hdf5Loader(const std::string& filename);
 
@@ -33,11 +34,12 @@ public:
         const std::function<bool(float progress)>& partial_callback = {}) override;
 
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
-    bool GetRegionSpectralData(int region_id, const AxisRange& spectral_range, int stokes,
-        const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
-        const std::function<bool(const std::map<CARTA::StatsType, std::vector<double>>&, float)>& partial_callback = {}) override;
-    void ReleaseRegion(int region_id) override;
+    RegionProfileReader* ProfileReader() override {
+        return this;
+    }
+    BatchOutcome ReadOn(const RegionProfileRequest& request, std::mutex& image_mutex, RegionProfileProgress& progress,
+        std::chrono::steady_clock::time_point deadline, const std::function<bool(double fraction)>& report) override;
+    double BeamArea() override;
     bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
     bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes,
@@ -50,12 +52,6 @@ private:
     std::string _hdu;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
     std::unordered_map<int, std::unique_ptr<casacore::HDF5Lattice<float>>> _mipmaps;
-
-    // Each region's profile so far, by region and stokes. The lock guards the map and nothing in it,
-    // and is never held across a walk: a walk holds its state through the pointer, so a region
-    // released while its walk runs leaves the walk to finish into a state nobody will ask for again.
-    std::mutex _region_stats_mutex;
-    std::map<FileInfo::RegionStatsId, std::shared_ptr<FileInfo::RegionSpectralStats>> _region_stats;
 
     H5D_layout_t _layout;
 

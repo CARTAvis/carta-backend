@@ -19,6 +19,7 @@
 #include "Logger/Logger.h"
 #include "RegionAnalysis/LineBoxRegions.h"
 #include "RegionAnalysis/LineProfileCalculator.h"
+#include "RegionAnalysis/RegionProfiles.h"
 #include "RegionImportExport/RegionImportExport.h"
 #include "Timer/Timer.h"
 #include "Util/File.h"
@@ -581,6 +582,8 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
 }
 
 void RegionHandler::RemoveFileRequirementsCache(int file_id) {
+    _region_profiles.ReleaseFile(file_id);
+
     // Clear requirements and cache for a specific file or for all files when closed
     if (file_id == ALL_FILES) {
         std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
@@ -660,6 +663,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
 // A loader that can resume a region's spectral walk keeps its own state for that region, and this
 // handler is the only thing that knows the region has gone or changed underneath it.
 void RegionHandler::ReleaseRegionFromLoaders(int region_id) {
+    _region_profiles.Release(region_id);
     for (auto& frame : _frames) {
         if (frame.second) {
             frame.second->ReleaseRegion(region_id);
@@ -1670,20 +1674,57 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
             // What a loader sends from inside its call is never the final profile: that comes back
             // from the call, and goes out below.
-            auto send_partial = [&](const ProfilesMap& partial, float partial_progress) {
-                if (!still_wanted()) {
-                    return false;
-                }
-                if (!partial_updates.Due()) {
-                    return true;
-                }
+            auto publish_partial = [&](const ProfilesMap& partial, float partial_progress) {
                 for (const auto& profile : partial) {
                     if (results.count(profile.first)) {
                         results[profile.first] = profile.second;
                     }
                 }
                 partial_results_callback(results, partial_progress);
+            };
+            auto send_partial = [&](const ProfilesMap& partial, float partial_progress) {
+                if (!still_wanted()) {
+                    return false;
+                }
+                if (partial_updates.Due()) {
+                    publish_partial(partial, partial_progress);
+                }
                 return true;
+            };
+            // The same, for a profile made here: the partial is made only if it is going out.
+            const RegionProfileReport report_partial = [&](float partial_progress, const std::function<ProfilesMap()>& partial) {
+                if (!still_wanted()) {
+                    return false;
+                }
+                if (partial_updates.Due()) {
+                    publish_partial(partial(), partial_progress);
+                }
+                return true;
+            };
+
+            // One step on for one stokes: made here from the loader's own reading, where it has one,
+            // and otherwise kept by the loader itself. A reader that declines leaves the profile to
+            // casacore, below.
+            RegionProfileRequest request;
+            request.origin = xy_origin;
+            request.mask = &mask;
+            request.channels = z_range;
+            bool declined = false;
+            auto step_on = [&](int tmp_stokes_index, ProfilesMap& tmp_results, bool with_partials) {
+                if (frame->HasProfileReader()) {
+                    request.stokes = tmp_stokes_index;
+                    const auto outcome = frame->WithProfileReader([&](RegionProfileReader& reader, std::mutex& image_mutex) {
+                        return _region_profiles.Continue({file_id, region_id, tmp_stokes_index}, request, reader, image_mutex,
+                            std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME), with_partials ? report_partial : RegionProfileReport(),
+                            tmp_results, progress);
+                    });
+                    declined = declined || outcome == BatchOutcome::declined;
+                    return outcome == BatchOutcome::finished;
+                }
+                if (with_partials) {
+                    return frame->GetLoaderSpectralData(region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress, send_partial);
+                }
+                return frame->GetLoaderSpectralData(region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress);
             };
 
             // Get partial profiles until complete (do once if cached)
@@ -1695,21 +1736,21 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 // Get partial profile
                 auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
                     int tmp_stokes_index;
-                    return (frame->GetStokesTypeIndex(tmp_coordinate, tmp_stokes_index) &&
-                            frame->GetLoaderSpectralData(
-                                region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress));
+                    return frame->GetStokesTypeIndex(tmp_coordinate, tmp_stokes_index) && step_on(tmp_stokes_index, tmp_results, false);
                 };
 
                 ProfilesMap partial_profiles;
+                bool stepped = false;
                 if (Stokes::IsComputed(stokes_index)) { // For computed stokes
-                    if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
-                        return false;
-                    }
+                    stepped = GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data);
                 } else { // For regular stokes I, Q, U, or V
-                    if (!frame->GetLoaderSpectralData(
-                            region_id, z_range, stokes_index, mask, xy_origin, partial_profiles, progress, send_partial)) {
-                        return false;
+                    stepped = step_on(stokes_index, partial_profiles, true);
+                }
+                if (!stepped) {
+                    if (declined) {
+                        break;
                     }
+                    return false;
                 }
 
                 if (partial_updates.Due(progress)) {
@@ -1726,8 +1767,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 }
             }
 
-            spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed().ms());
-            return true;
+            if (!declined) {
+                spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed().ms());
+                return true;
+            }
         }
     } // end loader swizzled data
 
