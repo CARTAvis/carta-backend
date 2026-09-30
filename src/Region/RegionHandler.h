@@ -102,6 +102,15 @@ protected:
         const AxisRange& z_range, int stokes_index, const std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
         bool reverse);
 
+    // Generate box regions to approximate a line with a width, and get mean of each box for z-range for PV image.
+    //
+    // Reachable by a subclass rather than private, with the frames it works over, because its one
+    // caller is a PV image, and whether the loader's walk made the profiles or the boxes were taken
+    // one at a time is invisible there: both produce the same profiles.
+    bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index, const std::string& coordinate,
+        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, casacore::Quantity& increment, bool& cancelled,
+        std::string& message, bool reverse = false);
+
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
@@ -136,10 +145,6 @@ private:
     bool GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
         const std::function<void(std::vector<float>&, casacore::Quantity&)>& spatial_profile_callback);
 
-    // Generate box regions to approximate a line with a width, and get mean of each box for z-range for PV image.
-    bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index, const std::string& coordinate,
-        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, casacore::Quantity& increment, bool& cancelled,
-        std::string& message, bool reverse = false);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     casacore::Vector<float> GetTemporaryRegionProfile(int file_id, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> csys, const AxisRange& z_range, int stokes_index, double& num_pixels);

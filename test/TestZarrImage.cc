@@ -82,18 +82,23 @@ public:
 
     BatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override {
+        ++region_walks;
         if (_script == Script::decline) {
-            return BatchOutcome::declined;
+            return last_region_walk = BatchOutcome::declined;
         }
         if (_script == Script::fail_after_first_plane) {
             ZarrLoader::RegionSpectra(regions, z_range, stokes, [&](const RegionSpectralBlock& block) {
                 sink(block);
                 return false;
             });
-            return BatchOutcome::failed;
+            return last_region_walk = BatchOutcome::failed;
         }
-        return ZarrLoader::RegionSpectra(regions, z_range, stokes, sink);
+        return last_region_walk = ZarrLoader::RegionSpectra(regions, z_range, stokes, sink);
     }
+
+    // How often a walk over regions was asked for, and how the last one ended.
+    int region_walks = 0;
+    BatchOutcome last_region_walk = BatchOutcome::declined;
 
 private:
     Script _script;
@@ -127,10 +132,10 @@ HistogramConfig CubeConfig(int num_bins) {
     return config;
 }
 
-// RegionHandler keeps the batched line path to itself, and the frames it works over too.
+// RegionHandler keeps its line profiles to itself, and the frames it works over too.
 class PeekableRegionHandler : public carta::RegionHandler {
 public:
-    using carta::RegionHandler::LineProfilesByWalk;
+    using carta::RegionHandler::GetLineProfiles;
     using carta::RegionHandler::_frames;
     using carta::RegionHandler::_line_profile_progress_interval;
 };
@@ -582,12 +587,9 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataMarksPartialBlocks) {
 // guard rejected the batched pass, the caller fell back to reading each box on its own, and the
 // answer came out right. The only symptom was that the optimisation never ran.
 TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
-    auto loader = FileLoader::GetLoader(kZarrFixture.string());
-    ASSERT_NE(loader, nullptr);
+    auto loader = std::make_shared<ScriptedZarrLoader>(kZarrFixture.string(), ScriptedZarrLoader::Script::walk);
     loader->OpenFile("");
-    auto* zarr_loader = dynamic_cast<ZarrLoader*>(loader.get());
-    ASSERT_NE(zarr_loader, nullptr);
-    zarr_loader->SetReadBudgetBytes(1);
+    loader->SetReadBudgetBytes(1);
     std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
     ASSERT_TRUE(frame->IsValid());
 
@@ -603,13 +605,6 @@ TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
     RegionState line_state(file_id, CARTA::RegionType::LINE, control_points, 0.0);
     int region_id = -1;
     ASSERT_TRUE(handler.SetRegion(region_id, line_state, csys));
-
-    LineBoxRegions line_box_regions;
-    std::vector<RegionState> box_regions;
-    casacore::Quantity increment;
-    std::string message;
-    ASSERT_TRUE(line_box_regions.GetLineBoxRegions(line_state, csys, 3, increment, box_regions, message)) << message;
-    ASSERT_FALSE(box_regions.empty());
 
     // A finished block moves progress by at least one whole channel, so any smaller forward step
     // came from a block reported while it was still filling. Merely seeing a fraction proves
@@ -627,12 +622,19 @@ TEST_F(ZarrImageTest, BatchedLineProfilesSurviveASplitReduction) {
         highest_progress = std::max(highest_progress, progress);
     };
     casacore::Matrix<float> profiles;
-    EXPECT_EQ(handler.LineProfilesByWalk(
-                  file_id, region_id, line_state, box_regions, csys, AxisRange(0, kDepth - 1), 0, progress_callback, profiles, false),
-        BatchOutcome::finished)
-        << "a reduction split across reads should still produce a complete set of profiles";
+    casacore::Quantity increment;
+    bool cancelled = false;
+    std::string message;
+    EXPECT_TRUE(handler.GetLineProfiles(file_id, region_id, 3, AxisRange(0, kDepth - 1), 0, "", progress_callback, profiles, increment,
+        cancelled, message, false))
+        << message;
+    // The boxes one at a time move progress by a box, which can be finer than a channel too, so
+    // the walk is asked whether it was the one that answered.
+    EXPECT_EQ(loader->region_walks, 1);
+    EXPECT_EQ(loader->last_region_walk, BatchOutcome::finished) << "a reduction split across reads should still finish";
+    EXPECT_FALSE(cancelled);
     ASSERT_EQ(profiles.shape().size(), 2u);
-    EXPECT_EQ(profiles.shape()(0), static_cast<casacore::Int>(box_regions.size()));
+    EXPECT_GT(profiles.shape()(0), 0);
     EXPECT_EQ(profiles.shape()(1), kDepth);
     EXPECT_FLOAT_EQ(highest_progress, 1.0f) << "progress should reach one, and counting partials drove it past";
     EXPECT_TRUE(saw_step_finer_than_a_channel)
