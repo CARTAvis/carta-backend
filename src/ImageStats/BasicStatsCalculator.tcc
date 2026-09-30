@@ -7,6 +7,7 @@
 #ifndef CARTA_SRC_IMAGESTATS_BASICSTATSCALCULATOR_TCC_
 #define CARTA_SRC_IMAGESTATS_BASICSTATSCALCULATOR_TCC_
 
+#include "ImageStats/DerivedStatistics.h"
 #include "Logger/Logger.h"
 #include "Util/Nan.h"
 
@@ -22,9 +23,12 @@ void BasicStats<T>::join(const BasicStats<T>& other) {
         num_pixels += other.num_pixels;
         min_val = std::min(min_val, other.min_val);
         max_val = std::max(max_val, other.max_val);
-        mean = sum / num_pixels;
-        stdDev = num_pixels > 1 ? sqrt((sumSq - (sum * sum / num_pixels)) / (num_pixels - 1)) : DOUBLE_NAN;
-        rms = sqrt(sumSq / num_pixels);
+        // The extremes are not derived from here, but they are part of the totals.
+        const auto derived = DeriveStatistics(
+            {static_cast<double>(num_pixels), sum, sumSq, static_cast<double>(min_val), static_cast<double>(max_val)}, LonePixelSigma::nan);
+        mean = derived.mean;
+        stdDev = derived.sigma;
+        rms = derived.rms;
     }
 }
 
@@ -84,21 +88,10 @@ void BasicStatsCalculator<T>::join(BasicStatsCalculator<T>& other) { // NOLINT
 
 template <typename T>
 BasicStats<T> BasicStatsCalculator<T>::GetStats() const {
-    double mean;
-    double stdDev;
-    double rms;
-
-    if (_num_pixels > 0) {
-        mean = _sum / _num_pixels;
-        stdDev = _num_pixels > 1 ? sqrt((_sum_squares - (_sum * _sum / _num_pixels)) / (_num_pixels - 1)) : DOUBLE_NAN;
-        rms = sqrt(_sum_squares / _num_pixels);
-    } else {
-        mean = DOUBLE_NAN;
-        stdDev = DOUBLE_NAN;
-        rms = DOUBLE_NAN;
-    }
-
-    return BasicStats<T>{_num_pixels, _sum, mean, stdDev, _min_val, _max_val, rms, _sum_squares};
+    const auto derived = DeriveStatistics(
+        {static_cast<double>(_num_pixels), _sum, _sum_squares, static_cast<double>(_min_val), static_cast<double>(_max_val)},
+        LonePixelSigma::nan);
+    return BasicStats<T>{_num_pixels, _sum, derived.mean, derived.sigma, _min_val, _max_val, derived.rms, _sum_squares};
 }
 
 } // namespace carta

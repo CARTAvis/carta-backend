@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 
 #include "ImageData/FileLoader.h"
+#include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/DerivedStatistics.h"
 #include "src/Frame/Frame.h"
 
@@ -64,8 +65,7 @@ Reported ReportedFrom(const CountedTotals& t, double lone_pixel_sigma) {
     Reported reported;
     reported.mean = t.sum / t.num_pixels;
     reported.rms = std::sqrt(t.sum_sq / t.num_pixels);
-    reported.sigma =
-        t.num_pixels > 1.0 ? std::sqrt((t.sum_sq - (t.sum * t.sum / t.num_pixels)) / (t.num_pixels - 1.0)) : lone_pixel_sigma;
+    reported.sigma = t.num_pixels > 1.0 ? std::sqrt((t.sum_sq - (t.sum * t.sum / t.num_pixels)) / (t.num_pixels - 1.0)) : lone_pixel_sigma;
     reported.extrema = std::abs(t.min) > std::abs(t.max) ? t.min : t.max;
     return reported;
 }
@@ -234,7 +234,8 @@ struct StoredStats {
     }
 };
 
-void ExpectStoredDerivedFromItsTotals(const std::map<CARTA::StatsType, double>& stats, const CountedTotals& pixels, const std::string& where) {
+void ExpectStoredDerivedFromItsTotals(
+    const std::map<CARTA::StatsType, double>& stats, const CountedTotals& pixels, const std::string& where) {
     CountedTotals reported;
     reported.num_pixels = stats.at(CARTA::StatsType::NumPixels);
     reported.sum = stats.at(CARTA::StatsType::Sum);
@@ -438,8 +439,8 @@ TEST_F(DerivedStatisticsTest, ExtremaIsTheExtremeOfLargerMagnitudeAndTheLargestW
         double expected;
     };
     // Fractions among them, which is what an integer absolute value would get wrong.
-    for (const auto& c : {Case{-3.0, 2.0, -3.0}, Case{-2.0, 3.0, 3.0}, Case{-2.0, 2.0, 2.0}, Case{-5.0, -1.0, -5.0},
-             Case{1.0, 4.0, 4.0}, Case{0.0, 0.0, 0.0}, Case{-0.75, 0.5, -0.75}, Case{-0.5, 0.75, 0.75}, Case{-0.75, 0.75, 0.75}}) {
+    for (const auto& c : {Case{-3.0, 2.0, -3.0}, Case{-2.0, 3.0, 3.0}, Case{-2.0, 2.0, 2.0}, Case{-5.0, -1.0, -5.0}, Case{1.0, 4.0, 4.0},
+             Case{0.0, 0.0, 0.0}, Case{-0.75, 0.5, -0.75}, Case{-0.5, 0.75, 0.75}, Case{-0.75, 0.75, 0.75}}) {
         const auto derived = DeriveStatistics({4.0, 1.0, 1.0, c.min, c.max}, LonePixelSigma::nan);
         EXPECT_EQ(derived.extrema, c.expected) << "min=" << c.min << " max=" << c.max;
     }
@@ -477,4 +478,91 @@ TEST_F(DerivedStatisticsTest, MakesTheSameBitsAsTheFormulasItReplaces) {
             ExpectSameAsWrittenOut(DeriveStatistics(TotalsOf(counted), LonePixelSigma::nan), ReportedFrom(counted, kNaN), where + " nan");
         }
     }
+}
+
+// The statistics of a plane that the calculators make, which say NaN for one pixel.
+
+namespace {
+
+CountedTotals TotalsReportedBy(const BasicStats<float>& stats) {
+    CountedTotals counted;
+    counted.num_pixels = static_cast<double>(stats.num_pixels);
+    counted.sum = stats.sum;
+    counted.sum_sq = stats.sumSq;
+    counted.min = stats.min_val;
+    counted.max = stats.max_val;
+    return counted;
+}
+
+void ExpectDerivedFromItsOwnTotals(const BasicStats<float>& stats, const std::string& where) {
+    const auto expected = ReportedFrom(TotalsReportedBy(stats), kNaN);
+    ExpectSame(stats.mean, expected.mean, where + " mean");
+    ExpectSame(stats.rms, expected.rms, where + " rms");
+    ExpectSame(stats.stdDev, expected.sigma, where + " sigma");
+}
+
+std::vector<float> SomePixels(std::size_t size, std::mt19937& random) {
+    std::uniform_real_distribution<float> spread(-1.0f, 1.0f);
+    std::uniform_int_distribution<int> one_in_five(0, 4);
+    std::vector<float> pixels(size);
+    for (auto& pixel : pixels) {
+        pixel = 2.0f + spread(random);
+        if (one_in_five(random) == 0) {
+            pixel = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    return pixels;
+}
+
+} // namespace
+
+class BasicStatsDerivedTest : public ::testing::Test {};
+
+TEST_F(BasicStatsDerivedTest, ACalculatedPlaneIsDerivedFromItsOwnTotals) {
+    std::mt19937 random(7);
+    for (const std::size_t size : {0u, 1u, 2u, 3u, 10u, 400u}) {
+        const auto pixels = SomePixels(size, random);
+        BasicStatsCalculator<float> calculator(pixels.data(), pixels.size());
+        calculator.reduce();
+        const auto stats = calculator.GetStats();
+        ExpectDerivedFromItsOwnTotals(stats, "size=" + std::to_string(size));
+    }
+}
+
+TEST_F(BasicStatsDerivedTest, APlaneWithOneValidPixelHasNoSigma) {
+    const std::vector<float> pixels = {std::numeric_limits<float>::quiet_NaN(), 1.5f, std::numeric_limits<float>::infinity()};
+    BasicStatsCalculator<float> calculator(pixels.data(), pixels.size());
+    calculator.reduce();
+    const auto stats = calculator.GetStats();
+    ASSERT_EQ(stats.num_pixels, 1u);
+    EXPECT_EQ(stats.mean, 1.5);
+    EXPECT_TRUE(std::isnan(stats.stdDev));
+}
+
+TEST_F(BasicStatsDerivedTest, APlaneWithNoValidPixelIsUndefined) {
+    const std::vector<float> pixels = {std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::infinity()};
+    BasicStatsCalculator<float> calculator(pixels.data(), pixels.size());
+    calculator.reduce();
+    const auto stats = calculator.GetStats();
+    ASSERT_EQ(stats.num_pixels, 0u);
+    EXPECT_TRUE(std::isnan(stats.mean));
+    EXPECT_TRUE(std::isnan(stats.stdDev));
+    EXPECT_TRUE(std::isnan(stats.rms));
+}
+
+TEST_F(BasicStatsDerivedTest, PlanesJoinedAreDerivedFromTheirTotalsAsTheyGrow) {
+    std::mt19937 random(11);
+    BasicStats<float> joined;
+    // Chunks that are one pixel, none, and more: the sigma is undefined until the second pixel arrives.
+    for (const std::size_t size : {1u, 0u, 1u, 6u, 0u, 30u}) {
+        const auto pixels = SomePixels(size, random);
+        BasicStatsCalculator<float> calculator(pixels.data(), pixels.size());
+        calculator.reduce();
+        const auto chunk = calculator.GetStats();
+        joined.join(chunk);
+        if (joined.num_pixels > 0) {
+            ExpectDerivedFromItsOwnTotals(joined, "after " + std::to_string(joined.num_pixels) + " pixels");
+        }
+    }
+    EXPECT_GT(joined.num_pixels, 1u);
 }
