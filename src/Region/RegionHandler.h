@@ -89,19 +89,6 @@ public:
         GeneratedImage& model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback);
 
 protected:
-    // Reduce every box of a line in one pass over the pixels, when the file's loader can. Finished
-    // means `profiles` holds every box's profile. Declined means nothing was read and the caller
-    // walks the boxes one at a time instead, which is slower but always available; failed and
-    // cancelled are the caller's own answer.
-    //
-    // Reachable by a subclass rather than private, with the frames it works over, because its one
-    // caller swallows a decline: the slow path produces the same profiles, so nothing downstream can
-    // tell whether this ever ran.
-    BatchOutcome LineProfilesByWalk(int file_id, int region_id, RegionState& line_region_state,
-        const std::vector<RegionState>& box_regions, const std::shared_ptr<casacore::CoordinateSystem>& line_coord_sys,
-        const AxisRange& z_range, int stokes_index, const std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
-        bool reverse);
-
     // Generate box regions to approximate a line with a width, and get mean of each box for z-range for PV image.
     //
     // Reachable by a subclass rather than private, with the frames it works over, because its one
@@ -146,6 +133,9 @@ private:
         const std::function<void(std::vector<float>&, casacore::Quantity&)>& spatial_profile_callback);
 
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
+    // The two routes line profiles are made by; see LineProfileCalculator.
+    class LineWalk;
+    class BoxByBox;
     casacore::Vector<float> GetTemporaryRegionProfile(int file_id, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> csys, const AxisRange& z_range, int stokes_index, double& num_pixels);
 
