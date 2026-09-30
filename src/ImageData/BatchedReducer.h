@@ -3,8 +3,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_ZARRBATCHEDREDUCER_H_
-#define CARTA_SRC_IMAGEDATA_ZARRBATCHEDREDUCER_H_
+#ifndef CARTA_SRC_IMAGEDATA_BATCHEDREDUCER_H_
+#define CARTA_SRC_IMAGEDATA_BATCHEDREDUCER_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -83,23 +83,28 @@ struct RegionSpectralBlock {
 
 // How a batched walk ended.
 //
-// `failed` covers every way of not answering -- a request the walk does not serve, such as an empty
-// range or a stokes it cannot read, as well as a read that went wrong, which the loader logs -- and
-// in each the caller keeps its own route. `cancelled` is the caller's own callback having said stop,
-// which is not a reason to try another route. Kept apart because a bool could not keep them apart:
-// it used to be false for both, and the caller had to watch its own callback to tell which.
-enum class ZarrBatchOutcome { finished, cancelled, failed };
-
-// What a Zarr loader can do beyond FileLoader: read the pixels once and answer many questions from
-// them. The caller's own routes ask plane by plane or region by region, and each of those reads the
-// same chunks again; these read each chunk once.
+// `declined` is the walk refusing the request before it began -- one it does not serve, such as an
+// empty range or a stokes it cannot read -- so no callback has been called and nothing the caller
+// holds has been touched. It is always answered before the loader asks anything of the pixels, which
+// is what makes it safe to take another route after it. `failed` is the pixels having been asked and
+// the answer not arriving -- a read or a request the library refused, which the loader logs -- and
+// callbacks may already have been called by then. `cancelled` is the caller's own callback having
+// said stop, which is not a reason to try another route.
 //
-// Reached through FileLoader::ZarrBatched(), which is null for every other loader, so having one is
-// what says the path exists and the outcome only says how it went. Named for Zarr because Zarr is the
-// only format with one; nothing in the signatures would stop another from implementing it.
-class ZarrBatchedReducer {
+// `declined` and `failed` are kept apart because a caller can do something sensible after the
+// first and not after the second: its own route reads the same pixels, through the same library, and
+// would meet the same failure after having already published part of an answer.
+enum class BatchOutcome { finished, declined, cancelled, failed };
+
+// What a loader can do beyond FileLoader: read the pixels once and answer many questions from them.
+// The caller's own routes ask plane by plane or region by region, and each of those reads the same
+// chunks again; these read each chunk once.
+//
+// Reached through FileLoader::Batched(), which is null for a loader that has no such walks. Only
+// the Zarr loader has them today; nothing in the signatures is particular to Zarr.
+class BatchedReducer {
 public:
-    virtual ~ZarrBatchedReducer() = default;
+    virtual ~BatchedReducer() = default;
 
     // Basic statistics for every plane of one stokes. `plane_callback` receives each plane as it is
     // finished; returning false from it cancels.
@@ -108,14 +113,14 @@ public:
     // cancels too. It is not the callback's job because the callback is only reached when a plane is
     // finished, and a plane of a large image is finished only after every read of its chunk layer:
     // a stop that waited for the callback waited seconds. Empty asks nothing.
-    virtual ZarrBatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
+    virtual BatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) = 0;
 
     // Bin counts for every plane of one stokes over a fixed range. `plane_callback` receives each
     // plane's bins as it is finished; returning false from it cancels, and so does a yes from
     // `cancellation_requested`, asked as PlaneStats asks it. An empty or inverted range is the
-    // caller's degenerate case and is not served.
-    virtual ZarrBatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
+    // caller's degenerate case and is declined.
+    virtual BatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) = 0;
 
@@ -123,17 +128,17 @@ public:
     // rather than two, at the cost of where the bin edges land. `spatial_sample` reads every nth
     // pixel along both spatial axes, one being every pixel. `progress` is told how far along the walk
     // is between reads; returning false from it cancels.
-    virtual ZarrBatchOutcome CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
+    virtual BatchOutcome CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
         std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) = 0;
 
     // Many regions reduced over the same channels, a run of channels at a time. A position-velocity
     // cut is one box per pixel along the line -- 5,792 of them across a 4096 pixel diagonal -- and they
     // overlap heavily, so asking for them one at a time reads the same chunks once per box. Returning
     // false from the sink cancels.
-    virtual ZarrBatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
+    virtual BatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) = 0;
 };
 
-}  // namespace carta
+} // namespace carta
 
-#endif  // CARTA_SRC_IMAGEDATA_ZARRBATCHEDREDUCER_H_
+#endif // CARTA_SRC_IMAGEDATA_BATCHEDREDUCER_H_

@@ -2179,7 +2179,7 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
 
     auto frame = _frames.at(file_id);
     // Asked before any mask is built: a loader with no batched walk declines here for nothing.
-    auto* zarr_batched = frame->ZarrBatched();
+    auto* zarr_batched = frame->Batched();
     if (!zarr_batched) {
         return false;
     }
@@ -2293,13 +2293,13 @@ bool RegionHandler::TryBatchedLineProfiles(int file_id, int region_id, RegionSta
             return true;
         });
 
-    if (outcome == ZarrBatchOutcome::cancelled) {
+    if (outcome == BatchOutcome::cancelled) {
         cancelled = true;
         profiles.resize();
         return true;
     }
-    if (outcome != ZarrBatchOutcome::finished || blocks == 0 || channels_done != num_channels) {
-        // Either the loader has no batched path, or it gave up partway. Both mean the caller should
+    if (outcome != BatchOutcome::finished || blocks == 0 || channels_done != num_channels) {
+        // Either the loader declined the boxes, or it gave up partway. Both mean the caller should
         // do the work the long way rather than publish half a profile.
         return false;
     }

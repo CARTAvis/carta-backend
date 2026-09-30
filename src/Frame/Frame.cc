@@ -1832,15 +1832,15 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
     return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
-ZarrBatchedReducer* Frame::ZarrBatched() {
-    return _loader->ZarrBatched();
+BatchedReducer* Frame::Batched() {
+    return _loader->Batched();
 }
 
-ZarrBatchOutcome Frame::GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
+BatchOutcome Frame::GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
     const std::function<bool(int, const BasicStats<float>&)>& plane_callback) {
-    auto* batched = ZarrBatched();
+    auto* batched = Batched();
     if (!batched) {
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
     // Each plane is cached on the way past, because the per-plane path this replaces cached it and
     // later per-plane requests still look there.

@@ -222,16 +222,16 @@ void ZarrLoader::ReleaseRegion(int region_id) {
     }
 }
 
-ZarrBatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
+BatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
     const std::function<bool(const RegionSpectralBlock&)>& sink) {
     auto image = ImageForStokes(stokes);
     if (!image || regions.empty() || !sink) {
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
 
     const auto depth = _image_shape(2);
     if (z_range.from < 0 || z_range.to < z_range.from || z_range.to >= depth) {
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
 
     // casacore stores a Bool as one byte and an LCRegionFixed's mask contiguously with x fastest,
@@ -283,22 +283,22 @@ ZarrBatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& re
             }
             return sink(forwarded);
         }, options);
-        return finished ? ZarrBatchOutcome::finished : ZarrBatchOutcome::cancelled;
+        return finished ? BatchOutcome::finished : BatchOutcome::cancelled;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not reduce regions over the spectrum of a Zarr dataset: {}", error.getMesg());
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::failed;
     }
 }
 
-ZarrBatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
+BatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
     const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
     auto image = ImageForStokes(stokes);
     if (!image || !plane_callback) {
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
     if (depth == 0) {
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
 
     // One region covering the plane, with no mask: the reduction's own six accumulators over the
@@ -334,24 +334,24 @@ ZarrBatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>&
             }
             return true;
         }, options);
-        return finished ? ZarrBatchOutcome::finished : ZarrBatchOutcome::cancelled;
+        return finished ? BatchOutcome::finished : BatchOutcome::cancelled;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not reduce the planes of a Zarr dataset: {}", error.getMesg());
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::failed;
     }
 }
 
-ZarrBatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
+BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
     const std::function<bool()>& cancellation_requested, const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) {
     auto image = ImageForStokes(stokes);
     if (!image || !plane_callback) {
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
     if (depth == 0 || num_bins <= 0 || !(bounds.min < bounds.max)) {
         // An empty or inverted range is the caller's degenerate case, which it answers with a single
         // bin over [0, 0]; that is not a shape this walk can produce, so it declines instead.
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
 
     carta::zarr::HistogramRequest request;
@@ -388,23 +388,22 @@ ZarrBatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const His
             spdlog::warn("A Zarr plane histogram has a bin past {} pixels; it is reported as that many",
                 std::numeric_limits<int>::max());
         }
-        return finished ? ZarrBatchOutcome::finished : ZarrBatchOutcome::cancelled;
+        return finished ? BatchOutcome::finished : BatchOutcome::cancelled;
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not bin the planes of a Zarr dataset: {}", error.getMesg());
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::failed;
     }
 }
 
-ZarrBatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample,
-    BasicStats<float>& stats, std::vector<int>& bins,
-    const std::function<bool(const CubeHistogramUpdate&)>& progress) {
+BatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
+    std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) {
     auto image = ImageForStokes(stokes);
     if (!image || num_bins <= 0 || spatial_sample == 0) {
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
     const auto depth = static_cast<std::uint64_t>(_image_shape(2));
     if (depth == 0) {
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::declined;
     }
 
     carta::zarr::CubeHistogramRequest request;
@@ -437,11 +436,11 @@ ZarrBatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64
     carta::zarr::CubeHistogramResult computed;
     try {
         if (!image->ComputeCubeHistogram(request, computed, options, zarr_progress)) {
-            return ZarrBatchOutcome::cancelled;
+            return BatchOutcome::cancelled;
         }
     } catch (const casacore::AipsError& error) {
         spdlog::warn("Could not compute a Zarr cube histogram in one pass: {}", error.getMesg());
-        return ZarrBatchOutcome::failed;
+        return BatchOutcome::failed;
     }
 
     stats = ToBasicStats(computed);
@@ -449,7 +448,7 @@ ZarrBatchOutcome ZarrLoader::CubeHistogram(int stokes, int num_bins, std::uint64
         spdlog::warn("A Zarr cube histogram has a bin past {} pixels; it is reported as that many",
             std::numeric_limits<int>::max());
     }
-    return ZarrBatchOutcome::finished;
+    return BatchOutcome::finished;
 }
 
 // Zarr has one copy of the pixels, so there is no second layout to choose between and no

@@ -328,8 +328,8 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataMatchesAPerRegionSum) {
 
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::size_t channels_seen = 0;
-        const bool reduced = loader->ZarrBatched()->RegionSpectra(
-            regions, AxisRange(0, kDepth - 1), stokes, [&](const RegionSpectralBlock& block) {
+        const bool reduced =
+            loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), stokes, [&](const RegionSpectralBlock& block) {
                 EXPECT_EQ(block.region_count, regions.size());
                 for (std::size_t r = 0; r < block.region_count; ++r) {
                     for (std::size_t c = 0; c < block.channel_count; ++c) {
@@ -344,7 +344,7 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataMatchesAPerRegionSum) {
                 }
                 channels_seen += block.channel_count;
                 return true;
-            }) == ZarrBatchOutcome::finished;
+            }) == BatchOutcome::finished;
         ASSERT_TRUE(reduced) << "the batched reduction failed at stokes=" << stokes;
         EXPECT_EQ(channels_seen, static_cast<std::size_t>(kDepth));
     }
@@ -366,19 +366,20 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataMarksPartialBlocks) {
     std::size_t partials = 0;
     std::size_t complete_channels = 0;
     std::size_t every_arrival = 0;
-    ASSERT_EQ(loader->ZarrBatched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
-        [&](const RegionSpectralBlock& block) {
-            every_arrival += block.channel_count;
-            if (block.complete) {
-                complete_channels += block.channel_count;
-                EXPECT_DOUBLE_EQ(block.completeness, 1.0);
-            } else {
-                ++partials;
-                EXPECT_GT(block.completeness, 0.0) << "a partial has read something";
-                EXPECT_LT(block.completeness, 1.0) << "and not everything";
-            }
-            return true;
-        }), ZarrBatchOutcome::finished);
+    ASSERT_EQ(loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
+                  [&](const RegionSpectralBlock& block) {
+                      every_arrival += block.channel_count;
+                      if (block.complete) {
+                          complete_channels += block.channel_count;
+                          EXPECT_DOUBLE_EQ(block.completeness, 1.0);
+                      } else {
+                          ++partials;
+                          EXPECT_GT(block.completeness, 0.0) << "a partial has read something";
+                          EXPECT_LT(block.completeness, 1.0) << "and not everything";
+                      }
+                      return true;
+                  }),
+        BatchOutcome::finished);
 
     EXPECT_GT(partials, 0u) << "a one-byte budget should have split the block across reads";
     EXPECT_GT(every_arrival, complete_channels) << "the partials are exactly what a counter must not count";
@@ -581,13 +582,14 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataReportsAnEmptyChannel) {
 
     const std::vector<RegionMaskSpec> regions{{2, 0, 2, kHeight, nullptr}};
     std::vector<double> counts(kDepth, -1.0);
-    ASSERT_EQ(loader->ZarrBatched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 2,
-        [&](const RegionSpectralBlock& block) {
-            for (std::size_t c = 0; c < block.channel_count; ++c) {
-                counts.at(block.first_channel + c) = block.NumPixels(0)[c];
-            }
-            return true;
-        }), ZarrBatchOutcome::finished);
+    ASSERT_EQ(loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 2,
+                  [&](const RegionSpectralBlock& block) {
+                      for (std::size_t c = 0; c < block.channel_count; ++c) {
+                          counts.at(block.first_channel + c) = block.NumPixels(0)[c];
+                      }
+                      return true;
+                  }),
+        BatchOutcome::finished);
     EXPECT_GT(counts.at(0), 0.0);
     EXPECT_DOUBLE_EQ(counts.at(1), 0.0);
 }
@@ -600,11 +602,12 @@ TEST_F(ZarrImageTest, MultiRegionSpectralDataStopsWhenTheSinkDoes) {
 
     const std::vector<RegionMaskSpec> regions{{0, 0, kWidth, kHeight, nullptr}};
     int blocks = 0;
-    EXPECT_EQ(loader->ZarrBatched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
-        [&](const RegionSpectralBlock&) {
-            ++blocks;
-            return false;
-        }), ZarrBatchOutcome::cancelled);
+    EXPECT_EQ(loader->Batched()->RegionSpectra(regions, AxisRange(0, kDepth - 1), 0,
+                  [&](const RegionSpectralBlock&) {
+                      ++blocks;
+                      return false;
+                  }),
+        BatchOutcome::cancelled);
     EXPECT_EQ(blocks, 1);
 }
 
@@ -714,13 +717,13 @@ TEST_F(ZarrImageTest, CubeBasicStatsAgreeWithThePerPlaneLoop) {
 
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::map<int, BasicStats<float>> from_loader;
-        ASSERT_EQ(loader->ZarrBatched()->PlaneStats(stokes, {},
+        ASSERT_EQ(loader->Batched()->PlaneStats(stokes, {},
                       [&](int z, const BasicStats<float>& stats) {
                           EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
                           from_loader[z] = stats;
                           return true;
                       }),
-            ZarrBatchOutcome::finished)
+            BatchOutcome::finished)
             << "the Zarr loader should serve cube statistics itself";
         ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
 
@@ -772,7 +775,7 @@ TEST_F(ZarrImageTest, CubeBasicStatsAgreeThroughAFrame) {
                       walked[z] = stats;
                       return true;
                   }),
-        ZarrBatchOutcome::finished);
+        BatchOutcome::finished);
     ASSERT_EQ(walked.size(), static_cast<std::size_t>(kDepth));
 
     for (int z = 0; z < kDepth; ++z) {
@@ -798,13 +801,13 @@ TEST_F(ZarrImageTest, CubeHistogramAgreesWithThePerPlaneLoop) {
     const HistogramBounds bounds(0.0, 4000.0);
     for (int stokes = 0; stokes < kStokes; ++stokes) {
         std::map<int, std::vector<int>> from_loader;
-        ASSERT_EQ(frame->ZarrBatched()->PlaneHistograms(stokes, num_bins, bounds, {},
+        ASSERT_EQ(frame->Batched()->PlaneHistograms(stokes, num_bins, bounds, {},
                       [&](int z, const std::vector<int>& bins) {
                           EXPECT_EQ(from_loader.count(z), 0u) << "plane " << z << " was reported twice";
                           from_loader[z] = bins;
                           return true;
                       }),
-            ZarrBatchOutcome::finished)
+            BatchOutcome::finished)
             << "the Zarr loader should bin the cube itself";
         ASSERT_EQ(from_loader.size(), static_cast<std::size_t>(kDepth));
 
@@ -834,10 +837,10 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassAgreesWithTwo) {
     const int stokes = 1;
     BasicStats<float> stats;
     std::vector<int> bins;
-    EXPECT_EQ(loader->ZarrBatched()->CubeHistogram(stokes, num_bins, 0, stats, bins, {}), ZarrBatchOutcome::failed)
+    EXPECT_EQ(loader->Batched()->CubeHistogram(stokes, num_bins, 0, stats, bins, {}), BatchOutcome::declined)
         << "a stride of zero reads no pixel, and it no longer means 'whatever the settings say'";
 
-    ASSERT_EQ(loader->ZarrBatched()->CubeHistogram(stokes, num_bins, 1, stats, bins, {}), ZarrBatchOutcome::finished);
+    ASSERT_EQ(loader->Batched()->CubeHistogram(stokes, num_bins, 1, stats, bins, {}), BatchOutcome::finished);
     ASSERT_EQ(bins.size(), static_cast<std::size_t>(num_bins));
 
     // The two-pass answer over the range the one pass found.
@@ -900,29 +903,30 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     int updates = 0;
     double last_progress = -1.0;
     std::size_t last_pixels = 0;
-    ASSERT_EQ(loader->ZarrBatched()->CubeHistogram(
-        stokes, num_bins, 1, stats, bins, [&](const CubeHistogramUpdate& update) {
-            ++updates;
-            EXPECT_GT(update.progress, last_progress) << "progress should not go backwards";
-            last_progress = update.progress;
+    ASSERT_EQ(loader->Batched()->CubeHistogram(stokes, num_bins, 1, stats, bins,
+                  [&](const CubeHistogramUpdate& update) {
+                      ++updates;
+                      EXPECT_GT(update.progress, last_progress) << "progress should not go backwards";
+                      last_progress = update.progress;
 
-            BasicStats<float> partial_stats;
-            std::vector<int> partial_bins;
-            update.snapshot(partial_stats, partial_bins);
-            EXPECT_EQ(partial_bins.size(), static_cast<std::size_t>(num_bins));
-            std::int64_t total = 0;
-            for (const auto count : partial_bins) {
-                total += count;
-            }
-            EXPECT_EQ(total, static_cast<std::int64_t>(partial_stats.num_pixels))
-                << "a partial histogram should hold every pixel it has counted";
-            EXPECT_GE(partial_stats.num_pixels, last_pixels) << "a partial cannot un-read a pixel";
-            last_pixels = partial_stats.num_pixels;
-            if (partial_stats.num_pixels > 0) {
-                EXPECT_LE(partial_stats.min_val, partial_stats.max_val);
-            }
-            return true;
-        }), ZarrBatchOutcome::finished);
+                      BasicStats<float> partial_stats;
+                      std::vector<int> partial_bins;
+                      update.snapshot(partial_stats, partial_bins);
+                      EXPECT_EQ(partial_bins.size(), static_cast<std::size_t>(num_bins));
+                      std::int64_t total = 0;
+                      for (const auto count : partial_bins) {
+                          total += count;
+                      }
+                      EXPECT_EQ(total, static_cast<std::int64_t>(partial_stats.num_pixels))
+                          << "a partial histogram should hold every pixel it has counted";
+                      EXPECT_GE(partial_stats.num_pixels, last_pixels) << "a partial cannot un-read a pixel";
+                      last_pixels = partial_stats.num_pixels;
+                      if (partial_stats.num_pixels > 0) {
+                          EXPECT_LE(partial_stats.min_val, partial_stats.max_val);
+                      }
+                      return true;
+                  }),
+        BatchOutcome::finished);
 
     EXPECT_GT(updates, 0) << "a one-byte budget should have taken several reads and reported on each";
     EXPECT_GE(stats.num_pixels, last_pixels) << "the answer should hold at least what the last partial did";
@@ -930,8 +934,9 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     // And saying stop ends the walk, which the loader reports as having no answer.
     BasicStats<float> ignored_stats;
     std::vector<int> ignored_bins;
-    EXPECT_EQ(loader->ZarrBatched()->CubeHistogram(
-        stokes, num_bins, 1, ignored_stats, ignored_bins, [](const CubeHistogramUpdate&) { return false; }), ZarrBatchOutcome::cancelled);
+    EXPECT_EQ(loader->Batched()->CubeHistogram(
+                  stokes, num_bins, 1, ignored_stats, ignored_bins, [](const CubeHistogramUpdate&) { return false; }),
+        BatchOutcome::cancelled);
 }
 
 // The setting a session reads to decide how a cube histogram is made. A typo is two passes rather
@@ -965,8 +970,8 @@ TEST_F(ZarrImageTest, CubeHistogramDeclinesAnEmptyRange) {
         ++calls;
         return true;
     };
-    EXPECT_EQ(loader->ZarrBatched()->PlaneHistograms(0, 8, HistogramBounds(5.0, 5.0), {}, count), ZarrBatchOutcome::failed);
-    EXPECT_EQ(loader->ZarrBatched()->PlaneHistograms(0, 0, HistogramBounds(0.0, 10.0), {}, count), ZarrBatchOutcome::failed);
+    EXPECT_EQ(loader->Batched()->PlaneHistograms(0, 8, HistogramBounds(5.0, 5.0), {}, count), BatchOutcome::declined);
+    EXPECT_EQ(loader->Batched()->PlaneHistograms(0, 0, HistogramBounds(0.0, 10.0), {}, count), BatchOutcome::declined);
     EXPECT_EQ(calls, 0) << "a declined request should not have reported a plane";
 }
 
@@ -976,12 +981,12 @@ TEST_F(ZarrImageTest, CubeBasicStatsStopWhenTheCallbackDoes) {
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
     int calls = 0;
-    EXPECT_EQ(loader->ZarrBatched()->PlaneStats(0, {},
+    EXPECT_EQ(loader->Batched()->PlaneStats(0, {},
                   [&](int, const BasicStats<float>&) {
                       ++calls;
                       return false;
                   }),
-        ZarrBatchOutcome::cancelled);
+        BatchOutcome::cancelled);
     EXPECT_EQ(calls, 1) << "a callback that says stop should not be asked again";
 }
 
@@ -1001,13 +1006,13 @@ TEST_F(ZarrImageTest, CubeBasicStatsStopBetweenReadsWhenCancelled) {
 
     int asked = 0;
     int planes = 0;
-    EXPECT_EQ(loader->ZarrBatched()->PlaneStats(
+    EXPECT_EQ(loader->Batched()->PlaneStats(
                   0, [&]() { return ++asked > 1; },
                   [&](int, const BasicStats<float>&) {
                       ++planes;
                       return true;
                   }),
-        ZarrBatchOutcome::cancelled);
+        BatchOutcome::cancelled);
     EXPECT_GT(asked, 1) << "the walk should have asked again after its first read";
     EXPECT_EQ(planes, 0) << "the stop should have ended the walk before any plane was finished";
 }
@@ -1023,13 +1028,13 @@ TEST_F(ZarrImageTest, CubeHistogramStopsBetweenReadsWhenCancelled) {
 
     int asked = 0;
     int planes = 0;
-    EXPECT_EQ(loader->ZarrBatched()->PlaneHistograms(
+    EXPECT_EQ(loader->Batched()->PlaneHistograms(
                   0, 9, HistogramBounds(0.0, 4000.0), [&]() { return ++asked > 1; },
                   [&](int, const std::vector<int>&) {
                       ++planes;
                       return true;
                   }),
-        ZarrBatchOutcome::cancelled);
+        BatchOutcome::cancelled);
     EXPECT_GT(asked, 1) << "the walk should have asked again after its first read";
     EXPECT_EQ(planes, 0) << "the stop should have ended the walk before any plane was finished";
 }

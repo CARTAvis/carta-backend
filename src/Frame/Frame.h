@@ -22,8 +22,8 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
+#include "ImageData/BatchedReducer.h"
 #include "ImageData/FileLoader.h"
-#include "ImageData/ZarrBatchedReducer.h"
 #include "ImageFitting/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
@@ -185,14 +185,14 @@ public:
     // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
-    // The loader's batched walks, or null when it has none; see ZarrBatchedReducer. No image mutex
+    // The loader's batched walks, or null when it has none; see BatchedReducer. No image mutex
     // is taken for them: the only loader with any reads through immutable carta-zarr handles, which
     // are safe to call concurrently.
-    ZarrBatchedReducer* ZarrBatched();
+    BatchedReducer* Batched();
     // Every plane's basic statistics from the loader's batched walk, cached on the way past as the
-    // per-plane path caches them. Failed, without calling the callback, when there is no such walk.
-    // `cancellation_requested` is asked between the walk's reads; see ZarrBatchedReducer::PlaneStats.
-    ZarrBatchOutcome GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
+    // per-plane path caches them. Declined, without calling the callback, when there is no such walk.
+    // `cancellation_requested` is asked between the walk's reads; see BatchedReducer::PlaneStats.
+    BatchOutcome GetCubeBasicStats(int stokes, const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const BasicStats<float>&)>& plane_callback);
     // The bin count a request for AUTO_BIN_SIZE means. Public because the batched paths are handed
     // a resolved count and would decline a request for -1 bins.

@@ -6,8 +6,8 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARRLOADER_H_
 #define CARTA_SRC_IMAGEDATA_ZARRLOADER_H_
 
+#include "BatchedReducer.h"
 #include "FileLoader.h"
-#include "ZarrBatchedReducer.h"
 
 #include <chrono>
 #include <cstdint>
@@ -26,7 +26,7 @@ class CartaZarrImage;
 // would inherit. Returns whether any count was held.
 bool AssignBinCounts(const std::uint64_t* counts, std::size_t size, std::vector<int>& bins);
 
-class ZarrLoader : public FileLoader, public ZarrBatchedReducer {
+class ZarrLoader : public FileLoader, public BatchedReducer {
 public:
     explicit ZarrLoader(const std::string& filename);
 
@@ -35,17 +35,17 @@ public:
         const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {}) override;
 
-    ZarrBatchedReducer* ZarrBatched() override {
+    BatchedReducer* Batched() override {
         return this;
     }
-    ZarrBatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
+    BatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) override;
-    ZarrBatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
+    BatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const std::vector<int>& bins)>& plane_callback) override;
-    ZarrBatchOutcome CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
-        std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override;
-    ZarrBatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
+    BatchOutcome CubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats, std::vector<int>& bins,
+        const std::function<bool(const CubeHistogramUpdate&)>& progress) override;
+    BatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override;
 
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
@@ -89,7 +89,7 @@ protected:
     void AllocateImage(const std::string& hdu) override;
 
     // The image this loader reads, when it can serve a request for `stokes` at all. Null means it
-    // cannot, which every entry point here reports as false or as ZarrBatchOutcome::failed.
+    // cannot, which every entry point here reports as false or as BatchOutcome::declined.
     std::shared_ptr<CartaZarrImage> ImageForStokes(int stokes) const;
 
     std::size_t _read_budget_bytes = 0;
