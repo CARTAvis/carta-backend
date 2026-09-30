@@ -49,6 +49,7 @@ set(TEST_SOURCES
         TestBlockSmooth.cc
         TestContour.cc
         TestCartaZarrAxes.cc
+        TestCubeHistogramCalculator.cc
         TestCursorSpatialProfiles.cc
         TestExprImage.cc
         TestFileInfo.cc
