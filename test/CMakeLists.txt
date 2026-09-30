@@ -62,6 +62,7 @@ set(TEST_SOURCES
         TestZarrImage.cc
         TestZarrCasacore.cc
         TestZarrNotes.cc
+        TestZarrStores.cc
         TestHistogram.cc
         TestLineProfileCalculator.cc
         TestImageFitting.cc
