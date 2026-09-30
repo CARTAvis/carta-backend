@@ -32,9 +32,8 @@ class ZarrLoader : public FileLoader, public RegionReducer, public CubeReducer, 
 public:
     explicit ZarrLoader(const std::string& filename);
 
-    bool GetCursorSpectralData(
-        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
-        const std::function<bool()>& cancellation_requested = {},
+    BatchOutcome GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+        std::mutex& image_mutex, const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {}) override;
 
     CubeReducer* CubeWalk() override {

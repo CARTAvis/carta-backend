@@ -8,9 +8,9 @@
 
 namespace carta {
 
-// How a walk ended.
+// How a loader's own read ended: a walk, a region profile read on, or a cursor's spectrum.
 //
-// `declined` is the walk refusing the request before it began -- one it does not serve, such as an
+// `declined` is the loader refusing the request before it began -- one it does not serve, such as an
 // empty range or a stokes it cannot read -- so no callback has been called and nothing the caller
 // holds has been touched. It is always answered before the loader asks anything of the pixels, which
 // is what makes it safe to take another route after it. `failed` is the pixels having been asked and

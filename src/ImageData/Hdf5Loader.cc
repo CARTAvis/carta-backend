@@ -216,36 +216,36 @@ std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsData(FileInfo::Data ds)
     }
 }
 
-bool Hdf5Loader::GetCursorSpectralData(
-    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
-    const std::function<bool()>& /*cancellation_requested*/,
+BatchOutcome Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+    std::mutex& image_mutex, const std::function<bool()>& /*cancellation_requested*/,
     const std::function<bool(float progress)>& /*partial_callback*/) {
     // The swizzled dataset hands over a whole spectrum in one operation, so there is no partial
     // answer to report and partial_callback is not called.
-    bool data_ok(false);
     std::unique_lock<std::mutex> ulock(image_mutex);
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
     ulock.unlock();
-    if (has_swizzled) {
-        casacore::Slicer slicer;
-        if (_num_dims == 4) {
-            slicer = casacore::Slicer(
-                casacore::IPosition(4, 0, cursor_y, cursor_x, stokes), casacore::IPosition(4, _dims.depth, count_y, count_x, 1));
-        } else if (_num_dims == 3) {
-            slicer = casacore::Slicer(casacore::IPosition(3, 0, cursor_y, cursor_x), casacore::IPosition(3, _dims.depth, count_y, count_x));
-        }
-
-        data.resize(_dims.depth * count_y * count_x);
-        casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
-        std::lock_guard<std::mutex> lguard(image_mutex);
-        try {
-            LoadSwizzledData()->doGetSlice(tmp, slicer);
-            data_ok = true;
-        } catch (casacore::AipsError& err) {
-            spdlog::warn("Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: {}", err.getMesg());
-        }
+    if (!has_swizzled) {
+        return BatchOutcome::declined;
     }
-    return data_ok;
+
+    casacore::Slicer slicer;
+    if (_num_dims == 4) {
+        slicer = casacore::Slicer(
+            casacore::IPosition(4, 0, cursor_y, cursor_x, stokes), casacore::IPosition(4, _dims.depth, count_y, count_x, 1));
+    } else if (_num_dims == 3) {
+        slicer = casacore::Slicer(casacore::IPosition(3, 0, cursor_y, cursor_x), casacore::IPosition(3, _dims.depth, count_y, count_x));
+    }
+
+    data.resize(_dims.depth * count_y * count_x);
+    casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
+    std::lock_guard<std::mutex> lguard(image_mutex);
+    try {
+        LoadSwizzledData()->doGetSlice(tmp, slicer);
+    } catch (casacore::AipsError& err) {
+        spdlog::warn("Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: {}", err.getMesg());
+        return BatchOutcome::failed;
+    }
+    return BatchOutcome::finished;
 }
 
 bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
@@ -302,7 +302,7 @@ BatchOutcome Hdf5Loader::ReadOn(const RegionProfileRequest& request, std::mutex&
     std::vector<float> slice_data;
     do {
         const auto x = static_cast<int>(progress.done);
-        if (!GetCursorSpectralData(slice_data, request.stokes, x + x_min, 1, y_min, height, image_mutex)) {
+        if (GetCursorSpectralData(slice_data, request.stokes, x + x_min, 1, y_min, height, image_mutex) != BatchOutcome::finished) {
             return BatchOutcome::failed;
         }
         for (int y = 0; y < height; ++y) {

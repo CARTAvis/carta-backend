@@ -1615,16 +1615,26 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 }
                 return true;
             };
-            if (!Stokes::IsComputed(stokes) &&
-                _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
-                    (start_cursor.y + 0.5), xy_count, _image_mutex, profile_cancelled, publish_partial)) {
+            // A computed stokes is no loader's to read: it is made from the others, below.
+            const BatchOutcome read = Stokes::IsComputed(stokes)
+                                          ? BatchOutcome::declined
+                                          : _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
+                                                (start_cursor.y + 0.5), xy_count, _image_mutex, profile_cancelled, publish_partial);
+            if (read != BatchOutcome::declined) {
                 // The read may have published partial profiles, but the final one still has to pass
-                // the same state check as the incremental fallback before it goes out.
+                // the same state check as the incremental read below before it goes out -- and a read
+                // that was stopped was stopped by one of these.
                 if (!(_cursor == start_cursor) || !IsConnected()) {
                     return false;
                 }
                 if (!HasSpectralConfig(config)) {
                     break;
+                }
+                if (read != BatchOutcome::finished) {
+                    // Failed, which the loader has logged -- or stopped by a cursor that has since come
+                    // back, whose own request is on its way. Neither is read again below: a failure
+                    // would be met again, since that reads the same pixels through the same library.
+                    return false;
                 }
                 // Send final profile message with loader data
                 auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
@@ -1632,14 +1642,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                 cb(profile_message);
             } else {
-                // A cancelled direct read is reported as unavailable by the loader. Do not turn
-                // that cancellation into a second I/O attempt through the incremental fallback.
-                if (!(_cursor == start_cursor) || !IsConnected()) {
-                    return false;
-                }
-                if (!HasSpectralConfig(config)) {
-                    break;
-                }
                 // Send image slices
                 // Set up slicer
                 int x_index, y_index;
@@ -1941,7 +1943,7 @@ bool Frame::UseLoaderSpectralData(const casacore::IPosition& region_shape) {
 }
 
 bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point) {
-    return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
+    return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex) == BatchOutcome::finished;
 }
 
 BatchOutcome Frame::RegionSpectra(const std::function<bool(std::vector<RegionMaskSpec>& regions)>& describe_regions,

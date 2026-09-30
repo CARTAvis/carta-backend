@@ -111,19 +111,19 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
     _data_type = image->InternalDataType();
 }
 
-bool ZarrLoader::GetCursorSpectralData(
-    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& /*image_mutex*/,
-    const std::function<bool()>& cancellation_requested, const std::function<bool(float progress)>& partial_callback) {
+BatchOutcome ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+    std::mutex& /*image_mutex*/, const std::function<bool()>& cancellation_requested,
+    const std::function<bool(float progress)>& partial_callback) {
     auto image = ImageForStokes(stokes);
     if (!image || count_x <= 0 || count_y <= 0 || cursor_x < 0 || cursor_y < 0) {
-        return false;
+        return BatchOutcome::declined;
     }
 
     const auto width = _image_shape(0);
     const auto height = _image_shape(1);
     const auto depth = _image_shape(2);
     if (cursor_x > width || cursor_y > height || count_x > width - cursor_x || count_y > height - cursor_y) {
-        return false;
+        return BatchOutcome::declined;
     }
 
     const casacore::IPosition start(4, cursor_x, cursor_y, 0, stokes);
@@ -149,14 +149,13 @@ bool ZarrLoader::GetCursorSpectralData(
 
     // carta-zarr Image handles are immutable and safe for concurrent reads. The backend mutex is
     // intentionally not held across this I/O operation.
-    if (Outcome(image->Read(destination, section, options, progress), "read the cursor spectrum") ==
-        BatchOutcome::finished) {
-        return true;
+    const auto read = Outcome(image->Read(destination, section, options, progress), "read the cursor spectrum");
+    if (read != BatchOutcome::finished) {
+        // Stopped by the cursor moving on, or failed: either way what is in the buffer is a prefix
+        // nobody wants now.
+        data.clear();
     }
-    // Stopped by the cursor moving on, or failed: either way what is in the buffer is a prefix
-    // nobody wants now.
-    data.clear();
-    return false;
+    return read;
 }
 
 // The batched path exists for the position-velocity generator, which asks for one small box per

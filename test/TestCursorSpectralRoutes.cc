@@ -6,11 +6,14 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <vector>
 
 #include "Frame/Frame.h"
 #include "ImageData/ZarrLoader.h"
+
+#include "CommonTestUtilities.h"
 
 using namespace carta;
 
@@ -26,7 +29,7 @@ public:
 
     ScriptedCursorLoader(const std::string& filename, Script script) : ZarrLoader(filename), _script(script) {}
 
-    bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+    BatchOutcome GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
         std::mutex& image_mutex, const std::function<bool()>& cancellation_requested,
         const std::function<bool(float progress)>& partial_callback) override {
         ++cursor_reads;
@@ -35,17 +38,15 @@ public:
                 return ZarrLoader::GetCursorSpectralData(
                     data, stokes, cursor_x, count_x, cursor_y, count_y, image_mutex, cancellation_requested, partial_callback);
             case Script::decline:
-                return false;
+                return BatchOutcome::declined;
             case Script::fail:
-                data.clear();
-                return false;
+                return BatchOutcome::failed;
             case Script::cursor_moves:
                 frame->SetCursor(0, 0);
                 EXPECT_TRUE(cancellation_requested());
-                data.clear();
-                return false;
+                return BatchOutcome::cancelled;
         }
-        return false;
+        return BatchOutcome::failed;
     }
 
     int cursor_reads = 0;
@@ -126,9 +127,94 @@ TEST_F(CursorSpectralRoutesTest, AReadTheCursorLeftIsNotReadAgain) {
     EXPECT_TRUE(profile.messages.empty());
 }
 
-// Today a failed read is read again by the frame, through the same library.
-TEST_F(CursorSpectralRoutesTest, AFailedReadIsReadAgainByTheFrame) {
+// A failed read is not read again: the frame would read the same pixels through the same library,
+// and meet the same failure.
+TEST_F(CursorSpectralRoutesTest, AFailedReadIsNotReadAgain) {
     const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::fail);
+    EXPECT_FALSE(profile.filled);
+    EXPECT_TRUE(profile.messages.empty());
+    EXPECT_EQ(profile.cursor_reads, 1);
+}
+
+// How each loader's own cursor read ends.
+
+TEST_F(CursorSpectralRoutesTest, AZarrReadDeclinesWhatItCannotRead) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    std::mutex image_mutex;
+    std::vector<float> data;
+    EXPECT_EQ(loader->GetCursorSpectralData(data, 0, 2, 1, 2, 1, image_mutex), BatchOutcome::finished);
+    EXPECT_EQ(data, kSpectrum);
+    EXPECT_EQ(loader->GetCursorSpectralData(data, 7, 2, 1, 2, 1, image_mutex), BatchOutcome::declined) << "no such stokes";
+    EXPECT_EQ(loader->GetCursorSpectralData(data, 0, 4, 1, 2, 1, image_mutex), BatchOutcome::declined) << "past the edge";
+}
+
+// A chunk that will not decode is the store failing, and what was read of the spectrum is not kept.
+TEST_F(CursorSpectralRoutesTest, AZarrReadOfABrokenChunkFails) {
+    const auto store = std::filesystem::temp_directory_path() / ("carta_cursor_routes_" + std::to_string(::getpid()));
+    std::filesystem::remove_all(store);
+    std::filesystem::copy(kZarrFixture, store, std::filesystem::copy_options::recursive);
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(store / "SKY" / "c")) {
+        if (entry.is_regular_file()) {
+            std::ofstream(entry.path(), std::ios::binary | std::ios::trunc) << "x";
+        }
+    }
+
+    auto loader = FileLoader::GetLoader(store.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    std::mutex image_mutex;
+    std::vector<float> data;
+    EXPECT_EQ(loader->GetCursorSpectralData(data, 0, 2, 1, 2, 1, image_mutex), BatchOutcome::failed);
+    EXPECT_TRUE(data.empty());
+
+    loader.reset();
+    std::error_code error;
+    std::filesystem::remove_all(store, error);
+}
+
+// An HDF5 file reads a spectrum itself only from its swizzled copy, and one without leaves it to the
+// frame.
+TEST_F(CursorSpectralRoutesTest, AnHdf5ReadIsOnlyOfItsSwizzledCopy) {
+    std::mutex image_mutex;
+    std::vector<float> data;
+
+    auto swizzled = FileLoader::GetLoader(Hdf5Images() / "10x10x10.hdf5");
+    ASSERT_NE(swizzled, nullptr);
+    // The frame is what tells the loader its axes.
+    Frame swizzled_frame(0, swizzled, "0");
+    EXPECT_EQ(swizzled->GetCursorSpectralData(data, 0, 2, 1, 3, 1, image_mutex), BatchOutcome::finished);
+    EXPECT_EQ(data.size(), 10u);
+    // Past the edge is the pixels having been asked, and the answer not arriving.
+    EXPECT_EQ(swizzled->GetCursorSpectralData(data, 0, 20, 1, 3, 1, image_mutex), BatchOutcome::failed);
+
+    auto plain = FileLoader::GetLoader(Hdf5Images() / "10x10x1x10.hdf5");
+    ASSERT_NE(plain, nullptr);
+    Frame plain_frame(0, plain, "0");
+    EXPECT_EQ(plain->GetCursorSpectralData(data, 0, 2, 1, 3, 1, image_mutex), BatchOutcome::declined);
+}
+
+// An image with no loader of its own to read spectra -- FITS here -- has every cursor profile read by
+// the frame.
+TEST_F(CursorSpectralRoutesTest, AnImageWithNoReaderOfItsOwnIsReadByTheFrame) {
+    const auto path = FitsImages() / "10x10x10.fits";
+    std::shared_ptr<FileLoader> loader(FileLoader::GetLoader(path.string()));
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("0");
+    Frame frame(0, loader, "0");
+    frame.SetCursor(2, 3);
+
+    CARTA::SetSpectralRequirements_SpectralConfig config;
+    config.set_coordinate("z");
+    config.add_stats_types(CARTA::StatsType::Sum);
+    ASSERT_TRUE(frame.SetSpectralRequirements(CURSOR_REGION_ID, {config}));
+
+    CursorProfile profile;
+    profile.filled =
+        frame.FillSpectralProfileData([&](CARTA::SpectralProfileData data) { profile.messages.push_back(data); }, CURSOR_REGION_ID, false);
     EXPECT_TRUE(profile.filled);
-    EXPECT_EQ(FinalValues(profile), kSpectrum);
+
+    FitsDataReader reader(path.string());
+    EXPECT_EQ(FinalValues(profile), reader.ReadRegion({2, 3, 0}, {3, 4, 10}));
 }

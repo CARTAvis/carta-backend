@@ -938,7 +938,7 @@ TEST_F(ZarrImageTest, CursorSpectralDataReportsItsProgress) {
     std::mutex image_mutex;
     std::vector<float> profile;
     std::vector<float> reported;
-    ASSERT_TRUE(loader->GetCursorSpectralData(profile, stokes, x, 1, y, 1, image_mutex, {},
+    const auto read = loader->GetCursorSpectralData(profile, stokes, x, 1, y, 1, image_mutex, {},
         [&](float progress) {
             EXPECT_GT(progress, 0.0f);
             EXPECT_LE(progress, 1.0f);
@@ -954,7 +954,8 @@ TEST_F(ZarrImageTest, CursorSpectralDataReportsItsProgress) {
                 }
             }
             return true;
-        }));
+        });
+    ASSERT_EQ(read, BatchOutcome::finished);
     ASSERT_EQ(profile.size(), static_cast<std::size_t>(kDepth));
     ASSERT_FALSE(reported.empty());
     EXPECT_FLOAT_EQ(reported.back(), 1.0f) << "the last report should cover the whole profile";
@@ -970,11 +971,12 @@ TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenTheCallbackDoes) {
     std::mutex image_mutex;
     std::vector<float> profile;
     int calls = 0;
-    EXPECT_FALSE(loader->GetCursorSpectralData(profile, 0, 1, 1, 1, 1, image_mutex, {},
+    const auto read = loader->GetCursorSpectralData(profile, 0, 1, 1, 1, 1, image_mutex, {},
         [&](float) {
             ++calls;
             return false;
-        }));
+        });
+    EXPECT_EQ(read, BatchOutcome::cancelled);
     EXPECT_EQ(calls, 1);
 }
 

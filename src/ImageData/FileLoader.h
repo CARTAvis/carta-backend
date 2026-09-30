@@ -22,6 +22,7 @@
 
 #include "ImageData/FileInfo.h"
 #include "ImageStats/BasicStatsCalculator.h"
+#include "ImageStats/BatchOutcome.h"
 #include "ImageStats/Histogram.h"
 #include "Util/Casacore.h"
 #include "Util/Stokes.h"
@@ -112,11 +113,14 @@ public:
     //
     // `partial_callback`, when given, is called as the profile fills, with the fraction of it that
     // is final: the leading portion of `data` up to that fraction is already correct and can be
-    // forwarded. Returning false from it cancels the read. A loader that reads the whole profile in
-    // one operation ignores it, which is honest -- it has no partial answer to offer.
-    virtual bool GetCursorSpectralData(
-        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
-        const std::function<bool()>& cancellation_requested = {},
+    // forwarded. Returning false from it cancels the read, as does `cancellation_requested`. A loader
+    // that reads the whole profile in one operation ignores it, which is honest -- it has no partial
+    // answer to offer.
+    //
+    // `declined` is a loader with no way of its own to read this spectrum, which leaves it to the
+    // caller; the default declines everything. `data` is the spectrum only when `finished`.
+    virtual BatchOutcome GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+        std::mutex& image_mutex, const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {});
     // Whether this loader reads the spectra of a region of this shape itself, rather than leaving them
     // to casacore: a point's through GetCursorSpectralData, and any other region's through its

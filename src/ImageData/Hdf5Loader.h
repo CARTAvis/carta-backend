@@ -28,9 +28,8 @@ public:
 
     bool HasData(FileInfo::Data ds) const override;
 
-    bool GetCursorSpectralData(
-        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex,
-        const std::function<bool()>& cancellation_requested = {},
+    BatchOutcome GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+        std::mutex& image_mutex, const std::function<bool()>& cancellation_requested = {},
         const std::function<bool(float progress)>& partial_callback = {}) override;
 
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
