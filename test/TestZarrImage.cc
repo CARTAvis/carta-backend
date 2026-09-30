@@ -137,6 +137,7 @@ class PeekableRegionHandler : public carta::RegionHandler {
 public:
     using carta::RegionHandler::_frames;
     using carta::RegionHandler::_line_profile_progress_interval;
+    using carta::RegionHandler::_region_profiles;
     using carta::RegionHandler::GetLineProfiles;
 };
 
@@ -737,7 +738,7 @@ TEST_F(ZarrImageTest, ARectanglesSpectralProfileIsReadByTheLoader) {
         std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
         ASSERT_TRUE(frame->IsValid());
 
-        carta::RegionHandler handler;
+        PeekableRegionHandler handler;
         const int file_id = 0;
         int region_id = -1;
         std::vector<CARTA::Point> control_points{Message::Point(1.5, 2.0), Message::Point(3.0, 4.0)};
@@ -751,7 +752,7 @@ TEST_F(ZarrImageTest, ARectanglesSpectralProfileIsReadByTheLoader) {
         CARTA::SpectralProfileData profile;
         ASSERT_TRUE(handler.FillSpectralProfileData([&](CARTA::SpectralProfileData data) { profile = data; }, region_id, file_id, false));
 
-        EXPECT_EQ(loader->RegionStateCount(), 1u) << "rotation " << rotation << ": the profile should have been the loader's walk";
+        EXPECT_EQ(handler._region_profiles.Size(), 1u) << "rotation " << rotation << ": the profile should have been the loader's reading";
         EXPECT_FLOAT_EQ(profile.progress(), 1.0f);
         ASSERT_EQ(profile.profiles_size(), 1);
     }

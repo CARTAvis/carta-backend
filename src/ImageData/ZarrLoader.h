@@ -8,6 +8,7 @@
 
 #include "FileLoader.h"
 #include "ImageStats/CubeReducer.h"
+#include "ImageStats/RegionProfileReader.h"
 #include "ImageStats/RegionReducer.h"
 
 #include <chrono>
@@ -27,7 +28,7 @@ class CartaZarrImage;
 // would inherit. Returns whether any count was held.
 bool AssignBinCounts(const std::uint64_t* counts, std::size_t size, std::vector<int>& bins);
 
-class ZarrLoader : public FileLoader, public RegionReducer, public CubeReducer {
+class ZarrLoader : public FileLoader, public RegionReducer, public CubeReducer, public RegionProfileReader {
 public:
     explicit ZarrLoader(const std::string& filename);
 
@@ -51,6 +52,13 @@ public:
         std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override;
     BatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override;
+
+    RegionProfileReader* ProfileReader() override {
+        return this;
+    }
+    BatchOutcome ReadOn(const RegionProfileRequest& request, std::mutex& image_mutex, RegionProfileProgress& progress,
+        std::chrono::steady_clock::time_point deadline, const std::function<bool(double fraction)>& report) override;
+    double BeamArea() override;
 
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
     bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,

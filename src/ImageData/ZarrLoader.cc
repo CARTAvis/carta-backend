@@ -575,4 +575,99 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     return true;
 }
 
+// A region's profile a run of whole channels at a time, finished in order: a channel reported
+// complete is final, and those after it are unread until their turn. A run spanning more than one read
+// is handed over as it fills, so the profile has something to show within one chunk layer of a large
+// image, which is tens of seconds.
+//
+// The hint for how often the library hands over a run is left at zero on purpose: it then hands one
+// over once per read budget, which is as often as it can without making the reads smaller, and that is
+// what gives the deadline somewhere to fall.
+BatchOutcome ZarrLoader::ReadOn(const RegionProfileRequest& request, std::mutex& /*image_mutex*/, RegionProfileProgress& progress,
+    std::chrono::steady_clock::time_point deadline, const std::function<bool(double fraction)>& report) {
+    auto image = ImageForStokes(request.stokes);
+    if (!image || !request.mask || request.origin.size() < 2) {
+        return BatchOutcome::declined;
+    }
+    const auto& mask = *request.mask;
+    const auto mask_shape = mask.shape();
+    // Any region of a four-axis image, whatever its shape: see UseRegionSpectralData.
+    if (_num_dims != 4 || mask_shape.size() != 2 || !mask.asArray().contiguousStorage()) {
+        return BatchOutcome::declined;
+    }
+    const int depth = _image_shape(2);
+    const auto& range = request.channels;
+    const auto channels = static_cast<std::size_t>(range.to - range.from + 1);
+    if (range.from < 0 || range.to < range.from || range.to >= depth || progress.channels.size() != channels) {
+        return BatchOutcome::declined;
+    }
+    if (progress.total == 0) {
+        progress.total = channels;
+    }
+    if (progress.Complete()) {
+        return BatchOutcome::finished;
+    }
+
+    static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to borrow a mask");
+    carta::zarr::RegionMask region{static_cast<std::uint64_t>(request.origin(0)), static_cast<std::uint64_t>(request.origin(1)),
+        static_cast<std::uint64_t>(mask_shape(0)), static_cast<std::uint64_t>(mask_shape(1)),
+        {reinterpret_cast<const std::uint8_t*>(mask.asArray().data()), static_cast<std::size_t>(mask.asArray().nelements())}};
+
+    const auto first = static_cast<std::size_t>(progress.done);
+    carta::zarr::SpectralReduceRequest reduce;
+    reduce.planes.spectral = {static_cast<std::uint64_t>(range.from) + first, static_cast<std::uint64_t>(channels - first), 1};
+    reduce.planes.polarization = static_cast<std::uint64_t>(request.stokes);
+    reduce.regions = {&region, 1};
+    reduce.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::nan_count | carta::zarr::Statistic::sum |
+                        carta::zarr::Statistic::sum_sq | carta::zarr::Statistic::min | carta::zarr::Statistic::max;
+
+    bool paused = false;
+    carta::zarr::ReadOptions options;
+    options.read_budget_bytes = _read_budget_bytes;
+    const auto store = [&](const carta::zarr::SpectralBlock& block) {
+        for (std::size_t c = 0; c < static_cast<std::size_t>(block.channel_count); ++c) {
+            const auto counted = block.Totals(0, c);
+            auto& channel = progress.channels[first + static_cast<std::size_t>(block.first_channel) + c];
+            channel.read = true;
+            channel.num_pixels = counted.num_pixels;
+            channel.nan_count = counted.nan_count;
+            channel.sum = counted.sum;
+            channel.sum_sq = counted.sum_sq;
+            channel.min = counted.min;
+            channel.max = counted.max;
+        }
+        const auto run_start = static_cast<double>(first + static_cast<std::size_t>(block.first_channel));
+        if (!block.complete) {
+            // Partial sums over the chunks read so far: nothing is finished, so how far the profile has
+            // got does not move, and the same channels arrive again.
+            return report((run_start + (block.completeness * static_cast<double>(block.channel_count))) / static_cast<double>(channels));
+        }
+        progress.done = first + static_cast<std::size_t>(block.first_channel + block.channel_count);
+        if (progress.Complete()) {
+            return true;
+        }
+        if (!report(static_cast<double>(progress.done) / static_cast<double>(channels))) {
+            return false;
+        }
+        if (std::chrono::steady_clock::now() >= deadline) {
+            // Only ever at the end of a run: a pause inside one would throw away its partial sums, and
+            // the next step would read them again.
+            paused = true;
+            return false;
+        }
+        return true;
+    };
+    const auto outcome = Outcome(image->Library().ReduceSpectral(reduce, store, options), "reduce a region over the spectrum");
+    // A pause is this reader's own stop, and the library reports it as any other; the flag is what
+    // tells the two apart (ADR 0011 in carta-zarr).
+    if (outcome == BatchOutcome::cancelled && paused) {
+        return BatchOutcome::finished;
+    }
+    return outcome;
+}
+
+double ZarrLoader::BeamArea() {
+    return CalculateBeamArea();
+}
+
 }  // namespace carta
