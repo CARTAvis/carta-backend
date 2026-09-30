@@ -72,9 +72,10 @@ public:
     void StopCalculation();
 
     // The chunk grid of the image this was made from: the shape of a chunk, and where this image's
-    // corner lies among them, both in this image's axis order. With it the moment reads slabs cut on
-    // that grid (see SlabPlan). Kept only while the image collapsed is that image: one convolved from
-    // it is held in memory, and decodes in no chunks.
+    // corner lies among them, both in this image's axis order. With it the moment shapes its slabs to
+    // the chunks themselves rather than to the image's cursor advice, and counts what they cost knowing
+    // where the chunks lie (see SlabPlan). Kept only while the image collapsed is that image: one
+    // convolved from it is held in memory, and decodes in no chunks.
     void SetChunkGrid(const casacore::IPosition& unit, const casacore::IPosition& origin) {
         _chunk_grid_unit = unit;
         _chunk_grid_origin = origin;

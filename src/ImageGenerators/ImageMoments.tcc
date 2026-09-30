@@ -143,6 +143,9 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
         // image
         if (!_stop) { // check cancellation
             _image = image_copy;
+            // Held in memory now, not in the store: the chunks are no longer what it decodes in.
+            _chunk_grid_unit = casacore::IPosition();
+            _chunk_grid_origin = casacore::IPosition();
         }
     }
 
@@ -683,17 +686,20 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     chunk_slice_end[collapse_axis] = in_shape[collapse_axis] - 1;                    // Position at the end of a collapse axis line
     const casacore::IPosition chunk_slice_end_at_chunk_iter_begin = chunk_slice_end; // As an increment of a chunk for the lattice iterator
 
-    // The slab to step through the image in. What the image decodes together is taken from its
-    // cursor advice, which is the only thing a lattice says about its chunking.
+    // The slab to step through the image in. What the image decodes together is the chunk grid the
+    // caller gave, while it is still this image's; otherwise its cursor advice, which is the only
+    // thing a lattice says about its chunking.
     const casacore::uInt pixel_bytes = lattice_in.isMasked() ? sizeof(T) + sizeof(casacore::Bool) : sizeof(T);
     const ptrdiff_t total_kib = casacore::HostInfo::memoryTotal();
     const std::uint64_t memory_bytes = total_kib > 0 ? static_cast<std::uint64_t>(total_kib) * 1024 : 0;
-    const SlabPlan plan = PlanSlab(in_shape, lattice_in.niceCursorShape(), collapse_axis, pixel_bytes, memory_bytes);
+    const bool on_the_grid = _chunk_grid_unit.size() == in_ndim && _chunk_grid_origin.size() == in_ndim;
+    const SlabPlan plan = on_the_grid ? PlanSlab(in_shape, _chunk_grid_unit, collapse_axis, pixel_bytes, memory_bytes, _chunk_grid_origin)
+                                      : PlanSlab(in_shape, lattice_in.niceCursorShape(), collapse_axis, pixel_bytes, memory_bytes);
     if (plan.chunked) {
-        // Worth saying out loud: when the budget could not reach a whole chunk of display area, every
-        // chunk is decoded once per slab that lands in it.
-        spdlog::debug("moment slab {} path {} budget {} MiB, unit {} MiB, reads the store {:.1f}x", plan.slab.toString(),
-            plan.axis_path.toString(), plan.budget_bytes >> 20U, plan.unit_bytes >> 20U, plan.StoreReads());
+        // Worth saying out loud: every chunk is decoded once per slab that lands in it.
+        spdlog::debug("moment slab {} path {} from the {}, budget {} MiB, unit {} MiB, reads the store {:.1f}x", plan.slab.toString(),
+            plan.axis_path.toString(), on_the_grid ? "chunks" : "cursor advice", plan.budget_bytes >> 20U, plan.unit_bytes >> 20U,
+            plan.store_reads);
     }
 
     casacore::LatticeStepper my_stepper(in_shape, plan.slab, plan.axis_path, LatticeStepper::RESIZE);

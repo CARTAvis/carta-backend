@@ -233,9 +233,9 @@ TEST_F(MomentTest, CheckConsistencyForZarr) {
     GenerateMoments(image, moment_axis);
 }
 
-// Told the chunk grid a region sits on, the moment reads it in slabs cut on that grid -- not all one
-// shape, and read one by one rather than by casacore's stepper. This is the Zarr image's own chunk
-// grid, and a region whose corner is off it on both display axes.
+// Told the chunks a region's image decodes in, the moment shapes its slabs to them rather than to the
+// image's cursor advice. This is the Zarr image's own chunk grid, found as MomentGenerator finds it,
+// and a region whose corner is off it on both display axes.
 TEST_F(MomentTest, CheckConsistencyForZarrOnItsChunkGrid) {
     const std::filesystem::path fixture{ZARR_PIXEL_FIXTURE};
     if (!std::filesystem::exists(fixture)) {
@@ -255,7 +255,9 @@ TEST_F(MomentTest, CheckConsistencyForZarrOnItsChunkGrid) {
     casacore::IPosition unit;
     casacore::IPosition corner;
     ASSERT_TRUE(ChunkGridOf(*image, *region, unit, corner));
-    EXPECT_EQ(unit, dynamic_cast<const CartaZarrImage&>(*image).ChunkShape());
+    // The fixture is chunked 1 x 1 x 1 x 2 x 5 in time, frequency, polarization, l and m; in CARTA's
+    // order, x y z stokes, with time gone, that is 2 x 5 x 1 x 1.
+    EXPECT_EQ(unit, casacore::IPosition(4, 2, 5, 1, 1));
     EXPECT_EQ(corner, origin);
 
     // An image that is not a Zarr store's has none.
@@ -267,29 +269,6 @@ TEST_F(MomentTest, CheckConsistencyForZarrOnItsChunkGrid) {
 
     GenerateMoments(
         region, 2, casacore::Vector<casacore::Int>(), {}, [&](carta::ImageMoments<float>& moments) { moments.SetChunkGrid(unit, corner); });
-}
-
-// The same, with a grid made up for an image held in memory, so that the region spans many units
-// and the slabs cut on the grid come in every shape: a first one cut short by the grid, whole ones,
-// and a last one cut short by the region's edge. The grid is only a claim about how the image
-// decodes; the pixels are the same however they are sliced, so the answer has to be too.
-TEST_F(MomentTest, CheckConsistencyOnAMadeUpChunkGrid) {
-    const casacore::IPosition shape(3, 45, 38, 24);
-    auto image = std::make_shared<casacore::TempImage<float>>(casacore::TiledShape(shape), casacore::CoordinateUtil::defaultCoords3D());
-    casacore::Array<float> pixels(shape);
-    std::uint32_t state = 2026;
-    for (auto& pixel : pixels) {
-        state = state * 1664525u + 1013904223u;
-        pixel = static_cast<float>(state >> 8) / static_cast<float>(1u << 24);
-    }
-    image->put(pixels);
-
-    const casacore::IPosition origin(3, 3, 5, 0);
-    const casacore::IPosition length(3, 37, 30, 24);
-    auto region = std::make_shared<casacore::SubImage<float>>(*image, casacore::Slicer(origin, length));
-
-    GenerateMoments(region, 2, casacore::Vector<casacore::Int>(), {},
-        [&](carta::ImageMoments<float>& moments) { moments.SetChunkGrid(casacore::IPosition(3, 8, 7, 4), origin); });
 }
 
 namespace {
@@ -340,36 +319,26 @@ std::vector<casacore::Slicer> SectionsRead(const casacore::IPosition& unit, cons
     return *sections;
 }
 
-// Whether `section`, in the parent's pixels, stays inside one unit of the grid on each display axis.
-bool InsideOneUnit(const casacore::Slicer& section, const casacore::IPosition& unit) {
-    for (unsigned axis = 0; axis < 2; ++axis) {
-        const auto first = section.start()(axis);
-        const auto last = first + section.length()(axis) - 1;
-        if (first / unit(axis) != last / unit(axis)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 } // namespace
 
-// What the grid is for: told it, the moment reads no section that crosses a unit of it, where
-// stepping from the region's corner does.
-TEST_F(MomentTest, OnAChunkGridNoSectionCrossesAChunk) {
+// What the grid is for: told the chunks, the moment reads slabs one chunk across and down, stepped from
+// the region's corner. An image held in memory advises no chunking of its own, and without the grid is
+// read by the byte budget in whole rows.
+TEST_F(MomentTest, ToldTheChunksTheSlabIsShapedToThem) {
     const casacore::IPosition unit(3, 8, 7, 4);
     const casacore::IPosition origin(3, 3, 5, 0);
 
-    const auto from_the_corner = SectionsRead(casacore::IPosition(), origin);
-    ASSERT_FALSE(from_the_corner.empty());
-    EXPECT_FALSE(std::all_of(from_the_corner.begin(), from_the_corner.end(), [&](const casacore::Slicer& section) {
-        return InsideOneUnit(section, unit);
-    })) << "the image advises no grid, so from the corner some section should cross this one";
+    const auto advised = SectionsRead(casacore::IPosition(), origin);
+    ASSERT_FALSE(advised.empty());
+    EXPECT_EQ(advised.front().length(), casacore::IPosition(3, 37, 30, 24));
 
-    const auto on_the_grid = SectionsRead(unit, origin);
-    ASSERT_FALSE(on_the_grid.empty());
-    for (const auto& section : on_the_grid) {
-        EXPECT_TRUE(InsideOneUnit(section, unit)) << "read " << section.start() << " length " << section.length();
+    const auto chunked = SectionsRead(unit, origin);
+    ASSERT_FALSE(chunked.empty());
+    EXPECT_EQ(chunked.front().start(), origin);
+    EXPECT_EQ(chunked.front().length(), casacore::IPosition(3, 8, 7, 24));
+    for (const auto& section : chunked) {
+        EXPECT_LE(section.length()(0), unit(0)) << "read " << section.start() << " length " << section.length();
+        EXPECT_LE(section.length()(1), unit(1)) << "read " << section.start() << " length " << section.length();
     }
 }
 

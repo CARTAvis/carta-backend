@@ -13,6 +13,20 @@ namespace carta {
 
 namespace {
 
+// The mean, over the units an axis of `length` touches when its corner lies `origin` into their grid,
+// of the slabs of `step` from that corner that touch each.
+double TouchesPerUnit(ssize_t origin, ssize_t length, ssize_t unit, ssize_t step) {
+    std::size_t units = 0;
+    std::size_t touches = 0;
+    for (ssize_t start = (origin / unit) * unit; start < origin + length; start += unit) {
+        const ssize_t from = std::max(start, origin) - origin;
+        const ssize_t to = std::min(start + unit, origin + length) - origin;
+        touches += static_cast<std::size_t>((to - 1) / step - from / step + 1);
+        ++units;
+    }
+    return static_cast<double>(touches) / static_cast<double>(std::max<std::size_t>(1, units));
+}
+
 // Whole lines along the collapse axis, as many as a fixed budget holds, filling the other axes in
 // their natural order. For an image with no chunking to align to.
 SlabPlan PlanByBytes(const casacore::IPosition& shape, unsigned collapse_axis, unsigned pixel_bytes) {
@@ -21,6 +35,7 @@ SlabPlan PlanByBytes(const casacore::IPosition& shape, unsigned collapse_axis, u
 
     const unsigned ndim = shape.size();
     SlabPlan plan;
+    plan.store_reads = std::numeric_limits<double>::quiet_NaN();
     plan.axis_path = casacore::IPosition::makeAxisPath(ndim);
     plan.slab = casacore::IPosition(ndim, 1);
     plan.slab(collapse_axis) = shape(collapse_axis);
@@ -46,13 +61,6 @@ SlabPlan PlanByBytes(const casacore::IPosition& shape, unsigned collapse_axis, u
 
 } // namespace
 
-double SlabPlan::StoreReads() const {
-    if (!chunked) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    return static_cast<double>(unit_bytes) / static_cast<double>(std::max<std::uint64_t>(1, budget_bytes));
-}
-
 // The collapser wants whole lines along the collapse axis, so a slab has to span that axis in full;
 // the only freedom is how much display area it covers. A chunked store hands back a whole chunk
 // however few of its pixels were asked for, so the unit that costs nothing to read twice is one chunk
@@ -60,8 +68,8 @@ double SlabPlan::StoreReads() const {
 //
 //     chunk_x * chunk_y * depth * bytes per pixel
 //
-// -- and a slab narrower than that is re-decoded by the ratio it falls short. That ratio is the whole
-// story of what stepping through the image costs. The byte budget's 20 MB covers a 514 x 1 sliver of
+// -- and each chunk is decoded once for every slab that touches it. That count is the whole story of
+// what stepping through the image costs. The byte budget's 20 MB covers a 514 x 1 sliver of
 // a 7776-deep cube chunked 512x512x4, which reads every chunk about a thousand times.
 //
 // Measured on an ASKAP cube chunked the same way, 7763 x 4742, one AVERAGE moment, against the 1 GiB
@@ -72,10 +80,20 @@ double SlabPlan::StoreReads() const {
 //
 // So: give the fastest display axis exactly one chunk, spend what is left on the next, and step the
 // axes that were cut short before the ones that were not, so the reading finishes a chunk before it
-// moves off it. Then the cache is no longer load-bearing, which is why its size is not asked for here:
-// the measurements above are what it cost to lean on it, not a setting to plan against.
+// moves off it.
+//
+// Measured on 2048 x 2048 x 2000 chunked 512x512x1, cut from the same ASKAP cube, one AVERAGE moment,
+// 1 GiB cache, 2 GiB budget, from disk and from the page cache: a slab shaped to the chunk rather than
+// to an advice four chunks wide took 45.5 s to 35.2 s from disk and 34.2 s to 23.2 s warm, decoding
+// the store 1.7 times over rather than 5.4. Two refinements that decode less were slower still, and
+// are not made: splitting a chunk the budget cannot hold into even pieces (256 of 512 rows rather than
+// the 419 the budget allows; the collapse slowed by a third), and cutting slabs on the chunk grid for
+// a region whose corner is off it (read slice by slice, each slab cost a quarter of a second more). A
+// cache large enough to keep one chunk's whole depth between the two slabs that share it (4 GiB there)
+// took the decodes to one each and the warm time to 19.9 s -- but that is the server's setting, and
+// the plan does not count on it.
 SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& decode_unit, unsigned collapse_axis, unsigned pixel_bytes,
-    std::uint64_t memory_bytes) {
+    std::uint64_t memory_bytes, const casacore::IPosition& grid_origin) {
     const unsigned ndim = shape.size();
     if (decode_unit.size() != ndim || collapse_axis >= ndim || shape(collapse_axis) < 1) {
         return PlanByBytes(shape, collapse_axis, pixel_bytes);
@@ -105,7 +123,8 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
     // shares the server, hence the fraction and the ceiling.
     //
     // The ceiling is not a compromise between memory and speed; measured, it is the fastest point.
-    // Sweeping it on 512 x 512 x 7776 chunked 512x512x4, warm, everything else fixed:
+    // Sweeping it on 512 x 512 x 7776 chunked 512x512x4, warm, everything else fixed, with the reads
+    // as this plan once estimated them, the unit over the budget:
     //
     //     256 MiB  reads the store 29.0x  70.1 s
     //     512 MiB                  14.6x  74.2 s
@@ -117,7 +136,9 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
     // The curve is a U. Below the knee the decode dominates, as expected. Above it the slab stops
     // fitting anything -- a profile along the collapse axis is strided by the whole display area, so
     // every line touches thousands of pages, and 2.4x fewer bytes read cost 2x the time. Reading less
-    // is not the objective; it is only the proxy that holds on the way up to the knee.
+    // is not the objective; it is only the proxy that holds on the way up to the knee. The same held
+    // on the 2048 x 2048 x 2000 cube above: stretching the budget to 2.5 GiB so that a slab held one
+    // whole chunk decoded each chunk once, and took 29.1 s against 23.2, all of it in the collapse.
     //
     // So the ceiling is the measured optimum and the fraction only matters on machines too small to
     // reach it. A sixteenth puts a 16 GB machine at 1 GiB rather than the 512 MiB a thirty-second
@@ -169,6 +190,14 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
         plan.axis_path(at++) = static_cast<ssize_t>(*axis);
     }
     plan.axis_path(at) = static_cast<ssize_t>(collapse_axis);
+
+    // Where the grid lies is known only when the caller says; otherwise it is taken to start at the
+    // image's corner, which a region cut from elsewhere may not.
+    const bool on_the_grid = grid_origin.size() == ndim;
+    plan.store_reads = 1.0;
+    for (unsigned axis = 0; axis < ndim; ++axis) {
+        plan.store_reads *= TouchesPerUnit(on_the_grid ? grid_origin(axis) : 0, shape(axis), decode_unit(axis), plan.slab(axis));
+    }
     return plan;
 }
 
