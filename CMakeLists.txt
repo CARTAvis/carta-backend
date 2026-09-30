@@ -307,6 +307,7 @@ set(SOURCE_FILES
         src/Util/Memory.cc
         src/Util/Message.cc
         src/Util/RemoteFiles.cc
+        src/Util/ReportCadence.cc
         src/Util/Stokes.cc
         src/Util/String.cc
         src/Util/Token.cc)
