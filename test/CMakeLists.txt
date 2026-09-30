@@ -68,6 +68,7 @@ set(TEST_SOURCES
         TestImageFitting.cc
         TestMain.cc
         TestMoment.cc
+        TestSlabPlan.cc
         TestNormalizedUnits.cc
         TestProgramSettings.cc
         TestPvGenerator.cc

@@ -683,17 +683,20 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     chunk_slice_end[collapse_axis] = in_shape[collapse_axis] - 1;                    // Position at the end of a collapse axis line
     const casacore::IPosition chunk_slice_end_at_chunk_iter_begin = chunk_slice_end; // As an increment of a chunk for the lattice iterator
 
-    // Get a chunk shape and used it to set the data iterator
-
-    casacore::IPosition axis_path = casacore::IPosition::makeAxisPath(in_ndim);
-    casacore::IPosition chunk_shape_init = SlabShape(collapse_axis, lattice_in, axis_path);
-    if (chunk_shape_init.empty()) {
-        // Not a chunked lattice: keep the byte-budget shape and the natural axis order.
-        axis_path = casacore::IPosition::makeAxisPath(in_ndim);
-        chunk_shape_init = ChunkShape(collapse_axis, lattice_in);
+    // The slab to step through the image in. What the image decodes together is taken from its
+    // cursor advice, which is the only thing a lattice says about its chunking.
+    const casacore::uInt pixel_bytes = lattice_in.isMasked() ? sizeof(T) + sizeof(casacore::Bool) : sizeof(T);
+    const ptrdiff_t total_kib = casacore::HostInfo::memoryTotal();
+    const std::uint64_t memory_bytes = total_kib > 0 ? static_cast<std::uint64_t>(total_kib) * 1024 : 0;
+    const SlabPlan plan = PlanSlab(in_shape, lattice_in.niceCursorShape(), collapse_axis, pixel_bytes, memory_bytes);
+    if (plan.chunked) {
+        // Worth saying out loud: when the budget could not reach a whole chunk of display area, every
+        // chunk is decoded once per slab that lands in it.
+        spdlog::debug("moment slab {} path {} budget {} MiB, unit {} MiB, reads the store {:.1f}x", plan.slab.toString(),
+            plan.axis_path.toString(), plan.budget_bytes >> 20U, plan.unit_bytes >> 20U, plan.StoreReads());
     }
 
-    casacore::LatticeStepper my_stepper(in_shape, chunk_shape_init, axis_path, LatticeStepper::RESIZE);
+    casacore::LatticeStepper my_stepper(in_shape, plan.slab, plan.axis_path, LatticeStepper::RESIZE);
     casacore::RO_MaskedLatticeIterator<T> lat_iter(lattice_in, my_stepper);
 
     static const casacore::Vector<casacore::Bool> no_mask; // False mask vector
@@ -837,172 +840,6 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     if (_progress_monitor) {
         _progress_monitor->done();
     }
-}
-
-// The slab one pass of the walk holds, when the lattice decodes in chunks.
-//
-// The collapser wants whole lines along the collapse axis, so a slab has to span that axis in
-// full; the only freedom is how much display area it covers. A chunked store hands back a whole
-// chunk however few of its pixels were asked for, so the unit that costs nothing to read twice is
-// one chunk of display area by the full depth --
-//
-//     chunk_x * chunk_y * depth * bytes per pixel
-//
-// -- and a slab narrower than that is re-decoded by the ratio it falls short. That ratio is the
-// whole story of what this walk costs. ChunkShape's 20 MB budget covers a 514 x 1 sliver of a
-// 7776-deep cube chunked 512x512x4, which reads every chunk about a thousand times.
-//
-// Measured on an ASKAP cube chunked the same way, 7763 x 4742, one AVERAGE moment, against the
-// 1 GiB decoded-chunk cache the server runs with: at 16, 32 and 64 channels the old shape read
-// the store 1.0x over -- its working set still fit the cache -- and at 128 it read it 57x over
-// and went from 17.7 s to 127.7 s. The cliff is where (chunks a slab spans) x (chunks along the
-// collapse axis) stops fitting in the cache, and a deep cube is always past it.
-//
-// So: give the fastest display axis exactly one chunk, spend what is left on the next, and step
-// the axes that were cut short before the ones that were not, so the walk finishes a chunk before
-// it moves off it. Then the cache is no longer load-bearing.
-template <class T>
-casacore::IPosition ImageMoments<T>::SlabShape(
-    casacore::uInt collapse_axis, const casacore::MaskedLattice<T>& lattice_in, casacore::IPosition& axis_path) {
-    const casacore::IPosition shape = lattice_in.shape();
-    const casacore::uInt ndim = shape.size();
-    const casacore::IPosition nice = lattice_in.niceCursorShape();
-    if (nice.size() != ndim || collapse_axis >= ndim || shape(collapse_axis) < 1) {
-        return casacore::IPosition();
-    }
-
-    // Only for a lattice that really is granular -- one whose advice covers the whole image is
-    // telling us there is nothing to align to, and keeps the shape it had. The collapse axis
-    // counts: a cube can be exactly one chunk wide in both spatial axes and still be thousands of
-    // chunks deep, and that is the shape this walk is worst on, not the shape it can ignore.
-    bool granular = false;
-    for (casacore::uInt axis = 0; axis < ndim; ++axis) {
-        if (nice(axis) < 1) {
-            return casacore::IPosition();
-        }
-        if (nice(axis) < shape(axis)) {
-            granular = true;
-        }
-    }
-    if (!granular) {
-        return casacore::IPosition();
-    }
-
-    const casacore::uInt pixel_bytes = lattice_in.isMasked() ? sizeof(T) + sizeof(casacore::Bool) : sizeof(T);
-    const casacore::uInt64 line_bytes =
-        static_cast<casacore::uInt64>(pixel_bytes) * static_cast<casacore::uInt64>(shape(collapse_axis));
-
-    // What the whole unit would cost, and what this process will spend on it. A moment is a
-    // deliberate, one-at-a-time operation, so it may hold more than an interactive read -- but it
-    // shares the server, hence the fraction and the ceiling.
-    //
-    // The ceiling is not a compromise between memory and speed; measured, it is the fastest point.
-    // Sweeping it on 512 x 512 x 7776 chunked 512x512x4, warm, everything else fixed:
-    //
-    //     256 MiB  reads the store 29.0x  70.1 s
-    //     512 MiB                  14.6x  74.2 s
-    //       1 GiB                   7.3x  45.6 s
-    //       2 GiB                   3.7x  39.5 s
-    //       4 GiB                   2.3x  40.2 s
-    //     9.7 GiB (the whole unit)  1.6x  75-80 s
-    //
-    // The curve is a U. Below the knee the decode dominates, as expected. Above it the slab stops
-    // fitting anything -- a profile along the collapse axis is strided by the whole display area,
-    // so every line touches thousands of pages, and 2.4x fewer bytes read cost 2x the time. Reading
-    // less is not the objective; it is only the proxy that holds on the way up to the knee.
-    //
-    // So the ceiling is the measured optimum and the fraction only matters on machines too small
-    // to reach it. A sixteenth puts a 16 GB machine at 1 GiB rather than the 512 MiB a thirty-second
-    // would, and 512 MiB measured worse than 256.
-    //
-    // Off memoryTotal, not memoryFree: memoryFree tracks MemFree, which a full page cache drives
-    // to near nothing while MemAvailable stays whole -- 15.7 GB against 125.3 GB on the machine
-    // this was measured on. Sizing off it makes the walk's speed depend on how much unrelated file
-    // data happens to be cached, and backwards at that, since cached pages are the reclaimable
-    // ones. Measured cost of the mistake: the same walk picked a 640 MiB slab one run and a
-    // ~1.2 GiB one the next, reading a 7776-deep cube 8x over instead of 4x.
-    static const casacore::uInt64 most_bytes = casacore::uInt64(2) << 30;
-    static const casacore::uInt64 least_bytes = casacore::uInt64(64) << 20;
-    casacore::uInt64 unit_bytes = line_bytes;
-    for (casacore::uInt axis = 0; axis < ndim; ++axis) {
-        if (axis != collapse_axis) {
-            unit_bytes *= static_cast<casacore::uInt64>(std::min(nice(axis), shape(axis)));
-        }
-    }
-    const ptrdiff_t total_kib = casacore::HostInfo::memoryTotal();
-    const casacore::uInt64 total_bytes = total_kib > 0 ? static_cast<casacore::uInt64>(total_kib) * 1024 : 0;
-    casacore::uInt64 budget = std::min<casacore::uInt64>(total_bytes / 16, most_bytes);
-    budget = std::max(budget, least_bytes);
-    budget = std::min(budget, unit_bytes);
-
-    casacore::IPosition slab(ndim, 1);
-    slab(collapse_axis) = shape(collapse_axis);
-
-    casacore::uInt64 room = std::max<casacore::uInt64>(1, budget / std::max<casacore::uInt64>(1, line_bytes));
-    std::vector<casacore::uInt> grown;
-    for (casacore::uInt axis = 0; axis < ndim; ++axis) {
-        if (axis == collapse_axis) {
-            continue;
-        }
-        const casacore::uInt64 want = static_cast<casacore::uInt64>(std::min(nice(axis), shape(axis)));
-        const casacore::uInt64 take = std::max<casacore::uInt64>(1, std::min(want, room));
-        slab(axis) = static_cast<ssize_t>(take);
-        room = std::max<casacore::uInt64>(1, room / take);
-        grown.push_back(axis);
-    }
-
-    // Reverse of the order they were grown in: the last one to be grown is the one that ran out of
-    // budget, and stepping it first keeps the walk inside the chunk the earlier axes paid for.
-    axis_path = casacore::IPosition(ndim);
-    casacore::uInt at = 0;
-    for (auto axis = grown.rbegin(); axis != grown.rend(); ++axis) {
-        axis_path(at++) = static_cast<ssize_t>(*axis);
-    }
-    axis_path(at) = static_cast<ssize_t>(collapse_axis);
-
-    // Worth saying out loud: when the budget could not reach a whole chunk of display area, every
-    // chunk is decoded once per slab that lands in it, and this ratio is the factor by which the
-    // walk reads the store more than once.
-    spdlog::debug("moment walk: slab {} path {} budget {} MiB, unit {} MiB, reads the store {:.1f}x",
-        slab.toString(), axis_path.toString(), budget >> 20U, unit_bytes >> 20U,
-        static_cast<double>(unit_bytes) / static_cast<double>(std::max<casacore::uInt64>(1, budget)));
-    return slab;
-}
-
-template <class T>
-casacore::IPosition ImageMoments<T>::ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in) {
-    casacore::uInt ndim = lattice_in.ndim();
-    casacore::IPosition chunk_shape(ndim, 1);
-    casacore::IPosition lat_in_shape = lattice_in.shape();
-    casacore::uInt axis_length = lat_in_shape[axis];
-    chunk_shape[axis] = axis_length;
-
-    // arbitrary, but reasonable, max memory limit in bytes for storing arrays in bytes
-    static const casacore::uInt limit = 2e7; // Set the limit of memory usage (Bytes)
-    static const casacore::uInt size_of_T = sizeof(T);
-    static const casacore::uInt size_of_Bool = sizeof(casacore::Bool);
-    casacore::uInt chunk_mult = lattice_in.isMasked() ? size_of_T + size_of_Bool : size_of_T;
-    casacore::uInt sub_chunk_size = chunk_mult * axis_length; // Memory size for a sub-chunk (Bytes), i.e., memory for a specific axis line
-
-    // integer division
-    const casacore::uInt chunk_size = limit / sub_chunk_size; // Chunk size, i.e., number of pixels on display axes
-    if (chunk_size <= 1) {
-        // can only go row by row
-        return chunk_shape;
-    }
-
-    ssize_t x = chunk_size;
-    for (casacore::uInt i = 0; i < ndim; ++i) {
-        if (i != axis) {
-            chunk_shape[i] = std::min(x, lat_in_shape[i]);
-            // integer division
-            x /= chunk_shape[i];
-            if (x == 0) {
-                break;
-            }
-        }
-    }
-    return chunk_shape;
 }
 
 #endif // CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_

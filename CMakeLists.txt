@@ -263,6 +263,7 @@ set(SOURCE_FILES
         src/ImageGenerators/PvGenerator.cc
         src/ImageGenerators/PvPreviewCube.cc
         src/ImageGenerators/PvPreviewCut.cc
+        src/ImageGenerators/SlabPlan.cc
         src/ImageStats/CubeHistogramCalculator.cc
         src/ImageStats/CubeHistogramMethod.cc
         src/ImageStats/DerivedStatistics.cc

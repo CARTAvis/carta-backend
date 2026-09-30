@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "Image2DConvolver.h"
+#include "SlabPlan.h"
 
 namespace carta {
 
@@ -90,15 +91,6 @@ private:
     // and the walk is 77-86% of the time inside that call.
     void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
         const std::vector<std::shared_ptr<casa::MomentCalcBase<T>>>& collapsers, casacore::uInt collapse_axis);
-
-    // Get a suitable chunk shape in order for the iteration
-    casacore::IPosition ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in);
-
-    // The slab LineMultiApply reads at a time from a lattice that decodes in chunks, and the
-    // order to step it in. Empty when the lattice reports no chunking finer than itself, which
-    // leaves the caller on ChunkShape.
-    casacore::IPosition SlabShape(casacore::uInt collapse_axis, const casacore::MaskedLattice<T>& lattice_in,
-        casacore::IPosition& axis_path);
 
     // Stop moment calculation. Set by StopCalculation on another thread, and read by every worker of
     // the parallel walk as well as by the thread that runs it, so it is atomic: volatile made each
