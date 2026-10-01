@@ -154,22 +154,28 @@ public:
         })"_json;
 
         example_workspace = R"({
-            "$schema": "https://cartavis.org/schemas/workspace_schema_1.json",
-            "workspaceVersion": 1,
+            "$schema": "https://cartavis.org/schemas/workspace_schema_2.json",
+            "workspaceVersion": 2,
             "frontendVersion": "v3.0.0-beta.0",
             "description": "Example workspace",
             "files": [{
                 "id": 0,
-                "directory": "test",
-                "filename": "A.fits",
-                "hdu": "0",
+                "source": {
+                    "type": "file",
+                    "directory": "test",
+                    "filename": "A.fits",
+                    "hdu": "0"
+                },
                 "renderConfig": {
-                  "colormap": "magma"
+                  "colorMap": "magma"
                 }
             }, {
                 "id": 1,
-                "directory": "test",
-                "filename": "B.fits",
+                "source": {
+                    "type": "file",
+                    "directory": "test",
+                    "filename": "B.fits"
+                },
                 "references": {
                     "spatial": 0,
                     "spectral": 0
