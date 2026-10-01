@@ -51,6 +51,7 @@ SlabPlan PlanByBytes(const casacore::IPosition& shape, unsigned collapse_axis, u
     const unsigned ndim = shape.size();
     SlabPlan plan;
     plan.store_reads = std::numeric_limits<double>::quiet_NaN();
+    plan.cached_store_reads = std::numeric_limits<double>::quiet_NaN();
     plan.axis_path = casacore::IPosition::makeAxisPath(ndim);
     plan.slab = casacore::IPosition(ndim, 1);
     plan.slab(collapse_axis) = shape(collapse_axis);
@@ -209,12 +210,25 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
     // Where the grid lies is known only when the caller says; otherwise it is taken to start at the
     // image's corner, which a region cut from elsewhere may not.
     const bool on_the_grid = grid_origin.size() == ndim;
+    // The axis stepped first among those with more than one slab: the one along which the slab stepped
+    // next shares chunks with the last.
+    int stepped_first = -1;
+    for (unsigned at = 0; at < ndim && stepped_first < 0; ++at) {
+        const auto axis = static_cast<unsigned>(plan.axis_path(at));
+        if (plan.slab(axis) < shape(axis)) {
+            stepped_first = static_cast<int>(axis);
+        }
+    }
+
     plan.store_reads = 1.0;
+    plan.cached_store_reads = 1.0;
     std::uint64_t units_per_slab = 1;
     std::uint64_t unit_pixels = 1;
     for (unsigned axis = 0; axis < ndim; ++axis) {
         const ssize_t origin = on_the_grid ? grid_origin(axis) : 0;
-        plan.store_reads *= TouchesPerUnit(origin, shape(axis), decode_unit(axis), plan.slab(axis));
+        const double touches = TouchesPerUnit(origin, shape(axis), decode_unit(axis), plan.slab(axis));
+        plan.store_reads *= touches;
+        plan.cached_store_reads *= static_cast<int>(axis) == stepped_first ? 1.0 : touches;
         units_per_slab *= MostUnitsPerSlab(origin, shape(axis), decode_unit(axis), plan.slab(axis));
         unit_pixels *= static_cast<std::uint64_t>(decode_unit(axis));
     }

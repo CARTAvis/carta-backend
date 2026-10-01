@@ -226,3 +226,28 @@ TEST(SlabPlanTest, NoCacheWhereNothingIsDecodedTwice) {
     EXPECT_EQ(by_bytes.reuse_pixels, 0U);
     EXPECT_EQ(by_bytes.CacheBytes(kFloat), 0U);
 }
+
+// What the cache saves is the slab stepped next sharing what the last one decoded, so it saves along
+// the axis stepped first. Across the others the slab that shared a chunk came a whole sweep earlier and
+// is long gone: a region off the grid, whose slabs straddle the chunks across, still decodes the
+// columns they share twice. Measured on that region, chunk-weighted 1.5 and by bytes 1.635, the store
+// was decoded 1.62 times over with the cache and 2.88 without.
+TEST(SlabPlanTest, ACacheSavesAlongTheAxisSteppedFirst) {
+    const IPosition chunk(4, 512, 512, 1, 1);
+
+    const auto whole = PlanSlab(IPosition(4, 2048, 2048, 2000, 1), chunk, 2, kMaskedFloat, kLargeMachine);
+    EXPECT_DOUBLE_EQ(whole.store_reads, 2.0);
+    EXPECT_DOUBLE_EQ(whole.cached_store_reads, 1.0);
+
+    const auto off_the_grid = PlanSlab(IPosition(4, 1536, 1536, 2000, 1), chunk, 2, kMaskedFloat, kLargeMachine, IPosition(4, 256, 256, 0, 0));
+    EXPECT_EQ(off_the_grid.axis_path, IPosition(4, 3, 1, 0, 2));
+    EXPECT_DOUBLE_EQ(off_the_grid.store_reads, 2.625);
+    EXPECT_DOUBLE_EQ(off_the_grid.cached_store_reads, 1.5);
+
+    // Nothing decoded twice, nothing to save.
+    const auto whole_units = PlanSlab(IPosition(4, 1024, 1024, 100, 1), IPosition(4, 256, 256, 10, 1), 2, kFloat, kLargeMachine);
+    EXPECT_DOUBLE_EQ(whole_units.cached_store_reads, 1.0);
+
+    const auto by_bytes = PlanSlab(IPosition(4, 4096, 4096, 2000, 1), IPosition(4, 4096, 4096, 2000, 1), 2, kFloat, kLargeMachine);
+    EXPECT_TRUE(std::isnan(by_bytes.cached_store_reads));
+}

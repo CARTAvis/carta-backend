@@ -30,18 +30,25 @@ struct SlabPlan {
     // not shaped to what the image decodes together.
     double store_reads = 0.0;
 
-    // What a cache of decoded chunks has to hold for each to be decoded once: every chunk one slab
-    // touches, at the most, in pixels. Two neighbouring slabs share the chunks a boundary between them
-    // cuts through, and which of a slab's chunks the next one needs again depends on the order they
-    // were decoded in, so it is all of them. 0 when no chunk is touched twice, or the slab was not
-    // shaped to what the image decodes together.
+    // What a cache of decoded chunks has to hold for the slab stepped next to find what it shares with
+    // the last: every chunk one slab touches, at the most, in pixels. Two neighbouring slabs share the
+    // chunks a boundary between them cuts through, and which of a slab's chunks the next one needs again
+    // depends on the order they were decoded in, so it is all of them. 0 when no chunk is touched twice,
+    // or the slab was not shaped to what the image decodes together.
     std::uint64_t reuse_pixels = 0;
+    // store_reads with that cache held: no more than once for every slab along the axis stepped first,
+    // where neighbouring slabs share chunks, and as often as before along the others, where the slab
+    // that shared a chunk came a whole sweep earlier and the cache has long let it go. 1 for a region
+    // on the grid; more for one off it, whose slabs straddle the chunks across as well as down. NaN
+    // when store_reads is.
+    double cached_store_reads = 0.0;
     // The most a moment spends on that cache: a sixteenth of the machine, as for the slab, without
     // the slab's ceiling, which is about the collapse rather than the memory.
     std::uint64_t cache_ceiling_bytes = 0;
 
     // The cache to hold while stepping through the image, for an image that decodes `decoded_pixel_bytes`
-    // a pixel: what it needs, as far as the ceiling allows. Short of what it needs it still keeps some
+    // a pixel: what it needs to bring store_reads down to cached_store_reads, as far as the ceiling
+    // allows. Short of what it needs it still keeps some
     // of what the next slab wants: on 2048 x 2048 x 2000 chunked 512x512x1, a quarter of the need
     // (1 GiB) decoded the store 1.72 times over rather than 2.
     std::uint64_t CacheBytes(unsigned decoded_pixel_bytes) const;

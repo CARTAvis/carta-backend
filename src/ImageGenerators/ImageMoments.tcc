@@ -705,9 +705,12 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     if (plan.chunked) {
         // Worth saying out loud: every chunk is decoded once per slab that lands in it, short of a cache
         // that keeps it for the next.
-        spdlog::debug("moment slab {} path {} from the {}, budget {} MiB, unit {} MiB, reads the store {:.1f}x, cache {} MiB{}",
+        spdlog::debug("moment slab {} path {} from the {}, budget {} MiB, unit {} MiB, reads the store {:.1f}x, cache {} MiB{}{}",
             plan.slab.toString(), plan.axis_path.toString(), on_the_grid ? "chunks" : "cursor advice", plan.budget_bytes >> 20U,
-            plan.unit_bytes >> 20U, plan.store_reads, cache_bytes >> 20U, held_cache ? " of its own" : "");
+            plan.unit_bytes >> 20U, plan.store_reads, cache_bytes >> 20U, held_cache ? " of its own" : "",
+            held_cache ? fmt::format(" ({}{:.1f}x with it)", cache_bytes < plan.reuse_pixels * sizeof(T) ? "short of the need; " : "",
+                             plan.cached_store_reads)
+                       : std::string());
     }
 
     casacore::LatticeStepper my_stepper(in_shape, plan.slab, plan.axis_path, LatticeStepper::RESIZE);
