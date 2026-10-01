@@ -48,9 +48,17 @@ struct SlabPlan {
 
     // The cache to hold while stepping through the image, for an image that decodes `decoded_pixel_bytes`
     // a pixel: what it needs to bring store_reads down to cached_store_reads, as far as the ceiling
-    // allows. Short of what it needs it still keeps some
-    // of what the next slab wants: on 2048 x 2048 x 2000 chunked 512x512x1, a quarter of the need
-    // (1 GiB) decoded the store 1.72 times over rather than 2.
+    // allows. Short of what it needs it still keeps some of what the next slab wants: on 2048 x 2048 x
+    // 2000 chunked 512x512x1, a quarter of the need (1 GiB) decoded the store 1.72 times over rather
+    // than 2.
+    //
+    // The cache keeps to its size; the process does not keep to the cache's. Measured on a 1536-square
+    // region of that cube with 7.8 GiB asked for, resident memory held at the cache and the slab, about
+    // 10.5 GB, for the first part of the walk and then climbed to 13-15 GB by its end, all of it given
+    // back when the walk let the cache go. The climb is glibc's arenas keeping what the decoding threads
+    // freed: limited to two arenas it stayed near 11 GB, but kept 6.5-8.7 GB after the walk instead of
+    // giving it back, which is worse in a server that runs for days. So the ceiling is on the cache,
+    // and the peak runs about a third over it plus the slab.
     std::uint64_t CacheBytes(unsigned decoded_pixel_bytes) const;
 };
 
