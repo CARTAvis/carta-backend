@@ -22,6 +22,8 @@
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
 
 #include <atomic>
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -76,9 +78,16 @@ public:
     // the chunks themselves rather than to the image's cursor advice, and counts what they cost knowing
     // where the chunks lie (see SlabPlan). Kept only while the image collapsed is that image: one
     // convolved from it is held in memory, and decodes in no chunks.
-    void SetChunkGrid(const casacore::IPosition& unit, const casacore::IPosition& origin) {
+    //
+    // `hold_cache`, when given, holds a cache of decoded chunks for the walk's reads to keep what they
+    // decode in: called with a size once the slabs are planned, it returns what keeps a cache that large,
+    // which the walk lets go of when it is done. The size is what neighbouring slabs share, so that each
+    // chunk is decoded once (see SlabPlan::CacheBytes).
+    void SetChunkGrid(const casacore::IPosition& unit, const casacore::IPosition& origin,
+        std::function<std::shared_ptr<void>(std::uint64_t bytes)> hold_cache = {}) {
         _chunk_grid_unit = unit;
         _chunk_grid_origin = origin;
+        _hold_cache = std::move(hold_cache);
     }
 
 private:
@@ -113,6 +122,7 @@ private:
     // See SetChunkGrid. Empty when not known.
     casacore::IPosition _chunk_grid_unit;
     casacore::IPosition _chunk_grid_origin;
+    std::function<std::shared_ptr<void>(std::uint64_t bytes)> _hold_cache;
 
 protected:
     using casa::MomentsBase<T>::os_p;

@@ -182,3 +182,47 @@ TEST(SlabPlanTest, ALineLongerThanTheByteBudgetIsReadALineAtATime) {
     EXPECT_FALSE(plan.chunked);
     EXPECT_EQ(plan.slab, IPosition(3, 1, 1, 6000000));
 }
+
+// What a cache of decoded chunks has to hold for every chunk to be decoded once: every chunk one slab
+// touches, since which of them the next slab needs again depends on the order they were decoded in. On
+// the cube the 4 GiB measurement was made on, a slab one chunk across and two down, the whole depth of
+// 512x512x1 chunks: 4000 chunks, a little under 4 GiB.
+TEST(SlabPlanTest, ACacheHoldsEveryChunkOneSlabTouches) {
+    const auto plan = PlanSlab(IPosition(4, 2048, 2048, 2000, 1), IPosition(4, 512, 512, 1, 1), 2, kMaskedFloat, kLargeMachine);
+    EXPECT_EQ(plan.slab, IPosition(4, 512, 419, 2000, 1));
+    EXPECT_EQ(plan.reuse_pixels, std::uint64_t(1 * 2 * 2000) * 512 * 512);
+    EXPECT_EQ(plan.CacheBytes(kFloat), std::uint64_t(4000) * 512 * 512 * kFloat);
+}
+
+// Off the grid a slab straddles the chunks across as well, and needs twice as many kept -- more than a
+// sixteenth of a 64 GiB machine, which is what the cache gets at most. The slab's own ceiling, which is
+// about the collapse, does not apply.
+TEST(SlabPlanTest, ACacheIsASixteenthOfTheMachineAtMost) {
+    const IPosition shape(4, 1536, 1536, 2000, 1);
+    const IPosition chunk(4, 512, 512, 1, 1);
+    const IPosition corner(4, 256, 256, 0, 0);
+
+    const auto plan = PlanSlab(shape, chunk, 2, kMaskedFloat, kLargeMachine, corner);
+    EXPECT_EQ(plan.reuse_pixels, std::uint64_t(2 * 2 * 2000) * 512 * 512);
+    EXPECT_EQ(plan.CacheBytes(kFloat), 4 * kGiB);
+
+    const auto roomy = PlanSlab(shape, chunk, 2, kMaskedFloat, 1024 * kGiB, corner);
+    EXPECT_EQ(roomy.CacheBytes(kFloat), std::uint64_t(8000) * 512 * 512 * kFloat);
+
+    // A machine that will not say how much memory it has gets the slab's floor.
+    const auto unknown = PlanSlab(shape, chunk, 2, kMaskedFloat, 0, corner);
+    EXPECT_EQ(unknown.CacheBytes(kFloat), 64 * kMiB);
+}
+
+// Nothing to keep where no chunk is decoded twice: a slab that holds whole units touches each once, and a
+// slab that was not shaped to chunks says nothing about them.
+TEST(SlabPlanTest, NoCacheWhereNothingIsDecodedTwice) {
+    const auto whole_units = PlanSlab(IPosition(4, 1024, 1024, 100, 1), IPosition(4, 256, 256, 10, 1), 2, kFloat, kLargeMachine);
+    EXPECT_DOUBLE_EQ(whole_units.store_reads, 1.0);
+    EXPECT_EQ(whole_units.reuse_pixels, 0U);
+    EXPECT_EQ(whole_units.CacheBytes(kFloat), 0U);
+
+    const auto by_bytes = PlanSlab(IPosition(4, 4096, 4096, 2000, 1), IPosition(4, 4096, 4096, 2000, 1), 2, kFloat, kLargeMachine);
+    EXPECT_EQ(by_bytes.reuse_pixels, 0U);
+    EXPECT_EQ(by_bytes.CacheBytes(kFloat), 0U);
+}

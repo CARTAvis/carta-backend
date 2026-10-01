@@ -96,6 +96,14 @@ private:
 bool ChunkGridOf(const casacore::ImageInterface<float>& image, const casacore::SubImage<float>& region, casacore::IPosition& unit,
     casacore::IPosition& origin);
 
+// A copy of `image` for a moment to read through, whose reads keep what they decode in a cache of the
+// moment's own while `hold_cache` holds one -- for ImageMoments::SetChunkGrid. The walk comes back to the
+// chunks its neighbouring slabs share, which the session's cache is too small to keep and would evict
+// what is being looked at to try. Null, with `hold_cache` left empty, for an image that is not a Zarr
+// store's.
+std::shared_ptr<casacore::ImageInterface<float>> WithCacheOfItsOwn(
+    const casacore::ImageInterface<float>& image, std::function<std::shared_ptr<void>(std::uint64_t bytes)>& hold_cache);
+
 } // namespace carta
 
 #endif // CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_

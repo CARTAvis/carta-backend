@@ -112,7 +112,8 @@ CartaZarrImage::CartaZarrImage(const CartaZarrImage& other)
       _axes(other._axes),
       _notes(other._notes),
       _descriptor(other._descriptor),
-      _shape(other._shape) {}
+      _shape(other._shape),
+      _own_cache(other._own_cache) {}
 
 CartaZarrImage::~CartaZarrImage() = default;
 
@@ -248,12 +249,63 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
     const auto& image = Opened("Read");
     buffer.resize(section.length());
 
+    // A cache the caller named is the caller's; otherwise the one held for this image's reads, if any.
+    carta::zarr::ReadOptions through_own;
+    const carta::zarr::ReadOptions* chosen = &options;
+    if (_own_cache && !options.control.cache_pool) {
+        std::scoped_lock lock(_own_cache->mutex);
+        if (_own_cache->pool) {
+            through_own = options;
+            through_own.control.cache_pool = _own_cache->pool;
+            chosen = &through_own;
+        }
+    }
+
     bool delete_storage(false);
     float* storage = buffer.getStorage(delete_storage);
     auto read = image.Read(_axes->Request(section),
-        {storage, static_cast<std::size_t>(buffer.nelements())}, options, progress);
+        {storage, static_cast<std::size_t>(buffer.nelements())}, *chosen, progress);
     buffer.putStorage(storage, delete_storage);
     return read;
+}
+
+std::function<std::shared_ptr<void>(std::uint64_t bytes)> CartaZarrImage::OwnCache() {
+    auto cache = std::make_shared<CacheOfItsOwn>();
+    _own_cache = cache;
+    return [cache](std::uint64_t bytes) -> std::shared_ptr<void> {
+        auto pool = GetZarrContext().NewCachePool(static_cast<std::size_t>(bytes));
+        if (!pool) {
+            spdlog::warn("A walk reads through the session's cache: {}", pool.error().message);
+            return nullptr;
+        }
+        {
+            std::scoped_lock lock(cache->mutex);
+            cache->pool = *pool;
+        }
+        // What keeps the pool is the cache's hold on it; letting go of this lets go of that.
+        struct Held {
+            explicit Held(std::shared_ptr<CacheOfItsOwn> held) : cache(std::move(held)) {}
+            Held(const Held&) = delete;
+            Held& operator=(const Held&) = delete;
+            ~Held() {
+                std::scoped_lock lock(cache->mutex);
+                cache->pool.reset();
+            }
+            std::shared_ptr<CacheOfItsOwn> cache;
+        };
+        return std::make_shared<Held>(cache);
+    };
+}
+
+std::optional<std::size_t> CartaZarrImage::OwnCacheBytes() const {
+    if (!_own_cache) {
+        return std::nullopt;
+    }
+    std::scoped_lock lock(_own_cache->mutex);
+    if (!_own_cache->pool) {
+        return std::nullopt;
+    }
+    return _own_cache->pool->bytes();
 }
 
 const carta::zarr::Image& CartaZarrImage::Library() const {

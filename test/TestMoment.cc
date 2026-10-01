@@ -249,7 +249,12 @@ TEST_F(MomentTest, CheckConsistencyForZarrOnItsChunkGrid) {
     ASSERT_NE(image, nullptr);
     const casacore::IPosition origin(4, 1, 1, 0, 0);
     const casacore::IPosition length(4, image->shape()(0) - 1, image->shape()(1) - 1, image->shape()(2), 1);
-    auto region = std::make_shared<casacore::SubImage<float>>(*image, casacore::Slicer(origin, length));
+    // Cut, as MomentGenerator cuts it, from a copy whose reads keep a cache of the moment's own.
+    std::function<std::shared_ptr<void>(std::uint64_t)> hold_cache;
+    const auto own = WithCacheOfItsOwn(*image, hold_cache);
+    ASSERT_NE(own, nullptr);
+    ASSERT_TRUE(hold_cache);
+    auto region = std::make_shared<casacore::SubImage<float>>(*own, casacore::Slicer(origin, length));
 
     // The grid as MomentGenerator finds it: the store's chunks, and the region's corner among them.
     casacore::IPosition unit;
@@ -266,9 +271,26 @@ TEST_F(MomentTest, CheckConsistencyForZarrOnItsChunkGrid) {
     casacore::IPosition none_unit;
     casacore::IPosition none_corner;
     EXPECT_FALSE(ChunkGridOf(memory, memory_region, none_unit, none_corner));
+    std::function<std::shared_ptr<void>(std::uint64_t)> no_hold = [](std::uint64_t) { return nullptr; };
+    EXPECT_EQ(WithCacheOfItsOwn(memory, no_hold), nullptr);
+    EXPECT_FALSE(no_hold);
+
+    // The walk below holds a cache for the copy, and the image the session displays never reads through it.
+    std::size_t held_bytes = 0;
+    const auto* session = dynamic_cast<const CartaZarrImage*>(image.get());
+    ASSERT_NE(session, nullptr);
+    const auto* copy = dynamic_cast<const CartaZarrImage*>(own.get());
+    ASSERT_NE(copy, nullptr);
+    const auto watched_hold = [&, hold_cache](std::uint64_t bytes) {
+        auto held = hold_cache(bytes);
+        held_bytes = copy->OwnCacheBytes().value_or(0);
+        EXPECT_FALSE(session->OwnCacheBytes());
+        return held;
+    };
 
     GenerateMoments(
-        region, 2, casacore::Vector<casacore::Int>(), {}, [&](carta::ImageMoments<float>& moments) { moments.SetChunkGrid(unit, corner); });
+        region, 2, casacore::Vector<casacore::Int>(), {}, [&](carta::ImageMoments<float>& moments) { moments.SetChunkGrid(unit, corner, watched_hold); });
+    EXPECT_GT(held_bytes, 0U) << "the walk read without a cache of its own";
 }
 
 namespace {
@@ -277,9 +299,11 @@ namespace {
 // same place: a SubImage reads through a copy of its parent.
 class SliceRecordingImage : public casacore::TempImage<float> {
 public:
-    SliceRecordingImage(const casacore::IPosition& shape, std::shared_ptr<std::vector<casacore::Slicer>> sections)
+    SliceRecordingImage(const casacore::IPosition& shape, std::shared_ptr<std::vector<casacore::Slicer>> sections,
+        std::function<void()> on_read = {})
         : casacore::TempImage<float>(casacore::TiledShape(shape), casacore::CoordinateUtil::defaultCoords3D()),
-          _sections(std::move(sections)) {}
+          _sections(std::move(sections)),
+          _on_read(std::move(on_read)) {}
 
     casacore::ImageInterface<float>* cloneII() const override {
         return new SliceRecordingImage(*this);
@@ -287,19 +311,24 @@ public:
 
     casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) override {
         _sections->push_back(section);
+        if (_on_read) {
+            _on_read();
+        }
         return casacore::TempImage<float>::doGetSlice(buffer, section);
     }
 
 private:
     std::shared_ptr<std::vector<casacore::Slicer>> _sections;
+    std::function<void()> _on_read;
 };
 
 // The sections one AVERAGE moment of `region` reads from its parent, told `unit` and `origin` as its
 // chunk grid if `unit` is not empty.
-std::vector<casacore::Slicer> SectionsRead(const casacore::IPosition& unit, const casacore::IPosition& origin) {
+std::vector<casacore::Slicer> SectionsRead(const casacore::IPosition& unit, const casacore::IPosition& origin,
+    const std::function<std::shared_ptr<void>(std::uint64_t)>& hold_cache = {}, const std::function<void()>& on_read = {}) {
     const casacore::IPosition shape(3, 45, 38, 24);
     auto sections = std::make_shared<std::vector<casacore::Slicer>>();
-    SliceRecordingImage image(shape, sections);
+    SliceRecordingImage image(shape, sections, on_read);
     image.put(casacore::Array<float>(shape, 1.0f));
     const casacore::IPosition length(3, 37, 30, 24);
     casacore::SubImage<float> region(image, casacore::Slicer(origin, length));
@@ -308,7 +337,7 @@ std::vector<casacore::Slicer> SectionsRead(const casacore::IPosition& unit, cons
     casacore::LogIO os(log);
     carta::ImageMoments<float> moments(region, os, nullptr, true);
     if (!unit.empty()) {
-        moments.SetChunkGrid(unit, origin);
+        moments.SetChunkGrid(unit, origin, hold_cache);
     }
     casacore::Vector<casacore::Int> which(1, 0);
     moments.setMoments(which);
@@ -340,6 +369,41 @@ TEST_F(MomentTest, ToldTheChunksTheSlabIsShapedToThem) {
         EXPECT_LE(section.length()(0), unit(0)) << "read " << section.start() << " length " << section.length();
         EXPECT_LE(section.length()(1), unit(1)) << "read " << section.start() << " length " << section.length();
     }
+}
+
+// Told how to hold a cache, the walk holds one as large as its plan says its slabs share, for every read
+// it makes, and lets go of it when it is done. Here: slabs one 8 x 7 chunk across and down, stepped from
+// a corner off the grid, so each straddles 2 x 2 chunks and all 6 along the moment axis -- 24 chunks of
+// 8 x 7 x 4 floats. Told nothing of the grid, it holds none.
+TEST_F(MomentTest, HoldsTheCacheItsPlanAsksForWhileItWalks) {
+    const casacore::IPosition unit(3, 8, 7, 4);
+    const casacore::IPosition origin(3, 3, 5, 0);
+
+    std::vector<std::uint64_t> asked;
+    std::weak_ptr<void> held;
+    int reads = 0;
+    int reads_while_held = 0;
+    const auto hold = [&](std::uint64_t bytes) -> std::shared_ptr<void> {
+        asked.push_back(bytes);
+        auto token = std::make_shared<int>(0);
+        held = token;
+        return token;
+    };
+    const auto on_read = [&] {
+        ++reads;
+        reads_while_held += held.expired() ? 0 : 1;
+    };
+
+    SectionsRead(unit, origin, hold, on_read);
+    ASSERT_EQ(asked.size(), 1U);
+    EXPECT_EQ(asked.front(), std::uint64_t(24) * 8 * 7 * 4 * sizeof(float));
+    EXPECT_GT(reads, 0);
+    EXPECT_EQ(reads_while_held, reads) << "a read was made without the cache held";
+    EXPECT_TRUE(held.expired()) << "the walk kept its cache after it was done";
+
+    asked.clear();
+    SectionsRead(casacore::IPosition(), origin, hold);
+    EXPECT_TRUE(asked.empty());
 }
 
 // CartaHdf5Image reports its HDF5 chunk shape as the cursor advice, so the walk shapes its slab
@@ -395,6 +459,28 @@ IoCounters ReadIoCounters() {
         }
     }
     return counters;
+}
+
+// The process's resident memory now and at its peak, in KiB, from /proc/self/status; zero where there
+// is none. What a walk's own cache costs is the peak, and whether letting go of it gave the memory back
+// is what is resident after.
+struct Resident {
+    long long now_kib = 0;
+    long long peak_kib = 0;
+};
+
+Resident ReadResident() {
+    Resident resident;
+    std::ifstream status("/proc/self/status");
+    std::string key;
+    while (status >> key) {
+        if (key == "VmRSS:") {
+            status >> resident.now_kib;
+        } else if (key == "VmHWM:") {
+            status >> resident.peak_kib;
+        }
+    }
+    return resident;
 }
 
 std::string FromEnv(const char* name) {
@@ -455,8 +541,13 @@ TEST_F(MomentTest, MeasureZarrWalk) {
         ASSERT_GT(length(1), 0) << "the origin is past the image";
     }
 
+    // As MomentGenerator does: cut from a copy whose reads keep a cache of the walk's own, unless
+    // CARTA_MOMENT_OWN_CACHE=off asks for the session's, which is what the walk read through before.
+    const bool own_cache = FromEnv("CARTA_MOMENT_OWN_CACHE") != "off";
+    std::function<std::shared_ptr<void>(std::uint64_t)> hold_cache;
+    const auto own = own_cache ? carta::WithCacheOfItsOwn(*image, hold_cache) : nullptr;
     casacore::Slicer section(start, length);
-    auto sub = std::make_shared<casacore::SubImage<float>>(*image, section);
+    auto sub = std::make_shared<casacore::SubImage<float>>(own ? *own : *image, section);
 
     const double wanted_bytes =
         static_cast<double>(length.product()) * static_cast<double>(sizeof(float));
@@ -468,7 +559,7 @@ TEST_F(MomentTest, MeasureZarrWalk) {
     casacore::IPosition grid_unit;
     casacore::IPosition grid_origin;
     if (carta::ChunkGridOf(*image, *sub, grid_unit, grid_origin)) {
-        moments.SetChunkGrid(grid_unit, grid_origin);
+        moments.SetChunkGrid(grid_unit, grid_origin, hold_cache);
     }
 
     casacore::Vector<casacore::Int> which(1);
@@ -480,11 +571,13 @@ TEST_F(MomentTest, MeasureZarrWalk) {
     spdlog::set_level(spdlog::level::debug);
     spdlog::info("measure: shape {} nice {} masked {} multiple_beams {}", sub->shape().toString(),
         sub->niceCursorShape().toString(), sub->isMasked(), sub->imageInfo().hasMultipleBeams());
+    const auto resident_before = ReadResident();
     const auto before = ReadIoCounters();
     const auto t0 = std::chrono::steady_clock::now();
     auto results = moments.createMoments(true, "moment_measure", false);
     const auto t1 = std::chrono::steady_clock::now();
     const auto after = ReadIoCounters();
+    const auto resident_after = ReadResident();
 
     ASSERT_EQ(results.size(), 1u);
     const double seconds = std::chrono::duration<double>(t1 - t0).count();
@@ -493,11 +586,12 @@ TEST_F(MomentTest, MeasureZarrWalk) {
     const double mib = 1024.0 * 1024.0;
 
     std::printf(
-        "\nMOMENT store=%s origin=%lld,%lld shape=%lldx%lldx%lldx%lld cache_MiB=%d seconds=%.2f wanted_MiB=%.1f "
-        "rchar_MiB=%.1f disk_MiB=%.1f amplification=%.1fx\n",
+        "\nMOMENT store=%s origin=%lld,%lld shape=%lldx%lldx%lldx%lld cache_MiB=%d own_cache=%s seconds=%.2f wanted_MiB=%.1f "
+        "rchar_MiB=%.1f disk_MiB=%.1f amplification=%.1fx rss_before_MiB=%.0f rss_peak_MiB=%.0f rss_after_MiB=%.0f\n",
         store.c_str(), (long long)start(0), (long long)start(1), (long long)length(0), (long long)length(1),
-        (long long)length(2), (long long)length(3), cache_mb, seconds, wanted_bytes / mib, rchar / mib, disk / mib,
-        wanted_bytes > 0 ? rchar / wanted_bytes : 0.0);
+        (long long)length(2), (long long)length(3), cache_mb, own ? "on" : "off", seconds, wanted_bytes / mib, rchar / mib,
+        disk / mib, wanted_bytes > 0 ? rchar / wanted_bytes : 0.0, resident_before.now_kib / 1024.0,
+        resident_after.peak_kib / 1024.0, resident_after.now_kib / 1024.0);
     std::fflush(stdout);
 }
 

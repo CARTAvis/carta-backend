@@ -72,6 +72,8 @@ _Avoid_: single-pixel sigma, n=1 case
 What a moment holds at a time as it steps through the image: whole lines along the moment axis, over
 as much of the other axes as it can afford. Its shape is chosen to match what the image decodes
 together -- a Zarr store's own chunks, where the image has them -- so that each chunk is decoded as few
-times as the memory allows: once for every slab that touches it. Stepping through the image this way
-is not a **Walk**: the image is read through casacore, not by a loader's own means.
+times as the memory allows: once for every slab that touches it, unless the moment's own cache keeps
+it for the next. That cache is the moment's, not the session's, and lasts only as long as the moment.
+Stepping through the image this way is not a **Walk**: the image is read through casacore, not by a
+loader's own means.
 _Avoid_: chunk (the image's unit, not the moment's), cursor

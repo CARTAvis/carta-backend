@@ -193,8 +193,10 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     // Set the requested rest frequency in the image spectral coordinate
     SetImageRestFrequency(_rest_frequency);
 
-    // Reset the sub-image
-    _sub_image.reset(new casacore::SubImage<casacore::Float>(*_image, image_region));
+    // Reset the sub-image, cut from a copy whose reads keep a cache of their own where the image has one
+    std::function<std::shared_ptr<void>(std::uint64_t bytes)> hold_cache;
+    const auto own = WithCacheOfItsOwn(*_image, hold_cache);
+    _sub_image.reset(new casacore::SubImage<casacore::Float>(own ? *own : *_image, image_region));
 
     casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     casacore::LogIO os(log);
@@ -205,7 +207,7 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     casacore::IPosition unit;
     casacore::IPosition origin;
     if (ChunkGridOf(*_image, *_sub_image, unit, origin)) {
-        _image_moments->SetChunkGrid(unit, origin);
+        _image_moments->SetChunkGrid(unit, origin, hold_cache);
     }
 }
 
@@ -221,6 +223,18 @@ bool carta::ChunkGridOf(const casacore::ImageInterface<float>& image, const casa
     unit = zarr->ChunkShape();
     origin = region.region().slicer().start();
     return !unit.empty() && origin.size() == unit.size() && region.shape().size() == unit.size();
+}
+
+std::shared_ptr<casacore::ImageInterface<float>> carta::WithCacheOfItsOwn(
+    const casacore::ImageInterface<float>& image, std::function<std::shared_ptr<void>(std::uint64_t bytes)>& hold_cache) {
+    const auto* zarr = dynamic_cast<const CartaZarrImage*>(&image);
+    if (zarr == nullptr) {
+        hold_cache = nullptr;
+        return nullptr;
+    }
+    auto own = std::make_shared<CartaZarrImage>(*zarr);
+    hold_cache = own->OwnCache();
+    return own;
 }
 
 void MomentGenerator::SetImageRestFrequency(double rest_frequency) {

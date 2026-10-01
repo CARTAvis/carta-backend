@@ -27,6 +27,21 @@ double TouchesPerUnit(ssize_t origin, ssize_t length, ssize_t unit, ssize_t step
     return static_cast<double>(touches) / static_cast<double>(std::max<std::size_t>(1, units));
 }
 
+// The most units of `unit` that one slab of `step`, stepped from an axis's corner lying `origin` into
+// their grid, touches along an axis of `length`.
+std::uint64_t MostUnitsPerSlab(ssize_t origin, ssize_t length, ssize_t unit, ssize_t step) {
+    std::uint64_t most = 0;
+    for (ssize_t from = 0; from < length; from += step) {
+        const ssize_t to = std::min(from + step, length);
+        most = std::max<std::uint64_t>(most, static_cast<std::uint64_t>((origin + to - 1) / unit - (origin + from) / unit + 1));
+    }
+    return most;
+}
+
+// The least a moment spends on a slab, or on a cache, whatever the machine; also what a machine that
+// will not say how much memory it has is given.
+const std::uint64_t kLeastBytes = std::uint64_t(64) << 20;
+
 // Whole lines along the collapse axis, as many as a fixed budget holds, filling the other axes in
 // their natural order. For an image with no chunking to align to.
 SlabPlan PlanByBytes(const casacore::IPosition& shape, unsigned collapse_axis, unsigned pixel_bytes) {
@@ -89,9 +104,10 @@ SlabPlan PlanByBytes(const casacore::IPosition& shape, unsigned collapse_axis, u
 // are not made: splitting a chunk the budget cannot hold into even pieces (256 of 512 rows rather than
 // the 419 the budget allows; the collapse slowed by a third), and cutting slabs on the chunk grid for
 // a region whose corner is off it (read slice by slice, each slab cost a quarter of a second more). A
-// cache large enough to keep one chunk's whole depth between the two slabs that share it (4 GiB there)
-// took the decodes to one each and the warm time to 19.9 s -- but that is the server's setting, and
-// the plan does not count on it.
+// cache large enough to keep every chunk a slab touches until the next slab has read it (4 GiB there)
+// took the decodes to one each and the warm time to 19.9 s. That was the server's shared cache; the
+// plan does not count on the server's setting, and asks for a cache of the moment's own instead (see
+// SlabPlan::CacheBytes).
 SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& decode_unit, unsigned collapse_axis, unsigned pixel_bytes,
     std::uint64_t memory_bytes, const casacore::IPosition& grid_origin) {
     const unsigned ndim = shape.size();
@@ -151,7 +167,6 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
     // Measured cost of the mistake: the same moment picked a 640 MiB slab one run and a ~1.2 GiB one
     // the next, reading a 7776-deep cube 8x over instead of 4x.
     static const std::uint64_t most_bytes = std::uint64_t(2) << 30;
-    static const std::uint64_t least_bytes = std::uint64_t(64) << 20;
     std::uint64_t unit_bytes = line_bytes;
     for (unsigned axis = 0; axis < ndim; ++axis) {
         if (axis != collapse_axis) {
@@ -159,7 +174,7 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
         }
     }
     std::uint64_t budget = std::min<std::uint64_t>(memory_bytes / 16, most_bytes);
-    budget = std::max(budget, least_bytes);
+    budget = std::max(budget, kLeastBytes);
     budget = std::min(budget, unit_bytes);
 
     SlabPlan plan;
@@ -195,10 +210,22 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
     // image's corner, which a region cut from elsewhere may not.
     const bool on_the_grid = grid_origin.size() == ndim;
     plan.store_reads = 1.0;
+    std::uint64_t units_per_slab = 1;
+    std::uint64_t unit_pixels = 1;
     for (unsigned axis = 0; axis < ndim; ++axis) {
-        plan.store_reads *= TouchesPerUnit(on_the_grid ? grid_origin(axis) : 0, shape(axis), decode_unit(axis), plan.slab(axis));
+        const ssize_t origin = on_the_grid ? grid_origin(axis) : 0;
+        plan.store_reads *= TouchesPerUnit(origin, shape(axis), decode_unit(axis), plan.slab(axis));
+        units_per_slab *= MostUnitsPerSlab(origin, shape(axis), decode_unit(axis), plan.slab(axis));
+        unit_pixels *= static_cast<std::uint64_t>(decode_unit(axis));
     }
+    // A chunk is decoded whole, edge or not, so it is kept whole.
+    plan.reuse_pixels = plan.store_reads > 1.0 ? units_per_slab * unit_pixels : 0;
+    plan.cache_ceiling_bytes = std::max(memory_bytes / 16, kLeastBytes);
     return plan;
+}
+
+std::uint64_t SlabPlan::CacheBytes(unsigned decoded_pixel_bytes) const {
+    return std::min(reuse_pixels * decoded_pixel_bytes, cache_ceiling_bytes);
 }
 
 } // namespace carta

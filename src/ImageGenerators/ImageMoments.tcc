@@ -146,6 +146,7 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
             // Held in memory now, not in the store: the chunks are no longer what it decodes in.
             _chunk_grid_unit = casacore::IPosition();
             _chunk_grid_origin = casacore::IPosition();
+            _hold_cache = nullptr;
         }
     }
 
@@ -695,11 +696,18 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     const bool on_the_grid = _chunk_grid_unit.size() == in_ndim && _chunk_grid_origin.size() == in_ndim;
     const SlabPlan plan = on_the_grid ? PlanSlab(in_shape, _chunk_grid_unit, collapse_axis, pixel_bytes, memory_bytes, _chunk_grid_origin)
                                       : PlanSlab(in_shape, lattice_in.niceCursorShape(), collapse_axis, pixel_bytes, memory_bytes);
+    // Kept until the walk is done: what its slabs share, held where they can find it again.
+    std::shared_ptr<void> held_cache;
+    const std::uint64_t cache_bytes = on_the_grid && _hold_cache ? plan.CacheBytes(sizeof(T)) : 0;
+    if (on_the_grid && _hold_cache) {
+        held_cache = _hold_cache(cache_bytes);
+    }
     if (plan.chunked) {
-        // Worth saying out loud: every chunk is decoded once per slab that lands in it.
-        spdlog::debug("moment slab {} path {} from the {}, budget {} MiB, unit {} MiB, reads the store {:.1f}x", plan.slab.toString(),
-            plan.axis_path.toString(), on_the_grid ? "chunks" : "cursor advice", plan.budget_bytes >> 20U, plan.unit_bytes >> 20U,
-            plan.store_reads);
+        // Worth saying out loud: every chunk is decoded once per slab that lands in it, short of a cache
+        // that keeps it for the next.
+        spdlog::debug("moment slab {} path {} from the {}, budget {} MiB, unit {} MiB, reads the store {:.1f}x, cache {} MiB{}",
+            plan.slab.toString(), plan.axis_path.toString(), on_the_grid ? "chunks" : "cursor advice", plan.budget_bytes >> 20U,
+            plan.unit_bytes >> 20U, plan.store_reads, cache_bytes >> 20U, held_cache ? " of its own" : "");
     }
 
     casacore::LatticeStepper my_stepper(in_shape, plan.slab, plan.axis_path, LatticeStepper::RESIZE);

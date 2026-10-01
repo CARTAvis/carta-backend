@@ -20,6 +20,7 @@
 #include <fstream>
 #include <future>
 #include <limits>
+#include <memory>
 #include <regex>
 #include <sstream>
 #include <tuple>
@@ -993,6 +994,42 @@ TEST_F(ZarrImageTest, ACancelledReadSaysItWasCancelled) {
     const auto read = image.Read(buffer, section, options);
     ASSERT_FALSE(read) << "a cancelled read should say it did not finish";
     EXPECT_EQ(read.error().code, carta::zarr::ErrorCode::cancelled);
+}
+
+// A moment reads through a copy of the image whose reads keep what they decode in a cache of the
+// moment's own. That copy and every copy made of it share the cache; the image it was copied from, and
+// copies made before, read through the session's. Letting go of what holds the cache frees it, and the
+// pixels are the same whichever cache answers.
+TEST_F(ZarrImageTest, ACopyReadsThroughACacheOfItsOwnWhileOneIsHeld) {
+    CartaZarrImage session(kZarrFixture.string());
+    CartaZarrImage own(session);
+    const CartaZarrImage made_before(own);
+    const auto hold = own.OwnCache();
+    std::unique_ptr<casacore::ImageInterface<float>> clone(own.cloneII());
+    const auto* made_after = dynamic_cast<const CartaZarrImage*>(clone.get());
+    ASSERT_NE(made_after, nullptr);
+    EXPECT_FALSE(own.OwnCacheBytes()) << "nothing is held until the walk holds it";
+
+    const std::size_t bytes = std::size_t(1) << 20;
+    const casacore::Slicer section(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, kDepth, 1));
+    {
+        const auto held = hold(bytes);
+        ASSERT_TRUE(held);
+        EXPECT_EQ(own.OwnCacheBytes(), bytes);
+        EXPECT_EQ(made_after->OwnCacheBytes(), bytes);
+        EXPECT_FALSE(session.OwnCacheBytes());
+        EXPECT_FALSE(made_before.OwnCacheBytes());
+
+        const casacore::Array<float> through_own = own.getSlice(section);
+        const casacore::Array<float> through_session = session.getSlice(section);
+        ASSERT_EQ(through_own.shape(), through_session.shape());
+        auto a = through_own.begin();
+        for (auto b = through_session.begin(); b != through_session.end(); ++a, ++b) {
+            EXPECT_TRUE((std::isnan(*a) && std::isnan(*b)) || *a == *b);
+        }
+    }
+    EXPECT_FALSE(own.OwnCacheBytes()) << "the cache outlived what held it";
+    EXPECT_FALSE(made_after->OwnCacheBytes());
 }
 
 // A whole-cube histogram counts in 64 bits and the backend holds a bin as an int. A 2.9e11-pixel

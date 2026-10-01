@@ -11,6 +11,9 @@
 #include "CartaZarrAxes.h"
 #include "ZarrNotes.h"
 
+#include <cstdint>
+#include <functional>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -80,6 +83,18 @@ public:
     casacore::Bool doGetMaskSlice(casacore::Array<casacore::Bool>& buffer,
         const casacore::Slicer& section) override;
 
+    // Makes this image's reads, and those of every copy made of it from now on, keep what they decode
+    // in a cache of their own rather than the session's, while one is held. The function returned
+    // holds one: given a size, it makes a pool that large and returns what keeps it, and letting go
+    // of that frees the pool and returns the reads to the session's. One held at a time.
+    //
+    // For a walk that comes back to what it decoded -- a moment, whose neighbouring slabs share chunks
+    // -- read through a copy, so that the image the session displays keeps its own cache throughout.
+    // Copies made before this call do not share it, so the copy to call it on is the walk's own.
+    std::function<std::shared_ptr<void>(std::uint64_t bytes)> OwnCache();
+    // The size of the cache of its own these reads keep what they decode in, while one is held.
+    std::optional<std::size_t> OwnCacheBytes() const;
+
     std::vector<StorageEntry> GetStorageInfo() const;
     // What a reader should know about this image's values: carta-zarr's diagnostics on it and what
     // the backend had to say while describing it to casacore. See ZarrNote.
@@ -111,6 +126,13 @@ private:
     std::vector<ZarrNote> _notes;
     carta::zarr::ImageDescriptor _descriptor;
     casacore::IPosition _shape;
+
+    // The cache OwnCache holds, shared by the copies made after it was called and empty until then.
+    struct CacheOfItsOwn {
+        std::mutex mutex;
+        std::optional<carta::zarr::CachePool> pool;
+    };
+    std::shared_ptr<CacheOfItsOwn> _own_cache;
 };
 
 }  // namespace carta
