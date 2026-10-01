@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <optional>
 #include <vector>
 
 #include <spdlog/spdlog.h>
@@ -23,6 +24,18 @@
 namespace carta {
 
 namespace {
+
+// A pool of no bytes, for a scan that comes back to no chunk to read through rather than evict what the
+// session is looking at; the session's own if one cannot be made, which costs the session its working
+// set rather than the scan its answer.
+std::optional<carta::zarr::CachePool> KeepingNothing() {
+    auto pool = GetZarrContext().NewCachePool(0);
+    if (!pool) {
+        spdlog::warn("A cube scan reads through the session's cache: {}", pool.error().message);
+        return std::nullopt;
+    }
+    return *pool;
+}
 
 // The six accumulators a reduction produces, as the statistics the caller's own calculator would
 // have produced from the same pixels. A statistic that was not accumulated reads as SpectralTotals
@@ -251,7 +264,7 @@ BatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& can
     // callback below skips every plane that is not finished yet, so it cannot be where a stop is
     // noticed: that is asked of the walk itself, at every read.
     carta::zarr::ReadOptions options;
-    options.control.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.control.cache_pool = KeepingNothing();
     options.control.cancellation_requested = cancellation_requested;
     options.read_budget_bytes = _read_budget_bytes;
 
@@ -294,7 +307,7 @@ BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const Histogr
     // its own that holds nothing rather than evicting whatever the session is looking at. A stop is
     // asked of the walk at every read, as in PlaneStats.
     carta::zarr::ReadOptions options;
-    options.control.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.control.cache_pool = KeepingNothing();
     options.control.cancellation_requested = cancellation_requested;
     options.read_budget_bytes = _read_budget_bytes;
 
@@ -358,7 +371,7 @@ BatchOutcome ZarrLoader::OnePassCubeHistogram(int stokes, int num_bins, std::uin
 
     // As with the other cube walks: read every chunk once, keep none of them.
     carta::zarr::ReadOptions options;
-    options.control.cache_policy = carta::zarr::CachePolicy::bypass;
+    options.control.cache_pool = KeepingNothing();
     options.read_budget_bytes = _read_budget_bytes;
 
     auto result = image->Library().ComputeCubeHistogram(request, options, zarr_progress);
