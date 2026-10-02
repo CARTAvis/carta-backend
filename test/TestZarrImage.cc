@@ -18,11 +18,13 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <future>
 #include <limits>
 #include <memory>
 #include <regex>
 #include <sstream>
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -1053,6 +1055,53 @@ TEST_F(ZarrImageTest, ARunIsThePlaneRoundedOutToChunksTimesTheirDepth) {
     ASSERT_NE(read_ahead, nullptr);
     EXPECT_EQ(read_ahead->RunOf(1, 2), (PlaneRun{1, 2}));
     EXPECT_EQ(read_ahead->RunBytes(), kWidth * kHeight * (sizeof(float) + 1));
+}
+
+// A copy of the fixture whose SKY metadata is rewritten by `edit`, and without the nodes named in
+// `dropped`. Only the metadata: what a run costs is answered before any pixel is read.
+std::filesystem::path EditedFixture(const std::string& name, const std::function<std::string(const std::string&)>& edit,
+    const std::vector<std::string>& dropped = {}) {
+    const auto copy = TestRoot() / "data" / "generated" / name;
+    std::filesystem::remove_all(copy);
+    std::filesystem::copy(kZarrFixture, copy, std::filesystem::copy_options::recursive);
+    for (const auto& node : dropped) {
+        std::filesystem::remove_all(copy / node);
+    }
+    const auto metadata = copy / "SKY" / "zarr.json";
+    std::stringstream text;
+    text << std::ifstream(metadata).rdbuf();
+    std::ofstream(metadata, std::ios::trunc) << edit(text.str());
+    return copy;
+}
+
+// The cache holds a chunk as it is stored, not as the float it is read out as, so a float64 image's
+// run is eight bytes a pixel and its flag's one more. Counted at four, two runs looked as if they fit
+// a cache they did not, and reading ahead evicted the chunks the animation was playing.
+TEST_F(ZarrImageTest, ARunIsCountedAtTheWidthTheChunksAreStoredIn) {
+    const auto copy = EditedFixture("float64_run.zarr", [](const std::string& text) {
+        return std::regex_replace(text, std::regex(R"("data_type"\s*:\s*"float32")"), R"("data_type": "float64")");
+    });
+    auto loader = FileLoader::GetLoader(copy.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* read_ahead = loader->ReadAhead();
+    ASSERT_NE(read_ahead, nullptr);
+    EXPECT_EQ(read_ahead->RunBytes(), kWidth * kHeight * (sizeof(double) + 1));
+}
+
+// And a run counts a flag only when the image has one. CartaZarrImage reports a mask whatever the
+// store holds -- casacore's statistics need it to -- so that is not the question to ask.
+TEST_F(ZarrImageTest, ARunCountsAFlagOnlyWhenTheImageHasOne) {
+    const auto copy = EditedFixture(
+        "unflagged_run.zarr",
+        [](const std::string& text) { return std::regex_replace(text, std::regex(R"("flag"\s*:\s*"FLAG"\s*,)"), ""); },
+        {"FLAG"});
+    auto loader = FileLoader::GetLoader(copy.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* read_ahead = loader->ReadAhead();
+    ASSERT_NE(read_ahead, nullptr);
+    EXPECT_EQ(read_ahead->RunBytes(), kWidth * kHeight * sizeof(float));
 }
 
 // What a prefetch decoded, the plane's read finds without going to storage: after it the chunks are
