@@ -46,6 +46,7 @@ set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
         ImageData/TestFitsUtil.cc
+        TestAnimationReadAhead.cc
         TestBlockSmooth.cc
         TestContour.cc
         TestCartaZarrAxes.cc

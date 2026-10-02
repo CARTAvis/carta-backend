@@ -77,3 +77,19 @@ it for the next. That cache is the moment's, not the session's, and lasts only a
 Stepping through the image this way is not a **Walk**: the image is read through casacore, not by a
 loader's own means.
 _Avoid_: chunk (the image's unit, not the moment's), cursor
+
+### Animations
+
+**Run**:
+The planes whose pixels lie in the same chunks of a store: as many channels as a chunk is deep, and as
+many Stokes. Reading any plane of a run decodes all of it, so the frame of an animation that enters a
+run pays for the rest of it, and every frame after it in the run is served from the cache. Its size is
+the plane rounded out to whole chunks times that depth.
+_Avoid_: chunk run, slab (a moment's unit, not an animation's)
+
+**Read ahead**:
+Decoding the next **Run** an animation will enter while the frames of this one play, so that the frame
+entering it does not stall. One run of each animated file at a time, only while the cache holds two
+runs of each, and only until a frame is late while one is being decoded: reading ahead is for the time
+the frames leave over, and stops when there is none.
+_Avoid_: preload, warm-up
