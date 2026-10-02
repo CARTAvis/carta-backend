@@ -104,6 +104,8 @@ list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main/Main.cc)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(${BINARY} ${SOURCES} ${TEST_SOURCES})
+# The backend's sources include headers generated from the layout schemas, as carta_backend's do.
+add_dependencies(${BINARY} carta-schemas)
 add_test(NAME ${BINARY} COMMAND ${BINARY})
 target_link_libraries(${BINARY}
         ${TEST_COMMON_LIBS}
