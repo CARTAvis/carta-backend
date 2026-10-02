@@ -7,6 +7,7 @@
 #define CARTA_SRC_IMAGEDATA_ZARRLOADER_H_
 
 #include "FileLoader.h"
+#include "PlaneReadAhead.h"
 #include "ImageStats/CubeReducer.h"
 #include "ImageStats/RegionProfileReader.h"
 #include "ImageStats/RegionReducer.h"
@@ -28,7 +29,11 @@ class CartaZarrImage;
 // would inherit. Returns whether any count was held.
 bool AssignBinCounts(const std::uint64_t* counts, std::size_t size, std::vector<int>& bins);
 
-class ZarrLoader : public FileLoader, public RegionReducer, public CubeReducer, public RegionProfileReader {
+class ZarrLoader : public FileLoader,
+                   public RegionReducer,
+                   public CubeReducer,
+                   public RegionProfileReader,
+                   public PlaneReadAhead {
 public:
     explicit ZarrLoader(const std::string& filename);
 
@@ -55,6 +60,13 @@ public:
     RegionProfileReader* ProfileReader() override {
         return this;
     }
+    PlaneReadAhead* ReadAhead() override {
+        return this;
+    }
+    PlaneRun RunOf(int z, int stokes) const override;
+    std::uint64_t RunBytes() const override;
+    std::uint64_t CacheBytes() const override;
+    bool Prefetch(int z, int stokes, const std::function<bool()>& cancelled) override;
     BatchOutcome ReadOn(const RegionProfileRequest& request, std::mutex& image_mutex, RegionProfileProgress& progress,
         std::chrono::steady_clock::time_point deadline, const std::function<bool(double fraction)>& report) override;
     double BeamArea() override;

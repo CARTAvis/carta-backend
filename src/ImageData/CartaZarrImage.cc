@@ -244,29 +244,36 @@ const carta::zarr::Image& CartaZarrImage::Opened(const char* where) const {
     return *_zarr_image;
 }
 
+carta::zarr::ReadOptions CartaZarrImage::ThroughOwnCache(const carta::zarr::ReadOptions& options) const {
+    // A cache the caller named is the caller's; otherwise the one held for this image's reads, if any.
+    carta::zarr::ReadOptions chosen = options;
+    if (_own_cache && !options.control.cache_pool) {
+        std::scoped_lock lock(_own_cache->mutex);
+        if (_own_cache->pool) {
+            chosen.control.cache_pool = _own_cache->pool;
+        }
+    }
+    return chosen;
+}
+
 carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
     const carta::zarr::ReadOptions& options, const carta::zarr::ProgressCallback& progress) const {
     const auto& image = Opened("Read");
     buffer.resize(section.length());
 
-    // A cache the caller named is the caller's; otherwise the one held for this image's reads, if any.
-    carta::zarr::ReadOptions through_own;
-    const carta::zarr::ReadOptions* chosen = &options;
-    if (_own_cache && !options.control.cache_pool) {
-        std::scoped_lock lock(_own_cache->mutex);
-        if (_own_cache->pool) {
-            through_own = options;
-            through_own.control.cache_pool = _own_cache->pool;
-            chosen = &through_own;
-        }
-    }
-
     bool delete_storage(false);
     float* storage = buffer.getStorage(delete_storage);
     auto read = image.Read(_axes->Request(section),
-        {storage, static_cast<std::size_t>(buffer.nelements())}, *chosen, progress);
+        {storage, static_cast<std::size_t>(buffer.nelements())}, ThroughOwnCache(options), progress);
     buffer.putStorage(storage, delete_storage);
     return read;
+}
+
+carta::zarr::Result<std::uint64_t> CartaZarrImage::Prefetch(const casacore::Slicer& section, const carta::zarr::ReadControl& control) const {
+    const auto& image = Opened("Prefetch");
+    carta::zarr::ReadOptions options;
+    options.control = control;
+    return image.Prefetch(_axes->Request(section), ThroughOwnCache(options));
 }
 
 std::function<std::shared_ptr<void>(std::uint64_t bytes)> CartaZarrImage::OwnCache() {

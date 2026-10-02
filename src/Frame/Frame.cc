@@ -173,6 +173,14 @@ size_t Frame::Depth() {
     return _dims.depth;
 }
 
+std::shared_ptr<PlaneReadAhead> Frame::ReadAhead() {
+    auto* read_ahead = _loader ? _loader->ReadAhead() : nullptr;
+    if (!read_ahead) {
+        return nullptr;
+    }
+    return std::shared_ptr<PlaneReadAhead>(_loader, read_ahead);
+}
+
 size_t Frame::NumStokes() {
     return _dims.num_stokes;
 }

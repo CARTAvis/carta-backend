@@ -49,6 +49,7 @@ struct StokesRegion {
 class RegionReducer;
 class CubeReducer;
 class RegionProfileReader;
+class PlaneReadAhead;
 
 class FileLoader {
 public:
@@ -139,6 +140,11 @@ public:
     // The walk this loader can make over many regions at once, or null for a loader that has none --
     // every one but the Zarr loader. See RegionReducer.
     virtual RegionReducer* RegionWalk() {
+        return nullptr;
+    }
+    // This loader's decoding of a plane's chunks ahead of the plane being read, or null for a loader
+    // that has none -- every one but the Zarr loader. See PlaneReadAhead.
+    virtual PlaneReadAhead* ReadAhead() {
         return nullptr;
     }
     virtual bool GetDownsampledRasterData(

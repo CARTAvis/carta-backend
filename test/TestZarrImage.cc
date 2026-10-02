@@ -1032,6 +1032,79 @@ TEST_F(ZarrImageTest, ACopyReadsThroughACacheOfItsOwnWhileOneIsHeld) {
     EXPECT_FALSE(made_after->OwnCacheBytes());
 }
 
+// Whether the loader can read plane (z, stokes), however it says it cannot.
+bool PlaneReads(FileLoader& loader, int z, int stokes, casacore::Array<float>& data) {
+    const casacore::Slicer slicer(casacore::IPosition(4, 0, 0, z, stokes), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    data.resize(slicer.length());
+    try {
+        return loader.GetSlice(data, StokesSlicer(StokesSource(), slicer));
+    } catch (const std::exception&) {
+        return false;
+    }
+}
+
+// The fixture's chunks are one channel and one Stokes deep and half a row of the plane wide, and it has
+// a flag, so a run is the plane, decoded at four bytes a pixel and one more for the flag.
+TEST_F(ZarrImageTest, ARunIsThePlaneRoundedOutToChunksTimesTheirDepth) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* read_ahead = loader->ReadAhead();
+    ASSERT_NE(read_ahead, nullptr);
+    EXPECT_EQ(read_ahead->RunOf(1, 2), (PlaneRun{1, 2}));
+    EXPECT_EQ(read_ahead->RunBytes(), kWidth * kHeight * (sizeof(float) + 1));
+}
+
+// What a prefetch decoded, the plane's read finds without going to storage: after it the chunks are
+// emptied on disk, and the plane still reads as it did, flags and all, while the next plane, which was
+// not prefetched, no longer reads at all.
+TEST_F(ZarrImageTest, APrefetchedPlaneIsReadWithoutGoingToStorage) {
+    const auto copy = TestRoot() / "data" / "generated" / "prefetched.zarr";
+    std::filesystem::remove_all(copy);
+    std::filesystem::copy(kZarrFixture, copy, std::filesystem::copy_options::recursive);
+
+    casacore::Array<float> before;
+    {
+        auto reference = FileLoader::GetLoader(copy.string());
+        reference->OpenFile("");
+        ASSERT_TRUE(PlaneReads(*reference, 0, 1, before));
+    }
+
+    auto loader = FileLoader::GetLoader(copy.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* image = dynamic_cast<CartaZarrImage*>(loader->GetImage().get());
+    ASSERT_NE(image, nullptr);
+    // A cache of the image's own, so that the test does not size the process's.
+    const std::uint64_t bytes = std::uint64_t(64) << 20;
+    const auto held = image->OwnCache()(bytes);
+    ASSERT_TRUE(held);
+    auto* read_ahead = loader->ReadAhead();
+    ASSERT_NE(read_ahead, nullptr);
+    EXPECT_EQ(read_ahead->CacheBytes(), bytes);
+    ASSERT_TRUE(read_ahead->Prefetch(0, 1, [] { return false; }));
+
+    for (const char* array : {"SKY", "FLAG"}) {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(copy / array / "c")) {
+            if (entry.is_regular_file()) {
+                std::filesystem::resize_file(entry.path(), 0);
+            }
+        }
+    }
+
+    casacore::Array<float> after;
+    ASSERT_TRUE(PlaneReads(*loader, 0, 1, after)) << "a prefetched plane went to storage for its chunks";
+    ASSERT_EQ(after.shape(), before.shape());
+    auto a = after.begin();
+    for (auto b = before.begin(); b != before.end(); ++a, ++b) {
+        EXPECT_TRUE((std::isnan(*a) && std::isnan(*b)) || *a == *b);
+    }
+    casacore::Array<float> next;
+    EXPECT_FALSE(PlaneReads(*loader, 1, 1, next)) << "a plane not prefetched still read from emptied chunks, so this shows nothing";
+    EXPECT_FALSE(read_ahead->Prefetch(0, kStokes, [] { return false; })) << "a Stokes the image does not have was prefetched";
+    std::filesystem::remove_all(copy);
+}
+
 // A whole-cube histogram counts in 64 bits and the backend holds a bin as an int. A 2.9e11-pixel
 // cube needs under 1% of its pixels in one bin to pass INT_MAX, and a narrowing cast wrapped that to
 // a negative count. No fixture is that large, so the conversion is checked on its own.

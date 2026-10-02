@@ -65,6 +65,11 @@ public:
     carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {},
         const carta::zarr::ProgressCallback& progress = {}) const;
+    // Decodes the chunks a Read of `section` would, into the cache that Read would keep them in, and
+    // reads out nothing: one element of each chunk, which decodes all of it. Says how many chunks that
+    // was. For reading ahead of somebody -- see PlaneReadAhead -- and safe to call while the same
+    // chunks are being read, which then wait for the decoding under way rather than starting another.
+    carta::zarr::Result<std::uint64_t> Prefetch(const casacore::Slicer& section, const carta::zarr::ReadControl& control = {}) const;
     // The library's own image, for the walks casacore has no call for: a Lattice is asked for
     // pixels, and every reduction it offers is one region at a time. Those walks name their axes by
     // role, so unlike Read they need nothing from this image's mapping onto CARTA's order, and
@@ -107,6 +112,9 @@ private:
     void SetBeams();
     // The library image, or an exception naming `where` when there is none.
     const carta::zarr::Image& Opened(const char* where) const;
+    // `options`, reading through the cache of its own held for this image's reads when there is one
+    // and the caller named none.
+    carta::zarr::ReadOptions ThroughOwnCache(const carta::zarr::ReadOptions& options) const;
 
     // The finiteness mask of the most recent doGetSlice. casacore asks for a cursor's pixels and
     // then that same cursor's mask, so computing the mask while the pixels are still hot turns the

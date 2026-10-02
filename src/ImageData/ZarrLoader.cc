@@ -237,6 +237,76 @@ BatchOutcome ZarrLoader::RegionSpectra(const std::vector<RegionMaskSpec>& region
     return Outcome(image->Library().ReduceSpectral(request, forward, options), "reduce regions over the spectrum");
 }
 
+// A plane's chunks, as the store has them: a chunk's extent along the channels and the Stokes, which is
+// what a run is, and along the two image axes, which is what a plane is rounded out to. Ones where the
+// image has no chunks to say.
+namespace {
+struct PlaneChunks {
+    std::int64_t width = 1;
+    std::int64_t height = 1;
+    std::int64_t depth = 1;
+    std::int64_t stokes = 1;
+};
+
+PlaneChunks ChunksOf(const CartaZarrImage* image) {
+    PlaneChunks chunks;
+    const auto shape = image ? image->ChunkShape() : casacore::IPosition();
+    if (shape.size() == 4) {
+        chunks = {std::max<std::int64_t>(shape(0), 1), std::max<std::int64_t>(shape(1), 1),
+            std::max<std::int64_t>(shape(2), 1), std::max<std::int64_t>(shape(3), 1)};
+    }
+    return chunks;
+}
+
+std::int64_t RoundedOut(std::int64_t length, std::int64_t chunk) {
+    return (length + chunk - 1) / chunk * chunk;
+}
+} // namespace
+
+PlaneRun ZarrLoader::RunOf(int z, int stokes) const {
+    const auto chunks = ChunksOf(_zarr_image.get());
+    return {static_cast<int>(z / chunks.depth), static_cast<int>(stokes / chunks.stokes)};
+}
+
+std::uint64_t ZarrLoader::RunBytes() const {
+    if (!_zarr_image || _num_dims != 4) {
+        return 0;
+    }
+    const auto chunks = ChunksOf(_zarr_image.get());
+    // The flag, when there is one, decodes beside the pixels at a byte a pixel.
+    const std::uint64_t pixel_bytes = sizeof(float) + (_has_pixel_mask ? 1 : 0);
+    return static_cast<std::uint64_t>(RoundedOut(_image_shape(0), chunks.width)) *
+           static_cast<std::uint64_t>(RoundedOut(_image_shape(1), chunks.height)) * static_cast<std::uint64_t>(chunks.depth) *
+           static_cast<std::uint64_t>(chunks.stokes) * pixel_bytes;
+}
+
+std::uint64_t ZarrLoader::CacheBytes() const {
+    if (_zarr_image) {
+        if (const auto own = _zarr_image->OwnCacheBytes()) {
+            return *own;
+        }
+    }
+    return ZarrCacheBytes();
+}
+
+bool ZarrLoader::Prefetch(int z, int stokes, const std::function<bool()>& cancelled) {
+    auto image = ImageForStokes(stokes);
+    if (!image || z < 0 || z >= _image_shape(2)) {
+        return false;
+    }
+    const casacore::Slicer plane(casacore::IPosition(4, 0, 0, z, stokes), casacore::IPosition(4, _image_shape(0), _image_shape(1), 1, 1));
+    carta::zarr::ReadControl control;
+    control.cancellation_requested = cancelled;
+    const auto decoded = image->Prefetch(plane, control);
+    if (!decoded) {
+        if (decoded.error().code != carta::zarr::ErrorCode::cancelled) {
+            spdlog::debug("Reading ahead of plane {} Stokes {} failed: {}", z, stokes, decoded.error().message);
+        }
+        return false;
+    }
+    return true;
+}
+
 BatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
     const std::function<bool(int z, const BasicStats<float>&)>& plane_callback) {
     auto image = ImageForStokes(stokes);
