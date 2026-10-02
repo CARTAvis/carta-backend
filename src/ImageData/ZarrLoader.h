@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -63,6 +64,7 @@ public:
     PlaneReadAhead* ReadAhead() override {
         return this;
     }
+    std::optional<ZarrPlaneRead> Plane(int z, int stokes) const override;
     PlaneRun RunOf(int z, int stokes) const override;
     std::uint64_t RunBytes() const override;
     std::uint64_t CacheBytes() const override;

@@ -319,6 +319,16 @@ std::uint64_t ZarrLoader::CacheBytes() const {
     return ZarrCacheBytes();
 }
 
+std::optional<ZarrPlaneRead> ZarrLoader::Plane(int z, int stokes) const {
+    auto image = ImageForStokes(stokes);
+    if (!image || z < 0 || z >= _image_shape(2)) {
+        return std::nullopt;
+    }
+    const casacore::Slicer plane(casacore::IPosition(4, 0, 0, z, stokes), casacore::IPosition(4, _image_shape(0), _image_shape(1), 1, 1));
+    auto [request, options] = image->LibraryRead(plane);
+    return ZarrPlaneRead{image->Library(), std::move(options), std::move(request)};
+}
+
 bool ZarrLoader::Prefetch(int z, int stokes, const std::function<bool()>& cancelled) {
     auto image = ImageForStokes(stokes);
     if (!image || z < 0 || z >= _image_shape(2)) {

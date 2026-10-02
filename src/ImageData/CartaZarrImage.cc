@@ -276,6 +276,11 @@ carta::zarr::Result<std::uint64_t> CartaZarrImage::Prefetch(const casacore::Slic
     return image.Prefetch(_axes->Request(section), ThroughOwnCache(options));
 }
 
+std::pair<carta::zarr::ReadRequest, carta::zarr::ReadOptions> CartaZarrImage::LibraryRead(const casacore::Slicer& section) const {
+    (void)Opened("LibraryRead");
+    return {_axes->Request(section), ThroughOwnCache({})};
+}
+
 std::function<std::shared_ptr<void>(std::uint64_t bytes)> CartaZarrImage::OwnCache() {
     auto cache = std::make_shared<CacheOfItsOwn>();
     _own_cache = cache;

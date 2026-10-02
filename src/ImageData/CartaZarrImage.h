@@ -70,6 +70,10 @@ public:
     // was. For reading ahead of somebody -- see PlaneReadAhead -- and safe to call while the same
     // chunks are being read, which then wait for the decoding under way rather than starting another.
     carta::zarr::Result<std::uint64_t> Prefetch(const casacore::Slicer& section, const carta::zarr::ReadControl& control = {}) const;
+    // What a Read of `section` asks of the library: the request in the library's axis order, and the
+    // options it reads through -- this image's own cache when one is held. For a caller that hands the
+    // read on rather than making it, as reading ahead does; see PlaneReadAhead.
+    std::pair<carta::zarr::ReadRequest, carta::zarr::ReadOptions> LibraryRead(const casacore::Slicer& section) const;
     // The library's own image, for the walks casacore has no call for: a Lattice is asked for
     // pixels, and every reduction it offers is one region at a time. Those walks name their axes by
     // role, so unlike Read they need nothing from this image's mapping onto CARTA's order, and

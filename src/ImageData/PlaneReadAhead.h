@@ -8,6 +8,9 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
+
+#include <carta-zarr/carta_zarr.h>
 
 namespace carta {
 
@@ -31,9 +34,20 @@ struct PlaneRun {
 // unless the run was decoded while the frames before it played from the one before.
 //
 // Asked of a loader through FileLoader::ReadAhead, and offered by none but the Zarr loader's.
+// How a plane of a file is read: the library's image, the options its reads go through -- and so the
+// cache they keep what they decode in -- and the read of the plane itself.
+struct ZarrPlaneRead {
+    carta::zarr::Image image;
+    carta::zarr::ReadOptions options;
+    carta::zarr::ReadRequest request;
+};
+
 class PlaneReadAhead {
 public:
     virtual ~PlaneReadAhead() = default;
+
+    // How plane (z, stokes) is read, or nothing for a plane the file does not have.
+    virtual std::optional<ZarrPlaneRead> Plane(int z, int stokes) const = 0;
 
     // The run of chunks plane (z, stokes) is in.
     virtual PlaneRun RunOf(int z, int stokes) const = 0;
