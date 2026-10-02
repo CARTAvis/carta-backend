@@ -65,11 +65,6 @@ public:
     carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {},
         const carta::zarr::ProgressCallback& progress = {}) const;
-    // Decodes the chunks a Read of `section` would, into the cache that Read would keep them in, and
-    // reads out nothing: one element of each chunk, which decodes all of it. Says how many chunks that
-    // was. For reading ahead of somebody -- see PlaneReadAhead -- and safe to call while the same
-    // chunks are being read, which then wait for the decoding under way rather than starting another.
-    carta::zarr::Result<std::uint64_t> Prefetch(const casacore::Slicer& section, const carta::zarr::ReadControl& control = {}) const;
     // What a Read of `section` asks of the library: the request in the library's axis order, and the
     // options it reads through -- this image's own cache when one is held. For a caller that hands the
     // read on rather than making it, as reading ahead does; see PlaneReadAhead.

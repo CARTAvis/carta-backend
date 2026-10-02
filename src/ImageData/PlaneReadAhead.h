@@ -6,34 +6,12 @@
 #ifndef CARTA_SRC_IMAGEDATA_PLANEREADAHEAD_H_
 #define CARTA_SRC_IMAGEDATA_PLANEREADAHEAD_H_
 
-#include <cstdint>
-#include <functional>
 #include <optional>
 
 #include <carta-zarr/carta_zarr.h>
 
 namespace carta {
 
-// Which chunks a plane decodes: the chunk along the channels and the chunk along the Stokes it lies in.
-// Two planes in one run decode the same chunks, so reading one leaves the other decoded.
-struct PlaneRun {
-    int z = 0;
-    int stokes = 0;
-
-    bool operator==(const PlaneRun& other) const {
-        return z == other.z && stokes == other.stokes;
-    }
-    bool operator!=(const PlaneRun& other) const {
-        return !(*this == other);
-    }
-};
-
-// Decoding a plane's chunks before anyone asks for the plane, for a loader whose reads keep what they
-// decode in a cache the next read finds. An animation is the reader that knows what it will ask for:
-// the frame that enters a new run of chunks decodes all of it, and that is the frame that stalls,
-// unless the run was decoded while the frames before it played from the one before.
-//
-// Asked of a loader through FileLoader::ReadAhead, and offered by none but the Zarr loader's.
 // How a plane of a file is read: the library's image, the options its reads go through -- and so the
 // cache they keep what they decode in -- and the read of the plane itself.
 struct ZarrPlaneRead {
@@ -42,26 +20,17 @@ struct ZarrPlaneRead {
     carta::zarr::ReadRequest request;
 };
 
+// What reading ahead of an animation needs of a file's loader: how each plane is read. Which run of
+// chunks a plane is in, what a run holds, whether the cache has room for it and when to decode it are
+// carta-zarr's ReadAhead's to say -- see AnimationReadAhead -- and need nothing more of a loader.
+//
+// Asked of a loader through FileLoader::ReadAhead, and offered by none but the Zarr loader's.
 class PlaneReadAhead {
 public:
     virtual ~PlaneReadAhead() = default;
 
     // How plane (z, stokes) is read, or nothing for a plane the file does not have.
     virtual std::optional<ZarrPlaneRead> Plane(int z, int stokes) const = 0;
-
-    // The run of chunks plane (z, stokes) is in.
-    virtual PlaneRun RunOf(int z, int stokes) const = 0;
-    // What one run holds once decoded, in bytes: the plane, rounded out to whole chunks, times a chunk's
-    // depth along the channels and the Stokes.
-    virtual std::uint64_t RunBytes() const = 0;
-    // How much the cache that runs are decoded into holds, in bytes.
-    virtual std::uint64_t CacheBytes() const = 0;
-    // Decodes the run plane (z, stokes) is in, so that reading any plane of it finds its chunks
-    // decoded. Blocks until it has, or `cancelled` says to stop, or it fails, and says whether it
-    // finished. Safe to call while planes are being read, and takes no lock a read of a plane takes:
-    // a frame that needs the run before it is decoded waits for the decoding under way rather than
-    // starting its own.
-    virtual bool Prefetch(int z, int stokes, const std::function<bool()>& cancelled) = 0;
 };
 
 } // namespace carta

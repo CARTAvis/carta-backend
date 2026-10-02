@@ -269,13 +269,6 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
     return read;
 }
 
-carta::zarr::Result<std::uint64_t> CartaZarrImage::Prefetch(const casacore::Slicer& section, const carta::zarr::ReadControl& control) const {
-    const auto& image = Opened("Prefetch");
-    carta::zarr::ReadOptions options;
-    options.control = control;
-    return image.Prefetch(_axes->Request(section), ThroughOwnCache(options));
-}
-
 std::pair<carta::zarr::ReadRequest, carta::zarr::ReadOptions> CartaZarrImage::LibraryRead(const casacore::Slicer& section) const {
     (void)Opened("LibraryRead");
     return {_axes->Request(section), ThroughOwnCache({})};

@@ -65,10 +65,6 @@ public:
         return this;
     }
     std::optional<ZarrPlaneRead> Plane(int z, int stokes) const override;
-    PlaneRun RunOf(int z, int stokes) const override;
-    std::uint64_t RunBytes() const override;
-    std::uint64_t CacheBytes() const override;
-    bool Prefetch(int z, int stokes, const std::function<bool()>& cancelled) override;
     BatchOutcome ReadOn(const RegionProfileRequest& request, std::mutex& image_mutex, RegionProfileProgress& progress,
         std::chrono::steady_clock::time_point deadline, const std::function<bool(double fraction)>& report) override;
     double BeamArea() override;

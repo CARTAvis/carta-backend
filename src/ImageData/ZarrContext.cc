@@ -31,22 +31,8 @@ std::optional<carta::zarr::Context>& SharedContext() {
     return context;
 }
 
-// What the shared context's cache was sized to, when it was sized at all.
-std::optional<std::size_t>& SharedCacheBytes() {
-    static std::optional<std::size_t> bytes;
-    return bytes;
-}
-
-// TensorStore's cache pool holds nothing unless it is given a size, so a context left to its defaults
-// keeps nothing decoded either.
-constexpr std::size_t DEFAULT_CACHE_BYTES = 0;
-
-// `applied`, when given, says whether the context was made with `options` rather than the defaults.
-carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options, bool* applied = nullptr) {
+carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options) {
     auto context_result = carta::zarr::Context::Create(options);
-    if (applied) {
-        *applied = static_cast<bool>(context_result);
-    }
     if (context_result) {
         return *std::move(context_result);
     }
@@ -75,11 +61,9 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, in
     // used to say with a separate disable_cache beside the size.
     options.cache_bytes = cache_pool_mb > 0 ? static_cast<std::size_t>(cache_pool_mb) * BYTES_PER_MB : 0;
 
-    bool applied = false;
-    auto context = CreateContext(options, &applied);
+    auto context = CreateContext(options);
     std::scoped_lock lock(ContextMutex());
     SharedContext() = std::move(context);
-    SharedCacheBytes() = applied ? options.cache_bytes : std::nullopt;
 
     const std::string file_io_threads = file_io_concurrency > 0 ? std::to_string(file_io_concurrency) : "default";
     const std::string cache_size_mib = cache_pool_mb > 0 ? std::to_string(cache_pool_mb) : "disabled";
@@ -93,11 +77,6 @@ carta::zarr::Context GetZarrContext() {
         SharedContext() = CreateContext({});
     }
     return *SharedContext();
-}
-
-std::size_t ZarrCacheBytes() {
-    std::scoped_lock lock(ContextMutex());
-    return SharedCacheBytes().value_or(DEFAULT_CACHE_BYTES);
 }
 
 }  // namespace carta
