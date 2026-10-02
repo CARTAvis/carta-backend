@@ -322,6 +322,7 @@ bool Frame::ZStokesChanged(int z, int stokes) {
 void Frame::WaitForTaskCancellation() {
     _connected = false; // file closed
     StopMomentCalc();
+    _vector_field.StopCalculations(); // invalidate all on-going vector field calculations
     std::unique_lock lock(GetActiveTaskMutex());
 }
 
@@ -2479,75 +2480,36 @@ bool Frame::GetDownsampledRasterData(
         tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
 }
 
-bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    return _vector_field.SetParameters(message, _axes.stokes);
+void Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameter) {
+    _vector_field.SetVectorOverlayParameters(parameter);
 }
 
-bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    if (_vector_field.ClearParameters(callback, _z_index)) {
-        return true;
-    }
-    return DoVectorFieldCalculation(callback);
-}
+bool Frame::CalculateVectorField(
+    const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
+    auto strong_this = shared_from_this();
+    int current_stokes = _stokes_index;
+    int z_index = _z_index;
 
-bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    // Prevent deleting the Frame while this task is not finished yet
-    std::shared_lock lock(GetActiveTaskMutex());
-
-    // Get vector field settings
-    int mip = _vector_field.Mip();
-    bool fractional = _vector_field.Fractional();
-    float threshold = _vector_field.Threshold();
-    CARTA::PolarizationType threshold_option = _vector_field.ThresholdOption();
-    bool calculate_pi = _vector_field.CalculatePi();
-    bool calculate_pa = _vector_field.CalculatePa();
-    bool current_stokes_as_pi = _vector_field.CurrStokesAsPi();
-    bool current_stokes_as_pa = _vector_field.CurrStokesAsPa();
-
-    // Get tiles
-    std::vector<Tile> tiles;
-    GetTiles(_dims.width, _dims.height, mip, tiles);
-
-    // Initialize stokes maps for their flags (Stokes data needed) and indices (Stokes pixel axis)
-    std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
-    std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
-
-    // Set stokes flags and get their indices
-    bool use_threshold_I = !std::isnan(threshold) && threshold_option == CARTA::PolarizationType::I;
-    stokes_flag["I"] = (fractional || use_threshold_I) && GetStokesTypeIndex("I", stokes_indices["I"]);
-    stokes_flag["Q"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("Q", stokes_indices["Q"]);
-    stokes_flag["U"] = (calculate_pi || calculate_pa) && GetStokesTypeIndex("U", stokes_indices["U"]);
-
-    // Get image tiles data
-    for (int i = 0; i < tiles.size(); ++i) {
-        auto& tile = tiles[i];
-        auto bounds = GetImageBounds(tile, _dims.width, _dims.height, mip);
-        int width, height;
-        std::unordered_map<std::string, std::vector<float>> stokes_data;
-        double progress = (double)(i + 1) / tiles.size();
-
-        // Get current stokes data
-        if (current_stokes_as_pi || current_stokes_as_pa) {
-            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, CurrentStokes(), bounds, mip)) {
+    auto tile_callback = [strong_this, &z_index, &current_stokes](std::vector<float>& data, CARTA::ImageBounds& bounds,
+                             int smoothing_factor, CARTA::PolarizationType stokes_type, int& width, int& height) {
+        int stokes_index = current_stokes;
+        if (stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE) {
+            std::string stokes_name = Stokes::Name(stokes_type);
+            if (!strong_this->GetStokesTypeIndex(stokes_name.c_str(), stokes_index)) {
                 return false;
             }
         }
+        return strong_this->GetDownsampledRasterData(data, width, height, z_index, stokes_index, bounds, smoothing_factor);
+    };
 
-        // Get stokes data I, Q, or U
-        if (calculate_pi || calculate_pa) {
-            for (auto one : stokes_flag) {
-                std::string stokes = one.first;
-                if (stokes_flag[stokes] &&
-                    !GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, mip)) {
-                    return false;
-                }
-            }
-        }
+    // this callback wrapper is only here to set z_index which is unknown inside VectorField functions (we removed this parameter)
+    // so here is will be set to the local variable z_index
+    auto message_callback = [&z_index, &callback](CARTA::VectorOverlayTileData& message) {
+        message.set_channel(z_index);
+        callback(message);
+    };
 
-        // Calculate PI or PA and then send a partial response message
-        _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
-    }
-    return true;
+    return _vector_field.NewCalculation(message_callback, _dims, tile_callback, stokes_changed, z_changed);
 }
 
 } // namespace carta

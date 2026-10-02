@@ -650,17 +650,23 @@ void Session::OnCloseFile(const CARTA::CloseFile& message) {
 
 void Session::DeleteFrame(int file_id) {
     // call destructor and erase from map
+    std::cout << "DEBUG : in Session::DeleteFrame ???" << std::endl;
     std::unique_lock<std::mutex> lock(_frame_mutex);
+    std::cout << "DEBUG : in Session::DeleteFrame after mutex" << std::endl;
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
+            std::cout << "DEBUG : in Session::DeleteFrame - before WaitForTaskCancellation1" << std::endl;
             frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();                    // delete Frame
+            std::cout << "DEBUG : in Session::DeleteFrame - after WaitForTaskCancellation1" << std::endl;
+            frame.second.reset(); // delete Frame
         }
         _frames.clear();
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
+        std::cout << "DEBUG : in Session::DeleteFrame - before WaitForTaskCancellation2" << std::endl;
         _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
+        std::cout << "DEBUG : in Session::DeleteFrame - after WaitForTaskCancellation2" << std::endl;
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
@@ -672,6 +678,8 @@ void Session::DeleteFrame(int file_id) {
     if (_channel_map_settings) {
         _channel_map_settings->RemoveFile(file_id);
     }
+
+    std::cout << "DEBUG : in Session::DeleteFrame - end of function" << std::endl;
 }
 
 void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int z, int animation_id, bool skip_data) {
@@ -838,7 +846,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                 // Send Contour data if required
                 SendContourData(file_id);
                 // Send vector field data if required
-                SendVectorFieldData(file_id);
+                SendVectorFieldData(file_id, stokes_changed, z_changed);
                 bool send_histogram(true);
                 UpdateImageData(file_id, send_histogram, z_changed, stokes_changed);
                 UpdateRegionData(file_id, ALL_REGIONS, z_changed, stokes_changed);
@@ -1595,8 +1603,11 @@ void Session::OnStopFitting(const CARTA::StopFitting& stop_fitting) {
 }
 
 void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message, bool silent) {
-    if (_frames.count(message.file_id()) && _frames.at(message.file_id())->SetVectorOverlayParameters(message) && !silent) {
-        SendVectorFieldData(message.file_id());
+    if (_frames.count(message.file_id())) {
+        _frames.at(message.file_id())->SetVectorOverlayParameters(message);
+        if (!silent) {
+            SendVectorFieldData(message.file_id());
+        }
     }
 }
 
@@ -2077,7 +2088,7 @@ void Session::RegionDataStreams(int file_id, int region_id) {
     }
 }
 
-bool Session::SendVectorFieldData(int file_id) {
+bool Session::SendVectorFieldData(int file_id, bool stokes_changed /*=false*/, bool z_changed /*=false*/) {
     if (_frames.count(file_id) && _frames.at(file_id)->IsValid()) {
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& partial_response) {
@@ -2085,7 +2096,7 @@ bool Session::SendVectorFieldData(int file_id) {
         };
 
         // Do PI/PA calculations
-        if (_frames.at(file_id)->CalculateVectorField(callback)) {
+        if (_frames.at(file_id)->CalculateVectorField(callback), stokes_changed, z_changed) {
             return true;
         }
         SendLogEvent("Error processing vector field image", {"vector field"}, CARTA::ErrorSeverity::WARNING);
@@ -2263,7 +2274,7 @@ void Session::ExecuteAnimationFrameInner(int animation_id) {
                     if (_animation_object->_stop_called) {
                         return;
                     }
-                    SendVectorFieldData(file_id);
+                    SendVectorFieldData(file_id, stokes_changed, z_changed);
 
                     // Send tile data
                     if (_animation_object->_stop_called) {
@@ -2296,7 +2307,7 @@ void Session::ExecuteAnimationFrameInner(int animation_id) {
                     if (_animation_object->_stop_called) {
                         return;
                     }
-                    SendVectorFieldData(active_file_id);
+                    SendVectorFieldData(active_file_id, stokes_changed, z_changed);
 
                     // Send tile data
                     if (_animation_object->_stop_called) {
