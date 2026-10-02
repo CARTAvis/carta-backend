@@ -37,6 +37,8 @@
 #include "ImageData/ZarrContext.h"
 #include "Main/ProgramSettings.h"
 #include "ImageData/ZarrLoader.h"
+
+#include <carta-zarr/read_ahead.h>
 #include "Cache/FileInfoCache.h"
 #include "FileList/FileInfoLoader.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -1045,16 +1047,28 @@ bool PlaneReads(FileLoader& loader, int z, int stokes, casacore::Array<float>& d
     }
 }
 
+// Whether the library reads ahead of the loader's planes into a cache of `bytes` of the frames' own: it
+// does only when that holds two runs, so what a run costs is told by the size it starts to fit.
+bool ReadsAheadWithin(FileLoader& loader, std::uint64_t bytes) {
+    auto* read_ahead = loader.ReadAhead();
+    const auto plane = read_ahead ? read_ahead->Plane(0, 0) : std::nullopt;
+    if (!plane) {
+        return false;
+    }
+    auto options = plane->options;
+    options.control.cache_pool = GetZarrContext().NewCachePool(bytes).value();
+    return carta::zarr::ReadAhead::For({{plane->image, options}}).has_value();
+}
+
 // The fixture's chunks are one channel and one Stokes deep and half a row of the plane wide, and it has
 // a flag, so a run is the plane, decoded at four bytes a pixel and one more for the flag.
 TEST_F(ZarrImageTest, ARunIsThePlaneRoundedOutToChunksTimesTheirDepth) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
-    auto* read_ahead = loader->ReadAhead();
-    ASSERT_NE(read_ahead, nullptr);
-    EXPECT_EQ(read_ahead->RunOf(1, 2), (PlaneRun{1, 2}));
-    EXPECT_EQ(read_ahead->RunBytes(), kWidth * kHeight * (sizeof(float) + 1));
+    const std::uint64_t run = kWidth * kHeight * (sizeof(float) + 1);
+    EXPECT_TRUE(ReadsAheadWithin(*loader, 2 * run));
+    EXPECT_FALSE(ReadsAheadWithin(*loader, 2 * run - 1));
 }
 
 // A copy of the fixture whose SKY metadata is rewritten by `edit`, and without the nodes named in
@@ -1084,9 +1098,9 @@ TEST_F(ZarrImageTest, ARunIsCountedAtTheWidthTheChunksAreStoredIn) {
     auto loader = FileLoader::GetLoader(copy.string());
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
-    auto* read_ahead = loader->ReadAhead();
-    ASSERT_NE(read_ahead, nullptr);
-    EXPECT_EQ(read_ahead->RunBytes(), kWidth * kHeight * (sizeof(double) + 1));
+    const std::uint64_t run = kWidth * kHeight * (sizeof(double) + 1);
+    EXPECT_TRUE(ReadsAheadWithin(*loader, 2 * run));
+    EXPECT_FALSE(ReadsAheadWithin(*loader, 2 * run - 1));
 }
 
 // And a run counts a flag only when the image has one. CartaZarrImage reports a mask whatever the
@@ -1099,9 +1113,9 @@ TEST_F(ZarrImageTest, ARunCountsAFlagOnlyWhenTheImageHasOne) {
     auto loader = FileLoader::GetLoader(copy.string());
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
-    auto* read_ahead = loader->ReadAhead();
-    ASSERT_NE(read_ahead, nullptr);
-    EXPECT_EQ(read_ahead->RunBytes(), kWidth * kHeight * sizeof(float));
+    const std::uint64_t run = kWidth * kHeight * sizeof(float);
+    EXPECT_TRUE(ReadsAheadWithin(*loader, 2 * run));
+    EXPECT_FALSE(ReadsAheadWithin(*loader, 2 * run - 1));
 }
 
 // What a prefetch decoded, the plane's read finds without going to storage: after it the chunks are
@@ -1130,8 +1144,11 @@ TEST_F(ZarrImageTest, APrefetchedPlaneIsReadWithoutGoingToStorage) {
     ASSERT_TRUE(held);
     auto* read_ahead = loader->ReadAhead();
     ASSERT_NE(read_ahead, nullptr);
-    EXPECT_EQ(read_ahead->CacheBytes(), bytes);
-    ASSERT_TRUE(read_ahead->Prefetch(0, 1, [] { return false; }));
+    const auto plane = read_ahead->Plane(0, 1);
+    ASSERT_TRUE(plane.has_value());
+    ASSERT_TRUE(plane->options.control.cache_pool.has_value()) << "a plane is not read through the image's own cache";
+    EXPECT_EQ(plane->options.control.cache_pool->bytes(), bytes);
+    ASSERT_TRUE(plane->image.Prefetch(plane->request, plane->options).has_value());
 
     for (const char* array : {"SKY", "FLAG"}) {
         for (const auto& entry : std::filesystem::recursive_directory_iterator(copy / array / "c")) {
@@ -1150,7 +1167,7 @@ TEST_F(ZarrImageTest, APrefetchedPlaneIsReadWithoutGoingToStorage) {
     }
     casacore::Array<float> next;
     EXPECT_FALSE(PlaneReads(*loader, 1, 1, next)) << "a plane not prefetched still read from emptied chunks, so this shows nothing";
-    EXPECT_FALSE(read_ahead->Prefetch(0, kStokes, [] { return false; })) << "a Stokes the image does not have was prefetched";
+    EXPECT_FALSE(read_ahead->Plane(0, kStokes).has_value()) << "a Stokes the image does not have has a plane";
     std::filesystem::remove_all(copy);
 }
 

@@ -23,11 +23,6 @@ void ConfigureZarrContext(
 // copy of the one handle rather than a pointer to it.
 carta::zarr::Context GetZarrContext();
 
-// How much the context's shared cache holds, in bytes: what ConfigureZarrContext was given, zero when it
-// was told to keep nothing, and TensorStore's own default size when it was never configured or left
-// the size alone.
-std::size_t ZarrCacheBytes();
-
 }  // namespace carta
 
 #endif  // CARTA_SRC_IMAGEDATA_ZARRCONTEXT_H_

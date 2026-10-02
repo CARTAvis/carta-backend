@@ -2316,10 +2316,9 @@ bool Session::ExecuteAnimationFrame() {
 
         curr_frame = _animation_object->_next_frame;
         auto* read_ahead = _animation_object->ReadAhead();
-        const bool overlapped = read_ahead && read_ahead->UnderWay();
-        const auto began = std::chrono::high_resolution_clock::now();
+        const auto began = std::chrono::steady_clock::now();
         ExecuteAnimationFrameInner(animation_id);
-        const bool late = std::chrono::high_resolution_clock::now() - began > _animation_object->_frame_interval;
+        const bool late = std::chrono::steady_clock::now() - began > _animation_object->_frame_interval;
 
         const auto step = _animation_object->Step(curr_frame, _animation_object->_going_forward);
         _animation_object->_next_frame = step.frame;
@@ -2333,7 +2332,7 @@ bool Session::ExecuteAnimationFrame() {
                     upcoming.push_back(AnimatedPlanes(frame));
                 }
             }
-            read_ahead->Served(late, overlapped, AnimatedPlanes(curr_frame), upcoming);
+            read_ahead->Served(began, late, AnimatedPlanes(curr_frame), upcoming);
         }
         _animation_object->_t_last = std::chrono::high_resolution_clock::now();
     }
