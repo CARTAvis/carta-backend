@@ -1943,6 +1943,49 @@ TEST_F(ZarrImageTest, NiceCursorShapeIsTheChunk) {
     EXPECT_LE(cursor.product(), static_cast<casacore::Int>(image->advisedMaxPixels()));
 }
 
+// XRADIO writes obsdate as an MJD, but a date string is what another writer may leave, and it names
+// the same epoch. It used to reach casacore as no date at all: the image opened observed at MJD 0.
+TEST_F(ZarrImageTest, AnObservationDateWrittenAsAStringIsTheEpochItNames) {
+    const auto copy = EditedFixture("string_obsdate.zarr", [](const std::string& text) {
+        const auto dated = std::regex_replace(text, std::regex(R"("data"\s*:\s*59000\.0)"), R"("data": "2020-05-31T12:00:00")");
+        return std::regex_replace(dated, std::regex(R"("format"\s*:\s*"MJD")"), R"("format": "ISO")");
+    });
+    auto loader = FileLoader::GetLoader(copy.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto image = loader->GetImage();
+    ASSERT_NE(image, nullptr);
+
+    const auto date = image->coordinates().obsInfo().obsDate();
+    EXPECT_EQ(date.getRefPtr()->getType(), casacore::MEpoch::UTC);
+    EXPECT_NEAR(date.getValue().get(), 59000.5, 1e-9);
+}
+
+// A chunk may be declared longer than the array it chunks, and no longer than 2^64 - 1 elements. A
+// spatial extent past what casacore::Int holds was narrowed before it was clipped to the image: 2^32
+// became zero, and the cursor never stopped growing by it, while one past 2^31 became negative. The
+// cursor is the image along that axis, as it is for any chunk at least as long as the image.
+TEST_F(ZarrImageTest, NiceCursorShapeClipsAChunkLongerThanAnInt) {
+    for (const char* extent : {"4294967296", "3000000000"}) {
+        const auto copy = EditedFixture(std::string("wide_chunk_") + extent + ".zarr", [&](const std::string& text) {
+            return std::regex_replace(
+                text, std::regex(R"("chunk_shape"\s*:\s*\[\s*1\s*,\s*1\s*,\s*1\s*,\s*2\s*,)"),
+                std::string(R"("chunk_shape": [1, 1, 1, )") + extent + ",");
+        });
+        auto loader = FileLoader::GetLoader(copy.string());
+        ASSERT_NE(loader, nullptr);
+        loader->OpenFile("");
+        auto image = loader->GetImage();
+        ASSERT_NE(image, nullptr) << "a chunk " << extent << " long was not opened";
+        const auto cursor = image->niceCursorShape(image->advisedMaxPixels());
+        ASSERT_EQ(cursor.size(), 4);
+        EXPECT_EQ(cursor(0), kWidth) << "a chunk " << extent << " long";
+        EXPECT_EQ(cursor(1), kHeight) << "a chunk " << extent << " long";
+        EXPECT_EQ(cursor(2), 1);
+        EXPECT_EQ(cursor(3), 1);
+    }
+}
+
 }  // namespace
 // A beam table with one row per plane is how XRADIO stores beams whether or not the planes differ,
 // so the loader has to decide which it is. The decision is not cosmetic: hasMultipleBeams() is what

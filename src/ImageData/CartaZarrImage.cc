@@ -197,23 +197,27 @@ casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels)
         return casacore::ImageInterface<float>::doNiceCursorShape(max_pixels);
     }
 
+    // Clipped to the image in IPosition's own 64-bit width, never narrowed first: a chunk may be
+    // declared longer than its array, and one 2^32 long narrowed to casacore::Int was a zero step
+    // the growth below never got past. One so long that it wrapped negative is clipped to one.
     casacore::IPosition cursor(_shape.size());
     for (casacore::uInt axis = 0; axis < _shape.size(); ++axis) {
-        cursor(axis) = std::min<casacore::Int>(static_cast<casacore::Int>(chunk[axis]), _shape(axis));
+        cursor(axis) = std::clamp<ssize_t>(chunk[axis], 1, std::max<ssize_t>(_shape(axis), 1));
     }
+    const auto most_pixels = static_cast<ssize_t>(max_pixels);
 
     // Collapse the non-spatial axes, slowest first, until the advice is met.
-    for (casacore::uInt axis = _shape.size(); axis > 2 && cursor.product() > static_cast<casacore::Int>(max_pixels);
-         --axis) {
+    for (casacore::uInt axis = _shape.size(); axis > 2 && cursor.product() > most_pixels; --axis) {
         cursor(axis - 1) = 1;
     }
 
     // Grow by whole chunks while the advice still allows it: one chunk per cursor is one small
-    // request per chunk, which leaves the decode pool idle.
+    // request per chunk, which leaves the decode pool idle. The step is the clipped chunk, which is
+    // the chunk itself whenever there is room for a second one.
     for (casacore::uInt axis = 0; axis < 2; ++axis) {
-        const auto step = static_cast<casacore::Int>(chunk[axis]);
+        const auto step = cursor(axis);
         while (cursor(axis) + step <= _shape(axis) &&
-               (cursor.product() / cursor(axis)) * (cursor(axis) + step) <= static_cast<casacore::Int>(max_pixels)) {
+               (cursor.product() / cursor(axis)) * (cursor(axis) + step) <= most_pixels) {
             cursor(axis) += step;
         }
     }
