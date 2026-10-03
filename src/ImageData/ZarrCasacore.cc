@@ -267,9 +267,19 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
         if (beam.time != 0) {
             continue;
         }
-        beam_matrix(static_cast<casacore::uInt>(beam.channel), static_cast<casacore::uInt>(beam.polarization)) =
-            casacore::GaussianBeam(casacore::Quantity(beam.major, beam.unit), casacore::Quantity(beam.minor, beam.unit),
-                casacore::Quantity(beam.position_angle, beam.unit));
+        // casacore refuses a beam that is not one -- a negative axis, a minor axis longer than the
+        // major, a unit that is not an angle -- by throwing. The beams are optional and the pixels
+        // are not, so a table it refuses is the table ignored, not an image that will not open.
+        try {
+            beam_matrix(static_cast<casacore::uInt>(beam.channel), static_cast<casacore::uInt>(beam.polarization)) =
+                casacore::GaussianBeam(casacore::Quantity(beam.major, beam.unit), casacore::Quantity(beam.minor, beam.unit),
+                    casacore::Quantity(beam.position_angle, beam.unit));
+        } catch (const casacore::AipsError& error) {
+            result.notes.push_back(ZarrNote{ZarrNoteTopic::none, "beam table ignored",
+                "beam table gives channel " + std::to_string(beam.channel) + " polarization " + std::to_string(beam.polarization) +
+                    " a beam casacore refuses (" + std::string(error.getMesg()) + "); ignoring the beams"});
+            return result;
+        }
         ++filled;
 
         if (first == nullptr) {

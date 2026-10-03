@@ -5,6 +5,7 @@
 
 #include "DerivedStatistics.h"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -27,7 +28,11 @@ DerivedStatistics DeriveStatistics(const Totals& totals, LonePixelSigma lone_pix
     derived.mean = totals.sum / count;
     derived.rms = std::sqrt(totals.sum_sq / count);
     if (count > 1.0) {
-        derived.sigma = std::sqrt((totals.sum_sq - (totals.sum * totals.sum / count)) / (count - 1.0));
+        // Pixels that are all, or nearly all, one value can leave the sum of squares a rounding
+        // error below the square of the sum over the count. The spread is then zero as far as these
+        // totals can tell, and not the NaN its square root would be.
+        const double spread = totals.sum_sq - (totals.sum * totals.sum / count);
+        derived.sigma = std::sqrt(std::max(spread, 0.0) / (count - 1.0));
     } else {
         derived.sigma = lone_pixel_sigma == LonePixelSigma::zero ? 0.0 : undefined;
     }

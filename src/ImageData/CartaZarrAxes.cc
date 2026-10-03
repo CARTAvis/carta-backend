@@ -57,6 +57,13 @@ std::optional<CartaZarrAxes> CartaZarrAxes::Of(const std::vector<carta::zarr::Ax
             reason = "XRADIO image has an empty axis: " + axis.name;
             return std::nullopt;
         }
+        // One direction cosine is not a spacing, so an axis one pixel across has no pixel scale, and
+        // casacore refuses a direction coordinate whose increment is zero. Refused here, from the axes
+        // alone, so that the file list does not offer what would then fail to open.
+        if ((axis.role == carta::zarr::AxisRole::spatial_x || axis.role == carta::zarr::AxisRole::spatial_y) && axis.length == 1) {
+            reason = "XRADIO image has a spatial axis one pixel across, which has no pixel scale: " + axis.name;
+            return std::nullopt;
+        }
         if (axis.length > static_cast<std::uint64_t>(std::numeric_limits<casacore::Int>::max())) {
             reason = "XRADIO image dimension is too large for casacore";
             return std::nullopt;
@@ -82,6 +89,14 @@ std::optional<CartaZarrAxes> CartaZarrAxes::Of(const carta::zarr::ImageDescripto
     if (!descriptor.direction || !descriptor.spectral || !descriptor.polarization) {
         reason = "XRADIO image is missing a required coordinate descriptor";
         return std::nullopt;
+    }
+    // The other way to the same thing, which only the coordinate values show: two direction cosines
+    // that are the same. carta-zarr says so as a degenerate axis and leaves the increment at zero.
+    for (const double increment : descriptor.direction->increment) {
+        if (increment == 0.0) {
+            reason = "XRADIO image has a direction axis with no increment, so no pixel scale";
+            return std::nullopt;
+        }
     }
     return axes;
 }

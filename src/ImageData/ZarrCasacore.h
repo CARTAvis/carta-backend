@@ -56,7 +56,8 @@ struct ZarrBeams {
 
 // The beams at the first time, on an image of `channels` by `polarizations` planes. A table that
 // gives every plane exactly the same beam is a single beam, because hasMultipleBeams() decides
-// whether a consumer convolves the cube to a common one first.
+// whether a consumer convolves the cube to a common one first. A table with a beam casacore refuses
+// is ignored, and noted, rather than thrown.
 ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore::uInt channels, casacore::uInt polarizations);
 
 }  // namespace carta

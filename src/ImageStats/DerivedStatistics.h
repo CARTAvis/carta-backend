@@ -46,8 +46,9 @@ double Extrema(double min, double max);
 //
 // The arithmetic is the same however the totals arrived, so two loaders that count the same pixels
 // report the same bits. Sigma is `sqrt((sum_sq - sum * sum / n) / (n - 1))`, whose radicand can come
-// out a rounding error below zero for pixels that are nearly all one value; sigma is then NaN, as it
-// always was.
+// out a rounding error below zero for pixels that are nearly all one value; it is then taken as zero,
+// where it used to make sigma NaN. Rounding the other way still leaves such a sigma a little above
+// zero: the totals hold no more than that, and a centred second moment is what would.
 DerivedStatistics DeriveStatistics(const Totals& totals, LonePixelSigma lone_pixel_sigma);
 
 } // namespace carta

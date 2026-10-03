@@ -1603,8 +1603,13 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
             std::vector<float> spectral_data;
             int xy_count(1);
-            auto profile_cancelled = [this, start_cursor, &config]() {
-                return !(_cursor == start_cursor) || !IsConnected() || !HasSpectralConfig(config);
+            // A profile of the current stokes is of the one current when it began, and every message
+            // says CurrentStokes(): one the user has turned away from is not wanted, and must not go
+            // out as the new one's. A stokes change brings a request of its own.
+            const bool current_stokes = coordinate == "z";
+            auto stokes_left = [this, current_stokes, stokes]() { return current_stokes && CurrentStokes() != stokes; };
+            auto profile_cancelled = [this, start_cursor, &config, &stokes_left]() {
+                return !(_cursor == start_cursor) || !IsConnected() || !HasSpectralConfig(config) || stokes_left();
             };
             // Publish the finished part of the profile on the same cadence as the incremental path
             // below, so that a loader reading directly behaves like one reading in slices: a curve
@@ -1637,6 +1642,9 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 }
                 if (!HasSpectralConfig(config)) {
                     break;
+                }
+                if (stokes_left()) {
+                    continue;
                 }
                 if (read != BatchOutcome::finished) {
                     // Failed, which the loader has logged -- or stopped by a cursor that has since come
@@ -1715,8 +1723,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel all profiles
                         return false;
                     }
-                    if (!HasSpectralConfig(config)) {
-                        // requirements changed, cancel this profile
+                    if (!HasSpectralConfig(config) || stokes_left()) {
+                        // requirements or stokes changed, cancel this profile
                         break;
                     }
 

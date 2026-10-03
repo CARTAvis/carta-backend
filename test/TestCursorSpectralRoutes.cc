@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "Frame/Frame.h"
@@ -25,7 +26,7 @@ const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
 // cue: read as the real one does, decline, fail, or be stopped by the cursor moving on.
 class ScriptedCursorLoader : public ZarrLoader {
 public:
-    enum class Script { read, decline, fail, cursor_moves };
+    enum class Script { read, decline, fail, cursor_moves, stokes_changes };
 
     ScriptedCursorLoader(const std::string& filename, Script script) : ZarrLoader(filename), _script(script) {}
 
@@ -45,11 +46,20 @@ public:
                 frame->SetCursor(0, 0);
                 EXPECT_TRUE(cancellation_requested());
                 return BatchOutcome::cancelled;
+            case Script::stokes_changes: {
+                // The user turns to Q while I is being read, and the read finishes regardless.
+                std::string message;
+                EXPECT_TRUE(frame->SetImageChannels(frame->CurrentZ(), 1, message)) << message;
+                stokes_change_seen = cancellation_requested();
+                return ZarrLoader::GetCursorSpectralData(
+                    data, stokes, cursor_x, count_x, cursor_y, count_y, image_mutex, {}, partial_callback);
+            }
         }
         return BatchOutcome::failed;
     }
 
     int cursor_reads = 0;
+    bool stokes_change_seen = false;
     Frame* frame = nullptr;
 
 private:
@@ -60,6 +70,7 @@ struct CursorProfile {
     bool filled = false;
     std::vector<CARTA::SpectralProfileData> messages;
     int cursor_reads = 0;
+    bool stokes_change_seen = false;
 };
 
 // The spectrum under a cursor at (2, 2) of the pixel fixture, as the frame sends it.
@@ -79,6 +90,7 @@ CursorProfile FillCursorProfile(ScriptedCursorLoader::Script script) {
     profile.filled =
         frame.FillSpectralProfileData([&](CARTA::SpectralProfileData data) { profile.messages.push_back(data); }, CURSOR_REGION_ID, false);
     profile.cursor_reads = loader->cursor_reads;
+    profile.stokes_change_seen = loader->stokes_change_seen;
     return profile;
 }
 
@@ -125,6 +137,17 @@ TEST_F(CursorSpectralRoutesTest, AReadTheCursorLeftIsNotReadAgain) {
     const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::cursor_moves);
     EXPECT_FALSE(profile.filled);
     EXPECT_TRUE(profile.messages.empty());
+}
+
+// A read of the current stokes is of the stokes that was current when it began. One the user turned
+// away from is not wanted, and a spectrum of I is not sent as Q's: the frame is told of the change,
+// and its own request for Q follows.
+TEST_F(CursorSpectralRoutesTest, AReadOfAStokesTheUserLeftIsNotSent) {
+    const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::stokes_changes);
+    EXPECT_TRUE(profile.stokes_change_seen) << "the read should be told to stop";
+    for (const auto& message : profile.messages) {
+        EXPECT_LT(message.progress(), 1.0f) << "a finished spectrum of stokes " << message.stokes() << " was sent";
+    }
 }
 
 // A failed read is not read again: the frame would read the same pixels through the same library,
