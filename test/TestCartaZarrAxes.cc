@@ -44,6 +44,7 @@ carta::zarr::ImageDescriptor Described(const std::vector<std::pair<AxisRole, std
         descriptor.axes.push_back(axis);
     }
     descriptor.direction.emplace();
+    descriptor.direction->increment = {-1.0e-4, 1.0e-4};
     descriptor.spectral.emplace();
     descriptor.polarization.emplace();
     return descriptor;
@@ -168,6 +169,35 @@ TEST(CartaZarrAxes, AnEmptyAxisIsNotDisplayed) {
     descriptor.spectral.reset();
     EXPECT_FALSE(CartaZarrAxes::Of(descriptor.axes, reason).has_value());
     EXPECT_NE(reason.find("empty axis"), std::string::npos) << reason;
+}
+
+// One pixel across has no pixel scale: one direction cosine is not a spacing, and casacore refuses a
+// direction coordinate whose increment is zero. Refused from the axes alone, so the list does not
+// offer what would then fail to open.
+TEST(CartaZarrAxes, ASpatialAxisOfOnePixelIsNotDisplayed) {
+    for (const std::size_t spatial : {0u, 1u}) {
+        auto descriptor = XradioOrder();
+        descriptor.axes[spatial].length = 1;
+        std::string from_axes;
+        std::string from_descriptor;
+        EXPECT_FALSE(CartaZarrAxes::Of(descriptor.axes, from_axes).has_value()) << descriptor.axes[spatial].name;
+        EXPECT_FALSE(CartaZarrAxes::Of(descriptor, from_descriptor).has_value()) << descriptor.axes[spatial].name;
+        EXPECT_NE(from_axes.find("one pixel"), std::string::npos) << from_axes;
+        EXPECT_NE(from_axes.find(descriptor.axes[spatial].name), std::string::npos) << from_axes;
+        EXPECT_EQ(from_axes, from_descriptor);
+    }
+}
+
+// Two direction cosines that are the same are the other way to an axis with no increment, and only
+// the descriptor can see it. Refused with that reason rather than by casacore's singular transform.
+TEST(CartaZarrAxes, ADirectionAxisWithNoIncrementIsNotDisplayed) {
+    for (const std::size_t axis : {0u, 1u}) {
+        auto descriptor = XradioOrder();
+        descriptor.direction->increment[axis] = 0.0;
+        std::string reason;
+        EXPECT_FALSE(CartaZarrAxes::Of(descriptor, reason).has_value()) << axis;
+        EXPECT_NE(reason.find("no increment"), std::string::npos) << reason;
+    }
 }
 
 // The file list decides from a listed image's axes and the image decides again from its descriptor.
