@@ -69,7 +69,10 @@ Reported ReportedFrom(const CountedTotals& t, double lone_pixel_sigma) {
     Reported reported;
     reported.mean = t.sum / t.num_pixels;
     reported.rms = std::sqrt(t.sum_sq / t.num_pixels);
-    reported.sigma = t.num_pixels > 1.0 ? std::sqrt((t.sum_sq - (t.sum * t.sum / t.num_pixels)) / (t.num_pixels - 1.0)) : lone_pixel_sigma;
+    // Less a radicand that rounded below zero, which the formulas written out made NaN.
+    reported.sigma = t.num_pixels > 1.0
+                         ? std::sqrt(std::max(t.sum_sq - (t.sum * t.sum / t.num_pixels), 0.0) / (t.num_pixels - 1.0))
+                         : lone_pixel_sigma;
     reported.extrema = std::abs(t.min) > std::abs(t.max) ? t.min : t.max;
     return reported;
 }
@@ -462,6 +465,16 @@ TEST_F(DerivedStatisticsTest, TheSecondPixelIsWhereSigmaStopsBeingAPolicy) {
     for (const auto policy : {LonePixelSigma::zero, LonePixelSigma::nan}) {
         const auto derived = DeriveStatistics({2.0, 6.0, 18.0, 3.0, 3.0}, policy);
         EXPECT_EQ(derived.sigma, 0.0);
+    }
+}
+
+TEST_F(DerivedStatisticsTest, PixelsThatAreAllOneLargeValueHaveASpreadAndNotNaN) {
+    // A 1000 x 1000 plane of 1e8: the sum of squares comes out a rounding error below the square of
+    // the sum over the count, and the square root of that is NaN.
+    const auto counted = CountPixels(std::vector<float>(1000 * 1000, 1.0e8f));
+    ASSERT_LT(counted.sum_sq - counted.sum * counted.sum / counted.num_pixels, 0.0);
+    for (const auto policy : {LonePixelSigma::zero, LonePixelSigma::nan}) {
+        EXPECT_EQ(DeriveStatistics(TotalsOf(counted), policy).sigma, 0.0);
     }
 }
 
