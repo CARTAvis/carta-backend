@@ -7,8 +7,12 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
+#include <filesystem>
+#include <memory>
+
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
+#include "ImageData/ZarrLoader.h"
 #include "Region/Region.h"
 #include "Region/RegionHandler.h"
 #include "src/Frame/Frame.h"
@@ -189,4 +193,78 @@ TEST_F(RegionSpectralProfileTest, TestAnnPointSpectralProfile) {
     CARTA::SpectralProfileData spectral_data;
     bool ok = SpectralProfile(image_path, points, spectral_data, true);
     ASSERT_FALSE(ok);
+}
+
+namespace {
+
+// A Zarr loader whose region profile reader goes on at its own pace: Q one channel a call, every
+// other stokes all its channels in one. Each channel read is one pixel of 3 in Q and of 4 in U, so
+// Plinear is 5 wherever both have been read. What it reads is not what the fixture holds; what is
+// under test is how the handler goes on from piece to piece.
+class UnevenProfileLoader : public ZarrLoader {
+public:
+    explicit UnevenProfileLoader(const std::string& filename) : ZarrLoader(filename) {}
+
+    BatchOutcome ReadOn(const RegionProfileRequest& request, std::mutex&, RegionProfileProgress& progress,
+        std::chrono::steady_clock::time_point, const std::function<bool(double)>&) override {
+        if (progress.total == 0) {
+            progress.total = progress.channels.size();
+        }
+        const double value = request.stokes == 1 ? 3.0 : 4.0;
+        const std::uint64_t until = request.stokes == 1 ? progress.done + 1 : progress.total;
+        for (; progress.done < until; ++progress.done) {
+            auto& channel = progress.channels[progress.done];
+            channel.read = true;
+            channel.num_pixels = 1.0;
+            channel.sum = value;
+            channel.sum_sq = value * value;
+            channel.min = value;
+            channel.max = value;
+        }
+        return BatchOutcome::finished;
+    }
+};
+
+} // namespace
+
+// A computed stokes is done when every stokes it is made of is done, and not when the last one asked
+// is: U finishes in its first call, and Q still has a channel to read.
+TEST_F(RegionSpectralProfileTest, AComputedStokesWaitsForEveryStokesItIsMadeOf) {
+    const std::filesystem::path fixture{ZARR_PIXEL_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "carta-zarr pixel fixture not found at " << fixture;
+    }
+    auto loader = std::make_shared<UnevenProfileLoader>(fixture.string());
+    loader->OpenFile("");
+    auto frame = std::make_shared<Frame>(0, loader, "");
+    ASSERT_TRUE(frame->IsValid());
+    carta::RegionHandler region_handler;
+
+    int file_id(0), region_id(-1);
+    ASSERT_TRUE(SetRegion(region_handler, file_id, region_id, {0.0, 0.0, 2.0, 0.0, 2.0, 2.0, 0.0, 2.0}, frame->CoordinateSystem(), false));
+
+    // The current stokes first, as a session asks for it first: that is what leaves the region's mask
+    // where the loader's path looks for it.
+    CARTA::SetSpectralRequirements_SpectralConfig current;
+    current.set_coordinate("z");
+    current.add_stats_types(CARTA::StatsType::Sum);
+    CARTA::SetSpectralRequirements_SpectralConfig plinear;
+    plinear.set_coordinate("Plinearz");
+    plinear.add_stats_types(CARTA::StatsType::Sum);
+    ASSERT_TRUE(region_handler.SetSpectralRequirements(region_id, file_id, frame, {current, plinear}));
+
+    std::vector<CARTA::SpectralProfileData> messages;
+    ASSERT_TRUE(region_handler.FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData data) {
+            if (data.profiles_size() == 1 && data.profiles(0).coordinate() == "Plinearz") {
+                messages.push_back(data);
+            }
+        },
+        region_id, file_id, false));
+
+    ASSERT_FALSE(messages.empty());
+    const auto& last = messages.back();
+    ASSERT_EQ(last.progress(), 1.0f);
+    ASSERT_EQ(last.profiles_size(), 1);
+    EXPECT_EQ(GetSpectralProfileValues<double>(last.profiles(0)), (std::vector<double>{5.0, 5.0}));
 }

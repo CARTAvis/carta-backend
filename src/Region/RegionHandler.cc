@@ -8,6 +8,7 @@
 
 #include "RegionHandler.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 
@@ -1692,19 +1693,26 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
             // One step on for one stokes. A loader without a reading of its own, or one that declines
             // this region, leaves the profile to casacore, below.
+            //
+            // A computed stokes steps each of the stokes it is made of in turn, and is as far on as the
+            // least of them: one already finished -- or kept from before, and so finished at once --
+            // says nothing of the others.
             RegionProfileRequest request;
             request.origin = xy_origin;
             request.mask = &mask;
             request.channels = z_range;
             bool declined = false;
+            float least_progress = 1.0F;
             auto step_on = [&](int tmp_stokes_index, ProfilesMap& tmp_results, bool with_partials) {
                 request.stokes = tmp_stokes_index;
+                float stokes_progress = 0.0F;
                 const auto outcome = frame->WithProfileReader([&](RegionProfileReader& reader, std::mutex& image_mutex) {
                     return _region_profiles.Continue({file_id, region_id, tmp_stokes_index}, request, reader, image_mutex,
                         std::chrono::milliseconds(TARGET_PARTIAL_REGION_TIME), with_partials ? report_partial : RegionProfileReport(),
-                        tmp_results, progress);
+                        tmp_results, stokes_progress);
                 });
                 declined = declined || outcome == BatchOutcome::declined;
+                least_progress = std::min(least_progress, stokes_progress);
                 return outcome == BatchOutcome::finished;
             };
 
@@ -1722,6 +1730,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
                 ProfilesMap partial_profiles;
                 bool stepped = false;
+                least_progress = 1.0F;
                 if (Stokes::IsComputed(stokes_index)) { // For computed stokes
                     stepped = GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data);
                 } else { // For regular stokes I, Q, U, or V
@@ -1733,6 +1742,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                     }
                     return false;
                 }
+                progress = least_progress;
 
                 if (partial_updates.Due(progress)) {
                     // Copy partial profile to results
