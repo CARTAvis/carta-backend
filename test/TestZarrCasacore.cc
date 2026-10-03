@@ -4,6 +4,7 @@
 */
 #include <gtest/gtest.h>
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -227,4 +228,25 @@ TEST(ZarrCasacore, ATableNamingPlanesTheImageLacksIsIgnored) {
     ASSERT_EQ(made.notes.size(), 1u);
     EXPECT_EQ(made.notes.front().topic, carta::ZarrNoteTopic::none) << "with no beams there is no beam entry to sit beside";
     EXPECT_NE(made.notes.front().detail.find("ignoring the beams"), std::string::npos) << made.notes.front().detail;
+}
+
+// The beams are optional and the pixels are not: a table casacore will not take as beams leaves an
+// image with no beam, and says why, rather than an image that will not open.
+TEST(ZarrCasacore, ATableCasacoreRefusesIsIgnored) {
+    struct Case {
+        const char* what;
+        std::function<void(carta::zarr::Beam&)> spoil;
+    };
+    for (const auto& c : {Case{"negative axes", [](carta::zarr::Beam& beam) { beam.major = beam.minor = -1.0e-5; }},
+             Case{"minor larger than major", [](carta::zarr::Beam& beam) { beam.minor = 2.0 * beam.major; }},
+             Case{"a unit that is not an angle", [](carta::zarr::Beam& beam) { beam.unit = "Jy"; }}}) {
+        auto table = EveryPlane(2.0e-5);
+        c.spoil(table[2]);
+        carta::ZarrBeams made;
+        ASSERT_NO_THROW(made = MakeZarrBeamSet(table, 3, 2)) << c.what;
+        EXPECT_FALSE(made.beams.has_value()) << c.what;
+        ASSERT_EQ(made.notes.size(), 1u) << c.what;
+        EXPECT_EQ(made.notes.front().topic, carta::ZarrNoteTopic::none) << c.what;
+        EXPECT_NE(made.notes.front().detail.find("ignoring the beams"), std::string::npos) << made.notes.front().detail;
+    }
 }
