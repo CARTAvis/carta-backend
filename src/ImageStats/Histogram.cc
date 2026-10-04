@@ -9,11 +9,25 @@
 #include <omp.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <limits>
 
 #include "Logger/Logger.h"
 #include "ThreadManager/ThreadManager.h"
 
 using namespace carta;
+
+namespace {
+
+// A count as the int a bin holds: at most INT_MAX. A cube's histogram is its planes' added together,
+// and planes each held below INT_MAX can still sum past it; wrapped, the bin would go negative and
+// every percentile read from it would be misplaced. Counts are only ever added, so holding each sum
+// here comes to the same as adding in 64 bits and holding the total.
+int HeldCount(int64_t count) {
+    return static_cast<int>(std::min<int64_t>(count, std::numeric_limits<int>::max()));
+}
+
+} // namespace
 
 Histogram::Histogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size)
     : _bin_width((bounds.max - bounds.min) / num_bins),
@@ -40,7 +54,7 @@ bool Histogram::Add(const Histogram& h) {
     const auto& other_bins = h.GetHistogramBins();
 #pragma omp simd
     for (int i = 0; i < num_bins; i++) {
-        _histogram_bins[i] = _histogram_bins[i] + other_bins[i];
+        _histogram_bins[i] = HeldCount(static_cast<int64_t>(_histogram_bins[i]) + other_bins[i]);
     }
     return true;
 }
@@ -66,9 +80,11 @@ void Histogram::Fill(const float* data, const size_t data_size) {
         }
 #pragma omp for
         for (int64_t i = 0; i < num_bins; i++) {
+            int64_t count = _histogram_bins[i];
             for (int t = 0; t < num_threads; t++) {
-                _histogram_bins[i] += temp_bins[num_bins * t + i];
+                count += temp_bins[num_bins * t + i];
             }
+            _histogram_bins[i] = HeldCount(count);
         }
     }
 }
