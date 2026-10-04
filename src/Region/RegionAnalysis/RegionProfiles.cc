@@ -38,7 +38,8 @@ std::map<CARTA::StatsType, std::vector<double>> RegionProfileStatistics(const st
         }
         // A profile says zero for a lone pixel's sigma.
         const auto derived =
-            DeriveStatistics({channel.num_pixels, channel.sum, channel.sum_sq, channel.min, channel.max}, LonePixelSigma::zero);
+            DeriveStatistics({channel.num_pixels, channel.sum, channel.sum_sq, channel.min, channel.max, channel.sum_sq_dev},
+                LonePixelSigma::zero);
         stats[CARTA::StatsType::Sum][c] = channel.sum;
         stats[CARTA::StatsType::SumSq][c] = channel.sum_sq;
         stats[CARTA::StatsType::Min][c] = channel.min;

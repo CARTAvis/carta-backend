@@ -37,8 +37,9 @@ std::optional<carta::zarr::CachePool> KeepingNothing() {
     return *pool;
 }
 
-// The six accumulators a reduction produces, as the statistics the caller's own calculator would
-// have produced from the same pixels. A statistic that was not accumulated reads as SpectralTotals
+// What a reduction counts, as the statistics the caller's own calculator would have produced from
+// the same pixels. Every reduction that comes here asks for sum_sq_dev, which sigma is made from; a
+// cube histogram always counts it. A statistic that was not accumulated reads as SpectralTotals
 // says -- zero for the sums, NaN for the extrema -- which is the value that calculator would have
 // left there.
 //
@@ -53,10 +54,10 @@ BasicStats<float> ToPlaneStats(const carta::zarr::SpectralTotals& counted) {
     if (count == 0) {
         return BasicStats<float>();
     }
-    const auto derived =
-        DeriveStatistics({counted.num_pixels, counted.sum, counted.sum_sq, counted.min, counted.max}, LonePixelSigma::nan);
+    const auto derived = DeriveStatistics(
+        {counted.num_pixels, counted.sum, counted.sum_sq, counted.min, counted.max, counted.sum_sq_dev}, LonePixelSigma::nan);
     return BasicStats<float>{count, counted.sum, derived.mean, derived.sigma, static_cast<float>(counted.min),
-        static_cast<float>(counted.max), derived.rms, counted.sum_sq};
+        static_cast<float>(counted.max), derived.rms, counted.sum_sq, counted.sum_sq_dev};
 }
 
 // What this loader makes of a library call, said once. The library already tells a caller's stop
@@ -268,7 +269,7 @@ BatchOutcome ZarrLoader::PlaneStats(int stokes, const std::function<bool()>& can
     request.regions = {&region, 1};
     request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum |
                          carta::zarr::Statistic::sum_sq | carta::zarr::Statistic::min |
-                         carta::zarr::Statistic::max;
+                         carta::zarr::Statistic::max | carta::zarr::Statistic::sum_sq_dev;
 
     // A scan over the cube should not evict the session's working set; see PlaneHistograms. The
     // callback below skips every plane that is not finished yet, so it cannot be where a stop is
@@ -452,7 +453,8 @@ BatchOutcome ZarrLoader::ReadOn(const RegionProfileRequest& request, std::mutex&
     reduce.planes.polarization = static_cast<std::uint64_t>(request.stokes);
     reduce.regions = {&region, 1};
     reduce.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::nan_count | carta::zarr::Statistic::sum |
-                        carta::zarr::Statistic::sum_sq | carta::zarr::Statistic::min | carta::zarr::Statistic::max;
+                        carta::zarr::Statistic::sum_sq | carta::zarr::Statistic::min | carta::zarr::Statistic::max |
+                        carta::zarr::Statistic::sum_sq_dev;
 
     bool paused = false;
     carta::zarr::ReadOptions options;
@@ -468,6 +470,7 @@ BatchOutcome ZarrLoader::ReadOn(const RegionProfileRequest& request, std::mutex&
             channel.sum_sq = counted.sum_sq;
             channel.min = counted.min;
             channel.max = counted.max;
+            channel.sum_sq_dev = counted.sum_sq_dev;
         }
         const auto run_start = static_cast<double>(first + static_cast<std::size_t>(block.first_channel));
         if (!block.complete) {
