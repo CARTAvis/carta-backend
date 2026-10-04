@@ -905,6 +905,10 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, const H
     return have_histogram;
 }
 
+bool Frame::UsesSpread() const {
+    return _loader && _loader->UsesSpread();
+}
+
 bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
     // Return basic stats from cache, or calculate (no loader option); also used for cube histogram
     if (z == ALL_Z) { // cube
@@ -926,7 +930,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
                 // cannot calculate
                 return false;
             }
-            CalcBasicStats(stats, _image_cache.get(), _image_cache_size);
+            CalcBasicStats(stats, _image_cache.get(), _image_cache_size, UsesSpread());
             _image_basic_stats[cache_key] = stats;
             return true;
         }
@@ -934,7 +938,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
         // calculate histogram from given z/stokes data
         std::vector<float> data;
         GetZSlice(data, z, stokes);
-        CalcBasicStats(stats, data.data(), data.size());
+        CalcBasicStats(stats, data.data(), data.size(), UsesSpread());
 
         // cache results
         _image_basic_stats[cache_key] = stats;

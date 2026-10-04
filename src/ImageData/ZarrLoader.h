@@ -58,6 +58,9 @@ public:
     BatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override;
 
+    bool UsesSpread() const override {
+        return true;
+    }
     RegionProfileReader* ProfileReader() override {
         return this;
     }
