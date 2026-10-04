@@ -337,6 +337,11 @@ if (CartaDefaultFrontendFolder)
     add_definitions(-DCARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
 endif (CartaDefaultFrontendFolder)
 
+# The libraries found outside the system's own directories -- carta-zarr in its install prefix, zfp
+# and others where a package manager put them -- are named @rpath/... on macOS, and the build tree's
+# RPATH is dropped on install. Without these the installed executable cannot load them.
+set_target_properties(carta_backend PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)
 
