@@ -59,8 +59,9 @@ _Avoid_: accumulators, moments, raw stats
 How far the valid pixels lie from their own mean, said as the sum of their squared deviations from
 it. carta-zarr counts it beside the sums, because from the sums it is a difference of two numbers
 that agree in every digit a double holds once the pixels are far from zero against how far apart
-they are -- see ADR 0018 there -- and the Zarr loader makes sigma from it. No other loader counts
-one, and their sigma is made from the sums as it always was.
+they are -- see ADR 0018 there -- and a Zarr image's sigma is made from it wherever it is counted:
+by carta-zarr, or here from pixels read out of the image, as the current plane's histogram is. No
+other image's is, and their sigma is made from the sums as it always was.
 _Avoid_: variance (for the sum itself), M2, second moment
 
 **Derived statistics**:

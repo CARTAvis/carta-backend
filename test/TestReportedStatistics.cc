@@ -759,6 +759,56 @@ TEST_F(BasicStatsDerivedTest, AProfileChannelWithASpreadHasItsSigma) {
     ExpectSame(stats.at(CARTA::StatsType::Sigma).at(1), ReportedFrom(sums_only, 0.0).sigma, "from the sums");
 }
 
+// A plane of a Zarr image that is read whole and counted here, rather than by carta-zarr -- the
+// current channel's histogram -- counts its spread as carta-zarr would. Any other image's does not.
+
+TEST_F(BasicStatsDerivedTest, APlaneCountedWithItsSpreadHasIt) {
+    const std::vector<float> constant(1000 * 1000, 1.0e8f);
+    BasicStatsCalculator<float> with(constant.data(), constant.size(), true);
+    with.reduce();
+    const auto stats = with.GetStats();
+    ASSERT_TRUE(stats.sumSqDev.has_value());
+    EXPECT_EQ(*stats.sumSqDev, 0.0);
+    EXPECT_EQ(stats.stdDev, 0.0) << "pixels all one value have no spread";
+
+    BasicStatsCalculator<float> without(constant.data(), constant.size());
+    without.reduce();
+    EXPECT_FALSE(without.GetStats().sumSqDev.has_value()) << "a calculator not asked for the spread counts none";
+
+    const auto noisy = PixelsAround(1.0e7, 0.5, 1000 * 1000, 4);
+    BasicStatsCalculator<float> spread(noisy.data(), noisy.size(), true);
+    spread.reduce();
+    const auto expected = *WithSpread(CountPixels(noisy), noisy).sum_sq_dev;
+    EXPECT_NEAR(*spread.GetStats().sumSqDev, expected, 1e-10 * expected);
+}
+
+TEST_F(BasicStatsDerivedTest, OnlyAZarrFrameCountsAPlanesSpread) {
+    struct Case {
+        fs::path path;
+        std::string hdu;
+        bool spread;
+    };
+    for (const auto& c : {Case{fs::path(ZARR_PIXEL_FIXTURE), "", true}, Case{FitsImages() / "10x10x10.fits", "0", false}}) {
+        if (!fs::exists(c.path)) {
+            continue;
+        }
+        std::shared_ptr<FileLoader> loader(FileLoader::GetLoader(c.path.string()));
+        ASSERT_NE(loader, nullptr) << c.path;
+        loader->OpenFile(c.hdu);
+        Frame frame(0, loader, c.hdu);
+        ASSERT_TRUE(frame.IsValid()) << c.path;
+        // The current plane, from the image cache, and another, read for the purpose.
+        for (const int z : {frame.CurrentZ(), frame.CurrentZ() + 1}) {
+            BasicStats<float> stats;
+            ASSERT_TRUE(frame.GetBasicStats(z, frame.CurrentStokes(), stats)) << c.path << " z=" << z;
+            EXPECT_EQ(stats.sumSqDev.has_value(), c.spread) << c.path << " z=" << z;
+            if (stats.sumSqDev && stats.num_pixels > 1) {
+                EXPECT_EQ(stats.stdDev, std::sqrt(*stats.sumSqDev / (static_cast<double>(stats.num_pixels) - 1.0))) << c.path;
+            }
+        }
+    }
+}
+
 // A file that keeps statistics for no valid pixel and for one, which none of the fixtures does.
 //
 // The statistics stored in the file are all a loader has to go on -- it never sees the pixels -- so

@@ -127,6 +127,12 @@ public:
     // to casacore: a point's through GetCursorSpectralData, and any other region's through its
     // ProfileReader, which asks this too.
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
+    // Whether this image's statistics are made from the pixels' Spread rather than from their sums,
+    // wherever they are counted -- by the loader, or from pixels it handed over. Only the Zarr loader's
+    // are: see Spread in CONTEXT.md.
+    virtual bool UsesSpread() const {
+        return false;
+    }
     // This loader's own reading of region profiles, or null for a loader that has none. See
     // RegionProfileReader.
     virtual RegionProfileReader* ProfileReader() {

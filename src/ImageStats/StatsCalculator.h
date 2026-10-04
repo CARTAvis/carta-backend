@@ -39,7 +39,9 @@ static std::unordered_map<CARTA::StatsType, casacore::LatticeStatsBase::Statisti
  *  @param data The pointer to the float vector
  *  @param data_size The size of the float vector
  */
-void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t data_size);
+// `spread` counts the pixels' Spread too, as a Zarr image's statistics are made from: see
+// FileLoader::UsesSpread.
+void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t data_size, bool spread = false);
 
 /** @brief Calculate a histogram from a float vector using Histogram
  *  @param num_bins The number of bins for the histogram

@@ -92,7 +92,7 @@ bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame>
 
     BasicStats<float> stats;
     if (!_cache[cache_id].GetBasicStats(stats)) {
-        CalcBasicStats(stats, region_data.data(), region_data.size());
+        CalcBasicStats(stats, region_data.data(), region_data.size(), frame->UsesSpread());
         _cache[cache_id].SetBasicStats(stats);
     }
     auto bounds = config.GetBounds(stats);

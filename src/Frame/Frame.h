@@ -151,6 +151,8 @@ public:
     bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id,
         int file_id, bool channel_changed);
     bool GetBasicStats(int z, int stokes, BasicStats<float>& stats);
+    // Whether this image's statistics are made from the pixels' Spread: see FileLoader::UsesSpread.
+    bool UsesSpread() const;
     bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
     // A histogram of the whole cube for one stokes, and the statistics it was binned against, both

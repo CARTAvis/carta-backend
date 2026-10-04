@@ -70,12 +70,17 @@ template <typename T>
 class BasicStatsCalculator {
     T _min_val, _max_val;
     double _sum, _sum_squares;
+    // Whether to count the spread, and what it came to. See Spread in CONTEXT.md.
+    bool _spread;
+    std::optional<double> _sum_sq_dev;
     size_t _num_pixels;
     const T* _data;
     size_t _data_size;
 
 public:
-    BasicStatsCalculator(const T* data, size_t data_size);
+    // `spread` also counts the pixels' Spread, in a second pass over them, which only a Zarr image's
+    // statistics are made from: see FileLoader::UsesSpread.
+    BasicStatsCalculator(const T* data, size_t data_size, bool spread = false);
 
     void join(BasicStatsCalculator& other); // NOLINT
     void reduce();
