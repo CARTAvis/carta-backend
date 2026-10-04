@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <random>
 #include <string>
 #include <utility>
@@ -51,6 +52,8 @@ struct CountedTotals {
     double sum_sq = 0.0;
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
+    // From the mean, found first, when the totals say it: the Zarr loader's do, no other loader's.
+    std::optional<double> sum_sq_dev;
 };
 
 struct Reported {
@@ -60,8 +63,9 @@ struct Reported {
     double extrema;
 };
 
-// The derivation, as the loaders each wrote it. `lone_pixel_sigma` is what to say for one valid pixel;
-// a profile says zero and a plane or a cube says NaN.
+// The derivation, as the loaders each wrote it -- with sigma made from the spread instead where the
+// totals have one. `lone_pixel_sigma` is what to say for one valid pixel; a profile says zero and a
+// plane or a cube says NaN.
 Reported ReportedFrom(const CountedTotals& t, double lone_pixel_sigma) {
     if (t.num_pixels == 0.0) {
         return {kNaN, kNaN, kNaN, kNaN};
@@ -69,12 +73,30 @@ Reported ReportedFrom(const CountedTotals& t, double lone_pixel_sigma) {
     Reported reported;
     reported.mean = t.sum / t.num_pixels;
     reported.rms = std::sqrt(t.sum_sq / t.num_pixels);
-    // Less a radicand that rounded below zero, which the formulas written out made NaN.
-    reported.sigma = t.num_pixels > 1.0
-                         ? std::sqrt(std::max(t.sum_sq - (t.sum * t.sum / t.num_pixels), 0.0) / (t.num_pixels - 1.0))
-                         : lone_pixel_sigma;
+    if (t.num_pixels <= 1.0) {
+        reported.sigma = lone_pixel_sigma;
+    } else if (t.sum_sq_dev) {
+        reported.sigma = std::sqrt(std::max(*t.sum_sq_dev, 0.0) / (t.num_pixels - 1.0));
+    } else {
+        reported.sigma = std::sqrt((t.sum_sq - (t.sum * t.sum / t.num_pixels)) / (t.num_pixels - 1.0));
+    }
     reported.extrema = std::abs(t.min) > std::abs(t.max) ? t.min : t.max;
     return reported;
+}
+
+// The same totals with their spread, from the mean found first, as the Zarr loader's carry one.
+CountedTotals WithSpread(CountedTotals counted, const std::vector<float>& pixels) {
+    double sum_sq_dev = 0.0;
+    if (counted.num_pixels > 0.0) {
+        const double mean = counted.sum / counted.num_pixels;
+        for (const float pixel : pixels) {
+            if (std::isfinite(pixel)) {
+                sum_sq_dev += (pixel - mean) * (pixel - mean);
+            }
+        }
+    }
+    counted.sum_sq_dev = sum_sq_dev;
+    return counted;
 }
 
 // The same for a set of pixels, in the simplest way there is.
@@ -400,7 +422,7 @@ TEST_F(ReportedStatisticsTest, StoredCubeStatisticsAreDerivedFromTheirTotals) {
 namespace {
 
 Totals TotalsOf(const CountedTotals& counted) {
-    return {counted.num_pixels, counted.sum, counted.sum_sq, counted.min, counted.max};
+    return {counted.num_pixels, counted.sum, counted.sum_sq, counted.min, counted.max, counted.sum_sq_dev};
 }
 
 void ExpectSameAsWrittenOut(const DerivedStatistics& derived, const Reported& expected, const std::string& where) {
@@ -468,13 +490,16 @@ TEST_F(DerivedStatisticsTest, TheSecondPixelIsWhereSigmaStopsBeingAPolicy) {
     }
 }
 
-TEST_F(DerivedStatisticsTest, PixelsThatAreAllOneLargeValueHaveASpreadAndNotNaN) {
+TEST_F(DerivedStatisticsTest, PixelsThatAreAllOneLargeValueHaveNoSpread) {
     // A 1000 x 1000 plane of 1e8: the sum of squares comes out a rounding error below the square of
-    // the sum over the count, and the square root of that is NaN.
-    const auto counted = CountPixels(std::vector<float>(1000 * 1000, 1.0e8f));
+    // the sum over the count, which the spread does not depend on. Without one, sigma is what the
+    // sums make of it, as it always was: the square root of a negative number.
+    const std::vector<float> pixels(1000 * 1000, 1.0e8f);
+    const auto counted = CountPixels(pixels);
     ASSERT_LT(counted.sum_sq - counted.sum * counted.sum / counted.num_pixels, 0.0);
     for (const auto policy : {LonePixelSigma::zero, LonePixelSigma::nan}) {
-        EXPECT_EQ(DeriveStatistics(TotalsOf(counted), policy).sigma, 0.0);
+        EXPECT_EQ(DeriveStatistics(TotalsOf(WithSpread(counted, pixels)), policy).sigma, 0.0);
+        EXPECT_TRUE(std::isnan(DeriveStatistics(TotalsOf(counted), policy).sigma));
     }
 }
 
@@ -521,8 +546,11 @@ TEST_F(DerivedStatisticsTest, MakesTheSameBitsAsTheFormulasItReplaces) {
             const auto counted = CountPixels(pixels);
             const std::string where = "size=" + std::to_string(size) + " offset=" + std::to_string(offset);
 
-            ExpectSameAsWrittenOut(DeriveStatistics(TotalsOf(counted), LonePixelSigma::zero), ReportedFrom(counted, 0.0), where + " zero");
-            ExpectSameAsWrittenOut(DeriveStatistics(TotalsOf(counted), LonePixelSigma::nan), ReportedFrom(counted, kNaN), where + " nan");
+            for (const auto& totals : {counted, WithSpread(counted, pixels)}) {
+                const auto said = where + (totals.sum_sq_dev ? " with the spread" : " from the sums");
+                ExpectSameAsWrittenOut(DeriveStatistics(TotalsOf(totals), LonePixelSigma::zero), ReportedFrom(totals, 0.0), said + " zero");
+                ExpectSameAsWrittenOut(DeriveStatistics(TotalsOf(totals), LonePixelSigma::nan), ReportedFrom(totals, kNaN), said + " nan");
+            }
         }
     }
 }
@@ -538,6 +566,7 @@ CountedTotals TotalsReportedBy(const BasicStats<float>& stats) {
     counted.sum_sq = stats.sumSq;
     counted.min = stats.min_val;
     counted.max = stats.max_val;
+    counted.sum_sq_dev = stats.sumSqDev;
     return counted;
 }
 
@@ -643,6 +672,91 @@ TEST_F(BasicStatsDerivedTest, PlanesJoinedAreDerivedFromTheirTotalsAsTheyGrow) {
         }
     }
     EXPECT_GT(joined.num_pixels, 1u);
+}
+
+// A cube's statistics are joined from its planes'. The Zarr loader's planes carry their spread, and
+// the cube's is theirs put together; any other loader's carry none, and the cube's sigma is made from
+// the sums as each plane's was.
+
+namespace {
+
+// About normal, of unit variance, the same every run.
+std::vector<float> PixelsAround(double centre, double spread, std::size_t size, unsigned seed) {
+    std::mt19937 random(seed);
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    std::vector<float> pixels(size);
+    for (auto& pixel : pixels) {
+        const double noise = (uniform(random) + uniform(random) + uniform(random) + uniform(random) - 2.0) * std::sqrt(3.0);
+        pixel = static_cast<float>(centre + (spread * noise));
+    }
+    return pixels;
+}
+
+// A plane's statistics as the Zarr loader reports them: the calculator's, with the spread beside.
+BasicStats<float> WithItsSpread(const std::vector<float>& pixels) {
+    BasicStatsCalculator<float> calculator(pixels.data(), pixels.size());
+    calculator.reduce();
+    auto stats = calculator.GetStats();
+    stats.sumSqDev = WithSpread(CountPixels(pixels), pixels).sum_sq_dev;
+    return stats;
+}
+
+} // namespace
+
+TEST_F(BasicStatsDerivedTest, PlanesWithTheirSpreadsJoinedHaveTheCubesSpread) {
+    // Far from zero against their spread, where the sums cannot say it: 1e7 with a spread of 0.5.
+    std::vector<float> cube;
+    BasicStats<float> joined;
+    for (unsigned z = 0; z < 10; ++z) {
+        const auto plane = PixelsAround(1.0e7, 0.5, 100000, z);
+        cube.insert(cube.end(), plane.begin(), plane.end());
+        joined.join(WithItsSpread(plane));
+    }
+    const auto expected = WithSpread(CountPixels(cube), cube);
+    ASSERT_TRUE(joined.sumSqDev.has_value());
+    EXPECT_NEAR(*joined.sumSqDev, *expected.sum_sq_dev, 1e-10 * *expected.sum_sq_dev);
+    ExpectDerivedFromItsOwnTotals(joined, "ten planes with their spreads");
+    // 0.576 rather than 0.5, since a float holds 1e7 only to the nearest unit; the sums say 1.48.
+    const double own = ReportedFrom(expected, kNaN).sigma;
+    EXPECT_NEAR(joined.stdDev, own, 1e-10 * own) << "the sums of these planes say " << ReportedFrom(CountPixels(cube), kNaN).sigma;
+}
+
+TEST_F(BasicStatsDerivedTest, APlaneWithoutASpreadLeavesTheCubeWithout) {
+    const auto first = PixelsAround(3.0, 1.0, 1000, 1);
+    const auto second = PixelsAround(3.0, 1.0, 1000, 2);
+    BasicStatsCalculator<float> calculator(second.data(), second.size());
+    calculator.reduce();
+    const auto without = calculator.GetStats();
+    ASSERT_FALSE(without.sumSqDev.has_value()) << "only the Zarr loader counts the spread";
+
+    BasicStats<float> joined;
+    joined.join(WithItsSpread(first));
+    ASSERT_TRUE(joined.sumSqDev.has_value());
+    joined.join(without);
+    EXPECT_FALSE(joined.sumSqDev.has_value()) << "half a spread is no spread";
+    ExpectDerivedFromItsOwnTotals(joined, "a plane with a spread and one without");
+}
+
+// A region profile's sigma, from the spread a channel carries when its reader counted one.
+TEST_F(BasicStatsDerivedTest, AProfileChannelWithASpreadHasItsSigma) {
+    const auto pixels = PixelsAround(1.0e7, 0.5, 10000, 3);
+    const auto counted = WithSpread(CountPixels(pixels), pixels);
+    ChannelTotals channel;
+    channel.read = true;
+    channel.num_pixels = counted.num_pixels;
+    channel.sum = counted.sum;
+    channel.sum_sq = counted.sum_sq;
+    channel.min = counted.min;
+    channel.max = counted.max;
+    channel.sum_sq_dev = counted.sum_sq_dev;
+    ChannelTotals without = channel;
+    without.sum_sq_dev.reset();
+
+    const auto stats = RegionProfileStatistics({channel, without}, kNaN);
+    ExpectSame(stats.at(CARTA::StatsType::Sigma).at(0), ReportedFrom(counted, 0.0).sigma, "with the spread");
+    CountedTotals sums_only = counted;
+    sums_only.sum_sq_dev.reset();
+    ExpectSame(stats.at(CARTA::StatsType::Sigma).at(1), ReportedFrom(sums_only, 0.0).sigma, "from the sums");
 }
 
 // A file that keeps statistics for no valid pixel and for one, which none of the fixtures does.

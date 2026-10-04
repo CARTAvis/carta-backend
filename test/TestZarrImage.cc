@@ -334,6 +334,11 @@ void ExpectPlaneStatsAgreeWithThePerPlaneLoop(const std::filesystem::path& path)
             const std::string where = " z=" + std::to_string(z) + " stokes=" + std::to_string(stokes);
             const auto& actual = from_loader[z];
             EXPECT_EQ(actual.num_pixels, reference.num_pixels) << where;
+            // The loader's sigma is made from the spread carta-zarr counted, not from the sums.
+            if (actual.num_pixels > 1) {
+                ASSERT_TRUE(actual.sumSqDev.has_value()) << where;
+                EXPECT_EQ(actual.stdDev, std::sqrt(*actual.sumSqDev / (static_cast<double>(actual.num_pixels) - 1.0))) << where;
+            }
             EXPECT_FLOAT_EQ(actual.min_val, reference.min_val) << where;
             EXPECT_FLOAT_EQ(actual.max_val, reference.max_val) << where;
             for (const auto& [name, pair] : std::map<std::string, std::pair<double, double>>{{"sum", {actual.sum, reference.sum}},

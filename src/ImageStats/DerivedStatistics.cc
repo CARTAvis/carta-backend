@@ -27,17 +27,30 @@ DerivedStatistics DeriveStatistics(const Totals& totals, LonePixelSigma lone_pix
     DerivedStatistics derived;
     derived.mean = totals.sum / count;
     derived.rms = std::sqrt(totals.sum_sq / count);
-    if (count > 1.0) {
-        // Pixels that are all, or nearly all, one value can leave the sum of squares a rounding
-        // error below the square of the sum over the count. The spread is then zero as far as these
-        // totals can tell, and not the NaN its square root would be.
-        const double spread = totals.sum_sq - (totals.sum * totals.sum / count);
-        derived.sigma = std::sqrt(std::max(spread, 0.0) / (count - 1.0));
+    if (count > 1.0 && totals.sum_sq_dev) {
+        derived.sigma = std::sqrt(std::max(*totals.sum_sq_dev, 0.0) / (count - 1.0));
+    } else if (count > 1.0) {
+        derived.sigma = std::sqrt((totals.sum_sq - (totals.sum * totals.sum / count)) / (count - 1.0));
     } else {
         derived.sigma = lone_pixel_sigma == LonePixelSigma::zero ? 0.0 : undefined;
     }
     derived.extrema = Extrema(totals.min, totals.max);
     return derived;
+}
+
+void Spread::Merge(const Spread& other) {
+    if (!(other.count > 0.0)) {
+        return;
+    }
+    if (!(count > 0.0)) {
+        *this = other;
+        return;
+    }
+    const double total = count + other.count;
+    const double between = other.mean - mean;
+    sum_sq_dev += other.sum_sq_dev + (between * between * (count * other.count / total));
+    mean += between * (other.count / total);
+    count = total;
 }
 
 } // namespace carta

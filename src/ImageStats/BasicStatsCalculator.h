@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include <optional>
+
 #include <carta-protobuf/defs.pb.h>
 
 namespace carta {
@@ -54,8 +56,12 @@ struct BasicStats {
     T max_val;
     double rms;
     double sumSq;
+    // The pixels' squared deviations from their own mean, which stdDev was made from, where whoever
+    // counted them counted it -- the Zarr loader. See Spread in CONTEXT.md.
+    std::optional<double> sumSqDev;
 
-    BasicStats<T>(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq);
+    BasicStats<T>(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq,
+        std::optional<double> sumSqDev = std::nullopt);
     BasicStats<T>();
     void join(const BasicStats<T>& other);
 };

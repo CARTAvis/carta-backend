@@ -11,6 +11,7 @@
 #include <functional>
 #include <limits>
 #include <mutex>
+#include <optional>
 #include <vector>
 
 #include <casacore/casa/Arrays/IPosition.h>
@@ -34,6 +35,9 @@ struct ChannelTotals {
     double sum_sq = 0.0;
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
+    // The pixels' squared deviations from their own mean, which sigma is made from, from a reader
+    // that counts it -- the Zarr one. See Spread in CONTEXT.md.
+    std::optional<double> sum_sq_dev;
 };
 
 // Which region profile to read: a mask over a box of one plane, at `origin` in image pixels, over a

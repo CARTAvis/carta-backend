@@ -50,14 +50,24 @@ _Avoid_: region spectral data, region spectral stats
 
 **Totals**:
 The count, sum, sum of squares, smallest and largest of the valid pixels of a plane, a cube or one
-channel of a region: what every reported statistic is made from. A pixel that is not finite is not
-valid and is in no total. carta-zarr calls the same numbers a SpectralTotals.
+channel of a region, and their Spread where whoever counted them counted it: what every reported
+statistic is made from. A pixel that is not finite is not valid and is in no total. carta-zarr calls
+the same numbers a SpectralTotals.
 _Avoid_: accumulators, moments, raw stats
 
+**Spread**:
+How far the valid pixels lie from their own mean, said as the sum of their squared deviations from
+it. carta-zarr counts it beside the sums, because from the sums it is a difference of two numbers
+that agree in every digit a double holds once the pixels are far from zero against how far apart
+they are -- see ADR 0018 there -- and the Zarr loader makes sigma from it. No other loader counts
+one, and their sigma is made from the sums as it always was.
+_Avoid_: variance (for the sum itself), M2, second moment
+
 **Derived statistics**:
-The mean, RMS, sigma and extrema that CARTA reports, made from Totals and from nothing else. Extrema
-is whichever of the smallest and the largest has the larger magnitude, the largest when they tie. With
-no valid pixel there is nothing to derive, and every one of them is undefined.
+The mean, RMS, sigma and extrema that CARTA reports, made from Totals and from nothing else. Sigma is
+made from the Spread when the totals have one, and from the sums when they do not. Extrema is whichever of the smallest and the largest has the larger magnitude,
+the largest when they tie. With no valid pixel there is nothing to derive, and every one of them is
+undefined.
 _Avoid_: computed stats, stats
 
 **Lone-pixel sigma**:

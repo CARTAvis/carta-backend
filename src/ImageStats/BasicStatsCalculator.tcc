@@ -18,6 +18,17 @@ namespace carta {
 template <typename T>
 void BasicStats<T>::join(const BasicStats<T>& other) {
     if (other.num_pixels) {
+        // The spread of the two together when both have one, and none when either has not: a sigma
+        // made from half a spread would be neither of the two sigmas there are.
+        if (!num_pixels) {
+            sumSqDev = other.sumSqDev;
+        } else if (sumSqDev && other.sumSqDev) {
+            Spread spread{static_cast<double>(num_pixels), sum / static_cast<double>(num_pixels), *sumSqDev};
+            spread.Merge({static_cast<double>(other.num_pixels), other.sum / static_cast<double>(other.num_pixels), *other.sumSqDev});
+            sumSqDev = spread.sum_sq_dev;
+        } else {
+            sumSqDev.reset();
+        }
         sum += other.sum;
         sumSq += other.sumSq;
         num_pixels += other.num_pixels;
@@ -25,7 +36,8 @@ void BasicStats<T>::join(const BasicStats<T>& other) {
         max_val = std::max(max_val, other.max_val);
         // The extremes are not derived from here, but they are part of the totals.
         const auto derived = DeriveStatistics(
-            {static_cast<double>(num_pixels), sum, sumSq, static_cast<double>(min_val), static_cast<double>(max_val)}, LonePixelSigma::nan);
+            {static_cast<double>(num_pixels), sum, sumSq, static_cast<double>(min_val), static_cast<double>(max_val), sumSqDev},
+            LonePixelSigma::nan);
         mean = derived.mean;
         stdDev = derived.sigma;
         rms = derived.rms;
@@ -33,8 +45,17 @@ void BasicStats<T>::join(const BasicStats<T>& other) {
 }
 
 template <typename T>
-BasicStats<T>::BasicStats(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq)
-    : num_pixels(num_pixels), sum(sum), mean(mean), stdDev(stdDev), min_val(min_val), max_val(max_val), rms(rms), sumSq(sumSq) {}
+BasicStats<T>::BasicStats(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq,
+    std::optional<double> sumSqDev)
+    : num_pixels(num_pixels),
+      sum(sum),
+      mean(mean),
+      stdDev(stdDev),
+      min_val(min_val),
+      max_val(max_val),
+      rms(rms),
+      sumSq(sumSq),
+      sumSqDev(sumSqDev) {}
 
 // No pixel yet: nothing is derived, as for a plane with no valid pixel, and the extremes are the
 // identities a join starts from.
