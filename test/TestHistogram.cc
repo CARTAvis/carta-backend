@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <limits>
 #include <random>
 #include <vector>
 
@@ -92,6 +93,22 @@ TEST_F(HistogramTest, TestHistogramAdd) {
     EXPECT_EQ(2 * total_counts, total_counts2);
     carta::Histogram hist3(512, HistogramBounds(0.0, 1.0), data.data(), data.size());
     EXPECT_FALSE(hist.Add(hist3));
+}
+
+// A cube's histogram is its planes' added together, and a count is an int: each plane's may be held
+// below INT_MAX and their sum still pass it. Added, it is held at INT_MAX rather than wrapped to a
+// negative count that every percentile read from it would then misplace.
+TEST_F(HistogramTest, TestAddingHoldsACountAtIntMax) {
+    constexpr int kIntMax = std::numeric_limits<int>::max();
+    const float nothing = 0.0F;
+    carta::Histogram cube(2, HistogramBounds(0.0, 1.0), &nothing, 0);
+    carta::Histogram plane(2, HistogramBounds(0.0, 1.0), &nothing, 0);
+    cube.SetHistogramBins({1'500'000'000, 1});
+    plane.SetHistogramBins({1'500'000'000, 2});
+    ASSERT_TRUE(cube.Add(plane));
+    EXPECT_EQ(cube.GetHistogramBins(), (std::vector<int>{kIntMax, 3}));
+    ASSERT_TRUE(cube.Add(plane));
+    EXPECT_EQ(cube.GetHistogramBins(), (std::vector<int>{kIntMax, 5}));
 }
 
 TEST_F(HistogramTest, TestSingleThreading) {
