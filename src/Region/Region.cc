@@ -167,8 +167,16 @@ std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared
 
                 try {
                     lcregion.reset(casacore::LCRegion::fromRecord(region_record, ""));
-                } catch (const casacore::AipsError& err) {
-                    // Region is outside image
+                } catch (const casacore::AipsError&) {
+                    // If only an annulus hole is outside this lattice, it subtracts no image pixels.
+                    const auto state = GetRegionState();
+                    if (state.type == CARTA::RegionType::ANNULUS && state.control_points.size() == 3) {
+                        auto outer_state = state;
+                        outer_state.type = CARTA::RegionType::ELLIPSE;
+                        outer_state.control_points.resize(2);
+                        Region outer_region(outer_state, _coord_sys);
+                        lcregion = outer_region.GetLCRegion(file_id, image_csys, image_shape, stokes_source, report_error);
+                    }
                 }
 
                 // Cache LCRegion and set flag

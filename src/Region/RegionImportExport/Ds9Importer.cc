@@ -347,7 +347,8 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
     auto region_name = parameters[0];
     size_t nparam(parameters.size());
 
-    if ((region_name == "annulus" && nparam >= 5) || (region_name == "ellipse" && nparam >= 7)) {
+    const bool valid_annulus_parameters = region_name == "annulus" ? nparam == 5 : region_name == "ellipse" && (nparam == 7 || nparam == 8);
+    if (valid_annulus_parameters) {
         std::vector<casacore::Quantity> param_quantities;
         for (size_t i = 1; i < nparam; ++i) {
             bool is_angle(i == 2);
@@ -433,6 +434,8 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
             }
         }
         region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, rotation);
+    } else if (region_name == "annulus" || region_name == "ellipse") {
+        _errors.append(region_name + " annulus syntax error: expected four radii and an optional ellipse angle.\n");
     } else {
         _errors.append(region_name + " syntax error.\n");
     }
