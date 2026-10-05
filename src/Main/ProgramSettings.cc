@@ -148,7 +148,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("zarr_file_io_threads", "thread pool size for Zarr file IO operations", cxxopts::value<int>(), "<threads>")
         ("zarr_data_copy_threads", "thread pool size for Zarr data copy/decode operations (<= 0: max(1, omp_threads))", cxxopts::value<int>(), "<threads>")
-        ("zarr_cache_size", "in-memory chunk cache size for Zarr stores in MiB (integer; default 1024; <= 0 disables caching)", cxxopts::value<int>(), "<MiB>")
+        ("zarr_cache_size", "in-memory chunk cache size for Zarr stores in MiB (integer; default 1024; 0 disables caching)", cxxopts::value<int>(), "<MiB>")
         ("zarr_histogram_method", "how to compute a cube histogram over a Zarr store: exact (default, two passes), binned (one pass, approximate bin edges) or sampled[:stride] (one pass over every nth pixel)", cxxopts::value<std::string>(), "<method>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
@@ -222,8 +222,10 @@ Access to Zarr images is handled by carta-zarr. 'zarr_file_io_threads' (default 
 sets the thread pool size for file IO operations. 'zarr_data_copy_threads' sets the
 thread pool size for data copy/decode operations; if set to zero or a negative value,
 it defaults to max(1, the number of OpenMP threads). 'zarr_cache_size' sets an
-in-memory chunk cache size in MiB (integer; default 1024; zero or a negative value
-disables caching).
+in-memory chunk cache size in MiB (integer; default 1024; zero disables caching).
+'zarr_histogram_method' chooses how a cube histogram is made: exact (the default, two
+passes), binned (one pass, approximate bin edges) or sampled[:stride] (one pass over
+every nth pixel along both spatial axes).
 
 Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
 in the user's home directory. Logging to the file can be disabled with 'no_log'. 

@@ -100,6 +100,8 @@ public:
     std::optional<std::size_t> OwnCacheBytes() const;
 
     std::vector<StorageEntry> GetStorageInfo() const;
+    // How many bytes of mask the image is holding for a mask read to come.
+    std::size_t MaskCacheBytes() const;
     // What a reader should know about this image's values: carta-zarr's diagnostics on it and what
     // the backend had to say while describing it to casacore. See ZarrNote.
     const std::vector<ZarrNote>& Notes() const {

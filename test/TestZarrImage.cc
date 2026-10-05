@@ -519,6 +519,24 @@ TEST_F(ZarrImageTest, CachedMaskAgreesWithADirectMaskRead) {
     }
 }
 
+// A section's mask is kept for the mask read casacore makes right after the pixels, and for nothing
+// else. Kept until the next read instead, a cube walk's last slab -- up to a gibibyte of mask -- stayed
+// for the life of the image whenever what came after it was a plane too large to keep.
+TEST_F(ZarrImageTest, AKeptMaskIsReleasedOnceItIsRead) {
+    CartaZarrImage image(kZarrFixture.string());
+    const casacore::Slicer cube(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 2, 1));
+    casacore::Array<float> pixels;
+    image.getSlice(pixels, cube);
+    EXPECT_EQ(image.MaskCacheBytes(), static_cast<std::size_t>(kWidth * kHeight * 2)) << "a cube section keeps its mask";
+
+    casacore::Array<bool> mask;
+    image.getMaskSlice(mask, cube);
+    EXPECT_EQ(image.MaskCacheBytes(), 0u) << "and lets it go once it has been read";
+    casacore::Array<bool> again;
+    image.getMaskSlice(again, cube);
+    EXPECT_TRUE(allEQ(mask, again)) << "a second mask read of the section reads it again, to the same answer";
+}
+
 // The batched reduction is what a position-velocity cut uses instead of asking for one box at a
 // time. Its answers have to be the ones a per-region read would give, including for the flagged
 // pixels and the chunk the fixture never wrote.

@@ -363,6 +363,22 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
     EXPECT_EQ(j.size(), 0);
 }
 
+// The cube histogram method is a string like every other the schema validates: one of another type is
+// dropped with a warning. Missing from the schema, it reached SetSettingsFromJSON as whatever the file
+// said, and a number there threw on the way to a std::string -- at startup, out of main.
+TEST_F(ProgramSettingsTest, ACubeHistogramMethodOfAnotherTypeIsIgnored) {
+    const auto path = fs::temp_directory_path() / "carta-settings-histogram-method.json";
+    for (const auto& [text, expected] : std::vector<std::pair<std::string, std::string>>{
+             {R"({"zarr_histogram_method": "binned"})", "binned"}, {R"({"zarr_histogram_method": 4})", "exact"}}) {
+        std::ofstream(path) << text;
+        carta::ProgramSettings settings;
+        auto j = settings.JSONSettingsFromFile(path.string());
+        EXPECT_NO_THROW(settings.SetSettingsFromJSON(j)) << text;
+        EXPECT_EQ(settings.zarr_histogram_method, expected) << text;
+    }
+    fs::remove(path);
+}
+
 TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
     auto input = SettingsPath() / "settings-good-fields.json";
     carta::ProgramSettings settings;

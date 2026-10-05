@@ -33,7 +33,14 @@ std::unique_ptr<AnimationReadAhead> AnimationReadAhead::For(const std::map<int, 
     }
     auto reading = carta::zarr::ReadAhead::For(reads);
     if (!reading) {
-        spdlog::debug("Animation reads nothing ahead: {}", reading.error().message);
+        // A cache too small for two runs is the operator's to fix, and at the default size a cube
+        // chunked 16 channels deep is one, so it is said where they will see it. Anything else is an
+        // image with nothing to animate, which is no news.
+        if (reading.error().code == carta::zarr::ErrorCode::buffer_too_small) {
+            spdlog::info("Animation reads nothing ahead; raising zarr_cache_size would let it: {}", reading.error().message);
+        } else {
+            spdlog::debug("Animation reads nothing ahead: {}", reading.error().message);
+        }
         return nullptr;
     }
     return std::unique_ptr<AnimationReadAhead>(new AnimationReadAhead(std::move(readable), std::move(images), std::move(reading).value()));
