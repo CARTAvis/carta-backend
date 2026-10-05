@@ -53,7 +53,8 @@ public:
     BatchOutcome PlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
         const std::function<bool()>& cancellation_requested,
         const std::function<bool(int z, const Histogram& histogram)>& plane_callback) override;
-    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
+    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample,
+        const std::function<bool()>& cancellation_requested, BasicStats<float>& stats,
         std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override;
     BatchOutcome RegionSpectra(const std::vector<RegionMaskSpec>& regions, const AxisRange& z_range, int stokes,
         const std::function<bool(const RegionSpectralBlock&)>& sink) override;

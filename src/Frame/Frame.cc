@@ -1075,8 +1075,9 @@ public:
         return BatchOutcome::finished;
     }
 
-    BatchOutcome OnePassCubeHistogram(int /*stokes*/, int /*num_bins*/, std::uint64_t /*spatial_sample*/, BasicStats<float>& /*stats*/,
-        std::vector<int>& /*bins*/, const std::function<bool(const CubeHistogramUpdate&)>& /*progress*/) override {
+    BatchOutcome OnePassCubeHistogram(int /*stokes*/, int /*num_bins*/, std::uint64_t /*spatial_sample*/,
+        const std::function<bool()>& /*cancellation_requested*/, BasicStats<float>& /*stats*/, std::vector<int>& /*bins*/,
+        const std::function<bool(const CubeHistogramUpdate&)>& /*progress*/) override {
         return BatchOutcome::declined;
     }
 
@@ -1105,9 +1106,10 @@ public:
         return _walk.PlaneHistograms(stokes, num_bins, bounds, cancellation_requested, plane_callback);
     }
 
-    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
-        std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
-        return _walk.OnePassCubeHistogram(stokes, num_bins, spatial_sample, stats, bins, progress);
+    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample,
+        const std::function<bool()>& cancellation_requested, BasicStats<float>& stats, std::vector<int>& bins,
+        const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
+        return _walk.OnePassCubeHistogram(stokes, num_bins, spatial_sample, cancellation_requested, stats, bins, progress);
     }
 
 private:

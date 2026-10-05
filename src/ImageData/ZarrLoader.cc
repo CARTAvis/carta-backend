@@ -347,7 +347,8 @@ BatchOutcome ZarrLoader::PlaneHistograms(int stokes, int num_bins, const Histogr
     return outcome;
 }
 
-BatchOutcome ZarrLoader::OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
+BatchOutcome ZarrLoader::OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample,
+    const std::function<bool()>& cancellation_requested, BasicStats<float>& stats,
     std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) {
     auto image = ImageForStokes(stokes);
     if (!image || num_bins <= 0 || spatial_sample == 0) {
@@ -380,9 +381,11 @@ BatchOutcome ZarrLoader::OnePassCubeHistogram(int stokes, int num_bins, std::uin
         };
     }
 
-    // As with the other cube walks: read every chunk once, keep none of them.
+    // As with the other cube walks: read every chunk once, keep none of them, and ask for a stop at
+    // every read -- not only through `progress`, which a walk done in one read never calls.
     carta::zarr::ReadOptions options;
     options.control.cache_pool = KeepingNothing();
+    options.control.cancellation_requested = cancellation_requested;
     options.read_budget_bytes = _read_budget_bytes;
 
     auto result = image->Library().ComputeCubeHistogram(request, options, zarr_progress);

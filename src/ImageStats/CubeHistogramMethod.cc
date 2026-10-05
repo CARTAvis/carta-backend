@@ -21,7 +21,9 @@ CubeHistogramMethod ParseCubeHistogramMethod(const std::string& method) {
         parsed.one_pass = true;
         return parsed;
     }
-    if (method.rfind("sampled", 0) == 0) {
+    // "sampled", or "sampled:" and a stride. Any word beginning with it used to be taken for it, so
+    // "sampled_typo" sampled every fourth pixel where a misspelling is meant to stay exact.
+    if (method == "sampled" || method.rfind("sampled:", 0) == 0) {
         parsed.one_pass = true;
         parsed.spatial_sample = 4;
         const auto colon = method.find(':');
