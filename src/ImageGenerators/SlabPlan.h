@@ -36,6 +36,8 @@ struct SlabPlan {
     // depends on the order they were decoded in, so it is all of them. 0 when no chunk is touched twice,
     // or the slab was not shaped to what the image decodes together.
     std::uint64_t reuse_pixels = 0;
+    // The same, in chunks: what reuse_pixels is made of, each chunk kept whole.
+    std::uint64_t reuse_chunks = 0;
     // store_reads with that cache held: no more than once for every slab along the axis stepped first,
     // where neighbouring slabs share chunks, and as often as before along the others, where the slab
     // that shared a chunk came a whole sweep earlier and the cache has long let it go. 1 for a region
@@ -60,6 +62,11 @@ struct SlabPlan {
     // giving it back, which is worse in a server that runs for days. So the ceiling is on the cache,
     // and the peak runs about a third over it plus the slab.
     std::uint64_t CacheBytes(unsigned decoded_pixel_bytes) const;
+    // The same, for an image that says what one chunk decodes to: `decoded_chunk_bytes`, at the type
+    // the chunk is stored as and with the flag chunks it brings. What a cache of decoded chunks really
+    // holds, where CacheBytes(sizeof(float)) counted the floats a moment is handed -- half the chunks
+    // of a float64 image, and fewer still with a flag beside them.
+    std::uint64_t CacheBytesOfChunks(std::uint64_t decoded_chunk_bytes) const;
 };
 
 // The slab to read an image in, to collapse it along `collapse_axis`.

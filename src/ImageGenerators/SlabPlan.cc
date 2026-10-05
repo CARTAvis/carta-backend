@@ -233,13 +233,18 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
         unit_pixels *= static_cast<std::uint64_t>(decode_unit(axis));
     }
     // A chunk is decoded whole, edge or not, so it is kept whole.
-    plan.reuse_pixels = plan.store_reads > 1.0 ? units_per_slab * unit_pixels : 0;
+    plan.reuse_chunks = plan.store_reads > 1.0 ? units_per_slab : 0;
+    plan.reuse_pixels = plan.reuse_chunks * unit_pixels;
     plan.cache_ceiling_bytes = std::max(memory_bytes / 16, kLeastBytes);
     return plan;
 }
 
 std::uint64_t SlabPlan::CacheBytes(unsigned decoded_pixel_bytes) const {
     return std::min(reuse_pixels * decoded_pixel_bytes, cache_ceiling_bytes);
+}
+
+std::uint64_t SlabPlan::CacheBytesOfChunks(std::uint64_t decoded_chunk_bytes) const {
+    return std::min(reuse_chunks * decoded_chunk_bytes, cache_ceiling_bytes);
 }
 
 } // namespace carta

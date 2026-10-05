@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_
 #define CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_
 
+#include <cstdint>
+
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
@@ -90,11 +92,12 @@ private:
     bool _first_report_made;
 };
 
-// The chunk grid `region` of `image` lies on: the shape of a chunk, and where the region's corner is
-// among them, for ImageMoments::SetChunkGrid. False for an image that does not decode in chunks it can
+// The chunk grid `region` of `image` lies on: the shape of a chunk, where the region's corner is among
+// them, and what one chunk decodes to in a cache -- its stored type and the flag beside it, as carta-zarr
+// counts it -- for ImageMoments::SetChunkGrid. False for an image that does not decode in chunks it can
 // name, which is every image but a Zarr store's.
 bool ChunkGridOf(const casacore::ImageInterface<float>& image, const casacore::SubImage<float>& region, casacore::IPosition& unit,
-    casacore::IPosition& origin);
+    casacore::IPosition& origin, std::uint64_t& decoded_chunk_bytes);
 
 // A copy of `image` for a moment to read through, whose reads keep what they decode in a cache of the
 // moment's own while `hold_cache` holds one -- for ImageMoments::SetChunkGrid. The walk comes back to the

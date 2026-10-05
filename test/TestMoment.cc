@@ -259,7 +259,11 @@ TEST_F(MomentTest, CheckConsistencyForZarrOnItsChunkGrid) {
     // The grid as MomentGenerator finds it: the store's chunks, and the region's corner among them.
     casacore::IPosition unit;
     casacore::IPosition corner;
-    ASSERT_TRUE(ChunkGridOf(*image, *region, unit, corner));
+    std::uint64_t chunk_bytes = 0;
+    ASSERT_TRUE(ChunkGridOf(*image, *region, unit, corner, chunk_bytes));
+    // What one of those chunks decodes to, as the library counts it: ten float32 pixels and, the read
+    // applying the flag, its ten bytes beside them.
+    EXPECT_EQ(chunk_bytes, 10U * 4 + 10);
     // The fixture is chunked 1 x 1 x 1 x 2 x 5 in time, frequency, polarization, l and m; in CARTA's
     // order, x y z stokes, with time gone, that is 2 x 5 x 1 x 1.
     EXPECT_EQ(unit, casacore::IPosition(4, 2, 5, 1, 1));
@@ -270,7 +274,8 @@ TEST_F(MomentTest, CheckConsistencyForZarrOnItsChunkGrid) {
     casacore::SubImage<float> memory_region(memory, casacore::Slicer(origin, length));
     casacore::IPosition none_unit;
     casacore::IPosition none_corner;
-    EXPECT_FALSE(ChunkGridOf(memory, memory_region, none_unit, none_corner));
+    std::uint64_t none_bytes = 0;
+    EXPECT_FALSE(ChunkGridOf(memory, memory_region, none_unit, none_corner, none_bytes));
     std::function<std::shared_ptr<void>(std::uint64_t)> no_hold = [](std::uint64_t) { return nullptr; };
     EXPECT_EQ(WithCacheOfItsOwn(memory, no_hold), nullptr);
     EXPECT_FALSE(no_hold);
@@ -325,7 +330,8 @@ private:
 // The sections one AVERAGE moment of `region` reads from its parent, told `unit` and `origin` as its
 // chunk grid if `unit` is not empty.
 std::vector<casacore::Slicer> SectionsRead(const casacore::IPosition& unit, const casacore::IPosition& origin,
-    const std::function<std::shared_ptr<void>(std::uint64_t)>& hold_cache = {}, const std::function<void()>& on_read = {}) {
+    const std::function<std::shared_ptr<void>(std::uint64_t)>& hold_cache = {}, const std::function<void()>& on_read = {},
+    std::uint64_t decoded_chunk_bytes = 0) {
     const casacore::IPosition shape(3, 45, 38, 24);
     auto sections = std::make_shared<std::vector<casacore::Slicer>>();
     SliceRecordingImage image(shape, sections, on_read);
@@ -337,7 +343,7 @@ std::vector<casacore::Slicer> SectionsRead(const casacore::IPosition& unit, cons
     casacore::LogIO os(log);
     carta::ImageMoments<float> moments(region, os, nullptr, true);
     if (!unit.empty()) {
-        moments.SetChunkGrid(unit, origin, hold_cache);
+        moments.SetChunkGrid(unit, origin, hold_cache, decoded_chunk_bytes);
     }
     casacore::Vector<casacore::Int> which(1, 0);
     moments.setMoments(which);
@@ -400,6 +406,14 @@ TEST_F(MomentTest, HoldsTheCacheItsPlanAsksForWhileItWalks) {
     EXPECT_GT(reads, 0);
     EXPECT_EQ(reads_while_held, reads) << "a read was made without the cache held";
     EXPECT_TRUE(held.expired()) << "the walk kept its cache after it was done";
+
+    // Told what a chunk decodes to, the cache is that many of them: TensorStore keeps a chunk at the
+    // type it is stored as and the flag chunks beside it, not the floats the moment is handed. Here a
+    // float64 chunk with its flag, 8 x 7 x 4 pixels at nine bytes each.
+    asked.clear();
+    SectionsRead(unit, origin, hold, {}, std::uint64_t(8) * 7 * 4 * 9);
+    ASSERT_EQ(asked.size(), 1U);
+    EXPECT_EQ(asked.front(), std::uint64_t(24) * 8 * 7 * 4 * 9);
 
     asked.clear();
     SectionsRead(casacore::IPosition(), origin, hold);
@@ -558,8 +572,9 @@ TEST_F(MomentTest, MeasureZarrWalk) {
     // As MomentGenerator does.
     casacore::IPosition grid_unit;
     casacore::IPosition grid_origin;
-    if (carta::ChunkGridOf(*image, *sub, grid_unit, grid_origin)) {
-        moments.SetChunkGrid(grid_unit, grid_origin, hold_cache);
+    std::uint64_t grid_chunk_bytes = 0;
+    if (carta::ChunkGridOf(*image, *sub, grid_unit, grid_origin, grid_chunk_bytes)) {
+        moments.SetChunkGrid(grid_unit, grid_origin, hold_cache, grid_chunk_bytes);
     }
 
     casacore::Vector<casacore::Int> which(1);

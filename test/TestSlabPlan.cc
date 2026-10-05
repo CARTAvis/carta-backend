@@ -192,6 +192,12 @@ TEST(SlabPlanTest, ACacheHoldsEveryChunkOneSlabTouches) {
     EXPECT_EQ(plan.slab, IPosition(4, 512, 419, 2000, 1));
     EXPECT_EQ(plan.reuse_pixels, std::uint64_t(1 * 2 * 2000) * 512 * 512);
     EXPECT_EQ(plan.CacheBytes(kFloat), std::uint64_t(4000) * 512 * 512 * kFloat);
+    // Counted in what a chunk decodes to rather than in floats: the same 4000 chunks, at whatever one of
+    // them holds -- here one byte a pixel, to stay under the ceiling -- and held at the ceiling past it,
+    // as a float64 chunk with its flag beside it, nine bytes a pixel, is.
+    EXPECT_EQ(plan.reuse_chunks, 4000U);
+    EXPECT_EQ(plan.CacheBytesOfChunks(std::uint64_t(512) * 512), std::uint64_t(4000) * 512 * 512);
+    EXPECT_EQ(plan.CacheBytesOfChunks(std::uint64_t(512) * 512 * 9), plan.cache_ceiling_bytes);
 }
 
 // Off the grid a slab straddles the chunks across as well, and needs twice as many kept -- more than a
@@ -221,6 +227,7 @@ TEST(SlabPlanTest, NoCacheWhereNothingIsDecodedTwice) {
     EXPECT_DOUBLE_EQ(whole_units.store_reads, 1.0);
     EXPECT_EQ(whole_units.reuse_pixels, 0U);
     EXPECT_EQ(whole_units.CacheBytes(kFloat), 0U);
+    EXPECT_EQ(whole_units.CacheBytesOfChunks(256 * 256 * 10 * kFloat), 0U);
 
     const auto by_bytes = PlanSlab(IPosition(4, 4096, 4096, 2000, 1), IPosition(4, 4096, 4096, 2000, 1), 2, kFloat, kLargeMachine);
     EXPECT_EQ(by_bytes.reuse_pixels, 0U);
