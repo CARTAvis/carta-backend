@@ -230,6 +230,9 @@ casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const 
     const auto length = section.length();
     const bool one_plane = length.size() < 3 || (length(2) <= 1 && (length.size() < 4 || length(3) <= 1));
     const casacore::Int most_pixels = one_plane ? kMaskCacheMaxPixels : kMaskCacheMaxCubePixels;
+    // Kept for the mask read that follows, and only for that: the mask read lets it go, and a read
+    // too large to keep one drops whatever an earlier read kept. Otherwise a cube walk's last slab --
+    // up to a gibibyte of mask -- stayed for the life of the image.
     if (section.length().product() <= most_pixels) {
         casacore::Array<casacore::Bool> mask = isFinite(buffer);
         std::scoped_lock lock(_mask_cache_mutex);
@@ -237,8 +240,16 @@ casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const 
         _mask_cache_length = section.length();
         _mask_cache_stride = section.stride();
         _mask_cache.reference(mask);
+    } else {
+        std::scoped_lock lock(_mask_cache_mutex);
+        _mask_cache.resize();
     }
     return false;
+}
+
+std::size_t CartaZarrImage::MaskCacheBytes() const {
+    std::scoped_lock lock(_mask_cache_mutex);
+    return _mask_cache.nelements() * sizeof(casacore::Bool);
 }
 
 const carta::zarr::Image& CartaZarrImage::Opened(const char* where) const {
@@ -364,6 +375,7 @@ casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& b
             _mask_cache_stride == section.stride()) {
             buffer.resize(section.length());
             buffer = _mask_cache;
+            _mask_cache.resize();
             return false;
         }
     }
