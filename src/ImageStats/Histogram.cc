@@ -63,14 +63,18 @@ void Histogram::Fill(const float* data, const size_t data_size) {
     std::vector<int64_t> temp_bins;
     const auto num_elements = data_size;
     const size_t num_bins = GetNbins();
-    // A pixel's bin is found in double, and held to the bins before it becomes an index. In float,
-    // a range wider than a float holds made the offset or the width infinite, and a range of no width
-    // divided the one pixel it holds by zero: either way a non-finite float was converted to an
-    // index, which is undefined. Over no width every pixel the bounds admit is the bound, and the
-    // first bin's.
-    const double min_val = _min_val;
-    const double width = (static_cast<double>(_max_val) - min_val) / static_cast<double>(num_bins);
-    const double last_bin = static_cast<double>(num_bins - 1);
+    // Over a range a float spans with a positive, finite width, every offset is finite and at least
+    // zero, and converts to an index as it always has. Over any other -- one of no width, a width too
+    // small for a float, a range wider than a float holds -- an offset can be NaN or infinite, and
+    // converting one is undefined: it is clamped as a float first, NaN to the first bin, which over no
+    // width is every pixel's, and infinity to the last.
+    //
+    // Decided once, outside the loop. Finding every bin in double instead moved pixels on a bin's edge
+    // to the bin below and cost a tenth more; clamping every offset, or deciding per pixel which way to
+    // bin it, cost 2-5% on a 4096-square plane.
+    const float span = _max_val - _min_val;
+    const bool finite_offsets = span > 0 && std::isfinite(span) && _bin_width > 0 && std::isfinite(_bin_width);
+    const auto last_bin = static_cast<float>(num_bins - 1);
     ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
     {
@@ -78,13 +82,24 @@ void Histogram::Fill(const float* data, const size_t data_size) {
         auto thread_index = omp_get_thread_num();
 #pragma omp single
         { temp_bins.resize(num_bins * num_threads); }
+        // Every thread takes the same branch, so each meets the same loop to share.
+        if (finite_offsets) {
 #pragma omp for
-        for (int64_t i = 0; i < num_elements; i++) {
-            auto val = data[i];
-            if (_min_val <= val && val <= _max_val) {
-                const double offset = width > 0 ? (static_cast<double>(val) - min_val) / width : 0.0;
-                const auto bin_number = static_cast<size_t>(std::min(offset, last_bin));
-                temp_bins[thread_index * num_bins + bin_number]++;
+            for (int64_t i = 0; i < num_elements; i++) {
+                auto val = data[i];
+                if (_min_val <= val && val <= _max_val) {
+                    size_t bin_number = std::clamp((size_t)((val - _min_val) / _bin_width), (size_t)0, num_bins - 1);
+                    temp_bins[thread_index * num_bins + bin_number]++;
+                }
+            }
+        } else {
+#pragma omp for
+            for (int64_t i = 0; i < num_elements; i++) {
+                auto val = data[i];
+                if (_min_val <= val && val <= _max_val) {
+                    const float offset = std::fmin(std::fmax((val - _min_val) / _bin_width, 0.0F), last_bin);
+                    temp_bins[thread_index * num_bins + static_cast<size_t>(offset)]++;
+                }
             }
         }
 #pragma omp for
