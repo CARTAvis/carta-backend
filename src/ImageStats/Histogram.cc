@@ -65,16 +65,20 @@ void Histogram::Fill(const float* data, const size_t data_size) {
     const size_t num_bins = GetNbins();
     // Over a range a float spans with a positive, finite width, every offset is finite and at least
     // zero, and converts to an index as it always has. Over any other -- one of no width, a width too
-    // small for a float, a range wider than a float holds -- an offset can be NaN or infinite, and
-    // converting one is undefined: it is clamped as a float first, NaN to the first bin, which over no
-    // width is every pixel's, and infinity to the last.
+    // small for a float, a range wider than a float holds -- an offset found in float can be NaN or
+    // infinite, and converting one is undefined. There it is found in double, which holds any span of
+    // two floats: clamping the float instead kept it defined and counted it wrongly, putting every
+    // pixel more than FLT_MAX above the bottom in the last bin. Over no width every pixel the bounds
+    // admit is the bound, and the first bin's.
     //
-    // Decided once, outside the loop. Finding every bin in double instead moved pixels on a bin's edge
-    // to the bin below and cost a tenth more; clamping every offset, or deciding per pixel which way to
-    // bin it, cost 2-5% on a 4096-square plane.
+    // Decided once, outside the loop. Finding every bin in double moved pixels on a bin's edge to the
+    // bin below and cost a tenth more; clamping every offset, or deciding per pixel which way to bin
+    // it, cost 2-5% on a 4096-square plane.
     const float span = _max_val - _min_val;
     const bool finite_offsets = span > 0 && std::isfinite(span) && _bin_width > 0 && std::isfinite(_bin_width);
-    const auto last_bin = static_cast<float>(num_bins - 1);
+    const double min_val = _min_val;
+    const double width = (static_cast<double>(_max_val) - min_val) / static_cast<double>(num_bins);
+    const double last_bin = static_cast<double>(num_bins - 1);
     ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
     {
@@ -97,8 +101,8 @@ void Histogram::Fill(const float* data, const size_t data_size) {
             for (int64_t i = 0; i < num_elements; i++) {
                 auto val = data[i];
                 if (_min_val <= val && val <= _max_val) {
-                    const float offset = std::fmin(std::fmax((val - _min_val) / _bin_width, 0.0F), last_bin);
-                    temp_bins[thread_index * num_bins + static_cast<size_t>(offset)]++;
+                    const double offset = width > 0 ? (static_cast<double>(val) - min_val) / width : 0.0;
+                    temp_bins[thread_index * num_bins + static_cast<size_t>(std::min(offset, last_bin))]++;
                 }
             }
         }
