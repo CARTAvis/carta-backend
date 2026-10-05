@@ -4,6 +4,8 @@
 */
 #include <gtest/gtest.h>
 
+#include <algorithm>
+
 #include <functional>
 #include <string>
 #include <vector>
@@ -171,6 +173,29 @@ TEST(ZarrCasacore, TheObservationIsCarried) {
     const auto position = info.telescopePosition().getValue().getValue();
     EXPECT_DOUBLE_EQ(position[0], 1.0) << "three doubles are Cartesian, not longitude, latitude and height";
     EXPECT_DOUBLE_EQ(position[2], 3.0);
+}
+
+// The observation is optional, and a time scale casacore does not know costs only the date it
+// scales: it threw, and an image with every coordinate it needs did not open.
+TEST(ZarrCasacore, AnObservationTimeScaleCasacoreCannotHoldCostsOnlyTheDate) {
+    auto descriptor = Described();
+    carta::zarr::ObservationInfo observation;
+    observation.observer = "CARTA";
+    observation.telescope_name = "Test scope";
+    observation.mjd_obs = 59000.0;
+    observation.timesys = "NOT_A_TIME_SCALE";
+    descriptor.observation = observation;
+
+    carta::ZarrCoordinates made;
+    ASSERT_NO_THROW(made = MakeZarrCoordinateSystem(descriptor));
+    const auto info = made.coordinates.obsInfo();
+    EXPECT_EQ(info.observer(), "CARTA") << "what could be kept was";
+    EXPECT_EQ(info.telescope(), "Test scope");
+    EXPECT_DOUBLE_EQ(info.obsDate().get("d").getValue(), casacore::ObsInfo().obsDate().get("d").getValue())
+        << "a date in a scale casacore cannot name is left unset, not read as UTC";
+    const auto said = std::find_if(made.notes.begin(), made.notes.end(),
+        [](const carta::ZarrNote& note) { return note.detail.find("NOT_A_TIME_SCALE") != std::string::npos; });
+    EXPECT_NE(said, made.notes.end()) << "and the reader is told why";
 }
 
 TEST(ZarrCasacore, TheSameBeamOnEveryPlaneIsOneBeam) {

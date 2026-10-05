@@ -39,7 +39,8 @@ struct ZarrCoordinates {
 
 // The coordinate system of an image in CARTA's order -- direction, spectral, Stokes -- with the
 // observation it carries. Throws casacore::AipsError for what casacore cannot express at all: a
-// frame, projection, Stokes label or time scale it does not know. What it can express only nearly,
+// frame, projection or Stokes label it does not know; an observation time scale it does not
+// know costs the observation date and is noted. What it can express only nearly,
 // it does, and notes. Only asked of an image CartaZarrAxes accepted, which is what says the three
 // coordinates are there.
 ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor);
