@@ -185,11 +185,14 @@ include_directories(${CMAKE_SOURCE_DIR}/third-party/nlohmann_json/include)
 set(nlohmann_json_VERSION "v3.11.3")
 add_subdirectory(third-party/json-schema-validator)
 
-# carta-zarr
-if (NOT CARTA_ZARR_ROOT)
-    set(CARTA_ZARR_ROOT /opt/carta-zarr)
-endif()
-find_package(CartaZarr 0.1 CONFIG REQUIRED PATHS ${CARTA_ZARR_ROOT} NO_DEFAULT_PATH)
+# carta-zarr. A root given as CARTA_ZARR_ROOT is the one used, and nothing else is searched. Without
+# one, the usual places are -- CMAKE_PREFIX_PATH, CartaZarr_ROOT, the system prefixes a distribution
+# package installs to -- with /opt/carta-zarr, once the only place looked in, as a hint.
+if (CARTA_ZARR_ROOT)
+    find_package(CartaZarr 0.1 CONFIG REQUIRED PATHS ${CARTA_ZARR_ROOT} NO_DEFAULT_PATH)
+else ()
+    find_package(CartaZarr 0.1 CONFIG REQUIRED HINTS /opt/carta-zarr)
+endif ()
 
 set(LINK_LIBS
         ${LINK_LIBS}
