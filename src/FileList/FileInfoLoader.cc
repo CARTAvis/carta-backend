@@ -76,7 +76,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
         file_info.set_type(entry->type);
         _message = entry->message;
         file_info.set_size(entry->size);
-        file_info.set_size_is_upper_bound(entry->size_is_upper_bound);
+        file_info.set_size_is_declared(entry->size_is_declared);
         for (const auto& hdu : entry->hdu_list) {
             file_info.add_hdu_list(hdu);
         }
@@ -93,7 +93,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
         file_size = linked_file.size();
     }
     file_info.set_size(file_size);
-    file_info.set_size_is_upper_bound(false);
+    file_info.set_size_is_declared(false);
 
     if (type == CARTA::FileType::ZARR) {
         // A Zarr image is a directory; a file carrying the type has no images to list.
@@ -138,13 +138,10 @@ FileInfoCache::Entry FileInfoLoader::FillDirectoryInfo() {
     auto dataset_size = dataset->Size();
     if (dataset_size && dataset_size.value().bytes <= static_cast<std::uint64_t>(std::numeric_limits<int64_t>::max())) {
         entry.size = static_cast<int64_t>(dataset_size.value().bytes);
-        // The library says which of two questions it answered, not how the answers compare -- see
-        // its ADR 0008. Treating the declared size as an upper bound is this line's inference, and
-        // it holds for the reason the walk usually gives up: a store too large to enumerate inside
-        // the timeout is one whose compressed chunks dwarf its metadata. It does not hold when the
-        // walk failed for some other reason, such as a directory that refused to be read, and
-        // nothing here can tell the two apart.
-        entry.size_is_upper_bound = dataset_size.value().basis == carta::zarr::SizeBasis::declared;
+        // The library says which of two questions it answered, and that is what is passed on: the
+        // bytes the store occupies, or the uncompressed size its metadata declares when those could
+        // not be measured. Not how the two compare, which nothing here knows -- see its ADR 0008.
+        entry.size_is_declared = dataset_size.value().basis == carta::zarr::SizeBasis::declared;
     }
 
     // Offered only if CARTA will open it, which is more than the library promises with openable: the
