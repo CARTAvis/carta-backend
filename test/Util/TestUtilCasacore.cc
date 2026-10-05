@@ -7,6 +7,9 @@
 #include <gtest/gtest.h>
 #include <filesystem>
 #include <fstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -115,6 +118,33 @@ TEST_F(GetResolvedFilenameTest, DirectorySymlink) {
     std::string result = GetResolvedFilename(temp_dir.string(), "", "symlink_dir", message);
 
     EXPECT_EQ(result, real_dir);
+    EXPECT_TRUE(message.empty());
+}
+
+// The top-level folder is a boundary: a client names a file by a directory and a name relative to it,
+// and neither may climb out of it with "..". Resolving such a path used to answer with the file
+// outside, and every open, region import and file-info request trusted the answer. Refused before the
+// file is looked at, so that the reply does not say whether something exists out there either.
+TEST_F(GetResolvedFilenameTest, PathOutsideTopLevelFolderIsRefused) {
+    fs::path root = temp_dir / "root";
+    fs::create_directories(root / "inside");
+    fs::create_directories(temp_dir / "sibling");
+    CreateFile(temp_dir / "sibling" / "secret.fits");
+    CreateFile(root / "inside" / "image.fits");
+
+    for (const auto& [directory, file] : std::vector<std::pair<std::string, std::string>>{
+             {"../sibling", "secret.fits"}, {"", "../sibling/secret.fits"}, {"inside/../..", "sibling/secret.fits"},
+             {"..", ""}, {"../sibling", "missing.fits"}}) {
+        std::string message;
+        std::string result = GetResolvedFilename(root.string(), directory, file, message);
+        EXPECT_EQ(result, "") << directory << " + " << file;
+        EXPECT_NE(message.find("outside the top-level folder"), std::string::npos) << directory << " + " << file << ": " << message;
+    }
+
+    // A ".." that stays inside is only a longer way of naming a file there.
+    std::string message;
+    std::string result = GetResolvedFilename(root.string(), "inside/../inside", "image.fits", message);
+    EXPECT_EQ(result, (root / "inside" / "image.fits").string());
     EXPECT_TRUE(message.empty());
 }
 
