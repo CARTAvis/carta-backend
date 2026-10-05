@@ -208,4 +208,7 @@ TEST(CubeHistogramMethod, TheSettingSaysWhetherToMakeOnePassAndOverWhichPixels) 
     EXPECT_EQ(ParseCubeHistogramMethod("sampled:8x").spatial_sample, 4u) << "and one with more after it";
 
     EXPECT_FALSE(ParseCubeHistogramMethod("bined").one_pass) << "a misspelling is exact";
+    // Taken for "sampled" because it began with it, and then sampled every fourth pixel or the eighth.
+    EXPECT_FALSE(ParseCubeHistogramMethod("sampled_typo").one_pass) << "so is a word that begins with sampled";
+    EXPECT_FALSE(ParseCubeHistogramMethod("sampledgarbage:8").one_pass) << "stride or none";
 }
