@@ -159,7 +159,7 @@ casacore::CoordinateSystem MakeCoordinateSystemOnly(const carta::zarr::ImageDesc
 }
 
 void SetObservationInfo(casacore::CoordinateSystem& coordinate_system,
-                        const std::optional<carta::zarr::ObservationInfo>& descriptor) {
+                        const std::optional<carta::zarr::ObservationInfo>& descriptor, std::vector<ZarrNote>& notes) {
     if (!descriptor) {
         return;
     }
@@ -173,11 +173,16 @@ void SetObservationInfo(casacore::CoordinateSystem& coordinate_system,
     }
     if (descriptor->mjd_obs) {
         casacore::MEpoch::Types epoch_type = casacore::MEpoch::UTC;
+        // The observation is optional, and a time scale casacore cannot name costs the date it
+        // scales and nothing else: it threw, and an image with every coordinate it needs did not
+        // open. Not read as UTC either, which would be a date the image never gave.
         if (!descriptor->timesys.empty() &&
             !casacore::MEpoch::getType(epoch_type, casacore::String(descriptor->timesys))) {
-            throw casacore::AipsError("Unsupported XRADIO time scale: " + descriptor->timesys);
+            notes.push_back(ZarrNote{ZarrNoteTopic::none, "observation date omitted",
+                "observation time scale " + descriptor->timesys + " is one casacore cannot hold; the observation date is left out"});
+        } else {
+            observation.setObsDate(casacore::MEpoch(casacore::Quantity(*descriptor->mjd_obs, "d"), epoch_type));
         }
-        observation.setObsDate(casacore::MEpoch(casacore::Quantity(*descriptor->mjd_obs, "d"), epoch_type));
     }
     if (descriptor->observatory_position) {
         const auto& position = *descriptor->observatory_position;
@@ -204,7 +209,7 @@ std::optional<double> EquinoxOf(casacore::MDirection::Types type) {
 
 ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor) {
     ZarrCoordinates made{MakeCoordinateSystemOnly(descriptor), {}};
-    SetObservationInfo(made.coordinates, descriptor.observation);
+    SetObservationInfo(made.coordinates, descriptor.observation, made.notes);
 
     // FK5 becomes J2000 and FK4 becomes B1950, which are those frames at one equinox each; casacore
     // has no FK5 at another. An image naming another is read in the nearest frame there is rather

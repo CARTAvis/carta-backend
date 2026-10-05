@@ -41,6 +41,11 @@ Planes ConstantCube() {
     return Planes(3, std::vector<float>(6, 5.0f));
 }
 
+// Three planes with no value at all: all NaN, or all flagged, which reach a cube histogram alike.
+Planes EmptyCube() {
+    return Planes(3, std::vector<float>(6, std::numeric_limits<float>::quiet_NaN()));
+}
+
 std::vector<float> Flatten(const Planes& planes, std::size_t first = 0, std::size_t count = std::numeric_limits<std::size_t>::max()) {
     std::vector<float> data;
     for (std::size_t z = first; z < planes.size() && z - first < count; ++z) {
@@ -537,6 +542,52 @@ TEST(CubeHistogramCalculatorTest, OnePassReportsAsItGoesAndHasNoHalves) {
         EXPECT_FLOAT_EQ(reports[i].partial_stats.max_val, so_far.max_val) << "over the range found so far";
         EXPECT_FLOAT_EQ(reports[i].partial.GetMaxVal(), so_far.max_val);
     }
+}
+
+// One pass answers a cube with nothing to bin as two halves do, rather than with the statistics'
+// empty range as bounds: an all-NaN or fully flagged cube came back as a success over [FLT_MAX,
+// -FLT_MAX] with a negative bin width, and a constant one over [v, v] in bins of no width.
+TEST(CubeHistogramCalculatorTest, OnePassOverNothingToBinIsTheHistogramTwoHalvesMake) {
+    for (const auto& planes : {EmptyCube(), ConstantCube()}) {
+        Routes routes(planes);
+        routes.depth = planes.size();
+        CubeHistogram one_pass;
+        ASSERT_EQ(routes.Calculator().Calculate(OnePassRequest(FreeBounds(kBins)), {}, one_pass), CubeHistogramOutcome::finished);
+        ExpectSameCubeHistogram(one_pass, Expected(planes, FreeBounds(kBins)));
+        EXPECT_GE(one_pass.histogram.GetBinWidth(), 0.0);
+        EXPECT_LE(one_pass.histogram.GetMinVal(), one_pass.histogram.GetMaxVal());
+
+        Routes halves(planes);
+        halves.depth = planes.size();
+        CubeHistogram two;
+        ASSERT_EQ(halves.Calculator().Calculate(Request(FreeBounds(kBins)), {}, two), CubeHistogramOutcome::finished);
+        EXPECT_EQ(one_pass.histogram.GetHistogramBins(), two.histogram.GetHistogramBins());
+        EXPECT_FLOAT_EQ(one_pass.histogram.GetMinVal(), two.histogram.GetMinVal());
+        EXPECT_FLOAT_EQ(one_pass.histogram.GetMaxVal(), two.histogram.GetMaxVal());
+    }
+}
+
+// And so does a snapshot taken on the way, which is shown as the histogram so far.
+TEST(CubeHistogramCalculatorTest, ASnapshotOfOneValueIsTheHistogramTwoHalvesMake) {
+    Routes routes(ConstantCube());
+    routes.depth = 3;
+    int shown = 0;
+    CubeHistogramControl control;
+    control.progress = [&](const CubeHistogramProgress& update) {
+        BasicStats<float> stats;
+        Histogram partial;
+        if (update.partial && update.partial(stats, partial)) {
+            ++shown;
+            const auto expected = CalcHistogram(kBins, FreeBounds(kBins).GetBounds(stats), nullptr, 0);
+            EXPECT_EQ(partial.GetHistogramBins().size(), expected.GetHistogramBins().size());
+            EXPECT_FLOAT_EQ(partial.GetMinVal(), expected.GetMinVal());
+            EXPECT_FLOAT_EQ(partial.GetMaxVal(), expected.GetMaxVal());
+        }
+        return true;
+    };
+    CubeHistogram result;
+    ASSERT_EQ(routes.Calculator().Calculate(OnePassRequest(FreeBounds(kBins)), control, result), CubeHistogramOutcome::finished);
+    EXPECT_GT(shown, 0);
 }
 
 TEST(CubeHistogramCalculatorTest, ASnapshotWithNothingInItHasNothingToShow) {

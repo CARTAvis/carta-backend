@@ -5,6 +5,9 @@
 
 #include "CubeHistogramCalculator.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <limits>
 #include <utility>
 
 #include <spdlog/spdlog.h>
@@ -47,6 +50,28 @@ BatchOutcome AskInTurn(const std::vector<CubeRoute>& routes, const char* half, A
 
 // What a half that did not finish means to the caller. Declined is not a case: the caller has taken
 // the next route by then, and a half that every route declined is failed.
+// A histogram of a whole pass's bins over `bounds`, or what CalcHistogram makes of a range with
+// nothing in it -- the single bin over [0, 0] the two halves answer with, holding the pixels that are
+// zero -- when the bounds are empty or inverted. One pass binned no data here to recount, so the bin
+// is counted from the statistics: a range that is empty and not inverted is one value, which is in
+// the bin only if it is zero.
+//
+// Made directly from the statistics, an all-NaN or fully flagged cube was a success over [FLT_MAX,
+// -FLT_MAX] with a negative bin width, and a constant one bins of no width over [v, v].
+Histogram BinnedOver(int num_bins, const HistogramBounds& bounds, const BasicStats<float>& stats, const std::vector<int>& bins) {
+    if (bounds.Invalid<float>()) {
+        Histogram empty(1, HistogramBounds(0, 0), nullptr, 0);
+        const bool zero = stats.num_pixels > 0 && stats.min_val == 0.0f && stats.max_val == 0.0f;
+        // Held at the most a bin counts, as Histogram holds its own.
+        const auto count = std::min<std::int64_t>(static_cast<std::int64_t>(stats.num_pixels), std::numeric_limits<int>::max());
+        empty.SetHistogramBins({zero ? static_cast<int>(count) : 0});
+        return empty;
+    }
+    Histogram histogram(num_bins, bounds, nullptr, 0);
+    histogram.SetHistogramBins(bins);
+    return histogram;
+}
+
 CubeHistogramOutcome Unfinished(BatchOutcome outcome) {
     return outcome == BatchOutcome::cancelled ? CubeHistogramOutcome::cancelled : CubeHistogramOutcome::failed;
 }
@@ -99,8 +124,7 @@ std::optional<CubeHistogramOutcome> CubeHistogramCalculator::OnePass(
                     if (partial_bins.empty() || partial_stats.num_pixels == 0) {
                         return false;
                     }
-                    partial = Histogram(num_bins, HistogramBounds(partial_stats.min_val, partial_stats.max_val), nullptr, 0);
-                    partial.SetHistogramBins(partial_bins);
+                    partial = BinnedOver(num_bins, HistogramBounds(partial_stats.min_val, partial_stats.max_val), partial_stats, partial_bins);
                     return true;
                 };
                 return watch.Report(reported);
@@ -115,8 +139,7 @@ std::optional<CubeHistogramOutcome> CubeHistogramCalculator::OnePass(
 
     CubeHistogram made;
     made.stats = stats;
-    made.histogram = Histogram(num_bins, request.config.GetBounds(made.stats), nullptr, 0);
-    made.histogram.SetHistogramBins(bins);
+    made.histogram = BinnedOver(num_bins, request.config.GetBounds(made.stats), made.stats, bins);
     // A stop that arrived during the last read is not an answer to anyone.
     if (watch.Stopped()) {
         return CubeHistogramOutcome::cancelled;
