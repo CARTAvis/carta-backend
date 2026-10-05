@@ -82,6 +82,8 @@ public:
     int stats_calls = 0;
     int bins_calls = 0;
     int one_pass_calls = 0;
+    // Reads after the first, each of which asks whether to stop.
+    int one_pass_reads = 0;
     int stokes_seen = -1;
 
     BatchOutcome PlaneStats(int stokes, const std::function<bool()>& cancellation_requested,
@@ -130,8 +132,9 @@ public:
 
     // Reads one plane at a time, and tells the caller how far it has got before every read after the
     // first, as the real walk does.
-    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t /*spatial_sample*/, BasicStats<float>& stats_out,
-        std::vector<int>& bins_out, const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
+    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t /*spatial_sample*/,
+        const std::function<bool()>& cancellation_requested, BasicStats<float>& stats_out, std::vector<int>& bins_out,
+        const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
         ++one_pass_calls;
         stokes_seen = stokes;
         if (one_pass == Mode::decline) {
@@ -140,7 +143,14 @@ public:
         if (one_pass == Mode::fail) {
             return BatchOutcome::failed;
         }
-        for (std::size_t z = 1; z < _planes.size() && progress; ++z) {
+        for (std::size_t z = 1; z < _planes.size(); ++z) {
+            if (cancellation_requested && cancellation_requested()) {
+                return BatchOutcome::cancelled;
+            }
+            ++one_pass_reads;
+            if (!progress) {
+                continue;
+            }
             CubeHistogramUpdate update;
             update.progress = static_cast<double>(z) / static_cast<double>(_planes.size());
             update.snapshot = [this, z, num_bins](BasicStats<float>& partial_stats, std::vector<int>& partial_bins) {
@@ -436,6 +446,35 @@ TEST(CubeHistogramCalculatorTest, AProgressCallbackThatSaysStopCancels) {
     CubeHistogram result;
     EXPECT_EQ(routes.Calculator().Calculate(OnePassRequest(FreeBounds(kBins)), control, result), CubeHistogramOutcome::cancelled)
         << "one pass is stopped in the same way";
+}
+
+// A request already cancelled is not started. One pass asked only its progress callback whether to
+// stop, and a walk done in one read calls that never: the whole cube was read before the stop was seen.
+TEST(CubeHistogramCalculatorTest, ARequestAlreadyCancelledAsksNoRoute) {
+    for (const bool one_pass : {false, true}) {
+        Routes routes(SampleCube());
+        CubeHistogramControl control;
+        control.cancellation_requested = [] { return true; };
+        CubeHistogram result;
+        const auto request = one_pass ? OnePassRequest(FreeBounds(kBins)) : Request(FreeBounds(kBins));
+        EXPECT_EQ(routes.Calculator().Calculate(request, control, result), CubeHistogramOutcome::cancelled);
+        EXPECT_EQ(routes.walk.one_pass_calls + routes.walk.stats_calls + routes.plane_by_plane.one_pass_calls +
+                      routes.plane_by_plane.stats_calls,
+            0)
+            << (one_pass ? "one pass" : "two halves") << " was started for a request already cancelled";
+    }
+}
+
+// And a stop asked for during the walk ends it at the next read, with nobody watching progress: one
+// pass passes the question down rather than waiting to be called back.
+TEST(CubeHistogramCalculatorTest, OnePassStopsAtTheNextReadWithNobodyWatching) {
+    Routes routes(SampleCube());
+    int asked = 0;
+    CubeHistogramControl control;
+    control.cancellation_requested = [&] { return ++asked > 2; };
+    CubeHistogram result;
+    EXPECT_EQ(routes.Calculator().Calculate(OnePassRequest(FreeBounds(kBins)), control, result), CubeHistogramOutcome::cancelled);
+    EXPECT_EQ(routes.walk.one_pass_reads, 1) << "the walk read on after the stop";
 }
 
 // The last read may finish before the stop is noticed. What it produced is an answer to a question

@@ -91,6 +91,12 @@ CubeHistogramOutcome CubeHistogramCalculator::Calculate(
     // hand it a range it was not given. Labelling those counts with the requested edges would publish
     // counts of one thing as counts of another. The two halves have the range before they bin, so
     // they are the ones that can answer this.
+    //
+    // A request already cancelled starts neither. Each route asks again at every read, but one pass
+    // could only ask through its progress callback, which a walk done in one read never calls.
+    if (control.cancellation_requested && control.cancellation_requested()) {
+        return CubeHistogramOutcome::cancelled;
+    }
     if (request.method.one_pass && !request.config.fixed_bounds) {
         if (const auto outcome = OnePass(request, control, result)) {
             return *outcome;
@@ -107,8 +113,8 @@ std::optional<CubeHistogramOutcome> CubeHistogramCalculator::OnePass(
     BasicStats<float> stats;
     std::vector<int> bins;
     const auto asked = AskInTurn(_routes, "one pass", [&](CubeReducer& reducer) {
-        return reducer.OnePassCubeHistogram(
-            request.stokes, num_bins, request.method.spatial_sample, stats, bins, [&](const CubeHistogramUpdate& update) {
+        return reducer.OnePassCubeHistogram(request.stokes, num_bins, request.method.spatial_sample, control.cancellation_requested,
+            stats, bins, [&](const CubeHistogramUpdate& update) {
                 if (watch.Stopped()) {
                     return false;
                 }

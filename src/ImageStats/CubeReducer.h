@@ -68,9 +68,12 @@ public:
     // One histogram of the whole cube and its statistics, finding the range as it bins: one pass
     // rather than two, at the cost of where the bin edges land. `spatial_sample` reads every nth
     // pixel along both spatial axes, one being every pixel. `progress` is told how far along the walk
-    // is between reads; returning false from it cancels.
-    virtual BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
-        std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) = 0;
+    // is between reads; returning false from it cancels, and so does a yes from
+    // `cancellation_requested`, asked at every read as PlaneStats asks it -- the first included, which
+    // `progress` is never told of, so a walk done in one read is still stopped by it.
+    virtual BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample,
+        const std::function<bool()>& cancellation_requested, BasicStats<float>& stats, std::vector<int>& bins,
+        const std::function<bool(const CubeHistogramUpdate&)>& progress) = 0;
 };
 
 } // namespace carta

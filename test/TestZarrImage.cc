@@ -108,10 +108,11 @@ public:
 
     int one_pass_calls = 0;
 
-    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample, BasicStats<float>& stats,
-        std::vector<int>& bins, const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
+    BatchOutcome OnePassCubeHistogram(int stokes, int num_bins, std::uint64_t spatial_sample,
+        const std::function<bool()>& cancellation_requested, BasicStats<float>& stats, std::vector<int>& bins,
+        const std::function<bool(const CubeHistogramUpdate&)>& progress) override {
         ++one_pass_calls;
-        return ZarrLoader::OnePassCubeHistogram(stokes, num_bins, spatial_sample, stats, bins, progress);
+        return ZarrLoader::OnePassCubeHistogram(stokes, num_bins, spatial_sample, cancellation_requested, stats, bins, progress);
     }
 };
 
@@ -1481,10 +1482,10 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassAgreesWithTwo) {
     const int stokes = 1;
     BasicStats<float> stats;
     std::vector<int> bins;
-    EXPECT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 0, stats, bins, {}), BatchOutcome::declined)
+    EXPECT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 0, {}, stats, bins, {}), BatchOutcome::declined)
         << "a stride of zero reads no pixel, and it no longer means 'whatever the settings say'";
 
-    ASSERT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 1, stats, bins, {}), BatchOutcome::finished);
+    ASSERT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 1, {}, stats, bins, {}), BatchOutcome::finished);
     ASSERT_EQ(bins.size(), static_cast<std::size_t>(num_bins));
 
     // The two-pass answer over the range the one pass found.
@@ -1547,7 +1548,7 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     int updates = 0;
     double last_progress = -1.0;
     std::size_t last_pixels = 0;
-    ASSERT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 1, stats, bins,
+    ASSERT_EQ(loader->CubeWalk()->OnePassCubeHistogram(stokes, num_bins, 1, {}, stats, bins,
                   [&](const CubeHistogramUpdate& update) {
                       ++updates;
                       EXPECT_GT(update.progress, last_progress) << "progress should not go backwards";
@@ -1579,8 +1580,21 @@ TEST_F(ZarrImageTest, CubeHistogramOnePassReportsAsItGoes) {
     BasicStats<float> ignored_stats;
     std::vector<int> ignored_bins;
     EXPECT_EQ(loader->CubeWalk()->OnePassCubeHistogram(
-                  stokes, num_bins, 1, ignored_stats, ignored_bins, [](const CubeHistogramUpdate&) { return false; }),
+                  stokes, num_bins, 1, {}, ignored_stats, ignored_bins, [](const CubeHistogramUpdate&) { return false; }),
         BatchOutcome::cancelled);
+
+    // As does a stop asked for, with nobody watching progress: a walk done in one read has no progress
+    // to report, and was read to the end before anyone asked whether to stop.
+    int asked = 0;
+    EXPECT_EQ(loader->CubeWalk()->OnePassCubeHistogram(
+                  stokes, num_bins, 1,
+                  [&] {
+                      ++asked;
+                      return true;
+                  },
+                  ignored_stats, ignored_bins, {}),
+        BatchOutcome::cancelled);
+    EXPECT_GT(asked, 0) << "the walk never asked whether to stop";
 }
 
 // A range the walk cannot express is declined rather than answered differently: the caller's
