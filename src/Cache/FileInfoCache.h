@@ -38,7 +38,7 @@ constexpr std::size_t FILE_INFO_CACHE_SIZE = 512;
  * untouched. Since a size is precisely a measure of those writes, there is no cheap stamp that
  * tracks it -- the only one that would is the recursive walk this cache exists to avoid. So the
  * TTL is what makes an entry expire, and Stamp is only a fast way to notice a change that did
- * happen to be visible. A size is already explicitly approximate (see size_is_upper_bound), which
+ * happen to be visible. A size can already be the declared one rather than a measure (see size_is_declared), which
  * is what makes bounded staleness the right trade here rather than a compromise.
  *
  * An image that could not be read is remembered like any other entry. A broken store costs one
@@ -53,7 +53,7 @@ public:
         // rather than asked again by the next caller that arrives without a type in hand.
         CARTA::FileType type = CARTA::FileType::UNKNOWN;
         int64_t size = 0;
-        bool size_is_upper_bound = false;
+        bool size_is_declared = false;
         std::vector<std::string> hdu_list;
         bool complete = false;
         // Why there is nothing to open, when there is nothing: the library's reason for a store that

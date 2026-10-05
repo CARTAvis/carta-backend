@@ -104,6 +104,15 @@ public:
 
 // The repetition the cache exists for: the folder listing, the selection and the open all derive
 // the same image, and only the first of them pays for it.
+// A file type is sent as its number, so a number once given keeps its meaning: a frontend or script
+// built before Zarr was added reads 6 as UNKNOWN, and must go on doing so. ZARR was first given 6,
+// with UNKNOWN moved to 7.
+TEST(FileTypeNumbers, ANumberKeepsTheTypeItWasGiven) {
+    EXPECT_EQ(static_cast<int>(CARTA::FileType::MIRIAD), 5);
+    EXPECT_EQ(static_cast<int>(CARTA::FileType::UNKNOWN), 6);
+    EXPECT_EQ(static_cast<int>(CARTA::FileType::ZARR), 7);
+}
+
 TEST_F(FileInfoCacheTest, RepeatedFillIsServedFromTheCache) {
     bool complete = false;
     const int64_t first = FillSize(&complete);
