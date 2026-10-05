@@ -182,6 +182,11 @@ TEST(CubeHistogramMethod, TheSettingSaysWhetherToMakeOnePassAndOverWhichPixels) 
     EXPECT_EQ(ParseCubeHistogramMethod("sampled:8").spatial_sample, 8u);
     EXPECT_EQ(ParseCubeHistogramMethod("sampled:x").spatial_sample, 4u) << "a stride that is not a number is ignored";
     EXPECT_EQ(ParseCubeHistogramMethod("sampled:0").spatial_sample, 4u) << "and so is one that reads nothing";
+    // std::stoull reads "-1" as the largest stride there is; a sign is no stride.
+    EXPECT_EQ(ParseCubeHistogramMethod("sampled:-1").spatial_sample, 4u) << "a negative stride is ignored";
+    EXPECT_EQ(ParseCubeHistogramMethod("sampled:+8").spatial_sample, 4u) << "as is a signed one";
+    EXPECT_EQ(ParseCubeHistogramMethod("sampled: 8").spatial_sample, 4u) << "and one with space before it";
+    EXPECT_EQ(ParseCubeHistogramMethod("sampled:8x").spatial_sample, 4u) << "and one with more after it";
 
     EXPECT_FALSE(ParseCubeHistogramMethod("bined").one_pass) << "a misspelling is exact";
 }
