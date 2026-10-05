@@ -6,6 +6,7 @@
 
 #include "Casacore.h"
 
+#include <filesystem>
 #include <regex>
 
 #include <casacore/casa/OS/File.h>
@@ -31,6 +32,24 @@ casacore::String GetResolvedFilename(
     casacore::Path path(root_dir);
     path.append(directory);
     casacore::File cc_file(path);
+
+    // The top-level folder is a boundary, and a directory or a name that climbs out of it with ".."
+    // is refused before anything is looked at, so that the answer does not say whether something
+    // exists out there either. Spelled as casacore spells the path it opens, then compared without
+    // resolving links: a link inside the folder is still followed wherever it points, as before.
+    casacore::Path requested(path);
+    if (!file.empty()) {
+        requested.append(file);
+    }
+    auto top = std::filesystem::path(std::string(casacore::Path(root_dir).expandedName())).lexically_normal();
+    if (!top.has_filename() && top.has_relative_path()) {
+        top = top.parent_path();
+    }
+    const auto relative = std::filesystem::path(std::string(requested.expandedName())).lexically_normal().lexically_relative(top);
+    if (relative.empty() || *relative.begin() == "..") {
+        message = fmt::format("Path {} is outside the top-level folder.", requested.expandedName());
+        return resolved_filename;
+    }
 
     // Check directory
     if (!cc_file.exists()) {
