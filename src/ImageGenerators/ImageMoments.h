@@ -83,11 +83,16 @@ public:
     // decode in: called with a size once the slabs are planned, it returns what keeps a cache that large,
     // which the walk lets go of when it is done. The size is what neighbouring slabs share, so that each
     // chunk is decoded once (see SlabPlan::CacheBytes).
+    //
+    // `decoded_chunk_bytes` is what one chunk keeps in that cache, as the image says: its stored type
+    // and the flag chunks beside it, which is what the cache is counted in. Zero when the image does not
+    // say, and a chunk is then counted as its pixels in T.
     void SetChunkGrid(const casacore::IPosition& unit, const casacore::IPosition& origin,
-        std::function<std::shared_ptr<void>(std::uint64_t bytes)> hold_cache = {}) {
+        std::function<std::shared_ptr<void>(std::uint64_t bytes)> hold_cache = {}, std::uint64_t decoded_chunk_bytes = 0) {
         _chunk_grid_unit = unit;
         _chunk_grid_origin = origin;
         _hold_cache = std::move(hold_cache);
+        _decoded_chunk_bytes = decoded_chunk_bytes;
     }
 
 private:
@@ -123,6 +128,7 @@ private:
     casacore::IPosition _chunk_grid_unit;
     casacore::IPosition _chunk_grid_origin;
     std::function<std::shared_ptr<void>(std::uint64_t bytes)> _hold_cache;
+    std::uint64_t _decoded_chunk_bytes = 0;
 
 protected:
     using casa::MomentsBase<T>::os_p;

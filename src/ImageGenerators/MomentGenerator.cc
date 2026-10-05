@@ -206,13 +206,14 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
 
     casacore::IPosition unit;
     casacore::IPosition origin;
-    if (ChunkGridOf(*_image, *_sub_image, unit, origin)) {
-        _image_moments->SetChunkGrid(unit, origin, hold_cache);
+    std::uint64_t chunk_bytes = 0;
+    if (ChunkGridOf(*_image, *_sub_image, unit, origin, chunk_bytes)) {
+        _image_moments->SetChunkGrid(unit, origin, hold_cache, chunk_bytes);
     }
 }
 
 bool carta::ChunkGridOf(const casacore::ImageInterface<float>& image, const casacore::SubImage<float>& region, casacore::IPosition& unit,
-    casacore::IPosition& origin) {
+    casacore::IPosition& origin, std::uint64_t& decoded_chunk_bytes) {
     // A Zarr store decodes in chunks, and the moment reads fastest in slabs cut on them. Only the image
     // knows the chunks, and only the region knows where it starts among them; any other image says
     // what it can through its cursor advice.
@@ -222,6 +223,8 @@ bool carta::ChunkGridOf(const casacore::ImageInterface<float>& image, const casa
     }
     unit = zarr->ChunkShape();
     origin = region.region().slicer().start();
+    // As the library counts it, for the reads the moment will make: masked, as CartaZarrImage reads.
+    decoded_chunk_bytes = zarr->Library().DecodedChunkBytes();
     return !unit.empty() && origin.size() == unit.size() && region.shape().size() == unit.size();
 }
 

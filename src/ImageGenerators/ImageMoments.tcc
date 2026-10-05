@@ -698,7 +698,10 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
                                       : PlanSlab(in_shape, lattice_in.niceCursorShape(), collapse_axis, pixel_bytes, memory_bytes);
     // Kept until the walk is done: what its slabs share, held where they can find it again.
     std::shared_ptr<void> held_cache;
-    const std::uint64_t cache_bytes = on_the_grid && _hold_cache ? plan.CacheBytes(sizeof(T)) : 0;
+    // In what a chunk decodes to when the image says, which is what the cache holds; in T otherwise.
+    const std::uint64_t cache_need = _decoded_chunk_bytes != 0 ? plan.reuse_chunks * _decoded_chunk_bytes : plan.reuse_pixels * sizeof(T);
+    const std::uint64_t cache_bytes =
+        !on_the_grid || !_hold_cache ? 0 : _decoded_chunk_bytes != 0 ? plan.CacheBytesOfChunks(_decoded_chunk_bytes) : plan.CacheBytes(sizeof(T));
     if (on_the_grid && _hold_cache) {
         held_cache = _hold_cache(cache_bytes);
     }
@@ -708,7 +711,7 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
         spdlog::debug("moment slab {} path {} from the {}, budget {} MiB, unit {} MiB, reads the store {:.1f}x, cache {} MiB{}{}",
             plan.slab.toString(), plan.axis_path.toString(), on_the_grid ? "chunks" : "cursor advice", plan.budget_bytes >> 20U,
             plan.unit_bytes >> 20U, plan.store_reads, cache_bytes >> 20U, held_cache ? " of its own" : "",
-            held_cache ? fmt::format(" ({}{:.1f}x with it)", cache_bytes < plan.reuse_pixels * sizeof(T) ? "short of the need; " : "",
+            held_cache ? fmt::format(" ({}{:.1f}x with it)", cache_bytes < cache_need ? "short of the need; " : "",
                              plan.cached_store_reads)
                        : std::string());
     }
