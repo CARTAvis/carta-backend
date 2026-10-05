@@ -111,6 +111,25 @@ TEST_F(HistogramTest, TestAddingHoldsACountAtIntMax) {
     EXPECT_EQ(cube.GetHistogramBins(), (std::vector<int>{kIntMax, 5}));
 }
 
+// A bin is found by dividing a pixel's offset by the bin width, and both were floats. Over a range
+// wider than a float holds -- a cube whose finite pixels span nearly all of them -- the width was
+// infinite and every offset divided to zero or NaN, so every pixel landed in the first bin. Over a
+// range of no width, the zero pixel's offset was 0/0. Both converted a non-finite float to an index,
+// which is undefined; arm64 happens to give the first bin.
+TEST_F(HistogramTest, APixelIsBinnedOverARangeWiderThanAFloat) {
+    const std::vector<float> data{-3e38F, -1e38F, 0.0F, 3e38F};
+    carta::Histogram wide(4, HistogramBounds(-3e38F, 3e38F), data.data(), data.size());
+    EXPECT_EQ(wide.GetHistogramBins(), (std::vector<int>{1, 1, 1, 1}));
+}
+
+TEST_F(HistogramTest, APixelIsBinnedOverARangeOfNoWidth) {
+    const std::vector<float> data{0.0F, 0.0F, 1.0F};
+    carta::Histogram constant(1, HistogramBounds(0.0F, 0.0F), data.data(), data.size());
+    EXPECT_EQ(constant.GetHistogramBins(), (std::vector<int>{2}));
+    carta::Histogram several(3, HistogramBounds(0.0F, 0.0F), data.data(), data.size());
+    EXPECT_EQ(several.GetHistogramBins(), (std::vector<int>{2, 0, 0}));
+}
+
 TEST_F(HistogramTest, TestSingleThreading) {
     std::vector<float> data(1024 * 1024);
     for (auto& v : data) {
