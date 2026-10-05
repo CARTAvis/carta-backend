@@ -122,6 +122,16 @@ TEST_F(HistogramTest, APixelIsBinnedOverARangeWiderThanAFloat) {
     EXPECT_EQ(wide.GetHistogramBins(), (std::vector<int>{1, 1, 1, 1}));
 }
 
+// A pixel's bin is found in float, as CARTA always has, so a pixel on a bin's edge stays in the bin it
+// was counted in. Found in double instead, 0.7f over [0, 1] in ten bins fell to bin 6, where the float
+// rule has always put it in bin 7 -- a thousand pixels of a 4096-square plane moved, and binning
+// cost a tenth more.
+TEST_F(HistogramTest, APixelOnABinsEdgeStaysInItsBin) {
+    const float edge = 0.7F;
+    carta::Histogram tenths(10, HistogramBounds(0.0, 1.0), &edge, 1);
+    EXPECT_EQ(tenths.GetHistogramBins()[7], 1);
+}
+
 TEST_F(HistogramTest, APixelIsBinnedOverARangeOfNoWidth) {
     const std::vector<float> data{0.0F, 0.0F, 1.0F};
     carta::Histogram constant(1, HistogramBounds(0.0F, 0.0F), data.data(), data.size());
