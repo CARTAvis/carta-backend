@@ -117,9 +117,11 @@ TEST_F(HistogramTest, TestAddingHoldsACountAtIntMax) {
 // range of no width, the zero pixel's offset was 0/0. Both converted a non-finite float to an index,
 // which is undefined; arm64 happens to give the first bin.
 TEST_F(HistogramTest, APixelIsBinnedOverARangeWiderThanAFloat) {
-    const std::vector<float> data{-3e38F, -1e38F, 0.0F, 3e38F};
+    const std::vector<float> data{-3e38F, -1e38F, 0.0F, 1e38F, 2e38F, 3e38F};
     carta::Histogram wide(4, HistogramBounds(-3e38F, 3e38F), data.data(), data.size());
-    EXPECT_EQ(wide.GetHistogramBins(), (std::vector<int>{1, 1, 1, 1}));
+    // 1e38 is 4e38 above the bottom, which overflows a float: clamped to the last bin, it was counted
+    // in bin 3 rather than bin 2.
+    EXPECT_EQ(wide.GetHistogramBins(), (std::vector<int>{1, 1, 2, 2}));
 }
 
 // A pixel's bin is found in float, as CARTA always has, so a pixel on a bin's edge stays in the bin it
