@@ -334,8 +334,6 @@ RegionState Ds9Importer::ImportEllipseRegion(std::vector<std::string>& parameter
             }
         }
         region_state = RegionState(_file_id, type, control_points, rotation);
-    } else if (region_name == "ellipse" && nparam > 6) {
-        region_state = ImportAnnulusRegion(parameters, is_annotation);
     } else {
         _errors.append(region_name + " syntax error.\n");
     }
@@ -378,7 +376,7 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
             } else {
                 CARTA::Point p1 = Message::Point(param_quantities, 2, 3);
                 CARTA::Point p2 = Message::Point(param_quantities, 4, 5);
-                if (p1.x() > p2.x() || p1.y() > p2.y()) {
+                if (p1.x() > p2.x() && p1.y() > p2.y()) {
                     control_points.push_back(p1);
                     control_points.push_back(p2);
                 } else {
@@ -413,7 +411,7 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
             } else {
                 CARTA::Point p1 = Message::Point(WorldToPixelLength(param_quantities[2], 0), WorldToPixelLength(param_quantities[3], 1));
                 CARTA::Point p2 = Message::Point(WorldToPixelLength(param_quantities[4], 0), WorldToPixelLength(param_quantities[5], 1));
-                if (p1.x() > p2.x() || p1.y() > p2.y()) {
+                if (p1.x() > p2.x() && p1.y() > p2.y()) {
                     control_points.push_back(p1);
                     control_points.push_back(p2);
                 } else {
@@ -433,7 +431,8 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                 rotation += 360.0;
             }
         }
-        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, rotation);
+        region_state =
+            RegionState(_file_id, is_annotation ? CARTA::RegionType::ANNELLIPSE : CARTA::RegionType::ANNULUS, control_points, rotation);
     } else if (region_name == "annulus" || region_name == "ellipse") {
         _errors.append(region_name + " annulus syntax error: expected four radii and an optional ellipse angle.\n");
     } else {

@@ -171,6 +171,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared
                     // If only an annulus hole is outside this lattice, it subtracts no image pixels.
                     const auto state = GetRegionState();
                     if (state.type == CARTA::RegionType::ANNULUS && state.control_points.size() == 3) {
+                        spdlog::warn("Annulus region could not be constructed; falling back to its outer ellipse");
                         auto outer_state = state;
                         outer_state.type = CARTA::RegionType::ELLIPSE;
                         outer_state.control_points.resize(2);

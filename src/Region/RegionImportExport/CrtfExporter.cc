@@ -8,10 +8,16 @@
 
 #include "CrtfExporter.h"
 
+#include <spdlog/spdlog.h>
+
 #include <spdlog/fmt/fmt.h>
+
+#include <algorithm>
+#include <cmath>
 
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
+#include <imageanalysis/Annotations/AnnAnnulus.h>
 #include <imageanalysis/Annotations/AnnCenterBox.h>
 #include <imageanalysis/Annotations/AnnCircle.h>
 #include <imageanalysis/Annotations/AnnEllipse.h>
@@ -34,6 +40,20 @@ CrtfExporter::CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys
 }
 
 bool CrtfExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
+    if (region_state.type == CARTA::RegionType::ANNULUS) {
+        if (region_state.control_points.size() != 3 || region_state.control_points[1].x() != region_state.control_points[1].y() ||
+            region_state.control_points[2].x() != region_state.control_points[2].y()) {
+            return false;
+        }
+        const auto& center = region_state.control_points[0];
+        const auto& outer = region_state.control_points[1];
+        const auto& inner = region_state.control_points[2];
+        std::string file_line =
+            fmt::format("annulus[[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", center.x(), center.y(), inner.x(), outer.x());
+        AddStyle(region_style, file_line);
+        _file_lines.push_back(file_line);
+        return true;
+    }
     auto region_type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
     float rotation = region_state.rotation;
@@ -155,7 +175,6 @@ bool CrtfExporter::AddRegion(CARTA::RegionType region_type, const std::vector<ca
     if (control_points.empty()) {
         return false;
     }
-
     // Create casa region then print it
     casa::AnnotationBase* ann_base(nullptr); // symbol, line, and polyline
     casa::AnnRegion* ann_region(nullptr);    // all other regions
@@ -283,6 +302,25 @@ bool CrtfExporter::GetAnnRegion(CARTA::RegionType region_type, const std::vector
                 } else {
                     ann_region = new casa::AnnCircle(cx, cy, bmaj, *_coord_sys, _image_shape, stokes_types, require_region);
                 }
+                break;
+            }
+            case CARTA::RegionType::ANNULUS: {
+                if (control_points.size() != 6) {
+                    return false;
+                }
+                auto outer_x = control_points[2];
+                auto outer_y = control_points[3];
+                auto inner_x = control_points[4];
+                auto inner_y = control_points[5];
+                outer_y.convert(outer_x.getUnit());
+                inner_y.convert(inner_x.getUnit());
+                const auto is_circle = [](double x, double y) { return std::abs(x - y) <= 1e-6 * std::max(std::abs(x), std::abs(y)); };
+                if (!is_circle(outer_x.getValue(), outer_y.getValue()) || !is_circle(inner_x.getValue(), inner_y.getValue())) {
+                    spdlog::warn("Elliptical annulus regions are not supported in CRTF format");
+                    return false;
+                }
+                ann_region = new casa::AnnAnnulus(
+                    control_points[0], control_points[1], inner_x, outer_x, *_coord_sys, _image_shape, stokes_types, require_region);
                 break;
             }
             case CARTA::RegionType::POLYGON:

@@ -70,8 +70,8 @@ private:
     casacore::TableRecord GetLineRecord(std::shared_ptr<casacore::CoordinateSystem> image_csys);
     casacore::TableRecord GetPolygonRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
     casacore::TableRecord GetRotboxRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
-    casacore::TableRecord GetEllipseRecord(const std::vector<casacore::Quantity>& ellipse_points, float rotation,
-        std::shared_ptr<casacore::CoordinateSystem> output_csys);
+    casacore::TableRecord GetEllipseRecord(
+        const std::vector<casacore::Quantity>& ellipse_points, float rotation, std::shared_ptr<casacore::CoordinateSystem> output_csys);
     casacore::TableRecord GetAnnulusRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
 
     // Utilities for pixel/world conversion

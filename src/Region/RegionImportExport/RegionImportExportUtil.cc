@@ -17,6 +17,7 @@ std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::Fil
     if (region_file_type == CARTA::CRTF) {
         region_names[CARTA::RegionType::POINT] = "symbol";
         region_names[CARTA::RegionType::RECTANGLE] = "centerbox";
+        region_names[CARTA::RegionType::ANNULUS] = "annulus";
         region_names[CARTA::RegionType::POLYGON] = "poly";
         region_names[CARTA::RegionType::ANNPOINT] = "ann symbol";
         region_names[CARTA::RegionType::ANNLINE] = "ann line";

@@ -8,7 +8,6 @@
 
 #include "RegionConverter.h"
 
-#include <algorithm>
 #include <casacore/casa/Quanta/QLogical.h>
 #include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
@@ -23,6 +22,7 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/measures/Measures/MCDirection.h>
+#include <algorithm>
 
 #include "Logger/Logger.h"
 #include "Util/Image.h"
@@ -159,13 +159,11 @@ void RegionConverter::SetReferenceWCRegion() {
                 theta.convert("rad");
                 casacore::Quantity inner_theta(inner_rotation, "deg");
                 inner_theta.convert("rad");
-                auto outer_wc = new casacore::WCEllipsoid(
+                casacore::WCEllipsoid outer_wc(
                     center_world[0], center_world[1], outer_maj_world, outer_min_world, theta, 0, 1, *_reference_coord_sys);
-                auto inner_wc = new casacore::WCEllipsoid(
+                casacore::WCEllipsoid inner_wc(
                     center_world[0], center_world[1], inner_maj_world, inner_min_world, inner_theta, 0, 1, *_reference_coord_sys);
-                region = new casacore::WCDifference(casacore::ImageRegion(*outer_wc), casacore::ImageRegion(*inner_wc));
-                delete outer_wc;
-                delete inner_wc;
+                region = new casacore::WCDifference(casacore::ImageRegion(outer_wc), casacore::ImageRegion(inner_wc));
                 break;
             }
             default: // no WCRegion for line-type regions
@@ -1035,9 +1033,21 @@ casacore::TableRecord RegionConverter::GetAnnulusRecord(std::shared_ptr<casacore
         return record;
     }
     std::vector<casacore::Quantity> outer_points(_wcs_control_points.begin(), _wcs_control_points.begin() + 4);
-    std::vector<casacore::Quantity> inner_points{_wcs_control_points[0], _wcs_control_points[1], _wcs_control_points[4], _wcs_control_points[5]};
-    casacore::TableRecord outer_record = GetEllipseRecord(outer_points, _region_state.rotation, output_csys);
-    casacore::TableRecord inner_record = GetEllipseRecord(inner_points, _region_state.rotation, output_csys);
+    std::vector<casacore::Quantity> inner_points{
+        _wcs_control_points[0], _wcs_control_points[1], _wcs_control_points[4], _wcs_control_points[5]};
+    const auto ellipse_rotation = [this](const casacore::Quantity& x_radius, const casacore::Quantity& y_radius) {
+        auto x_world_radius = x_radius;
+        auto y_world_radius = y_radius;
+        try {
+            x_world_radius.convert(_reference_coord_sys->worldAxisUnits()(0));
+            y_world_radius.convert(_reference_coord_sys->worldAxisUnits()(1));
+        } catch (const casacore::AipsError&) {
+            return _region_state.rotation;
+        }
+        return _region_state.rotation + (x_world_radius > y_world_radius ? 90.0f : 0.0f);
+    };
+    casacore::TableRecord outer_record = GetEllipseRecord(outer_points, ellipse_rotation(outer_points[2], outer_points[3]), output_csys);
+    casacore::TableRecord inner_record = GetEllipseRecord(inner_points, ellipse_rotation(inner_points[2], inner_points[3]), output_csys);
 
     if (outer_record.empty() || inner_record.empty()) {
         return record;

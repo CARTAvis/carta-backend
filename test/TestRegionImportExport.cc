@@ -476,4 +476,42 @@ TEST_F(RegionImportExportTest, TestDs9AnnulusExportImport) {
     imported_info = world_import_ack.regions().begin()->second;
     imported_region_state = GetRegionState(file_id, imported_info);
     ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state, CARTA::DS9_REG));
+
+    CARTA::ExportRegionAck crtf_export_ack;
+    region_handler.ExportRegion(file_id, frame0, CARTA::CRTF, CARTA::WORLD, region_style_map, filename, overwrite, crtf_export_ack);
+    ASSERT_FALSE(crtf_export_ack.success());
+    EXPECT_EQ(crtf_export_ack.message(), "Elliptical annulus regions are not supported in CRTF format.");
+}
+
+TEST_F(RegionImportExportTest, TestCrtfCircularAnnulusExport) {
+    auto image_path = FitsImages() / "noise_10px_10px.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    int region_id(-1);
+    std::vector<float> annulus_points = {5.0, 5.0, 3.0, 3.0, 1.0, 1.0};
+    ASSERT_TRUE(SetRegion(region_handler, 0, region_id, CARTA::ANNULUS, annulus_points, 0.0, frame->CoordinateSystem()));
+    std::map<int, CARTA::RegionStyle> region_styles{{region_id, GetRegionStyle(CARTA::ANNULUS)}};
+    std::string filename;
+    bool overwrite(false);
+
+    CARTA::ExportRegionAck pixel_export_ack;
+    region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::PIXEL, region_styles, filename, overwrite, pixel_export_ack);
+    ASSERT_TRUE(pixel_export_ack.success()) << pixel_export_ack.message();
+    EXPECT_THAT(pixel_export_ack.contents().Get(1), testing::HasSubstr("annulus[[5.0000pix, 5.0000pix], [1.0000pix, 3.0000pix]]"));
+
+    CARTA::ExportRegionAck world_export_ack;
+    region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::WORLD, region_styles, filename, overwrite, world_export_ack);
+    ASSERT_TRUE(world_export_ack.success()) << world_export_ack.message();
+    EXPECT_THAT(world_export_ack.contents().Get(1), testing::HasSubstr("annulus"));
+}
+
+TEST_F(RegionImportExportTest, TestInvalidAnnulusAxesRejected) {
+    auto image_path = FitsImages() / "noise_10px_10px.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    int region_id(-1);
+    std::vector<float> invalid_annulus_points = {5.0, 5.0, 3.0, 4.0, 3.5, 2.0};
+    EXPECT_FALSE(SetRegion(region_handler, 0, region_id, CARTA::ANNULUS, invalid_annulus_points, 0.0, frame->CoordinateSystem()));
 }

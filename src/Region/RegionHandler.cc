@@ -224,6 +224,22 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     auto exporter = GetRegionExporter(region_file_type, output_csys, output_shape, stokes_axis, export_pixel_coords);
+    if (region_file_type == CARTA::CRTF) {
+        for (const auto& region_id_style : region_styles) {
+            const auto region = GetRegion(region_id_style.first);
+            if (region) {
+                const auto state = region->GetRegionState();
+                if (state.type != CARTA::RegionType::ANNULUS || state.control_points.size() != 3 ||
+                    (state.control_points[1].x() == state.control_points[1].y() &&
+                        state.control_points[2].x() == state.control_points[2].y())) {
+                    continue;
+                }
+                export_ack.set_success(false);
+                export_ack.set_message("Elliptical annulus regions are not supported in CRTF format.");
+                return;
+            }
+        }
+    }
     if (!exporter->CanExportToFile(filename, overwrite, export_ack)) {
         return;
     }
