@@ -6,6 +6,8 @@
 
 #include "RegionExporter.h"
 
+#include <algorithm>
+
 #include <casacore/casa/OS/File.h>
 
 #include "Logger/Logger.h"
@@ -54,7 +56,9 @@ bool RegionExporter::AddRegion(int file_id, std::shared_ptr<Region> region, cons
     auto region_state = region->GetRegionState();
     bool region_added(false);
 
-    if ((region_state.reference_file_id == file_id) && export_pixels) {
+    if (region_state.reference_file_id == file_id && region_state.type == CARTA::RegionType::ANNULUS && !export_pixels) {
+        region_added = AddReferenceAnnulusInWorldCoordinates(region_state, region_style);
+    } else if ((region_state.reference_file_id == file_id) && export_pixels) {
         region_added = AddRegion(region_state, region_style); // CRTF or DS9 exporter
     } else {
         try {
@@ -67,6 +71,46 @@ bool RegionExporter::AddRegion(int file_id, std::shared_ptr<Region> region, cons
         }
     }
     return region_added;
+}
+
+bool RegionExporter::AddReferenceAnnulusInWorldCoordinates(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
+    if (region_state.control_points.size() != 3 || !_coord_sys || !_coord_sys->hasDirectionCoordinate()) {
+        return false;
+    }
+
+    const auto& center = region_state.control_points[0];
+    casacore::Vector<casacore::Float> center_values(2);
+    center_values(0) = center.x();
+    center_values(1) = center.y();
+    const auto make_ellipse_record = [&](const CARTA::Point& axes) {
+        auto x_radius = axes.x();
+        auto y_radius = axes.y();
+        float theta_degrees = region_state.rotation;
+        if (y_radius >= x_radius) {
+            std::swap(x_radius, y_radius);
+        } else {
+            theta_degrees += 90.0f;
+        }
+        casacore::Vector<casacore::Float> radii(2);
+        radii(0) = x_radius;
+        radii(1) = y_radius;
+        casacore::Quantity theta(theta_degrees, "deg");
+        theta.convert("rad");
+
+        casacore::TableRecord ellipse_record;
+        ellipse_record.define("name", "LCEllipsoid");
+        ellipse_record.define("oneRel", false);
+        ellipse_record.define("center", center_values);
+        ellipse_record.define("radii", radii);
+        ellipse_record.define("theta", theta.getValue());
+        return ellipse_record;
+    };
+
+    casacore::TableRecord annulus_record;
+    annulus_record.define("name", "LCDifference");
+    annulus_record.defineRecord("region1", make_ellipse_record(region_state.control_points[1]));
+    annulus_record.defineRecord("region2", make_ellipse_record(region_state.control_points[2]));
+    return AddRegion(region_state, region_style, annulus_record, false);
 }
 
 void RegionExporter::ExportRegions(const std::string& filename, std::string& message, CARTA::ExportRegionAck& export_ack) {

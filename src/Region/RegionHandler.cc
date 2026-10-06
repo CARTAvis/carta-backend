@@ -239,9 +239,9 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             if (region_file_type == CARTA::CRTF) {
                 const auto state = region->GetRegionState();
                 if (state.type == CARTA::RegionType::ANNULUS) {
-                    const auto is_circle = [](float x, float y) { return std::abs(x - y) <= 1e-6f * std::max(std::abs(x), std::abs(y)); };
-                    if (state.control_points.size() != 3 || !is_circle(state.control_points[1].x(), state.control_points[1].y()) ||
-                        !is_circle(state.control_points[2].x(), state.control_points[2].y())) {
+                    if (state.control_points.size() != 3 ||
+                        !IsApproximatelyCircular(state.control_points[1].x(), state.control_points[1].y()) ||
+                        !IsApproximatelyCircular(state.control_points[2].x(), state.control_points[2].y())) {
                         annulus_warning = "Ellipse annulus is not supported in CRTF. Please save as DS9 format.";
                         continue;
                     }

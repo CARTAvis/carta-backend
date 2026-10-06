@@ -1010,6 +1010,7 @@ casacore::TableRecord RegionConverter::GetEllipseRecord(
 
             // Add fields for this region type
             record.define("name", "LCEllipsoid");
+            record.define("oneRel", false);
             record.define("center", center);
             record.define("radii", radii);
 
@@ -1035,19 +1036,20 @@ casacore::TableRecord RegionConverter::GetAnnulusRecord(std::shared_ptr<casacore
     std::vector<casacore::Quantity> outer_points(_wcs_control_points.begin(), _wcs_control_points.begin() + 4);
     std::vector<casacore::Quantity> inner_points{
         _wcs_control_points[0], _wcs_control_points[1], _wcs_control_points[4], _wcs_control_points[5]};
-    const auto ellipse_rotation = [this](const casacore::Quantity& x_radius, const casacore::Quantity& y_radius) {
-        auto x_world_radius = x_radius;
-        auto y_world_radius = y_radius;
+    const auto ellipse_rotation = [this]() {
+        casacore::Quantity x_world_radius, y_world_radius;
         try {
-            x_world_radius.convert(_reference_coord_sys->worldAxisUnits()(0));
-            y_world_radius.convert(_reference_coord_sys->worldAxisUnits()(1));
+            x_world_radius = _reference_coord_sys->toWorldLength(_region_state.control_points[1].x(), 0);
+            y_world_radius = _reference_coord_sys->toWorldLength(_region_state.control_points[1].y(), 1);
+            y_world_radius.convert(x_world_radius.getUnit());
         } catch (const casacore::AipsError&) {
             return _region_state.rotation;
         }
-        return _region_state.rotation + (x_world_radius > y_world_radius ? 90.0f : 0.0f);
+        return _region_state.rotation + (x_world_radius > y_world_radius ? 0.0f : -90.0f);
     };
-    casacore::TableRecord outer_record = GetEllipseRecord(outer_points, ellipse_rotation(outer_points[2], outer_points[3]), output_csys);
-    casacore::TableRecord inner_record = GetEllipseRecord(inner_points, ellipse_rotation(inner_points[2], inner_points[3]), output_csys);
+    const auto rotation = ellipse_rotation();
+    casacore::TableRecord outer_record = GetEllipseRecord(outer_points, rotation, output_csys);
+    casacore::TableRecord inner_record = GetEllipseRecord(inner_points, rotation, output_csys);
 
     if (outer_record.empty() || inner_record.empty()) {
         return record;

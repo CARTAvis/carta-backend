@@ -34,6 +34,9 @@ static std::unordered_map<CARTA::RegionType, std::string> region_names{{CARTA::R
  */
 std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::FileType region_file_type);
 
+/** @brief Check whether two positive region radii describe a circle. */
+bool IsApproximatelyCircular(double radius_x, double radius_y);
+
 /**
  * @brief Return name of coordinate frame from coordinate system direction coordinate, if any.
  * @param coord_sys casacore::CoordinateSystem of image to use for frame

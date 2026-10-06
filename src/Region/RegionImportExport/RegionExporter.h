@@ -132,6 +132,8 @@ protected:
     std::vector<std::string> _file_lines;
 
 private:
+    bool AddReferenceAnnulusInWorldCoordinates(const RegionState& region_state, const CARTA::RegionStyle& region_style);
+
     /**
      * @brief Convert casacore Record to point region control points.
      * @param[in] region_record casacore Record created from casacore LCRegion

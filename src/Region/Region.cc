@@ -12,7 +12,6 @@
 #include <cmath>
 
 #include <casacore/lattices/LRegions/LCDifference.h>
-#include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/RegionType.h>
 
@@ -420,10 +419,6 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
             casacore::Quantity outer_theta(outer_theta_deg, "deg");
             outer_theta.convert("rad");
 
-            casacore::Vector<casacore::Int> shape_2d(2);
-            shape_2d(0) = image_shape(0);
-            shape_2d(1) = image_shape(1);
-
             // Inner ellipse: control_points[2] = {semiMinor, semiMajor}
             auto inner_min = region_state.control_points[2].x();
             auto inner_maj = region_state.control_points[2].y();
@@ -441,18 +436,20 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
             inner_theta.convert("rad");
 
             try {
-                // Build real LCEllipsoid objects, then use their toRecord() as sub-records.
-                // LCEllipsoid constructor takes 0-based center coordinates.
-                casacore::LCEllipsoid outer_ellipse(
-                    center(0), center(1), outer_radii(0), outer_radii(1), static_cast<float>(outer_theta.getValue()), shape_2d);
-                casacore::LCEllipsoid inner_ellipse(
-                    center(0), center(1), inner_radii(0), inner_radii(1), static_cast<float>(inner_theta.getValue()), shape_2d);
+                // Define geometry directly so export still works when either ellipse is outside the image.
+                auto make_ellipse_record = [&center](const casacore::Vector<casacore::Float>& radii, double theta) {
+                    casacore::TableRecord ellipse_record;
+                    ellipse_record.define("name", "LCEllipsoid");
+                    ellipse_record.define("oneRel", false);
+                    ellipse_record.define("center", center);
+                    ellipse_record.define("radii", radii);
+                    ellipse_record.define("theta", theta);
+                    return ellipse_record;
+                };
 
-                // Build the "regions" sub-record matching LCRegionMulti::makeRecord format:
-                // integer-keyed records + "nr" count
                 casacore::TableRecord regions_rec;
-                regions_rec.defineRecord(0, outer_ellipse.toRecord(""));
-                regions_rec.defineRecord(1, inner_ellipse.toRecord(""));
+                regions_rec.defineRecord(0, make_ellipse_record(outer_radii, outer_theta.getValue()));
+                regions_rec.defineRecord(1, make_ellipse_record(inner_radii, inner_theta.getValue()));
                 regions_rec.define("nr", 2);
 
                 record.define("name", "LCDifference");

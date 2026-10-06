@@ -41,9 +41,9 @@ CrtfExporter::CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys
 
 bool CrtfExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
     if (region_state.type == CARTA::RegionType::ANNULUS) {
-        const auto is_circle = [](float x, float y) { return std::abs(x - y) <= 1e-6f * std::max(std::abs(x), std::abs(y)); };
-        if (region_state.control_points.size() != 3 || !is_circle(region_state.control_points[1].x(), region_state.control_points[1].y()) ||
-            !is_circle(region_state.control_points[2].x(), region_state.control_points[2].y())) {
+        if (region_state.control_points.size() != 3 ||
+            !IsApproximatelyCircular(region_state.control_points[1].x(), region_state.control_points[1].y()) ||
+            !IsApproximatelyCircular(region_state.control_points[2].x(), region_state.control_points[2].y())) {
             return false;
         }
         const auto& center = region_state.control_points[0];
@@ -315,8 +315,8 @@ bool CrtfExporter::GetAnnRegion(CARTA::RegionType region_type, const std::vector
                 auto inner_y = control_points[5];
                 outer_y.convert(outer_x.getUnit());
                 inner_y.convert(inner_x.getUnit());
-                const auto is_circle = [](double x, double y) { return std::abs(x - y) <= 1e-6 * std::max(std::abs(x), std::abs(y)); };
-                if (!is_circle(outer_x.getValue(), outer_y.getValue()) || !is_circle(inner_x.getValue(), inner_y.getValue())) {
+                if (!IsApproximatelyCircular(outer_x.getValue(), outer_y.getValue()) ||
+                    !IsApproximatelyCircular(inner_x.getValue(), inner_y.getValue())) {
                     spdlog::warn("Elliptical annulus regions are not supported in CRTF format");
                     return false;
                 }
