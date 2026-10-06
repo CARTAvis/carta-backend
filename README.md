@@ -103,6 +103,7 @@ The backend build depends on the following libraries (this is not an exhaustive 
 * [libuuid](https://linux.die.net/man/3/libuuid) for generating auth tokens (if not using external authentication).
 * [cfitsio](https://heasarc.gsfc.nasa.gov/fitsio/) library for I/O with FITS format data files.
 * [wcslib](https://www.gnu.org/software/gnuastro/manual/html_node/WCSLIB.html) library to handle world coordinate system.
+* [carta-zarr](https://github.com/CARTAvis/carta-zarr) for reading XRADIO images stored as Zarr.
 
 We recommend using our [Dockerfiles](Dockerfiles) as a guideline for installing these dependencies on RPM-based and Debian-based distributions. We provide packaged versions of dependencies missing from officially supported distributions.
 

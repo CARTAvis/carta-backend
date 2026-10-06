@@ -189,6 +189,14 @@ include_directories(${CMAKE_SOURCE_DIR}/third-party/nlohmann_json/include)
 set(nlohmann_json_VERSION "v3.11.3")
 add_subdirectory(third-party/json-schema-validator)
 
+# carta-zarr
+if (CARTA_ZARR_ROOT)
+    find_package(CartaZarr 0.1 CONFIG REQUIRED PATHS ${CARTA_ZARR_ROOT} NO_DEFAULT_PATH)
+else ()
+    find_package(CartaZarr 0.1 CONFIG REQUIRED HINTS /opt/carta-zarr)
+endif ()
+message(STATUS "Found carta-zarr ${CartaZarr_VERSION}")
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
@@ -203,6 +211,7 @@ set(LINK_LIBS
         gsl
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator
+        CARTA::zarr
         casa_casa
         casa_coordinates
         casa_tables
@@ -317,6 +326,9 @@ endif (CartaUserFolderPrefix)
 if (CartaDefaultFrontendFolder)
     add_definitions(-DCARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
 endif (CartaDefaultFrontendFolder)
+
+# Keep the link path (e.g. carta-zarr's install prefix) as the installed executable's RPATH
+set_target_properties(carta_backend PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)
