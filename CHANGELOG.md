@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Fixed error opening HDF5 image with degenerate undefined Stokes axis ([#1594](https://github.com/CARTAvis/carta-backend/issues/1594)).
 * Fixed duplicate data appearing in wide field polyline spatial profiles ([#1604](https://github.com/CARTAvis/carta-backend/issues/1604)). 
+* Fixed error importing incorrect region name from a CRTF region file ([#1626](https://github.com/CARTAvis/carta-backend/issues/1626)). 
 
 ### Changed
 * Refactored loader factory to return smart pointers to loaders ([#1597](https://github.com/CARTAvis/carta-backend/pull/1597)).
