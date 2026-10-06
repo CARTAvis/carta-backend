@@ -8,6 +8,7 @@
 
 #include "RegionHandler.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 
@@ -224,35 +225,35 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     auto exporter = GetRegionExporter(region_file_type, output_csys, output_shape, stokes_axis, export_pixel_coords);
-    if (region_file_type == CARTA::CRTF) {
-        for (const auto& region_id_style : region_styles) {
-            const auto region = GetRegion(region_id_style.first);
-            if (region) {
-                const auto state = region->GetRegionState();
-                if (state.type != CARTA::RegionType::ANNULUS || state.control_points.size() != 3 ||
-                    (state.control_points[1].x() == state.control_points[1].y() &&
-                        state.control_points[2].x() == state.control_points[2].y())) {
-                    continue;
-                }
-                export_ack.set_success(false);
-                export_ack.set_message("Elliptical annulus regions are not supported in CRTF format.");
-                return;
-            }
-        }
-    }
     if (!exporter->CanExportToFile(filename, overwrite, export_ack)) {
         return;
     }
 
     std::string export_errors; // for ack message
+    std::string annulus_warning;
     for (auto& region_id_style : region_styles) {
         auto region_id = region_id_style.first;
         if (RegionSet(region_id)) {
             auto region = GetRegion(region_id);
             auto region_style = region_id_style.second;
+            if (region_file_type == CARTA::CRTF) {
+                const auto state = region->GetRegionState();
+                if (state.type == CARTA::RegionType::ANNULUS) {
+                    const auto is_circle = [](float x, float y) { return std::abs(x - y) <= 1e-6f * std::max(std::abs(x), std::abs(y)); };
+                    if (state.control_points.size() != 3 || !is_circle(state.control_points[1].x(), state.control_points[1].y()) ||
+                        !is_circle(state.control_points[2].x(), state.control_points[2].y())) {
+                        annulus_warning = "Ellipse annulus is not supported in CRTF. Please save as DS9 format.";
+                        continue;
+                    }
+                }
+            }
             if (!exporter->AddRegion(file_id, region, region_style, export_pixel_coords)) {
-                std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
-                export_errors.append(region_error);
+                if (region_file_type == CARTA::CRTF && region->GetRegionState().type == CARTA::RegionType::ANNULUS) {
+                    annulus_warning = "Ellipse annulus is not supported in CRTF. Please save as DS9 format.";
+                } else {
+                    std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
+                    export_errors.append(region_error);
+                }
             }
         } else {
             std::string region_error = fmt::format("Region {} not found for export.\n", region_id);
@@ -262,6 +263,13 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 
     // Export regions to file or contents, and complete ack message.
     exporter->ExportRegions(filename, export_errors, export_ack);
+    if (!annulus_warning.empty()) {
+        if (export_ack.success()) {
+            export_ack.set_message(export_ack.message().empty() ? annulus_warning : annulus_warning + "\n" + export_ack.message());
+        } else {
+            export_ack.set_message(annulus_warning + " No other regions were exported.");
+        }
+    }
 }
 
 // ********************************************************************

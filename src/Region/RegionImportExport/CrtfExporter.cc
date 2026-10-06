@@ -41,8 +41,9 @@ CrtfExporter::CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys
 
 bool CrtfExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
     if (region_state.type == CARTA::RegionType::ANNULUS) {
-        if (region_state.control_points.size() != 3 || region_state.control_points[1].x() != region_state.control_points[1].y() ||
-            region_state.control_points[2].x() != region_state.control_points[2].y()) {
+        const auto is_circle = [](float x, float y) { return std::abs(x - y) <= 1e-6f * std::max(std::abs(x), std::abs(y)); };
+        if (region_state.control_points.size() != 3 || !is_circle(region_state.control_points[1].x(), region_state.control_points[1].y()) ||
+            !is_circle(region_state.control_points[2].x(), region_state.control_points[2].y())) {
             return false;
         }
         const auto& center = region_state.control_points[0];

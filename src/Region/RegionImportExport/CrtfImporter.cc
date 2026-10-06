@@ -62,6 +62,8 @@ void CrtfImporter::SetFileLineRegions(std::vector<std::string>& file_lines) {
             region_state = ImportAnnBox(parameters, coord_frame);
         } else if ((region == "ellipse") || (region == "circle") || (region == "compass")) {
             region_state = ImportAnnEllipse(parameters, coord_frame);
+        } else if (region == "annulus") {
+            region_state = ImportAnnulus(parameters, coord_frame);
         } else if (region.find("poly") != std::string::npos) { // "poly(gon)", "polyline"
             region_state = ImportAnnPoly(parameters, coord_frame);
         } else if (region == "text") {
@@ -309,6 +311,42 @@ RegionState CrtfImporter::ImportAnnEllipse(std::vector<std::string>& parameters,
         }
     } else {
         _errors.append(region + " syntax invalid.\n");
+    }
+
+    return region_state;
+}
+
+RegionState CrtfImporter::ImportAnnulus(std::vector<std::string>& parameters, std::string& coord_frame) {
+    RegionState region_state;
+    if (parameters.size() != 5) {
+        _errors.append("annulus syntax invalid.\n");
+        return region_state;
+    }
+
+    try {
+        casacore::Quantity cx, cy, inner_radius, outer_radius;
+        casacore::readQuantity(cx, parameters[1]);
+        casacore::readQuantity(cy, parameters[2]);
+        casacore::readQuantity(inner_radius, parameters[3]);
+        casacore::readQuantity(outer_radius, parameters[4]);
+
+        std::vector<casacore::Quantity> center{cx, cy};
+        casacore::Vector<casacore::Double> pixel_center;
+        if (!ConvertPointToPixels(_coord_sys, coord_frame, center, pixel_center)) {
+            _errors.append("annulus import failed.\n");
+            return region_state;
+        }
+
+        const double inner_x = WorldToPixelLength(inner_radius, 0);
+        const double inner_y = WorldToPixelLength(inner_radius, 1);
+        const double outer_x = WorldToPixelLength(outer_radius, 0);
+        const double outer_y = WorldToPixelLength(outer_radius, 1);
+        std::vector<CARTA::Point> control_points{
+            Message::Point(pixel_center), Message::Point(outer_x, outer_y), Message::Point(inner_x, inner_y)};
+        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, 0.0f);
+    } catch (const casacore::AipsError& err) {
+        spdlog::error("annulus import error: {}", err.getMesg());
+        _errors.append("annulus parameters invalid.\n");
     }
 
     return region_state;

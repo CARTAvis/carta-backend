@@ -480,7 +480,7 @@ TEST_F(RegionImportExportTest, TestDs9AnnulusExportImport) {
     CARTA::ExportRegionAck crtf_export_ack;
     region_handler.ExportRegion(file_id, frame0, CARTA::CRTF, CARTA::WORLD, region_style_map, filename, overwrite, crtf_export_ack);
     ASSERT_FALSE(crtf_export_ack.success());
-    EXPECT_EQ(crtf_export_ack.message(), "Elliptical annulus regions are not supported in CRTF format.");
+    EXPECT_THAT(crtf_export_ack.message(), testing::HasSubstr("Ellipse annulus is not supported in CRTF. Please save as DS9 format."));
 }
 
 TEST_F(RegionImportExportTest, TestCrtfCircularAnnulusExport) {
@@ -499,6 +499,16 @@ TEST_F(RegionImportExportTest, TestCrtfCircularAnnulusExport) {
     region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::PIXEL, region_styles, filename, overwrite, pixel_export_ack);
     ASSERT_TRUE(pixel_export_ack.success()) << pixel_export_ack.message();
     EXPECT_THAT(pixel_export_ack.contents().Get(1), testing::HasSubstr("annulus[[5.0000pix, 5.0000pix], [1.0000pix, 3.0000pix]]"));
+
+    std::vector<std::string> export_contents{pixel_export_ack.contents().begin(), pixel_export_ack.contents().end()};
+    const auto contents_string = ConcatContents(export_contents);
+    CARTA::ImportRegionAck import_ack;
+    region_handler.ImportRegion(0, frame, CARTA::CRTF, contents_string, false, import_ack);
+    ASSERT_EQ(import_ack.regions_size(), 1) << import_ack.message();
+    auto imported_info = import_ack.regions().begin()->second;
+    const auto imported_region_state = GetRegionState(0, imported_info);
+    const auto original_region_state = region_handler.GetRegion(region_id)->GetRegionState();
+    EXPECT_TRUE(RegionsEqual(imported_region_state, original_region_state));
 
     CARTA::ExportRegionAck world_export_ack;
     region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::WORLD, region_styles, filename, overwrite, world_export_ack);
