@@ -514,4 +514,8 @@ TEST_F(RegionImportExportTest, TestInvalidAnnulusAxesRejected) {
     int region_id(-1);
     std::vector<float> invalid_annulus_points = {5.0, 5.0, 3.0, 4.0, 3.5, 2.0};
     EXPECT_FALSE(SetRegion(region_handler, 0, region_id, CARTA::ANNULUS, invalid_annulus_points, 0.0, frame->CoordinateSystem()));
+
+    region_id = -1;
+    std::vector<float> different_shape_points = {5.0, 5.0, 10.0, 20.0, 5.0, 5.0};
+    EXPECT_FALSE(SetRegion(region_handler, 0, region_id, CARTA::ANNULUS, different_shape_points, 0.0, frame->CoordinateSystem()));
 }

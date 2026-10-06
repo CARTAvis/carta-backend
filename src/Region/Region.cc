@@ -8,6 +8,9 @@
 
 #include "Region.h"
 
+#include <algorithm>
+#include <cmath>
+
 #include <casacore/lattices/LRegions/LCDifference.h>
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
@@ -93,8 +96,11 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
             break;
         }
         case CARTA::ANNULUS: { // [(cx, cy), (outer_x, outer_y), (inner_x, inner_y)]
+            const double outer_ratio = points.size() == 3 && points[1].y() > 0 ? points[1].x() / points[1].y() : 0.0;
+            const double inner_ratio = points.size() == 3 && points[2].y() > 0 ? points[2].x() / points[2].y() : 0.0;
             points_ok = (npoints == 3) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0) && (points[2].x() > 0) &&
-                        (points[2].y() > 0) && (points[1].x() > points[2].x()) && (points[1].y() > points[2].y());
+                        (points[2].y() > 0) && (points[1].x() > points[2].x()) && (points[1].y() > points[2].y()) &&
+                        (std::abs(outer_ratio - inner_ratio) <= 1e-5 * std::max(outer_ratio, inner_ratio));
             break;
         }
         case CARTA::ANNTEXT: { // [(cx, cy), (width, height)]
