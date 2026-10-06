@@ -182,6 +182,8 @@ add_subdirectory(schemas)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_Install OFF CACHE INTERNAL "")
 add_subdirectory(third-party/nlohmann_json)
+# Use the bundled nlohmann_json headers, not a system copy, so that json-schema-validator and the backend use the same nlohmann_json
+include_directories(${CMAKE_SOURCE_DIR}/third-party/nlohmann_json/include)
 
 # json-schema-validator
 set(nlohmann_json_VERSION "v3.11.3")
