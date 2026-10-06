@@ -333,7 +333,11 @@ bool Session::FillFileInfo(
     file_info_ok = info_loader.FillFileInfo(file_info);
 
     if (!file_info_ok) {
-        message = fmt::format("File info for {} failed.", filename);
+        if (info_loader.Message().empty()) {
+            message = fmt::format("File info for {} failed.", filename);
+        } else {
+            message = fmt::format("File info for {} failed: {}", filename, info_loader.Message());
+        }
     }
 
     return file_info_ok;
