@@ -272,7 +272,6 @@ set(SOURCE_FILES
         src/Region/RegionImportExport/RegionExporter.cc
         src/Region/RegionImportExport/RegionImporter.cc
         src/Region/RegionImportExport/RegionImportExportUtil.cc
-        src/Session/ChannelMapSettings.cc
         src/Session/CursorSettings.cc
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
