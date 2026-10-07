@@ -8,9 +8,9 @@
 
 #include "RegionImportExportUtil.h"
 
+#include <casacore/casa/BasicMath/Math.h>
 #include <algorithm>
 #include <cmath>
-#include <casacore/casa/BasicMath/Math.h>
 
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/measures/Measures/MCDirection.h>
