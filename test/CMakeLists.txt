@@ -4,6 +4,11 @@ project(carta_backend_test)
 
 add_definitions(-DCARTA_USER_FOLDER_PREFIX=".carta-unit-tests")
 
+add_definitions(-DZARR_PIXEL_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/pixels")
+add_definitions(-DZARR_XRADIO_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/minimal")
+add_definitions(-DZARR_XRADIO_UNIFORM_BEAM_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/uniform_beam")
+add_definitions(-DZARR_XRADIO_TIME_AXIS_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/time_axis")
+
 # Performance tests should not be run by default, since they need to be run in isolation
 option(performance_tests "Build performance tests." OFF)
 if (performance_tests)
@@ -37,6 +42,7 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         ImageData/TestFitsUtil.cc
         TestBlockSmooth.cc
+        TestCartaZarrAxes.cc
         TestContour.cc
         TestCursorSpatialProfiles.cc
         TestExprImage.cc
@@ -63,7 +69,11 @@ set(TEST_SOURCES
         TestRestApi.cc
         TestTileEncoding.cc
         TestVoTable.cc
+        TestZarrCasacore.cc
         TestZarrContext.cc
+        TestZarrImage.cc
+        TestZarrNotes.cc
+        TestZarrStores.cc
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc

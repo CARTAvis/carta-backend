@@ -21,13 +21,19 @@ public:
     FileInfoLoader(const std::string& filename, const CARTA::FileType& type);
 
     bool FillFileInfo(CARTA::FileInfo& file_info);
+    // Why the last FillFileInfo found nothing to open, if known
+    const std::string& Message() const {
+        return _message;
+    }
 
 private:
+    bool FillZarrFileInfo(CARTA::FileInfo& file_info);
     CARTA::FileType GetCartaFileType(const std::string& filename);
     bool GetHdf5HduList(CARTA::FileInfo& file_info, const std::string& abs_filename);
 
     std::string _filename;
     CARTA::FileType _type;
+    std::string _message;
 };
 
 } // namespace carta

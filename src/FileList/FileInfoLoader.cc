@@ -13,6 +13,7 @@
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 
+#include "ImageData/ZarrStores.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
@@ -36,6 +37,12 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
         // set resolved filename; if symlink, set in calling function
         std::string filename_only = cc_file.path().baseName();
         file_info.set_name(filename_only);
+    }
+
+    if (_type == CARTA::FileType::ZARR) {
+        file_info.set_date(cc_file.modifyTime());
+        file_info.set_type(_type);
+        return FillZarrFileInfo(file_info);
     }
 
     // fill FileInfo submessage
@@ -65,10 +72,30 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     return success;
 }
 
+bool FileInfoLoader::FillZarrFileInfo(CARTA::FileInfo& file_info) {
+    const auto look = ZarrStores::Instance().Look(_filename);
+    const auto size = look->Size();
+    file_info.set_size(size.bytes);
+    file_info.set_size_is_declared(size.declared);
+
+    _message = look->why_not_openable;
+    if (!look->dataset) {
+        return false;
+    }
+    // Only the images CARTA can display, the default first
+    for (const auto& image_id : look->offered) {
+        file_info.add_hdu_list(image_id);
+    }
+    return !look->offered.empty();
+}
+
 CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
     // get casacore image type then convert to carta file type
     if (IsCompressedFits(filename)) {
         return CARTA::FileType::FITS;
+    }
+    if (ZarrStores::Instance().Look(filename)->is_zarr) {
+        return CARTA::FileType::ZARR;
     }
 
     switch (CasacoreImageType(filename)) {
