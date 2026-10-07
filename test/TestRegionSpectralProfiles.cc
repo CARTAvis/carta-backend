@@ -4,9 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
-#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
