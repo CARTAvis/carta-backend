@@ -8,6 +8,9 @@
 
 #include "Ds9Importer.h"
 
+#include <algorithm>
+#include <cmath>
+
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
@@ -343,6 +346,10 @@ RegionState Ds9Importer::ImportEllipseRegion(std::vector<std::string>& parameter
 RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameters, bool is_annotation) {
     RegionState region_state;
     auto region_name = parameters[0];
+    if (is_annotation) {
+        _errors.append("Annotation annulus is not supported.\n");
+        return region_state;
+    }
     size_t nparam(parameters.size());
 
     const bool valid_annulus_parameters = region_name == "annulus" ? nparam == 5 : region_name == "ellipse" && (nparam == 7 || nparam == 8);
@@ -417,6 +424,21 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                 } else {
                     control_points.push_back(p2);
                     control_points.push_back(p1);
+                }
+            }
+        }
+
+        // DS9 rounds axes independently. Snap small rounding errors to preserve the annulus shape invariant.
+        if (region_name == "ellipse" && control_points.size() == 3) {
+            const auto& outer = control_points[1];
+            const auto& inner = control_points[2];
+            if (outer.x() > 0.0 && outer.y() > 0.0 && inner.x() > 0.0 && inner.y() > 0.0) {
+                const double outer_ratio = outer.x() / outer.y();
+                const double inner_ratio = inner.x() / inner.y();
+                if (std::abs(outer_ratio - inner_ratio) <= 1e-2 * std::max(outer_ratio, inner_ratio)) {
+                    const double inner_area = inner.x() * inner.y();
+                    control_points[2].set_x(std::sqrt(inner_area * outer_ratio));
+                    control_points[2].set_y(std::sqrt(inner_area / outer_ratio));
                 }
             }
         }

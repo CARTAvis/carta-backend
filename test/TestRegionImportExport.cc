@@ -480,7 +480,41 @@ TEST_F(RegionImportExportTest, TestDs9AnnulusExportImport) {
     CARTA::ExportRegionAck crtf_export_ack;
     region_handler.ExportRegion(file_id, frame0, CARTA::CRTF, CARTA::WORLD, region_style_map, filename, overwrite, crtf_export_ack);
     ASSERT_FALSE(crtf_export_ack.success());
-    EXPECT_THAT(crtf_export_ack.message(), testing::HasSubstr("Ellipse annulus is not supported in CRTF. Please save as DS9 format."));
+    EXPECT_THAT(
+        crtf_export_ack.message(), testing::HasSubstr("Region 1: Ellipse annulus is not supported in CRTF. Please save as DS9 format."));
+}
+
+TEST_F(RegionImportExportTest, TestDs9AnnotationAnnulusRejectedWithMessage) {
+    auto image_path = FitsImages() / "noise_10px_10px.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    const std::string contents = "image\n# ellipse(5,5,3,4,2,2,0)\n";
+    CARTA::ImportRegionAck import_ack;
+
+    region_handler.ImportRegion(0, frame, CARTA::DS9_REG, contents, false, import_ack);
+
+    EXPECT_FALSE(import_ack.success());
+    EXPECT_EQ(import_ack.regions_size(), 0);
+    EXPECT_THAT(import_ack.message(), testing::HasSubstr("Annotation annulus is not supported"));
+}
+
+TEST_F(RegionImportExportTest, TestDs9AnnulusAxisRoundingIsNormalized) {
+    auto image_path = FitsImages() / "noise_10px_10px.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    const std::string contents = "image\nellipse(5,5,10,20,5.01,10,0)\n";
+    CARTA::ImportRegionAck import_ack;
+
+    region_handler.ImportRegion(0, frame, CARTA::DS9_REG, contents, false, import_ack);
+
+    ASSERT_EQ(import_ack.regions_size(), 1) << import_ack.message();
+    auto region_info = import_ack.regions().begin()->second;
+    const auto region_state = GetRegionState(0, region_info);
+    ASSERT_EQ(region_state.control_points.size(), 3);
+    EXPECT_NEAR(region_state.control_points[2].x() / region_state.control_points[2].y(), 0.5, 1e-5);
+    EXPECT_NEAR(region_state.control_points[2].x() * region_state.control_points[2].y(), 5.01 * 10.0, 1e-4);
 }
 
 TEST_F(RegionImportExportTest, TestCrtfCircularAnnulusExport) {

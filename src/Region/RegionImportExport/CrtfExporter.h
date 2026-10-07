@@ -29,6 +29,9 @@ public:
      */
     CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& shape, int stokes_axis);
 
+    void ResetAnnulusExportStatus() { _annulus_rejected_as_elliptical = false; }
+    bool WasAnnulusRejectedAsElliptical() const { return _annulus_rejected_as_elliptical; }
+
 protected:
     /**
      * @brief Add file line for region in pixel coordinates
@@ -66,6 +69,8 @@ protected:
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 private:
+    bool _annulus_rejected_as_elliptical = false;
+
     /**
      * @brief Create casa AnnotationBase or AnnRegion from region parameters.
      * @param[in] region_type Region type
