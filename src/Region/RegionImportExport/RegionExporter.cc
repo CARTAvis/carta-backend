@@ -317,10 +317,7 @@ bool RegionExporter::ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bo
         control_points.push_back(casacore::Quantity(world_coords(0), world_units(0)));
         control_points.push_back(casacore::Quantity(world_coords(1), world_units(1)));
 
-        // Restore the coordinate-axis association before applying its pixel scale.
-        control_points.push_back(_coord_sys->toWorldLength(radii(reversed ? 1 : 0), 0));
-        control_points.push_back(_coord_sys->toWorldLength(radii(reversed ? 0 : 1), 1));
-        return true;
+        return PixelEllipseAxesToWorld(*_coord_sys, radii(reversed ? 1 : 0), radii(reversed ? 0 : 1), rotation, control_points);
     } catch (const casacore::AipsError& err) {
         spdlog::error("Export error: ellipse Record conversion failed: {}", err.getMesg());
         return false;

@@ -27,12 +27,19 @@ TEST(AnnulusExportTest, WorldCircleWithRectangularPixels) {
     auto increments = csys->increment();
     increments(0) *= 2;
     ASSERT_TRUE(csys->setIncrement(increments));
+    auto reference = csys->referencePixel();
+    reference(0) = reference(1) = 10;
+    ASSERT_TRUE(csys->setReferencePixel(reference));
     const casacore::IPosition shape(2, 20, 20);
     CrtfImporter source(csys, 0, "annulus[[0deg,0deg], [120arcsec,360arcsec]] coord=J2000", false);
     std::string error;
     auto original = source.GetRegions(error);
     ASSERT_EQ(original.size(), 1);
     auto region = std::make_shared<Region>(original[0].state, csys);
+    EXPECT_FLOAT_EQ(original[0].state.rotation, 270);
+    auto lc = region->GetLCRegion(0, csys, shape);
+    ASSERT_TRUE(lc);
+    EXPECT_EQ(lc->boundingBox().length(), casacore::IPosition(2, 7, 13));
     CrtfExporter crtf(csys, shape, -1);
     RegionExporter& exporter = crtf;
     CARTA::RegionStyle style;
@@ -58,7 +65,16 @@ TEST(AnnulusExportTest, WorldCircleWithRectangularPixels) {
     contents.clear();
     for (const auto& line : ack.contents())
         contents += line;
-    EXPECT_THAT(contents, testing::HasSubstr("120\", 360\""));
+    Ds9Importer ds9_importer(csys, 0, contents, false);
+    SCOPED_TRACE(contents);
+    auto ds9_roundtrip = ds9_importer.GetRegions(error);
+    ASSERT_EQ(ds9_roundtrip.size(), 1) << error;
+    EXPECT_NEAR(ds9_roundtrip[0].state.control_points[1].x(), 3, 1e-4);
+    EXPECT_NEAR(ds9_roundtrip[0].state.control_points[1].y(), 6, 1e-4);
+    Region ds9_region(ds9_roundtrip[0].state, csys);
+    auto ds9_lc = ds9_region.GetLCRegion(0, csys, shape);
+    ASSERT_TRUE(ds9_lc);
+    EXPECT_EQ(ds9_lc->boundingBox().length(), lc->boundingBox().length());
 }
 
 TEST(AnnulusExportTest, MatchedPixelRoundtripPreservesCenter) {

@@ -10,11 +10,43 @@
 
 #include <algorithm>
 #include <cmath>
+#include <casacore/casa/BasicMath/Math.h>
 
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/measures/Measures/MCDirection.h>
 
 namespace carta {
+
+bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
+    std::vector<casacore::Quantity>& axes) {
+    // The restored first radius follows rotation, measured from the horizontal axis.
+    const double angle = rotation.get("rad").getValue();
+    const auto x_scale = coord_sys.toWorldLength(1, 0);
+    const auto y_scale = coord_sys.toWorldLength(1, 1);
+    const double sx = x_scale.getValue();
+    if (!x_scale.isConform(y_scale.getUnit())) {
+        return false;
+    }
+    const double sy = y_scale.get(x_scale.getUnit()).getValue();
+    if (casacore::near(sx, sy)) {
+        axes.push_back(casacore::Quantity(first * sx, x_scale.getUnit()));
+        axes.push_back(casacore::Quantity(second * sy, x_scale.getUnit()));
+    } else {
+        // Unequal pixel scales change both the principal radii and the angle of a rotated ellipse.
+        const double c = std::cos(angle), s = std::sin(angle);
+        const double xx = sx * sx * (first * first * c * c + second * second * s * s);
+        const double yy = sy * sy * (first * first * s * s + second * second * c * c);
+        const double xy = sx * sy * (first * first - second * second) * s * c;
+        const double difference = std::hypot(xx - yy, 2 * xy);
+        const bool circular = difference <= 1e-12 * (xx + yy);
+        const double axis_difference = circular ? 0 : difference;
+        axes.push_back(casacore::Quantity(std::sqrt((xx + yy + axis_difference) / 2), x_scale.getUnit()));
+        axes.push_back(casacore::Quantity(std::sqrt(std::max(0.0, (xx + yy - axis_difference) / 2)), x_scale.getUnit()));
+        rotation = casacore::Quantity(circular ? 0 : std::atan2(2 * xy, xx - yy) / 2, "rad");
+        rotation.convert("deg");
+    }
+    return true;
+}
 
 bool IsApproximatelyCircular(double radius_x, double radius_y) {
     return std::isfinite(radius_x) && std::isfinite(radius_y) && radius_x > 0.0 && radius_y > 0.0 &&

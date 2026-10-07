@@ -7,6 +7,7 @@
 #include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <set>
 
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
@@ -15,6 +16,44 @@
 #include "src/Frame/Frame.h"
 
 using namespace carta;
+
+TEST(AnnulusMaskTest, RectangularPixelsPreserveMatchedGeometry) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto increments = csys->increment();
+    increments(0) *= 2;
+    ASSERT_TRUE(csys->setIncrement(increments));
+    const casacore::IPosition shape(2, 40, 40);
+    for (const auto axes : {Message::Point(3, 6), Message::Point(6, 3), Message::Point(4, 4)}) {
+        for (float rotation : {0.0f, 30.0f, 90.0f, 270.0f}) {
+            Region region(
+                RegionState(0, CARTA::ANNULUS, {Message::Point(20.25, 20.25), axes, Message::Point(axes.x() / 3, axes.y() / 3)}, rotation),
+                csys);
+            std::set<std::pair<int, int>> reference_pixels;
+            for (int file_id : {0, 1}) {
+                if (file_id == 1) {
+                    // Export can populate the analytic conversion cache before a measurement requests its mask.
+                    region.GetImageRegionRecord(file_id, csys, shape);
+                }
+                auto lc = region.GetLCRegion(file_id, csys, shape);
+                ASSERT_TRUE(lc);
+                auto mask = region.GetImageRegionMask(file_id);
+                ASSERT_EQ(mask.ndim(), 2);
+                auto start = lc->boundingBox().start();
+                std::set<std::pair<int, int>> pixels;
+                for (int y = 0; y < mask.shape()(1); ++y) {
+                    for (int x = 0; x < mask.shape()(0); ++x) {
+                        if (mask.getAt(casacore::IPosition(2, x, y)))
+                            pixels.emplace(x + start(0), y + start(1));
+                    }
+                }
+                if (file_id == 0)
+                    reference_pixels = pixels;
+                else
+                    EXPECT_EQ(pixels, reference_pixels) << "rotation=" << rotation << " axes=" << axes.x() << ',' << axes.y();
+            }
+        }
+    }
+}
 
 TEST(AnnulusMaskTest, ReferenceAndMatchedMasksExcludeTheHole) {
     auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords3D());

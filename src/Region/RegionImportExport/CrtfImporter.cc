@@ -343,7 +343,9 @@ RegionState CrtfImporter::ImportAnnulus(std::vector<std::string>& parameters, st
         const double outer_y = WorldToPixelLength(outer_radius, 1);
         std::vector<CARTA::Point> control_points{
             Message::Point(pixel_center), Message::Point(outer_x, outer_y), Message::Point(inner_x, inner_y)};
-        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, 0.0f);
+        // Lengths above are measured along x/y, while CARTA's unrotated first ellipse axis is vertical.
+        const float rotation = outer_x == outer_y ? 0.0f : 270.0f;
+        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, rotation);
     } catch (const casacore::AipsError& err) {
         spdlog::error("annulus import error: {}", err.getMesg());
         _errors.append("annulus parameters invalid.\n");

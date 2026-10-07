@@ -25,6 +25,7 @@
 #include <algorithm>
 
 #include "Logger/Logger.h"
+#include "Region/RegionImportExport/RegionImportExportUtil.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
 
@@ -123,30 +124,27 @@ void RegionConverter::SetReferenceWCRegion() {
                 if (!CartaPointToWorld(_region_state.control_points[0], center_world)) {
                     break;
                 }
-                float outer_maj(_region_state.control_points[1].x()), outer_min(_region_state.control_points[1].y());
-                casacore::Quantity outer_maj_world = _reference_coord_sys->toWorldLength(outer_maj, 0);
-                casacore::Quantity outer_min_world = _reference_coord_sys->toWorldLength(outer_min, 1);
-                if (!outer_maj_world.isConform(outer_min_world.getUnit())) {
+                // CARTA's first ellipse radius starts on the vertical axis.
+                const auto world_axes = [&](const CARTA::Point& axes, casacore::Quantity& theta, casacore::Quantity& major,
+                                            casacore::Quantity& minor) {
+                    theta = casacore::Quantity(_region_state.rotation + 90.0, "deg");
+                    std::vector<casacore::Quantity> radii;
+                    if (!PixelEllipseAxesToWorld(*_reference_coord_sys, axes.x(), axes.y(), theta, radii)) {
+                        return false;
+                    }
+                    major = radii[0];
+                    minor = radii[1];
+                    if (major < minor) {
+                        std::swap(major, minor);
+                        theta += 90.0;
+                    }
+                    theta.convert("rad");
+                    return true;
+                };
+                casacore::Quantity outer_maj_world, outer_min_world, inner_maj_world, inner_min_world, theta, inner_theta;
+                if (!world_axes(_region_state.control_points[1], theta, outer_maj_world, outer_min_world) ||
+                    !world_axes(_region_state.control_points[2], inner_theta, inner_maj_world, inner_min_world)) {
                     break;
-                }
-                float ellipse_rotation = _region_state.rotation;
-                if (outer_maj_world > outer_min_world) {
-                    ellipse_rotation += 90.0;
-                } else {
-                    std::swap(outer_maj_world, outer_min_world);
-                }
-
-                float inner_maj(_region_state.control_points[2].x()), inner_min(_region_state.control_points[2].y());
-                casacore::Quantity inner_maj_world = _reference_coord_sys->toWorldLength(inner_maj, 0);
-                casacore::Quantity inner_min_world = _reference_coord_sys->toWorldLength(inner_min, 1);
-                if (!inner_maj_world.isConform(inner_min_world.getUnit())) {
-                    break;
-                }
-                float inner_rotation = _region_state.rotation;
-                if (inner_maj_world <= inner_min_world) {
-                    std::swap(inner_maj_world, inner_min_world);
-                } else {
-                    inner_rotation += 90.0;
                 }
 
                 _wcs_control_points = center_world;
@@ -155,10 +153,6 @@ void RegionConverter::SetReferenceWCRegion() {
                 _wcs_control_points.push_back(inner_maj_world);
                 _wcs_control_points.push_back(inner_min_world);
 
-                casacore::Quantity theta(ellipse_rotation, "deg");
-                theta.convert("rad");
-                casacore::Quantity inner_theta(inner_rotation, "deg");
-                inner_theta.convert("rad");
                 casacore::WCEllipsoid outer_wc(
                     center_world[0], center_world[1], outer_maj_world, outer_min_world, theta, 0, 1, *_reference_coord_sys);
                 casacore::WCEllipsoid inner_wc(
@@ -278,7 +272,13 @@ bool RegionConverter::CartaPointToWorld(const CARTA::Point& point, std::vector<c
 
 std::shared_ptr<casacore::LCRegion> RegionConverter::GetCachedLCRegion(int file_id, bool use_approx_polygon) {
     // Return cached region applied to image with file_id, if cached.
+    const bool require_polygon =
+        use_approx_polygon && _region_state.type == CARTA::RegionType::ANNULUS && UseApproximatePolygon(_reference_coord_sys);
     std::lock_guard<std::mutex> guard(_region_mutex);
+    if (require_polygon) {
+        const auto cached = _polygon_regions.find(file_id);
+        return cached == _polygon_regions.end() ? nullptr : cached->second;
+    }
     if (_converted_regions.find(file_id) != _converted_regions.end()) {
         return _converted_regions.at(file_id);
     } else if (use_approx_polygon && _polygon_regions.find(file_id) != _polygon_regions.end()) {
@@ -381,6 +381,15 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
     // Closed region types: rectangle, ellipse, polygon.
     // Check ellipse and rectangle distortion; always use polygon for polygon regions.
     CARTA::RegionType region_type = _region_state.type;
+    if (region_type == CARTA::RegionType::ANNULUS) {
+        const auto increments = _reference_coord_sys->increment();
+        const auto units = _reference_coord_sys->worldAxisUnits();
+        casacore::Quantity x_scale(std::abs(increments(0)), units(0));
+        casacore::Quantity y_scale(std::abs(increments(1)), units(1));
+        if (x_scale.isConform(y_scale.getUnit()) && !casacore::near(x_scale.getValue(), y_scale.get(x_scale.getUnit()).getValue())) {
+            return true; // Transform the ellipse vertices instead of mixing pixel axes and sky axes.
+        }
+    }
     if ((region_type != CARTA::RegionType::ELLIPSE) && (region_type != CARTA::RegionType::RECTANGLE) &&
         (region_type != CARTA::RegionType::ANNULUS)) {
         return true;
