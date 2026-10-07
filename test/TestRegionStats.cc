@@ -7,6 +7,8 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
+#include <cmath>
+
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
@@ -30,6 +32,11 @@ public:
         stats_config->add_stats_types(CARTA::StatsType::SumSq);
         stats_config->add_stats_types(CARTA::StatsType::Min);
         stats_config->add_stats_types(CARTA::StatsType::Max);
+        stats_config->add_stats_types(CARTA::StatsType::Median);
+        stats_config->add_stats_types(CARTA::StatsType::MedAbsDevMed);
+        stats_config->add_stats_types(CARTA::StatsType::Quartile);
+        stats_config->add_stats_types(CARTA::StatsType::Q1);
+        stats_config->add_stats_types(CARTA::StatsType::Q3);
         return set_stats_requirements;
     }
 
@@ -98,6 +105,15 @@ TEST_F(RegionStatsTest, TestFitsRegionStats) {
     double expected_mean = expected_sum / image_data.size();
     double expected_min = *std::min_element(image_data.begin(), image_data.end());
     double expected_max = *std::max_element(image_data.begin(), image_data.end());
+    std::sort(image_data.begin(), image_data.end());
+    double expected_median = (image_data[7] + image_data[8]) / 2.0;
+    double expected_q1 = image_data[3];
+    double expected_q3 = image_data[11];
+    std::vector<double> absolute_deviations;
+    std::transform(image_data.begin(), image_data.end(), std::back_inserter(absolute_deviations),
+        [expected_median](double value) { return std::abs(value - expected_median); });
+    std::sort(absolute_deviations.begin(), absolute_deviations.end());
+    double expected_mad = (absolute_deviations[7] + absolute_deviations[8]) / 2.0;
 
     // Check some stats
     for (size_t i = 0; i < stats_data.statistics_size(); ++i) {
@@ -111,8 +127,90 @@ TEST_F(RegionStatsTest, TestFitsRegionStats) {
             ASSERT_DOUBLE_EQ(stats_data.statistics(i).value(), expected_min);
         } else if (stats_data.statistics(i).stats_type() == CARTA::StatsType::Max) {
             ASSERT_DOUBLE_EQ(stats_data.statistics(i).value(), expected_max);
+        } else if (stats_data.statistics(i).stats_type() == CARTA::StatsType::Median) {
+            ASSERT_NEAR(stats_data.statistics(i).value(), expected_median, 1e-7);
+        } else if (stats_data.statistics(i).stats_type() == CARTA::StatsType::MedAbsDevMed) {
+            ASSERT_NEAR(stats_data.statistics(i).value(), expected_mad, 1e-7);
+        } else if (stats_data.statistics(i).stats_type() == CARTA::StatsType::Quartile) {
+            ASSERT_NEAR(stats_data.statistics(i).value(), expected_q3 - expected_q1, 1e-7);
+        } else if (stats_data.statistics(i).stats_type() == CARTA::StatsType::Q1) {
+            ASSERT_NEAR(stats_data.statistics(i).value(), expected_q1, 1e-7);
+        } else if (stats_data.statistics(i).stats_type() == CARTA::StatsType::Q3) {
+            ASSERT_NEAR(stats_data.statistics(i).value(), expected_q3, 1e-7);
         }
     }
+}
+
+TEST_F(RegionStatsTest, TestFitsImageStatsRecalculateMissingStatistics) {
+    auto image_path = FitsImages() / "noise_3d.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+
+    CARTA::SetStatsRequirements_StatsConfig basic_config;
+    basic_config.add_stats_types(CARTA::StatsType::Mean);
+    ASSERT_TRUE(frame->SetStatsRequirements(IMAGE_REGION_ID, {basic_config}));
+    ASSERT_TRUE(frame->FillRegionStatsData([](CARTA::RegionStatsData) {}, IMAGE_REGION_ID, 0));
+
+    auto stats_req_message = SetStatsRequirements(0, IMAGE_REGION_ID);
+    std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs = {
+        stats_req_message.stats_configs().begin(), stats_req_message.stats_configs().end()};
+    ASSERT_TRUE(frame->SetStatsRequirements(IMAGE_REGION_ID, stats_configs));
+
+    CARTA::RegionStatsData stats_data;
+    ASSERT_TRUE(frame->FillRegionStatsData([&stats_data](CARTA::RegionStatsData data) { stats_data = data; }, IMAGE_REGION_ID, 0));
+
+    int robust_stats_count = 0;
+    for (const auto& statistic : stats_data.statistics()) {
+        switch (statistic.stats_type()) {
+            case CARTA::StatsType::Median:
+            case CARTA::StatsType::MedAbsDevMed:
+            case CARTA::StatsType::Quartile:
+            case CARTA::StatsType::Q1:
+            case CARTA::StatsType::Q3:
+                ASSERT_TRUE(std::isfinite(statistic.value()));
+                ++robust_stats_count;
+                break;
+            default:
+                break;
+        }
+    }
+    ASSERT_EQ(robust_stats_count, 5);
+}
+
+TEST_F(RegionStatsTest, TestHdf5ImageStatsRecalculateMissingStatistics) {
+    auto image_path = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+
+    CARTA::SetStatsRequirements_StatsConfig basic_config;
+    basic_config.add_stats_types(CARTA::StatsType::Mean);
+    ASSERT_TRUE(frame->SetStatsRequirements(IMAGE_REGION_ID, {basic_config}));
+    ASSERT_TRUE(frame->FillRegionStatsData([](CARTA::RegionStatsData) {}, IMAGE_REGION_ID, 0));
+
+    auto stats_req_message = SetStatsRequirements(0, IMAGE_REGION_ID);
+    std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs = {
+        stats_req_message.stats_configs().begin(), stats_req_message.stats_configs().end()};
+    ASSERT_TRUE(frame->SetStatsRequirements(IMAGE_REGION_ID, stats_configs));
+
+    CARTA::RegionStatsData stats_data;
+    ASSERT_TRUE(frame->FillRegionStatsData([&stats_data](CARTA::RegionStatsData data) { stats_data = data; }, IMAGE_REGION_ID, 0));
+
+    int robust_stats_count = 0;
+    for (const auto& statistic : stats_data.statistics()) {
+        switch (statistic.stats_type()) {
+            case CARTA::StatsType::Median:
+            case CARTA::StatsType::MedAbsDevMed:
+            case CARTA::StatsType::Quartile:
+            case CARTA::StatsType::Q1:
+            case CARTA::StatsType::Q3:
+                ASSERT_TRUE(std::isfinite(statistic.value()));
+                ++robust_stats_count;
+                break;
+            default:
+                break;
+        }
+    }
+    ASSERT_EQ(robust_stats_count, 5);
 }
 
 TEST_F(RegionStatsTest, TestFitsAnnotationRegionStats) {

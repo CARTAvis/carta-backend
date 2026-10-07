@@ -1046,9 +1046,14 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             required_stats.push_back(stats_config.stats_types(i));
         }
 
+        auto has_required_stats = [&required_stats](const std::map<CARTA::StatsType, double>& stats_map) {
+            return std::all_of(required_stats.begin(), required_stats.end(),
+                [&stats_map](CARTA::StatsType type) { return stats_map.find(type) != stats_map.end(); });
+        };
+
         // Use loader image stats
         auto& image_stats = _loader->GetImageStats(stokes, z);
-        if (image_stats.full) {
+        if (image_stats.full && has_required_stats(image_stats.basic_stats)) {
             FillStatistics(stats_data, required_stats, image_stats.basic_stats);
             stats_data_callback(stats_data);
             continue;
@@ -1056,8 +1061,8 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
 
         // Use cached stats
         int cache_key(CacheKey(z, stokes));
-        if (_image_stats.count(cache_key)) {
-            auto stats_map = _image_stats[cache_key];
+        if (_image_stats.count(cache_key) && has_required_stats(_image_stats[cache_key])) {
+            auto& stats_map = _image_stats[cache_key];
             FillStatistics(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
             continue;
