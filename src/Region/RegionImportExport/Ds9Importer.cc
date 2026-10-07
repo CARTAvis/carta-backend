@@ -439,6 +439,9 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                     const double inner_area = inner.x() * inner.y();
                     control_points[2].set_x(std::sqrt(inner_area * outer_ratio));
                     control_points[2].set_y(std::sqrt(inner_area / outer_ratio));
+                } else {
+                    _errors.append("Elliptical annulus with different inner/outer axis ratios is not supported.\n");
+                    return region_state;
                 }
             }
         }
@@ -453,10 +456,14 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                 rotation += 360.0;
             }
         }
-        region_state =
-            RegionState(_file_id, is_annotation ? CARTA::RegionType::ANNELLIPSE : CARTA::RegionType::ANNULUS, control_points, rotation);
-    } else if (region_name == "annulus" || region_name == "ellipse") {
-        _errors.append(region_name + " annulus syntax error: expected four radii and an optional ellipse angle.\n");
+        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, rotation);
+    } else if (region_name == "annulus") {
+        _errors.append(
+            "Circular annulus syntax error: expected a center and exactly two radii; multiple rings and n= are not supported.\n");
+    } else if (region_name == "ellipse") {
+        _errors.append(
+            "Elliptical annulus syntax error: expected a center, exactly four radii, and an optional angle; multiple rings and n= are not "
+            "supported.\n");
     } else {
         _errors.append(region_name + " syntax error.\n");
     }

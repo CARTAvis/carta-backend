@@ -1064,6 +1064,8 @@ casacore::TableRecord RegionConverter::GetAnnulusRecord(std::shared_ptr<casacore
         return record;
     }
 
+    // Exporter-only intermediate record; RegionExporter accepts these ellipse records as region1/region2.
+    // This is not a serialized casacore LCDifference and must not be passed to LCRegion::fromRecord.
     record.define("name", "LCDifference");
     record.defineRecord("region1", outer_record);
     record.defineRecord("region2", inner_record);

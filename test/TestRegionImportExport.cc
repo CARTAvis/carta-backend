@@ -585,6 +585,31 @@ TEST_F(RegionImportExportTest, TestDs9AnnotationAnnulusRejectedWithMessage) {
     EXPECT_THAT(import_ack.message(), testing::HasSubstr("Annotation annulus is not supported"));
 }
 
+TEST_F(RegionImportExportTest, TestInvalidAnnulusImportReportsReason) {
+    auto loader = carta::FileLoader::GetLoader(FitsImages() / "noise_10px_10px.fits");
+    auto frame = std::make_shared<Frame>(0, loader, "0");
+    for (bool include_valid_region : {false, true}) {
+        carta::RegionHandler handler;
+        CARTA::ImportRegionAck ack;
+        std::string contents = "image\nellipse(100,100,20,10,40,30)\n";
+        if (include_valid_region)
+            contents += "circle(5,5,2)\n";
+        handler.ImportRegion(0, frame, CARTA::DS9_REG, contents, false, ack);
+        EXPECT_EQ(ack.success(), include_valid_region);
+        EXPECT_EQ(ack.regions_size(), include_valid_region ? 1 : 0);
+        EXPECT_THAT(ack.message(), testing::HasSubstr("different inner/outer axis ratios"));
+    }
+    carta::RegionHandler handler;
+    CARTA::ImportRegionAck ack;
+    handler.ImportRegion(0, frame, CARTA::DS9_REG, "image\nannulus(5,5,2,2)\n", false, ack);
+    EXPECT_FALSE(ack.success());
+    EXPECT_THAT(ack.message(), testing::HasSubstr("Invalid annulus geometry"));
+    handler.ImportRegion(0, frame, CARTA::DS9_REG, "image\nannulus(5,5,1,2,3)\n", false, ack);
+    EXPECT_FALSE(ack.success());
+    EXPECT_THAT(ack.message(), testing::HasSubstr("exactly two radii"));
+    EXPECT_THAT(ack.message(), testing::HasSubstr("multiple rings"));
+}
+
 TEST_F(RegionImportExportTest, TestDs9AnnulusAxisRoundingIsNormalized) {
     auto image_path = FitsImages() / "noise_10px_10px.fits";
     auto loader = carta::FileLoader::GetLoader(image_path);

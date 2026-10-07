@@ -196,8 +196,14 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             region_id += 1;
 
             success = true; // if any regions were set
+        } else {
+            error.append(props.state.type == CARTA::RegionType::ANNULUS
+                             ? "Invalid annulus geometry: axes must be positive and finite, with inner axes strictly inside outer axes and "
+                               "identical axis ratios.\n"
+                             : "Imported region has invalid geometry.\n");
         }
     }
+    import_ack.set_message(error);
     import_ack.set_success(success);
 }
 
