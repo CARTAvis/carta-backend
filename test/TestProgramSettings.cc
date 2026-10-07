@@ -67,6 +67,9 @@ public:
         }
         EXPECT_TRUE(p1.omp_thread_count == p2.omp_thread_count);
         EXPECT_TRUE(p1.event_thread_count == p2.event_thread_count);
+        EXPECT_TRUE(p1.zarr_file_io_concurrency == p2.zarr_file_io_concurrency);
+        EXPECT_TRUE(p1.zarr_data_copy_concurrency == p2.zarr_data_copy_concurrency);
+        EXPECT_TRUE(p1.zarr_cache_pool_mb == p2.zarr_cache_pool_mb);
         EXPECT_TRUE(p1.top_level_folder == p2.top_level_folder);
         EXPECT_TRUE(p1.starting_folder == p2.starting_folder);
         EXPECT_TRUE(p1.host == p2.host);
@@ -131,6 +134,9 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
 
     EXPECT_EQ(settings.port.size(), 0);
     EXPECT_EQ(settings.omp_thread_count, -1);
+    EXPECT_EQ(settings.zarr_file_io_concurrency, 2);
+    EXPECT_EQ(settings.zarr_data_copy_concurrency, -1);
+    EXPECT_EQ(settings.zarr_cache_pool_mb, 1024);
     EXPECT_EQ(settings.top_level_folder, "/");
     EXPECT_EQ(settings.starting_folder, ".");
     EXPECT_EQ(settings.host, "0.0.0.0");
@@ -151,6 +157,7 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
 TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
         "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --omp_threads 10"
+        " --zarr_file_io_threads 3 --zarr_data_copy_threads 7 --zarr_cache_size 256"
         " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode "
         "--enable_scripting");
     EXPECT_EQ(settings.verbosity, 6);
@@ -160,6 +167,9 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     EXPECT_EQ(settings.host, "helloworld");
     EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.omp_thread_count, 10);
+    EXPECT_EQ(settings.zarr_file_io_concurrency, 3);
+    EXPECT_EQ(settings.zarr_data_copy_concurrency, 7);
+    EXPECT_EQ(settings.zarr_cache_pool_mb, 256);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
     EXPECT_EQ(settings.frontend_folder, "/var");
     EXPECT_EQ(settings.wait_time, 10);
@@ -291,6 +301,9 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
         "host": "helloworld",
         "port": [1234],
         "omp_threads": 10,
+        "zarr_file_io_threads": 3,
+        "zarr_data_copy_threads": 7,
+        "zarr_cache_size": 256,
         "top_level_folder": "/tmp",
         "frontend_folder": "/var",
         "exit_timeout": 10,
@@ -310,6 +323,9 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.host, "helloworld");
     EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.omp_thread_count, 10);
+    EXPECT_EQ(settings.zarr_file_io_concurrency, 3);
+    EXPECT_EQ(settings.zarr_data_copy_concurrency, 7);
+    EXPECT_EQ(settings.zarr_cache_pool_mb, 256);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
     EXPECT_EQ(settings.frontend_folder, "/var");
     EXPECT_EQ(settings.wait_time, 10);

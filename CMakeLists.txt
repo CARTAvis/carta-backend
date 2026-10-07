@@ -115,6 +115,7 @@ if (Protobuf_VERSION VERSION_GREATER_EQUAL "4.25.3")
     set(PROTOBUF_LIBRARY
             ${PROTOBUF_LIBRARY}
             absl_hash
+            absl_log_internal_check_op
             absl_log_internal_message
             absl_log_internal_nullguard)
     message(STATUS "Newer protobuf version (${Protobuf_VERSION}) includes abseil libraries")
@@ -182,10 +183,20 @@ add_subdirectory(schemas)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_Install OFF CACHE INTERNAL "")
 add_subdirectory(third-party/nlohmann_json)
+# Use the bundled nlohmann_json headers, not a system copy, so that json-schema-validator and the backend use the same nlohmann_json
+include_directories(${CMAKE_SOURCE_DIR}/third-party/nlohmann_json/include)
 
 # json-schema-validator
 set(nlohmann_json_VERSION "v3.11.3")
 add_subdirectory(third-party/json-schema-validator)
+
+# carta-zarr
+if (CARTA_ZARR_ROOT)
+    find_package(CartaZarr 0.1 CONFIG REQUIRED PATHS ${CARTA_ZARR_ROOT} NO_DEFAULT_PATH)
+else ()
+    find_package(CartaZarr 0.1 CONFIG REQUIRED HINTS /opt/carta-zarr)
+endif ()
+message(STATUS "Found carta-zarr ${CartaZarr_VERSION}")
 
 set(LINK_LIBS
         ${LINK_LIBS}
@@ -201,6 +212,7 @@ set(LINK_LIBS
         gsl
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator
+        CARTA::zarr
         casa_casa
         casa_coordinates
         casa_tables
@@ -244,6 +256,7 @@ set(SOURCE_FILES
         src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
+        src/ImageData/ZarrContext.cc
         src/ImageFitting/ImageFitter.cc
         src/ImageFitting/InitialValueCalculator.cc
         src/ImageGenerators/MomentGenerator.cc
@@ -315,6 +328,9 @@ endif (CartaUserFolderPrefix)
 if (CartaDefaultFrontendFolder)
     add_definitions(-DCARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
 endif (CartaDefaultFrontendFolder)
+
+# Keep the link path (e.g. carta-zarr's install prefix) as the installed executable's RPATH
+set_target_properties(carta_backend PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)
