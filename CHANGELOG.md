@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-* Fixed annulus statistics to exclude the inner ellipse and corrected annulus coordinate exports ([#828](https://github.com/CARTAvis/carta-backend/issues/828)).
+### Added
+* Added the annulus region ([#828](https://github.com/CARTAvis/carta-backend/issues/828)).
 
 ## [6.0.0]
 
