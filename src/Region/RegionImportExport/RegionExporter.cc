@@ -51,66 +51,29 @@ bool RegionExporter::CanExportToFile(const std::string& filename, bool overwrite
     return true;
 }
 
-bool RegionExporter::AddRegion(int file_id, std::shared_ptr<Region> region, const CARTA::RegionStyle& region_style, bool export_pixels) {
+bool RegionExporter::AddRegion(
+    int file_id, std::shared_ptr<Region> region, const CARTA::RegionStyle& region_style, bool export_pixels, std::string* error) {
+    std::string local_error;
+    auto& export_error = error ? *error : local_error;
+    export_error.clear();
     // Add file line for region using RegionState for pixel coords if reference image, else use region Record
     auto region_state = region->GetRegionState();
     bool region_added(false);
 
-    if (region_state.reference_file_id == file_id && region_state.type == CARTA::RegionType::ANNULUS && !export_pixels) {
-        region_added = AddReferenceAnnulusInWorldCoordinates(region_state, region_style);
-    } else if ((region_state.reference_file_id == file_id) && export_pixels) {
-        region_added = AddRegion(region_state, region_style); // CRTF or DS9 exporter
+    if ((region_state.reference_file_id == file_id) && export_pixels) {
+        region_added = AddRegion(region_state, region_style, export_error); // CRTF or DS9 exporter
     } else {
         try {
             // Convert region to another image, to world coordinates, or both
             // Get Record containing pixel coords of region in image with file_id
             casacore::TableRecord region_record = region->GetImageRegionRecord(file_id, _coord_sys, _image_shape);
-            region_added = AddRegion(region_state, region_style, region_record, export_pixels);
+            region_added = AddRegion(region_state, region_style, region_record, export_pixels, export_error);
         } catch (const casacore::AipsError& err) {
+            export_error = err.getMesg();
             spdlog::error("Add region failed: {}", err.getMesg());
         }
     }
     return region_added;
-}
-
-bool RegionExporter::AddReferenceAnnulusInWorldCoordinates(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
-    if (region_state.control_points.size() != 3 || !_coord_sys || !_coord_sys->hasDirectionCoordinate()) {
-        return false;
-    }
-
-    const auto& center = region_state.control_points[0];
-    casacore::Vector<casacore::Float> center_values(2);
-    center_values(0) = center.x();
-    center_values(1) = center.y();
-    const auto make_ellipse_record = [&](const CARTA::Point& axes) {
-        auto x_radius = axes.x();
-        auto y_radius = axes.y();
-        float theta_degrees = region_state.rotation;
-        if (y_radius >= x_radius) {
-            std::swap(x_radius, y_radius);
-        } else {
-            theta_degrees += 90.0f;
-        }
-        casacore::Vector<casacore::Float> radii(2);
-        radii(0) = x_radius;
-        radii(1) = y_radius;
-        casacore::Quantity theta(theta_degrees, "deg");
-        theta.convert("rad");
-
-        casacore::TableRecord ellipse_record;
-        ellipse_record.define("name", "LCEllipsoid");
-        ellipse_record.define("oneRel", false);
-        ellipse_record.define("center", center_values);
-        ellipse_record.define("radii", radii);
-        ellipse_record.define("theta", theta.getValue());
-        return ellipse_record;
-    };
-
-    casacore::TableRecord annulus_record;
-    annulus_record.define("name", "LCDifference");
-    annulus_record.defineRecord("region1", make_ellipse_record(region_state.control_points[1]));
-    annulus_record.defineRecord("region2", make_ellipse_record(region_state.control_points[2]));
-    return AddRegion(region_state, region_style, annulus_record, false);
 }
 
 void RegionExporter::ExportRegions(const std::string& filename, std::string& message, CARTA::ExportRegionAck& export_ack) {
@@ -132,7 +95,7 @@ void RegionExporter::ExportRegions(const std::string& filename, std::string& mes
 }
 
 bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,
-    const casacore::RecordInterface& region_record, bool export_pixels) {
+    const casacore::RecordInterface& region_record, bool export_pixels, std::string& error) {
     // Convert casacore Record to pixel or world control points for region type, then add region file line.
     if (export_pixels) {
         casa::AnnotationBase::unitInit(); // enable "pix" unit
@@ -177,7 +140,7 @@ bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::Reg
 
     if (converted) {
         // Add file line for region file type
-        return AddRegion(region_state.type, control_points, rotation, region_style); // CRTF or DS9 exporter
+        return AddRegion(region_state.type, control_points, rotation, region_style, error); // CRTF or DS9 exporter
     }
     return converted;
 }
@@ -354,17 +317,9 @@ bool RegionExporter::ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bo
         control_points.push_back(casacore::Quantity(world_coords(0), world_units(0)));
         control_points.push_back(casacore::Quantity(world_coords(1), world_units(1)));
 
-        // Convert (lattice region) axes pixel to world and add to control points
-        casacore::Quantity bmaj = _coord_sys->toWorldLength(radii(0), 0);
-        casacore::Quantity bmin = _coord_sys->toWorldLength(radii(1), 1);
-        // Restore original axes order; oddly, rotation angle was not changed
-        if (reversed) {
-            control_points.push_back(bmin);
-            control_points.push_back(bmaj);
-        } else {
-            control_points.push_back(bmaj);
-            control_points.push_back(bmin);
-        }
+        // Restore the coordinate-axis association before applying its pixel scale.
+        control_points.push_back(_coord_sys->toWorldLength(radii(reversed ? 1 : 0), 0));
+        control_points.push_back(_coord_sys->toWorldLength(radii(reversed ? 0 : 1), 1));
         return true;
     } catch (const casacore::AipsError& err) {
         spdlog::error("Export error: ellipse Record conversion failed: {}", err.getMesg());

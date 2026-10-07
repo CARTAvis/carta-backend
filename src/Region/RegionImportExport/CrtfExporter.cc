@@ -39,13 +39,12 @@ CrtfExporter::CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys
     _file_coord_frame = GetImageDirectionFrame(_coord_sys);
 }
 
-bool CrtfExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
-    _annulus_rejected_as_elliptical = false;
+bool CrtfExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) {
     if (region_state.type == CARTA::RegionType::ANNULUS) {
         if (region_state.control_points.size() != 3 ||
             !IsApproximatelyCircular(region_state.control_points[1].x(), region_state.control_points[1].y()) ||
             !IsApproximatelyCircular(region_state.control_points[2].x(), region_state.control_points[2].y())) {
-            _annulus_rejected_as_elliptical = true;
+            error = "Ellipse annulus is not supported in CRTF. Please save as DS9 format.";
             return false;
         }
         const auto& center = region_state.control_points[0];
@@ -174,15 +173,14 @@ bool CrtfExporter::AddRegion(const RegionState& region_state, const CARTA::Regio
 }
 
 bool CrtfExporter::AddRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
-    const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) {
-    _annulus_rejected_as_elliptical = false;
+    const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style, std::string& error) {
     if (control_points.empty()) {
         return false;
     }
     // Create casa region then print it
     casa::AnnotationBase* ann_base(nullptr); // symbol, line, and polyline
     casa::AnnRegion* ann_region(nullptr);    // all other regions
-    if (!GetAnnRegion(region_type, control_points, rotation, region_style, ann_base, ann_region)) {
+    if (!GetAnnRegion(region_type, control_points, rotation, region_style, ann_base, ann_region, error)) {
         return false;
     }
 
@@ -209,7 +207,9 @@ bool CrtfExporter::AddRegion(CARTA::RegionType region_type, const std::vector<ca
 
 bool CrtfExporter::ExportRegions(const std::string& filename, std::string& error) {
     if (_file_lines.empty()) {
-        error = "Export region failed: no regions to export.";
+        if (error.empty()) {
+            error = "Export region failed: no regions to export.";
+        }
         return false;
     }
 
@@ -225,7 +225,9 @@ bool CrtfExporter::ExportRegions(const std::string& filename, std::string& error
 
 bool CrtfExporter::ExportRegions(std::vector<std::string>& contents, std::string& error) {
     if (_file_lines.empty()) {
-        error = "Export region failed: no regions to export.";
+        if (error.empty()) {
+            error = "Export region failed: no regions to export.";
+        }
         return false;
     }
     // Append header and regions to contents vector
@@ -238,7 +240,7 @@ bool CrtfExporter::ExportRegions(std::vector<std::string>& contents, std::string
 
 bool CrtfExporter::GetAnnRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
     const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style, casa::AnnotationBase*& ann_base,
-    casa::AnnRegion*& ann_region) {
+    casa::AnnRegion*& ann_region, std::string& error) {
     auto stokes_types = GetStokesTypes();
     bool require_region(false); // can be outside image
 
@@ -320,7 +322,7 @@ bool CrtfExporter::GetAnnRegion(CARTA::RegionType region_type, const std::vector
                 inner_y.convert(inner_x.getUnit());
                 if (!IsApproximatelyCircular(outer_x.getValue(), outer_y.getValue()) ||
                     !IsApproximatelyCircular(inner_x.getValue(), inner_y.getValue())) {
-                    _annulus_rejected_as_elliptical = true;
+                    error = "Ellipse annulus is not supported in CRTF. Please save as DS9 format.";
                     spdlog::warn("Elliptical annulus regions are not supported in CRTF format");
                     return false;
                 }

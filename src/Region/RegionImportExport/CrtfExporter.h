@@ -29,9 +29,6 @@ public:
      */
     CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& shape, int stokes_axis);
 
-    void ResetAnnulusExportStatus() { _annulus_rejected_as_elliptical = false; }
-    bool WasAnnulusRejectedAsElliptical() const { return _annulus_rejected_as_elliptical; }
-
 protected:
     /**
      * @brief Add file line for region in pixel coordinates
@@ -39,7 +36,7 @@ protected:
      * @param region_style Region style parameters
      * @return Whether adding the region file line is successful
      */
-    bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) override;
+    bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) override;
 
     /**
      * @brief Add file line for region in world coordinates or in matched image
@@ -50,7 +47,7 @@ protected:
      * @return Whether adding the region file line is successful
      */
     bool AddRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation,
-        const CARTA::RegionStyle& region_style) override;
+        const CARTA::RegionStyle& region_style, std::string& error) override;
 
     /**
      * @brief Write region file lines to filename.
@@ -69,8 +66,6 @@ protected:
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 private:
-    bool _annulus_rejected_as_elliptical = false;
-
     /**
      * @brief Create casa AnnotationBase or AnnRegion from region parameters.
      * @param[in] region_type Region type
@@ -83,7 +78,7 @@ private:
      */
     bool GetAnnRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style, casa::AnnotationBase*& ann_base,
-        casa::AnnRegion*& ann_region);
+        casa::AnnRegion*& ann_region, std::string& error);
 
     /**
      * @brief Add file line after adjusting line printed by CASA region

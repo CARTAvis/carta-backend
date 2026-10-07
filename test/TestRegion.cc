@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
@@ -14,6 +15,39 @@
 #include "src/Frame/Frame.h"
 
 using namespace carta;
+
+TEST(AnnulusMaskTest, ReferenceAndMatchedMasksExcludeTheHole) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords3D());
+    const casacore::IPosition shape(3, 20, 20, 10);
+    Region region(RegionState(0, CARTA::ANNULUS, {Message::Point(10, 10), Message::Point(4, 4), Message::Point(2, 2)}, 0), csys);
+    for (int file_id : {0, 1}) {
+        auto lc = region.GetLCRegion(file_id, csys, shape);
+        ASSERT_TRUE(lc);
+        auto mask = region.GetImageRegionMask(file_id);
+        ASSERT_EQ(mask.ndim(), 2);
+        const auto start = lc->boundingBox().start();
+        int selected = 0;
+        for (int y = 0; y < mask.shape()(1); ++y) {
+            for (int x = 0; x < mask.shape()(0); ++x) {
+                const int dx = x + start(0) - 10, dy = y + start(1) - 10;
+                const int radius_squared = dx * dx + dy * dy;
+                const bool expected = radius_squared <= 16 && radius_squared > 4;
+                EXPECT_EQ(mask.getAt(casacore::IPosition(2, x, y)), expected);
+                selected += expected;
+            }
+        }
+        EXPECT_EQ(selected, 36);
+    }
+}
+
+TEST(AnnulusMaskTest, NonOverlappingHoleAndOuterEllipse) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    const casacore::IPosition shape(2, 20, 20);
+    Region partial(RegionState(0, CARTA::ANNULUS, {Message::Point(-3, 10), Message::Point(4, 4), Message::Point(2, 2)}, 0), csys);
+    ASSERT_TRUE(partial.GetLCRegion(0, csys, shape));
+    Region outside(RegionState(0, CARTA::ANNULUS, {Message::Point(100, 100), Message::Point(4, 4), Message::Point(2, 2)}, 0), csys);
+    EXPECT_FALSE(outside.GetLCRegion(0, csys, shape));
+}
 
 class RegionTest : public ::testing::Test {
 public:

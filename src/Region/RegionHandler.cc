@@ -230,40 +230,15 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     std::string export_errors; // for ack message
-    std::string annulus_warning;
-    auto append_annulus_warning = [&annulus_warning](int region_id) {
-        if (!annulus_warning.empty()) {
-            annulus_warning += "\n";
-        }
-        annulus_warning += fmt::format("Region {}: Ellipse annulus is not supported in CRTF. Please save as DS9 format.", region_id);
-    };
     for (auto& region_id_style : region_styles) {
         auto region_id = region_id_style.first;
         if (RegionSet(region_id)) {
             auto region = GetRegion(region_id);
             auto region_style = region_id_style.second;
-            if (region_file_type == CARTA::CRTF) {
-                const auto state = region->GetRegionState();
-                if (export_pixel_coords && state.type == CARTA::RegionType::ANNULUS) {
-                    if (state.control_points.size() != 3 ||
-                        !IsApproximatelyCircular(state.control_points[1].x(), state.control_points[1].y()) ||
-                        !IsApproximatelyCircular(state.control_points[2].x(), state.control_points[2].y())) {
-                        append_annulus_warning(region_id);
-                        continue;
-                    }
-                }
-            }
-            auto* crtf_exporter = dynamic_cast<CrtfExporter*>(exporter.get());
-            if (crtf_exporter) {
-                crtf_exporter->ResetAnnulusExportStatus();
-            }
-            if (!exporter->AddRegion(file_id, region, region_style, export_pixel_coords)) {
-                if (crtf_exporter && crtf_exporter->WasAnnulusRejectedAsElliptical()) {
-                    append_annulus_warning(region_id);
-                } else {
-                    std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
-                    export_errors.append(region_error);
-                }
+            std::string error;
+            if (!exporter->AddRegion(file_id, region, region_style, export_pixel_coords, &error)) {
+                export_errors += error.empty() ? fmt::format("Export region {} in image {} failed.\n", region_id, file_id)
+                                               : fmt::format("Region {}: {}\n", region_id, error);
             }
         } else {
             std::string region_error = fmt::format("Region {} not found for export.\n", region_id);
@@ -273,9 +248,6 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 
     // Export regions to file or contents, and complete ack message.
     exporter->ExportRegions(filename, export_errors, export_ack);
-    if (!annulus_warning.empty()) {
-        export_ack.set_message(annulus_warning + (export_ack.message().empty() ? "" : "\n" + export_ack.message()));
-    }
 }
 
 // ********************************************************************

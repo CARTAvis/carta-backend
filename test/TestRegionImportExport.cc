@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
@@ -13,9 +14,78 @@
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
 #include "Region/RegionHandler.h"
+#include "Region/RegionImportExport/CrtfExporter.h"
+#include "Region/RegionImportExport/CrtfImporter.h"
+#include "Region/RegionImportExport/Ds9Exporter.h"
+#include "Region/RegionImportExport/Ds9Importer.h"
 #include "src/Frame/Frame.h"
 
 using namespace carta;
+
+TEST(AnnulusExportTest, WorldCircleWithRectangularPixels) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto increments = csys->increment();
+    increments(0) *= 2;
+    ASSERT_TRUE(csys->setIncrement(increments));
+    const casacore::IPosition shape(2, 20, 20);
+    CrtfImporter source(csys, 0, "annulus[[0deg,0deg], [120arcsec,360arcsec]] coord=J2000", false);
+    std::string error;
+    auto original = source.GetRegions(error);
+    ASSERT_EQ(original.size(), 1);
+    auto region = std::make_shared<Region>(original[0].state, csys);
+    CrtfExporter crtf(csys, shape, -1);
+    RegionExporter& exporter = crtf;
+    CARTA::RegionStyle style;
+    style.set_color("green");
+    ASSERT_TRUE(exporter.AddRegion(0, region, style, false, &error)) << error;
+    CARTA::ExportRegionAck ack;
+    exporter.ExportRegions("", error, ack);
+    ASSERT_TRUE(ack.success());
+    std::string contents;
+    for (const auto& line : ack.contents())
+        contents += line;
+    CrtfImporter imported(csys, 0, contents, false);
+    auto roundtrip = imported.GetRegions(error);
+    ASSERT_EQ(roundtrip.size(), 1) << error;
+    for (int axis = 1; axis <= 2; ++axis) {
+        EXPECT_NEAR(roundtrip[0].state.control_points[axis].x(), original[0].state.control_points[axis].x(), 1e-4);
+        EXPECT_NEAR(roundtrip[0].state.control_points[axis].y(), original[0].state.control_points[axis].y(), 1e-4);
+    }
+    Ds9Exporter ds9(csys, shape, false);
+    RegionExporter& ds9_exporter = ds9;
+    ASSERT_TRUE(ds9_exporter.AddRegion(0, region, CARTA::RegionStyle(), false));
+    ds9_exporter.ExportRegions("", error, ack);
+    contents.clear();
+    for (const auto& line : ack.contents())
+        contents += line;
+    EXPECT_THAT(contents, testing::HasSubstr("120\", 360\""));
+}
+
+TEST(AnnulusExportTest, MatchedPixelRoundtripPreservesCenter) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    const casacore::IPosition shape(2, 20, 20);
+    for (float center : {10.0f, 100.0f}) {
+        for (auto axes : {Message::Point(3, 4), Message::Point(4, 3), Message::Point(4, 4)}) {
+            auto region = std::make_shared<Region>(
+                RegionState(0, CARTA::ANNULUS, {Message::Point(center, center), axes, Message::Point(axes.x() / 2, axes.y() / 2)}, 15),
+                csys);
+            Ds9Exporter ds9(csys, shape, true);
+            RegionExporter& exporter = ds9;
+            ASSERT_TRUE(exporter.AddRegion(1, region, CARTA::RegionStyle(), true));
+            std::string error, contents;
+            CARTA::ExportRegionAck ack;
+            exporter.ExportRegions("", error, ack);
+            ASSERT_TRUE(ack.success());
+            for (const auto& line : ack.contents())
+                contents += line;
+            Ds9Importer imported(csys, 1, contents, false);
+            auto roundtrip = imported.GetRegions(error);
+            ASSERT_EQ(roundtrip.size(), 1) << error;
+            EXPECT_NEAR(roundtrip[0].state.control_points[0].x(), center, 1e-4);
+            EXPECT_NEAR(roundtrip[0].state.control_points[0].y(), center, 1e-4);
+        }
+    }
+}
 
 class RegionImportExportTest : public ::testing::Test {
 public:
@@ -548,6 +618,15 @@ TEST_F(RegionImportExportTest, TestCrtfCircularAnnulusExport) {
     region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::WORLD, region_styles, filename, overwrite, world_export_ack);
     ASSERT_TRUE(world_export_ack.success()) << world_export_ack.message();
     EXPECT_THAT(world_export_ack.contents().Get(1), testing::HasSubstr("annulus"));
+
+    int elliptical_id(-1);
+    ASSERT_TRUE(SetRegion(region_handler, 0, elliptical_id, CARTA::ANNULUS, {5, 5, 3, 4, 1.5, 2}, 0, frame->CoordinateSystem()));
+    region_styles[elliptical_id] = GetRegionStyle(CARTA::ANNULUS);
+    CARTA::ExportRegionAck partial_ack;
+    region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::PIXEL, region_styles, filename, overwrite, partial_ack);
+    EXPECT_TRUE(partial_ack.success());
+    EXPECT_EQ(partial_ack.contents_size(), pixel_export_ack.contents_size());
+    EXPECT_THAT(partial_ack.message(), testing::HasSubstr("Region 3: Ellipse annulus is not supported in CRTF."));
 }
 
 TEST_F(RegionImportExportTest, TestInvalidAnnulusAxesRejected) {

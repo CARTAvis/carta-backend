@@ -32,7 +32,7 @@ Ds9Exporter::Ds9Exporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys, 
     SetFileCoordFrame();
 }
 
-bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
+bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) {
     auto region_type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
     float rotation = region_state.rotation;
@@ -155,7 +155,7 @@ bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::Region
 }
 
 bool Ds9Exporter::AddRegion(const CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
-    const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) {
+    const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style, std::string& error) {
     float rotation_deg = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
 
     std::string file_line;
@@ -179,7 +179,9 @@ bool Ds9Exporter::AddRegion(const CARTA::RegionType region_type, const std::vect
 
 bool Ds9Exporter::ExportRegions(const std::string& filename, std::string& error) {
     if (_file_lines.empty()) {
-        error = "Export regions failed: no regions to export.";
+        if (error.empty()) {
+            error = "Export regions failed: no regions to export.";
+        }
         return false;
     }
     std::ofstream export_file(filename);
@@ -195,7 +197,9 @@ bool Ds9Exporter::ExportRegions(const std::string& filename, std::string& error)
 
 bool Ds9Exporter::ExportRegions(std::vector<std::string>& contents, std::string& error) {
     if (_file_lines.empty()) {
-        error = "Export regions failed: no regions to export.";
+        if (error.empty()) {
+            error = "Export regions failed: no regions to export.";
+        }
         return false;
     }
 
@@ -305,17 +309,17 @@ std::string Ds9Exporter::GetRegionPixelLine(CARTA::RegionType region_type, const
         case CARTA::RegionType::ANNULUS: {
             if (control_points[2].getValue() == control_points[3].getValue() &&
                 control_points[4].getValue() == control_points[5].getValue()) {
-                file_line = fmt::format("annulus({:.9g}, {:.9g}, {:.9g}, {:.9g})", control_points[0].getValue(),
-                    control_points[1].getValue(), control_points[4].getValue(), control_points[2].getValue());
+                file_line = fmt::format("annulus({:.9g}, {:.9g}, {:.9g}, {:.9g})", (control_points[0].getValue() + 1),
+                    (control_points[1].getValue() + 1), control_points[4].getValue(), control_points[2].getValue());
             } else {
                 if (rotation == 0.0) {
-                    file_line = fmt::format("ellipse({:.9g}, {:.9g}, {:.9g}, {:.9g}, {:.9g}, {:.9g})", control_points[0].getValue(),
-                        control_points[1].getValue(), control_points[4].getValue(), control_points[5].getValue(),
+                    file_line = fmt::format("ellipse({:.9g}, {:.9g}, {:.9g}, {:.9g}, {:.9g}, {:.9g})", (control_points[0].getValue() + 1),
+                        (control_points[1].getValue() + 1), control_points[4].getValue(), control_points[5].getValue(),
                         control_points[2].getValue(), control_points[3].getValue());
                 } else {
-                    file_line = fmt::format("ellipse({:.9g}, {:.9g}, {:.9g}, {:.9g}, {:.9g}, {:.9g}, {})", control_points[0].getValue(),
-                        control_points[1].getValue(), control_points[4].getValue(), control_points[5].getValue(),
-                        control_points[2].getValue(), control_points[3].getValue(), rotation);
+                    file_line = fmt::format("ellipse({:.9g}, {:.9g}, {:.9g}, {:.9g}, {:.9g}, {:.9g}, {})",
+                        (control_points[0].getValue() + 1), (control_points[1].getValue() + 1), control_points[4].getValue(),
+                        control_points[5].getValue(), control_points[2].getValue(), control_points[3].getValue(), rotation);
                 }
             }
             break;

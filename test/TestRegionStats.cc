@@ -139,9 +139,18 @@ TEST_F(RegionStatsTest, TestFitsAnnulusRegionStats) {
     ASSERT_EQ(stats_data.stokes(), 0);
     ASSERT_GT(stats_data.statistics_size(), 0);
 
-    for (size_t i = 0; i < stats_data.statistics_size(); ++i) {
-        if (stats_data.statistics(i).stats_type() == CARTA::StatsType::NumPixels) {
-            ASSERT_GT(stats_data.statistics(i).value(), 0);
+    FitsDataReader reader(image_path);
+    auto data = reader.ReadRegion({1, 1, 0}, {5, 5, 1});
+    double expected_sum = 0;
+    for (int index : {1, 2, 4, 7, 8, 11, 13, 14})
+        expected_sum += data[index];
+    for (const auto& statistic : stats_data.statistics()) {
+        if (statistic.stats_type() == CARTA::StatsType::NumPixels) {
+            EXPECT_DOUBLE_EQ(statistic.value(), 8);
+        } else if (statistic.stats_type() == CARTA::StatsType::Sum) {
+            EXPECT_NEAR(statistic.value(), expected_sum, 1e-6);
+        } else if (statistic.stats_type() == CARTA::StatsType::Mean) {
+            EXPECT_NEAR(statistic.value(), expected_sum / 8, 1e-6);
         }
     }
 }

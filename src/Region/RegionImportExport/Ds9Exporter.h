@@ -31,7 +31,7 @@ protected:
      * @param region_style Region style parameters
      * @return Whether adding the file line is successful
      */
-    bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) override;
+    bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) override;
 
     /**
      * @brief Add file line for region in world coordinates or in matched image.
@@ -42,7 +42,7 @@ protected:
      * @return Whether adding the file line is successful
      */
     bool AddRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation,
-        const CARTA::RegionStyle& region_style) override;
+        const CARTA::RegionStyle& region_style, std::string& error) override;
 
     /**
      * @brief Write region file lines to filename.
