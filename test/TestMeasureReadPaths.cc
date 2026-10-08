@@ -19,7 +19,8 @@
 // Optional: CARTA_MEASURE_CHANNELS (channel changes for "channels", 8), CARTA_MEASURE_FRAMES and
 // CARTA_MEASURE_FRAME_RATE (frames an animation plays, 32, and how many a second, 5),
 // CARTA_MEASURE_REGION_FRACTION (share of the plane a region box covers, 0.05), CARTA_MEASURE_CACHE_MB
-// (the Zarr chunk cache, the server's default otherwise).
+// (the Zarr chunk cache, the server's default otherwise), CARTA_MEASURE_LOG_LEVEL (spdlog's level, warn;
+// debug shows, for one, the slab and cache a moment plans).
 
 #include <gtest/gtest.h>
 #include <omp.h>
@@ -242,7 +243,8 @@ TEST(MeasureReadPaths, One) {
     const std::string cache = FromEnv("CARTA_MEASURE_CACHE_MB");
     ConfigureZarrContext(
         ZARR_FILE_IO_CONCURRENCY, ZARR_DATA_COPY_CONCURRENCY, cache.empty() ? ZARR_CACHE_POOL_MB : std::stoi(cache), omp_get_num_procs());
-    spdlog::set_level(spdlog::level::warn);
+    const std::string log_level = FromEnv("CARTA_MEASURE_LOG_LEVEL");
+    spdlog::set_level(log_level.empty() ? spdlog::level::warn : spdlog::level::from_str(log_level));
 
     std::shared_ptr<Frame> frame;
     MeasureStep(file, "open", [&] {
