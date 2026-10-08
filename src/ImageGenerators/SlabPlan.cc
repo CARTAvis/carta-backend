@@ -42,6 +42,24 @@ std::uint64_t MostUnitsPerSlab(ssize_t origin, ssize_t length, ssize_t unit, ssi
 // will not say how much memory it has is given.
 const std::uint64_t kLeastBytes = std::uint64_t(64) << 20;
 
+// The most a moment spends on a cache of its own, however large the machine. A sixteenth of 125 GB
+// let one moment over the cigar of the standard test set (512 x 512 x 30000 chunked 128x128x64, 20
+// slabs 128 x 111) hold 3.7 GiB, which took it to 8.5 GB at its peak where the FITS cube's moment
+// peaked at 5.1 GB, for a walk that decoded the store once rather than twice. Swept, warm, everything
+// else fixed, two runs each:
+//
+//     cache       time     peak
+//     3.7 GiB    41.0 s   8.5 GB
+//       2 GiB    41.4 s   5.7 GB
+//       1 GiB    42.5 s   4.4 GB
+//     512 MiB    43.1 s   3.6 GB
+//           0    43.5 s   3.0 GB
+//
+// Decoding from a warm page cache is a quarter of the walk and the collapse the rest, so a second
+// decode costs little and the gigabytes past the first buy almost none of it back: 1 GiB is the knee.
+// It is also what the server's own chunk cache holds by default.
+const std::uint64_t kMostCacheBytes = std::uint64_t(1) << 30;
+
 // Whole lines along the collapse axis, as many as a fixed budget holds, filling the other axes in
 // their natural order. For an image with no chunking to align to.
 SlabPlan PlanByBytes(const casacore::IPosition& shape, unsigned collapse_axis, unsigned pixel_bytes) {
@@ -235,7 +253,7 @@ SlabPlan PlanSlab(const casacore::IPosition& shape, const casacore::IPosition& d
     // A chunk is decoded whole, edge or not, so it is kept whole.
     plan.reuse_chunks = plan.store_reads > 1.0 ? units_per_slab : 0;
     plan.reuse_pixels = plan.reuse_chunks * unit_pixels;
-    plan.cache_ceiling_bytes = std::max(memory_bytes / 16, kLeastBytes);
+    plan.cache_ceiling_bytes = std::max(std::min(memory_bytes / 16, kMostCacheBytes), kLeastBytes);
     return plan;
 }
 

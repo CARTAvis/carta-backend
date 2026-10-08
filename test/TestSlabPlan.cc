@@ -191,29 +191,34 @@ TEST(SlabPlanTest, ACacheHoldsEveryChunkOneSlabTouches) {
     const auto plan = PlanSlab(IPosition(4, 2048, 2048, 2000, 1), IPosition(4, 512, 512, 1, 1), 2, kMaskedFloat, kLargeMachine);
     EXPECT_EQ(plan.slab, IPosition(4, 512, 419, 2000, 1));
     EXPECT_EQ(plan.reuse_pixels, std::uint64_t(1 * 2 * 2000) * 512 * 512);
-    EXPECT_EQ(plan.CacheBytes(kFloat), std::uint64_t(4000) * 512 * 512 * kFloat);
+    // At one byte a pixel, to stay under the ceiling; as floats they are past it, and held at it.
+    EXPECT_EQ(plan.CacheBytes(1), std::uint64_t(4000) * 512 * 512);
+    EXPECT_EQ(plan.CacheBytes(kFloat), plan.cache_ceiling_bytes);
     // Counted in what a chunk decodes to rather than in floats: the same 4000 chunks, at whatever one of
-    // them holds -- here one byte a pixel, to stay under the ceiling -- and held at the ceiling past it,
-    // as a float64 chunk with its flag beside it, nine bytes a pixel, is.
+    // them holds -- again one byte a pixel -- and held at the ceiling past it, as a float64 chunk with
+    // its flag beside it, nine bytes a pixel, is.
     EXPECT_EQ(plan.reuse_chunks, 4000U);
     EXPECT_EQ(plan.CacheBytesOfChunks(std::uint64_t(512) * 512), std::uint64_t(4000) * 512 * 512);
     EXPECT_EQ(plan.CacheBytesOfChunks(std::uint64_t(512) * 512 * 9), plan.cache_ceiling_bytes);
 }
 
-// Off the grid a slab straddles the chunks across as well, and needs twice as many kept -- more than a
-// sixteenth of a 64 GiB machine, which is what the cache gets at most. The slab's own ceiling, which is
-// about the collapse, does not apply.
-TEST(SlabPlanTest, ACacheIsASixteenthOfTheMachineAtMost) {
+// Off the grid a slab straddles the chunks across as well, and needs twice as many kept, 7.8 GiB. The
+// cache gets a sixteenth of the machine and no more than 1 GiB, however large the machine: the slab's
+// own ceiling, which is about the collapse, does not apply, but one of its own does.
+TEST(SlabPlanTest, ACacheIsASixteenthOfTheMachineAndAGibibyteAtMost) {
     const IPosition shape(4, 1536, 1536, 2000, 1);
     const IPosition chunk(4, 512, 512, 1, 1);
     const IPosition corner(4, 256, 256, 0, 0);
 
     const auto plan = PlanSlab(shape, chunk, 2, kMaskedFloat, kLargeMachine, corner);
     EXPECT_EQ(plan.reuse_pixels, std::uint64_t(2 * 2 * 2000) * 512 * 512);
-    EXPECT_EQ(plan.CacheBytes(kFloat), 4 * kGiB);
+    EXPECT_EQ(plan.CacheBytes(kFloat), kGiB);
+
+    const auto small = PlanSlab(shape, chunk, 2, kMaskedFloat, 8 * kGiB, corner);
+    EXPECT_EQ(small.CacheBytes(kFloat), 512 * kMiB);
 
     const auto roomy = PlanSlab(shape, chunk, 2, kMaskedFloat, 1024 * kGiB, corner);
-    EXPECT_EQ(roomy.CacheBytes(kFloat), std::uint64_t(8000) * 512 * 512 * kFloat);
+    EXPECT_EQ(roomy.CacheBytes(kFloat), kGiB);
 
     // A machine that will not say how much memory it has gets the slab's floor.
     const auto unknown = PlanSlab(shape, chunk, 2, kMaskedFloat, 0, corner);

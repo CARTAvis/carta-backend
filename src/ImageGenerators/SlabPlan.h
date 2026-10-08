@@ -44,15 +44,17 @@ struct SlabPlan {
     // on the grid; more for one off it, whose slabs straddle the chunks across as well as down. NaN
     // when store_reads is.
     double cached_store_reads = 0.0;
-    // The most a moment spends on that cache: a sixteenth of the machine, as for the slab, without
-    // the slab's ceiling, which is about the collapse rather than the memory.
+    // The most a moment spends on that cache: a sixteenth of the machine, as for the slab, and no more
+    // than 1 GiB, past which the decodes it saves are worth less than the memory it takes (see
+    // kMostCacheBytes).
     std::uint64_t cache_ceiling_bytes = 0;
 
     // The cache to hold while stepping through the image, for an image that decodes `decoded_pixel_bytes`
     // a pixel: what it needs to bring store_reads down to cached_store_reads, as far as the ceiling
     // allows. Short of what it needs it still keeps some of what the next slab wants: on 2048 x 2048 x
     // 2000 chunked 512x512x1, a quarter of the need (1 GiB) decoded the store 1.72 times over rather
-    // than 2.
+    // than 2 -- and on the cigar of the standard test set, 1 GiB of the 3.7 GiB it needed cost 4% in
+    // time and saved half the peak.
     //
     // The cache keeps to its size; the process does not keep to the cache's. Measured on a 1536-square
     // region of that cube with 7.8 GiB asked for, resident memory held at the cache and the slab, about
