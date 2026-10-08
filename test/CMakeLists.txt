@@ -69,6 +69,7 @@ set(TEST_SOURCES
         TestLineProfileCalculator.cc
         TestImageFitting.cc
         TestMain.cc
+        TestMeasureReadPaths.cc
         TestMoment.cc
         TestSlabPlan.cc
         TestNormalizedUnits.cc
