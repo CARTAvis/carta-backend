@@ -443,15 +443,21 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                     }
                     return true;
                 };
-                CARTA::Point outer_axes, inner_axes;
-                double outer_angle;
-                if (!convert_axes(2, outer_axes, &outer_angle) || !convert_axes(4, inner_axes, nullptr)) {
+                CARTA::Point first_axes, second_axes;
+                double first_angle, second_angle;
+                if (!convert_axes(2, first_axes, &first_angle) || !convert_axes(4, second_axes, &second_angle)) {
                     _errors.append("Failed to convert elliptical annulus axes to image pixels.\n");
                     return region_state;
                 }
-                control_points.push_back(outer_axes);
-                control_points.push_back(inner_axes);
-                converted_ellipse_rotation = outer_angle;
+                if (first_axes.x() > second_axes.x() && first_axes.y() > second_axes.y()) {
+                    control_points.push_back(first_axes);
+                    control_points.push_back(second_axes);
+                    converted_ellipse_rotation = first_angle;
+                } else {
+                    control_points.push_back(second_axes);
+                    control_points.push_back(first_axes);
+                    converted_ellipse_rotation = second_angle;
+                }
                 transformed_ellipse_rotation = true;
             }
         }
