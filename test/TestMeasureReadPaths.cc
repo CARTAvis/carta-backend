@@ -14,7 +14,8 @@
 // before each step through /proc/self/clear_refs.
 //
 // Ops: open, channels, animation, animation_no_read_ahead, cursor_spectrum, region_spectrum,
-// image_histogram, cube_histogram_exact, cube_histogram_binned, cube_histogram_sampled, moment.
+// image_histogram, cube_histogram_exact, cube_histogram_binned, cube_histogram_sampled, moment,
+// cursor_moves_near, cursor_moves_far, channel_after_spectrum, channel_after_channel.
 //
 // Optional: CARTA_MEASURE_CHANNELS (channel changes for "channels", 8), CARTA_MEASURE_FRAMES and
 // CARTA_MEASURE_FRAME_RATE (frames an animation plays, 32, and how many a second, 5),
@@ -230,6 +231,46 @@ bool RunAnimation(const std::string& file, const std::shared_ptr<Frame>& frame, 
     return true;
 }
 
+// The cursor's spectrum at (x, y), read whole.
+bool CursorSpectrum(const std::shared_ptr<Frame>& frame, float x, float y) {
+    frame->SetCursor(x, y);
+    CARTA::SetSpectralRequirements_SpectralConfig config;
+    config.set_coordinate("z");
+    config.add_stats_types(CARTA::StatsType::Sum);
+    if (!frame->SetSpectralRequirements(CURSOR_REGION_ID, {config})) {
+        return false;
+    }
+    bool complete = false;
+    frame->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData data) { complete = complete || data.progress() >= 1.0; }, CURSOR_REGION_ID, false);
+    return complete;
+}
+
+// Moves the cursor through `positions` one after another, as a user sweeping it does, reading the
+// spectrum at each. Prints how long the first took and the others on average, beside the step's own
+// line: what a cache of decoded chunks can save is in the others, where a later spectrum needs
+// chunks an earlier one decoded.
+bool RunCursorMoves(const std::string& file, const std::string& op, const std::shared_ptr<Frame>& frame,
+    const std::vector<std::pair<float, float>>& positions) {
+    std::vector<double> reads;
+    for (const auto& [x, y] : positions) {
+        const auto began = std::chrono::steady_clock::now();
+        if (!CursorSpectrum(frame, x, y)) {
+            return false;
+        }
+        reads.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - began).count());
+    }
+    double rest = 0;
+    for (std::size_t i = 1; i < reads.size(); ++i) {
+        rest += reads[i];
+    }
+    std::printf("measure: file=%s op=%s_spectra spectra=%zu first_ms=%.1f rest_mean_ms=%.1f\n",
+        std::filesystem::path(file).filename().c_str(), op.c_str(), reads.size(), reads.front(),
+        reads.size() > 1 ? rest / (reads.size() - 1) : 0.0);
+    std::fflush(stdout);
+    return true;
+}
+
 } // namespace
 
 TEST(MeasureReadPaths, One) {
@@ -281,19 +322,35 @@ TEST(MeasureReadPaths, One) {
         ASSERT_GT(rate, 0) << "CARTA_MEASURE_FRAME_RATE must be positive";
         MeasureStep(file, op, [&] { return RunAnimation(file, frame, frames, rate, op == "animation"); });
     } else if (op == "cursor_spectrum") {
-        MeasureStep(file, op, [&] {
-            frame->SetCursor(frame->Width() / 2.0f, frame->Height() / 2.0f);
-            CARTA::SetSpectralRequirements_SpectralConfig config;
-            config.set_coordinate("z");
-            config.add_stats_types(CARTA::StatsType::Sum);
-            if (!frame->SetSpectralRequirements(CURSOR_REGION_ID, {config})) {
-                return false;
+        MeasureStep(file, op, [&] { return CursorSpectrum(frame, frame->Width() / 2.0f, frame->Height() / 2.0f); });
+    } else if (op == "cursor_moves_near" || op == "cursor_moves_far") {
+        // Near: eight positions a pixel or a few apart about the centre, inside one chunk of any
+        // layout in the test set. Far: eight spread over a 4 x 2 grid of the plane, each in a chunk of
+        // its own there.
+        std::vector<std::pair<float, float>> positions;
+        for (int i = 0; i < 8; ++i) {
+            if (op == "cursor_moves_near") {
+                positions.emplace_back(frame->Width() / 2.0f + i, frame->Height() / 2.0f + i % 3);
+            } else {
+                positions.emplace_back((i % 4 + 0.5f) * frame->Width() / 4.0f, (i / 4 + 0.5f) * frame->Height() / 2.0f);
             }
-            bool complete = false;
-            frame->FillSpectralProfileData(
-                [&](CARTA::SpectralProfileData data) { complete = complete || data.progress() >= 1.0; }, CURSOR_REGION_ID, false);
-            return complete;
-        });
+        }
+        MeasureStep(file, op, [&] { return RunCursorMoves(file, op, frame, positions); });
+    } else if (op == "channel_after_spectrum" || op == "channel_after_channel") {
+        // What a spectrum costs the plane the user is looking at: channel 1 is shown, then -- for
+        // channel_after_spectrum -- the cursor's spectrum is read, and the step is the change to
+        // channel 2, which lies in channel 1's chunks wherever a chunk is deeper than one channel. Kept
+        // in the cache, they are read again from it; pushed out by the spectrum, they are decoded
+        // again. channel_after_channel is the same without the spectrum.
+        if (depth < 3) {
+            GTEST_SKIP() << "an image of fewer than three channels has no channel 2";
+        }
+        std::string message;
+        ASSERT_TRUE(frame->SetImageChannels(1, 0, message));
+        if (op == "channel_after_spectrum") {
+            ASSERT_TRUE(CursorSpectrum(frame, frame->Width() / 2.0f, frame->Height() / 2.0f));
+        }
+        MeasureStep(file, op, [&] { return frame->SetImageChannels(2, 0, message); });
     } else if (op == "region_spectrum") {
         const std::string fraction_env = FromEnv("CARTA_MEASURE_REGION_FRACTION");
         const double fraction = fraction_env.empty() ? 0.05 : std::stod(fraction_env);
