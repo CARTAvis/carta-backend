@@ -11,7 +11,7 @@
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 
-#include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/defs.pb.h>
 
 namespace carta {
 
@@ -24,8 +24,8 @@ static std::unordered_map<CARTA::TextAnnotationPosition, std::string> text_posit
 
 /** @brief Map from CARTA region type to string, common to all region file types. */
 static std::unordered_map<CARTA::RegionType, std::string> region_names{{CARTA::RegionType::LINE, "line"},
-    {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNRULER, "# ruler"},
-    {CARTA::RegionType::ANNCOMPASS, "# compass"}};
+    {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNULUS, "ellipse"},
+    {CARTA::RegionType::ANNRULER, "# ruler"}, {CARTA::RegionType::ANNCOMPASS, "# compass"}};
 
 /**
  * @brief Return map from CARTA region type to string for region file type.
@@ -33,6 +33,26 @@ static std::unordered_map<CARTA::RegionType, std::string> region_names{{CARTA::R
  * @return region name map
  */
 std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::FileType region_file_type);
+
+/** @brief Convert pixel ellipse radii and their angle from the horizontal axis to world geometry. */
+bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
+    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center = nullptr);
+
+/** @brief Convert world ellipse axes into pixel radii and CARTA rotation using the local WCS in the requested frame. */
+bool WorldEllipseAxesToPixels(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
+    const casacore::Quantity& first, const casacore::Quantity& second, double angle_degrees, const std::string& world_frame,
+    CARTA::Point& axes, double& rotation);
+
+/** @brief Transform ellipse radii by axis-aligned scales and return principal radii and angle. */
+bool TransformEllipseAxes(double first, double second, double angle_degrees, double scale_x, double scale_y, double& major, double& minor,
+    double& major_angle_degrees);
+
+/** @brief Transform ellipse radii by a complete two-dimensional pixel transform. */
+bool TransformEllipseAxes(double first, double second, double angle_degrees, const casacore::Matrix<casacore::Double>& transform,
+    double& major, double& minor, double& major_angle_degrees);
+
+/** @brief Check whether two positive region radii describe a circle. */
+bool IsApproximatelyCircular(double radius_x, double radius_y);
 
 /**
  * @brief Return name of coordinate frame from coordinate system direction coordinate, if any.

@@ -11,16 +11,21 @@
 #include <casacore/casa/Quanta/QLogical.h>
 #include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/images/Regions/ImageRegion.h>
 #include <casacore/images/Regions/WCBox.h>
+#include <casacore/images/Regions/WCDifference.h>
 #include <casacore/images/Regions/WCEllipsoid.h>
 #include <casacore/images/Regions/WCPolygon.h>
 #include <casacore/lattices/LRegions/LCBox.h>
+#include <casacore/lattices/LRegions/LCDifference.h>
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/measures/Measures/MCDirection.h>
+#include <algorithm>
 
 #include "Logger/Logger.h"
+#include "Region/RegionImportExport/RegionImportExportUtil.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
 
@@ -112,6 +117,47 @@ void RegionConverter::SetReferenceWCRegion() {
                     region = new casacore::WCEllipsoid(_wcs_control_points[0], _wcs_control_points[1], _wcs_control_points[2],
                         _wcs_control_points[3], theta, 0, 1, *_reference_coord_sys);
                 }
+                break;
+            }
+            case CARTA::ANNULUS: { // [(cx, cy), (outer_x, outer_y), (inner_x, inner_y)]
+                std::vector<casacore::Quantity> center_world;
+                if (!CartaPointToWorld(_region_state.control_points[0], center_world)) {
+                    break;
+                }
+                // CARTA's first ellipse radius starts on the vertical axis.
+                const auto world_axes = [&](const CARTA::Point& axes, casacore::Quantity& theta, casacore::Quantity& major,
+                                            casacore::Quantity& minor) {
+                    theta = casacore::Quantity(_region_state.rotation + 90.0, "deg");
+                    std::vector<casacore::Quantity> radii;
+                    if (!PixelEllipseAxesToWorld(*_reference_coord_sys, axes.x(), axes.y(), theta, radii)) {
+                        return false;
+                    }
+                    major = radii[0];
+                    minor = radii[1];
+                    if (major < minor) {
+                        std::swap(major, minor);
+                        theta += 90.0;
+                    }
+                    theta.convert("rad");
+                    return true;
+                };
+                casacore::Quantity outer_maj_world, outer_min_world, inner_maj_world, inner_min_world, theta, inner_theta;
+                if (!world_axes(_region_state.control_points[1], theta, outer_maj_world, outer_min_world) ||
+                    !world_axes(_region_state.control_points[2], inner_theta, inner_maj_world, inner_min_world)) {
+                    break;
+                }
+
+                _wcs_control_points = center_world;
+                _wcs_control_points.push_back(outer_maj_world);
+                _wcs_control_points.push_back(outer_min_world);
+                _wcs_control_points.push_back(inner_maj_world);
+                _wcs_control_points.push_back(inner_min_world);
+
+                casacore::WCEllipsoid outer_wc(
+                    center_world[0], center_world[1], outer_maj_world, outer_min_world, theta, 0, 1, *_reference_coord_sys);
+                casacore::WCEllipsoid inner_wc(
+                    center_world[0], center_world[1], inner_maj_world, inner_min_world, inner_theta, 0, 1, *_reference_coord_sys);
+                region = new casacore::WCDifference(casacore::ImageRegion(outer_wc), casacore::ImageRegion(inner_wc));
                 break;
             }
             default: // no WCRegion for line-type regions
@@ -329,14 +375,33 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
     // Closed region types: rectangle, ellipse, polygon.
     // Check ellipse and rectangle distortion; always use polygon for polygon regions.
     CARTA::RegionType region_type = _region_state.type;
-    if ((region_type != CARTA::RegionType::ELLIPSE) && (region_type != CARTA::RegionType::RECTANGLE)) {
+    if (region_type == CARTA::RegionType::ANNULUS) {
+        const auto increments = _reference_coord_sys->increment();
+        const auto units = _reference_coord_sys->worldAxisUnits();
+        casacore::Quantity x_scale(std::abs(increments(0)), units(0));
+        casacore::Quantity y_scale(std::abs(increments(1)), units(1));
+        if (x_scale.isConform(y_scale.getUnit()) && !casacore::near(x_scale.getValue(), y_scale.get(x_scale.getUnit()).getValue())) {
+            return true; // Transform the ellipse vertices instead of mixing pixel axes and sky axes.
+        }
+        casacore::Vector<casacore::Double> center;
+        casacore::Matrix<casacore::Double> transform;
+        if (!GetAnnulusPixelTransform(output_csys, center, transform)) {
+            return true;
+        }
+        const double tolerance = 1e-4 * std::max({std::abs(transform(0, 0)), std::abs(transform(1, 1)), 1.0});
+        if (std::abs(transform(0, 1)) > tolerance || std::abs(transform(1, 0)) > tolerance || transform(0, 0) < 0 || transform(1, 1) < 0) {
+            return true; // Direct world ellipses do not retain relative rotation or reflection.
+        }
+    }
+    if ((region_type != CARTA::RegionType::ELLIPSE) && (region_type != CARTA::RegionType::RECTANGLE) &&
+        (region_type != CARTA::RegionType::ANNULUS)) {
         return true;
     }
 
     // Ratio of vector lengths in reference image region
     double ref_length_ratio;
     double x_length(_region_state.control_points[1].x()), y_length(_region_state.control_points[1].y());
-    if (region_type == CARTA::RegionType::ELLIPSE) {
+    if (region_type == CARTA::RegionType::ELLIPSE || region_type == CARTA::RegionType::ANNULUS) {
         ref_length_ratio = x_length / y_length;
     } else {
         ref_length_ratio = y_length / x_length;
@@ -344,7 +409,7 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
 
     // Make vector of endpoints and center, to check lengths against reference image lengths
     std::vector<CARTA::Point> points; // [p0, p1, p2, p3, center]
-    if (region_type == CARTA::RegionType::ELLIPSE) {
+    if (region_type == CARTA::RegionType::ELLIPSE || region_type == CARTA::RegionType::ANNULUS) {
         // Make "polygon" with only 4 points
         points = GetApproximateEllipsePoints(4);
     } else {
@@ -356,6 +421,9 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
     // Convert reference pixel points to output pixel points, then check vector length ratio and dot product
     casacore::Vector<casacore::Double> x, y;
     if (PointsToImagePixels(points, output_csys, x, y)) {
+        if (x.size() < 5 || y.size() < 5) {
+            return true;
+        }
         // vector0 is (center, p0), vector1 is (center, p1)
         auto v0_delta_x = x[0] - x[4];
         auto v0_delta_y = y[0] - y[4];
@@ -416,6 +484,38 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetAppliedPolygonRegion(
     // Set reference region as points along polygon segments
     auto polygon_points = GetReferencePolygonPoints(nvertices, has_distortion);
     if (polygon_points.empty()) {
+        return lc_region;
+    }
+
+    if (_region_state.type == CARTA::RegionType::ANNULUS) {
+        if (polygon_points.size() != 2) {
+            return lc_region;
+        }
+        casacore::Vector<casacore::Double> outer_x, outer_y, inner_x, inner_y;
+        if (!PointsToImagePixels(polygon_points[0], output_csys, outer_x, outer_y) ||
+            !PointsToImagePixels(polygon_points[1], output_csys, inner_x, inner_y)) {
+            return lc_region;
+        }
+        try {
+            casacore::IPosition keep_axes(2, 0, 1);
+            casacore::IPosition region_shape(output_shape.keepAxes(keep_axes));
+            casacore::LCPolygon outer(outer_x, outer_y, region_shape);
+            double inner_min_x(inner_x[0]), inner_max_x(inner_x[0]), inner_min_y(inner_y[0]), inner_max_y(inner_y[0]);
+            for (size_t i = 1; i < inner_x.size(); ++i) {
+                inner_min_x = std::min(inner_min_x, inner_x[i]);
+                inner_max_x = std::max(inner_max_x, inner_x[i]);
+                inner_min_y = std::min(inner_min_y, inner_y[i]);
+                inner_max_y = std::max(inner_max_y, inner_y[i]);
+            }
+            if (inner_max_x < 0 || inner_min_x > region_shape[0] - 1 || inner_max_y < 0 || inner_min_y > region_shape[1] - 1) {
+                lc_region.reset(new casacore::LCPolygon(outer_x, outer_y, region_shape));
+                return lc_region;
+            }
+            casacore::LCPolygon inner(inner_x, inner_y, region_shape);
+            lc_region.reset(new casacore::LCDifference(outer, inner));
+        } catch (const casacore::AipsError& err) {
+            spdlog::error("Cannot apply annulus to file {}: {}", file_id, err.getMesg());
+        }
         return lc_region;
     }
 
@@ -505,6 +605,11 @@ std::vector<std::vector<CARTA::Point>> RegionConverter::GetReferencePolygonPoint
             points.push_back(GetApproximateEllipsePoints(num_vertices));
             break;
         }
+        case CARTA::ANNULUS: {
+            points.push_back(GetApproximateEllipsePoints(num_vertices));
+            points.push_back(GetApproximateEllipsePoints(num_vertices, &_region_state.control_points[2]));
+            break;
+        }
         default: {
             // Return empty vector
         }
@@ -580,14 +685,14 @@ std::vector<std::vector<CARTA::Point>> RegionConverter::GetApproximatePolygonPoi
     return polygon_points;
 }
 
-std::vector<CARTA::Point> RegionConverter::GetApproximateEllipsePoints(int num_vertices) {
+std::vector<CARTA::Point> RegionConverter::GetApproximateEllipsePoints(int num_vertices, const CARTA::Point* axes) {
     // Approximate ELLIPSE region as polygon with num_vertices, return points
     std::vector<CARTA::Point> polygon_points;
 
     auto cx = _region_state.control_points[0].x();
     auto cy = _region_state.control_points[0].y();
-    auto bmaj = _region_state.control_points[1].x();
-    auto bmin = _region_state.control_points[1].y();
+    auto bmaj = axes ? axes->x() : _region_state.control_points[1].x();
+    auto bmin = axes ? axes->y() : _region_state.control_points[1].y();
 
     auto delta_theta = 2.0 * M_PI / num_vertices;
     auto rotation = _region_state.rotation * M_PI / 180.0;
@@ -664,6 +769,10 @@ casacore::TableRecord RegionConverter::GetImageRegionRecord(
     // Return Record describing Region applied to output image in pixel coordinates
     casacore::TableRecord record;
 
+    if (_region_state.type == CARTA::RegionType::ANNULUS) {
+        return GetAnnulusRecord(output_csys);
+    }
+
     // No LCRegion for lines. LCRegion for rotbox is a polygon; Record should be for unrotated box with rotation field.
     if (!_region_state.IsLineType() && !_region_state.IsRotbox()) {
         // Get record from converted LCRegion, for enclosed regions only.
@@ -728,7 +837,11 @@ casacore::TableRecord RegionConverter::GetRegionPointsRecord(
         case CARTA::RegionType::ELLIPSE:
         case CARTA::RegionType::ANNELLIPSE:
         case CARTA::RegionType::ANNCOMPASS: {
-            record = GetEllipseRecord(output_csys);
+            record = GetEllipseRecord(_wcs_control_points, _region_state.rotation, output_csys);
+            break;
+        }
+        case CARTA::RegionType::ANNULUS: {
+            record = GetAnnulusRecord(output_csys);
             break;
         }
         default:
@@ -884,15 +997,16 @@ casacore::TableRecord RegionConverter::GetRotboxRecord(std::shared_ptr<casacore:
     return record;
 }
 
-casacore::TableRecord RegionConverter::GetEllipseRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys) {
+casacore::TableRecord RegionConverter::GetEllipseRecord(
+    const std::vector<casacore::Quantity>& ellipse_points, float rotation, std::shared_ptr<casacore::CoordinateSystem> output_csys) {
     // Convert wcs points to output image in format of LCEllipsoid::toRecord()
     casacore::TableRecord record;
     casacore::Vector<casacore::Float> center(2), radii(2); // for record
 
     // Center point
     std::vector<casacore::Quantity> ref_world_point(2);
-    ref_world_point[0] = _wcs_control_points[0];
-    ref_world_point[1] = _wcs_control_points[1];
+    ref_world_point[0] = ellipse_points[0];
+    ref_world_point[1] = ellipse_points[1];
     casacore::Vector<casacore::Double> out_pixel_point;
 
     try {
@@ -901,8 +1015,8 @@ casacore::TableRecord RegionConverter::GetEllipseRecord(std::shared_ptr<casacore
             center(1) = out_pixel_point(1);
 
             // Convert radii to output world units, then to pixels using increment
-            casacore::Quantity bmaj = _wcs_control_points[2];
-            casacore::Quantity bmin = _wcs_control_points[3];
+            casacore::Quantity bmaj = ellipse_points[2];
+            casacore::Quantity bmin = ellipse_points[3];
             casacore::Vector<casacore::Double> out_increments(output_csys->increment());
             casacore::Vector<casacore::String> out_units(output_csys->worldAxisUnits());
             bmaj.convert(out_units(0));
@@ -912,11 +1026,12 @@ casacore::TableRecord RegionConverter::GetEllipseRecord(std::shared_ptr<casacore
 
             // Add fields for this region type
             record.define("name", "LCEllipsoid");
+            record.define("oneRel", false);
             record.define("center", center);
             record.define("radii", radii);
 
             // LCEllipsoid measured from major (x) axis
-            casacore::Quantity theta = casacore::Quantity(_region_state.rotation + 90.0, "deg");
+            casacore::Quantity theta = casacore::Quantity(rotation + 90.0, "deg");
             theta.convert("rad");
             record.define("theta", theta.getValue());
         } else {
@@ -927,6 +1042,77 @@ casacore::TableRecord RegionConverter::GetEllipseRecord(std::shared_ptr<casacore
     }
 
     return record;
+}
+
+casacore::TableRecord RegionConverter::GetAnnulusRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys) {
+    casacore::TableRecord record;
+    if (_region_state.control_points.size() < 3 || !_reference_coord_sys || !output_csys) {
+        return record;
+    }
+
+    try {
+        casacore::Vector<casacore::Double> center_pixel;
+        casacore::Matrix<casacore::Double> transform;
+        if (!GetAnnulusPixelTransform(output_csys, center_pixel, transform)) {
+            return record;
+        }
+
+        const auto make_ellipse_record = [&](const CARTA::Point& axes) {
+            casacore::TableRecord ellipse;
+            double major, minor, major_angle;
+            if (!TransformEllipseAxes(axes.x(), axes.y(), _region_state.rotation + 90.0, transform, major, minor, major_angle)) {
+                return ellipse;
+            }
+            casacore::Vector<casacore::Float> radii(2), center(2);
+            center(0) = center_pixel(0);
+            center(1) = center_pixel(1);
+            radii(0) = major;
+            radii(1) = minor;
+            ellipse.define("name", "LCEllipsoid");
+            ellipse.define("oneRel", false);
+            ellipse.define("center", center);
+            ellipse.define("radii", radii);
+            casacore::Quantity theta(major_angle, "deg");
+            theta.convert("rad");
+            ellipse.define("theta", theta.getValue());
+            return ellipse;
+        };
+
+        casacore::TableRecord outer_record = make_ellipse_record(_region_state.control_points[1]);
+        casacore::TableRecord inner_record = make_ellipse_record(_region_state.control_points[2]);
+        if (outer_record.empty() || inner_record.empty()) {
+            return record;
+        }
+
+        // Exporter-only intermediate record; RegionExporter accepts these ellipse records as region1/region2.
+        // This is not a serialized casacore LCDifference and must not be passed to LCRegion::fromRecord.
+        record.define("name", "LCDifference");
+        record.defineRecord("region1", outer_record);
+        record.defineRecord("region2", inner_record);
+    } catch (const casacore::AipsError& err) {
+        spdlog::error("Error converting annulus to image: {}", err.getMesg());
+    }
+    return record;
+}
+
+bool RegionConverter::GetAnnulusPixelTransform(std::shared_ptr<casacore::CoordinateSystem> output_csys,
+    casacore::Vector<casacore::Double>& center, casacore::Matrix<casacore::Double>& transform) {
+    const auto& source = _region_state.control_points[0];
+    const std::vector<CARTA::Point> points = {
+        source, Message::Point(source.x() + 1, source.y()), Message::Point(source.x(), source.y() + 1)};
+    casacore::Vector<casacore::Double> x, y;
+    if (!PointsToImagePixels(points, output_csys, x, y)) {
+        return false;
+    }
+    center.resize(2);
+    center(0) = x(0);
+    center(1) = y(0);
+    transform.resize(2, 2);
+    transform(0, 0) = x(1) - x(0);
+    transform(1, 0) = y(1) - y(0);
+    transform(0, 1) = x(2) - x(0);
+    transform(1, 1) = y(2) - y(0);
+    return true;
 }
 
 // *************************************************************************

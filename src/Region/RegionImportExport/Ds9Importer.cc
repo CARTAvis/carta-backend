@@ -8,6 +8,9 @@
 
 #include "Ds9Importer.h"
 
+#include <algorithm>
+#include <cmath>
+
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
@@ -145,9 +148,15 @@ RegionProperties Ds9Importer::SetRegion(std::string& file_line) {
             region_state.rotation = std::stod(properties["textangle"]);
         }
     } else if (region_name == "ellipse") {
-        region_state = ImportEllipseRegion(parameters, is_annotation);
+        if (parameters.size() > 6) {
+            region_state = ImportAnnulusRegion(parameters, is_annotation);
+        } else {
+            region_state = ImportEllipseRegion(parameters, is_annotation);
+        }
     } else if (region_name == "circle") {
         region_state = ImportCircleRegion(parameters, is_annotation);
+    } else if (region_name == "annulus") {
+        region_state = ImportAnnulusRegion(parameters, is_annotation);
     } else if (region_name == "box" || region_name == "textbox") {
         region_state = ImportRectangleRegion(parameters, is_annotation);
     } else if (region_name == "line" || region_name == "polyline" || region_name == "polygon" || region_name == "segment") {
@@ -172,7 +181,7 @@ RegionProperties Ds9Importer::SetRegion(std::string& file_line) {
 
         region_properties = RegionProperties(region_state, region_style);
     } else {
-        std::vector<std::string> unsupported_regions{"projection", "annulus", "panda", "epanda", "bpanda", "composite"};
+        std::vector<std::string> unsupported_regions{"projection", "panda", "epanda", "bpanda", "composite"};
         if (std::find(unsupported_regions.begin(), unsupported_regions.end(), region_name) != unsupported_regions.end()) {
             _errors.append("DS9 " + region_name + " region not supported.\n");
         } else {
@@ -328,9 +337,145 @@ RegionState Ds9Importer::ImportEllipseRegion(std::vector<std::string>& parameter
             }
         }
         region_state = RegionState(_file_id, type, control_points, rotation);
-    } else if (region_name == "ellipse" && nparam > 6) {
-        // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
-        _errors.append("DS9 ellipse annulus region not supported.\n");
+    } else {
+        _errors.append(region_name + " syntax error.\n");
+    }
+    return region_state;
+}
+
+RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameters, bool is_annotation) {
+    RegionState region_state;
+    auto region_name = parameters[0];
+    if (is_annotation) {
+        _errors.append("Annotation annulus is not supported.\n");
+        return region_state;
+    }
+    size_t nparam(parameters.size());
+
+    const bool valid_annulus_parameters = region_name == "annulus" ? nparam == 5 : region_name == "ellipse" && (nparam == 7 || nparam == 8);
+    if (valid_annulus_parameters) {
+        std::vector<casacore::Quantity> param_quantities;
+        for (size_t i = 1; i < nparam; ++i) {
+            bool is_angle(i == 2);
+            bool is_xy = (i == 1 || i == 2);
+            casacore::Quantity param_quantity;
+            if (ParameterToQuantity(parameters[i], is_angle, is_xy, region_name, param_quantity)) {
+                param_quantities.push_back(param_quantity);
+            } else {
+                _errors.append("Invalid DS9 parameter: " + parameters[i] + "\n");
+                return region_state;
+            }
+        }
+
+        std::vector<CARTA::Point> control_points;
+        bool transformed_ellipse_rotation(false);
+        float converted_ellipse_rotation(0.0);
+        if (_import_pixels) {
+            control_points.push_back(Message::Point(param_quantities, 0, 1));
+            if (region_name == "annulus") {
+                float r1 = param_quantities[2].getValue();
+                float r2 = param_quantities[3].getValue();
+                if (r1 > r2) {
+                    control_points.push_back(Message::Point(r1, r1));
+                    control_points.push_back(Message::Point(r2, r2));
+                } else {
+                    control_points.push_back(Message::Point(r2, r2));
+                    control_points.push_back(Message::Point(r1, r1));
+                }
+            } else {
+                CARTA::Point p1 = Message::Point(param_quantities, 2, 3);
+                CARTA::Point p2 = Message::Point(param_quantities, 4, 5);
+                if (p1.x() > p2.x() && p1.y() > p2.y()) {
+                    control_points.push_back(p1);
+                    control_points.push_back(p2);
+                } else {
+                    control_points.push_back(p2);
+                    control_points.push_back(p1);
+                }
+            }
+        } else if (_coord_sys) {
+            std::vector<casacore::Quantity> center_coords;
+            center_coords.push_back(param_quantities[0]);
+            center_coords.push_back(param_quantities[1]);
+            casacore::Vector<casacore::Double> pixel_coords;
+            if (ConvertPointToPixels(_coord_sys, _file_coord_frame, center_coords, pixel_coords)) {
+                control_points.push_back(Message::Point(pixel_coords));
+            } else {
+                _errors.append("Failed to apply " + region_name + " to image.\n");
+                return region_state;
+            }
+
+            const bool circular = region_name == "annulus";
+            const double angle = nparam > 7 ? param_quantities[6].getValue() : 0.0;
+            const auto convert_axes = [&](size_t offset, CARTA::Point& axes, double& pixel_angle) {
+                const auto& first = param_quantities[offset];
+                const auto& second = circular ? first : param_quantities[offset + 1];
+                if (circular && first.getUnit() == "pix") {
+                    axes = Message::Point(first.getValue(), first.getValue());
+                    pixel_angle = 0;
+                    return true;
+                }
+                return WorldEllipseAxesToPixels(*_coord_sys, pixel_coords, first, second, angle, _file_coord_frame, axes, pixel_angle);
+            };
+            CARTA::Point first_axes, second_axes;
+            double first_angle, second_angle;
+            if (!convert_axes(2, first_axes, first_angle) || !convert_axes(circular ? 3 : 4, second_axes, second_angle)) {
+                _errors.append("Failed to convert annulus axes to image pixels.\n");
+                return region_state;
+            }
+            if (first_axes.x() > second_axes.x() && first_axes.y() > second_axes.y()) {
+                control_points.push_back(first_axes);
+                control_points.push_back(second_axes);
+                converted_ellipse_rotation = first_angle;
+            } else {
+                control_points.push_back(second_axes);
+                control_points.push_back(first_axes);
+                converted_ellipse_rotation = second_angle;
+            }
+            transformed_ellipse_rotation = true;
+        }
+
+        // DS9 rounds axes independently. Snap small rounding errors to preserve the annulus shape invariant.
+        if (region_name == "ellipse" && control_points.size() == 3) {
+            const auto& outer = control_points[1];
+            const auto& inner = control_points[2];
+            if (outer.x() > 0.0 && outer.y() > 0.0 && inner.x() > 0.0 && inner.y() > 0.0) {
+                const double outer_ratio = outer.x() / outer.y();
+                const double inner_ratio = inner.x() / inner.y();
+                if (std::abs(outer_ratio - inner_ratio) <= 1e-2 * std::max(outer_ratio, inner_ratio)) {
+                    const double inner_area = inner.x() * inner.y();
+                    control_points[2].set_x(std::sqrt(inner_area * outer_ratio));
+                    control_points[2].set_y(std::sqrt(inner_area / outer_ratio));
+                } else {
+                    _errors.append("Elliptical annulus with different inner/outer axis ratios is not supported.\n");
+                    return region_state;
+                }
+            }
+        }
+
+        float rotation = 0.0;
+        if (region_name == "ellipse" && nparam > 7) {
+            rotation = param_quantities[6].getValue();
+        }
+        if (transformed_ellipse_rotation) {
+            rotation = converted_ellipse_rotation;
+            if (rotation < 0.0) {
+                rotation += 360.0;
+            }
+        } else if (control_points.size() > 1 && control_points[1].x() != control_points[1].y()) {
+            rotation -= 90.0;
+            if (rotation < 0.0) {
+                rotation += 360.0;
+            }
+        }
+        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, rotation);
+    } else if (region_name == "annulus") {
+        _errors.append(
+            "Circular annulus syntax error: expected a center and exactly two radii; multiple rings and n= are not supported.\n");
+    } else if (region_name == "ellipse") {
+        _errors.append(
+            "Elliptical annulus syntax error: expected a center, exactly four radii, and an optional angle; multiple rings and n= are not "
+            "supported.\n");
     } else {
         _errors.append(region_name + " syntax error.\n");
     }

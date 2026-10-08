@@ -6,6 +6,8 @@
 
 #include "RegionExporter.h"
 
+#include <algorithm>
+
 #include <casacore/casa/OS/File.h>
 
 #include "Logger/Logger.h"
@@ -49,20 +51,25 @@ bool RegionExporter::CanExportToFile(const std::string& filename, bool overwrite
     return true;
 }
 
-bool RegionExporter::AddRegion(int file_id, std::shared_ptr<Region> region, const CARTA::RegionStyle& region_style, bool export_pixels) {
+bool RegionExporter::AddRegion(
+    int file_id, std::shared_ptr<Region> region, const CARTA::RegionStyle& region_style, bool export_pixels, std::string* error) {
+    std::string local_error;
+    auto& export_error = error ? *error : local_error;
+    export_error.clear();
     // Add file line for region using RegionState for pixel coords if reference image, else use region Record
     auto region_state = region->GetRegionState();
     bool region_added(false);
 
     if ((region_state.reference_file_id == file_id) && export_pixels) {
-        region_added = AddRegion(region_state, region_style); // CRTF or DS9 exporter
+        region_added = AddRegion(region_state, region_style, export_error); // CRTF or DS9 exporter
     } else {
         try {
             // Convert region to another image, to world coordinates, or both
             // Get Record containing pixel coords of region in image with file_id
             casacore::TableRecord region_record = region->GetImageRegionRecord(file_id, _coord_sys, _image_shape);
-            region_added = AddRegion(region_state, region_style, region_record, export_pixels);
+            region_added = AddRegion(region_state, region_style, region_record, export_pixels, export_error);
         } catch (const casacore::AipsError& err) {
+            export_error = err.getMesg();
             spdlog::error("Add region failed: {}", err.getMesg());
         }
     }
@@ -88,7 +95,7 @@ void RegionExporter::ExportRegions(const std::string& filename, std::string& mes
 }
 
 bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,
-    const casacore::RecordInterface& region_record, bool export_pixels) {
+    const casacore::RecordInterface& region_record, bool export_pixels, std::string& error) {
     // Convert casacore Record to pixel or world control points for region type, then add region file line.
     if (export_pixels) {
         casa::AnnotationBase::unitInit(); // enable "pix" unit
@@ -114,6 +121,9 @@ bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::Reg
         case CARTA::RegionType::ANNCOMPASS:
             converted = ConvertRecordToEllipse(region_state, region_record, export_pixels, control_points, rotation);
             break;
+        case CARTA::RegionType::ANNULUS:
+            converted = ConvertRecordToAnnulus(region_state, region_record, export_pixels, control_points, rotation);
+            break;
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON:
@@ -130,7 +140,7 @@ bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::Reg
 
     if (converted) {
         // Add file line for region file type
-        return AddRegion(region_state.type, control_points, rotation, region_style); // CRTF or DS9 exporter
+        return AddRegion(region_state.type, control_points, rotation, region_style, error); // CRTF or DS9 exporter
     }
     return converted;
 }
@@ -248,17 +258,22 @@ bool RegionExporter::ConvertRecordToRectangle(
 
 bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record,
     bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& rotation) {
+    bool restore_axes = (region_state.type == CARTA::RegionType::ELLIPSE || region_state.type == CARTA::RegionType::ANNELLIPSE);
+    return ConvertRecordToEllipse(region_state.control_points[1], restore_axes, region_record, export_pixels, control_points, rotation);
+}
+
+bool RegionExporter::ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bool restore_axes,
+    const casacore::RecordInterface& region_record, bool export_pixels, std::vector<casacore::Quantity>& control_points,
+    casacore::Quantity& rotation, bool use_local_wcs) {
     // Ellipse Record is a casacore LCEllipsoid with center and radii in pixel coordinates, and theta for angle.
-    // Use RegionState to check if bmaj/bmin swapped so bmaj > bmin.
+    // Use original control point axes to check if bmaj/bmin swapped so bmaj > bmin.
     casacore::Vector<casacore::Float> center = region_record.asArrayFloat("center");
     casacore::Vector<casacore::Float> radii = region_record.asArrayFloat("radii");
     casacore::Double theta = region_record.asDouble("theta"); // radians
     rotation = casacore::Quantity(theta, "rad");
     rotation.convert("deg"); // CASA rotang, from x-axis
 
-    CARTA::Point ellipse_axes = region_state.control_points[1];
-    bool reversed = (region_state.type == CARTA::RegionType::ELLIPSE || region_state.type == CARTA::RegionType::ANNELLIPSE) &&
-                    ((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
+    bool reversed = restore_axes && ((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
@@ -302,23 +317,52 @@ bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, con
         control_points.push_back(casacore::Quantity(world_coords(0), world_units(0)));
         control_points.push_back(casacore::Quantity(world_coords(1), world_units(1)));
 
-        // Convert (lattice region) axes pixel to world and add to control points
-        casacore::Quantity bmaj = _coord_sys->toWorldLength(radii(0), 0);
-        casacore::Quantity bmin = _coord_sys->toWorldLength(radii(1), 1);
-        // Restore original axes order; oddly, rotation angle was not changed
-        if (reversed) {
-            control_points.push_back(bmin);
-            control_points.push_back(bmaj);
-        } else {
-            control_points.push_back(bmaj);
-            control_points.push_back(bmin);
-        }
-        return true;
+        return PixelEllipseAxesToWorld(*_coord_sys, radii(reversed ? 1 : 0), radii(reversed ? 0 : 1), rotation, control_points,
+            use_local_wcs ? &pixel_coords : nullptr);
     } catch (const casacore::AipsError& err) {
         spdlog::error("Export error: ellipse Record conversion failed: {}", err.getMesg());
         return false;
     }
     return false;
+}
+
+bool RegionExporter::ConvertRecordToAnnulus(const RegionState& region_state, const casacore::RecordInterface& region_record,
+    bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& rotation) {
+    std::vector<casacore::Quantity> outer_cp, inner_cp;
+    casacore::Quantity outer_rot, inner_rot;
+    bool outer_ok(false), inner_ok(false);
+
+    if (region_record.isDefined("region1") && region_record.isDefined("region2")) {
+        const casacore::RecordInterface& outer_rec = region_record.asRecord("region1");
+        const casacore::RecordInterface& inner_rec = region_record.asRecord("region2");
+        outer_ok = ConvertRecordToEllipse(region_state.control_points[1], true, outer_rec, export_pixels, outer_cp, outer_rot, true);
+        inner_ok = ConvertRecordToEllipse(region_state.control_points[2], true, inner_rec, export_pixels, inner_cp, inner_rot, true);
+    } else if (region_record.isDefined("regions")) {
+        const casacore::RecordInterface& regions_rec = region_record.asRecord("regions");
+        if (!regions_rec.isDefined("nr") || regions_rec.asInt("nr") < 2) {
+            return false;
+        }
+        const casacore::RecordInterface& outer_rec = regions_rec.asRecord(0);
+        const casacore::RecordInterface& inner_rec = regions_rec.asRecord(1);
+        outer_ok = ConvertRecordToEllipse(region_state.control_points[1], true, outer_rec, export_pixels, outer_cp, outer_rot, true);
+        inner_ok = ConvertRecordToEllipse(region_state.control_points[2], true, inner_rec, export_pixels, inner_cp, inner_rot, true);
+    } else {
+        return false;
+    }
+
+    if (!outer_ok || !inner_ok || outer_cp.size() < 4 || inner_cp.size() < 4) {
+        return false;
+    }
+
+    // For annulus control points: center (from outer), outer sizes, inner sizes
+    control_points.push_back(outer_cp[0]);
+    control_points.push_back(outer_cp[1]);
+    control_points.push_back(outer_cp[2]);
+    control_points.push_back(outer_cp[3]);
+    control_points.push_back(inner_cp[2]);
+    control_points.push_back(inner_cp[3]);
+    rotation = outer_rot;
+    return true;
 }
 
 bool RegionExporter::ConvertRecordToPolygonLine(

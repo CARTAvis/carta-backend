@@ -8,9 +8,14 @@
 
 #include "Region.h"
 
+#include <algorithm>
+#include <cmath>
+
+#include <casacore/lattices/LRegions/LCDifference.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/RegionType.h>
 
+#include "Logger/Logger.h"
 #include "RegionConverter.h"
 
 using namespace carta;
@@ -89,6 +94,14 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
             points_ok = (npoints == 2) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0);
             break;
         }
+        case CARTA::ANNULUS: { // [(cx, cy), (outer_x, outer_y), (inner_x, inner_y)]
+            const double outer_ratio = points.size() == 3 && points[1].y() > 0 ? points[1].x() / points[1].y() : 0.0;
+            const double inner_ratio = points.size() == 3 && points[2].y() > 0 ? points[2].x() / points[2].y() : 0.0;
+            points_ok = (npoints == 3) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0) && (points[2].x() > 0) &&
+                        (points[2].y() > 0) && (points[1].x() > points[2].x()) && (points[1].y() > points[2].y()) &&
+                        (std::abs(outer_ratio - inner_ratio) <= 1e-5 * std::max(outer_ratio, inner_ratio));
+            break;
+        }
         case CARTA::ANNTEXT: { // [(cx, cy), (width, height)]
             // width/height may be 0 on import, frontend will dynamically size textbox
             points_ok = (npoints == 2) && PointsFinite(points);
@@ -160,7 +173,28 @@ std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared
                 try {
                     lcregion.reset(casacore::LCRegion::fromRecord(region_record, ""));
                 } catch (const casacore::AipsError& err) {
-                    // Region is outside image
+                    // If only an annulus hole is outside this lattice, it subtracts no image pixels.
+                    const auto state = GetRegionState();
+                    if (state.type == CARTA::RegionType::ANNULUS && state.control_points.size() == 3) {
+                        const auto& hole = state.control_points[2];
+                        const double theta = state.rotation * M_PI / 180.0;
+                        const double extent_x = std::hypot(hole.y() * std::cos(theta), hole.x() * std::sin(theta));
+                        const double extent_y = std::hypot(hole.y() * std::sin(theta), hole.x() * std::cos(theta));
+                        const auto& center = state.control_points[0];
+                        const bool hole_outside = center.x() + extent_x < 0 || center.y() + extent_y < 0 ||
+                                                  center.x() - extent_x > image_shape(0) - 1 || center.y() - extent_y > image_shape(1) - 1;
+                        if (!hole_outside) {
+                            if (report_error) {
+                                spdlog::warn("Annulus region construction failed: {}", err.getMesg());
+                            }
+                            return nullptr;
+                        }
+                        auto outer_state = state;
+                        outer_state.type = CARTA::RegionType::ELLIPSE;
+                        outer_state.control_points.resize(2);
+                        Region outer_region(outer_state, _coord_sys);
+                        lcregion = outer_region.GetLCRegion(file_id, image_csys, image_shape, stokes_source, report_error);
+                    }
                 }
 
                 // Cache LCRegion and set flag
@@ -214,6 +248,15 @@ casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
     auto lcregion = GetCachedLCRegion(file_id, stokes_source);
 
     if (lcregion) {
+        // Composite regions expose their mask through the lattice API. Unwrap spatial extensions first.
+        const casacore::LCRegion* spatial_region = lcregion.get();
+        while (auto extension = dynamic_cast<const casacore::LCExtension*>(spatial_region)) {
+            spatial_region = &extension->region();
+        }
+        if (!dynamic_cast<const casacore::LCRegionFixed*>(spatial_region)) {
+            return casacore::ArrayLattice<casacore::Bool>(spatial_region->get());
+        }
+
         // LCRegion is an extension region or a fixed region, depending on whether image is reference or matched.
         auto extended_region = dynamic_cast<casacore::LCExtension*>(lcregion.get());
         if (extended_region) {
@@ -262,6 +305,43 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
 
     auto region_state = GetRegionState();
     auto region_type = region_state.type;
+
+    const auto make_ellipse_record = [&](const CARTA::Point& axes, bool is_compass = false) {
+        casacore::TableRecord record;
+        casacore::Vector<casacore::Float> center(2), radii(2);
+        center(0) = region_state.control_points[0].x();
+        center(1) = region_state.control_points[0].y();
+        auto major = axes.x();
+        auto minor = axes.y();
+        auto ellipse_rotation = region_state.rotation;
+
+        // Enforce major > minor (as in WCEllipsoid) for ellipse.
+        if (major > minor || is_compass) {
+            radii(0) = major;
+            radii(1) = minor;
+            // carta rotation is from y-axis, ellipse rotation is from x-axis
+            ellipse_rotation += 90.0;
+        } else {
+            // swapping takes care of 90 deg adjustment
+            radii(0) = minor;
+            radii(1) = major;
+        }
+
+        if (is_compass) {
+            record.define("name", "compass");
+        } else {
+            record.define("name", "LCEllipsoid");
+        }
+        record.define("center", center);
+        record.define("radii", radii);
+
+        // LCEllipsoid measured from major (x) axis
+        casacore::Quantity theta = casacore::Quantity(ellipse_rotation, "deg");
+        theta.convert("rad");
+        record.define("theta", theta.getValue());
+        CompleteRegionRecord(record, image_shape);
+        return record;
+    };
 
     switch (region_type) {
         case CARTA::RegionType::POINT:
@@ -336,41 +416,26 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
         case CARTA::RegionType::ELLIPSE:
         case CARTA::RegionType::ANNELLIPSE:
         case CARTA::RegionType::ANNCOMPASS: {
-            casacore::Vector<casacore::Float> center(2), radii(2);
-            center(0) = region_state.control_points[0].x();
-            center(1) = region_state.control_points[0].y();
-            auto major = region_state.control_points[1].x();
-            auto minor = region_state.control_points[1].y();
-            auto ellipse_rotation = region_state.rotation;
-
-            // Enforce major > minor (as in WCEllipsoid) for ellipse.
-            bool is_compass(region_type == CARTA::RegionType::ANNCOMPASS);
-            if (major > minor || is_compass) {
-                radii(0) = major;
-                radii(1) = minor;
-                // carta rotation is from y-axis, ellipse rotation is from x-axis
-                ellipse_rotation += 90.0;
-            } else {
-                // swapping takes care of 90 deg adjustment
-                radii(0) = minor;
-                radii(1) = major;
-            }
-
-            if (region_type == CARTA::RegionType::ANNCOMPASS) {
-                record.define("name", "compass");
-            } else {
-                record.define("name", "LCEllipsoid");
-            }
-            record.define("center", center);
-            record.define("radii", radii);
-
-            // LCEllipsoid measured from major (x) axis
-            casacore::Quantity theta = casacore::Quantity(ellipse_rotation, "deg");
-            theta.convert("rad");
-            record.define("theta", theta.getValue());
+            record = make_ellipse_record(region_state.control_points[1], region_type == CARTA::RegionType::ANNCOMPASS);
             break;
         }
-        default: // Annulus not implemented
+        case CARTA::RegionType::ANNULUS: {
+            if (region_state.control_points.size() < 3) {
+                break;
+            }
+            casacore::Vector<casacore::Float> center(2);
+            center(0) = region_state.control_points[0].x();
+            center(1) = region_state.control_points[0].y();
+
+            casacore::TableRecord regions_rec;
+            regions_rec.defineRecord(0, make_ellipse_record(region_state.control_points[1]));
+            regions_rec.defineRecord(1, make_ellipse_record(region_state.control_points[2]));
+            regions_rec.define("nr", 2);
+            record.define("name", "LCDifference");
+            record.defineRecord("regions", regions_rec);
+            break;
+        }
+        default:
             break;
     }
     CompleteRegionRecord(record, image_shape);

@@ -46,9 +46,11 @@ public:
      * @param region Region to export
      * @param region_style Region style parameters
      * @param export_pixels Whether to export region in pixel or world coordinates
+     * @param[out] error Optional failure reason for this call; cleared before adding the region.
      * @return Whether adding the region file line is successful
      */
-    bool AddRegion(int file_id, std::shared_ptr<Region> region, const CARTA::RegionStyle& region_style, bool export_pixels);
+    bool AddRegion(int file_id, std::shared_ptr<Region> region, const CARTA::RegionStyle& region_style, bool export_pixels,
+        std::string* error = nullptr);
 
     /**
      * @brief Export region file lines to file or contents.
@@ -63,9 +65,10 @@ protected:
      * @brief Add file line for region in pixel coordinates
      * @param region_state Region definition parameters
      * @param region_style Region style parameters
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether adding the region file line is successful
      */
-    virtual bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) = 0;
+    virtual bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) = 0;
 
     /**
      * @brief Add file line for region in world coordinates or in matched image
@@ -73,10 +76,11 @@ protected:
      * @param control_points Region control points in world coordinates
      * @param rotation Region rotation
      * @param region_style Region style parameters
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether adding the region file line is successful
      */
     virtual bool AddRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
-        const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) = 0;
+        const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style, std::string& error) = 0;
 
     /**
      * @brief Write region file lines to filename.
@@ -100,10 +104,11 @@ protected:
      * @param region_style Region style parameters
      * @param region_record casacore Record created from LCRegion applied to image
      * @param export_pixels Whether to export region in pixel or world coordinates
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether region is exported successfully
      */
     bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, const casacore::RecordInterface& region_record,
-        bool export_pixels);
+        bool export_pixels, std::string& error);
 
     /**
      * @brief Append compass style parameters to region file line.
@@ -162,6 +167,21 @@ private:
      * @return Whether the conversion is successful
      */
     bool ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record, bool export_pixels,
+        std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
+
+    bool ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bool restore_axes, const casacore::RecordInterface& region_record,
+        bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation, bool use_local_wcs = false);
+
+    /**
+     * @brief Convert casacore Record to annulus region control points and rotation.
+     * @param[in] region_state Region definition parameters
+     * @param[in] region_record casacore Record created from casacore LCRegion
+     * @param[in] export_pixels Whether to set control points in pixel or world coordinates
+     * @param[out] control_points Region control points
+     * @param[out] qrotation Region rotation
+     * @return Whether the conversion is successful
+     */
+    bool ConvertRecordToAnnulus(const RegionState& region_state, const casacore::RecordInterface& region_record, bool export_pixels,
         std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
 
     /**

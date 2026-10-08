@@ -4,8 +4,11 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <cmath>
+#include <set>
 
 #include <carta-protobuf/enums.pb.h>
 
@@ -13,9 +16,244 @@
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
 #include "Region/RegionHandler.h"
+#include "Region/RegionImportExport/CrtfExporter.h"
+#include "Region/RegionImportExport/CrtfImporter.h"
+#include "Region/RegionImportExport/Ds9Exporter.h"
+#include "Region/RegionImportExport/Ds9Importer.h"
 #include "src/Frame/Frame.h"
 
 using namespace carta;
+
+namespace {
+std::set<std::pair<int, int>> SelectedPixels(
+    Region& region, int file_id, std::shared_ptr<casacore::CoordinateSystem> csys, const casacore::IPosition& shape) {
+    std::set<std::pair<int, int>> pixels;
+    auto lc = region.GetLCRegion(file_id, csys, shape);
+    if (!lc) {
+        return pixels;
+    }
+    auto mask = region.GetImageRegionMask(file_id);
+    const auto start = lc->boundingBox().start();
+    for (int y = 0; y < mask.shape()(1); ++y) {
+        for (int x = 0; x < mask.shape()(0); ++x) {
+            if (mask.getAt(casacore::IPosition(2, x, y))) {
+                pixels.emplace(x + start(0), y + start(1));
+            }
+        }
+    }
+    return pixels;
+}
+} // namespace
+
+TEST(AnnulusExportTest, WorldGeometryPreservesRotationAndReflection) {
+    const casacore::IPosition shape(2, 40, 40);
+    for (bool rectangular : {false, true}) {
+        auto source = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+        auto increments = source->increment();
+        increments(0) *= rectangular ? 2 : 1;
+        ASSERT_TRUE(source->setIncrement(increments));
+        auto reference = source->referencePixel();
+        reference(0) = reference(1) = 20;
+        ASSERT_TRUE(source->setReferencePixel(reference));
+        for (bool mirrored : {false, true}) {
+            auto target = std::make_shared<casacore::CoordinateSystem>(*source);
+            casacore::Matrix<casacore::Double> transform(2, 2, 0.0);
+            if (mirrored) {
+                transform(0, 0) = -1;
+                transform(1, 1) = 1;
+            } else {
+                transform(0, 1) = -1;
+                transform(1, 0) = 1;
+            }
+            ASSERT_TRUE(target->setLinearTransform(transform));
+            auto region = std::make_shared<Region>(
+                RegionState(0, CARTA::ANNULUS, {Message::Point(20, 20), Message::Point(3, 7), Message::Point(1.5, 3.5)}, 30), source);
+            const auto expected = SelectedPixels(*region, 0, source, shape);
+            ASSERT_FALSE(expected.empty());
+            for (int file_id : {0, 1}) {
+                Ds9Exporter ds9(file_id == 0 ? source : target, shape, false);
+                RegionExporter& exporter = ds9;
+                std::string error, contents;
+                ASSERT_TRUE(exporter.AddRegion(file_id, region, CARTA::RegionStyle(), false, &error)) << error;
+                CARTA::ExportRegionAck ack;
+                exporter.ExportRegions("", error, ack);
+                ASSERT_TRUE(ack.success());
+                for (const auto& line : ack.contents()) {
+                    contents += line;
+                }
+                Ds9Importer importer(source, 0, contents, false);
+                auto imported = importer.GetRegions(error);
+                ASSERT_EQ(imported.size(), 1) << error;
+                Region restored(imported[0].state, source);
+                EXPECT_EQ(SelectedPixels(restored, 0, source, shape), expected) << contents;
+            }
+
+            for (const auto& contents : {std::string("fk5\nellipse(0,0,90\",210\",180\",420\",120)"),
+                     std::string("fk5\nannulus(0,0,120\",360\")"), std::string("annulus[[0deg,0deg],[120arcsec,360arcsec]] coord=J2000")}) {
+                const bool crtf = contents.front() != 'f';
+                Ds9Importer ds9_source(source, 0, crtf ? "" : contents, false), ds9_target(target, 1, crtf ? "" : contents, false);
+                CrtfImporter crtf_source(source, 0, crtf ? contents : "", false), crtf_target(target, 1, crtf ? contents : "", false);
+                RegionImporter& source_importer =
+                    crtf ? static_cast<RegionImporter&>(crtf_source) : static_cast<RegionImporter&>(ds9_source);
+                RegionImporter& target_importer =
+                    crtf ? static_cast<RegionImporter&>(crtf_target) : static_cast<RegionImporter&>(ds9_target);
+                std::string error;
+                auto original = source_importer.GetRegions(error), imported = target_importer.GetRegions(error);
+                ASSERT_EQ(original.size(), 1) << error;
+                ASSERT_EQ(imported.size(), 1) << error;
+                auto reference_region = std::make_shared<Region>(original[0].state, source);
+                Region target_region(imported[0].state, target);
+                const auto matched = SelectedPixels(*reference_region, 1, target, shape);
+                ASSERT_FALSE(matched.empty());
+                EXPECT_EQ(SelectedPixels(target_region, 1, target, shape), matched) << contents;
+                if (crtf) {
+                    CrtfExporter crtf_exporter(target, shape, -1);
+                    RegionExporter& exporter = crtf_exporter;
+                    CARTA::RegionStyle style;
+                    style.set_color("green");
+                    ASSERT_TRUE(exporter.AddRegion(1, reference_region, style, false, &error)) << error;
+                    CARTA::ExportRegionAck ack;
+                    exporter.ExportRegions("", error, ack);
+                    ASSERT_TRUE(ack.success()) << error;
+                }
+            }
+        }
+    }
+}
+
+TEST(AnnulusExportTest, WorldCircleWithRectangularPixels) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto increments = csys->increment();
+    increments(0) *= 2;
+    ASSERT_TRUE(csys->setIncrement(increments));
+    auto reference = csys->referencePixel();
+    reference(0) = reference(1) = 10;
+    ASSERT_TRUE(csys->setReferencePixel(reference));
+    const casacore::IPosition shape(2, 20, 20);
+    CrtfImporter source(csys, 0, "annulus[[0deg,0deg], [120arcsec,360arcsec]] coord=J2000", false);
+    std::string error;
+    auto original = source.GetRegions(error);
+    ASSERT_EQ(original.size(), 1);
+    auto region = std::make_shared<Region>(original[0].state, csys);
+    EXPECT_FLOAT_EQ(std::fmod(original[0].state.rotation, 180), 90);
+    auto lc = region->GetLCRegion(0, csys, shape);
+    ASSERT_TRUE(lc);
+    EXPECT_EQ(lc->boundingBox().length(), casacore::IPosition(2, 7, 13));
+    CrtfExporter crtf(csys, shape, -1);
+    RegionExporter& exporter = crtf;
+    CARTA::RegionStyle style;
+    style.set_color("green");
+    ASSERT_TRUE(exporter.AddRegion(0, region, style, false, &error)) << error;
+    CARTA::ExportRegionAck ack;
+    exporter.ExportRegions("", error, ack);
+    ASSERT_TRUE(ack.success());
+    std::string contents;
+    for (const auto& line : ack.contents())
+        contents += line;
+    CrtfImporter imported(csys, 0, contents, false);
+    auto roundtrip = imported.GetRegions(error);
+    ASSERT_EQ(roundtrip.size(), 1) << error;
+    for (int axis = 1; axis <= 2; ++axis) {
+        EXPECT_NEAR(roundtrip[0].state.control_points[axis].x(), original[0].state.control_points[axis].x(), 1e-4);
+        EXPECT_NEAR(roundtrip[0].state.control_points[axis].y(), original[0].state.control_points[axis].y(), 1e-4);
+    }
+    Ds9Exporter ds9(csys, shape, false);
+    RegionExporter& ds9_exporter = ds9;
+    ASSERT_TRUE(ds9_exporter.AddRegion(0, region, CARTA::RegionStyle(), false));
+    ds9_exporter.ExportRegions("", error, ack);
+    contents.clear();
+    for (const auto& line : ack.contents())
+        contents += line;
+    Ds9Importer ds9_importer(csys, 0, contents, false);
+    SCOPED_TRACE(contents);
+    auto ds9_roundtrip = ds9_importer.GetRegions(error);
+    ASSERT_EQ(ds9_roundtrip.size(), 1) << error;
+    EXPECT_NEAR(ds9_roundtrip[0].state.control_points[1].x(), 3, 1e-4);
+    EXPECT_NEAR(ds9_roundtrip[0].state.control_points[1].y(), 6, 1e-4);
+    Region ds9_region(ds9_roundtrip[0].state, csys);
+    auto ds9_lc = ds9_region.GetLCRegion(0, csys, shape);
+    ASSERT_TRUE(ds9_lc);
+    EXPECT_EQ(ds9_lc->boundingBox().length(), lc->boundingBox().length());
+}
+
+TEST(AnnulusExportTest, MatchedPixelRoundtripPreservesCenter) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    const casacore::IPosition shape(2, 20, 20);
+    for (float center : {10.0f, 100.0f}) {
+        for (auto axes : {Message::Point(3, 4), Message::Point(4, 3), Message::Point(4, 4)}) {
+            auto region = std::make_shared<Region>(
+                RegionState(0, CARTA::ANNULUS, {Message::Point(center, center), axes, Message::Point(axes.x() / 2, axes.y() / 2)}, 15),
+                csys);
+            Ds9Exporter ds9(csys, shape, true);
+            RegionExporter& exporter = ds9;
+            ASSERT_TRUE(exporter.AddRegion(1, region, CARTA::RegionStyle(), true));
+            std::string error, contents;
+            CARTA::ExportRegionAck ack;
+            exporter.ExportRegions("", error, ack);
+            ASSERT_TRUE(ack.success());
+            for (const auto& line : ack.contents())
+                contents += line;
+            Ds9Importer imported(csys, 1, contents, false);
+            auto roundtrip = imported.GetRegions(error);
+            ASSERT_EQ(roundtrip.size(), 1) << error;
+            EXPECT_NEAR(roundtrip[0].state.control_points[0].x(), center, 1e-4);
+            EXPECT_NEAR(roundtrip[0].state.control_points[0].y(), center, 1e-4);
+        }
+    }
+}
+
+TEST(AnnulusExportTest, MatchedRotationPreservesGeometry) {
+    auto source = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto increments = source->increment();
+    increments(0) *= 2;
+    ASSERT_TRUE(source->setIncrement(increments));
+    auto reference = source->referencePixel();
+    reference(0) = reference(1) = 20;
+    ASSERT_TRUE(source->setReferencePixel(reference));
+    auto target = std::make_shared<casacore::CoordinateSystem>(*source);
+    casacore::Matrix<casacore::Double> rotation(2, 2, 0.0);
+    rotation(0, 1) = -1;
+    rotation(1, 0) = 1;
+    ASSERT_TRUE(target->setLinearTransform(rotation));
+
+    const casacore::IPosition shape(2, 40, 40);
+    auto region = std::make_shared<Region>(
+        RegionState(0, CARTA::ANNULUS, {Message::Point(20, 20), Message::Point(3, 7), Message::Point(1.5, 3.5)}, 30), source);
+    Ds9Exporter exporter(target, shape, true);
+    RegionExporter& region_exporter = exporter;
+    ASSERT_TRUE(region_exporter.AddRegion(1, region, CARTA::RegionStyle(), true));
+    std::string error, contents;
+    CARTA::ExportRegionAck ack;
+    region_exporter.ExportRegions("", error, ack);
+    ASSERT_TRUE(ack.success()) << error;
+    for (const auto& line : ack.contents()) {
+        contents += line;
+    }
+    Ds9Importer importer(target, 1, contents, false);
+    auto imported = importer.GetRegions(error);
+    ASSERT_EQ(imported.size(), 1) << error;
+    SCOPED_TRACE(contents);
+
+    auto matched = region->GetLCRegion(1, target, shape);
+    Region restored(imported[0].state, target);
+    auto roundtrip = restored.GetLCRegion(0, target, shape);
+    ASSERT_TRUE(matched);
+    ASSERT_TRUE(roundtrip);
+    auto selected_pixels = [](Region& current, int file_id, const std::shared_ptr<casacore::LCRegion>& lc) {
+        std::set<std::pair<int, int>> pixels;
+        auto mask = current.GetImageRegionMask(file_id);
+        const auto start = lc->boundingBox().start();
+        for (int y = 0; y < mask.shape()(1); ++y) {
+            for (int x = 0; x < mask.shape()(0); ++x) {
+                if (mask.getAt(casacore::IPosition(2, x, y))) {
+                    pixels.emplace(x + start(0), y + start(1));
+                }
+            }
+        }
+        return pixels;
+    };
+    EXPECT_EQ(selected_pixels(*region, 1, matched), selected_pixels(restored, 0, roundtrip)) << contents;
+}
 
 class RegionImportExportTest : public ::testing::Test {
 public:
@@ -428,4 +666,172 @@ TEST_F(RegionImportExportTest, TestDs9WorldExportImport) {
     region_handler.ImportRegion(file_id, frame1, CARTA::DS9_REG, contents_string, file_is_filename, import_ack1);
     // Check that all regions were imported
     ASSERT_EQ(import_ack1.regions_size(), num_regions);
+}
+
+TEST_F(RegionImportExportTest, TestDs9AnnulusExportImport) {
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto loader0 = carta::FileLoader::GetLoader(image_path0);
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+
+    carta::RegionHandler region_handler;
+    int file_id(0);
+    int region_id(-1);
+    std::vector<float> annulus_points = {5.0, 5.0, 3.0, 4.0, 1.5, 2.0};
+    float rotation(15.0);
+    ASSERT_TRUE(SetRegion(region_handler, file_id, region_id, CARTA::ANNULUS, annulus_points, rotation, frame0->CoordinateSystem()));
+
+    std::map<int, CARTA::RegionStyle> region_style_map;
+    region_style_map[region_id] = GetRegionStyle(CARTA::ANNULUS);
+
+    std::string filename;
+    bool overwrite(false);
+    CARTA::ExportRegionAck export_ack;
+    region_handler.ExportRegion(file_id, frame0, CARTA::DS9_REG, CARTA::PIXEL, region_style_map, filename, overwrite, export_ack);
+    ASSERT_GT(export_ack.contents_size(), 0);
+
+    std::vector<std::string> export_contents = {export_ack.contents().begin(), export_ack.contents().end()};
+    auto contents_string = ConcatContents(export_contents);
+    bool file_is_filename(false);
+    CARTA::ImportRegionAck import_ack;
+    region_handler.ImportRegion(file_id, frame0, CARTA::DS9_REG, contents_string, file_is_filename, import_ack);
+    ASSERT_EQ(import_ack.regions_size(), 1);
+
+    CARTA::RegionInfo imported_info = import_ack.regions().begin()->second;
+    auto imported_region_state = GetRegionState(file_id, imported_info);
+    auto original_region_state = region_handler.GetRegion(region_id)->GetRegionState();
+    ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state, CARTA::DS9_REG));
+
+    CARTA::ExportRegionAck world_export_ack;
+    region_handler.ExportRegion(file_id, frame0, CARTA::DS9_REG, CARTA::WORLD, region_style_map, filename, overwrite, world_export_ack);
+    ASSERT_GT(world_export_ack.contents_size(), 0);
+
+    export_contents = {world_export_ack.contents().begin(), world_export_ack.contents().end()};
+    contents_string = ConcatContents(export_contents);
+    CARTA::ImportRegionAck world_import_ack;
+    region_handler.ImportRegion(file_id, frame0, CARTA::DS9_REG, contents_string, file_is_filename, world_import_ack);
+    ASSERT_EQ(world_import_ack.regions_size(), 1);
+
+    imported_info = world_import_ack.regions().begin()->second;
+    imported_region_state = GetRegionState(file_id, imported_info);
+    ASSERT_TRUE(RegionsEqual(imported_region_state, original_region_state, CARTA::DS9_REG));
+
+    CARTA::ExportRegionAck crtf_export_ack;
+    region_handler.ExportRegion(file_id, frame0, CARTA::CRTF, CARTA::WORLD, region_style_map, filename, overwrite, crtf_export_ack);
+    ASSERT_FALSE(crtf_export_ack.success());
+    EXPECT_THAT(
+        crtf_export_ack.message(), testing::HasSubstr("Region 1: Ellipse annulus is not supported in CRTF. Please save as DS9 format."));
+}
+
+TEST_F(RegionImportExportTest, TestDs9AnnotationAnnulusRejectedWithMessage) {
+    auto image_path = FitsImages() / "noise_10px_10px.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    const std::string contents = "image\n# ellipse(5,5,3,4,2,2,0)\n";
+    CARTA::ImportRegionAck import_ack;
+
+    region_handler.ImportRegion(0, frame, CARTA::DS9_REG, contents, false, import_ack);
+
+    EXPECT_FALSE(import_ack.success());
+    EXPECT_EQ(import_ack.regions_size(), 0);
+    EXPECT_THAT(import_ack.message(), testing::HasSubstr("Annotation annulus is not supported"));
+}
+
+TEST_F(RegionImportExportTest, TestInvalidAnnulusImportReportsReason) {
+    auto loader = carta::FileLoader::GetLoader(FitsImages() / "noise_10px_10px.fits");
+    auto frame = std::make_shared<Frame>(0, loader, "0");
+    for (bool include_valid_region : {false, true}) {
+        carta::RegionHandler handler;
+        CARTA::ImportRegionAck ack;
+        std::string contents = "image\nellipse(100,100,20,10,40,30)\n";
+        if (include_valid_region)
+            contents += "circle(5,5,2)\n";
+        handler.ImportRegion(0, frame, CARTA::DS9_REG, contents, false, ack);
+        EXPECT_EQ(ack.success(), include_valid_region);
+        EXPECT_EQ(ack.regions_size(), include_valid_region ? 1 : 0);
+        EXPECT_THAT(ack.message(), testing::HasSubstr("different inner/outer axis ratios"));
+    }
+    carta::RegionHandler handler;
+    CARTA::ImportRegionAck ack;
+    handler.ImportRegion(0, frame, CARTA::DS9_REG, "image\nannulus(5,5,2,2)\n", false, ack);
+    EXPECT_FALSE(ack.success());
+    EXPECT_THAT(ack.message(), testing::HasSubstr("Invalid annulus geometry"));
+    handler.ImportRegion(0, frame, CARTA::DS9_REG, "image\nannulus(5,5,1,2,3)\n", false, ack);
+    EXPECT_FALSE(ack.success());
+    EXPECT_THAT(ack.message(), testing::HasSubstr("exactly two radii"));
+    EXPECT_THAT(ack.message(), testing::HasSubstr("multiple rings"));
+}
+
+TEST_F(RegionImportExportTest, TestDs9AnnulusAxisRoundingIsNormalized) {
+    auto image_path = FitsImages() / "noise_10px_10px.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    const std::string contents = "image\nellipse(5,5,10,20,5.01,10,0)\n";
+    CARTA::ImportRegionAck import_ack;
+
+    region_handler.ImportRegion(0, frame, CARTA::DS9_REG, contents, false, import_ack);
+
+    ASSERT_EQ(import_ack.regions_size(), 1) << import_ack.message();
+    auto region_info = import_ack.regions().begin()->second;
+    const auto region_state = GetRegionState(0, region_info);
+    ASSERT_EQ(region_state.control_points.size(), 3);
+    EXPECT_NEAR(region_state.control_points[2].x() / region_state.control_points[2].y(), 0.5, 1e-5);
+    EXPECT_NEAR(region_state.control_points[2].x() * region_state.control_points[2].y(), 5.01 * 10.0, 1e-4);
+}
+
+TEST_F(RegionImportExportTest, TestCrtfCircularAnnulusExport) {
+    auto image_path = FitsImages() / "noise_10px_10px.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    int region_id(-1);
+    std::vector<float> annulus_points = {5.0, 5.0, 3.0, 3.0, 1.0, 1.0};
+    ASSERT_TRUE(SetRegion(region_handler, 0, region_id, CARTA::ANNULUS, annulus_points, 0.0, frame->CoordinateSystem()));
+    std::map<int, CARTA::RegionStyle> region_styles{{region_id, GetRegionStyle(CARTA::ANNULUS)}};
+    std::string filename;
+    bool overwrite(false);
+
+    CARTA::ExportRegionAck pixel_export_ack;
+    region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::PIXEL, region_styles, filename, overwrite, pixel_export_ack);
+    ASSERT_TRUE(pixel_export_ack.success()) << pixel_export_ack.message();
+    EXPECT_THAT(pixel_export_ack.contents().Get(1), testing::HasSubstr("annulus[[5.0000pix, 5.0000pix], [1.0000pix, 3.0000pix]]"));
+
+    std::vector<std::string> export_contents{pixel_export_ack.contents().begin(), pixel_export_ack.contents().end()};
+    const auto contents_string = ConcatContents(export_contents);
+    CARTA::ImportRegionAck import_ack;
+    region_handler.ImportRegion(0, frame, CARTA::CRTF, contents_string, false, import_ack);
+    ASSERT_EQ(import_ack.regions_size(), 1) << import_ack.message();
+    auto imported_info = import_ack.regions().begin()->second;
+    const auto imported_region_state = GetRegionState(0, imported_info);
+    const auto original_region_state = region_handler.GetRegion(region_id)->GetRegionState();
+    EXPECT_TRUE(RegionsEqual(imported_region_state, original_region_state));
+
+    CARTA::ExportRegionAck world_export_ack;
+    region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::WORLD, region_styles, filename, overwrite, world_export_ack);
+    ASSERT_TRUE(world_export_ack.success()) << world_export_ack.message();
+    EXPECT_THAT(world_export_ack.contents().Get(1), testing::HasSubstr("annulus"));
+
+    int elliptical_id(-1);
+    ASSERT_TRUE(SetRegion(region_handler, 0, elliptical_id, CARTA::ANNULUS, {5, 5, 3, 4, 1.5, 2}, 0, frame->CoordinateSystem()));
+    region_styles[elliptical_id] = GetRegionStyle(CARTA::ANNULUS);
+    CARTA::ExportRegionAck partial_ack;
+    region_handler.ExportRegion(0, frame, CARTA::CRTF, CARTA::PIXEL, region_styles, filename, overwrite, partial_ack);
+    EXPECT_TRUE(partial_ack.success());
+    EXPECT_EQ(partial_ack.contents_size(), pixel_export_ack.contents_size());
+    EXPECT_THAT(partial_ack.message(), testing::HasSubstr("Region 3: Ellipse annulus is not supported in CRTF."));
+}
+
+TEST_F(RegionImportExportTest, TestInvalidAnnulusAxesRejected) {
+    auto image_path = FitsImages() / "noise_10px_10px.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    int region_id(-1);
+    std::vector<float> invalid_annulus_points = {5.0, 5.0, 3.0, 4.0, 3.5, 2.0};
+    EXPECT_FALSE(SetRegion(region_handler, 0, region_id, CARTA::ANNULUS, invalid_annulus_points, 0.0, frame->CoordinateSystem()));
+
+    region_id = -1;
+    std::vector<float> different_shape_points = {5.0, 5.0, 10.0, 20.0, 5.0, 5.0};
+    EXPECT_FALSE(SetRegion(region_handler, 0, region_id, CARTA::ANNULUS, different_shape_points, 0.0, frame->CoordinateSystem()));
 }
