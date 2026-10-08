@@ -20,7 +20,6 @@ namespace carta {
 bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
     std::vector<casacore::Quantity>& axes) {
     // The restored first radius follows rotation, measured from the horizontal axis.
-    const double angle = rotation.get("rad").getValue();
     const auto x_scale = coord_sys.toWorldLength(1, 0);
     const auto y_scale = coord_sys.toWorldLength(1, 1);
     const double sx = x_scale.getValue();
@@ -32,33 +31,45 @@ bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double
         axes.push_back(casacore::Quantity(first * sx, x_scale.getUnit()));
         axes.push_back(casacore::Quantity(second * sy, x_scale.getUnit()));
     } else {
-        // Unequal pixel scales change both the principal radii and the angle of a rotated ellipse.
-        const double c = std::cos(angle), s = std::sin(angle);
-        const double xx = sx * sx * (first * first * c * c + second * second * s * s);
-        const double yy = sy * sy * (first * first * s * s + second * second * c * c);
-        const double xy = sx * sy * (first * first - second * second) * s * c;
-        const double difference = std::hypot(xx - yy, 2 * xy);
-        const bool circular = difference <= 1e-12 * (xx + yy);
-        const double axis_difference = circular ? 0 : difference;
-        axes.push_back(casacore::Quantity(std::sqrt((xx + yy + axis_difference) / 2), x_scale.getUnit()));
-        axes.push_back(casacore::Quantity(std::sqrt(std::max(0.0, (xx + yy - axis_difference) / 2)), x_scale.getUnit()));
-        rotation = casacore::Quantity(circular ? 0 : std::atan2(2 * xy, xx - yy) / 2, "rad");
-        rotation.convert("deg");
+        double major, minor, major_angle;
+        if (!TransformEllipseAxes(first, second, rotation.get("deg").getValue(), sx, sy, major, minor, major_angle)) {
+            return false;
+        }
+        axes.push_back(casacore::Quantity(major, x_scale.getUnit()));
+        axes.push_back(casacore::Quantity(minor, x_scale.getUnit()));
+        rotation = casacore::Quantity(major_angle, "deg");
     }
     return true;
 }
 
 bool TransformEllipseAxes(double first, double second, double angle_degrees, double scale_x, double scale_y, double& major, double& minor,
     double& major_angle_degrees) {
-    if (first <= 0 || second <= 0 || scale_x == 0 || scale_y == 0) {
+    casacore::Matrix<casacore::Double> transform(2, 2, 0.0);
+    transform(0, 0) = scale_x;
+    transform(1, 1) = scale_y;
+    return TransformEllipseAxes(first, second, angle_degrees, transform, major, minor, major_angle_degrees);
+}
+
+bool TransformEllipseAxes(double first, double second, double angle_degrees, const casacore::Matrix<casacore::Double>& transform,
+    double& major, double& minor, double& major_angle_degrees) {
+    if (first <= 0 || second <= 0 || transform.nrow() != 2 || transform.ncolumn() != 2) {
         return false;
     }
 
     const double angle = angle_degrees * M_PI / 180.0;
     const double c = std::cos(angle), s = std::sin(angle);
-    const double xx = scale_x * scale_x * (first * first * c * c + second * second * s * s);
-    const double yy = scale_y * scale_y * (first * first * s * s + second * second * c * c);
-    const double xy = scale_x * scale_y * (first * first - second * second) * s * c;
+    const double major_x = first * c, major_y = first * s;
+    const double minor_x = -second * s, minor_y = second * c;
+    const double transformed_major_x = transform(0, 0) * major_x + transform(0, 1) * major_y;
+    const double transformed_major_y = transform(1, 0) * major_x + transform(1, 1) * major_y;
+    const double transformed_minor_x = transform(0, 0) * minor_x + transform(0, 1) * minor_y;
+    const double transformed_minor_y = transform(1, 0) * minor_x + transform(1, 1) * minor_y;
+    const double xx = transformed_major_x * transformed_major_x + transformed_minor_x * transformed_minor_x;
+    const double yy = transformed_major_y * transformed_major_y + transformed_minor_y * transformed_minor_y;
+    const double xy = transformed_major_x * transformed_major_y + transformed_minor_x * transformed_minor_y;
+    if (!std::isfinite(xx + yy + xy) || xx + yy <= 0) {
+        return false;
+    }
     const double difference = std::hypot(xx - yy, 2 * xy);
     const bool circular = difference <= 1e-12 * (xx + yy);
     major = std::sqrt((xx + yy + (circular ? 0 : difference)) / 2);

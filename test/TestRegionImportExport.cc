@@ -7,6 +7,7 @@
 #include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <set>
 
 #include <carta-protobuf/enums.pb.h>
 
@@ -101,6 +102,59 @@ TEST(AnnulusExportTest, MatchedPixelRoundtripPreservesCenter) {
             EXPECT_NEAR(roundtrip[0].state.control_points[0].y(), center, 1e-4);
         }
     }
+}
+
+TEST(AnnulusExportTest, MatchedRotationPreservesGeometry) {
+    auto source = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto increments = source->increment();
+    increments(0) *= 2;
+    ASSERT_TRUE(source->setIncrement(increments));
+    auto reference = source->referencePixel();
+    reference(0) = reference(1) = 20;
+    ASSERT_TRUE(source->setReferencePixel(reference));
+    auto target = std::make_shared<casacore::CoordinateSystem>(*source);
+    casacore::Matrix<casacore::Double> rotation(2, 2, 0.0);
+    rotation(0, 1) = -1;
+    rotation(1, 0) = 1;
+    ASSERT_TRUE(target->setLinearTransform(rotation));
+
+    const casacore::IPosition shape(2, 40, 40);
+    auto region = std::make_shared<Region>(
+        RegionState(0, CARTA::ANNULUS, {Message::Point(20, 20), Message::Point(3, 7), Message::Point(1.5, 3.5)}, 30), source);
+    Ds9Exporter exporter(target, shape, true);
+    RegionExporter& region_exporter = exporter;
+    ASSERT_TRUE(region_exporter.AddRegion(1, region, CARTA::RegionStyle(), true));
+    std::string error, contents;
+    CARTA::ExportRegionAck ack;
+    region_exporter.ExportRegions("", error, ack);
+    ASSERT_TRUE(ack.success()) << error;
+    for (const auto& line : ack.contents()) {
+        contents += line;
+    }
+    Ds9Importer importer(target, 1, contents, false);
+    auto imported = importer.GetRegions(error);
+    ASSERT_EQ(imported.size(), 1) << error;
+    SCOPED_TRACE(contents);
+
+    auto matched = region->GetLCRegion(1, target, shape);
+    Region restored(imported[0].state, target);
+    auto roundtrip = restored.GetLCRegion(0, target, shape);
+    ASSERT_TRUE(matched);
+    ASSERT_TRUE(roundtrip);
+    auto selected_pixels = [](Region& current, int file_id, const std::shared_ptr<casacore::LCRegion>& lc) {
+        std::set<std::pair<int, int>> pixels;
+        auto mask = current.GetImageRegionMask(file_id);
+        const auto start = lc->boundingBox().start();
+        for (int y = 0; y < mask.shape()(1); ++y) {
+            for (int x = 0; x < mask.shape()(0); ++x) {
+                if (mask.getAt(casacore::IPosition(2, x, y))) {
+                    pixels.emplace(x + start(0), y + start(1));
+                }
+            }
+        }
+        return pixels;
+    };
+    EXPECT_EQ(selected_pixels(*region, 1, matched), selected_pixels(restored, 0, roundtrip)) << contents;
 }
 
 class RegionImportExportTest : public ::testing::Test {

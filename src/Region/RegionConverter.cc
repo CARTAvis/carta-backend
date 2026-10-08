@@ -389,6 +389,15 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
         if (x_scale.isConform(y_scale.getUnit()) && !casacore::near(x_scale.getValue(), y_scale.get(x_scale.getUnit()).getValue())) {
             return true; // Transform the ellipse vertices instead of mixing pixel axes and sky axes.
         }
+        casacore::Vector<casacore::Double> center;
+        casacore::Matrix<casacore::Double> transform;
+        if (!GetAnnulusPixelTransform(output_csys, center, transform)) {
+            return true;
+        }
+        const double tolerance = 1e-4 * std::max({std::abs(transform(0, 0)), std::abs(transform(1, 1)), 1.0});
+        if (std::abs(transform(0, 1)) > tolerance || std::abs(transform(1, 0)) > tolerance || transform(0, 0) < 0 || transform(1, 1) < 0) {
+            return true; // Direct world ellipses do not retain relative rotation or reflection.
+        }
     }
     if ((region_type != CARTA::RegionType::ELLIPSE) && (region_type != CARTA::RegionType::RECTANGLE) &&
         (region_type != CARTA::RegionType::ANNULUS)) {
@@ -1048,33 +1057,16 @@ casacore::TableRecord RegionConverter::GetAnnulusRecord(std::shared_ptr<casacore
     }
 
     try {
-        std::vector<casacore::Quantity> center_world;
-        if (!CartaPointToWorld(_region_state.control_points[0], center_world)) {
-            return record;
-        }
         casacore::Vector<casacore::Double> center_pixel;
-        if (!WorldPointToImagePixels(center_world, output_csys, center_pixel)) {
+        casacore::Matrix<casacore::Double> transform;
+        if (!GetAnnulusPixelTransform(output_csys, center_pixel, transform)) {
             return record;
         }
-
-        casacore::Quantity source_x_scale = _reference_coord_sys->toWorldLength(1, 0);
-        casacore::Quantity source_y_scale = _reference_coord_sys->toWorldLength(1, 1);
-        casacore::Quantity target_x_scale = output_csys->toWorldLength(1, 0);
-        casacore::Quantity target_y_scale = output_csys->toWorldLength(1, 1);
-        if (!source_x_scale.isConform(target_x_scale.getUnit()) || !source_y_scale.isConform(target_x_scale.getUnit()) ||
-            !target_y_scale.isConform(target_x_scale.getUnit())) {
-            return record;
-        }
-        source_x_scale.convert(target_x_scale.getUnit());
-        source_y_scale.convert(target_x_scale.getUnit());
-        target_y_scale.convert(target_x_scale.getUnit());
-        const double scale_x = source_x_scale.getValue() / target_x_scale.getValue();
-        const double scale_y = source_y_scale.getValue() / target_y_scale.getValue();
 
         const auto make_ellipse_record = [&](const CARTA::Point& axes) {
             casacore::TableRecord ellipse;
             double major, minor, major_angle;
-            if (!TransformEllipseAxes(axes.x(), axes.y(), _region_state.rotation + 90.0, scale_x, scale_y, major, minor, major_angle)) {
+            if (!TransformEllipseAxes(axes.x(), axes.y(), _region_state.rotation + 90.0, transform, major, minor, major_angle)) {
                 return ellipse;
             }
             casacore::Vector<casacore::Float> radii(2), center(2);
@@ -1107,6 +1099,26 @@ casacore::TableRecord RegionConverter::GetAnnulusRecord(std::shared_ptr<casacore
         spdlog::error("Error converting annulus to image: {}", err.getMesg());
     }
     return record;
+}
+
+bool RegionConverter::GetAnnulusPixelTransform(std::shared_ptr<casacore::CoordinateSystem> output_csys,
+    casacore::Vector<casacore::Double>& center, casacore::Matrix<casacore::Double>& transform) {
+    const auto& source = _region_state.control_points[0];
+    const std::vector<CARTA::Point> points = {
+        source, Message::Point(source.x() + 1, source.y()), Message::Point(source.x(), source.y() + 1)};
+    casacore::Vector<casacore::Double> x, y;
+    if (!PointsToImagePixels(points, output_csys, x, y)) {
+        return false;
+    }
+    center.resize(2);
+    center(0) = x(0);
+    center(1) = y(0);
+    transform.resize(2, 2);
+    transform(0, 0) = x(1) - x(0);
+    transform(1, 0) = y(1) - y(0);
+    transform(0, 1) = x(2) - x(0);
+    transform(1, 1) = y(2) - y(0);
+    return true;
 }
 
 // *************************************************************************

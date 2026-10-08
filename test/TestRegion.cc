@@ -55,6 +55,42 @@ TEST(AnnulusMaskTest, RectangularPixelsPreserveMatchedGeometry) {
     }
 }
 
+TEST(AnnulusMaskTest, MatchedRotationPreservesSelectedPixels) {
+    auto source = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto target = std::make_shared<casacore::CoordinateSystem>(*source);
+    auto reference = source->referencePixel();
+    reference(0) = reference(1) = 20;
+    ASSERT_TRUE(source->setReferencePixel(reference));
+    ASSERT_TRUE(target->setReferencePixel(reference));
+    casacore::Matrix<casacore::Double> rotation(2, 2, 0.0);
+    rotation(0, 1) = -1;
+    rotation(1, 0) = 1;
+    ASSERT_TRUE(target->setLinearTransform(rotation));
+
+    const casacore::IPosition shape(2, 40, 40);
+    Region region(RegionState(0, CARTA::ANNULUS, {Message::Point(20, 20), Message::Point(3, 7), Message::Point(1.5, 3.5)}, 30), source);
+    std::set<std::pair<int, int>> source_pixels, target_pixels;
+    for (int file_id : {0, 1}) {
+        auto lc = region.GetLCRegion(file_id, file_id == 0 ? source : target, shape);
+        ASSERT_TRUE(lc);
+        auto mask = region.GetImageRegionMask(file_id);
+        const auto start = lc->boundingBox().start();
+        for (int y = 0; y < mask.shape()(1); ++y) {
+            for (int x = 0; x < mask.shape()(0); ++x) {
+                if (mask.getAt(casacore::IPosition(2, x, y))) {
+                    const int px = x + start(0), py = y + start(1);
+                    if (file_id == 0) {
+                        source_pixels.emplace(py, 40 - px);
+                    } else {
+                        target_pixels.emplace(px, py);
+                    }
+                }
+            }
+        }
+    }
+    EXPECT_EQ(target_pixels, source_pixels);
+}
+
 TEST(AnnulusMaskTest, ReferenceAndMatchedMasksExcludeTheHole) {
     auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords3D());
     const casacore::IPosition shape(3, 20, 20, 10);

@@ -42,6 +42,10 @@ bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double
 bool TransformEllipseAxes(double first, double second, double angle_degrees, double scale_x, double scale_y, double& major, double& minor,
     double& major_angle_degrees);
 
+/** @brief Transform ellipse radii by a complete two-dimensional pixel transform. */
+bool TransformEllipseAxes(double first, double second, double angle_degrees, const casacore::Matrix<casacore::Double>& transform,
+    double& major, double& minor, double& major_angle_degrees);
+
 /** @brief Check whether two positive region radii describe a circle. */
 bool IsApproximatelyCircular(double radius_x, double radius_y);
 
