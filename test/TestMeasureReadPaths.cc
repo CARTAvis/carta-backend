@@ -13,12 +13,13 @@
 // run opens the image first and reports that too, as op "open". Linux only: the peak is VmHWM, reset
 // before each step through /proc/self/clear_refs.
 //
-// Ops: open, channels, cursor_spectrum, region_spectrum, image_histogram, cube_histogram_exact,
-// cube_histogram_binned, cube_histogram_sampled, moment.
+// Ops: open, channels, animation, animation_no_read_ahead, cursor_spectrum, region_spectrum,
+// image_histogram, cube_histogram_exact, cube_histogram_binned, cube_histogram_sampled, moment.
 //
-// Optional: CARTA_MEASURE_CHANNELS (channel changes for "channels", 8), CARTA_MEASURE_REGION_FRACTION
-// (share of the plane a region box covers, 0.05), CARTA_MEASURE_CACHE_MB (the Zarr chunk cache, the
-// server's default otherwise).
+// Optional: CARTA_MEASURE_CHANNELS (channel changes for "channels", 8), CARTA_MEASURE_FRAMES and
+// CARTA_MEASURE_FRAME_RATE (frames an animation plays, 32, and how many a second, 5),
+// CARTA_MEASURE_REGION_FRACTION (share of the plane a region box covers, 0.05), CARTA_MEASURE_CACHE_MB
+// (the Zarr chunk cache, the server's default otherwise).
 
 #include <gtest/gtest.h>
 #include <omp.h>
@@ -34,6 +35,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -44,6 +46,7 @@
 #include "Main/ProgramSettings.h"
 #include "Region/Region.h"
 #include "Region/RegionHandler.h"
+#include "Session/AnimationReadAhead.h"
 #include "Session/Session.h"
 #include "Util/Message.h"
 
@@ -173,6 +176,59 @@ bool RunCubeHistogram(const std::string& method, const std::shared_ptr<Frame>& f
     return session.FinishedHistogram();
 }
 
+// Plays `frames` channels forward from the current one at `rate` a second, as Session's animation
+// does: each frame reads its plane and then -- with `read_ahead` -- tells reading ahead what it showed
+// and what is to come, so the next run of chunks is decoded while the next frame waits a whole frame
+// interval from the end of this one, as Session::ExecuteAnimationFrame waits from _t_last. Prints how
+// long the frames' reads took and how many were late, beside the step's own line.
+//
+// Session times a frame over all its work -- the plane, and then histograms, profiles and tiles -- and
+// this over the plane alone, so a frame late only for that other work is on time here: what this
+// measures is the read, and reading ahead is told about the read.
+bool RunAnimation(const std::string& file, const std::shared_ptr<Frame>& frame, int frames, double rate, bool read_ahead) {
+    std::unique_ptr<AnimationReadAhead> reading;
+    if (read_ahead) {
+        reading = AnimationReadAhead::For({{0, frame->ReadAhead()}});
+    }
+    const int depth = static_cast<int>(frame->Depth());
+    const auto interval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(1.0 / rate));
+    auto next = std::chrono::steady_clock::now();
+    if (frames < 1 || !(rate > 0)) {
+        return false;
+    }
+    std::vector<double> reads;
+    int late = 0;
+    for (int i = 1; i <= frames; ++i) {
+        std::this_thread::sleep_until(next);
+        const int z = (static_cast<int>(frame->CurrentZ()) + 1) % depth;
+        const auto began = std::chrono::steady_clock::now();
+        std::string message;
+        if (!frame->SetImageChannels(z, 0, message)) {
+            return false;
+        }
+        const auto took = std::chrono::steady_clock::now() - began;
+        reads.push_back(std::chrono::duration<double, std::milli>(took).count());
+        late += took > interval;
+        if (reading) {
+            std::vector<std::vector<AnimatedPlane>> upcoming;
+            for (int ahead = 1; ahead <= AnimationReadAhead::UPCOMING_FRAMES && i + ahead <= frames; ++ahead) {
+                upcoming.push_back({AnimatedPlane{0, (z + ahead) % depth, 0}});
+            }
+            reading->Served(began, took > interval, {AnimatedPlane{0, z, 0}}, upcoming);
+        }
+        next = std::chrono::steady_clock::now() + interval;
+    }
+    std::sort(reads.begin(), reads.end());
+    double total = 0;
+    for (const double ms : reads) {
+        total += ms;
+    }
+    std::printf("measure: file=%s op=animation_frames read_ahead=%d frames=%d late=%d mean_ms=%.1f median_ms=%.1f max_ms=%.1f\n",
+        std::filesystem::path(file).filename().c_str(), reading ? 1 : 0, frames, late, total / reads.size(), reads[reads.size() / 2],
+        reads.back());
+    return true;
+}
+
 } // namespace
 
 TEST(MeasureReadPaths, One) {
@@ -211,6 +267,17 @@ TEST(MeasureReadPaths, One) {
             }
             return true;
         });
+    } else if (op == "animation" || op == "animation_no_read_ahead") {
+        const std::string frames_env = FromEnv("CARTA_MEASURE_FRAMES");
+        const std::string rate_env = FromEnv("CARTA_MEASURE_FRAME_RATE");
+        const int frames = std::min(depth - 1, frames_env.empty() ? 32 : std::stoi(frames_env));
+        const double rate = rate_env.empty() ? 5.0 : std::stod(rate_env);
+        if (depth < 2) {
+            GTEST_SKIP() << "an image of one channel has nothing to animate";
+        }
+        ASSERT_GT(frames, 0) << "CARTA_MEASURE_FRAMES must be positive";
+        ASSERT_GT(rate, 0) << "CARTA_MEASURE_FRAME_RATE must be positive";
+        MeasureStep(file, op, [&] { return RunAnimation(file, frame, frames, rate, op == "animation"); });
     } else if (op == "cursor_spectrum") {
         MeasureStep(file, op, [&] {
             frame->SetCursor(frame->Width() / 2.0f, frame->Height() / 2.0f);
