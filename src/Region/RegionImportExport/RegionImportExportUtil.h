@@ -38,6 +38,10 @@ std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::Fil
 bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
     std::vector<casacore::Quantity>& axes);
 
+/** @brief Transform ellipse radii by axis-aligned scales and return principal radii and angle. */
+bool TransformEllipseAxes(double first, double second, double angle_degrees, double scale_x, double scale_y, double& major, double& minor,
+    double& major_angle_degrees);
+
 /** @brief Check whether two positive region radii describe a circle. */
 bool IsApproximatelyCircular(double radius_x, double radius_y);
 

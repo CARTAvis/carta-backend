@@ -48,6 +48,25 @@ bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double
     return true;
 }
 
+bool TransformEllipseAxes(double first, double second, double angle_degrees, double scale_x, double scale_y, double& major, double& minor,
+    double& major_angle_degrees) {
+    if (first <= 0 || second <= 0 || scale_x == 0 || scale_y == 0) {
+        return false;
+    }
+
+    const double angle = angle_degrees * M_PI / 180.0;
+    const double c = std::cos(angle), s = std::sin(angle);
+    const double xx = scale_x * scale_x * (first * first * c * c + second * second * s * s);
+    const double yy = scale_y * scale_y * (first * first * s * s + second * second * c * c);
+    const double xy = scale_x * scale_y * (first * first - second * second) * s * c;
+    const double difference = std::hypot(xx - yy, 2 * xy);
+    const bool circular = difference <= 1e-12 * (xx + yy);
+    major = std::sqrt((xx + yy + (circular ? 0 : difference)) / 2);
+    minor = std::sqrt(std::max(0.0, (xx + yy - (circular ? 0 : difference)) / 2));
+    major_angle_degrees = circular ? 0 : std::atan2(2 * xy, xx - yy) * 90.0 / M_PI;
+    return true;
+}
+
 bool IsApproximatelyCircular(double radius_x, double radius_y) {
     return std::isfinite(radius_x) && std::isfinite(radius_y) && radius_x > 0.0 && radius_y > 0.0 &&
            std::abs(radius_x - radius_y) <= 1e-6 * std::max(std::abs(radius_x), std::abs(radius_y));
