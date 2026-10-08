@@ -21,10 +21,7 @@ struct ContourTestParams {
 class ContourTest : public ::testing::TestWithParam<ContourTestParams> {
 public:
     struct ContourMetadata {
-        std::vector<int32_t> indices;
-        std::vector<int32_t> levels;
-        int32_t decimation_factor;
-        int32_t uncompressed_coordinates_size;
+        uint32_t num_levels;
 
         ContourMetadata(const std::string& file_path) {
             std::ifstream file(file_path, std::ios::binary);
@@ -32,37 +29,19 @@ public:
                 throw std::runtime_error("Could not open top metadata file at: " + file_path);
             }
 
+            // Read number of levels (uint32_t, '<I')
             int32_t num_levels = 0;
             if (!file.read(reinterpret_cast<char*>(&num_levels), sizeof(num_levels))) {
-                throw std::runtime_error("Failed to read number of levels from: " + file_path);
-            }
-
-            if (num_levels < 0) {
-                throw std::runtime_error("Invalid negative level count in metadata: " + std::to_string(num_levels));
-            }
-
-            indices.resize(num_levels);
-            levels.resize(num_levels);
-            if (num_levels > 0) {
-                if (!file.read(reinterpret_cast<char*>(indices.data()), num_levels * sizeof(int32_t))) {
-                    throw std::runtime_error("Failed to read contour indices array from: " + file_path);
-                }
-                if (!file.read(reinterpret_cast<char*>(levels.data()), num_levels * sizeof(int32_t))) {
-                    throw std::runtime_error("Failed to read level values array from: " + file_path);
-                }
-            }
-
-            if (!file.read(reinterpret_cast<char*>(&decimation_factor), sizeof(decimation_factor)) ||
-                !file.read(reinterpret_cast<char*>(&uncompressed_coordinates_size), sizeof(uncompressed_coordinates_size))) {
-                throw std::runtime_error("Failed to read contour metadata trailer from: " + file_path);
+                throw std::runtime_error("Failed to read number of contours from: " + file_path);
             }
         }
     };
 
     struct LevelMetadata {
-        int32_t level;
-        uint32_t num_contours;
-        std::vector<uint64_t> indices;
+        float level;
+        uint32_t num_points;
+        uint32_t num_indices;
+        std::vector<uint32_t> indices;
 
         LevelMetadata(const std::string& file_path) {
             std::ifstream file(file_path, std::ios::binary);
@@ -70,31 +49,23 @@ public:
                 throw std::runtime_error("Could not open contour metadata file at: " + file_path);
             }
 
-            // Read contour level (int32_t, '<i')
-            if (!file.read(reinterpret_cast<char*>(&level), sizeof(level))) {
-                throw std::runtime_error("Failed to read contour level from: " + file_path);
-            }
-
-            // Read number of contour boundaries (uint32_t, '<I')
-            if (!file.read(reinterpret_cast<char*>(&num_contours), sizeof(num_contours))) {
-                throw std::runtime_error("Failed to read number of contours from: " + file_path);
-            }
-
-            // Read each index boundary (uint64_t, '<Q') for num_contours elements
-            indices.resize(num_contours);
-            if (num_contours > 0) {
-                if (!file.read(reinterpret_cast<char*>(indices.data()), num_contours * sizeof(uint64_t))) {
-                    throw std::runtime_error("Failed to read contour index boundaries from: " + file_path);
-                }
-            }
+            // Read level (int32_t, '<f')
+            file.read(reinterpret_cast<char*>(&level), sizeof(level));
+            // Read number of points (uint32_t, '<I')
+            file.read(reinterpret_cast<char*>(&num_points), sizeof(num_points));
+            // Read number of indices (uint32_t, '<I')
+            file.read(reinterpret_cast<char*>(&num_indices), sizeof(num_indices));
+            // Read raw_start_indices
+            indices.resize(num_indices);
+            file.read(reinterpret_cast<char*>(indices.data()), num_indices * sizeof(uint32_t));
         }
     };
 
     struct Point {
-        double x;
-        double y;
+        float x;
+        float y;
 
-        Point(double x_val, double y_val) : x(x_val), y(y_val) {}
+        Point(float x_val, float y_val) : x(x_val), y(y_val) {}
     };
 
     static std::vector<Point> ToPoints(const std::vector<float>& values) {
@@ -132,7 +103,7 @@ public:
         std::vector<Point> coordinates;
         coordinates.reserve(num_floats / 2);
         for (size_t i = 0; i < num_floats; i += 2) {
-            coordinates.emplace_back(static_cast<double>(values[i]), static_cast<double>(values[i + 1]));
+            coordinates.emplace_back(Point(static_cast<float>(values[i]), static_cast<float>(values[i + 1])));
         }
         return coordinates;
     }
@@ -144,11 +115,10 @@ protected:
 TEST_P(ContourTest, VerifyVertices) {
     const auto& params = GetParam();
 
-    // get levels from top metadata file
     std::string stem = params.contour_dir.stem().string();
     fs::path contour_meta_file = params.contour_dir / (stem + "_metadata.bin");
     ContourMetadata contour_metadata(contour_meta_file.string());
-    const std::vector<int32_t>& levels = contour_metadata.levels;
+    const uint32_t& num_levels = contour_metadata.num_levels;
 
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(params.image_file));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
@@ -161,56 +131,51 @@ TEST_P(ContourTest, VerifyVertices) {
     bounds->set_x_max(frame->Width());
     bounds->set_y_min(0);
     bounds->set_y_max(frame->Height());
-    *set_contour_params.mutable_levels() = {levels.begin(), levels.end()};
     set_contour_params.set_smoothing_mode(params.mode);
     set_contour_params.set_smoothing_factor(4);
-    set_contour_params.set_decimation_factor(contour_metadata.decimation_factor);
+    set_contour_params.set_decimation_factor(4);
     set_contour_params.set_compression_level(8);
     set_contour_params.set_contour_chunk_size(100000);
 
     EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
 
-    std::unordered_map<double, std::vector<float>> generated_vertices;
-    for (auto level : levels) {
-        generated_vertices[level] = {};
-    }
-
-    auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
-        std::unique_lock<std::mutex> lock(_callback_mutex);
-        if (generated_vertices.count(level)) {
-            generated_vertices[level].insert(generated_vertices[level].end(), vertices.begin(), vertices.end());
-        }
-    };
-
-    {
-        carta::Timer t_contour;
-        EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
-    }
-
-    // load contour vertices by level
-    for (size_t level_position = 0; level_position < levels.size(); ++level_position) {
-        int32_t level = levels[level_position];
-        int32_t index = contour_metadata.indices[level_position];
+    // generate and load contour vertices by level
+    for (size_t level_position = 0; level_position < num_levels; ++level_position) {
 
         // get level metadata
-        fs::path index_dir = params.contour_dir / std::to_string(index);
-        fs::path meta_file = index_dir / (std::to_string(index) + "_metadata.bin");
+        fs::path index_dir = params.contour_dir / std::to_string(level_position);
+        fs::path meta_file = index_dir / (std::to_string(level_position) + "_metadata.bin");
         LevelMetadata level_metadata(meta_file.string());
 
         // get expected coordinates
-        fs::path data_file = index_dir / (std::to_string(index) + "_data.bin");
+        fs::path data_file = index_dir / (std::to_string(level_position) + "_data.bin");
         auto expected = ReadContourData(data_file.string());
 
+        std::vector<float> generated_vertices;
+
+        set_contour_params.clear_levels();
+        set_contour_params.add_levels(level_metadata.level);
+
+        EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
+
+        auto callback = [&](double cb_level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
+            std::unique_lock<std::mutex> lock(_callback_mutex);
+            if (cb_level == level_position) {
+                generated_vertices.insert(generated_vertices.end(), vertices.begin(), vertices.end());
+            }
+        };
+
+        EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
+
         // format generated vertices into (x,y) pairs
-        const auto& gen_verts = generated_vertices[level];
-        auto gen_coords = ToPoints(gen_verts);
+        auto gen_coords = ToPoints(generated_vertices);
 
-        EXPECT_EQ(expected.size(), gen_coords.size()) << "Vertex count mismatch for level " << level;
+        EXPECT_EQ(expected.size(), gen_coords.size()) << "Vertex count mismatch for level " << level_metadata.level;
 
-        const double tolerance = 0.13; // Allow small floating-point differences
+        const double tolerance = 0.1; // Allow small floating-point differences
         for (size_t i = 0; i < std::min(expected.size(), gen_coords.size()); ++i) {
-            EXPECT_NEAR(expected[i].x, gen_coords[i].x, tolerance) << "X coordinate mismatch at vertex " << i << " for level " << level;
-            EXPECT_NEAR((expected[i].y), gen_coords[i].y, tolerance) << "Y coordinate mismatch at vertex " << i << " for level " << level;
+            EXPECT_NEAR(expected[i].x, gen_coords[i].x, tolerance) << "X coordinate mismatch at vertex " << i << " for level " << level_metadata.level;
+            EXPECT_NEAR((expected[i].y), gen_coords[i].y, tolerance) << "Y coordinate mismatch at vertex " << i << " for level " << level_metadata.level;
         }
     }
 }
