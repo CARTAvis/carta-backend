@@ -65,6 +65,7 @@ protected:
      * @brief Add file line for region in pixel coordinates
      * @param region_state Region definition parameters
      * @param region_style Region style parameters
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether adding the region file line is successful
      */
     virtual bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) = 0;
@@ -75,6 +76,7 @@ protected:
      * @param control_points Region control points in world coordinates
      * @param rotation Region rotation
      * @param region_style Region style parameters
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether adding the region file line is successful
      */
     virtual bool AddRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
@@ -102,6 +104,7 @@ protected:
      * @param region_style Region style parameters
      * @param region_record casacore Record created from LCRegion applied to image
      * @param export_pixels Whether to export region in pixel or world coordinates
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether region is exported successfully
      */
     bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, const casacore::RecordInterface& region_record,

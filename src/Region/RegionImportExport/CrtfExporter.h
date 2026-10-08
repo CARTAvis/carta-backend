@@ -34,6 +34,7 @@ protected:
      * @brief Add file line for region in pixel coordinates
      * @param region_state Region definition parameters
      * @param region_style Region style parameters
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether adding the region file line is successful
      */
     bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) override;
@@ -44,6 +45,7 @@ protected:
      * @param control_points Region control points in world coordinates
      * @param rotation Region rotation
      * @param region_style Region style parameters
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether adding the region file line is successful
      */
     bool AddRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation,
@@ -74,6 +76,7 @@ private:
      * @param[in] region_style Region style parameters
      * @param[out] ann_base Pointer to return new AnnotationBase region
      * @param[out] ann_region Pointer to return new AnnRegion region
+     * @param[out] error Message describing why the region could not be created
      * @return Whether the region was created
      */
     bool GetAnnRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
