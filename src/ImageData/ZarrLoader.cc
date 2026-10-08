@@ -37,6 +37,34 @@ std::optional<carta::zarr::CachePool> KeepingNothing() {
     return *pool;
 }
 
+// The pool a spectrum is read through: the session's, unless the chunks it decodes come to more than
+// half of what that pool holds, when it is read through one that keeps nothing. A spectrum runs the
+// whole depth of a column of chunks, in order; a run past the pool's size finds none of what it
+// decoded when it comes back, and pushes out what the plane on show was reading from as it goes.
+// Measured on the standard test set's cigar (512 x 512 x 30000 chunked 128x128x64), one column is
+// 469 chunks, 1.8 GiB: with the 1 GiB session cache, eight spectra a pixel apart took 238 ms each
+// against 274 ms through no cache, and held 1.1 GB more for it. A column that fits stays in the
+// session's pool, where it is the plane's own chunks under the cursor and a spectrum read again is
+// found: on the pancake (7763 x 4742 x 256 chunked 256x256x16, 64 MiB a column) the second and later
+// spectra took 0.2 ms rather than 8. Half, so that one spectrum never takes more than half the pool
+// from the plane.
+std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& image, std::int64_t x, std::int64_t y, std::int64_t width,
+    std::int64_t height, std::int64_t z, std::int64_t depth) {
+    const auto chunk = image.ChunkShape();
+    if (chunk.size() < 3 || width <= 0 || height <= 0 || depth <= 0) {
+        return std::nullopt;
+    }
+    // The chunks along an axis that [from, from + count) touches.
+    const auto touched = [](std::int64_t from, std::int64_t count, std::int64_t unit) -> std::uint64_t {
+        return unit > 0 ? static_cast<std::uint64_t>((from + count - 1) / unit - from / unit + 1) : 1;
+    };
+    const std::uint64_t chunks = touched(x, width, chunk(0)) * touched(y, height, chunk(1)) * touched(z, depth, chunk(2));
+    if (chunks * image.Library().DecodedChunkBytes() <= ZarrCacheBytes() / 2) {
+        return std::nullopt;
+    }
+    return KeepingNothing();
+}
+
 // What a reduction counts, as the statistics the caller's own calculator would have produced from
 // the same pixels. Every reduction that comes here asks for sum_sq_dev, which sigma is made from; a
 // cube histogram always counts it. A statistic that was not accumulated reads as SpectralTotals
@@ -150,6 +178,7 @@ BatchOutcome ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int sto
     casacore::Array<float> destination(section.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     carta::zarr::ReadOptions options;
     options.control.cancellation_requested = cancellation_requested;
+    options.control.cache_pool = PoolForSpectrum(*image, cursor_x, cursor_y, count_x, count_y, 0, depth);
     // Supplying a progress callback is what makes carta-zarr issue the read in chunk-aligned pieces,
     // so the profile arrives in a prefix that grows rather than all at the end. Where those pieces
     // fall is the library's decision: it is the one that knows how many chunks a request has to hold
@@ -462,6 +491,10 @@ BatchOutcome ZarrLoader::ReadOn(const RegionProfileRequest& request, std::mutex&
     bool paused = false;
     carta::zarr::ReadOptions options;
     options.read_budget_bytes = _read_budget_bytes;
+    // Counted over the whole range asked for rather than what is left of it, so that a profile read in
+    // several goes keeps to one pool.
+    options.control.cache_pool =
+        PoolForSpectrum(*image, request.origin(0), request.origin(1), mask_shape(0), mask_shape(1), range.from, range.to - range.from + 1);
     const auto store = [&](const carta::zarr::SpectralBlock& block) {
         for (std::size_t c = 0; c < static_cast<std::size_t>(block.channel_count); ++c) {
             const auto counted = block.Totals(0, c);

@@ -9,6 +9,7 @@
 
 #include <carta-zarr/carta_zarr.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -22,6 +23,10 @@ void ConfigureZarrContext(
 // Returns the context configured at startup. A Context is already a shared handle, so this is a
 // copy of the one handle rather than a pointer to it.
 carta::zarr::Context GetZarrContext();
+
+// The bytes the shared context's cache holds, as ConfigureZarrContext was told: 0 for one that holds
+// nothing, and before it is called, when the context has TensorStore's default, which holds nothing too.
+std::size_t ZarrCacheBytes();
 
 }  // namespace carta
 

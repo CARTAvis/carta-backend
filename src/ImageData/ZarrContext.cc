@@ -31,6 +31,11 @@ std::optional<carta::zarr::Context>& SharedContext() {
     return context;
 }
 
+std::size_t& CacheBytes() {
+    static std::size_t bytes = 0;
+    return bytes;
+}
+
 carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options) {
     auto context_result = carta::zarr::Context::Create(options);
     if (context_result) {
@@ -64,6 +69,7 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, in
     auto context = CreateContext(options);
     std::scoped_lock lock(ContextMutex());
     SharedContext() = std::move(context);
+    CacheBytes() = options.cache_bytes.value_or(0);
 
     const std::string file_io_threads = file_io_concurrency > 0 ? std::to_string(file_io_concurrency) : "default";
     const std::string cache_size_mib = cache_pool_mb > 0 ? std::to_string(cache_pool_mb) : "disabled";
@@ -77,6 +83,11 @@ carta::zarr::Context GetZarrContext() {
         SharedContext() = CreateContext({});
     }
     return *SharedContext();
+}
+
+std::size_t ZarrCacheBytes() {
+    std::scoped_lock lock(ContextMutex());
+    return CacheBytes();
 }
 
 }  // namespace carta
