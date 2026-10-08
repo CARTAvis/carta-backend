@@ -11,7 +11,7 @@
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 
-#include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/defs.pb.h>
 
 namespace carta {
 
@@ -36,7 +36,12 @@ std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::Fil
 
 /** @brief Convert pixel ellipse radii and their angle from the horizontal axis to world geometry. */
 bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
-    std::vector<casacore::Quantity>& axes);
+    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center = nullptr);
+
+/** @brief Convert world ellipse axes into pixel radii and CARTA rotation using the local WCS in the requested frame. */
+bool WorldEllipseAxesToPixels(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
+    const casacore::Quantity& first, const casacore::Quantity& second, double angle_degrees, const std::string& world_frame,
+    CARTA::Point& axes, double& rotation);
 
 /** @brief Transform ellipse radii by axis-aligned scales and return principal radii and angle. */
 bool TransformEllipseAxes(double first, double second, double angle_degrees, double scale_x, double scale_y, double& major, double& minor,

@@ -405,61 +405,34 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                 return region_state;
             }
 
-            if (region_name == "annulus") {
-                float r1_x = WorldToPixelLength(param_quantities[2], 0);
-                float r1_y = WorldToPixelLength(param_quantities[2], 1);
-                float r2_x = WorldToPixelLength(param_quantities[3], 0);
-                float r2_y = WorldToPixelLength(param_quantities[3], 1);
-                if (r1_x > r2_x) {
-                    control_points.push_back(Message::Point(r1_x, r1_y));
-                    control_points.push_back(Message::Point(r2_x, r2_y));
-                } else {
-                    control_points.push_back(Message::Point(r2_x, r2_y));
-                    control_points.push_back(Message::Point(r1_x, r1_y));
-                }
-            } else {
-                const casacore::Quantity x_scale = _coord_sys->toWorldLength(1, 0);
-                casacore::Quantity y_scale = _coord_sys->toWorldLength(1, 1);
-                if (!x_scale.isConform(y_scale.getUnit())) {
-                    _errors.append("Failed to convert elliptical annulus axes to image pixels.\n");
-                    return region_state;
-                }
-                y_scale.convert(x_scale.getUnit());
-                const double angle = nparam > 7 ? param_quantities[6].getValue() : 0.0;
-                const auto convert_axes = [&](size_t offset, CARTA::Point& axes, double* pixel_angle) {
-                    casacore::Quantity major = param_quantities[offset];
-                    casacore::Quantity minor = param_quantities[offset + 1];
-                    major.convert(x_scale.getUnit());
-                    minor.convert(x_scale.getUnit());
-                    double pixel_major, pixel_minor;
-                    double angle_in_pixels;
-                    if (!TransformEllipseAxes(major.getValue(), minor.getValue(), angle, 1.0 / x_scale.getValue(), 1.0 / y_scale.getValue(),
-                            pixel_major, pixel_minor, angle_in_pixels)) {
-                        return false;
-                    }
-                    axes = Message::Point(pixel_minor, pixel_major);
-                    if (pixel_angle) {
-                        *pixel_angle = angle_in_pixels;
-                    }
+            const bool circular = region_name == "annulus";
+            const double angle = nparam > 7 ? param_quantities[6].getValue() : 0.0;
+            const auto convert_axes = [&](size_t offset, CARTA::Point& axes, double& pixel_angle) {
+                const auto& first = param_quantities[offset];
+                const auto& second = circular ? first : param_quantities[offset + 1];
+                if (circular && first.getUnit() == "pix") {
+                    axes = Message::Point(first.getValue(), first.getValue());
+                    pixel_angle = 0;
                     return true;
-                };
-                CARTA::Point first_axes, second_axes;
-                double first_angle, second_angle;
-                if (!convert_axes(2, first_axes, &first_angle) || !convert_axes(4, second_axes, &second_angle)) {
-                    _errors.append("Failed to convert elliptical annulus axes to image pixels.\n");
-                    return region_state;
                 }
-                if (first_axes.x() > second_axes.x() && first_axes.y() > second_axes.y()) {
-                    control_points.push_back(first_axes);
-                    control_points.push_back(second_axes);
-                    converted_ellipse_rotation = first_angle;
-                } else {
-                    control_points.push_back(second_axes);
-                    control_points.push_back(first_axes);
-                    converted_ellipse_rotation = second_angle;
-                }
-                transformed_ellipse_rotation = true;
+                return WorldEllipseAxesToPixels(*_coord_sys, pixel_coords, first, second, angle, _file_coord_frame, axes, pixel_angle);
+            };
+            CARTA::Point first_axes, second_axes;
+            double first_angle, second_angle;
+            if (!convert_axes(2, first_axes, first_angle) || !convert_axes(circular ? 3 : 4, second_axes, second_angle)) {
+                _errors.append("Failed to convert annulus axes to image pixels.\n");
+                return region_state;
             }
+            if (first_axes.x() > second_axes.x() && first_axes.y() > second_axes.y()) {
+                control_points.push_back(first_axes);
+                control_points.push_back(second_axes);
+                converted_ellipse_rotation = first_angle;
+            } else {
+                control_points.push_back(second_axes);
+                control_points.push_back(first_axes);
+                converted_ellipse_rotation = second_angle;
+            }
+            transformed_ellipse_rotation = true;
         }
 
         // DS9 rounds axes independently. Snap small rounding errors to preserve the annulus shape invariant.

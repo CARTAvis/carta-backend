@@ -337,14 +337,18 @@ RegionState CrtfImporter::ImportAnnulus(std::vector<std::string>& parameters, st
             return region_state;
         }
 
-        const double inner_x = WorldToPixelLength(inner_radius, 0);
-        const double inner_y = WorldToPixelLength(inner_radius, 1);
-        const double outer_x = WorldToPixelLength(outer_radius, 0);
-        const double outer_y = WorldToPixelLength(outer_radius, 1);
-        std::vector<CARTA::Point> control_points{
-            Message::Point(pixel_center), Message::Point(outer_x, outer_y), Message::Point(inner_x, inner_y)};
-        // Lengths above are measured along x/y, while CARTA's unrotated first ellipse axis is vertical.
-        const float rotation = outer_x == outer_y ? 0.0f : 270.0f;
+        CARTA::Point outer, inner;
+        double rotation = 0, inner_rotation = 0;
+        if (inner_radius.getUnit() == "pix" && outer_radius.getUnit() == "pix") {
+            outer = Message::Point(outer_radius.getValue(), outer_radius.getValue());
+            inner = Message::Point(inner_radius.getValue(), inner_radius.getValue());
+        } else if (!WorldEllipseAxesToPixels(*_coord_sys, pixel_center, outer_radius, outer_radius, 0, coord_frame, outer, rotation) ||
+                   !WorldEllipseAxesToPixels(
+                       *_coord_sys, pixel_center, inner_radius, inner_radius, 0, coord_frame, inner, inner_rotation)) {
+            _errors.append("annulus axes conversion failed.\n");
+            return region_state;
+        }
+        std::vector<CARTA::Point> control_points{Message::Point(pixel_center), outer, inner};
         region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, rotation);
     } catch (const casacore::AipsError& err) {
         spdlog::error("annulus import error: {}", err.getMesg());

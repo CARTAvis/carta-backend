@@ -7,6 +7,7 @@
 #include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <cmath>
 #include <set>
 
 #include <carta-protobuf/enums.pb.h>
@@ -23,6 +24,103 @@
 
 using namespace carta;
 
+namespace {
+std::set<std::pair<int, int>> SelectedPixels(
+    Region& region, int file_id, std::shared_ptr<casacore::CoordinateSystem> csys, const casacore::IPosition& shape) {
+    std::set<std::pair<int, int>> pixels;
+    auto lc = region.GetLCRegion(file_id, csys, shape);
+    if (!lc) {
+        return pixels;
+    }
+    auto mask = region.GetImageRegionMask(file_id);
+    const auto start = lc->boundingBox().start();
+    for (int y = 0; y < mask.shape()(1); ++y) {
+        for (int x = 0; x < mask.shape()(0); ++x) {
+            if (mask.getAt(casacore::IPosition(2, x, y))) {
+                pixels.emplace(x + start(0), y + start(1));
+            }
+        }
+    }
+    return pixels;
+}
+} // namespace
+
+TEST(AnnulusExportTest, WorldGeometryPreservesRotationAndReflection) {
+    const casacore::IPosition shape(2, 40, 40);
+    for (bool rectangular : {false, true}) {
+        auto source = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+        auto increments = source->increment();
+        increments(0) *= rectangular ? 2 : 1;
+        ASSERT_TRUE(source->setIncrement(increments));
+        auto reference = source->referencePixel();
+        reference(0) = reference(1) = 20;
+        ASSERT_TRUE(source->setReferencePixel(reference));
+        for (bool mirrored : {false, true}) {
+            auto target = std::make_shared<casacore::CoordinateSystem>(*source);
+            casacore::Matrix<casacore::Double> transform(2, 2, 0.0);
+            if (mirrored) {
+                transform(0, 0) = -1;
+                transform(1, 1) = 1;
+            } else {
+                transform(0, 1) = -1;
+                transform(1, 0) = 1;
+            }
+            ASSERT_TRUE(target->setLinearTransform(transform));
+            auto region = std::make_shared<Region>(
+                RegionState(0, CARTA::ANNULUS, {Message::Point(20, 20), Message::Point(3, 7), Message::Point(1.5, 3.5)}, 30), source);
+            const auto expected = SelectedPixels(*region, 0, source, shape);
+            ASSERT_FALSE(expected.empty());
+            for (int file_id : {0, 1}) {
+                Ds9Exporter ds9(file_id == 0 ? source : target, shape, false);
+                RegionExporter& exporter = ds9;
+                std::string error, contents;
+                ASSERT_TRUE(exporter.AddRegion(file_id, region, CARTA::RegionStyle(), false, &error)) << error;
+                CARTA::ExportRegionAck ack;
+                exporter.ExportRegions("", error, ack);
+                ASSERT_TRUE(ack.success());
+                for (const auto& line : ack.contents()) {
+                    contents += line;
+                }
+                Ds9Importer importer(source, 0, contents, false);
+                auto imported = importer.GetRegions(error);
+                ASSERT_EQ(imported.size(), 1) << error;
+                Region restored(imported[0].state, source);
+                EXPECT_EQ(SelectedPixels(restored, 0, source, shape), expected) << contents;
+            }
+
+            for (const auto& contents : {std::string("fk5\nellipse(0,0,90\",210\",180\",420\",120)"),
+                     std::string("fk5\nannulus(0,0,120\",360\")"), std::string("annulus[[0deg,0deg],[120arcsec,360arcsec]] coord=J2000")}) {
+                const bool crtf = contents.front() != 'f';
+                Ds9Importer ds9_source(source, 0, crtf ? "" : contents, false), ds9_target(target, 1, crtf ? "" : contents, false);
+                CrtfImporter crtf_source(source, 0, crtf ? contents : "", false), crtf_target(target, 1, crtf ? contents : "", false);
+                RegionImporter& source_importer =
+                    crtf ? static_cast<RegionImporter&>(crtf_source) : static_cast<RegionImporter&>(ds9_source);
+                RegionImporter& target_importer =
+                    crtf ? static_cast<RegionImporter&>(crtf_target) : static_cast<RegionImporter&>(ds9_target);
+                std::string error;
+                auto original = source_importer.GetRegions(error), imported = target_importer.GetRegions(error);
+                ASSERT_EQ(original.size(), 1) << error;
+                ASSERT_EQ(imported.size(), 1) << error;
+                auto reference_region = std::make_shared<Region>(original[0].state, source);
+                Region target_region(imported[0].state, target);
+                const auto matched = SelectedPixels(*reference_region, 1, target, shape);
+                ASSERT_FALSE(matched.empty());
+                EXPECT_EQ(SelectedPixels(target_region, 1, target, shape), matched) << contents;
+                if (crtf) {
+                    CrtfExporter crtf_exporter(target, shape, -1);
+                    RegionExporter& exporter = crtf_exporter;
+                    CARTA::RegionStyle style;
+                    style.set_color("green");
+                    ASSERT_TRUE(exporter.AddRegion(1, reference_region, style, false, &error)) << error;
+                    CARTA::ExportRegionAck ack;
+                    exporter.ExportRegions("", error, ack);
+                    ASSERT_TRUE(ack.success()) << error;
+                }
+            }
+        }
+    }
+}
+
 TEST(AnnulusExportTest, WorldCircleWithRectangularPixels) {
     auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
     auto increments = csys->increment();
@@ -37,7 +135,7 @@ TEST(AnnulusExportTest, WorldCircleWithRectangularPixels) {
     auto original = source.GetRegions(error);
     ASSERT_EQ(original.size(), 1);
     auto region = std::make_shared<Region>(original[0].state, csys);
-    EXPECT_FLOAT_EQ(original[0].state.rotation, 270);
+    EXPECT_FLOAT_EQ(std::fmod(original[0].state.rotation, 180), 90);
     auto lc = region->GetLCRegion(0, csys, shape);
     ASSERT_TRUE(lc);
     EXPECT_EQ(lc->boundingBox().length(), casacore::IPosition(2, 7, 13));

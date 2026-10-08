@@ -272,13 +272,7 @@ bool RegionConverter::CartaPointToWorld(const CARTA::Point& point, std::vector<c
 
 std::shared_ptr<casacore::LCRegion> RegionConverter::GetCachedLCRegion(int file_id, bool use_approx_polygon) {
     // Return cached region applied to image with file_id, if cached.
-    const bool require_polygon =
-        use_approx_polygon && _region_state.type == CARTA::RegionType::ANNULUS && UseApproximatePolygon(_reference_coord_sys);
     std::lock_guard<std::mutex> guard(_region_mutex);
-    if (require_polygon) {
-        const auto cached = _polygon_regions.find(file_id);
-        return cached == _polygon_regions.end() ? nullptr : cached->second;
-    }
     if (_converted_regions.find(file_id) != _converted_regions.end()) {
         return _converted_regions.at(file_id);
     } else if (use_approx_polygon && _polygon_regions.find(file_id) != _polygon_regions.end()) {

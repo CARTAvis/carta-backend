@@ -17,8 +17,86 @@
 
 namespace carta {
 
+namespace {
+// Local pixel-to-world matrix. Celestial axes are east/north in radians; signed
+// offsets retain WCS rotation, reflection, projection, and coordinate-frame conversion.
+bool PixelToWorldEllipseTransform(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
+    const std::string& world_frame, casacore::Matrix<casacore::Double>& transform, casacore::Unit& unit) {
+    transform.resize(2, 2);
+    if (coord_sys.hasDirectionCoordinate()) {
+        const auto& direction = coord_sys.directionCoordinate();
+        auto frame = direction.directionType();
+        if (!world_frame.empty() && !casacore::MDirection::getType(frame, world_frame)) {
+            return false;
+        }
+        const auto world_direction = [&](const casacore::Vector<casacore::Double>& pixel, casacore::MVDirection& value) {
+            casacore::MDirection world;
+            if (!direction.toWorld(world, pixel)) {
+                return false;
+            }
+            if (world.getRef().getType() != frame) {
+                world = casacore::MDirection::Convert(world, frame)();
+            }
+            value = world.getValue();
+            return true;
+        };
+        casacore::MVDirection origin;
+        if (!world_direction(center, origin)) {
+            return false;
+        }
+        for (int axis = 0; axis < 2; ++axis) {
+            double offsets[2][2];
+            for (int end = 0; end < 2; ++end) {
+                casacore::Vector<casacore::Double> pixel(center.copy());
+                pixel(axis) += end == 0 ? -0.5 : 0.5;
+                casacore::MVDirection world;
+                if (!world_direction(pixel, world)) {
+                    return false;
+                }
+                const double distance = origin.separation(world);
+                const double angle = origin.positionAngle(world);
+                offsets[end][0] = distance * std::sin(angle);
+                offsets[end][1] = distance * std::cos(angle);
+            }
+            transform(0, axis) = offsets[1][0] - offsets[0][0];
+            transform(1, axis) = offsets[1][1] - offsets[0][1];
+        }
+        unit = casacore::Unit("rad");
+    } else {
+        const auto units = coord_sys.worldAxisUnits();
+        unit = casacore::Unit(units(0));
+        for (int axis = 0; axis < 2; ++axis) {
+            casacore::Vector<casacore::Double> start(center.copy()), end(center.copy());
+            start(axis) -= 0.5;
+            end(axis) += 0.5;
+            casacore::Vector<casacore::Double> world_start, world_end;
+            if (!coord_sys.toWorld(world_start, start) || !coord_sys.toWorld(world_end, end)) {
+                return false;
+            }
+            for (int row = 0; row < 2; ++row) {
+                transform(row, axis) = casacore::Quantity(world_end(row) - world_start(row), units(row)).get(unit).getValue();
+            }
+        }
+    }
+    return true;
+}
+} // namespace
+
 bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
-    std::vector<casacore::Quantity>& axes) {
+    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center) {
+    if (center) {
+        casacore::Matrix<casacore::Double> transform;
+        casacore::Unit unit;
+        double major, minor, angle;
+        if (!PixelToWorldEllipseTransform(coord_sys, *center, "", transform, unit) ||
+            !TransformEllipseAxes(first, second, rotation.get("deg").getValue(), transform, major, minor, angle)) {
+            return false;
+        }
+        axes.push_back(casacore::Quantity(major, unit));
+        axes.push_back(casacore::Quantity(minor, unit));
+        rotation = casacore::Quantity(angle, "deg");
+        return true;
+    }
     // The restored first radius follows rotation, measured from the horizontal axis.
     const auto x_scale = coord_sys.toWorldLength(1, 0);
     const auto y_scale = coord_sys.toWorldLength(1, 1);
@@ -39,6 +117,33 @@ bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double
         axes.push_back(casacore::Quantity(minor, x_scale.getUnit()));
         rotation = casacore::Quantity(major_angle, "deg");
     }
+    return true;
+}
+
+bool WorldEllipseAxesToPixels(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
+    const casacore::Quantity& first, const casacore::Quantity& second, double angle_degrees, const std::string& world_frame,
+    CARTA::Point& axes, double& rotation) {
+    casacore::Matrix<casacore::Double> transform;
+    casacore::Unit unit;
+    if (!PixelToWorldEllipseTransform(coord_sys, center, world_frame, transform, unit)) {
+        return false;
+    }
+    const double determinant = transform(0, 0) * transform(1, 1) - transform(0, 1) * transform(1, 0);
+    if (!std::isfinite(determinant) || determinant == 0) {
+        return false;
+    }
+    casacore::Matrix<casacore::Double> inverse(2, 2);
+    inverse(0, 0) = transform(1, 1) / determinant;
+    inverse(1, 1) = transform(0, 0) / determinant;
+    inverse(0, 1) = -transform(0, 1) / determinant;
+    inverse(1, 0) = -transform(1, 0) / determinant;
+    double major, minor;
+    if (!TransformEllipseAxes(first.get(unit).getValue(), second.get(unit).getValue(), angle_degrees, inverse, major, minor, rotation)) {
+        return false;
+    }
+    axes.set_x(minor);
+    axes.set_y(major);
+    rotation = std::fmod(rotation + 360.0, 360.0);
     return true;
 }
 
