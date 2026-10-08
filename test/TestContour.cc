@@ -8,175 +8,188 @@
 
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
+#include "Timer/Timer.h"
 #include "Util/Message.h"
 #include "src/Frame/Frame.h"
 
-class ContourTest : public ::testing::Test {
+struct ContourTestParams {
+    fs::path image_file;
+    CARTA::SmoothingMode mode;
+    fs::path contour_dir;
+};
+
+class ContourTest : public ::testing::TestWithParam<ContourTestParams> {
 public:
-    static CARTA::SetContourParameters SetContourParameters(uint32_t file_id, uint32_t ref_file_id, int32_t x_min, int32_t x_max,
-        int32_t y_min, int32_t y_max, const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int32_t smoothing_factor,
-        int32_t decimation_factor, int32_t compression_level, int32_t contour_chunk_size) {
-        CARTA::SetContourParameters message;
-        message.set_file_id(file_id);
-        message.set_reference_file_id(ref_file_id);
-        auto* image_bounds = message.mutable_image_bounds();
-        image_bounds->set_x_min(x_min);
-        image_bounds->set_x_max(x_max);
-        image_bounds->set_y_min(y_min);
-        image_bounds->set_y_max(y_max);
-        for (auto level : levels) {
-            message.add_levels(level);
-        }
-        message.set_smoothing_mode(smoothing_mode);
-        message.set_smoothing_factor(smoothing_factor);
-        message.set_decimation_factor(decimation_factor);
-        message.set_compression_level(compression_level);
-        message.set_contour_chunk_size(contour_chunk_size);
-        return message;
-    }
+    struct ContourMetadata {
+        uint32_t num_levels;
 
-    void GenerateContour(fs::path file_path, const CARTA::SmoothingMode& smoothing_mode) {
-        auto loader = carta::FileLoader::GetLoader(file_path);
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-
-        spdlog::info("The generated image contains random pixels values with mean = 0 and STD = 1.");
-        std::vector<double> levels{0, -1, 1}; // Contour levels
-
-        auto set_contour_params =
-            ContourTest::SetContourParameters(0, 0, 0, frame->Width(), 0, frame->Height(), levels, smoothing_mode, 4, 4, 8, 100000);
-
-        EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
-
-        std::unordered_map<double, double> progresses;
-        std::unordered_map<double, std::vector<float>> vertices_map;
-        // Initialize vertices map with requested contour levels
-        for (auto level : levels) {
-            vertices_map[level] = {};
-        }
-
-        auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
-            std::unique_lock<std::mutex> ulock(_callback_mutex);
-            if (vertices_map.count(level)) {
-                vertices_map[level].insert(vertices_map[level].end(), vertices.begin(), vertices.end());
-            }
-            progresses[level] = progress;
-            ulock.unlock();
-        };
-        EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
-
-        // Check the number of resulting contour levels
-        EXPECT_EQ(progresses.size(), levels.size());
-
-        // Check are contour progresses completely for all contour levels
-        for (auto progress : progresses) {
-            EXPECT_DOUBLE_EQ(progress.second, 1);
-        }
-
-        std::shared_ptr<DataReader> reader = nullptr;
-        if (file_path.parent_path().filename() == "fits") {
-            reader.reset(new FitsDataReader(file_path));
-        } else {
-            reader.reset(new Hdf5DataReader(file_path));
-        }
-
-        for (auto vertices_level : vertices_map) {
-            // Fill in vertices coordinates
-            std::vector<std::pair<double, double>> coords;
-            for (int i = 0; i < vertices_level.second.size() / 2; ++i) {
-                double x = vertices_level.second[i * 2];
-                double y = vertices_level.second[i * 2 + 1];
-                coords.emplace_back(std::make_pair(x, y));
+        ContourMetadata(const std::string& file_path) {
+            std::ifstream file(file_path, std::ios::binary);
+            if (!file.is_open()) {
+                throw std::runtime_error("Could not open top metadata file at: " + file_path);
             }
 
-            // Check are they real vertices
-            int count(0);
-            for (auto coord : coords) {
-                if (smoothing_mode == CARTA::SmoothingMode::NoSmoothing) {
-                    // Only verify vertices coordinate which are calculated from raw pixels, i.e., with no smoothing mode
-                    EXPECT_TRUE(IsVertex(reader, coord.first, coord.second, vertices_level.first, frame->Width(), frame->Height()));
-                }
-                ++count;
+            // Read number of levels (uint32_t, '<I')
+            if (!file.read(reinterpret_cast<char*>(&num_levels), sizeof(num_levels))) {
+                throw std::runtime_error("Failed to read number of contours from: " + file_path);
             }
-            spdlog::info("For contour level {}, number of vertices is {}", vertices_level.first, count);
         }
-    }
+    };
 
-    bool IsVertex(const std::shared_ptr<DataReader>& reader, double x, double y, double level, int width, int height) {
-        // Shift to pixel coordinate
-        x -= 0.5;
-        y -= 0.5;
-        int pt_x = (int)floor(x);
-        int pt_y = (int)floor(y);
+    struct LevelMetadata {
+        float level;
+        uint32_t num_points;
+        uint32_t num_indices;
+        std::vector<uint32_t> indices;
 
-        if (!InImage(pt_x, pt_y, width, height)) {
-            return false;
-        }
-
-        double pt1_pix = (double)(reader->ReadPointXY(pt_x, pt_y));
-        pt1_pix = std::isnan(pt1_pix) ? -std::numeric_limits<float>::max() : pt1_pix;
-
-        auto is_vertex = [&](int x, int y) {
-            if (InImage(x, y, width, height)) {
-                double pt2_pix = (double)(reader->ReadPointXY(x, y));
-                pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-                if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                    return true;
-                }
+        LevelMetadata(const std::string& file_path) {
+            std::ifstream file(file_path, std::ios::binary);
+            if (!file.is_open()) {
+                throw std::runtime_error("Could not open contour metadata file at: " + file_path);
             }
-            return false;
-        };
 
-        return (is_vertex(pt_x - 1, pt_y - 1) || is_vertex(pt_x, pt_y - 1) || is_vertex(pt_x - 1, pt_y) || is_vertex(pt_x + 1, pt_y + 1) ||
-                is_vertex(pt_x, pt_y + 1) || is_vertex(pt_x + 1, pt_y) || is_vertex(pt_x - 1, pt_y + 1) || is_vertex(pt_x + 1, pt_y - 1));
+            // Read level (int32_t, '<f')
+            file.read(reinterpret_cast<char*>(&level), sizeof(level));
+            // Read number of points (uint32_t, '<I')
+            file.read(reinterpret_cast<char*>(&num_points), sizeof(num_points));
+            // Read number of indices (uint32_t, '<I')
+            file.read(reinterpret_cast<char*>(&num_indices), sizeof(num_indices));
+            // Read raw_start_indices
+            indices.resize(num_indices);
+            file.read(reinterpret_cast<char*>(indices.data()), num_indices * sizeof(uint32_t));
+        }
+    };
+
+    struct Point {
+        float x;
+        float y;
+
+        Point(float x_val, float y_val) : x(x_val), y(y_val) {}
+    };
+
+    static std::vector<Point> ToPoints(const std::vector<float>& values) {
+        std::vector<Point> points;
+        points.reserve(values.size() / 2);
+        for (size_t i = 0; i + 1 < values.size(); i += 2) {
+            points.emplace_back(static_cast<double>(values[i]), static_cast<double>(values[i + 1]));
+        }
+        return points;
     }
 
-    bool InImage(int x, int y, int width, int height) {
-        return (0 <= x && x < width && 0 <= y && y < height);
+    static std::vector<Point> ReadContourData(const std::string& file_path) {
+        std::ifstream file(file_path, std::ios::binary | std::ios::ate);
+        if (!file.is_open()) {
+            throw std::runtime_error("Could not open file at: " + file_path);
+        }
+
+        std::streamsize file_size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        if (file_size % sizeof(float) != 0) {
+            throw std::runtime_error("File size is not a multiple of float size: " + file_path);
+        }
+
+        size_t num_floats = file_size / sizeof(float);
+        if (num_floats % 2 != 0) {
+            throw std::runtime_error("Number of float values is odd, expected (x, y) pairs: " + file_path);
+        }
+
+        std::vector<float> values(num_floats);
+        if (!file.read(reinterpret_cast<char*>(values.data()), file_size)) {
+            throw std::runtime_error("Failed to read float data block from: " + file_path);
+        }
+
+        std::vector<Point> coordinates;
+        coordinates.reserve(num_floats / 2);
+        for (size_t i = 0; i < num_floats; i += 2) {
+            coordinates.emplace_back(Point(static_cast<float>(values[i]), static_cast<float>(values[i + 1])));
+        }
+        return coordinates;
     }
 
-private:
+protected:
     std::mutex _callback_mutex;
 };
 
-TEST_F(ContourTest, NoSmoothingFitsFile) {
-    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::NoSmoothing);
-}
-TEST_F(ContourTest, NoSmoothingFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::NoSmoothing);
+TEST_P(ContourTest, VerifyVertices) {
+    const auto& params = GetParam();
+
+    std::string stem = params.contour_dir.stem().string();
+    fs::path contour_meta_file = params.contour_dir / (stem + "_metadata.bin");
+    ContourMetadata contour_metadata(contour_meta_file.string());
+    const uint32_t& num_levels = contour_metadata.num_levels;
+
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(params.image_file));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+
+    CARTA::SetContourParameters set_contour_params;
+    set_contour_params.set_file_id(0);
+    set_contour_params.set_reference_file_id(0);
+    auto* bounds = set_contour_params.mutable_image_bounds();
+    bounds->set_x_min(0);
+    bounds->set_x_max(frame->Width());
+    bounds->set_y_min(0);
+    bounds->set_y_max(frame->Height());
+    set_contour_params.set_smoothing_mode(params.mode);
+    set_contour_params.set_smoothing_factor(4);
+    set_contour_params.set_decimation_factor(4);
+    set_contour_params.set_compression_level(8);
+    set_contour_params.set_contour_chunk_size(100000);
+
+    EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
+
+    // generate and load contour vertices by level
+    for (size_t level_position = 0; level_position < num_levels; ++level_position) {
+        // get level metadata
+        fs::path index_dir = params.contour_dir / std::to_string(level_position);
+        fs::path meta_file = index_dir / (std::to_string(level_position) + "_metadata.bin");
+        LevelMetadata level_metadata(meta_file.string());
+
+        // get expected coordinates
+        fs::path data_file = index_dir / (std::to_string(level_position) + "_data.bin");
+        auto expected = ReadContourData(data_file.string());
+
+        std::vector<float> generated_vertices;
+
+        set_contour_params.clear_levels();
+        set_contour_params.add_levels(level_metadata.level);
+
+        EXPECT_TRUE(frame->SetContourParameters(set_contour_params));
+
+        auto callback = [&](double cb_level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
+            std::unique_lock<std::mutex> lock(_callback_mutex);
+            if (cb_level == level_metadata.level) {
+                generated_vertices.insert(generated_vertices.end(), vertices.begin(), vertices.end());
+            }
+        };
+
+        EXPECT_TRUE(frame->ContourImage(callback, frame->CurrentZ()));
+
+        // format generated vertices into (x,y) pairs
+        auto gen_coords = ToPoints(generated_vertices);
+
+        EXPECT_EQ(expected.size(), gen_coords.size()) << "Vertex count mismatch for level " << level_metadata.level;
+
+        const double tolerance = 0.1; // Allow small floating-point differences
+        for (size_t i = 0; i < std::min(expected.size(), gen_coords.size()); ++i) {
+            EXPECT_NEAR(expected[i].x, gen_coords[i].x, tolerance)
+                << "X coordinate mismatch at vertex " << i << " for level " << level_metadata.level;
+            EXPECT_NEAR((expected[i].y), gen_coords[i].y, tolerance)
+                << "Y coordinate mismatch at vertex " << i << " for level " << level_metadata.level;
+        }
+    }
 }
 
-TEST_F(ContourTest, GaussianBlurFitsFile) {
-    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::GaussianBlur);
-}
-TEST_F(ContourTest, GaussianBlurFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::GaussianBlur);
-}
-
-TEST_F(ContourTest, BlockAverageFitsFile) {
-    GenerateContour(FitsImages() / "500x500.fits", CARTA::SmoothingMode::BlockAverage);
-}
-TEST_F(ContourTest, BlockAverageFitsFileNaN) {
-    GenerateContour(FitsImages() / "500x500_nans.fits", CARTA::SmoothingMode::BlockAverage);
-}
-
-TEST_F(ContourTest, NoSmoothingHdf5File) {
-    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::NoSmoothing);
-}
-TEST_F(ContourTest, NoSmoothingHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::NoSmoothing);
-}
-
-TEST_F(ContourTest, GaussianBlurHdf5File) {
-    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::GaussianBlur);
-}
-TEST_F(ContourTest, GaussianBlurHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::GaussianBlur);
-}
-
-TEST_F(ContourTest, BlockAverageHdf5File) {
-    GenerateContour(Hdf5Images() / "500x500.hdf5", CARTA::SmoothingMode::BlockAverage);
-}
-
-TEST_F(ContourTest, BlockAverageHdf5FileNaN) {
-    GenerateContour(Hdf5Images() / "500x500_nans.hdf5", CARTA::SmoothingMode::BlockAverage);
-}
+INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
+    ::testing::Values(ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::NoSmoothing,
+                          ContourData() / "sensible-picture-noisey-NoSmoothing"},
+        ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::BlockAverage,
+            ContourData() / "sensible-picture-noisey-BlockAverage"},
+        ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::GaussianBlur,
+            ContourData() / "sensible-picture-noisey-GaussianBlur"},
+        ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::NoSmoothing,
+            ContourData() / "sensible-picture-noisey-nans-NoSmoothing"},
+        ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::BlockAverage,
+            ContourData() / "sensible-picture-noisey-nans-BlockAverage"},
+        ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::GaussianBlur,
+            ContourData() / "sensible-picture-noisey-nans-GaussianBlur"}));
