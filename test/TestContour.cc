@@ -141,7 +141,6 @@ TEST_P(ContourTest, VerifyVertices) {
 
     // generate and load contour vertices by level
     for (size_t level_position = 0; level_position < num_levels; ++level_position) {
-
         // get level metadata
         fs::path index_dir = params.contour_dir / std::to_string(level_position);
         fs::path meta_file = index_dir / (std::to_string(level_position) + "_metadata.bin");
@@ -174,8 +173,10 @@ TEST_P(ContourTest, VerifyVertices) {
 
         const double tolerance = 0.1; // Allow small floating-point differences
         for (size_t i = 0; i < std::min(expected.size(), gen_coords.size()); ++i) {
-            EXPECT_NEAR(expected[i].x, gen_coords[i].x, tolerance) << "X coordinate mismatch at vertex " << i << " for level " << level_metadata.level;
-            EXPECT_NEAR((expected[i].y), gen_coords[i].y, tolerance) << "Y coordinate mismatch at vertex " << i << " for level " << level_metadata.level;
+            EXPECT_NEAR(expected[i].x, gen_coords[i].x, tolerance)
+                << "X coordinate mismatch at vertex " << i << " for level " << level_metadata.level;
+            EXPECT_NEAR((expected[i].y), gen_coords[i].y, tolerance)
+                << "Y coordinate mismatch at vertex " << i << " for level " << level_metadata.level;
         }
     }
 }
