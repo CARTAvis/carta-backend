@@ -30,7 +30,6 @@ public:
             }
 
             // Read number of levels (uint32_t, '<I')
-            int32_t num_levels = 0;
             if (!file.read(reinterpret_cast<char*>(&num_levels), sizeof(num_levels))) {
                 throw std::runtime_error("Failed to read number of contours from: " + file_path);
             }
@@ -159,7 +158,7 @@ TEST_P(ContourTest, VerifyVertices) {
 
         auto callback = [&](double cb_level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
             std::unique_lock<std::mutex> lock(_callback_mutex);
-            if (cb_level == level_position) {
+            if (cb_level == level_metadata.level) {
                 generated_vertices.insert(generated_vertices.end(), vertices.begin(), vertices.end());
             }
         };
@@ -183,14 +182,14 @@ TEST_P(ContourTest, VerifyVertices) {
 
 INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
     ::testing::Values(ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::NoSmoothing,
-                          ContourData() / "sensible-picture-noisey-none"},
+                          ContourData() / "sensible-picture-noisey-NoSmoothing"},
         ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::BlockAverage,
-            ContourData() / "sensible-picture-noisey-block"},
+            ContourData() / "sensible-picture-noisey-BlockAverage"},
         ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::GaussianBlur,
-            ContourData() / "sensible-picture-noisey-gaussian"},
+            ContourData() / "sensible-picture-noisey-GaussianBlur"},
         ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::NoSmoothing,
-            ContourData() / "sensible-picture-noisey-nans-none"},
+            ContourData() / "sensible-picture-noisey-nans-NoSmoothing"},
         ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::BlockAverage,
-            ContourData() / "sensible-picture-noisey-nans-block"},
+            ContourData() / "sensible-picture-noisey-nans-BlockAverage"},
         ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::GaussianBlur,
-            ContourData() / "sensible-picture-noisey-nans-gaussian"}));
+            ContourData() / "sensible-picture-noisey-nans-GaussianBlur"}));
