@@ -136,3 +136,62 @@ TEST_F(FitsImageTest, CorrectShape4dImages) {
     EXPECT_EQ(frame->NumStokes(), 2);
     EXPECT_EQ(frame->StokesAxis(), 2);
 }
+
+TEST_F(FitsImageTest, ScientificNotationParsing) {
+    auto tmp_path = fs::temp_directory_path() / "carta_scientific_cdeIt_test.fits";
+
+    fitsfile* fptr = nullptr;
+    int status = 0;
+
+    // Create a minimal FITS image with scientific-notation CDELT values.
+    fits_create_file(&fptr, tmp_path.string().c_str(), &status);
+    ASSERT_EQ(status, 0);
+
+    long naxis = 2;
+    long naxes[2] = {10, 10};
+    fits_create_img(fptr, FLOAT_IMG, naxis, naxes, &status);
+    ASSERT_EQ(status, 0);
+
+    char ctype1[] = "RA---TAN";
+    char ctype2[] = "DEC--TAN";
+    char cunit1[] = "deg";
+    char cunit2[] = "deg";
+    double crpix1 = 1.0;
+    double crpix2 = 1.0;
+    double crval1 = 0.0;
+    double crval2 = 0.0;
+    double cdelt1 = 5e-05;
+    double cdelt2 = 5e-05;
+
+    fits_write_key(fptr, TSTRING, "CTYPE1", ctype1, nullptr, &status);
+    fits_write_key(fptr, TSTRING, "CTYPE2", ctype2, nullptr, &status);
+    fits_write_key(fptr, TSTRING, "CUNIT1", cunit1, nullptr, &status);
+    fits_write_key(fptr, TSTRING, "CUNIT2", cunit2, nullptr, &status);
+    fits_write_key(fptr, TDOUBLE, "CRPIX1", &crpix1, nullptr, &status);
+    fits_write_key(fptr, TDOUBLE, "CRPIX2", &crpix2, nullptr, &status);
+    fits_write_key(fptr, TDOUBLE, "CRVAL1", &crval1, nullptr, &status);
+    fits_write_key(fptr, TDOUBLE, "CRVAL2", &crval2, nullptr, &status);
+    fits_write_key(fptr, TDOUBLE, "CDELT1", &cdelt1, nullptr, &status);
+    fits_write_key(fptr, TDOUBLE, "CDELT2", &cdelt2, nullptr, &status);
+
+    fits_close_file(fptr, &status);
+    ASSERT_EQ(status, 0);
+
+    auto loader = carta::FileLoader::GetLoader(tmp_path);
+    ASSERT_NE(loader.get(), nullptr);
+
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+    EXPECT_TRUE(frame->IsValid());
+
+    auto coord_sys = frame->CoordinateSystem();
+    ASSERT_NE(coord_sys, nullptr);
+
+    auto increment = coord_sys->directionCoordinate().increment();
+    ASSERT_GE(increment.nelements(), 2);
+
+    EXPECT_NEAR(casacore::Quantity(increment(0), "rad").getValue("deg"), 5e-05, 1e-12);
+    EXPECT_NEAR(casacore::Quantity(increment(1), "rad").getValue("deg"), 5e-05, 1e-12);
+    
+    std::error_code ec;
+    fs::remove(tmp_path, ec);
+}
