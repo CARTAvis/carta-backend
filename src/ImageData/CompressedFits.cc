@@ -396,7 +396,7 @@ void CompressedFits::AddHeaderEntry(
 
     if (!value.empty()) {
         // Set type, numeric value
-        if (value.contains(".")|| value.contains("E") || value.contains("e")) {
+        if (value.contains(".") || value.contains("E") || value.contains("e")) {
             try {
                 // Set double value
                 double dvalue = std::stod(value);

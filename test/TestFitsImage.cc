@@ -191,7 +191,7 @@ TEST_F(FitsImageTest, ScientificNotationParsing) {
 
     EXPECT_NEAR(casacore::Quantity(increment(0), "rad").getValue("deg"), 5e-05, 1e-12);
     EXPECT_NEAR(casacore::Quantity(increment(1), "rad").getValue("deg"), 5e-05, 1e-12);
-    
+
     std::error_code ec;
     fs::remove(tmp_path, ec);
 }
