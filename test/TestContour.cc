@@ -181,15 +181,15 @@ TEST_P(ContourTest, VerifyVertices) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AllModesAndFormats, ContourTest,
-    ::testing::Values(ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::NoSmoothing,
-                          ContourData() / "sensible-picture-noisey-NoSmoothing"},
-        ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::BlockAverage,
-            ContourData() / "sensible-picture-noisey-BlockAverage"},
-        ContourTestParams{FitsImages() / "sensible-picture-noisey.fits", CARTA::SmoothingMode::GaussianBlur,
-            ContourData() / "sensible-picture-noisey-GaussianBlur"},
-        ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::NoSmoothing,
-            ContourData() / "sensible-picture-noisey-nans-NoSmoothing"},
-        ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::BlockAverage,
-            ContourData() / "sensible-picture-noisey-nans-BlockAverage"},
-        ContourTestParams{FitsImages() / "sensible-picture-noisey-nans.fits", CARTA::SmoothingMode::GaussianBlur,
-            ContourData() / "sensible-picture-noisey-nans-GaussianBlur"}));
+    ::testing::Values(ContourTestParams{FitsImages() / "500x500_contours.fits", CARTA::SmoothingMode::NoSmoothing,
+                          ContourData() / "500x500_contours_NoSmoothing"},
+        ContourTestParams{FitsImages() / "500x500_contours.fits", CARTA::SmoothingMode::BlockAverage,
+            ContourData() / "500x500_contours_BlockAverage"},
+        ContourTestParams{FitsImages() / "500x500_contours.fits", CARTA::SmoothingMode::GaussianBlur,
+            ContourData() / "500x500_contours_GaussianBlur"},
+        ContourTestParams{FitsImages() / "500x500_contours_nans.fits", CARTA::SmoothingMode::NoSmoothing,
+            ContourData() / "500x500_contours_nans_NoSmoothing"},
+        ContourTestParams{FitsImages() / "500x500_contours_nans.fits", CARTA::SmoothingMode::BlockAverage,
+            ContourData() / "500x500_contours_nans_BlockAverage"},
+        ContourTestParams{FitsImages() / "500x500_contours_nans.fits", CARTA::SmoothingMode::GaussianBlur,
+            ContourData() / "500x500_contours_nans_GaussianBlur"}));
