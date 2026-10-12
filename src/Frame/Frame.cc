@@ -1053,6 +1053,24 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
 
         // Use loader image stats
         auto& image_stats = _loader->GetImageStats(stokes, z);
+        if (image_stats.full && !image_stats.basic_stats.count(CARTA::StatsType::FluxDensity) &&
+            std::find(required_stats.begin(), required_stats.end(), CARTA::StatsType::FluxDensity) != required_stats.end()) {
+            casacore::SubImage<float> sub_image;
+            auto stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
+            if (GetSlicerSubImage(stokes_slicer, sub_image)) {
+                std::vector<double> flux_density;
+                bool flux_ok(false);
+                try {
+                    std::lock_guard<std::mutex> guard(_image_mutex);
+                    flux_ok = ComputeFluxDensityFromSum(sub_image, {image_stats.basic_stats.at(CARTA::StatsType::NumPixels)},
+                        {image_stats.basic_stats.at(CARTA::StatsType::Sum)}, flux_density);
+                } catch (const casacore::AipsError&) {
+                    // Unsupported coordinates or units cannot provide flux density.
+                }
+                image_stats.basic_stats[CARTA::StatsType::FluxDensity] = flux_ok && !flux_density.empty() ? flux_density[0] : DOUBLE_NAN;
+                _loader->CloseImageIfUpdated();
+            }
+        }
         if (image_stats.full && has_required_stats(image_stats.basic_stats)) {
             FillStatistics(stats_data, required_stats, image_stats.basic_stats);
             stats_data_callback(stats_data);

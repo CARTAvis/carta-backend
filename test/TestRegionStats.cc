@@ -213,6 +213,30 @@ TEST_F(RegionStatsTest, TestHdf5ImageStatsRecalculateMissingStatistics) {
     ASSERT_EQ(robust_stats_count, 5);
 }
 
+TEST_F(RegionStatsTest, TestHdf5FluxDensityUsesPrecomputedStatistics) {
+    auto loader = carta::FileLoader::GetLoader(Hdf5Images() / "noise_10px_10px.hdf5");
+    auto frame = std::make_shared<Frame>(0, loader, "0");
+    auto& cached_stats = loader->GetImageStats(0, 0);
+    ASSERT_TRUE(cached_stats.full);
+    ASSERT_EQ(cached_stats.basic_stats.count(CARTA::StatsType::FluxDensity), 0);
+    const double expected_flux = cached_stats.basic_stats.at(CARTA::StatsType::Sum);
+    // A marker distinguishes the precomputed path from recalculating image pixels.
+    const double cached_mean = -12345.0;
+    cached_stats.basic_stats[CARTA::StatsType::Mean] = cached_mean;
+
+    CARTA::SetStatsRequirements_StatsConfig config;
+    config.add_stats_types(CARTA::StatsType::Mean);
+    config.add_stats_types(CARTA::StatsType::FluxDensity);
+    ASSERT_TRUE(frame->SetStatsRequirements(IMAGE_REGION_ID, {config}));
+
+    CARTA::RegionStatsData stats_data;
+    ASSERT_TRUE(frame->FillRegionStatsData([&stats_data](CARTA::RegionStatsData data) { stats_data = data; }, IMAGE_REGION_ID, 0));
+    ASSERT_EQ(stats_data.statistics_size(), 2);
+    EXPECT_DOUBLE_EQ(stats_data.statistics(0).value(), cached_mean);
+    EXPECT_DOUBLE_EQ(stats_data.statistics(1).value(), expected_flux);
+    EXPECT_DOUBLE_EQ(cached_stats.basic_stats.at(CARTA::StatsType::FluxDensity), expected_flux);
+}
+
 TEST_F(RegionStatsTest, TestFitsAnnotationRegionStats) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> endpoints = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};

@@ -196,6 +196,15 @@ bool ComputeFluxDensity(
         return false;
     }
     auto sums = stats_result.tovector();
+    return ComputeFluxDensityFromSum(image, npts, sums, result);
+}
+
+bool ComputeFluxDensityFromSum(const casacore::ImageInterface<float>& image, const std::vector<double>& npts,
+    const std::vector<double>& sums, std::vector<double>& result) {
+    casacore::String bunit(image.units().getName());
+    if (bunit.empty() || npts.size() != sums.size()) {
+        return false;
+    }
 
     // Separate unit parts
     casacore::String flux_unit(bunit);
