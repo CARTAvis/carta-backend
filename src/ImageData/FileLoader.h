@@ -129,7 +129,7 @@ public:
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
     // Whether this image's statistics are made from the pixels' Spread rather than from their sums,
     // wherever they are counted -- by the loader, or from pixels it handed over. Only the Zarr loader's
-    // are: see Spread in CONTEXT.md.
+    // are: see Spread in GLOSSARY.md.
     virtual bool UsesSpread() const {
         return false;
     }

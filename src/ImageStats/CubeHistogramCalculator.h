@@ -42,7 +42,7 @@ struct CubeHistogramProgress {
 // predicate or progress callback having said stop.
 enum class CubeHistogramOutcome { finished, cancelled, failed };
 
-// One way of making a half of a cube histogram, named for the log. See Route in CONTEXT.md. The
+// One way of making a half of a cube histogram, named for the log. See Route in GLOSSARY.md. The
 // reducer is never null and must outlive the calculation.
 struct CubeRoute {
     const char* name = "";

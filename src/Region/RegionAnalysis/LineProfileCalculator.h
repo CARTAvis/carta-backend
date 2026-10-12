@@ -36,7 +36,7 @@ struct LineProfileBlock {
     double completeness = 1.0;
 };
 
-// One way of making line profiles. See Route in CONTEXT.md. The boxes, the channels and the stokes are
+// One way of making line profiles. See Route in GLOSSARY.md. The boxes, the channels and the stokes are
 // the route's own, given when it is made.
 //
 // Returning false from `sink` cancels. `cancellation_requested` is asked by a route with a reason to
@@ -71,7 +71,7 @@ struct LineProfileControl {
 };
 
 // Makes the line profiles from whichever routes will answer: every box's mean over every channel.
-// See Line profiles in CONTEXT.md.
+// See Line profiles in GLOSSARY.md.
 //
 // The routes are asked in the order given, a walk first and the boxes one at a time last, and the
 // first that does not decline makes all of them. What it knows nothing of is where the boxes are, or

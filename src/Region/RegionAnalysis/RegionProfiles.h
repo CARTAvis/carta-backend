@@ -41,7 +41,7 @@ struct RegionProfileKey {
 using RegionProfileReport =
     std::function<bool(float progress, const std::function<std::map<CARTA::StatsType, std::vector<double>>()>& partial)>;
 
-// The region profiles being made, and those made: see Region profile in CONTEXT.md.
+// The region profiles being made, and those made: see Region profile in GLOSSARY.md.
 //
 // A profile is made a step at a time, and between steps the caller decides whether it is still
 // wanted; each step resumes where the last left off. It resumes only a request for the same box, mask
@@ -94,7 +94,7 @@ private:
 };
 
 // The statistics CARTA reports of a region profile, from its channels' totals and the beam area: see
-// Derived statistics in CONTEXT.md. A channel not yet read is NaN throughout; one read with no valid
+// Derived statistics in GLOSSARY.md. A channel not yet read is NaN throughout; one read with no valid
 // pixel is NaN but for its two counts.
 std::map<CARTA::StatsType, std::vector<double>> RegionProfileStatistics(const std::vector<ChannelTotals>& channels, double beam_area);
 

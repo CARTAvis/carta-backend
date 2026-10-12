@@ -35,7 +35,7 @@ struct CubeHistogramUpdate {
 // What can be asked of a cube as a whole, one Stokes at a time: the answers a cube histogram is made
 // of. A loader that has a walk over its pixels implements it, and so does anything that answers the
 // same questions another way; the caller asks each in turn and takes the first that does not decline.
-// See BatchOutcome for what declining is, and CONTEXT.md for what a walk and a route are.
+// See BatchOutcome for what declining is, and GLOSSARY.md for what a walk and a route are.
 //
 // Reached through FileLoader::CubeWalk(), which is null for a loader that has no walk. Only the Zarr
 // loader has one today; nothing in the signatures is particular to Zarr.

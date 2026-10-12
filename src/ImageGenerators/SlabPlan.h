@@ -12,7 +12,7 @@
 
 namespace carta {
 
-// How a moment steps through an image: the slab it holds at a time (see Slab in CONTEXT.md), and the
+// How a moment steps through an image: the slab it holds at a time (see Slab in GLOSSARY.md), and the
 // order the axes are stepped in.
 struct SlabPlan {
     casacore::IPosition slab;

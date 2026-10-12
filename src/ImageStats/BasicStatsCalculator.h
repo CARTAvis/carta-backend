@@ -57,7 +57,7 @@ struct BasicStats {
     double rms;
     double sumSq;
     // The pixels' squared deviations from their own mean, which stdDev was made from, where whoever
-    // counted them counted it -- the Zarr loader. See Spread in CONTEXT.md.
+    // counted them counted it -- the Zarr loader. See Spread in GLOSSARY.md.
     std::optional<double> sumSqDev;
 
     BasicStats<T>(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq,
@@ -70,7 +70,7 @@ template <typename T>
 class BasicStatsCalculator {
     T _min_val, _max_val;
     double _sum, _sum_squares;
-    // Whether to count the spread, and what it came to. See Spread in CONTEXT.md.
+    // Whether to count the spread, and what it came to. See Spread in GLOSSARY.md.
     bool _spread;
     std::optional<double> _sum_sq_dev;
     size_t _num_pixels;

@@ -24,7 +24,7 @@
 namespace carta {
 
 // The totals of one channel of a region's profile so far: what every statistic of it is made from.
-// See Totals in CONTEXT.md; the count of pixels that are not finite is kept beside them.
+// See Totals in GLOSSARY.md; the count of pixels that are not finite is kept beside them.
 struct ChannelTotals {
     // Whether the reader has said anything of this channel yet. One it has not is undefined
     // throughout, its counts too.
@@ -36,7 +36,7 @@ struct ChannelTotals {
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
     // The pixels' squared deviations from their own mean, which sigma is made from, from a reader
-    // that counts it -- the Zarr one. See Spread in CONTEXT.md.
+    // that counts it -- the Zarr one. See Spread in GLOSSARY.md.
     std::optional<double> sum_sq_dev;
 };
 
@@ -63,7 +63,7 @@ struct RegionProfileProgress {
     }
 };
 
-// A loader's own way of reading region profiles, a piece at a time: see Region profile in CONTEXT.md.
+// A loader's own way of reading region profiles, a piece at a time: see Region profile in GLOSSARY.md.
 // Reached through FileLoader::ProfileReader(), which is null for a loader that has none.
 class RegionProfileReader {
 public:
