@@ -91,9 +91,9 @@ struct ProgramSettings {
         {"verbosity", &verbosity},
         {"omp_threads", &omp_thread_count},
         {"event_thread_count", &event_thread_count},
-        {"zarr_file_io_threads", &zarr_file_io_concurrency},
-        {"zarr_data_copy_threads", &zarr_data_copy_concurrency},
-        {"zarr_cache_size", &zarr_cache_pool_gib},
+        {"zarr_io", &zarr_file_io_concurrency},
+        {"zarr_decode", &zarr_data_copy_concurrency},
+        {"zarr_cache", &zarr_cache_pool_gib},
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
         {"idle_timeout", &idle_session_wait_time}

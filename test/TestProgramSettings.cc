@@ -157,7 +157,7 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
 TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
         "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --omp_threads 10"
-        " --zarr_file_io_threads 3 --zarr_data_copy_threads 7 --zarr_cache_size 2"
+        " --zarr_io 3 --zarr_decode 7 --zarr_cache 2"
         " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode "
         "--enable_scripting");
     EXPECT_EQ(settings.verbosity, 6);
@@ -301,9 +301,9 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
         "host": "helloworld",
         "port": [1234],
         "omp_threads": 10,
-        "zarr_file_io_threads": 3,
-        "zarr_data_copy_threads": 7,
-        "zarr_cache_size": 2,
+        "zarr_io": 3,
+        "zarr_decode": 7,
+        "zarr_cache": 2,
         "top_level_folder": "/tmp",
         "frontend_folder": "/var",
         "exit_timeout": 10,
