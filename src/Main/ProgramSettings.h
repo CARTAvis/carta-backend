@@ -19,9 +19,9 @@
 #include "Util/FileSystem.h"
 
 #define OMP_THREAD_COUNT -1
-#define ZARR_FILE_IO_CONCURRENCY 2
-#define ZARR_DATA_COPY_CONCURRENCY -1
-#define ZARR_CACHE_POOL_MB 1024
+#define ZARR_FILE_IO_CONCURRENCY 0
+#define ZARR_DATA_COPY_CONCURRENCY 0
+#define ZARR_CACHE_POOL_GIB 1
 #define DEFAULT_SOCKET_PORT 3002
 
 #ifndef CARTA_DEFAULT_FRONTEND_FOLDER
@@ -50,7 +50,7 @@ struct ProgramSettings {
     int event_thread_count = 2;
     int zarr_file_io_concurrency = ZARR_FILE_IO_CONCURRENCY;
     int zarr_data_copy_concurrency = ZARR_DATA_COPY_CONCURRENCY;
-    int zarr_cache_pool_mb = ZARR_CACHE_POOL_MB;
+    int zarr_cache_pool_gib = ZARR_CACHE_POOL_GIB;
     std::string top_level_folder = "/";
     std::string starting_folder = ".";
     std::string host = "0.0.0.0";
@@ -93,7 +93,7 @@ struct ProgramSettings {
         {"event_thread_count", &event_thread_count},
         {"zarr_file_io_threads", &zarr_file_io_concurrency},
         {"zarr_data_copy_threads", &zarr_data_copy_concurrency},
-        {"zarr_cache_size", &zarr_cache_pool_mb},
+        {"zarr_cache_size", &zarr_cache_pool_gib},
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
         {"idle_timeout", &idle_session_wait_time}

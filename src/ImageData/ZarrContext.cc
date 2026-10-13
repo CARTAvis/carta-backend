@@ -18,7 +18,7 @@
 namespace carta {
 namespace {
 
-constexpr std::size_t BYTES_PER_MB = 1024U * 1024U;
+constexpr std::size_t BYTES_PER_GIB = 1024U * 1024U * 1024U;
 
 std::mutex& ContextMutex() {
     static std::mutex mutex;
@@ -47,27 +47,27 @@ carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options) {
 } // namespace
 
 carta::zarr::ContextOptions ZarrContextOptions(
-    int file_io_concurrency, int data_copy_concurrency, int cache_pool_mb, int omp_thread_count) {
+    int file_io_concurrency, int data_copy_concurrency, int cache_pool_gib, int omp_thread_count) {
     carta::zarr::ContextOptions options;
-    options.io_threads = file_io_concurrency > 0 ? static_cast<unsigned int>(file_io_concurrency) : 0;
+    options.io_threads =
+        static_cast<unsigned int>(file_io_concurrency > 0 ? file_io_concurrency : std::min(4, std::max(1, omp_thread_count)));
     // File IO threads mostly wait on reads, so they do not come out of the decode thread budget.
     options.decode_threads = static_cast<unsigned int>(data_copy_concurrency > 0 ? data_copy_concurrency : std::max(1, omp_thread_count));
-    options.cache_bytes = cache_pool_mb > 0 ? static_cast<std::size_t>(cache_pool_mb) * BYTES_PER_MB : 0;
+    options.cache_bytes = cache_pool_gib > 0 ? static_cast<std::size_t>(cache_pool_gib) * BYTES_PER_GIB : 0;
     return options;
 }
 
-void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, int cache_pool_mb, int omp_thread_count) {
-    const auto options = ZarrContextOptions(file_io_concurrency, data_copy_concurrency, cache_pool_mb, omp_thread_count);
+void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, int cache_pool_gib, int omp_thread_count) {
+    const auto options = ZarrContextOptions(file_io_concurrency, data_copy_concurrency, cache_pool_gib, omp_thread_count);
     auto context = CreateContext(options);
     {
         std::scoped_lock lock(ContextMutex());
         SharedContext() = std::move(context);
     }
 
-    const std::string file_io_threads = file_io_concurrency > 0 ? std::to_string(file_io_concurrency) : "default";
-    const std::string cache_size_mib = cache_pool_mb > 0 ? std::to_string(cache_pool_mb) : "disabled";
-    spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_mib={}", file_io_threads,
-        options.decode_threads, cache_size_mib);
+    const std::string cache_size_gib = cache_pool_gib > 0 ? std::to_string(cache_pool_gib) : "disabled";
+    spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={}", options.io_threads,
+        options.decode_threads, cache_size_gib);
 }
 
 carta::zarr::Context GetZarrContext() {

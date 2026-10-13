@@ -146,9 +146,9 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<std::vector<int>>(), "<port>")
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
-        ("zarr_file_io_threads", "thread pool size for Zarr file IO operations (<= 0: carta-zarr default)", cxxopts::value<int>(), "<threads>")
-        ("zarr_data_copy_threads", "thread pool size for Zarr data copy/decode operations (<= 0: max(1, omp_threads))", cxxopts::value<int>(), "<threads>")
-        ("zarr_cache_size", "in-memory chunk cache size for Zarr stores in MiB (<= 0 disables caching)", cxxopts::value<int>(), "<MiB>")
+        ("zarr_file_io_threads", "thread pool size for Zarr file IO operations (0: min(4, omp_threads); suggested values: 2 for limited resources, 4 for general use, 8 for large parallel filesystems with 16+ CPU cores)", cxxopts::value<int>(), "<threads>")
+        ("zarr_data_copy_threads", "thread pool size for Zarr data copy/decode operations (0: max(1, omp_threads))", cxxopts::value<int>(), "<threads>")
+        ("zarr_cache_size", "in-memory chunk cache size for Zarr stores in GiB (0 disables caching)", cxxopts::value<int>(), "<GiB>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
@@ -217,11 +217,14 @@ end.
 By default the number of OpenMP threads is automatically set to the detected 
 number of logical cores. A fixed number may be set with 'omp_threads'.
 
-Zarr images are read through carta-zarr. 'zarr_file_io_threads'
-(default 2) sets the thread pool size for file IO operations. 'zarr_data_copy_threads' sets the
-thread pool size for data copy/decode operations; if set to zero or a negative value, it defaults
-to max(1, the number of OpenMP threads). 'zarr_cache_size' sets an in-memory chunk cache size in
-MiB (integer; default 1024; zero disables caching).
+Zarr images are read through carta-zarr. 'zarr_file_io_threads' (default 0)
+sets the thread pool size for file IO operations; zero uses min(4, the number
+of OpenMP threads). Suggested values are 2 for limited resources, 4 for general
+use, or 8 for large parallel filesystems with 16 or more CPU cores.
+'zarr_data_copy_threads' (default 0) sets the thread pool size for data
+copy/decode operations; if set to zero, it defaults to max(1, the number of
+OpenMP threads). 'zarr_cache_size' sets an in-memory chunk cache size in GiB
+(integer; default 1; zero disables caching).
 
 Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
 in the user's home directory. Logging to the file can be disabled with 'no_log'. 
@@ -293,7 +296,7 @@ global configuration files, respectively.
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
     applyOptionalArgument(zarr_file_io_concurrency, "zarr_file_io_threads", result);
     applyOptionalArgument(zarr_data_copy_concurrency, "zarr_data_copy_threads", result);
-    applyOptionalArgument(zarr_cache_pool_mb, "zarr_cache_size", result);
+    applyOptionalArgument(zarr_cache_pool_gib, "zarr_cache_size", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);
     applyOptionalArgument(init_wait_time, "initial_timeout", result);
 

@@ -4,6 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <cstddef>
+
 #include <gtest/gtest.h>
 
 #include "ImageData/ZarrContext.h"
@@ -11,28 +13,30 @@
 using carta::ZarrContextOptions;
 
 TEST(ZarrContextTest, FileIoThreadsArePassedOnWhenPositive) {
-    EXPECT_EQ(ZarrContextOptions(3, -1, 1024, 8).io_threads, 3U);
+    EXPECT_EQ(ZarrContextOptions(3, -1, 1, 8).io_threads, 3U);
 }
 
-TEST(ZarrContextTest, FileIoThreadsOfZeroOrLessLeaveTheLibraryDefault) {
-    EXPECT_EQ(ZarrContextOptions(0, -1, 1024, 8).io_threads, 0U);
-    EXPECT_EQ(ZarrContextOptions(-4, -1, 1024, 8).io_threads, 0U);
+TEST(ZarrContextTest, FileIoThreadsOfZeroOrLessFollowTheCappedOpenMpThreads) {
+    EXPECT_EQ(ZarrContextOptions(0, -1, 1, 8).io_threads, 4U);
+    EXPECT_EQ(ZarrContextOptions(-4, -1, 1, 8).io_threads, 4U);
+    EXPECT_EQ(ZarrContextOptions(0, -1, 1, 2).io_threads, 2U);
+    EXPECT_EQ(ZarrContextOptions(0, -1, 1, 0).io_threads, 1U);
 }
 
 TEST(ZarrContextTest, DataCopyThreadsArePassedOnWhenPositive) {
-    EXPECT_EQ(ZarrContextOptions(2, 7, 1024, 8).decode_threads, 7U);
+    EXPECT_EQ(ZarrContextOptions(2, 7, 1, 8).decode_threads, 7U);
 }
 
 TEST(ZarrContextTest, DataCopyThreadsOfZeroOrLessFollowTheOpenMpThreads) {
-    EXPECT_EQ(ZarrContextOptions(2, -1, 1024, 8).decode_threads, 8U);
-    EXPECT_EQ(ZarrContextOptions(2, 0, 1024, 8).decode_threads, 8U);
-    EXPECT_EQ(ZarrContextOptions(2, -1, 1024, 0).decode_threads, 1U);
+    EXPECT_EQ(ZarrContextOptions(2, -1, 1, 8).decode_threads, 8U);
+    EXPECT_EQ(ZarrContextOptions(2, 0, 1, 8).decode_threads, 8U);
+    EXPECT_EQ(ZarrContextOptions(2, -1, 1, 0).decode_threads, 1U);
 }
 
-TEST(ZarrContextTest, CacheSizeIsGivenInMebibytes) {
-    const auto options = ZarrContextOptions(2, -1, 256, 8);
+TEST(ZarrContextTest, CacheSizeIsGivenInGibibytes) {
+    const auto options = ZarrContextOptions(2, -1, 8, 8);
     ASSERT_TRUE(options.cache_bytes.has_value());
-    EXPECT_EQ(*options.cache_bytes, 256U * 1024U * 1024U);
+    EXPECT_EQ(*options.cache_bytes, std::size_t{8} * 1024U * 1024U * 1024U);
 }
 
 TEST(ZarrContextTest, CacheSizeOfZeroDisablesTheCache) {

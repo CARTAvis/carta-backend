@@ -12,13 +12,14 @@
 namespace carta {
 
 // The options of the process-wide carta-zarr context, from the zarr_* settings. A thread count of
-// zero or less leaves file IO to carta-zarr's default and decoding to the OpenMP thread count; a
-// cache size of zero or less is a cache that holds nothing.
-carta::zarr::ContextOptions ZarrContextOptions(int file_io_concurrency, int data_copy_concurrency, int cache_pool_mb, int omp_thread_count);
+// zero or less sets file IO to min(4, the OpenMP thread count) and decoding to the OpenMP thread count; a
+// cache size in GiB of zero or less is a cache that holds nothing.
+carta::zarr::ContextOptions ZarrContextOptions(
+    int file_io_concurrency, int data_copy_concurrency, int cache_pool_gib, int omp_thread_count);
 
 // Creates the process-wide carta-zarr context. Called once at startup, before any Zarr file is
 // opened, so that every Zarr image shares one set of thread pools and one chunk cache.
-void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, int cache_pool_mb, int omp_thread_count);
+void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, int cache_pool_gib, int omp_thread_count);
 
 // The context configured at startup, or one with carta-zarr's defaults if none was.
 carta::zarr::Context GetZarrContext();
