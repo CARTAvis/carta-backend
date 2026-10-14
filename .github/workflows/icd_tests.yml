@@ -16,15 +16,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -58,32 +58,8 @@ jobs:
           uname -a
           sw_vers
 
-      - name: Build carta-backend (macOS-14)
-        if: matrix.os_version == 'macOS-14'
-        shell: bash
-        run: |
-          export CC=/usr/local/Cellar/llvm/20.1.3/bin/clang
-          export CXX=/usr/local/Cellar/llvm/20.1.3/bin/clang++
-          export PROTOBUF_ROOT=$(brew --prefix protobuf@21)
-          export PATH="$PROTOBUF_ROOT/bin:$PATH"
-          export LIBRARY_PATH="$PROTOBUF_ROOT/lib:$LIBRARY_PATH"
-          export CMAKE_PREFIX_PATH="$PROTOBUF_ROOT:$CMAKE_PREFIX_PATH"
-          export PKG_CONFIG_PATH="$PROTOBUF_ROOT/lib/pkgconfig:$PKG_CONFIG_PATH"
-          SRC_DIR=$GITHUB_WORKSPACE/source
-          BUILD_DIR=$GITHUB_WORKSPACE/build
-          cd $SRC_DIR && git submodule update --init
-          rm -rf $BUILD_DIR && mkdir -p $BUILD_DIR
-          cd $BUILD_DIR
-          cmake $SRC_DIR \
-            -Dtest=on \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DDevSuppressExternalWarnings=ON \
-            -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" \
-            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
-          make -j 16
-
       - name: Build carta-backend (macOS)
-        if: matrix.os == 'macos' && matrix.os_version != 'macOS-14'
+        if: matrix.os == 'macos'
         shell: bash
         run: |
           export Protobuf_ROOT="/opt/homebrew/opt/protobuf@21"
@@ -151,15 +127,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -224,15 +200,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -280,15 +256,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -336,15 +312,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -392,15 +368,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -448,15 +424,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -504,15 +480,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -560,15 +536,15 @@ jobs:
       fail-fast: false
       matrix:  
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -616,15 +592,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -672,15 +648,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -728,15 +704,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -784,15 +760,15 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -840,15 +816,15 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -896,15 +872,15 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
@@ -952,15 +928,15 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - os_version: macOS-14
-            os: macos
-            runner: [macOS-14, ICD]
           - os_version: macOS-15
             os: macos
             runner: [macOS-15, ICD]
           - os_version: macOS-26
             os: macos
             runner: [macOS-26, ICD]
+          - os_version: macOS-27
+            os: macos
+            runner: [macOS-27, ICD]
           - os_version: ubuntu-22.04
             os: linux
             runner: [self-hosted, Linux, Apptainer, ICD2]
