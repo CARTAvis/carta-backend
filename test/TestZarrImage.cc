@@ -6,12 +6,14 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <functional>
 #include <regex>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <casacore/coordinates/Coordinates/ObsInfo.h>
@@ -158,6 +160,32 @@ TEST_F(ZarrImageTest, EveryListedImageOpens) {
     for (const auto& id : listed) {
         EXPECT_NO_THROW(CartaZarrImage(fixture.string(), id)) << id << " was listed";
     }
+}
+
+// XRADIO stores a flag as an int8 and ties it to its image only through the root's data_groups. The
+// fixture was converted by XRADIO itself from two masked CASA images, so each image should be listed,
+// open without a pixel-mask note, and find its own flag.
+TEST_F(ZarrImageTest, EachImageFindsTheFlagXradioWroteForIt) {
+    const std::filesystem::path fixture{ZARR_XRADIO_FLAGGED_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio flagged fixture not found at " << fixture;
+    }
+    auto listed = ListedImages(fixture);
+    std::sort(listed.begin(), listed.end());
+    EXPECT_EQ(listed, (std::vector<std::string>{"SKY", "SKY_OTHER"}));
+
+    const auto look = ZarrStores::Instance().Look(fixture.string());
+    ASSERT_TRUE(look->dataset) << look->why_not_openable;
+    for (const auto& [image_id, flag_id] : {std::pair{"SKY", "FLAG_SKY"}, std::pair{"SKY_OTHER", "FLAG_SKY_OTHER"}}) {
+        const CartaZarrImage image(fixture.string(), image_id);
+        for (const auto& note : image.Notes()) {
+            EXPECT_EQ(note.brief.find("pixel_mask"), std::string::npos) << image_id << ": " << note.brief;
+        }
+        const auto opened = look->dataset->OpenImage(image_id);
+        ASSERT_TRUE(opened) << image_id << ": " << opened.error().message;
+        EXPECT_EQ(opened.value().descriptor().pixel_mask_id, flag_id) << image_id;
+    }
+    ZarrStores::Instance().Clear();
 }
 
 // The library opens every image of a dataset with two times, but CARTA displays one time, so none is
