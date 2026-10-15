@@ -192,9 +192,9 @@ add_subdirectory(third-party/json-schema-validator)
 
 # carta-zarr
 if (CARTA_ZARR_ROOT)
-    find_package(CartaZarr 0.1 CONFIG REQUIRED PATHS ${CARTA_ZARR_ROOT} NO_DEFAULT_PATH)
+    find_package(CartaZarr 0.2 CONFIG REQUIRED PATHS ${CARTA_ZARR_ROOT} NO_DEFAULT_PATH)
 else ()
-    find_package(CartaZarr 0.1 CONFIG REQUIRED HINTS /opt/carta-zarr)
+    find_package(CartaZarr 0.2 CONFIG REQUIRED HINTS /opt/carta-zarr)
 endif ()
 message(STATUS "Found carta-zarr ${CartaZarr_VERSION}")
 
