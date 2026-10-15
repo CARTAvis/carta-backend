@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CrtfImporter.cc: import regions from CRTF file or contents string
+// # CrtfImporter.cc: import regions from CRTF file or contents string
 
 #include "CrtfImporter.h"
 
@@ -62,6 +62,16 @@ void CrtfImporter::SetFileLineRegions(std::vector<std::string>& file_lines) {
             region_state = ImportAnnBox(parameters, coord_frame);
         } else if ((region == "ellipse") || (region == "circle") || (region == "compass")) {
             region_state = ImportAnnEllipse(parameters, coord_frame);
+        } else if (region == "annulus") {
+            const bool is_annotation = parameters[0] == "ann";
+            auto annulus_parameters = parameters;
+            if (is_annotation) {
+                annulus_parameters.erase(annulus_parameters.begin());
+            }
+            region_state = ImportAnnulus(annulus_parameters, coord_frame);
+            if (is_annotation && region_state.RegionDefined()) {
+                region_state.type = CARTA::ANNANNULUS;
+            }
         } else if (region.find("poly") != std::string::npos) { // "poly(gon)", "polyline"
             region_state = ImportAnnPoly(parameters, coord_frame);
         } else if (region == "text") {
@@ -309,6 +319,51 @@ RegionState CrtfImporter::ImportAnnEllipse(std::vector<std::string>& parameters,
         }
     } else {
         _errors.append(region + " syntax invalid.\n");
+    }
+
+    return region_state;
+}
+
+RegionState CrtfImporter::ImportAnnulus(std::vector<std::string>& parameters, std::string& coord_frame) {
+    RegionState region_state;
+    if (parameters.size() != 5) {
+        _errors.append("annulus syntax invalid.\n");
+        return region_state;
+    }
+
+    try {
+        casacore::Quantity cx, cy, inner_radius, outer_radius;
+        casacore::readQuantity(cx, parameters[1]);
+        casacore::readQuantity(cy, parameters[2]);
+        casacore::readQuantity(inner_radius, parameters[3]);
+        casacore::readQuantity(outer_radius, parameters[4]);
+
+        std::vector<casacore::Quantity> center{cx, cy};
+        casacore::Vector<casacore::Double> pixel_center;
+        if (!ConvertPointToPixels(_coord_sys, coord_frame, center, pixel_center)) {
+            _errors.append("annulus import failed.\n");
+            return region_state;
+        }
+
+        CARTA::Point outer, inner;
+        EllipseWcsTransform shared_transform;
+        double rotation = 0, inner_rotation = 0;
+        if (inner_radius.getUnit() == "pix" && outer_radius.getUnit() == "pix") {
+            outer = Message::Point(outer_radius.getValue(), outer_radius.getValue());
+            inner = Message::Point(inner_radius.getValue(), inner_radius.getValue());
+        } else if (!WorldEllipseAxesToPixels(
+                       *_coord_sys, pixel_center, outer_radius, outer_radius, 0, coord_frame, outer, rotation, false, &shared_transform) ||
+                   !WorldEllipseAxesToPixels(*_coord_sys, pixel_center, inner_radius, inner_radius, 0, coord_frame, inner, inner_rotation,
+                       false, &shared_transform)) {
+            _errors.append("annulus axes conversion failed.\n");
+            return region_state;
+        }
+        std::vector<CARTA::Point> control_points{Message::Point(pixel_center), outer, inner};
+        // CRTF annuli have no position angle.
+        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, 0.0);
+    } catch (const casacore::AipsError& err) {
+        spdlog::error("annulus import error: {}", err.getMesg());
+        _errors.append("annulus parameters invalid.\n");
     }
 
     return region_state;

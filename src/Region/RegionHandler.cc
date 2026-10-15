@@ -8,6 +8,7 @@
 
 #include "RegionHandler.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 
@@ -195,8 +196,14 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             region_id += 1;
 
             success = true; // if any regions were set
+        } else {
+            error.append(props.state.type == CARTA::RegionType::ANNULUS
+                             ? "Invalid annulus geometry: axes must be positive and finite, with inner axes strictly inside outer axes and "
+                               "identical axis ratios.\n"
+                             : "Imported region has invalid geometry.\n");
         }
     }
+    import_ack.set_message(error);
     import_ack.set_success(success);
 }
 
@@ -234,9 +241,10 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         if (RegionSet(region_id)) {
             auto region = GetRegion(region_id);
             auto region_style = region_id_style.second;
-            if (!exporter->AddRegion(file_id, region, region_style, export_pixel_coords)) {
-                std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
-                export_errors.append(region_error);
+            std::string error;
+            if (!exporter->AddRegion(file_id, region, region_style, export_pixel_coords, &error)) {
+                export_errors += error.empty() ? fmt::format("Export region {} in image {} failed.\n", region_id, file_id)
+                                               : fmt::format("Region {}: {}\n", region_id, error);
             }
         } else {
             std::string region_error = fmt::format("Region {} not found for export.\n", region_id);
@@ -2013,7 +2021,8 @@ bool RegionHandler::IsClosedRegion(int region_id) {
     // Analytic region, not annotation
     if (RegionSet(region_id, true)) {
         auto type = GetRegion(region_id)->GetRegionState().type;
-        return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON);
+        return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON) ||
+               (type == CARTA::RegionType::ANNULUS);
     }
     return false;
 }

@@ -66,6 +66,14 @@ private:
     RegionState ImportAnnEllipse(std::vector<std::string>& parameters, std::string& coord_frame);
 
     /**
+     * @brief Import circular annulus region.
+     * @param parameters Region definition parameters
+     * @param coord_frame Direction frame used to define parameters
+     * @return region state struct
+     */
+    RegionState ImportAnnulus(std::vector<std::string>& parameters, std::string& coord_frame);
+
+    /**
      * @brief Import polygon or line-based region.
      * @param parameters Region definition parameters
      * @param coord_frame Direction frame used to define parameters
