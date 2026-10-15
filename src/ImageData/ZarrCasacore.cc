@@ -222,6 +222,20 @@ ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& des
     return made;
 }
 
+casacore::ImageInfo::ImageTypes MakeZarrImageType(const std::string& sub_type) {
+    const auto spelled = [](std::string name) {
+        name.erase(std::remove(name.begin(), name.end(), ' '), name.end());
+        return casacore::upcase(casacore::String(name));
+    };
+    for (int index = 0; index < casacore::ImageInfo::nTypes; ++index) {
+        const auto type = static_cast<casacore::ImageInfo::ImageTypes>(index);
+        if (spelled(casacore::ImageInfo::imageType(type)) == spelled(sub_type)) {
+            return type;
+        }
+    }
+    return casacore::ImageInfo::defaultImageType();
+}
+
 ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore::uInt channels, casacore::uInt polarizations) {
     ZarrBeams result;
     bool has_first_time_plane = false;
