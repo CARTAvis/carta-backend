@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# RegionConverter.cc: implementation of class for converting a region
+// # RegionConverter.cc: implementation of class for converting a region
 
 #include "RegionConverter.h"
 
@@ -119,7 +119,8 @@ void RegionConverter::SetReferenceWCRegion() {
                 }
                 break;
             }
-            case CARTA::ANNULUS: { // [(cx, cy), (outer_x, outer_y), (inner_x, inner_y)]
+            case CARTA::ANNULUS:
+            case CARTA::ANNANNULUS: { // [(cx, cy), (outer_x, outer_y), (inner_x, inner_y)]
                 std::vector<casacore::Quantity> center_world;
                 if (!CartaPointToWorld(_region_state.control_points[0], center_world)) {
                     break;
@@ -375,7 +376,7 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
     // Closed region types: rectangle, ellipse, polygon.
     // Check ellipse and rectangle distortion; always use polygon for polygon regions.
     CARTA::RegionType region_type = _region_state.type;
-    if (region_type == CARTA::RegionType::ANNULUS) {
+    if ((region_type == CARTA::RegionType::ANNULUS || region_type == CARTA::RegionType::ANNANNULUS)) {
         const auto increments = _reference_coord_sys->increment();
         const auto units = _reference_coord_sys->worldAxisUnits();
         casacore::Quantity x_scale(std::abs(increments(0)), units(0));
@@ -394,14 +395,15 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
         }
     }
     if ((region_type != CARTA::RegionType::ELLIPSE) && (region_type != CARTA::RegionType::RECTANGLE) &&
-        (region_type != CARTA::RegionType::ANNULUS)) {
+        (region_type != CARTA::RegionType::ANNULUS) && (region_type != CARTA::RegionType::ANNANNULUS)) {
         return true;
     }
 
     // Ratio of vector lengths in reference image region
     double ref_length_ratio;
     double x_length(_region_state.control_points[1].x()), y_length(_region_state.control_points[1].y());
-    if (region_type == CARTA::RegionType::ELLIPSE || region_type == CARTA::RegionType::ANNULUS) {
+    if (region_type == CARTA::RegionType::ELLIPSE ||
+        (region_type == CARTA::RegionType::ANNULUS || region_type == CARTA::RegionType::ANNANNULUS)) {
         ref_length_ratio = x_length / y_length;
     } else {
         ref_length_ratio = y_length / x_length;
@@ -409,7 +411,8 @@ bool RegionConverter::UseApproximatePolygon(std::shared_ptr<casacore::Coordinate
 
     // Make vector of endpoints and center, to check lengths against reference image lengths
     std::vector<CARTA::Point> points; // [p0, p1, p2, p3, center]
-    if (region_type == CARTA::RegionType::ELLIPSE || region_type == CARTA::RegionType::ANNULUS) {
+    if (region_type == CARTA::RegionType::ELLIPSE ||
+        (region_type == CARTA::RegionType::ANNULUS || region_type == CARTA::RegionType::ANNANNULUS)) {
         // Make "polygon" with only 4 points
         points = GetApproximateEllipsePoints(4);
     } else {
@@ -487,7 +490,7 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetAppliedPolygonRegion(
         return lc_region;
     }
 
-    if (_region_state.type == CARTA::RegionType::ANNULUS) {
+    if ((_region_state.type == CARTA::RegionType::ANNULUS || _region_state.type == CARTA::RegionType::ANNANNULUS)) {
         if (polygon_points.size() != 2) {
             return lc_region;
         }
@@ -605,7 +608,8 @@ std::vector<std::vector<CARTA::Point>> RegionConverter::GetReferencePolygonPoint
             points.push_back(GetApproximateEllipsePoints(num_vertices));
             break;
         }
-        case CARTA::ANNULUS: {
+        case CARTA::ANNULUS:
+        case CARTA::ANNANNULUS: {
             points.push_back(GetApproximateEllipsePoints(num_vertices));
             points.push_back(GetApproximateEllipsePoints(num_vertices, &_region_state.control_points[2]));
             break;
@@ -769,7 +773,7 @@ casacore::TableRecord RegionConverter::GetImageRegionRecord(
     // Return Record describing Region applied to output image in pixel coordinates
     casacore::TableRecord record;
 
-    if (_region_state.type == CARTA::RegionType::ANNULUS) {
+    if ((_region_state.type == CARTA::RegionType::ANNULUS || _region_state.type == CARTA::RegionType::ANNANNULUS)) {
         return GetAnnulusRecord(output_csys);
     }
 
@@ -840,7 +844,8 @@ casacore::TableRecord RegionConverter::GetRegionPointsRecord(
             record = GetEllipseRecord(_wcs_control_points, _region_state.rotation, output_csys);
             break;
         }
-        case CARTA::RegionType::ANNULUS: {
+        case CARTA::RegionType::ANNULUS:
+        case CARTA::RegionType::ANNANNULUS: {
             record = GetAnnulusRecord(output_csys);
             break;
         }

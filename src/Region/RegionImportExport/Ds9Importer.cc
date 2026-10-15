@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Ds9Importer.cc: import regions in DS9 format
+// # Ds9Importer.cc: import regions in DS9 format
 
 #include "Ds9Importer.h"
 
@@ -346,10 +346,6 @@ RegionState Ds9Importer::ImportEllipseRegion(std::vector<std::string>& parameter
 RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameters, bool is_annotation) {
     RegionState region_state;
     auto region_name = parameters[0];
-    if (is_annotation) {
-        _errors.append("Annotation annulus is not supported.\n");
-        return region_state;
-    }
     size_t nparam(parameters.size());
 
     const bool valid_annulus_parameters = region_name == "annulus" ? nparam == 5 : region_name == "ellipse" && (nparam == 7 || nparam == 8);
@@ -415,7 +411,8 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                     pixel_angle = 0;
                     return true;
                 }
-                return WorldEllipseAxesToPixels(*_coord_sys, pixel_coords, first, second, angle, _file_coord_frame, axes, pixel_angle, !circular);
+                return WorldEllipseAxesToPixels(
+                    *_coord_sys, pixel_coords, first, second, angle, _file_coord_frame, axes, pixel_angle, !circular);
             };
             CARTA::Point first_axes, second_axes;
             double first_angle, second_angle;
@@ -468,7 +465,8 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                 rotation += 360.0;
             }
         }
-        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, rotation);
+        region_state =
+            RegionState(_file_id, is_annotation ? CARTA::RegionType::ANNANNULUS : CARTA::RegionType::ANNULUS, control_points, rotation);
     } else if (region_name == "annulus") {
         _errors.append(
             "Circular annulus syntax error: expected a center and exactly two radii; multiple rings and n= are not supported.\n");

@@ -66,7 +66,8 @@ bool RegionImporter::IsCommentLine(const std::string& file_line) {
     if (file_line[0] != '#') {
         return false;
     }
-    if (file_line.find("# textbox") == 0 || file_line.find("# circle") == 0 || file_line.find("# segment") == 0) {
+    if (file_line.find("# textbox") == 0 || file_line.find("# circle") == 0 || file_line.find("# segment") == 0 ||
+        file_line.find("# annulus") == 0) {
         // not in map, are type RECTANGLE (CRTF "centerbox", DS9 "box"), ELLIPSE ("ellipse"), and POLYLINE
         return false;
     }

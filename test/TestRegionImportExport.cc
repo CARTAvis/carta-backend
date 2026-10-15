@@ -86,6 +86,53 @@ TEST(AnnulusExportTest, Ds9EllipticalAnnulusPreservesAxisOrderAndPositionAngle) 
     }
 }
 
+TEST(AnnulusExportTest, AnnotationAnnulusRoundtrip) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto reference = csys->referencePixel();
+    reference(0) = reference(1) = 20;
+    ASSERT_TRUE(csys->setReferencePixel(reference));
+    const casacore::IPosition shape(2, 40, 40);
+    for (bool circular : {false, true}) {
+        const auto outer = Message::Point(3, circular ? 3 : 6);
+        const auto inner = Message::Point(1.5, circular ? 1.5 : 3);
+        auto region =
+            std::make_shared<Region>(RegionState(0, CARTA::ANNANNULUS, {Message::Point(20, 20), outer, inner}, circular ? 0 : 210), csys);
+        ASSERT_TRUE(region->GetRegionState().IsAnnotation());
+        for (bool pixels : {false, true}) {
+            for (bool crtf : {false, true}) {
+                if (crtf && !circular) {
+                    continue;
+                }
+                SCOPED_TRACE(fmt::format("circular={}, pixels={}, crtf={}", circular, pixels, crtf));
+                Ds9Exporter ds9(csys, shape, pixels);
+                CrtfExporter crtf_exporter(csys, shape, -1);
+                RegionExporter& exporter = crtf ? static_cast<RegionExporter&>(crtf_exporter) : static_cast<RegionExporter&>(ds9);
+                CARTA::RegionStyle style;
+                style.set_color("green");
+                std::string error, contents;
+                ASSERT_TRUE(exporter.AddRegion(0, region, style, pixels, &error)) << error;
+                CARTA::ExportRegionAck ack;
+                exporter.ExportRegions("", error, ack);
+                ASSERT_TRUE(ack.success()) << error;
+                for (const auto& line : ack.contents()) {
+                    contents += line;
+                }
+                Ds9Importer ds9_importer(csys, 0, crtf ? "" : contents, false);
+                CrtfImporter crtf_importer(csys, 0, crtf ? contents : "", false);
+                RegionImporter& importer = crtf ? static_cast<RegionImporter&>(crtf_importer) : static_cast<RegionImporter&>(ds9_importer);
+                auto imported = importer.GetRegions(error);
+                ASSERT_EQ(imported.size(), 1) << error << contents;
+                EXPECT_EQ(imported[0].state.type, CARTA::ANNANNULUS) << contents;
+                EXPECT_NEAR(imported[0].state.rotation, circular ? 0 : 210, 1e-3);
+                EXPECT_NEAR(imported[0].state.control_points[1].x(), outer.x(), 1e-3);
+                EXPECT_NEAR(imported[0].state.control_points[1].y(), outer.y(), 1e-3);
+                EXPECT_NEAR(imported[0].state.control_points[2].x(), inner.x(), 1e-3);
+                EXPECT_NEAR(imported[0].state.control_points[2].y(), inner.y(), 1e-3);
+            }
+        }
+    }
+}
+
 TEST(AnnulusExportTest, CrtfAnnulusImportsWithZeroPositionAngle) {
     auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
     auto increments = csys->increment();
@@ -343,7 +390,7 @@ public:
             {CARTA::ANNRECTANGLE, line_rectangle_ellipse_points}, {CARTA::ANNELLIPSE, line_rectangle_ellipse_points},
             {CARTA::ANNPOLYGON, poly_points}, {CARTA::ANNVECTOR, line_rectangle_ellipse_points},
             {CARTA::ANNRULER, line_rectangle_ellipse_points}, {CARTA::ANNTEXT, line_rectangle_ellipse_points},
-            {CARTA::ANNCOMPASS, circle_points}};
+            {CARTA::ANNCOMPASS, circle_points}, {CARTA::ANNANNULUS, {5.0, 5.0, 3.0, 3.0, 1.5, 1.5}}};
         float rotation(0.0);
         int num_regions(0);
 
@@ -451,7 +498,9 @@ public:
         if (rs0.control_points.size() != rs1.control_points.size()) {
             return false;
         }
-        if (std::fabs(rs0.rotation - rs1.rotation) > 1e-5) {
+        // Local WCS conversion and DS9 decimal precision can leave a small angle error near 0/360 degrees.
+        const double rotation_tolerance = rs0.type == CARTA::ANNANNULUS ? 1e-3 : 1e-5;
+        if (std::fabs(std::remainder(rs0.rotation - rs1.rotation, 360.0)) > rotation_tolerance) {
             return false;
         }
 
@@ -784,19 +833,19 @@ TEST_F(RegionImportExportTest, TestDs9AnnulusExportImport) {
         crtf_export_ack.message(), testing::HasSubstr("Region 1: Ellipse annulus is not supported in CRTF. Please save as DS9 format."));
 }
 
-TEST_F(RegionImportExportTest, TestDs9AnnotationAnnulusRejectedWithMessage) {
+TEST_F(RegionImportExportTest, TestDs9AnnotationAnnulusImport) {
     auto image_path = FitsImages() / "noise_10px_10px.fits";
     auto loader = carta::FileLoader::GetLoader(image_path);
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     carta::RegionHandler region_handler;
-    const std::string contents = "image\n# ellipse(5,5,3,4,2,2,0)\n";
+    const std::string contents = "image\n# ellipse(5,5,3,4,1.5,2,0)\n";
     CARTA::ImportRegionAck import_ack;
 
     region_handler.ImportRegion(0, frame, CARTA::DS9_REG, contents, false, import_ack);
 
-    EXPECT_FALSE(import_ack.success());
-    EXPECT_EQ(import_ack.regions_size(), 0);
-    EXPECT_THAT(import_ack.message(), testing::HasSubstr("Annotation annulus is not supported"));
+    ASSERT_TRUE(import_ack.success()) << import_ack.message();
+    ASSERT_EQ(import_ack.regions_size(), 1);
+    EXPECT_EQ(import_ack.regions().begin()->second.region_type(), CARTA::ANNANNULUS);
 }
 
 TEST_F(RegionImportExportTest, TestInvalidAnnulusImportReportsReason) {

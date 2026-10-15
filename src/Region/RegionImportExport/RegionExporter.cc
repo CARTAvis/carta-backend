@@ -122,6 +122,7 @@ bool RegionExporter::AddRegion(const RegionState& region_state, const CARTA::Reg
             converted = ConvertRecordToEllipse(region_state, region_record, export_pixels, control_points, rotation);
             break;
         case CARTA::RegionType::ANNULUS:
+        case CARTA::RegionType::ANNANNULUS:
             converted = ConvertRecordToAnnulus(region_state, region_record, export_pixels, control_points, rotation);
             break;
         case CARTA::RegionType::LINE:

@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CrtfImporter.cc: import regions from CRTF file or contents string
+// # CrtfImporter.cc: import regions from CRTF file or contents string
 
 #include "CrtfImporter.h"
 
@@ -63,7 +63,15 @@ void CrtfImporter::SetFileLineRegions(std::vector<std::string>& file_lines) {
         } else if ((region == "ellipse") || (region == "circle") || (region == "compass")) {
             region_state = ImportAnnEllipse(parameters, coord_frame);
         } else if (region == "annulus") {
-            region_state = ImportAnnulus(parameters, coord_frame);
+            const bool is_annotation = parameters[0] == "ann";
+            auto annulus_parameters = parameters;
+            if (is_annotation) {
+                annulus_parameters.erase(annulus_parameters.begin());
+            }
+            region_state = ImportAnnulus(annulus_parameters, coord_frame);
+            if (is_annotation && region_state.RegionDefined()) {
+                region_state.type = CARTA::ANNANNULUS;
+            }
         } else if (region.find("poly") != std::string::npos) { // "poly(gon)", "polyline"
             region_state = ImportAnnPoly(parameters, coord_frame);
         } else if (region == "text") {

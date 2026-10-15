@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# RegionImportExportUtil.cc: functions common to CRTF and DS9 import and export
+// # RegionImportExportUtil.cc: functions common to CRTF and DS9 import and export
 
 #include "RegionImportExportUtil.h"
 
@@ -138,7 +138,8 @@ bool WorldEllipseAxesToPixels(const casacore::CoordinateSystem& coord_sys, const
     inverse(0, 1) = -transform(0, 1) / determinant;
     inverse(1, 0) = -transform(1, 0) / determinant;
     double major, minor;
-    if (!TransformEllipseAxes(first.get(unit).getValue(), second.get(unit).getValue(), angle_degrees, inverse, major, minor, rotation, preserve_axis_order)) {
+    if (!TransformEllipseAxes(
+            first.get(unit).getValue(), second.get(unit).getValue(), angle_degrees, inverse, major, minor, rotation, preserve_axis_order)) {
         return false;
     }
     axes.set_x(preserve_axis_order ? major : minor);
@@ -216,6 +217,7 @@ std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::Fil
         region_names[CARTA::RegionType::ANNPOLYLINE] = "ann polyline";
         region_names[CARTA::RegionType::ANNRECTANGLE] = "ann centerbox";
         region_names[CARTA::RegionType::ANNELLIPSE] = "ann ellipse";
+        region_names[CARTA::RegionType::ANNANNULUS] = "ann annulus";
         region_names[CARTA::RegionType::ANNPOLYGON] = "ann poly";
         region_names[CARTA::RegionType::ANNVECTOR] = "vector";
         region_names[CARTA::RegionType::ANNTEXT] = "text";
@@ -228,6 +230,7 @@ std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::Fil
         region_names[CARTA::RegionType::ANNPOLYLINE] = "# polyline";
         region_names[CARTA::RegionType::ANNRECTANGLE] = "# box";
         region_names[CARTA::RegionType::ANNELLIPSE] = "# ellipse";
+        region_names[CARTA::RegionType::ANNANNULUS] = "# ellipse";
         region_names[CARTA::RegionType::ANNPOLYGON] = "# polygon";
         region_names[CARTA::RegionType::ANNVECTOR] = "# vector";
         region_names[CARTA::RegionType::ANNTEXT] = "# text";

@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Ds9Exporter.cc: export regions in DS9 format
+// # Ds9Exporter.cc: export regions in DS9 format
 
 #include "Ds9Exporter.h"
 
@@ -38,7 +38,7 @@ bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::Region
     float rotation = region_state.rotation;
 
     if (region_type == CARTA::RegionType::ELLIPSE || region_type == CARTA::RegionType::ANNELLIPSE ||
-        region_type == CARTA::RegionType::ANNULUS) {
+        (region_type == CARTA::RegionType::ANNULUS || region_type == CARTA::RegionType::ANNANNULUS)) {
         rotation += 90.0; // DS9 angle measured from x-axis
         if (rotation > 360.0) {
             rotation -= 360.0;
@@ -96,7 +96,8 @@ bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::Region
             }
             break;
         }
-        case CARTA::RegionType::ANNULUS: {
+        case CARTA::RegionType::ANNULUS:
+        case CARTA::RegionType::ANNANNULUS: {
             // annulus(x,y,r1,r2) OR ellipse(x,y,rx1,ry1,rx2,ry2) OR ellipse(x,y,rx1,ry1,rx2,ry2,angle)
             if (points[1].x() == points[1].y() && points[2].x() == points[2].y()) {
                 // circle when outer bmaj==bmin and inner bmaj==bmin
@@ -142,6 +143,10 @@ bool Ds9Exporter::AddRegion(const RegionState& region_state, const CARTA::Region
             break;
     }
 
+    if (region_type == CARTA::ANNANNULUS && !file_line.empty()) {
+        file_line = "# " + file_line;
+    }
+
     // Add region style and add to list
     if (!file_line.empty()) {
         AddStyle(region_style, file_line);
@@ -163,6 +168,10 @@ bool Ds9Exporter::AddRegion(const CARTA::RegionType region_type, const std::vect
         file_line = GetRegionPixelLine(region_type, control_points, rotation_deg, region_style);
     } else {
         file_line = GetRegionWorldLine(region_type, control_points, rotation_deg, region_style);
+    }
+
+    if (region_type == CARTA::ANNANNULUS && !file_line.empty()) {
+        file_line = "# " + file_line;
     }
 
     // Add region style and add to list
@@ -306,7 +315,8 @@ std::string Ds9Exporter::GetRegionPixelLine(CARTA::RegionType region_type, const
             }
             break;
         }
-        case CARTA::RegionType::ANNULUS: {
+        case CARTA::RegionType::ANNULUS:
+        case CARTA::RegionType::ANNANNULUS: {
             if (control_points[2].getValue() == control_points[3].getValue() &&
                 control_points[4].getValue() == control_points[5].getValue()) {
                 file_line = fmt::format("annulus({:.9g}, {:.9g}, {:.9g}, {:.9g})", (control_points[0].getValue() + 1),
@@ -409,7 +419,8 @@ std::string Ds9Exporter::GetRegionWorldLine(CARTA::RegionType region_type, const
             }
             break;
         }
-        case CARTA::RegionType::ANNULUS: {
+        case CARTA::RegionType::ANNULUS:
+        case CARTA::RegionType::ANNANNULUS: {
             if (control_points[2].getValue() == control_points[3].getValue() &&
                 control_points[4].getValue() == control_points[5].getValue()) {
                 file_line = fmt::format("annulus({:.9f}, {:.9f}, {:.9g}\", {:.9g}\")", control_points[0].get("deg").getValue(),

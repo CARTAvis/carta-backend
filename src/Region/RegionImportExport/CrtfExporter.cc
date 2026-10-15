@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CrtfExporter.cc: export regions in CRTF format
+// # CrtfExporter.cc: export regions in CRTF format
 
 #include "CrtfExporter.h"
 
@@ -40,7 +40,7 @@ CrtfExporter::CrtfExporter(std::shared_ptr<casacore::CoordinateSystem> coord_sys
 }
 
 bool CrtfExporter::AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) {
-    if (region_state.type == CARTA::RegionType::ANNULUS) {
+    if ((region_state.type == CARTA::RegionType::ANNULUS || region_state.type == CARTA::RegionType::ANNANNULUS)) {
         if (region_state.control_points.size() != 3 ||
             !IsApproximatelyCircular(region_state.control_points[1].x(), region_state.control_points[1].y()) ||
             !IsApproximatelyCircular(region_state.control_points[2].x(), region_state.control_points[2].y())) {
@@ -52,6 +52,9 @@ bool CrtfExporter::AddRegion(const RegionState& region_state, const CARTA::Regio
         const auto& inner = region_state.control_points[2];
         std::string file_line =
             fmt::format("annulus[[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", center.x(), center.y(), inner.x(), outer.x());
+        if (region_state.type == CARTA::ANNANNULUS) {
+            file_line = "ann " + file_line;
+        }
         AddStyle(region_style, file_line);
         _file_lines.push_back(file_line);
         return true;
@@ -310,7 +313,8 @@ bool CrtfExporter::GetAnnRegion(CARTA::RegionType region_type, const std::vector
                 }
                 break;
             }
-            case CARTA::RegionType::ANNULUS: {
+            case CARTA::RegionType::ANNULUS:
+            case CARTA::RegionType::ANNANNULUS: {
                 if (control_points.size() != 6) {
                     return false;
                 }

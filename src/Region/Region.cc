@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Region.cc: implementation of class for managing a region
+// # Region.cc: implementation of class for managing a region
 
 #include "Region.h"
 
@@ -94,7 +94,8 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
             points_ok = (npoints == 2) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0);
             break;
         }
-        case CARTA::ANNULUS: { // [(cx, cy), (outer_x, outer_y), (inner_x, inner_y)]
+        case CARTA::ANNULUS:
+        case CARTA::ANNANNULUS: { // [(cx, cy), (outer_x, outer_y), (inner_x, inner_y)]
             const double outer_ratio = points.size() == 3 && points[1].y() > 0 ? points[1].x() / points[1].y() : 0.0;
             const double inner_ratio = points.size() == 3 && points[2].y() > 0 ? points[2].x() / points[2].y() : 0.0;
             points_ok = (npoints == 3) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0) && (points[2].x() > 0) &&
@@ -175,7 +176,8 @@ std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared
                 } catch (const casacore::AipsError& err) {
                     // If only an annulus hole is outside this lattice, it subtracts no image pixels.
                     const auto state = GetRegionState();
-                    if (state.type == CARTA::RegionType::ANNULUS && state.control_points.size() == 3) {
+                    if ((state.type == CARTA::RegionType::ANNULUS || state.type == CARTA::RegionType::ANNANNULUS) &&
+                        state.control_points.size() == 3) {
                         const auto& hole = state.control_points[2];
                         const double theta = state.rotation * M_PI / 180.0;
                         const double extent_x = std::hypot(hole.y() * std::cos(theta), hole.x() * std::sin(theta));
@@ -419,7 +421,8 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
             record = make_ellipse_record(region_state.control_points[1], region_type == CARTA::RegionType::ANNCOMPASS);
             break;
         }
-        case CARTA::RegionType::ANNULUS: {
+        case CARTA::RegionType::ANNULUS:
+        case CARTA::RegionType::ANNANNULUS: {
             if (region_state.control_points.size() < 3) {
                 break;
             }
