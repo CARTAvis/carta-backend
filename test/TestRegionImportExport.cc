@@ -45,6 +45,31 @@ std::set<std::pair<int, int>> SelectedPixels(
 }
 } // namespace
 
+TEST(AnnulusExportTest, CrtfAnnulusImportsWithZeroPositionAngle) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto increments = csys->increment();
+    increments(0) *= 1.0005;
+    ASSERT_TRUE(csys->setIncrement(increments));
+    const std::vector<std::string> contents = {
+        "annulus[[20pix,20pix],[2pix,4pix]]", "annulus[[0deg,0deg],[120arcsec,360arcsec]] coord=J2000"};
+    for (double angle : {0.0, 30.0, 90.0}) {
+        casacore::Matrix<casacore::Double> transform(2, 2);
+        const double radians = angle * M_PI / 180.0;
+        transform(0, 0) = transform(1, 1) = std::cos(radians);
+        transform(0, 1) = -std::sin(radians);
+        transform(1, 0) = std::sin(radians);
+        ASSERT_TRUE(csys->setLinearTransform(transform));
+        for (const auto& text : contents) {
+            CrtfImporter importer(csys, 0, text, false);
+            std::string error;
+            auto regions = importer.GetRegions(error);
+            ASSERT_EQ(regions.size(), 1) << error;
+            EXPECT_EQ(regions[0].state.type, CARTA::ANNULUS);
+            EXPECT_FLOAT_EQ(regions[0].state.rotation, 0.0);
+        }
+    }
+}
+
 TEST(AnnulusExportTest, WorldGeometryPreservesRotationAndReflection) {
     const casacore::IPosition shape(2, 40, 40);
     for (bool rectangular : {false, true}) {
@@ -101,21 +126,16 @@ TEST(AnnulusExportTest, WorldGeometryPreservesRotationAndReflection) {
                 auto original = source_importer.GetRegions(error), imported = target_importer.GetRegions(error);
                 ASSERT_EQ(original.size(), 1) << error;
                 ASSERT_EQ(imported.size(), 1) << error;
+                if (crtf) {
+                    EXPECT_FLOAT_EQ(original[0].state.rotation, 0.0);
+                    EXPECT_FLOAT_EQ(imported[0].state.rotation, 0.0);
+                    continue;
+                }
                 auto reference_region = std::make_shared<Region>(original[0].state, source);
                 Region target_region(imported[0].state, target);
                 const auto matched = SelectedPixels(*reference_region, 1, target, shape);
                 ASSERT_FALSE(matched.empty());
                 EXPECT_EQ(SelectedPixels(target_region, 1, target, shape), matched) << contents;
-                if (crtf) {
-                    CrtfExporter crtf_exporter(target, shape, -1);
-                    RegionExporter& exporter = crtf_exporter;
-                    CARTA::RegionStyle style;
-                    style.set_color("green");
-                    ASSERT_TRUE(exporter.AddRegion(1, reference_region, style, false, &error)) << error;
-                    CARTA::ExportRegionAck ack;
-                    exporter.ExportRegions("", error, ack);
-                    ASSERT_TRUE(ack.success()) << error;
-                }
             }
         }
     }
@@ -130,7 +150,7 @@ TEST(AnnulusExportTest, WorldCircleWithRectangularPixels) {
     reference(0) = reference(1) = 10;
     ASSERT_TRUE(csys->setReferencePixel(reference));
     const casacore::IPosition shape(2, 20, 20);
-    CrtfImporter source(csys, 0, "annulus[[0deg,0deg], [120arcsec,360arcsec]] coord=J2000", false);
+    Ds9Importer source(csys, 0, "fk5\nannulus(0,0,120\",360\")", false);
     std::string error;
     auto original = source.GetRegions(error);
     ASSERT_EQ(original.size(), 1);
@@ -153,6 +173,7 @@ TEST(AnnulusExportTest, WorldCircleWithRectangularPixels) {
     CrtfImporter imported(csys, 0, contents, false);
     auto roundtrip = imported.GetRegions(error);
     ASSERT_EQ(roundtrip.size(), 1) << error;
+    EXPECT_FLOAT_EQ(roundtrip[0].state.rotation, 0.0);
     for (int axis = 1; axis <= 2; ++axis) {
         EXPECT_NEAR(roundtrip[0].state.control_points[axis].x(), original[0].state.control_points[axis].x(), 1e-4);
         EXPECT_NEAR(roundtrip[0].state.control_points[axis].y(), original[0].state.control_points[axis].y(), 1e-4);

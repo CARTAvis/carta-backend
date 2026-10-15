@@ -349,7 +349,8 @@ RegionState CrtfImporter::ImportAnnulus(std::vector<std::string>& parameters, st
             return region_state;
         }
         std::vector<CARTA::Point> control_points{Message::Point(pixel_center), outer, inner};
-        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, rotation);
+        // CRTF annuli have no position angle.
+        region_state = RegionState(_file_id, CARTA::RegionType::ANNULUS, control_points, 0.0);
     } catch (const casacore::AipsError& err) {
         spdlog::error("annulus import error: {}", err.getMesg());
         _errors.append("annulus parameters invalid.\n");
