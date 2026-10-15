@@ -83,13 +83,13 @@ bool PixelToWorldEllipseTransform(const casacore::CoordinateSystem& coord_sys, c
 } // namespace
 
 bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
-    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center) {
+    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center, bool preserve_axis_order) {
     if (center) {
         casacore::Matrix<casacore::Double> transform;
         casacore::Unit unit;
         double major, minor, angle;
         if (!PixelToWorldEllipseTransform(coord_sys, *center, "", transform, unit) ||
-            !TransformEllipseAxes(first, second, rotation.get("deg").getValue(), transform, major, minor, angle)) {
+            !TransformEllipseAxes(first, second, rotation.get("deg").getValue(), transform, major, minor, angle, preserve_axis_order)) {
             return false;
         }
         axes.push_back(casacore::Quantity(major, unit));
@@ -122,7 +122,7 @@ bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double
 
 bool WorldEllipseAxesToPixels(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
     const casacore::Quantity& first, const casacore::Quantity& second, double angle_degrees, const std::string& world_frame,
-    CARTA::Point& axes, double& rotation) {
+    CARTA::Point& axes, double& rotation, bool preserve_axis_order) {
     casacore::Matrix<casacore::Double> transform;
     casacore::Unit unit;
     if (!PixelToWorldEllipseTransform(coord_sys, center, world_frame, transform, unit)) {
@@ -138,12 +138,12 @@ bool WorldEllipseAxesToPixels(const casacore::CoordinateSystem& coord_sys, const
     inverse(0, 1) = -transform(0, 1) / determinant;
     inverse(1, 0) = -transform(1, 0) / determinant;
     double major, minor;
-    if (!TransformEllipseAxes(first.get(unit).getValue(), second.get(unit).getValue(), angle_degrees, inverse, major, minor, rotation)) {
+    if (!TransformEllipseAxes(first.get(unit).getValue(), second.get(unit).getValue(), angle_degrees, inverse, major, minor, rotation, preserve_axis_order)) {
         return false;
     }
-    axes.set_x(minor);
-    axes.set_y(major);
-    rotation = std::fmod(rotation + 360.0, 360.0);
+    axes.set_x(preserve_axis_order ? major : minor);
+    axes.set_y(preserve_axis_order ? minor : major);
+    rotation = std::fmod(rotation + (preserve_axis_order ? 270.0 : 360.0), 360.0);
     return true;
 }
 
@@ -156,7 +156,7 @@ bool TransformEllipseAxes(double first, double second, double angle_degrees, dou
 }
 
 bool TransformEllipseAxes(double first, double second, double angle_degrees, const casacore::Matrix<casacore::Double>& transform,
-    double& major, double& minor, double& major_angle_degrees) {
+    double& major, double& minor, double& major_angle_degrees, bool preserve_axis_order) {
     if (first <= 0 || second <= 0 || transform.nrow() != 2 || transform.ncolumn() != 2) {
         return false;
     }
@@ -180,6 +180,22 @@ bool TransformEllipseAxes(double first, double second, double angle_degrees, con
     major = std::sqrt((xx + yy + (circular ? 0 : difference)) / 2);
     minor = std::sqrt(std::max(0.0, (xx + yy - (circular ? 0 : difference)) / 2));
     major_angle_degrees = circular ? 0 : std::atan2(2 * xy, xx - yy) * 90.0 / M_PI;
+    if (preserve_axis_order) {
+        // Preserve whether the first radius is the shorter or longer axis, and retain its direction.
+        const double direction = std::atan2(transformed_major_y, transformed_major_x) * 180.0 / M_PI;
+        if (circular) {
+            major_angle_degrees = direction;
+        } else {
+            if (first < second) {
+                std::swap(major, minor);
+                major_angle_degrees += 90.0;
+            }
+            if (std::abs(std::remainder(direction - major_angle_degrees, 360.0)) > 90.0) {
+                major_angle_degrees += 180.0;
+            }
+        }
+        major_angle_degrees = std::fmod(major_angle_degrees + 360.0, 360.0);
+    }
     return true;
 }
 

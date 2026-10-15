@@ -45,6 +45,47 @@ std::set<std::pair<int, int>> SelectedPixels(
 }
 } // namespace
 
+TEST(AnnulusExportTest, Ds9EllipticalAnnulusPreservesAxisOrderAndPositionAngle) {
+    const casacore::IPosition shape(2, 100, 100);
+    for (bool near_square : {false, true}) {
+        auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+        auto increments = csys->increment();
+        increments(0) *= near_square ? 1.0005 : 1;
+        ASSERT_TRUE(csys->setIncrement(increments));
+        auto reference = csys->referencePixel();
+        reference(0) = reference(1) = 50;
+        ASSERT_TRUE(csys->setReferencePixel(reference));
+        for (bool swapped : {false, true}) {
+            auto outer = Message::Point(swapped ? 10 : 5, swapped ? 5 : 10);
+            auto inner = Message::Point(outer.x() / 2, outer.y() / 2);
+            for (float pa : {0.f, 30.f, 90.f, 120.f, 210.f, 270.f, 300.f}) {
+                auto region = std::make_shared<Region>(RegionState(0, CARTA::ANNULUS, {Message::Point(50, 50), outer, inner}, pa), csys);
+                for (bool pixels : {false, true}) {
+                    SCOPED_TRACE(fmt::format("near_square={}, swapped={}, pa={}, pixels={}", near_square, swapped, pa, pixels));
+                    Ds9Exporter ds9(csys, shape, pixels);
+                    RegionExporter& exporter = ds9;
+                    std::string error, contents;
+                    ASSERT_TRUE(exporter.AddRegion(0, region, CARTA::RegionStyle(), pixels, &error)) << error;
+                    CARTA::ExportRegionAck ack;
+                    exporter.ExportRegions("", error, ack);
+                    ASSERT_TRUE(ack.success()) << error;
+                    for (const auto& line : ack.contents()) {
+                        contents += line;
+                    }
+                    Ds9Importer importer(csys, 0, contents, false);
+                    auto imported = importer.GetRegions(error);
+                    ASSERT_EQ(imported.size(), 1) << error;
+                    EXPECT_NEAR(imported[0].state.rotation, pa, 1e-3);
+                    for (int axis = 1; axis <= 2; ++axis) {
+                        EXPECT_NEAR(imported[0].state.control_points[axis].x(), region->GetRegionState().control_points[axis].x(), 1e-3);
+                        EXPECT_NEAR(imported[0].state.control_points[axis].y(), region->GetRegionState().control_points[axis].y(), 1e-3);
+                    }
+                }
+            }
+        }
+    }
+}
+
 TEST(AnnulusExportTest, CrtfAnnulusImportsWithZeroPositionAngle) {
     auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
     auto increments = csys->increment();

@@ -415,7 +415,7 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                     pixel_angle = 0;
                     return true;
                 }
-                return WorldEllipseAxesToPixels(*_coord_sys, pixel_coords, first, second, angle, _file_coord_frame, axes, pixel_angle);
+                return WorldEllipseAxesToPixels(*_coord_sys, pixel_coords, first, second, angle, _file_coord_frame, axes, pixel_angle, !circular);
             };
             CARTA::Point first_axes, second_axes;
             double first_angle, second_angle;
