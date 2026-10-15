@@ -21,7 +21,12 @@ namespace {
 // Local pixel-to-world matrix. Celestial axes are east/north in radians; signed
 // offsets retain WCS rotation, reflection, projection, and coordinate-frame conversion.
 bool PixelToWorldEllipseTransform(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
-    const std::string& world_frame, casacore::Matrix<casacore::Double>& transform, casacore::Unit& unit) {
+    const std::string& world_frame, EllipseWcsTransform& cached) {
+    if (cached.initialized) {
+        return true;
+    }
+    auto& transform = cached.matrix;
+    auto& unit = cached.unit;
     transform.resize(2, 2);
     if (coord_sys.hasDirectionCoordinate()) {
         const auto& direction = coord_sys.directionCoordinate();
@@ -78,22 +83,24 @@ bool PixelToWorldEllipseTransform(const casacore::CoordinateSystem& coord_sys, c
             }
         }
     }
+    cached.initialized = true;
     return true;
 }
 } // namespace
 
 bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
-    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center, bool preserve_axis_order) {
+    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center, bool preserve_axis_order,
+    EllipseWcsTransform* shared_transform) {
     if (center) {
-        casacore::Matrix<casacore::Double> transform;
-        casacore::Unit unit;
+        EllipseWcsTransform local_transform;
+        auto& wcs = shared_transform ? *shared_transform : local_transform;
         double major, minor, angle;
-        if (!PixelToWorldEllipseTransform(coord_sys, *center, "", transform, unit) ||
-            !TransformEllipseAxes(first, second, rotation.get("deg").getValue(), transform, major, minor, angle, preserve_axis_order)) {
+        if (!PixelToWorldEllipseTransform(coord_sys, *center, "", wcs) ||
+            !TransformEllipseAxes(first, second, rotation.get("deg").getValue(), wcs.matrix, major, minor, angle, preserve_axis_order)) {
             return false;
         }
-        axes.push_back(casacore::Quantity(major, unit));
-        axes.push_back(casacore::Quantity(minor, unit));
+        axes.push_back(casacore::Quantity(major, wcs.unit));
+        axes.push_back(casacore::Quantity(minor, wcs.unit));
         rotation = casacore::Quantity(angle, "deg");
         return true;
     }
@@ -122,12 +129,14 @@ bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double
 
 bool WorldEllipseAxesToPixels(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
     const casacore::Quantity& first, const casacore::Quantity& second, double angle_degrees, const std::string& world_frame,
-    CARTA::Point& axes, double& rotation, bool preserve_axis_order) {
-    casacore::Matrix<casacore::Double> transform;
-    casacore::Unit unit;
-    if (!PixelToWorldEllipseTransform(coord_sys, center, world_frame, transform, unit)) {
+    CARTA::Point& axes, double& rotation, bool preserve_axis_order, EllipseWcsTransform* shared_transform) {
+    EllipseWcsTransform local_transform;
+    auto& wcs = shared_transform ? *shared_transform : local_transform;
+    if (!PixelToWorldEllipseTransform(coord_sys, center, world_frame, wcs)) {
         return false;
     }
+    const auto& transform = wcs.matrix;
+    const auto& unit = wcs.unit;
     const double determinant = transform(0, 0) * transform(1, 1) - transform(0, 1) * transform(1, 0);
     if (!std::isfinite(determinant) || determinant == 0) {
         return false;

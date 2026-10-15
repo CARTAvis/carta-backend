@@ -62,28 +62,179 @@ TEST(AnnulusExportTest, Ds9EllipticalAnnulusPreservesAxisOrderAndPositionAngle) 
                 auto region = std::make_shared<Region>(RegionState(0, CARTA::ANNULUS, {Message::Point(50, 50), outer, inner}, pa), csys);
                 for (bool pixels : {false, true}) {
                     SCOPED_TRACE(fmt::format("near_square={}, swapped={}, pa={}, pixels={}", near_square, swapped, pa, pixels));
-                    Ds9Exporter ds9(csys, shape, pixels);
+                    for (int file_id : {0, 1}) {
+                        SCOPED_TRACE(file_id);
+                        Ds9Exporter ds9(csys, shape, pixels);
+                        RegionExporter& exporter = ds9;
+                        std::string error, contents;
+                        ASSERT_TRUE(exporter.AddRegion(file_id, region, CARTA::RegionStyle(), pixels, &error)) << error;
+                        CARTA::ExportRegionAck ack;
+                        exporter.ExportRegions("", error, ack);
+                        ASSERT_TRUE(ack.success()) << error;
+                        for (const auto& line : ack.contents()) {
+                            contents += line;
+                        }
+                        Ds9Importer importer(csys, file_id, contents, false);
+                        auto imported = importer.GetRegions(error);
+                        ASSERT_EQ(imported.size(), 1) << error;
+                        EXPECT_NEAR(imported[0].state.rotation, pa, 1e-3);
+                        for (int axis = 1; axis <= 2; ++axis) {
+                            EXPECT_NEAR(
+                                imported[0].state.control_points[axis].x(), region->GetRegionState().control_points[axis].x(), 1e-3);
+                            EXPECT_NEAR(
+                                imported[0].state.control_points[axis].y(), region->GetRegionState().control_points[axis].y(), 1e-3);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST(AnnulusExportTest, MatchedAnnulusPositionAngleFollowsDirectedAxis) {
+    auto source = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto reference = source->referencePixel();
+    reference(0) = reference(1) = 20;
+    ASSERT_TRUE(source->setReferencePixel(reference));
+    const casacore::IPosition shape(2, 40, 40);
+    for (bool mirrored : {false, true}) {
+        auto target = std::make_shared<casacore::CoordinateSystem>(*source);
+        casacore::Matrix<casacore::Double> transform(2, 2, 0.0);
+        if (mirrored) {
+            transform(0, 0) = -1;
+            transform(1, 1) = 1;
+        } else {
+            transform(0, 1) = -1;
+            transform(1, 0) = 1;
+        }
+        ASSERT_TRUE(target->setLinearTransform(transform));
+        // Derive the directed PA independently through the coordinate systems, including RA-axis handedness.
+        casacore::Vector<casacore::Double> axis_endpoint(reference.copy());
+        axis_endpoint(0) -= std::sin(210 * M_PI / 180.0);
+        axis_endpoint(1) += std::cos(210 * M_PI / 180.0);
+        const auto target_endpoint = target->toPixel(source->toWorld(axis_endpoint));
+        const double expected_pa = std::fmod(std::atan2(-(target_endpoint(0) - 20), target_endpoint(1) - 20) * 180.0 / M_PI + 360, 360);
+        for (bool swapped : {false, true}) {
+            const auto outer = Message::Point(swapped ? 7 : 3, swapped ? 3 : 7);
+            const auto inner = Message::Point(outer.x() / 2, outer.y() / 2);
+            for (auto type : {CARTA::ANNULUS, CARTA::ANNANNULUS}) {
+                auto region = std::make_shared<Region>(RegionState(0, type, {Message::Point(20, 20), outer, inner}, 210), source);
+                for (bool pixels : {false, true}) {
+                    SCOPED_TRACE(fmt::format("mirrored={}, swapped={}, type={}, pixels={}", mirrored, swapped, type, pixels));
+                    Ds9Exporter ds9(target, shape, pixels);
                     RegionExporter& exporter = ds9;
+                    CARTA::RegionStyle style;
+                    style.set_color("green");
                     std::string error, contents;
-                    ASSERT_TRUE(exporter.AddRegion(0, region, CARTA::RegionStyle(), pixels, &error)) << error;
+                    ASSERT_TRUE(exporter.AddRegion(1, region, style, pixels, &error)) << error;
                     CARTA::ExportRegionAck ack;
                     exporter.ExportRegions("", error, ack);
                     ASSERT_TRUE(ack.success()) << error;
                     for (const auto& line : ack.contents()) {
                         contents += line;
                     }
-                    Ds9Importer importer(csys, 0, contents, false);
+                    Ds9Importer importer(target, 1, contents, false);
                     auto imported = importer.GetRegions(error);
-                    ASSERT_EQ(imported.size(), 1) << error;
-                    EXPECT_NEAR(imported[0].state.rotation, pa, 1e-3);
-                    for (int axis = 1; axis <= 2; ++axis) {
-                        EXPECT_NEAR(imported[0].state.control_points[axis].x(), region->GetRegionState().control_points[axis].x(), 1e-3);
-                        EXPECT_NEAR(imported[0].state.control_points[axis].y(), region->GetRegionState().control_points[axis].y(), 1e-3);
-                    }
+                    ASSERT_EQ(imported.size(), 1) << error << contents;
+                    EXPECT_EQ(imported[0].state.type, type);
+                    EXPECT_NEAR(imported[0].state.rotation, expected_pa, 1e-3);
+                    EXPECT_NEAR(imported[0].state.control_points[1].x(), outer.x(), 1e-3);
+                    EXPECT_NEAR(imported[0].state.control_points[1].y(), outer.y(), 1e-3);
                 }
             }
         }
     }
+}
+
+TEST(AnnulusExportTest, OrdinaryEllipseWorldExportRetainsExistingAxisConvention) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto increments = csys->increment();
+    increments(0) *= 2;
+    ASSERT_TRUE(csys->setIncrement(increments));
+    auto reference = csys->referencePixel();
+    reference(0) = reference(1) = 20;
+    ASSERT_TRUE(csys->setReferencePixel(reference));
+    const casacore::IPosition shape(2, 40, 40);
+    for (auto type : {CARTA::ELLIPSE, CARTA::ANNELLIPSE}) {
+        auto region = std::make_shared<Region>(RegionState(0, type, {Message::Point(20, 20), Message::Point(6, 3)}, 0), csys);
+        for (bool crtf : {false, true}) {
+            SCOPED_TRACE(fmt::format("type={}, crtf={}", type, crtf));
+            Ds9Exporter ds9(csys, shape, false);
+            CrtfExporter crtf_exporter(csys, shape, -1);
+            RegionExporter& exporter = crtf ? static_cast<RegionExporter&>(crtf_exporter) : static_cast<RegionExporter&>(ds9);
+            CARTA::RegionStyle style;
+            style.set_color("green");
+            std::string error, contents;
+            ASSERT_TRUE(exporter.AddRegion(0, region, style, false, &error)) << error;
+            CARTA::ExportRegionAck ack;
+            exporter.ExportRegions("", error, ack);
+            ASSERT_TRUE(ack.success()) << error;
+            for (const auto& line : ack.contents()) {
+                contents += line;
+            }
+            Ds9Importer ds9_importer(csys, 0, crtf ? "" : contents, false);
+            CrtfImporter crtf_importer(csys, 0, crtf ? contents : "", false);
+            RegionImporter& importer = crtf ? static_cast<RegionImporter&>(crtf_importer) : static_cast<RegionImporter&>(ds9_importer);
+            auto imported = importer.GetRegions(error);
+            ASSERT_EQ(imported.size(), 1) << error << contents;
+            EXPECT_EQ(imported[0].state.type, type);
+            EXPECT_NEAR(imported[0].state.control_points[1].x(), 6, 1e-3);
+            EXPECT_NEAR(imported[0].state.control_points[1].y(), 3, 1e-3);
+            EXPECT_NEAR(imported[0].state.rotation, 0, 1e-3);
+        }
+    }
+}
+
+TEST(AnnulusExportTest, SharedWcsTransformMatchesIndependentRingConversions) {
+    const auto csys = casacore::CoordinateUtil::defaultCoords2D();
+    casacore::Vector<casacore::Double> center(2, 0.0);
+    center(0) = 20;
+    center(1) = 30;
+    for (bool preserve_order : {false, true}) {
+        for (const std::string frame : {"", "GALACTIC"}) {
+            SCOPED_TRACE(fmt::format("preserve_order={}, frame={}", preserve_order, frame));
+            EllipseWcsTransform shared_forward, shared_inverse;
+            EXPECT_FALSE(shared_forward.initialized);
+            EXPECT_FALSE(shared_inverse.initialized);
+            for (double ratio : {1.0, 0.5}) {
+                casacore::Quantity actual_angle(210, "deg"), expected_angle(210, "deg");
+                std::vector<casacore::Quantity> actual_axes, expected_axes;
+                ASSERT_TRUE(PixelEllipseAxesToWorld(
+                    csys, 3 * ratio, 7 * ratio, actual_angle, actual_axes, &center, preserve_order, &shared_forward));
+                ASSERT_TRUE(PixelEllipseAxesToWorld(csys, 3 * ratio, 7 * ratio, expected_angle, expected_axes, &center, preserve_order));
+                EXPECT_TRUE(shared_forward.initialized);
+                EXPECT_DOUBLE_EQ(actual_axes[0].get("arcsec").getValue(), expected_axes[0].get("arcsec").getValue());
+                EXPECT_DOUBLE_EQ(actual_axes[1].get("arcsec").getValue(), expected_axes[1].get("arcsec").getValue());
+                EXPECT_DOUBLE_EQ(actual_angle.get("deg").getValue(), expected_angle.get("deg").getValue());
+
+                // The same transform must also work when the inner ring uses different angular units.
+                actual_axes[0].convert(ratio == 1.0 ? "arcsec" : "deg");
+                CARTA::Point actual_pixel_axes, expected_pixel_axes;
+                double actual_pa, expected_pa;
+                ASSERT_TRUE(WorldEllipseAxesToPixels(csys, center, actual_axes[0], actual_axes[1], actual_angle.get("deg").getValue(),
+                    frame, actual_pixel_axes, actual_pa, preserve_order, &shared_inverse));
+                ASSERT_TRUE(WorldEllipseAxesToPixels(csys, center, actual_axes[0], actual_axes[1], actual_angle.get("deg").getValue(),
+                    frame, expected_pixel_axes, expected_pa, preserve_order));
+                EXPECT_TRUE(shared_inverse.initialized);
+                EXPECT_FLOAT_EQ(actual_pixel_axes.x(), expected_pixel_axes.x());
+                EXPECT_FLOAT_EQ(actual_pixel_axes.y(), expected_pixel_axes.y());
+                EXPECT_DOUBLE_EQ(actual_pa, expected_pa);
+            }
+        }
+    }
+}
+
+TEST(AnnulusExportTest, SharedWcsTransformCanRetryFailedInitialization) {
+    const auto csys = casacore::CoordinateUtil::defaultCoords2D();
+    casacore::Vector<casacore::Double> center(2, 0.0);
+    EllipseWcsTransform shared_transform;
+    CARTA::Point axes;
+    double rotation;
+    const casacore::Quantity radius(1, "arcsec");
+    EXPECT_FALSE(WorldEllipseAxesToPixels(csys, center, radius, radius, 0, "invalid-frame", axes, rotation, false, &shared_transform));
+    EXPECT_FALSE(shared_transform.initialized);
+    EXPECT_TRUE(WorldEllipseAxesToPixels(csys, center, radius, radius, 0, "", axes, rotation, false, &shared_transform));
+    EXPECT_TRUE(shared_transform.initialized);
 }
 
 TEST(AnnulusExportTest, AnnotationAnnulusRoundtrip) {

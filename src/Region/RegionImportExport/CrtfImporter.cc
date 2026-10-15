@@ -346,13 +346,15 @@ RegionState CrtfImporter::ImportAnnulus(std::vector<std::string>& parameters, st
         }
 
         CARTA::Point outer, inner;
+        EllipseWcsTransform shared_transform;
         double rotation = 0, inner_rotation = 0;
         if (inner_radius.getUnit() == "pix" && outer_radius.getUnit() == "pix") {
             outer = Message::Point(outer_radius.getValue(), outer_radius.getValue());
             inner = Message::Point(inner_radius.getValue(), inner_radius.getValue());
-        } else if (!WorldEllipseAxesToPixels(*_coord_sys, pixel_center, outer_radius, outer_radius, 0, coord_frame, outer, rotation) ||
-                   !WorldEllipseAxesToPixels(
-                       *_coord_sys, pixel_center, inner_radius, inner_radius, 0, coord_frame, inner, inner_rotation)) {
+        } else if (!WorldEllipseAxesToPixels(
+                       *_coord_sys, pixel_center, outer_radius, outer_radius, 0, coord_frame, outer, rotation, false, &shared_transform) ||
+                   !WorldEllipseAxesToPixels(*_coord_sys, pixel_center, inner_radius, inner_radius, 0, coord_frame, inner, inner_rotation,
+                       false, &shared_transform)) {
             _errors.append("annulus axes conversion failed.\n");
             return region_state;
         }

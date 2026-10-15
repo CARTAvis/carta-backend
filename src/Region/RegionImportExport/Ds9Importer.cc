@@ -402,6 +402,7 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
             }
 
             const bool circular = region_name == "annulus";
+            EllipseWcsTransform shared_transform;
             const double angle = nparam > 7 ? param_quantities[6].getValue() : 0.0;
             const auto convert_axes = [&](size_t offset, CARTA::Point& axes, double& pixel_angle) {
                 const auto& first = param_quantities[offset];
@@ -412,7 +413,7 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
                     return true;
                 }
                 return WorldEllipseAxesToPixels(
-                    *_coord_sys, pixel_coords, first, second, angle, _file_coord_frame, axes, pixel_angle, !circular);
+                    *_coord_sys, pixel_coords, first, second, angle, _file_coord_frame, axes, pixel_angle, !circular, &shared_transform);
             };
             CARTA::Point first_axes, second_axes;
             double first_angle, second_angle;

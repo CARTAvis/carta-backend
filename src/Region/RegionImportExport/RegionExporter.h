@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# RegionExporter.h: handle region export in CRTF and DS9 formats
+// # RegionExporter.h: handle region export in CRTF and DS9 formats
 
 #ifndef CARTA_SRC_REGION_REGIONIMPORTEXPORT_REGIONEXPORTER_H_
 #define CARTA_SRC_REGION_REGIONIMPORTEXPORT_REGIONEXPORTER_H_
@@ -170,7 +170,8 @@ private:
         std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
 
     bool ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bool restore_axes, const casacore::RecordInterface& region_record,
-        bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation, bool use_local_wcs = false);
+        bool export_pixels, std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation, bool use_local_wcs = false,
+        EllipseWcsTransform* shared_transform = nullptr);
 
     /**
      * @brief Convert casacore Record to annulus region control points and rotation.

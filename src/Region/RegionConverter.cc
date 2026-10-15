@@ -1065,8 +1065,12 @@ casacore::TableRecord RegionConverter::GetAnnulusRecord(std::shared_ptr<casacore
         const auto make_ellipse_record = [&](const CARTA::Point& axes) {
             casacore::TableRecord ellipse;
             double major, minor, major_angle;
-            if (!TransformEllipseAxes(axes.x(), axes.y(), _region_state.rotation + 90.0, transform, major, minor, major_angle)) {
+            if (!TransformEllipseAxes(axes.x(), axes.y(), _region_state.rotation + 90.0, transform, major, minor, major_angle, true)) {
                 return ellipse;
+            }
+            if (major < minor) {
+                std::swap(major, minor);
+                major_angle -= 90.0;
             }
             casacore::Vector<casacore::Float> radii(2), center(2);
             center(0) = center_pixel(0);

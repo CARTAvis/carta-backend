@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# RegionImportExportUtil.h: functions common to CRTF and DS9 import and export
+// # RegionImportExportUtil.h: functions common to CRTF and DS9 import and export
 
 #ifndef CARTA_SRC_REGION_REGIONIMPORTEXPORT_REGIONIMPORTEXPORTUTIL_H_
 #define CARTA_SRC_REGION_REGIONIMPORTEXPORT_REGIONIMPORTEXPORTUTIL_H_
@@ -34,14 +34,22 @@ static std::unordered_map<CARTA::RegionType, std::string> region_names{{CARTA::R
  */
 std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::FileType region_file_type);
 
+/** @brief Operation-local transform shared by concentric rings with the same coordinate system, center, and world frame. */
+struct EllipseWcsTransform {
+    casacore::Matrix<casacore::Double> matrix;
+    casacore::Unit unit;
+    bool initialized = false;
+};
+
 /** @brief Convert pixel ellipse radii and their angle from the horizontal axis to world geometry. */
 bool PixelEllipseAxesToWorld(const casacore::CoordinateSystem& coord_sys, double first, double second, casacore::Quantity& rotation,
-    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center = nullptr, bool preserve_axis_order = false);
+    std::vector<casacore::Quantity>& axes, const casacore::Vector<casacore::Double>* center = nullptr, bool preserve_axis_order = false,
+    EllipseWcsTransform* shared_transform = nullptr);
 
 /** @brief Convert world ellipse axes into pixel radii and CARTA rotation using the local WCS in the requested frame. */
 bool WorldEllipseAxesToPixels(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
     const casacore::Quantity& first, const casacore::Quantity& second, double angle_degrees, const std::string& world_frame,
-    CARTA::Point& axes, double& rotation, bool preserve_axis_order = false);
+    CARTA::Point& axes, double& rotation, bool preserve_axis_order = false, EllipseWcsTransform* shared_transform = nullptr);
 
 /** @brief Transform ellipse radii by axis-aligned scales and return principal radii and angle. */
 bool TransformEllipseAxes(double first, double second, double angle_degrees, double scale_x, double scale_y, double& major, double& minor,

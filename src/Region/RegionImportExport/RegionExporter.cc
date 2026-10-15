@@ -265,7 +265,7 @@ bool RegionExporter::ConvertRecordToEllipse(const RegionState& region_state, con
 
 bool RegionExporter::ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bool restore_axes,
     const casacore::RecordInterface& region_record, bool export_pixels, std::vector<casacore::Quantity>& control_points,
-    casacore::Quantity& rotation, bool use_local_wcs) {
+    casacore::Quantity& rotation, bool use_local_wcs, EllipseWcsTransform* shared_transform) {
     // Ellipse Record is a casacore LCEllipsoid with center and radii in pixel coordinates, and theta for angle.
     // Use original control point axes to check if bmaj/bmin swapped so bmaj > bmin.
     casacore::Vector<casacore::Float> center = region_record.asArrayFloat("center");
@@ -318,8 +318,16 @@ bool RegionExporter::ConvertRecordToEllipse(const CARTA::Point& ellipse_axes, bo
         control_points.push_back(casacore::Quantity(world_coords(0), world_units(0)));
         control_points.push_back(casacore::Quantity(world_coords(1), world_units(1)));
 
-        return PixelEllipseAxesToWorld(*_coord_sys, radii(reversed ? 1 : 0), radii(reversed ? 0 : 1), rotation, control_points,
-            use_local_wcs ? &pixel_coords : nullptr, use_local_wcs);
+        if (!use_local_wcs) {
+            // Ordinary ellipse import uses the existing per-axis world lengths.
+            const auto first = _coord_sys->toWorldLength(radii(0), 0);
+            const auto second = _coord_sys->toWorldLength(radii(1), 1);
+            control_points.push_back(reversed ? second : first);
+            control_points.push_back(reversed ? first : second);
+            return true;
+        }
+        return PixelEllipseAxesToWorld(
+            *_coord_sys, radii(reversed ? 1 : 0), radii(reversed ? 0 : 1), rotation, control_points, &pixel_coords, true, shared_transform);
     } catch (const casacore::AipsError& err) {
         spdlog::error("Export error: ellipse Record conversion failed: {}", err.getMesg());
         return false;
@@ -332,12 +340,15 @@ bool RegionExporter::ConvertRecordToAnnulus(const RegionState& region_state, con
     std::vector<casacore::Quantity> outer_cp, inner_cp;
     casacore::Quantity outer_rot, inner_rot;
     bool outer_ok(false), inner_ok(false);
+    EllipseWcsTransform shared_transform;
 
     if (region_record.isDefined("region1") && region_record.isDefined("region2")) {
         const casacore::RecordInterface& outer_rec = region_record.asRecord("region1");
         const casacore::RecordInterface& inner_rec = region_record.asRecord("region2");
-        outer_ok = ConvertRecordToEllipse(region_state.control_points[1], true, outer_rec, export_pixels, outer_cp, outer_rot, true);
-        inner_ok = ConvertRecordToEllipse(region_state.control_points[2], true, inner_rec, export_pixels, inner_cp, inner_rot, true);
+        outer_ok = ConvertRecordToEllipse(
+            region_state.control_points[1], true, outer_rec, export_pixels, outer_cp, outer_rot, true, &shared_transform);
+        inner_ok = ConvertRecordToEllipse(
+            region_state.control_points[2], true, inner_rec, export_pixels, inner_cp, inner_rot, true, &shared_transform);
     } else if (region_record.isDefined("regions")) {
         const casacore::RecordInterface& regions_rec = region_record.asRecord("regions");
         if (!regions_rec.isDefined("nr") || regions_rec.asInt("nr") < 2) {
@@ -345,8 +356,10 @@ bool RegionExporter::ConvertRecordToAnnulus(const RegionState& region_state, con
         }
         const casacore::RecordInterface& outer_rec = regions_rec.asRecord(0);
         const casacore::RecordInterface& inner_rec = regions_rec.asRecord(1);
-        outer_ok = ConvertRecordToEllipse(region_state.control_points[1], true, outer_rec, export_pixels, outer_cp, outer_rot, true);
-        inner_ok = ConvertRecordToEllipse(region_state.control_points[2], true, inner_rec, export_pixels, inner_cp, inner_rot, true);
+        outer_ok = ConvertRecordToEllipse(
+            region_state.control_points[1], true, outer_rec, export_pixels, outer_cp, outer_rot, true, &shared_transform);
+        inner_ok = ConvertRecordToEllipse(
+            region_state.control_points[2], true, inner_rec, export_pixels, inner_cp, inner_rot, true, &shared_transform);
     } else {
         return false;
     }
