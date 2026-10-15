@@ -184,8 +184,9 @@ bool TransformEllipseAxes(double first, double second, double angle_degrees, con
 }
 
 bool IsApproximatelyCircular(double radius_x, double radius_y) {
+    // Match the frontend's 0.1% tolerance for square pixels, including small WCS projection distortions.
     return std::isfinite(radius_x) && std::isfinite(radius_y) && radius_x > 0.0 && radius_y > 0.0 &&
-           std::abs(radius_x - radius_y) <= 1e-6 * std::max(std::abs(radius_x), std::abs(radius_y));
+           std::abs(radius_x - radius_y) < 1e-3 * std::max(std::abs(radius_x), std::abs(radius_y));
 }
 
 std::unordered_map<CARTA::RegionType, std::string> GetRegionTypeNames(CARTA::FileType region_file_type) {
