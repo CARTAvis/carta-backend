@@ -18,6 +18,7 @@
 #include <casacore/casa/aipstype.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/images/Images/ImageBeamSet.h>
+#include <casacore/images/Images/ImageInfo.h>
 
 namespace carta {
 
@@ -39,6 +40,11 @@ struct ZarrBeams {
     std::optional<casacore::ImageBeamSet> beams;
     std::vector<ZarrNote> notes;
 };
+
+// The casacore image type a sky image's sub_type names, as FITS and HDF5 images take theirs from BTYPE. XRADIO
+// spells casacore's type names without their spaces ("SpectralIndex" for "Spectral Index"). Intensity, casacore's
+// default, for an image naming none or one casacore does not know.
+casacore::ImageInfo::ImageTypes MakeZarrImageType(const std::string& sub_type);
 
 // The beams at the first time, for an image of `channels` by `polarizations` planes. A table casacore
 // refuses is ignored and noted.

@@ -77,6 +77,18 @@ public:
         return store;
     }
 
+    // An XRADIO image store naming no schema version, as XRADIO 1.2.4 and earlier wrote
+    fs::path AnUnversionedStore() {
+        const auto store = AStore("unversioned.zarr");
+        auto text = ReadText(store / "zarr.json");
+        const std::string key = "\"schema_version\"";
+        const auto at = text.find(key);
+        EXPECT_NE(at, std::string::npos);
+        text.replace(at, key.size(), "\"not_schema_version\"");
+        WriteText(store / "zarr.json", text);
+        return store;
+    }
+
     // A valid Zarr v3 group that is not an image
     fs::path AZarrOfSomethingElse() {
         const auto store = _scratch / "other.zarr";
@@ -151,6 +163,33 @@ TEST_F(ZarrStoresTest, AMalformedStoreIsAnImageThatSaysWhyItWillNotOpen) {
     try {
         CartaZarrImage image(store);
         FAIL() << "a malformed store opened";
+    } catch (const casacore::AipsError& error) {
+        EXPECT_NE(std::string(error.getMesg()).find(look->why_not_openable), std::string::npos) << error.getMesg();
+    }
+}
+
+// carta-zarr reads XRADIO image schema 0.0.2 only. An older store is listed as an image, and selecting or opening
+// it says what carta-zarr said: which version it reads, and how to write the store again
+TEST_F(ZarrStoresTest, AStoreNamingNoSchemaVersionIsAnImageThatSaysWhyItWillNotOpen) {
+    const auto store = AnUnversionedStore().string();
+
+    const auto look = ZarrStores::Instance().Look(store);
+    EXPECT_TRUE(look->is_zarr);
+    EXPECT_FALSE(look->dataset.has_value());
+    EXPECT_NE(look->why_not_openable.find("0.0.2"), std::string::npos) << look->why_not_openable;
+    EXPECT_NE(look->why_not_openable.find("XRADIO 1.2.5"), std::string::npos) << look->why_not_openable;
+
+    std::string message;
+    EXPECT_EQ(FolderImageType(store, message), CARTA::FileType::ZARR);
+
+    CARTA::FileInfo file_info;
+    FileInfoLoader loader(store);
+    EXPECT_FALSE(loader.FillFileInfo(file_info));
+    EXPECT_NE(loader.Message().find(look->why_not_openable), std::string::npos) << loader.Message();
+
+    try {
+        CartaZarrImage image(store);
+        FAIL() << "a store naming no schema version opened";
     } catch (const casacore::AipsError& error) {
         EXPECT_NE(std::string(error.getMesg()).find(look->why_not_openable), std::string::npos) << error.getMesg();
     }

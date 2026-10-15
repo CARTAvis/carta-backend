@@ -164,7 +164,7 @@ void CartaZarrImage::SetUpImage() {
         }
 
         casacore::ImageInfo image_info;
-        image_info.setImageType(casacore::ImageInfo::Intensity);
+        image_info.setImageType(MakeZarrImageType(descriptor.sub_type));
         if (descriptor.observation && !descriptor.observation->object_name.empty()) {
             image_info.setObjectName(casacore::String(descriptor.observation->object_name));
         }

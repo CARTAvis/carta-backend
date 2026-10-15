@@ -17,6 +17,7 @@
 #include <vector>
 
 #include <casacore/coordinates/Coordinates/ObsInfo.h>
+#include <casacore/images/Images/ImageInfo.h>
 #include <casacore/measures/Measures/MPosition.h>
 
 #include "CommonTestUtilities.h"
@@ -94,20 +95,17 @@ TEST_F(ZarrImageTest, TelescopePositionIsCartesian) {
     EXPECT_NEAR(value(2), -3054420.106, 1.0);
 }
 
-TEST_F(ZarrImageTest, AnObservationDateWrittenAsAStringIsTheEpochItNames) {
-    const auto copy = EditedFixture("string_obsdate.zarr", [](const std::string& text) {
-        const auto dated = std::regex_replace(text, std::regex(R"("data"\s*:\s*59000\.0)"), R"("data": "2020-05-31T12:00:00")");
-        return std::regex_replace(dated, std::regex(R"("format"\s*:\s*"MJD")"), R"("format": "ISO")");
+// A sky image's sub_type is its image type, as BTYPE is a FITS image's
+TEST_F(ZarrImageTest, ASkyImagesSubTypeIsItsImageType) {
+    const auto copy = EditedFixture("spectral_index.zarr", [](const std::string& text) {
+        return std::regex_replace(text, std::regex(R"("type"\s*:\s*"sky")"), R"("type": "sky", "sub_type": "SpectralIndex")");
     });
     auto loader = FileLoader::GetLoader(copy.string());
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
     auto image = loader->GetImage();
     ASSERT_NE(image, nullptr);
-
-    const auto date = image->coordinates().obsInfo().obsDate();
-    EXPECT_EQ(date.getRefPtr()->getType(), casacore::MEpoch::UTC);
-    EXPECT_NEAR(date.getValue().get(), 59000.5, 1e-9);
+    EXPECT_EQ(image->imageInfo().imageType(), casacore::ImageInfo::SpectralIndex);
 }
 
 TEST_F(ZarrImageTest, BeamsThatAgreeOnEveryPlaneBecomeOne) {

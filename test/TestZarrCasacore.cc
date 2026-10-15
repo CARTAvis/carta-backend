@@ -21,6 +21,7 @@
 
 using carta::MakeZarrBeamSet;
 using carta::MakeZarrCoordinateSystem;
+using carta::MakeZarrImageType;
 
 namespace {
 
@@ -191,6 +192,19 @@ TEST(ZarrCasacore, AnObservationTimeScaleCasacoreCannotHoldCostsOnlyTheDate) {
     const auto said = std::find_if(made.notes.begin(), made.notes.end(),
         [](const carta::ZarrNote& note) { return note.detail.find("NOT_A_TIME_SCALE") != std::string::npos; });
     EXPECT_NE(said, made.notes.end()) << "and the reader is told why";
+}
+
+// XRADIO spells casacore's image types without their spaces
+TEST(ZarrCasacore, ASubTypeIsTheImageTypeItSpells) {
+    EXPECT_EQ(MakeZarrImageType("Intensity"), casacore::ImageInfo::Intensity);
+    EXPECT_EQ(MakeZarrImageType("SpectralIndex"), casacore::ImageInfo::SpectralIndex);
+    EXPECT_EQ(MakeZarrImageType("OpticalDepth"), casacore::ImageInfo::OpticalDepth);
+    EXPECT_EQ(MakeZarrImageType("VelocityDispersion"), casacore::ImageInfo::VelocityDispersion);
+}
+
+TEST(ZarrCasacore, NoSubTypeOrOneCasacoreLacksIsIntensity) {
+    EXPECT_EQ(MakeZarrImageType(""), casacore::ImageInfo::Intensity);
+    EXPECT_EQ(MakeZarrImageType("Polarization Angle"), casacore::ImageInfo::Intensity);
 }
 
 TEST(ZarrCasacore, TheSameBeamOnEveryPlaneIsOneBeam) {
