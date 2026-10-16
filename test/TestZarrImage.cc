@@ -7,17 +7,23 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <regex>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
 #include <casacore/coordinates/Coordinates/ObsInfo.h>
 #include <casacore/images/Images/ImageInfo.h>
+#include <casacore/images/Images/SubImage.h>
+#include <casacore/lattices/LRegions/LCBox.h>
+#include <casacore/lattices/Lattices/LatticeConcat.h>
 #include <casacore/measures/Measures/MPosition.h>
 
 #include "CommonTestUtilities.h"
@@ -26,6 +32,7 @@
 #include "ImageData/CartaZarrImage.h"
 #include "ImageData/FileLoader.h"
 #include "ImageData/ZarrStores.h"
+#include "ImageStats/StatsCalculator.h"
 
 using namespace carta;
 
@@ -37,6 +44,20 @@ constexpr int kWidth = 4;
 constexpr int kHeight = 5;
 constexpr int kDepth = 2;
 constexpr int kStokes = 3;
+
+// The pixel fixture's values say where they are, and a third of its pixels are flagged
+float ExpectedValue(int x, int y, int z, int stokes) {
+    return static_cast<float>((z * 1000) + (stokes * 100) + (x * 10) + y);
+}
+
+// The chunk the fixture leaves unwritten, which reads as NaN
+bool InMissingChunk(int x, int z, int stokes) {
+    return z == 1 && stokes == 2 && x >= 2;
+}
+
+bool ExpectedFlag(int x, int y) {
+    return ((x + y) % 3) != 0;
+}
 
 class ZarrImageTest : public ::testing::Test {
 protected:
@@ -247,5 +268,324 @@ TEST_F(ZarrImageTest, ADatasetWithTwoTimesListsNoImage) {
         ADD_FAILURE() << "an image with two times should not open";
     } catch (const casacore::AipsError& error) {
         EXPECT_NE(error.getMesg().find("singleton time axis"), std::string::npos) << error.getMesg();
+    }
+}
+
+TEST_F(ZarrImageTest, GetSliceReturnsCorrectPixels) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+
+    for (int stokes = 0; stokes < kStokes; ++stokes) {
+        for (int z = 0; z < kDepth; ++z) {
+            casacore::Slicer slicer(casacore::IPosition(4, 0, 0, z, stokes), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+            casacore::Array<float> data(slicer.length());
+            ASSERT_TRUE(loader->GetSlice(data, StokesSlicer(StokesSource(), slicer))) << "z=" << z << " stokes=" << stokes;
+            ASSERT_EQ(data.nelements(), kWidth * kHeight);
+
+            for (int y = 0; y < kHeight; ++y) {
+                for (int x = 0; x < kWidth; ++x) {
+                    const float value = data(casacore::IPosition(4, x, y, 0, 0));
+                    if (InMissingChunk(x, z, stokes) || !ExpectedFlag(x, y)) {
+                        EXPECT_TRUE(std::isnan(value)) << "x=" << x << " y=" << y << " z=" << z << " stokes=" << stokes;
+                    } else {
+                        EXPECT_FLOAT_EQ(value, ExpectedValue(x, y, z, stokes))
+                            << "x=" << x << " y=" << y << " z=" << z << " stokes=" << stokes;
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST_F(ZarrImageTest, GetSliceHonorsASubRegion) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+
+    casacore::Slicer slicer(casacore::IPosition(4, 1, 2, 0, 1), casacore::IPosition(4, 2, 3, 1, 1));
+    casacore::Array<float> data(slicer.length());
+    ASSERT_TRUE(loader->GetSlice(data, StokesSlicer(StokesSource(), slicer)));
+    ASSERT_EQ(data.nelements(), 6);
+
+    for (int y = 0; y < 3; ++y) {
+        for (int x = 0; x < 2; ++x) {
+            const float value = data(casacore::IPosition(4, x, y, 0, 0));
+            if (!ExpectedFlag(x + 1, y + 2)) {
+                EXPECT_TRUE(std::isnan(value));
+            } else {
+                EXPECT_FLOAT_EQ(value, ExpectedValue(x + 1, y + 2, 0, 1));
+            }
+        }
+    }
+}
+
+// The mask casacore sees is the finiteness of the pixels, which is how a flagged or absent pixel
+// reaches every casacore consumer that has no NaN handling of its own
+TEST_F(ZarrImageTest, MaskMarksFlaggedPixels) {
+    auto image = ImageThroughLoader(kZarrFixture);
+    ASSERT_NE(image, nullptr);
+    EXPECT_TRUE(image->isMasked());
+    EXPECT_TRUE(image->hasPixelMask());
+
+    casacore::Slicer slicer(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    casacore::Array<bool> mask(slicer.length());
+    image->getMaskSlice(mask, slicer);
+    for (int y = 0; y < kHeight; ++y) {
+        for (int x = 0; x < kWidth; ++x) {
+            EXPECT_EQ(mask(casacore::IPosition(4, x, y, 0, 0)), ExpectedFlag(x, y)) << "x=" << x << " y=" << y;
+        }
+    }
+}
+
+// Seven of the plane's twenty pixels are flagged, so the statistics are over thirteen summing to 217.
+// casacore's statistics exclude a NaN only when the image reports a mask.
+TEST_F(ZarrImageTest, PlaneStatisticsExcludeFlaggedPixels) {
+    auto image = ImageThroughLoader(kZarrFixture);
+    ASSERT_NE(image, nullptr);
+
+    const casacore::Slicer plane(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    casacore::SubImage<float> sub_image(*image, casacore::LCBox(plane, image->shape()), false);
+
+    const std::vector<CARTA::StatsType> requested{
+        CARTA::StatsType::NumPixels, CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::Min, CARTA::StatsType::Max};
+    std::map<CARTA::StatsType, std::vector<double>> stats;
+    ASSERT_TRUE(CalcStatsValues(stats, requested, sub_image, false));
+
+    EXPECT_DOUBLE_EQ(stats[CARTA::StatsType::NumPixels][0], 13.0);
+    EXPECT_DOUBLE_EQ(stats[CARTA::StatsType::Sum][0], 217.0);
+    EXPECT_NEAR(stats[CARTA::StatsType::Mean][0], 217.0 / 13.0, 1e-9);
+    EXPECT_DOUBLE_EQ(stats[CARTA::StatsType::Min][0], 1.0);
+    EXPECT_DOUBLE_EQ(stats[CARTA::StatsType::Max][0], 34.0);
+}
+
+// The mask kept from a pixel read agrees with one read on its own
+TEST_F(ZarrImageTest, CachedMaskAgreesWithADirectMaskRead) {
+    auto image = ImageThroughLoader(kZarrFixture);
+    ASSERT_NE(image, nullptr);
+
+    const casacore::Slicer slicer(casacore::IPosition(4, 0, 0, 1, 2), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    casacore::Array<bool> direct(slicer.length());
+    image->getMaskSlice(direct, slicer);
+
+    casacore::Array<float> pixels(slicer.length());
+    image->getSlice(pixels, slicer);
+    casacore::Array<bool> cached(slicer.length());
+    image->getMaskSlice(cached, slicer);
+
+    EXPECT_TRUE(allEQ(direct, cached));
+    // This plane holds the missing chunk, whose pixels are absent rather than flagged
+    for (int y = 0; y < kHeight; ++y) {
+        for (int x = 0; x < kWidth; ++x) {
+            EXPECT_EQ(cached(casacore::IPosition(4, x, y, 0, 0)), ExpectedFlag(x, y) && !InMissingChunk(x, 1, 2))
+                << "x=" << x << " y=" << y;
+        }
+    }
+}
+
+// A section's mask is kept for the mask read that follows, and let go once read
+TEST_F(ZarrImageTest, AKeptMaskIsReleasedOnceItIsRead) {
+    CartaZarrImage image(kZarrFixture.string());
+    const casacore::Slicer cube(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 2, 1));
+    casacore::Array<float> pixels;
+    image.getSlice(pixels, cube);
+    EXPECT_EQ(image.MaskCacheBytes(), static_cast<std::size_t>(kWidth * kHeight * 2));
+
+    casacore::Array<bool> mask;
+    image.getMaskSlice(mask, cube);
+    EXPECT_EQ(image.MaskCacheBytes(), 0u);
+    casacore::Array<bool> again;
+    image.getMaskSlice(again, cube);
+    EXPECT_TRUE(allEQ(mask, again));
+}
+
+// A strided section reads every other pixel, and its kept mask is not handed to the section of the same start
+// and length at unit stride
+TEST_F(ZarrImageTest, AStridedSectionKeepsItsOwnMask) {
+    CartaZarrImage image(kZarrFixture.string());
+    const casacore::Slicer strided(
+        casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, 2, 3, 1, 1), casacore::IPosition(4, 2, 2, 1, 1));
+    casacore::Array<float> pixels;
+    image.getSlice(pixels, strided);
+    ASSERT_EQ(pixels.shape(), casacore::IPosition(4, 2, 3, 1, 1));
+    for (int y = 0; y < 3; ++y) {
+        for (int x = 0; x < 2; ++x) {
+            const float value = pixels(casacore::IPosition(4, x, y, 0, 0));
+            if (ExpectedFlag(2 * x, 2 * y)) {
+                EXPECT_FLOAT_EQ(value, ExpectedValue(2 * x, 2 * y, 0, 0)) << "x=" << x << " y=" << y;
+            } else {
+                EXPECT_TRUE(std::isnan(value)) << "x=" << x << " y=" << y;
+            }
+        }
+    }
+
+    const casacore::Slicer unit(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, 2, 3, 1, 1));
+    casacore::Array<bool> mask;
+    image.getMaskSlice(mask, unit);
+    EXPECT_EQ(image.MaskCacheBytes(), 6u) << "the strided section's mask was handed to another section";
+    image.getMaskSlice(mask, strided);
+    EXPECT_EQ(image.MaskCacheBytes(), 0u);
+}
+
+// A read into part of a larger array fills that part and leaves the rest alone, for the pixels and for a mask
+// handed back from the read
+TEST_F(ZarrImageTest, AReadIntoPartOfALargerArrayFillsOnlyThatPart) {
+    CartaZarrImage image(kZarrFixture.string());
+    const casacore::Slicer plane(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    const casacore::IPosition inner_start(4, 1, 1, 0, 0);
+    const casacore::IPosition inner_end(4, kWidth, kHeight, 0, 0);
+
+    casacore::Array<float> pixels(casacore::IPosition(4, kWidth + 2, kHeight + 2, 1, 1), -1.0f);
+    casacore::Array<float> pixel_window = pixels(inner_start, inner_end);
+    image.getSlice(pixel_window, plane);
+    casacore::Array<bool> mask(casacore::IPosition(4, kWidth + 2, kHeight + 2, 1, 1), false);
+    casacore::Array<bool> mask_window = mask(inner_start, inner_end);
+    image.getMaskSlice(mask_window, plane);
+    EXPECT_EQ(image.MaskCacheBytes(), 0u) << "the mask was read again rather than handed back";
+
+    for (int y = -1; y <= kHeight; ++y) {
+        for (int x = -1; x <= kWidth; ++x) {
+            const casacore::IPosition at(4, x + 1, y + 1, 0, 0);
+            if (x < 0 || y < 0 || x == kWidth || y == kHeight) {
+                EXPECT_FLOAT_EQ(pixels(at), -1.0f) << "x=" << x << " y=" << y;
+                EXPECT_FALSE(mask(at)) << "x=" << x << " y=" << y;
+            } else if (ExpectedFlag(x, y)) {
+                EXPECT_FLOAT_EQ(pixels(at), ExpectedValue(x, y, 0, 0)) << "x=" << x << " y=" << y;
+                EXPECT_TRUE(mask(at)) << "x=" << x << " y=" << y;
+            } else {
+                EXPECT_TRUE(std::isnan(pixels(at))) << "x=" << x << " y=" << y;
+                EXPECT_FALSE(mask(at)) << "x=" << x << " y=" << y;
+            }
+        }
+    }
+}
+
+// A loader's masked read asks for each cursor's pixels and then its mask, and every mask is the one just
+// kept: none is left over
+TEST_F(ZarrImageTest, ALoaderReadUsesEveryKeptMask) {
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    const auto* image = dynamic_cast<const CartaZarrImage*>(loader->GetImage().get());
+    ASSERT_NE(image, nullptr);
+
+    const casacore::Slicer cube(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, kDepth, 1));
+    casacore::Array<float> data(cube.length());
+    ASSERT_TRUE(loader->GetSlice(data, StokesSlicer(StokesSource(), cube)));
+    EXPECT_EQ(image->MaskCacheBytes(), 0u);
+}
+
+// A chunk that will not decode fails the read with a casacore error, and the rest of the image still reads
+TEST_F(ZarrImageTest, AChunkThatWillNotDecodeFailsOnlyItsRead) {
+    const auto copy = EditedFixture("broken_chunk.zarr", [](const std::string& text) { return text; });
+    const auto chunk = copy / "SKY" / "c" / "0" / "0" / "0" / "0" / "0";
+    const auto size = std::filesystem::file_size(chunk);
+    std::filesystem::resize_file(chunk, size / 2);
+
+    CartaZarrImage image(copy.string());
+    casacore::Array<float> pixels;
+    const casacore::Slicer broken(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    try {
+        image.getSlice(pixels, broken);
+        ADD_FAILURE() << "a truncated chunk was read";
+    } catch (const casacore::AipsError& error) {
+        EXPECT_NE(error.getMesg().find("doGetSlice"), std::string::npos) << error.getMesg();
+    }
+
+    const casacore::Slicer whole(casacore::IPosition(4, 0, 0, 1, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    image.getSlice(pixels, whole);
+    EXPECT_FLOAT_EQ(pixels(casacore::IPosition(4, 1, 0, 0, 0)), ExpectedValue(1, 0, 1, 0));
+}
+
+// Two threads reading their own planes of one image each get their own pixels and masks
+TEST_F(ZarrImageTest, ThreadsReadingOneImageGetTheirOwnPlanes) {
+    CartaZarrImage image(kZarrFixture.string());
+    const auto read_plane = [&](int z, int& wrong) {
+        const casacore::Slicer plane(casacore::IPosition(4, 0, 0, z, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+        for (int round = 0; round < 50; ++round) {
+            casacore::Array<float> pixels;
+            image.getSlice(pixels, plane);
+            casacore::Array<bool> mask;
+            image.getMaskSlice(mask, plane);
+            for (int y = 0; y < kHeight; ++y) {
+                for (int x = 0; x < kWidth; ++x) {
+                    const casacore::IPosition at(4, x, y, 0, 0);
+                    const bool good = ExpectedFlag(x, y);
+                    if (mask(at) != good || (good && pixels(at) != ExpectedValue(x, y, z, 0))) {
+                        ++wrong;
+                    }
+                }
+            }
+        }
+    };
+    int wrong_0 = 0;
+    int wrong_1 = 0;
+    std::thread first(read_plane, 0, std::ref(wrong_0));
+    std::thread second(read_plane, 1, std::ref(wrong_1));
+    first.join();
+    second.join();
+    EXPECT_EQ(wrong_0, 0);
+    EXPECT_EQ(wrong_1, 0);
+}
+
+// The whole mask is a lattice of its own, so that casacore can concatenate Zarr images, as the Stokes files
+// of a hypercube are, and keep reading the mask after the images it was given are gone
+TEST_F(ZarrImageTest, TheMaskIsALatticeThatOutlivesTheImage) {
+    casacore::LatticeConcat<float> concat(3);
+    {
+        CartaZarrImage first(kZarrFixture.string());
+        CartaZarrImage second(kZarrFixture.string());
+        EXPECT_FALSE(first.pixelMask().isWritable());
+        EXPECT_EQ(first.pixelMask().shape(), first.shape());
+        concat.setLattice(first);
+        concat.setLattice(second);
+    }
+    ASSERT_TRUE(concat.hasPixelMask());
+
+    const casacore::Slicer plane(casacore::IPosition(4, 0, 0, 0, kStokes), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    casacore::Array<bool> mask;
+    concat.getMaskSlice(mask, plane);
+    // Through the concatenation's own mask lattice, which reads the views it was given
+    casacore::Array<bool> from_lattice;
+    concat.pixelMask().getSlice(from_lattice, plane);
+    for (int y = 0; y < kHeight; ++y) {
+        for (int x = 0; x < kWidth; ++x) {
+            EXPECT_EQ(mask(casacore::IPosition(4, x, y, 0, 0)), ExpectedFlag(x, y)) << "x=" << x << " y=" << y;
+            EXPECT_EQ(from_lattice(casacore::IPosition(4, x, y, 0, 0)), ExpectedFlag(x, y)) << "x=" << x << " y=" << y;
+        }
+    }
+}
+
+// The fixture is chunked (l, m) = (2, 5), one plane per chunk. The cursor is whole chunks, grown within
+// the advised maximum (here up to the whole plane), rather than casacore's default of one row.
+TEST_F(ZarrImageTest, NiceCursorShapeIsTheChunk) {
+    auto image = ImageThroughLoader(kZarrFixture);
+    ASSERT_NE(image, nullptr);
+
+    const auto cursor = image->niceCursorShape(image->advisedMaxPixels());
+    ASSERT_EQ(cursor.size(), 4);
+    EXPECT_EQ(cursor(0), kWidth);
+    EXPECT_EQ(cursor(1), kHeight);
+    EXPECT_EQ(cursor(2), 1);
+    EXPECT_EQ(cursor(3), 1);
+    EXPECT_LE(cursor.product(), static_cast<casacore::Int>(image->advisedMaxPixels()));
+}
+
+// A chunk declared longer than an int is clipped to the image, not narrowed to a zero step
+TEST_F(ZarrImageTest, NiceCursorShapeClipsAChunkLongerThanAnInt) {
+    for (const char* extent : {"4294967296", "3000000000"}) {
+        const auto copy = EditedFixture(std::string("wide_chunk_") + extent + ".zarr", [&](const std::string& text) {
+            return std::regex_replace(text, std::regex(R"("chunk_shape"\s*:\s*\[\s*1\s*,\s*1\s*,\s*1\s*,\s*2\s*,)"),
+                std::string(R"("chunk_shape": [1, 1, 1, )") + extent + ",");
+        });
+        ZarrStores::Instance().Clear();
+        auto image = ImageThroughLoader(copy);
+        ASSERT_NE(image, nullptr) << "a chunk " << extent << " long was not opened";
+        const auto cursor = image->niceCursorShape(image->advisedMaxPixels());
+        ASSERT_EQ(cursor.size(), 4);
+        EXPECT_EQ(cursor(0), kWidth) << "a chunk " << extent << " long";
+        EXPECT_EQ(cursor(1), kHeight) << "a chunk " << extent << " long";
+        EXPECT_EQ(cursor(2), 1);
+        EXPECT_EQ(cursor(3), 1);
     }
 }
