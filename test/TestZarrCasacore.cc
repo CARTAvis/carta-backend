@@ -5,6 +5,8 @@
 */
 #include <gtest/gtest.h>
 
+#include <cmath>
+
 #include <algorithm>
 
 #include <functional>
@@ -212,6 +214,26 @@ TEST(ZarrCasacore, TheSameBeamOnEveryPlaneIsOneBeam) {
     ASSERT_TRUE(made.beams.has_value());
     EXPECT_EQ(made.beams->nelements(), 1u) << "or a moment would convolve the cube to the beam it already has";
     EXPECT_TRUE(made.notes.empty());
+}
+
+// XRADIO stores beams in radians, and casacore's FITS writer writes a BEAMS table's position angle in
+// degrees under the unit the beam was made in. A beam made in radians was saved as 42.7 "rad", which
+// read back as -73.1 degrees, so beams are made in the units a FITS image's are.
+TEST(ZarrCasacore, BeamsAreInArcsecondsAndDegrees) {
+    auto table = EveryPlane(4.5e-6);
+    table.back().position_angle = 0.745;
+    const auto made = MakeZarrBeamSet(table, 3, 2);
+    ASSERT_TRUE(made.beams.has_value());
+    const auto& beam = made.beams->getBeam(2, 1);
+    EXPECT_EQ(std::string(beam.getMajor().getUnit()), "arcsec");
+    EXPECT_EQ(std::string(beam.getMinor().getUnit()), "arcsec");
+    EXPECT_EQ(std::string(beam.getPA().getUnit()), "deg");
+    EXPECT_NEAR(beam.getMajor().getValue(), 4.5e-6 * 180.0 / M_PI * 3600.0, 1e-9);
+    EXPECT_NEAR(beam.getPA().getValue(), 0.745 * 180.0 / M_PI, 1e-9);
+
+    const auto single = MakeZarrBeamSet(EveryPlane(4.5e-6), 3, 2);
+    ASSERT_TRUE(single.beams.has_value());
+    EXPECT_EQ(std::string(single.beams->getBeam().getPA().getUnit()), "deg");
 }
 
 TEST(ZarrCasacore, BeamsThatDifferStayMany) {
