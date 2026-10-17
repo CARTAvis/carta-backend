@@ -270,11 +270,13 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
         if (beam.time != 0) {
             continue;
         }
-        // casacore throws for an invalid beam; the beams are then ignored rather than failing the image
+        // casacore throws for an invalid beam; the beams are then ignored rather than failing the image.
+        // Made in the units a FITS image's beams are: casacore's FITS writer writes a BEAMS table's position
+        // angle in degrees under the unit the beam was made in, so a beam made in radians saved wrongly.
         try {
             beam_matrix(static_cast<casacore::uInt>(beam.channel), static_cast<casacore::uInt>(beam.polarization)) =
-                casacore::GaussianBeam(casacore::Quantity(beam.major, beam.unit), casacore::Quantity(beam.minor, beam.unit),
-                    casacore::Quantity(beam.position_angle, beam.unit));
+                casacore::GaussianBeam(casacore::Quantity(beam.major, beam.unit).get("arcsec"),
+                    casacore::Quantity(beam.minor, beam.unit).get("arcsec"), casacore::Quantity(beam.position_angle, beam.unit).get("deg"));
         } catch (const casacore::AipsError& error) {
             result.notes.push_back(ZarrNote{ZarrNoteTopic::none, "beam table ignored",
                 "beam table gives channel " + std::to_string(beam.channel) + " polarization " + std::to_string(beam.polarization) +
