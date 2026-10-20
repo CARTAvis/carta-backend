@@ -1560,18 +1560,24 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
     // Check cache
     CacheId cache_id(file_id, region_id, stokes_index);
+    std::map<CARTA::StatsType, std::vector<double>> cache_results;
     if (_spectral_cache.count(cache_id) && !_spectral_cache[cache_id].profiles.empty()) {
+        cache_results = _spectral_cache[cache_id].profiles;
+        bool all_stats_cached(true);
         // Copy profiles to results map
         for (auto& result : results) {
             auto stats_type = result.first;
             std::vector<double> profile;
             if (_spectral_cache[cache_id].GetProfile(stats_type, profile)) {
                 results[stats_type] = profile;
+            } else {
+                all_stats_cached = false;
             }
         }
-        progress = 1.0;
-        partial_results_callback(results, progress);
-        return true;
+        if (all_stats_cached) {
+            partial_results_callback(results, 1.0);
+            return true;
+        }
     }
 
     // Get 2D region with original image coordinate to check if inside image and whether to use loader
@@ -1589,7 +1595,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     RegionState initial_region_state = region->GetRegionState();
 
     // Use loader swizzled data for efficiency
-    if (frame->UseLoaderSpectralData(lc_region->shape())) {
+    const bool has_extra_stats = std::any_of(required_stats.begin(), required_stats.end(),
+        [this](CARTA::StatsType type) { return std::find(_spectral_stats.begin(), _spectral_stats.end(), type) == _spectral_stats.end(); });
+    if (!has_extra_stats && frame->UseLoaderSpectralData(lc_region->shape())) {
         // Use cursor spectral profile for point region
         if (initial_region_state.type == CARTA::RegionType::POINT) {
             casacore::IPosition origin = lc_region->boundingBox().start();
@@ -1699,9 +1707,17 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         }
     } // end loader swizzled data
 
-    // Initialize cache results for *all* spectral stats
-    std::map<CARTA::StatsType, std::vector<double>> cache_results;
-    for (const auto& stat : _spectral_stats) {
+    // Cache basic profiles together, but calculate robust profiles only on demand.
+    auto stats_to_calculate = _spectral_stats;
+    for (auto stat : required_stats) {
+        if (std::find(stats_to_calculate.begin(), stats_to_calculate.end(), stat) == stats_to_calculate.end()) {
+            stats_to_calculate.push_back(stat);
+        }
+    }
+    stats_to_calculate.erase(std::remove_if(stats_to_calculate.begin(), stats_to_calculate.end(),
+                                 [&cache_results](CARTA::StatsType type) { return cache_results.count(type); }),
+        stats_to_calculate.end());
+    for (const auto& stat : stats_to_calculate) {
         cache_results[stat] = init_spectral;
     }
 
@@ -1732,7 +1748,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             if (GetImageRegion(region, frame, partial_z_range, tmp_stokes_index, lc_region, image_region)) {
                 StokesSource stokes_source(tmp_stokes_index, partial_z_range);
                 StokesRegion stokes_region(stokes_source, image_region);
-                return frame->GetRegionStats(stokes_region, _spectral_stats, per_z, tmp_partial_profiles);
+                return frame->GetRegionStats(stokes_region, stats_to_calculate, per_z, tmp_partial_profiles);
             }
             return false;
         };
@@ -1760,6 +1776,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             const std::vector<double>& stats_data = profile.second;
             if (results.count(stats_type)) {
                 memcpy(&results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
+            }
+            if (!cache_results.count(stats_type)) {
+                // The shared calculator also returns the other quantiles for caching.
+                cache_results[stats_type] = init_spectral;
             }
             memcpy(&cache_results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
         }

@@ -139,6 +139,43 @@ TEST_F(RegionSpectralProfileTest, TestPolygonSpectralProfile) {
     }
 }
 
+TEST_F(RegionSpectralProfileTest, TestExtraStatisticsAfterBasicProfile) {
+    for (const auto& image_path : {FitsImages() / "noise_3d.fits", Hdf5Images() / "10x10x10.hdf5"}) {
+        SCOPED_TRACE(image_path.string());
+        auto loader = FileLoader::GetLoader(image_path);
+        auto frame = std::make_shared<Frame>(0, loader, "0");
+        carta::RegionHandler handler;
+        int region_id(-1);
+        ASSERT_TRUE(SetRegion(handler, 0, region_id, {0, 0, 0, 3, 3, 3, 3, 0}, frame->CoordinateSystem(), false));
+        CARTA::SetSpectralRequirements_SpectralConfig config;
+        config.set_coordinate("z");
+        config.add_stats_types(CARTA::StatsType::Mean);
+        CARTA::SpectralProfileData data;
+        auto receive = [&data](CARTA::SpectralProfileData response) { data = response; };
+        ASSERT_TRUE(handler.SetSpectralRequirements(region_id, 0, frame, {config}));
+        ASSERT_TRUE(handler.FillSpectralProfileData(receive, region_id, 0, false));
+        for (auto type : {CARTA::StatsType::Median, CARTA::StatsType::Q1, CARTA::StatsType::Q3, CARTA::StatsType::Quartile,
+                 CARTA::StatsType::MedAbsDevMed}) {
+            config.add_stats_types(type);
+            ASSERT_TRUE(handler.SetSpectralRequirements(region_id, 0, frame, {config}));
+            ASSERT_TRUE(handler.FillSpectralProfileData(receive, region_id, 0, false));
+            EXPECT_EQ(data.progress(), 1.0);
+            bool found(false);
+            for (const auto& profile : data.profiles()) {
+                if (profile.stats_type() == type) {
+                    found = true;
+                    auto values = GetSpectralProfileValues<double>(profile);
+                    ASSERT_EQ(values.size(), frame->Depth());
+                    for (auto value : values) {
+                        EXPECT_TRUE(std::isfinite(value));
+                    }
+                }
+            }
+            EXPECT_TRUE(found);
+        }
+    }
+}
+
 TEST_F(RegionSpectralProfileTest, TestAnnPolygonSpectralProfile) {
     auto image_path = FitsImages() / "noise_3d.fits";
     std::vector<float> points = {0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0};
