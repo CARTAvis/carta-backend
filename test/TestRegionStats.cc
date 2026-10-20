@@ -203,8 +203,10 @@ TEST_F(RegionStatsTest, TestQuantilesPerChannelIgnoreInvalidPixels) {
     pixels(casacore::IPosition(3, 0, 1, 0)) = 3.0;
     image.put(pixels);
     std::map<CARTA::StatsType, std::vector<double>> results;
-    ASSERT_TRUE(CalcStatsValues(results, {CARTA::StatsType::Median}, image, true));
-    ASSERT_EQ(results.size(), 4);
+    const std::vector<CARTA::StatsType> robust_stats = {CARTA::StatsType::Median, CARTA::StatsType::MedAbsDevMed,
+        CARTA::StatsType::Q1, CARTA::StatsType::Q3, CARTA::StatsType::Quartile};
+    ASSERT_TRUE(CalcStatsValues(results, robust_stats, image, true));
+    ASSERT_EQ(results.size(), robust_stats.size());
     for (const auto& [type, values] : results) {
         ASSERT_EQ(values.size(), 2);
         EXPECT_TRUE(std::isnan(values[1]));
@@ -213,6 +215,15 @@ TEST_F(RegionStatsTest, TestQuantilesPerChannelIgnoreInvalidPixels) {
     EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Q1)[0], 1.0);
     EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Q3)[0], 3.0);
     EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Quartile)[0], 2.0);
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::MedAbsDevMed)[0], 1.0);
+
+    results.clear();
+    ASSERT_TRUE(CalcStatsValues(results, robust_stats, image, false));
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Median)[0], 2.0);
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Q1)[0], 1.0);
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Q3)[0], 3.0);
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Quartile)[0], 2.0);
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::MedAbsDevMed)[0], 1.0);
 }
 
 TEST_F(RegionStatsTest, TestImageQuantilesCachedTogether) {
@@ -285,20 +296,31 @@ TEST_F(RegionStatsTest, TestFitsImageStatsRecalculateMissingStatistics) {
 TEST_F(RegionStatsTest, TestHdf5ImageStatsRecalculateMissingStatistics) {
     auto image_path = Hdf5Images() / "noise_10px_10px.hdf5";
     auto loader = carta::FileLoader::GetLoader(image_path);
-    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    auto frame = std::make_shared<StatsCacheFrame>(0, loader, "0");
 
     CARTA::SetStatsRequirements_StatsConfig basic_config;
     basic_config.add_stats_types(CARTA::StatsType::Mean);
     ASSERT_TRUE(frame->SetStatsRequirements(IMAGE_REGION_ID, {basic_config}));
-    ASSERT_TRUE(frame->FillRegionStatsData([](CARTA::RegionStatsData) {}, IMAGE_REGION_ID, 0));
+    CARTA::RegionStatsData stats_data;
+    ASSERT_TRUE(frame->FillRegionStatsData([&stats_data](CARTA::RegionStatsData data) { stats_data = data; }, IMAGE_REGION_ID, 0));
+    auto& loader_stats = loader->GetImageStats(0, 0);
+    ASSERT_TRUE(loader_stats.full);
+    const double cached_mean = loader_stats.basic_stats.at(CARTA::StatsType::Mean);
+    ASSERT_EQ(stats_data.statistics_size(), 1);
+    ASSERT_EQ(frame->_image_stats.size(), 1);
+    ASSERT_DOUBLE_EQ(frame->_image_stats.begin()->second.at(CARTA::StatsType::Mean), cached_mean);
 
     auto stats_req_message = SetStatsRequirements(0, IMAGE_REGION_ID);
     std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs = {
         stats_req_message.stats_configs().begin(), stats_req_message.stats_configs().end()};
     ASSERT_TRUE(frame->SetStatsRequirements(IMAGE_REGION_ID, stats_configs));
 
-    CARTA::RegionStatsData stats_data;
     ASSERT_TRUE(frame->FillRegionStatsData([&stats_data](CARTA::RegionStatsData data) { stats_data = data; }, IMAGE_REGION_ID, 0));
+    auto mean_stat = std::find_if(stats_data.statistics().begin(), stats_data.statistics().end(),
+        [](const CARTA::StatisticsValue& value) { return value.stats_type() == CARTA::StatsType::Mean; });
+    ASSERT_NE(mean_stat, stats_data.statistics().end());
+    EXPECT_DOUBLE_EQ(mean_stat->value(), cached_mean);
+    EXPECT_DOUBLE_EQ(frame->_image_stats.begin()->second.at(CARTA::StatsType::Mean), cached_mean);
 
     int robust_stats_count = 0;
     for (const auto& statistic : stats_data.statistics()) {

@@ -1071,6 +1071,14 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
                 _loader->CloseImageIfUpdated();
             }
         }
+
+        int cache_key(CacheKey(z, stokes));
+        auto& cached_stats = _image_stats[cache_key];
+        if (image_stats.full) {
+            for (const auto& [type, value] : image_stats.basic_stats) {
+                cached_stats.try_emplace(type, value);
+            }
+        }
         if (image_stats.full && has_required_stats(image_stats.basic_stats)) {
             FillStatistics(stats_data, required_stats, image_stats.basic_stats);
             stats_data_callback(stats_data);
@@ -1078,7 +1086,6 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         }
 
         // Use cached stats
-        int cache_key(CacheKey(z, stokes));
         if (_image_stats.count(cache_key) && has_required_stats(_image_stats[cache_key])) {
             auto& stats_map = _image_stats[cache_key];
             FillStatistics(stats_data, required_stats, stats_map);
@@ -1091,7 +1098,6 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
         bool per_z(false);
         std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
-        auto& cached_stats = _image_stats[cache_key];
         std::vector<CARTA::StatsType> missing_stats;
         std::copy_if(required_stats.begin(), required_stats.end(), std::back_inserter(missing_stats),
             [&cached_stats](CARTA::StatsType type) { return !cached_stats.count(type); });
