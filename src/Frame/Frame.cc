@@ -390,7 +390,7 @@ bool Frame::FillImageCache() {
     if (_image_cache == nullptr) {
         // allocate memory for full image cache
         _image_cache_size = _dims.width * _dims.height;
-        _image_cache = MakeUniqueAlignedDataPtr<float>(_image_cache_size);
+        _image_cache = MakeSharedAlignedDataPtr<float>(_image_cache_size);
     }
 
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);

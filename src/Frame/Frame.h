@@ -299,7 +299,7 @@ protected:
 
     // Image data cache and mutex
     size_t _image_cache_size;
-    UniqueAlignedDataPtr<float> _image_cache;
+    SharedAlignedDataPtr<float> _image_cache;
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;       // only one disk access at a time
