@@ -182,7 +182,7 @@ TEST_F(RegionSpectralProfileTest, TestExtraStatisticsAfterBasicProfile) {
 
 TEST_F(RegionSpectralProfileTest, TestComputedStokesExtraStatisticsUseDerivedPixels) {
     auto image = std::make_shared<casacore::TempImage<float>>(
-        casacore::TiledShape(casacore::IPosition(4, 2, 2, 4, 3)), casacore::CoordinateUtil::defaultCoords4D());
+        casacore::TiledShape(casacore::IPosition(4, 2, 2, 4, 12)), casacore::CoordinateUtil::defaultCoords4D());
     auto loader = FileLoader::GetLoader(image, "computed-stats-test");
     auto frame = std::make_shared<Frame>(0, loader, "0");
     auto axes = frame->Axes();
@@ -227,27 +227,20 @@ TEST_F(RegionSpectralProfileTest, TestComputedStokesExtraStatisticsUseDerivedPix
     ASSERT_EQ(data.profiles_size(), 5);
     for (const auto& profile : data.profiles()) {
         auto values = GetSpectralProfileValues<double>(profile);
-        ASSERT_EQ(values.size(), 3);
-        if (profile.stats_type() == CARTA::StatsType::Median) {
-            EXPECT_DOUBLE_EQ(values[0], 20.0);
-            EXPECT_DOUBLE_EQ(values[1], 40.0);
-            EXPECT_DOUBLE_EQ(values[2], 60.0);
-        } else if (profile.stats_type() == CARTA::StatsType::MedAbsDevMed) {
-            EXPECT_DOUBLE_EQ(values[0], 10.0);
-            EXPECT_DOUBLE_EQ(values[1], 20.0);
-            EXPECT_DOUBLE_EQ(values[2], 30.0);
-        } else if (profile.stats_type() == CARTA::StatsType::Q1) {
-            EXPECT_DOUBLE_EQ(values[0], 10.0);
-            EXPECT_DOUBLE_EQ(values[1], 20.0);
-            EXPECT_DOUBLE_EQ(values[2], 30.0);
-        } else if (profile.stats_type() == CARTA::StatsType::Q3) {
-            EXPECT_DOUBLE_EQ(values[0], 40.0);
-            EXPECT_DOUBLE_EQ(values[1], 80.0);
-            EXPECT_DOUBLE_EQ(values[2], 120.0);
-        } else if (profile.stats_type() == CARTA::StatsType::Quartile) {
-            EXPECT_DOUBLE_EQ(values[0], 30.0);
-            EXPECT_DOUBLE_EQ(values[1], 60.0);
-            EXPECT_DOUBLE_EQ(values[2], 90.0);
+        ASSERT_EQ(values.size(), 12);
+        for (int z = 0; z < 12; ++z) {
+            const double scale = z + 1;
+            if (profile.stats_type() == CARTA::StatsType::Median) {
+                EXPECT_DOUBLE_EQ(values[z], 20.0 * scale);
+            } else if (profile.stats_type() == CARTA::StatsType::MedAbsDevMed) {
+                EXPECT_DOUBLE_EQ(values[z], 10.0 * scale);
+            } else if (profile.stats_type() == CARTA::StatsType::Q1) {
+                EXPECT_DOUBLE_EQ(values[z], 10.0 * scale);
+            } else if (profile.stats_type() == CARTA::StatsType::Q3) {
+                EXPECT_DOUBLE_EQ(values[z], 40.0 * scale);
+            } else if (profile.stats_type() == CARTA::StatsType::Quartile) {
+                EXPECT_DOUBLE_EQ(values[z], 30.0 * scale);
+            }
         }
     }
 }

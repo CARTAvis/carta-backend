@@ -1734,6 +1734,14 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     }
 
     // Calculate and cache profiles
+    std::vector<CARTA::StatsType> computed_stokes_extra_stats;
+    if (Stokes::IsComputed(stokes_index)) {
+        std::copy_if(required_stats.begin(), required_stats.end(), std::back_inserter(computed_stokes_extra_stats),
+            [this, &cache_results](CARTA::StatsType type) {
+                return std::find(_spectral_stats.begin(), _spectral_stats.end(), type) == _spectral_stats.end() &&
+                       !cache_results.count(type);
+            });
+    }
     size_t start_z(z_range.from), count(0), end_z(0), profile_start(0);
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
@@ -1781,29 +1789,21 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             }
         }
 
-        if (Stokes::IsComputed(stokes_index)) {
-            std::vector<CARTA::StatsType> extra_stats;
-            std::copy_if(required_stats.begin(), required_stats.end(), std::back_inserter(extra_stats),
-                [this, &cache_results](CARTA::StatsType type) {
-                    return std::find(_spectral_stats.begin(), _spectral_stats.end(), type) == _spectral_stats.end() &&
-                           !cache_results.count(type);
-                });
-            if (!extra_stats.empty()) {
-                StokesSource computed_source(stokes_index, partial_z_range);
-                auto computed_lc_region = region->GetLCRegion(
-                    file_id, frame->CoordinateSystem(computed_source), frame->ImageShape(computed_source), computed_source);
-                casacore::ImageRegion computed_image_region;
-                if (!GetImageRegion(region, frame, partial_z_range, stokes_index, computed_lc_region, computed_image_region)) {
-                    return false;
-                }
-                StokesRegion computed_region(computed_source, computed_image_region);
-                ProfilesMap computed_profiles;
-                if (!frame->GetRegionStats(computed_region, extra_stats, true, computed_profiles)) {
-                    return false;
-                }
-                for (const auto& [type, values] : computed_profiles) {
-                    partial_profiles[type] = values;
-                }
+        if (!computed_stokes_extra_stats.empty()) {
+            StokesSource computed_source(stokes_index, partial_z_range);
+            auto computed_lc_region = region->GetLCRegion(
+                file_id, frame->CoordinateSystem(computed_source), frame->ImageShape(computed_source), computed_source);
+            casacore::ImageRegion computed_image_region;
+            if (!GetImageRegion(region, frame, partial_z_range, stokes_index, computed_lc_region, computed_image_region)) {
+                return false;
+            }
+            StokesRegion computed_region(computed_source, computed_image_region);
+            ProfilesMap computed_profiles;
+            if (!frame->GetRegionStats(computed_region, computed_stokes_extra_stats, true, computed_profiles)) {
+                return false;
+            }
+            for (const auto& [type, values] : computed_profiles) {
+                partial_profiles[type] = values;
             }
         }
 
