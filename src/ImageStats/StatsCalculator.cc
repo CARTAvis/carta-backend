@@ -8,7 +8,12 @@
 
 #include "StatsCalculator.h"
 
+#include <algorithm>
+#include <cmath>
+
 #include <casacore/casa/Arrays/ArrayMath.h>
+#include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
+#include <casacore/scimath/StatsFramework/ClassicalStatistics.h>
 
 #include "Logger/Logger.h"
 #include "Util/Nan.h"
@@ -56,9 +61,63 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
         std::vector<double> dbl_result;           // return value in stats_value map
         casacore::Array<casacore::Double> result; // ImageStatistics result
 
+        const std::vector<CARTA::StatsType> quantile_stats = {
+            CARTA::StatsType::Median, CARTA::StatsType::Q1, CARTA::StatsType::Q3, CARTA::StatsType::Quartile};
+        const bool calculate_quantiles =
+            std::any_of(quantile_stats.begin(), quantile_stats.end(), [&requested_stats](CARTA::StatsType type) {
+                return std::find(requested_stats.begin(), requested_stats.end(), type) != requested_stats.end();
+            });
+        const bool calculate_mad =
+            std::find(requested_stats.begin(), requested_stats.end(), CARTA::StatsType::MedAbsDevMed) != requested_stats.end();
+        if (calculate_quantiles || calculate_mad) {
+            // ImageStatistics always computes MAD along with quantiles. Use the lower-level API
+            // so that the extra deviation sort only runs when MAD is requested.
+            auto cursor_shape = image.shape();
+            if (per_channel) {
+                for (size_t axis = 2; axis < cursor_shape.size(); ++axis) {
+                    cursor_shape[axis] = 1;
+                }
+            }
+            for (casacore::RO_MaskedLatticeIterator<float> iter(image, cursor_shape); !iter.atEnd(); iter++) {
+                const auto& data = iter.cursor();
+                auto mask = iter.getMask().copy();
+                auto mask_it = mask.begin();
+                for (auto value : data) {
+                    *mask_it = *mask_it && std::isfinite(value);
+                    ++mask_it;
+                }
+                casacore::ClassicalStatistics<double, decltype(data.begin()), decltype(mask.cbegin())> statistics;
+                statistics.setData(data.begin(), mask.cbegin(), data.size());
+                double median = DOUBLE_NAN, q1 = DOUBLE_NAN, q3 = DOUBLE_NAN, mad = DOUBLE_NAN;
+                if (casacore::anyTrue(mask)) {
+                    if (calculate_quantiles) {
+                        std::map<double, double> quantiles;
+                        median = statistics.getMedianAndQuantiles(quantiles, {0.25, 0.75});
+                        q1 = quantiles.at(0.25);
+                        q3 = quantiles.at(0.75);
+                    }
+                    if (calculate_mad) {
+                        mad = statistics.getMedianAbsDevMed();
+                    }
+                }
+                if (calculate_quantiles) {
+                    stats_values[CARTA::StatsType::Median].push_back(median);
+                    stats_values[CARTA::StatsType::Q1].push_back(q1);
+                    stats_values[CARTA::StatsType::Q3].push_back(q3);
+                    stats_values[CARTA::StatsType::Quartile].push_back(q3 - q1);
+                }
+                if (calculate_mad) {
+                    stats_values[CARTA::StatsType::MedAbsDevMed].push_back(mad);
+                }
+            }
+        }
+
         for (size_t i = 0; i < requested_stats.size(); ++i) {
             // get requested statistics values
             auto carta_stats_type = requested_stats[i];
+            if (stats_values.count(carta_stats_type)) {
+                continue;
+            }
 
             // Clear previous results
             dbl_result.clear();

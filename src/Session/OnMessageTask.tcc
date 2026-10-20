@@ -21,7 +21,7 @@ class GeneralMessageTask : public OnMessageTask {
         } else if constexpr (std::is_same_v<T, CARTA::SetSpatialRequirements>) {
             _session->OnSetSpatialRequirements(_message);
         } else if constexpr (std::is_same_v<T, CARTA::SetStatsRequirements>) {
-            _session->OnSetStatsRequirements(_message);
+            _session->ExecuteStatsRequirements();
         } else if constexpr (std::is_same_v<T, CARTA::MomentRequest>) {
             _session->OnMomentRequest(_message, _request_id);
         } else if constexpr (std::is_same_v<T, CARTA::FileListRequest>) {

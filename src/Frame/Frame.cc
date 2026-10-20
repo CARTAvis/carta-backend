@@ -1091,9 +1091,13 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
         bool per_z(false);
         std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
-        if (GetSlicerStats(stokes_slicer, required_stats, per_z, stats_vector_map)) {
+        auto& cached_stats = _image_stats[cache_key];
+        std::vector<CARTA::StatsType> missing_stats;
+        std::copy_if(required_stats.begin(), required_stats.end(), std::back_inserter(missing_stats),
+            [&cached_stats](CARTA::StatsType type) { return !cached_stats.count(type); });
+        if (GetSlicerStats(stokes_slicer, missing_stats, per_z, stats_vector_map)) {
             // convert vector to single value in map
-            std::map<CARTA::StatsType, double> stats_map;
+            auto& stats_map = cached_stats;
             for (auto& value : stats_vector_map) {
                 stats_map[value.first] = value.second[0];
             }
@@ -1101,9 +1105,6 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             // complete message
             FillStatistics(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
-
-            // cache results
-            _image_stats[cache_key] = stats_map;
 
             spdlog::performance("Fill image stats in {:.3f} ms", t.Elapsed().ms());
         }

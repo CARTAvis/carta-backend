@@ -76,6 +76,10 @@ public:
     void OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
     void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
     void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
+    /** @brief Queue statistics requirements in websocket arrival order. */
+    void QueueStatsRequirements(const CARTA::SetStatsRequirements& message);
+    /** @brief Process the next statistics request after the previous calculation finishes. */
+    void ExecuteStatsRequirements();
     void OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent = false);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
@@ -287,6 +291,10 @@ protected:
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
     int _last_file_id;
     std::mutex _frame_mutex;
+
+    // Serialize statistics requirement updates and calculations, including channel/region updates.
+    std::recursive_mutex _stats_mutex;
+    concurrent_queue<CARTA::SetStatsRequirements> _stats_requirements;
 
     // Suffix for opening multiple remote files
     int _remote_file_index;

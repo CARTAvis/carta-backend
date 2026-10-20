@@ -7,15 +7,34 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
+#include <casacore/images/Images/TempImage.h>
 #include <cmath>
+#include <thread>
 
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
+#include "ImageStats/StatsCalculator.h"
 #include "Region/Region.h"
 #include "Region/RegionHandler.h"
+#include "Session/Session.h"
 #include "src/Frame/Frame.h"
 
 using namespace carta;
+
+class StatsCacheFrame : public Frame {
+public:
+    using Frame::_image_stats;
+    using Frame::Frame;
+};
+
+class StatsQueueSession : public Session {
+public:
+    StatsQueueSession(std::shared_ptr<Frame> frame) : Session(nullptr, nullptr, 0, "", nullptr) {
+        _frames[0] = frame;
+    }
+    using Session::_out_msgs;
+};
 
 class RegionStatsTest : public ::testing::Test {
 public:
@@ -139,6 +158,92 @@ TEST_F(RegionStatsTest, TestFitsRegionStats) {
             ASSERT_NEAR(stats_data.statistics(i).value(), expected_q3, 1e-7);
         }
     }
+}
+
+TEST_F(RegionStatsTest, TestRapidStatisticsRequestsProcessedInArrivalOrder) {
+    auto loader = FileLoader::GetLoader(FitsImages() / "noise_3d.fits");
+    auto frame = std::make_shared<StatsCacheFrame>(0, loader, "0");
+    StatsQueueSession session(frame);
+    CARTA::SetStatsRequirements request;
+    request.set_file_id(0);
+    request.set_region_id(IMAGE_REGION_ID);
+    auto config = request.add_stats_configs();
+    for (auto type : {CARTA::StatsType::Median, CARTA::StatsType::Q1, CARTA::StatsType::Q3, CARTA::StatsType::Quartile,
+             CARTA::StatsType::MedAbsDevMed}) {
+        config->add_stats_types(type);
+        session.QueueStatsRequirements(request);
+    }
+    std::vector<std::thread> workers;
+    for (int i = 0; i < 5; ++i) {
+        workers.emplace_back([&session]() { session.ExecuteStatsRequirements(); });
+    }
+    for (auto& worker : workers) {
+        worker.join();
+    }
+    ASSERT_EQ(session._out_msgs.size(), 5);
+    for (int count = 1; count <= 5; ++count) {
+        std::pair<std::vector<char>, bool> encoded;
+        ASSERT_TRUE(session._out_msgs.try_pop(encoded));
+        const auto& bytes = encoded.first;
+        auto response = Message::DecodeMessage<CARTA::RegionStatsData>(std::string_view(bytes.data(), bytes.size()));
+        ASSERT_EQ(response.statistics_size(), count);
+        for (const auto& statistic : response.statistics()) {
+            EXPECT_TRUE(std::isfinite(statistic.value()));
+        }
+    }
+    ASSERT_EQ(frame->_image_stats.size(), 1);
+    EXPECT_EQ(frame->_image_stats.begin()->second.size(), 5);
+}
+
+TEST_F(RegionStatsTest, TestQuantilesPerChannelIgnoreInvalidPixels) {
+    casacore::TempImage<float> image(casacore::TiledShape(casacore::IPosition(3, 2, 2, 2)), casacore::CoordinateUtil::defaultCoords3D());
+    casacore::Array<float> pixels(image.shape(), FLOAT_NAN);
+    pixels(casacore::IPosition(3, 0, 0, 0)) = 1.0;
+    pixels(casacore::IPosition(3, 1, 0, 0)) = 2.0;
+    pixels(casacore::IPosition(3, 0, 1, 0)) = 3.0;
+    image.put(pixels);
+    std::map<CARTA::StatsType, std::vector<double>> results;
+    ASSERT_TRUE(CalcStatsValues(results, {CARTA::StatsType::Median}, image, true));
+    ASSERT_EQ(results.size(), 4);
+    for (const auto& [type, values] : results) {
+        ASSERT_EQ(values.size(), 2);
+        EXPECT_TRUE(std::isnan(values[1]));
+    }
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Median)[0], 2.0);
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Q1)[0], 1.0);
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Q3)[0], 3.0);
+    EXPECT_DOUBLE_EQ(results.at(CARTA::StatsType::Quartile)[0], 2.0);
+}
+
+TEST_F(RegionStatsTest, TestImageQuantilesCachedTogether) {
+    auto loader = FileLoader::GetLoader(FitsImages() / "noise_3d.fits");
+    StatsCacheFrame frame(0, loader, "0");
+    CARTA::SetStatsRequirements_StatsConfig config;
+    config.add_stats_types(CARTA::StatsType::Median);
+    ASSERT_TRUE(frame.SetStatsRequirements(IMAGE_REGION_ID, {config}));
+    CARTA::RegionStatsData data;
+    auto receive = [&data](CARTA::RegionStatsData response) { data = response; };
+    ASSERT_TRUE(frame.FillRegionStatsData(receive, IMAGE_REGION_ID, 0));
+    ASSERT_EQ(data.statistics_size(), 1);
+    ASSERT_EQ(frame._image_stats.size(), 1);
+    auto& cache = frame._image_stats.begin()->second;
+    for (auto type : {CARTA::StatsType::Median, CARTA::StatsType::Q1, CARTA::StatsType::Q3, CARTA::StatsType::Quartile}) {
+        ASSERT_TRUE(cache.count(type));
+        EXPECT_TRUE(std::isfinite(cache.at(type)));
+    }
+    ASSERT_FALSE(cache.count(CARTA::StatsType::MedAbsDevMed));
+    // Mark a cached value to prove that subsequent requests do not recalculate it.
+    cache[CARTA::StatsType::Q1] = -12345.0;
+    config.add_stats_types(CARTA::StatsType::Q1);
+    ASSERT_TRUE(frame.SetStatsRequirements(IMAGE_REGION_ID, {config}));
+    ASSERT_TRUE(frame.FillRegionStatsData(receive, IMAGE_REGION_ID, 0));
+    EXPECT_DOUBLE_EQ(data.statistics(1).value(), -12345.0);
+    config.add_stats_types(CARTA::StatsType::MedAbsDevMed);
+    ASSERT_TRUE(frame.SetStatsRequirements(IMAGE_REGION_ID, {config}));
+    ASSERT_TRUE(frame.FillRegionStatsData(receive, IMAGE_REGION_ID, 0));
+    EXPECT_DOUBLE_EQ(data.statistics(1).value(), -12345.0);
+    EXPECT_TRUE(std::isfinite(data.statistics(2).value()));
+    EXPECT_TRUE(cache.count(CARTA::StatsType::MedAbsDevMed));
 }
 
 TEST_F(RegionStatsTest, TestFitsImageStatsRecalculateMissingStatistics) {
