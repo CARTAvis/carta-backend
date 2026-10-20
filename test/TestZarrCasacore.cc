@@ -44,7 +44,7 @@ carta::zarr::ImageDescriptor Described() {
     spectral.reference_value = 1.4e9;
     spectral.increment = 1.0e6;
     spectral.rest_frequency = 1.420405751e9;
-    spectral.channel_frequencies = {1.4e9, 1.401e9, 1.402e9};
+    spectral.values = {1.4e9, 1.401e9, 1.402e9};
     descriptor.spectral = spectral;
 
     carta::zarr::PolarizationCoordinate polarization;
@@ -138,7 +138,7 @@ TEST(ZarrCasacore, ASpectralAxisWithNoLinearDescriptionIsTabular) {
     descriptor.spectral->reference_pixel.reset();
     descriptor.spectral->reference_value.reset();
     descriptor.spectral->increment.reset();
-    descriptor.spectral->channel_frequencies = {1.4e9, 1.401e9, 1.403e9};
+    descriptor.spectral->values = {1.4e9, 1.401e9, 1.403e9};
 
     const auto coordinates = MakeZarrCoordinateSystem(descriptor).coordinates;
     casacore::Double world = 0.0;
@@ -161,7 +161,7 @@ TEST(ZarrCasacore, TheObservationIsCarried) {
     carta::zarr::ObservationInfo observation;
     observation.observer = "CARTA";
     observation.telescope_name = "Test scope";
-    observation.mjd_obs = 59000.0;
+    observation.observation_mjd = 59000.0;
     observation.observatory_position = std::array<double, 3>{1.0, 2.0, 3.0};
     descriptor.observation = observation;
 
@@ -180,8 +180,8 @@ TEST(ZarrCasacore, AnObservationTimeScaleCasacoreCannotHoldCostsOnlyTheDate) {
     carta::zarr::ObservationInfo observation;
     observation.observer = "CARTA";
     observation.telescope_name = "Test scope";
-    observation.mjd_obs = 59000.0;
-    observation.timesys = "NOT_A_TIME_SCALE";
+    observation.observation_mjd = 59000.0;
+    observation.time_scale = "NOT_A_TIME_SCALE";
     descriptor.observation = observation;
 
     carta::ZarrCoordinates made;

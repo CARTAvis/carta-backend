@@ -101,17 +101,17 @@ casacore::DirectionCoordinate MakeDirectionCoordinate(const carta::zarr::Directi
 }
 
 casacore::SpectralCoordinate MakeSpectralCoordinate(const carta::zarr::SpectralCoordinate& descriptor) {
-    if (descriptor.channel_frequencies.empty()) {
+    if (descriptor.values.empty()) {
         throw casacore::AipsError("XRADIO spectral coordinate has no channel values");
     }
 
     const std::string unit = descriptor.unit.empty() ? "Hz" : descriptor.unit;
-    casacore::Vector<casacore::Double> frequencies(static_cast<casacore::uInt>(descriptor.channel_frequencies.size()));
+    casacore::Vector<casacore::Double> frequencies(static_cast<casacore::uInt>(descriptor.values.size()));
     for (casacore::uInt index = 0; index < frequencies.size(); ++index) {
-        frequencies[index] = descriptor.channel_frequencies[index];
+        frequencies[index] = descriptor.values[index];
     }
     casacore::Quantum<casacore::Vector<casacore::Double>> frequency_values(frequencies, casacore::Unit(unit));
-    const auto reference_type = SpectralReferenceFrame(descriptor.system);
+    const auto reference_type = SpectralReferenceFrame(descriptor.reference_frame);
 
     casacore::SpectralCoordinate coordinate;
     if (descriptor.reference_pixel && descriptor.reference_value && descriptor.increment) {
@@ -169,14 +169,14 @@ void SetObservationInfo(casacore::CoordinateSystem& coordinate_system, const std
     if (!descriptor->telescope_name.empty()) {
         observation.setTelescope(casacore::String(descriptor->telescope_name));
     }
-    if (descriptor->mjd_obs) {
+    if (descriptor->observation_mjd) {
         casacore::MEpoch::Types epoch_type = casacore::MEpoch::UTC;
         // A time scale casacore does not know leaves out the date rather than failing the image or assuming UTC
-        if (!descriptor->timesys.empty() && !casacore::MEpoch::getType(epoch_type, casacore::String(descriptor->timesys))) {
+        if (!descriptor->time_scale.empty() && !casacore::MEpoch::getType(epoch_type, casacore::String(descriptor->time_scale))) {
             notes.push_back(ZarrNote{ZarrNoteTopic::none, "observation date omitted",
-                "observation time scale " + descriptor->timesys + " is one casacore cannot hold; the observation date is left out"});
+                "observation time scale " + descriptor->time_scale + " is one casacore cannot hold; the observation date is left out"});
         } else {
-            observation.setObsDate(casacore::MEpoch(casacore::Quantity(*descriptor->mjd_obs, "d"), epoch_type));
+            observation.setObsDate(casacore::MEpoch(casacore::Quantity(*descriptor->observation_mjd, "d"), epoch_type));
         }
     }
     if (descriptor->observatory_position) {
