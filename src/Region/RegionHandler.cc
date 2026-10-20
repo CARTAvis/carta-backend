@@ -1727,10 +1727,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
-    if (Stokes::IsComputed(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
-        lc_region = nullptr;
-    }
-
     // Get per-z stats data for spectral profiles
     while (progress < 1.0) {
         // start the timer
@@ -1745,9 +1741,11 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         auto get_stokes_profiles_data = [&](ProfilesMap& tmp_partial_profiles, int tmp_stokes_index) {
             casacore::ImageRegion image_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
-            if (GetImageRegion(region, frame, partial_z_range, tmp_stokes_index, lc_region, image_region)) {
-                StokesSource stokes_source(tmp_stokes_index, partial_z_range);
-                StokesRegion stokes_region(stokes_source, image_region);
+            StokesSource component_source(tmp_stokes_index, partial_z_range);
+            auto component_lc_region = region->GetLCRegion(
+                file_id, frame->CoordinateSystem(component_source), frame->ImageShape(component_source), component_source);
+            if (GetImageRegion(region, frame, partial_z_range, tmp_stokes_index, component_lc_region, image_region)) {
+                StokesRegion stokes_region(component_source, image_region);
                 return frame->GetRegionStats(stokes_region, stats_to_calculate, per_z, tmp_partial_profiles);
             }
             return false;
@@ -1767,6 +1765,32 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         } else { // For regular stokes I, Q, U, or V
             if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
                 return false;
+            }
+        }
+
+        if (Stokes::IsComputed(stokes_index)) {
+            std::vector<CARTA::StatsType> extra_stats;
+            std::copy_if(required_stats.begin(), required_stats.end(), std::back_inserter(extra_stats),
+                [this, &cache_results](CARTA::StatsType type) {
+                    return std::find(_spectral_stats.begin(), _spectral_stats.end(), type) == _spectral_stats.end() &&
+                           !cache_results.count(type);
+                });
+            if (!extra_stats.empty()) {
+                StokesSource computed_source(stokes_index, partial_z_range);
+                auto computed_lc_region = region->GetLCRegion(
+                    file_id, frame->CoordinateSystem(computed_source), frame->ImageShape(computed_source), computed_source);
+                casacore::ImageRegion computed_image_region;
+                if (!GetImageRegion(region, frame, partial_z_range, stokes_index, computed_lc_region, computed_image_region)) {
+                    return false;
+                }
+                StokesRegion computed_region(computed_source, computed_image_region);
+                ProfilesMap computed_profiles;
+                if (!frame->GetRegionStats(computed_region, extra_stats, true, computed_profiles)) {
+                    return false;
+                }
+                for (const auto& [type, values] : computed_profiles) {
+                    partial_profiles[type] = values;
+                }
             }
         }
 
