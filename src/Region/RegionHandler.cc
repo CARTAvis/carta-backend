@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <set>
 
 #include <casacore/casa/math.h>
 
@@ -658,9 +659,12 @@ void RegionHandler::ClearRegionCache(int region_id) {
     if (_region_histograms.find(region_id) != _region_histograms.end()) {
         _region_histograms[region_id]->ClearCache();
     }
-    for (auto& spcache : _spectral_cache) {
-        if (spcache.first.region_id == region_id) {
-            spcache.second.ClearProfiles();
+    {
+        std::lock_guard<std::mutex> guard(_spectral_mutex);
+        for (auto& spcache : _spectral_cache) {
+            if (spcache.first.region_id == region_id) {
+                spcache.second.ClearProfiles();
+            }
         }
     }
 
@@ -1561,15 +1565,21 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     // Check cache
     CacheId cache_id(file_id, region_id, stokes_index);
     std::map<CARTA::StatsType, std::vector<double>> cache_results;
-    if (_spectral_cache.count(cache_id) && !_spectral_cache[cache_id].profiles.empty()) {
-        cache_results = _spectral_cache[cache_id].profiles;
+    {
+        std::lock_guard<std::mutex> guard(_spectral_mutex);
+        auto cache = _spectral_cache.find(cache_id);
+        if (cache != _spectral_cache.end()) {
+            cache_results = cache->second.profiles;
+        }
+    }
+    if (!cache_results.empty()) {
         bool all_stats_cached(true);
         // Copy profiles to results map
         for (auto& result : results) {
             auto stats_type = result.first;
-            std::vector<double> profile;
-            if (_spectral_cache[cache_id].GetProfile(stats_type, profile)) {
-                results[stats_type] = profile;
+            auto profile = cache_results.find(stats_type);
+            if (profile != cache_results.end()) {
+                results[stats_type] = profile->second;
             } else {
                 all_stats_cached = false;
             }
@@ -1709,9 +1719,11 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
     // Cache basic profiles together, but calculate robust profiles only on demand.
     auto stats_to_calculate = _spectral_stats;
-    for (auto stat : required_stats) {
-        if (std::find(stats_to_calculate.begin(), stats_to_calculate.end(), stat) == stats_to_calculate.end()) {
-            stats_to_calculate.push_back(stat);
+    if (!Stokes::IsComputed(stokes_index)) {
+        for (auto stat : required_stats) {
+            if (std::find(stats_to_calculate.begin(), stats_to_calculate.end(), stat) == stats_to_calculate.end()) {
+                stats_to_calculate.push_back(stat);
+            }
         }
     }
     stats_to_calculate.erase(std::remove_if(stats_to_calculate.begin(), stats_to_calculate.end(),
@@ -1726,6 +1738,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
+    std::set<CARTA::StatsType> computed_cache_types;
 
     // Get per-z stats data for spectral profiles
     while (progress < 1.0) {
@@ -1806,6 +1819,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 cache_results[stats_type] = init_spectral;
             }
             memcpy(&cache_results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
+            computed_cache_types.insert(stats_type);
         }
 
         start_z += count;
@@ -1847,9 +1861,11 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             t_partial_profile_start = std::chrono::high_resolution_clock::now();
             partial_results_callback(results, progress);
             if (progress >= 1.0) {
-                // cache results for all stats types
-                // TODO: cache and load partial profiles
-                _spectral_cache[cache_id] = SpectralCache(cache_results);
+                std::lock_guard<std::mutex> guard(_spectral_mutex);
+                auto& cached_profiles = _spectral_cache[cache_id].profiles;
+                for (auto type : computed_cache_types) {
+                    cached_profiles[type] = std::move(cache_results[type]);
+                }
             }
         }
     }

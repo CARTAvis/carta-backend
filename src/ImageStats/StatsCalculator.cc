@@ -53,11 +53,34 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
         result_size = image.shape().removeAxes(xy_axes).product();
     }
 
-    // num_points used for setting stats results to NaN where num_points is zero.
-    casacore::Array<casacore::Double> num_points;
-    image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
+    const bool needs_num_points = std::any_of(requested_stats.begin(), requested_stats.end(), [](CARTA::StatsType type) {
+        switch (type) {
+            case CARTA::StatsType::Median:
+            case CARTA::StatsType::MedAbsDevMed:
+            case CARTA::StatsType::Quartile:
+            case CARTA::StatsType::Q1:
+            case CARTA::StatsType::Q3:
+            case CARTA::StatsType::Blc:
+            case CARTA::StatsType::Trc:
+            case CARTA::StatsType::MinPos:
+            case CARTA::StatsType::MaxPos:
+            case CARTA::StatsType::Blcf:
+            case CARTA::StatsType::Trcf:
+            case CARTA::StatsType::MinPosf:
+            case CARTA::StatsType::MaxPosf:
+                return false;
+            default:
+                return true;
+        }
+    });
 
-    if (!num_points.empty()) {
+    // num_points is used for pixel counts and to map empty basic-stat results to NaN.
+    casacore::Array<casacore::Double> num_points;
+    if (needs_num_points) {
+        image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
+    }
+
+    if (!image.shape().empty()) {
         std::vector<double> dbl_result;           // return value in stats_value map
         casacore::Array<casacore::Double> result; // ImageStatistics result
 
@@ -82,14 +105,16 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
                 const auto& data = iter.cursor();
                 auto mask = iter.getMask().copy();
                 auto mask_it = mask.begin();
+                bool has_valid(false);
                 for (auto value : data) {
                     *mask_it = *mask_it && std::isfinite(value);
+                    has_valid = has_valid || *mask_it;
                     ++mask_it;
                 }
                 casacore::ClassicalStatistics<double, decltype(data.begin()), decltype(mask.cbegin())> statistics;
                 statistics.setData(data.begin(), mask.cbegin(), data.size());
                 double median = DOUBLE_NAN, q1 = DOUBLE_NAN, q3 = DOUBLE_NAN, mad = DOUBLE_NAN;
-                if (casacore::anyTrue(mask)) {
+                if (has_valid) {
                     if (calculate_quantiles) {
                         std::map<double, double> quantiles;
                         median = statistics.getMedianAndQuantiles(quantiles, {0.25, 0.75});

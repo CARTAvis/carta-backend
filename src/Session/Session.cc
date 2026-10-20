@@ -147,6 +147,9 @@ void Session::SetInitExitTimeout(int secs) {
 
 void Session::WaitForTaskCancellation() {
     _connected = false;
+    CARTA::SetStatsRequirements queued_stats;
+    while (_stats_requirements.try_pop(queued_stats)) {
+    }
     for (auto& frame : _frames) {
         frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
     }

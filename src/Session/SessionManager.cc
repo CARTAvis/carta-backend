@@ -507,7 +507,7 @@ void SessionManager::SetSpatialRequirementsHandler(Session* session, std::string
 void SessionManager::SetStatsRequirementsHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
     auto message = Message::DecodeMessage<CARTA::SetStatsRequirements>(sv_message);
     session->QueueStatsRequirements(message);
-    OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetStatsRequirements>(session, message, head.request_id);
+    OnMessageTask* tsk = new StatsRequirementsTask(session);
     ThreadManager::QueueTask(tsk);
 };
 
