@@ -80,7 +80,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
         image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
     }
 
-    if (!image.shape().empty()) {
+    if (!image.shape().empty() && (!needs_num_points || !num_points.empty())) {
         std::vector<double> dbl_result;           // return value in stats_value map
         casacore::Array<casacore::Double> result; // ImageStatistics result
 

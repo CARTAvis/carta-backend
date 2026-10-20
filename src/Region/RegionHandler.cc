@@ -1779,13 +1779,15 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         };
 
         ProfilesMap partial_profiles;
-        if (Stokes::IsComputed(stokes_index)) { // For computed stokes
-            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
-                return false;
-            }
-        } else { // For regular stokes I, Q, U, or V
-            if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
-                return false;
+        if (!stats_to_calculate.empty()) {
+            if (Stokes::IsComputed(stokes_index)) { // For computed stokes
+                if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
+                    return false;
+                }
+            } else { // For regular stokes I, Q, U, or V
+                if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
+                    return false;
+                }
             }
         }
 
