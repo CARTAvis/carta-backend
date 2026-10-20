@@ -21,6 +21,7 @@
 #include <casacore/measures/Measures/MPosition.h>
 
 #include "CommonTestUtilities.h"
+#include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "ImageData/CartaZarrImage.h"
 #include "ImageData/FileLoader.h"
@@ -183,6 +184,36 @@ TEST_F(ZarrImageTest, EachImageFindsTheFlagXradioWroteForIt) {
         ASSERT_TRUE(opened) << image_id << ": " << opened.error().message;
         EXPECT_EQ(opened.value().descriptor().pixel_mask_id, flag_id) << image_id;
     }
+    ZarrStores::Instance().Clear();
+}
+
+// CASA's ia.fft writes the aperture plane of an image, and XRADIO converts it with u and v in place of l and m.
+// It is listed, opens with a linear coordinate named UU and VV where a sky image has its direction, and has
+// file info.
+TEST_F(ZarrImageTest, AnApertureImageOpensWithUuAndVv) {
+    const std::filesystem::path fixture{ZARR_XRADIO_APERTURE_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio aperture fixture not found at " << fixture;
+    }
+    EXPECT_EQ(ListedImages(fixture), (std::vector<std::string>{"APERTURE"}));
+
+    const CartaZarrImage image(fixture.string(), "APERTURE");
+    EXPECT_EQ(image.shape(), casacore::IPosition(4, 5, 4, 2, 3));
+    const auto& coordinates = image.coordinates();
+    EXPECT_FALSE(coordinates.hasDirectionCoordinate());
+    ASSERT_TRUE(coordinates.hasLinearCoordinate());
+    const auto names = coordinates.linearCoordinate(coordinates.findCoordinate(casacore::Coordinate::LINEAR)).worldAxisNames();
+    EXPECT_EQ(names[0], "UU");
+    EXPECT_EQ(names[1], "VV");
+    EXPECT_TRUE(image.imageInfo().restoringBeam().isNull()) << "the aperture plane has no beam";
+
+    auto loader = FileLoader::GetLoader(fixture.string());
+    ASSERT_NE(loader, nullptr);
+    CARTA::FileInfoExtended extended_info;
+    std::string message;
+    EXPECT_TRUE(FileExtInfoLoader(loader).FillFileExtInfo(extended_info, fixture.filename().string(), "APERTURE", message)) << message;
+    EXPECT_EQ(extended_info.width(), 5);
+    EXPECT_EQ(extended_info.height(), 4);
     ZarrStores::Instance().Clear();
 }
 

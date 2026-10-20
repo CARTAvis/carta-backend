@@ -31,8 +31,9 @@ struct ZarrCoordinates {
 };
 
 // The coordinate system in CARTA's order (direction, spectral, Stokes) with the observation info, for an
-// image CartaZarrAxes accepted. Throws casacore::AipsError for a frame, projection or Stokes label casacore
-// does not know.
+// image CartaZarrAxes accepted. An image of the aperture plane has a linear coordinate named UU and VV in
+// place of the direction. Throws casacore::AipsError for a frame, projection or Stokes label casacore does
+// not know.
 ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor);
 
 struct ZarrBeams {

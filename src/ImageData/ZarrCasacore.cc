@@ -15,6 +15,7 @@
 #include <casacore/casa/Quanta/MVPosition.h>
 #include <casacore/casa/Quanta/Unit.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/coordinates/Coordinates/LinearCoordinate.h>
 #include <casacore/coordinates/Coordinates/ObsInfo.h>
 #include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
@@ -100,6 +101,25 @@ casacore::DirectionCoordinate MakeDirectionCoordinate(const carta::zarr::Directi
     return coordinate;
 }
 
+// The aperture plane's u and v, named and in the unit casacore's own Fourier transform of a direction gives them
+casacore::LinearCoordinate MakeApertureCoordinate(const carta::zarr::ApertureCoordinate& descriptor) {
+    const std::string unit = descriptor.unit.empty() ? "lambda" : descriptor.unit;
+    casacore::Vector<casacore::String> names(2);
+    names[0] = "UU";
+    names[1] = "VV";
+    casacore::Vector<casacore::Double> reference_value(2);
+    casacore::Vector<casacore::Double> increment(2);
+    casacore::Vector<casacore::Double> reference_pixel(2);
+    for (casacore::uInt axis = 0; axis < 2; ++axis) {
+        reference_value[axis] = descriptor.reference_value[axis];
+        increment[axis] = descriptor.increment[axis];
+        reference_pixel[axis] = descriptor.reference_pixel[axis] - 1.0;
+    }
+    casacore::Matrix<casacore::Double> transform(2, 2, 0.0);
+    transform.diagonal() = 1.0;
+    return casacore::LinearCoordinate(names, CoordinateUnits(unit, unit), reference_value, increment, transform, reference_pixel);
+}
+
 casacore::SpectralCoordinate MakeSpectralCoordinate(const carta::zarr::SpectralCoordinate& descriptor) {
     if (descriptor.values.empty()) {
         throw casacore::AipsError("XRADIO spectral coordinate has no channel values");
@@ -147,10 +167,15 @@ casacore::StokesCoordinate MakeStokesCoordinate(const carta::zarr::PolarizationC
     return casacore::StokesCoordinate(stokes);
 }
 
-// Direction, spectral and Stokes coordinates, in CARTA's axis order
+// The spatial, spectral and Stokes coordinates, in CARTA's axis order. The spatial coordinate is a sky image's
+// direction, or an aperture-plane image's u and v.
 casacore::CoordinateSystem MakeCoordinateSystemOnly(const carta::zarr::ImageDescriptor& descriptor) {
     casacore::CoordinateSystem coordinate_system;
-    coordinate_system.addCoordinate(MakeDirectionCoordinate(*descriptor.direction));
+    if (descriptor.aperture) {
+        coordinate_system.addCoordinate(MakeApertureCoordinate(*descriptor.aperture));
+    } else {
+        coordinate_system.addCoordinate(MakeDirectionCoordinate(*descriptor.direction));
+    }
     coordinate_system.addCoordinate(MakeSpectralCoordinate(*descriptor.spectral));
     coordinate_system.addCoordinate(MakeStokesCoordinate(*descriptor.polarization));
     return coordinate_system;
@@ -205,6 +230,9 @@ std::optional<double> EquinoxOf(casacore::MDirection::Types type) {
 ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor) {
     ZarrCoordinates made{MakeCoordinateSystemOnly(descriptor), {}};
     SetObservationInfo(made.coordinates, descriptor.observation, made.notes);
+    if (!descriptor.direction) {
+        return made; // the aperture plane has no celestial frame
+    }
 
     // FK5 and FK4 become J2000 and B1950, which casacore has only at those equinoxes. Another equinox is
     // read in that frame anyway (off by the precession in between) and noted.

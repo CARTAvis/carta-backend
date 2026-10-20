@@ -9,6 +9,7 @@ add_definitions(-DZARR_XRADIO_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/z
 add_definitions(-DZARR_XRADIO_UNIFORM_BEAM_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/uniform_beam")
 add_definitions(-DZARR_XRADIO_TIME_AXIS_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/time_axis")
 add_definitions(-DZARR_XRADIO_FLAGGED_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/conformance_flagged")
+add_definitions(-DZARR_XRADIO_APERTURE_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/data/images/zarr/xradio/conformance_aperture")
 
 # Performance tests should not be run by default, since they need to be run in isolation
 option(performance_tests "Build performance tests." OFF)

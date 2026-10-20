@@ -11,12 +11,12 @@
 namespace carta {
 namespace {
 
-// The file info value a diagnostic on `axis` is about: frequency, `for_direction` for l or m, or none
+// The file info value a diagnostic on `axis` is about: frequency, `for_direction` for l, m, u or v, or none
 ZarrNoteTopic TopicFor(const std::string& axis, ZarrNoteTopic for_direction) {
     if (axis == "frequency") {
         return ZarrNoteTopic::frequency;
     }
-    if (axis == "l" || axis == "m") {
+    if (axis == "l" || axis == "m" || axis == "u" || axis == "v") {
         return for_direction;
     }
     return ZarrNoteTopic::none;

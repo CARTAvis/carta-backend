@@ -56,6 +56,17 @@ carta::zarr::ImageDescriptor XradioOrder(std::uint64_t times = 1) {
         {AxisRole::time, times}});
 }
 
+// An image of the aperture plane: u and v play the spatial roles, and an aperture coordinate replaces the direction
+carta::zarr::ImageDescriptor Aperture() {
+    auto descriptor = XradioOrder();
+    descriptor.axes[0].name = "u";
+    descriptor.axes[1].name = "v";
+    descriptor.direction.reset();
+    descriptor.aperture.emplace();
+    descriptor.aperture->increment = {-11459.2, 14323.9};
+    return descriptor;
+}
+
 // The same image with its axes in another order
 carta::zarr::ImageDescriptor Shuffled() {
     return Described(
@@ -159,6 +170,23 @@ TEST(CartaZarrAxes, ASpatialAxisOfOnePixelIsNotDisplayed) {
         EXPECT_NE(from_axes.find("one pixel"), std::string::npos) << from_axes;
         EXPECT_NE(from_axes.find(descriptor.axes[spatial].name), std::string::npos) << from_axes;
         EXPECT_EQ(from_axes, from_descriptor);
+    }
+}
+
+TEST(CartaZarrAxes, AnApertureImageIsDisplayed) {
+    std::string reason;
+    const auto axes = CartaZarrAxes::FromImage(Aperture(), reason);
+    ASSERT_TRUE(axes.has_value()) << reason;
+    EXPECT_EQ(axes->Shape(), casacore::IPosition(4, 4, 5, 3, 2));
+}
+
+TEST(CartaZarrAxes, AnApertureAxisWithNoIncrementIsNotDisplayed) {
+    for (const std::size_t axis : {0u, 1u}) {
+        auto descriptor = Aperture();
+        descriptor.aperture->increment[axis] = 0.0;
+        std::string reason;
+        EXPECT_FALSE(CartaZarrAxes::FromImage(descriptor, reason).has_value()) << axis;
+        EXPECT_NE(reason.find("aperture axis with no increment"), std::string::npos) << reason;
     }
 }
 

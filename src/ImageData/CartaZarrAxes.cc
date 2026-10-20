@@ -73,14 +73,16 @@ std::optional<CartaZarrAxes> CartaZarrAxes::FromImage(const carta::zarr::ImageDe
     if (!axes) {
         return std::nullopt;
     }
-    if (!descriptor.direction || !descriptor.spectral || !descriptor.polarization) {
+    if (!(descriptor.direction || descriptor.aperture) || !descriptor.spectral || !descriptor.polarization) {
         reason = "XRADIO image is missing a required coordinate descriptor";
         return std::nullopt;
     }
-    // Equal direction cosines also leave no pixel scale
-    for (const double increment : descriptor.direction->increment) {
+    // Equal samples along a spatial axis also leave no pixel scale, on the sky or the aperture plane
+    const auto& increments = descriptor.direction ? descriptor.direction->increment : descriptor.aperture->increment;
+    for (const double increment : increments) {
         if (increment == 0.0) {
-            reason = "XRADIO image has a direction axis with no increment, so no pixel scale";
+            reason = std::string("XRADIO image has ") + (descriptor.direction ? "a direction" : "an aperture") +
+                     " axis with no increment, so no pixel scale";
             return std::nullopt;
         }
     }

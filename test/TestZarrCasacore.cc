@@ -15,6 +15,7 @@
 
 #include <casacore/casa/Exceptions/Error.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/coordinates/Coordinates/LinearCoordinate.h>
 #include <casacore/coordinates/Coordinates/ObsInfo.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
@@ -50,6 +51,19 @@ carta::zarr::ImageDescriptor Described() {
     carta::zarr::PolarizationCoordinate polarization;
     polarization.labels = {"I", "Q"};
     descriptor.polarization = polarization;
+    return descriptor;
+}
+
+// The same image on the aperture plane, as CASA's ia.fft writes one and XRADIO converts it
+carta::zarr::ImageDescriptor ApertureDescribed() {
+    auto descriptor = Described();
+    descriptor.direction.reset();
+    carta::zarr::ApertureCoordinate aperture;
+    aperture.unit = "lambda";
+    aperture.reference_pixel = {3.0, 3.0}; // counted from one, as FITS counts
+    aperture.reference_value = {0.0, 0.0};
+    aperture.increment = {-11459.155902616463, 14323.94487827058};
+    descriptor.aperture = aperture;
     return descriptor;
 }
 
@@ -130,6 +144,28 @@ TEST(ZarrCasacore, TheCoordinatesAreInCartasOrder) {
     EXPECT_EQ(coordinates.type(0), casacore::Coordinate::DIRECTION);
     EXPECT_EQ(coordinates.type(1), casacore::Coordinate::SPECTRAL);
     EXPECT_EQ(coordinates.type(2), casacore::Coordinate::STOKES);
+}
+
+// u and v become a linear coordinate named as casacore's own Fourier transform of a direction names them
+TEST(ZarrCasacore, AnApertureImageHasUuAndVvInPlaceOfADirection) {
+    const auto made = MakeZarrCoordinateSystem(ApertureDescribed());
+    const auto& coordinates = made.coordinates;
+    ASSERT_EQ(coordinates.nCoordinates(), 3u);
+    EXPECT_EQ(coordinates.type(0), casacore::Coordinate::LINEAR);
+    EXPECT_EQ(coordinates.type(1), casacore::Coordinate::SPECTRAL);
+    EXPECT_EQ(coordinates.type(2), casacore::Coordinate::STOKES);
+    EXPECT_FALSE(coordinates.hasDirectionCoordinate());
+
+    const auto& aperture = coordinates.linearCoordinate(0);
+    EXPECT_EQ(aperture.worldAxisNames()[0], "UU");
+    EXPECT_EQ(aperture.worldAxisNames()[1], "VV");
+    EXPECT_EQ(aperture.worldAxisUnits()[0], "lambda");
+    EXPECT_EQ(aperture.worldAxisUnits()[1], "lambda");
+    EXPECT_DOUBLE_EQ(aperture.increment()[0], -11459.155902616463);
+    EXPECT_DOUBLE_EQ(aperture.increment()[1], 14323.94487827058);
+    EXPECT_DOUBLE_EQ(aperture.referencePixel()[0], 2.0) << "a descriptor counts from one and casacore from zero";
+    EXPECT_DOUBLE_EQ(aperture.referencePixel()[1], 2.0);
+    EXPECT_TRUE(made.notes.empty()) << "the aperture plane has no celestial frame to note";
 }
 
 // Without a linear description the channels are not evenly spaced, so the axis lists them

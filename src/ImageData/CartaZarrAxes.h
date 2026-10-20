@@ -31,7 +31,8 @@ public:
     // then at most a time axis of length one, with every length above zero and within CARTA's 32-bit
     // limit. Takes the listing's axes, so that images are sorted without opening them.
     static std::optional<CartaZarrAxes> FromListing(const std::vector<carta::zarr::AxisDescriptor>& axes, std::string& reason);
-    // The same for an opened image, which must also have direction, spectral and polarization coordinates
+    // The same for an opened image, which must also have spectral and polarization coordinates, and a direction
+    // or, for an image of the aperture plane, an aperture coordinate
     static std::optional<CartaZarrAxes> FromImage(const carta::zarr::ImageDescriptor& descriptor, std::string& reason);
 
     // The image's shape in CARTA's order
