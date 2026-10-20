@@ -203,8 +203,8 @@ TEST_F(RegionStatsTest, TestQuantilesPerChannelIgnoreInvalidPixels) {
     pixels(casacore::IPosition(3, 0, 1, 0)) = 3.0;
     image.put(pixels);
     std::map<CARTA::StatsType, std::vector<double>> results;
-    const std::vector<CARTA::StatsType> robust_stats = {CARTA::StatsType::Median, CARTA::StatsType::MedAbsDevMed,
-        CARTA::StatsType::Q1, CARTA::StatsType::Q3, CARTA::StatsType::Quartile};
+    const std::vector<CARTA::StatsType> robust_stats = {
+        CARTA::StatsType::Median, CARTA::StatsType::MedAbsDevMed, CARTA::StatsType::Q1, CARTA::StatsType::Q3, CARTA::StatsType::Quartile};
     ASSERT_TRUE(CalcStatsValues(results, robust_stats, image, true));
     ASSERT_EQ(results.size(), robust_stats.size());
     for (const auto& [type, values] : results) {

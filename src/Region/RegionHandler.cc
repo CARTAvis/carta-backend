@@ -1793,8 +1793,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
         if (!computed_stokes_extra_stats.empty()) {
             StokesSource computed_source(stokes_index, partial_z_range);
-            auto computed_lc_region = region->GetLCRegion(
-                file_id, frame->CoordinateSystem(computed_source), frame->ImageShape(computed_source), computed_source);
+            auto computed_lc_region =
+                region->GetLCRegion(file_id, frame->CoordinateSystem(computed_source), frame->ImageShape(computed_source), computed_source);
             casacore::ImageRegion computed_image_region;
             if (!GetImageRegion(region, frame, partial_z_range, stokes_index, computed_lc_region, computed_image_region)) {
                 return false;
