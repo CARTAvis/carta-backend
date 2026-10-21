@@ -69,28 +69,26 @@ public:
         return store;
     }
 
-    // An XRADIO image store without the coordinate system every image needs
-    fs::path AMalformedStore() {
-        const auto store = AStore("malformed.zarr");
+    // A copy of the pixel fixture whose root metadata no longer has `key`
+    fs::path AStoreWithout(const std::string& name, const std::string& key) {
+        const auto store = AStore(name);
         auto text = ReadText(store / "zarr.json");
-        const std::string key = "\"coordinate_system_info\"";
-        const auto at = text.find(key);
-        EXPECT_NE(at, std::string::npos);
-        text.replace(at, key.size(), "\"not_coordinate_system_info\"");
+        const auto quoted = "\"" + key + "\"";
+        const auto at = text.find(quoted);
+        EXPECT_NE(at, std::string::npos) << key;
+        text.replace(at, quoted.size(), "\"not_" + key + "\"");
         WriteText(store / "zarr.json", text);
         return store;
     }
 
+    // An XRADIO image store without the coordinate system every image needs
+    fs::path AMalformedStore() {
+        return AStoreWithout("malformed.zarr", "coordinate_system_info");
+    }
+
     // An XRADIO image store naming no schema version, as XRADIO 1.2.4 and earlier wrote
     fs::path AnUnversionedStore() {
-        const auto store = AStore("unversioned.zarr");
-        auto text = ReadText(store / "zarr.json");
-        const std::string key = "\"schema_version\"";
-        const auto at = text.find(key);
-        EXPECT_NE(at, std::string::npos);
-        text.replace(at, key.size(), "\"not_schema_version\"");
-        WriteText(store / "zarr.json", text);
-        return store;
+        return AStoreWithout("unversioned.zarr", "schema_version");
     }
 
     // A valid Zarr v3 group that is not an image

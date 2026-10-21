@@ -45,7 +45,21 @@ protected:
             GTEST_SKIP() << "carta-zarr pixel fixture not found at " << kZarrFixture;
         }
     }
+
+    void TearDown() override {
+        ZarrStores::Instance().Clear();
+    }
 };
+
+// The image a file loader opens from `store`, or null if it opens none
+FileLoader::ImageRef ImageThroughLoader(const std::filesystem::path& store) {
+    auto loader = FileLoader::GetLoader(store.string());
+    if (!loader) {
+        return nullptr;
+    }
+    loader->OpenFile("");
+    return loader->GetImage();
+}
 
 // A copy of the pixel fixture whose SKY metadata is rewritten by `edit`.
 std::filesystem::path EditedFixture(const std::string& name, const std::function<std::string(const std::string&)>& edit) {
@@ -92,10 +106,7 @@ TEST_F(ZarrImageTest, TheStorageLayoutIsInCartasOrder) {
 }
 
 TEST_F(ZarrImageTest, TelescopePositionIsCartesian) {
-    auto loader = FileLoader::GetLoader(kZarrFixture.string());
-    ASSERT_NE(loader, nullptr);
-    loader->OpenFile("");
-    auto image = loader->GetImage();
+    auto image = ImageThroughLoader(kZarrFixture);
     ASSERT_NE(image, nullptr);
 
     const auto position = image->coordinates().obsInfo().telescopePosition();
@@ -112,10 +123,7 @@ TEST_F(ZarrImageTest, ASkyImagesSubTypeIsItsImageType) {
     const auto copy = EditedFixture("spectral_index.zarr", [](const std::string& text) {
         return std::regex_replace(text, std::regex(R"("type"\s*:\s*"sky")"), R"("type": "sky", "sub_type": "SpectralIndex")");
     });
-    auto loader = FileLoader::GetLoader(copy.string());
-    ASSERT_NE(loader, nullptr);
-    loader->OpenFile("");
-    auto image = loader->GetImage();
+    auto image = ImageThroughLoader(copy);
     ASSERT_NE(image, nullptr);
     EXPECT_EQ(image->imageInfo().imageType(), casacore::ImageInfo::SpectralIndex);
 }
@@ -125,10 +133,7 @@ TEST_F(ZarrImageTest, BeamsThatAgreeOnEveryPlaneBecomeOne) {
     if (!std::filesystem::exists(fixture)) {
         GTEST_SKIP() << "uniform-beam fixture not found at " << fixture;
     }
-    auto loader = FileLoader::GetLoader(fixture.string());
-    ASSERT_NE(loader, nullptr);
-    loader->OpenFile("");
-    auto image = loader->GetImage();
+    auto image = ImageThroughLoader(fixture);
     ASSERT_NE(image, nullptr);
 
     const auto& info = image->imageInfo();
@@ -147,10 +152,7 @@ TEST_F(ZarrImageTest, BeamsThatDifferPerPlaneStayMany) {
     if (!std::filesystem::exists(fixture)) {
         GTEST_SKIP() << "xradio fixture not found at " << fixture;
     }
-    auto loader = FileLoader::GetLoader(fixture.string());
-    ASSERT_NE(loader, nullptr);
-    loader->OpenFile("");
-    auto image = loader->GetImage();
+    auto image = ImageThroughLoader(fixture);
     ASSERT_NE(image, nullptr);
 
     const auto& info = image->imageInfo();
@@ -195,7 +197,6 @@ TEST_F(ZarrImageTest, EachImageFindsTheFlagXradioWroteForIt) {
         ASSERT_TRUE(opened) << image_id << ": " << opened.error().message;
         EXPECT_EQ(opened.value().descriptor().pixel_mask_id, flag_id) << image_id;
     }
-    ZarrStores::Instance().Clear();
 }
 
 // CASA's ia.fft writes the aperture plane of an image, and XRADIO converts it with u and v in place of l and m.
@@ -225,7 +226,6 @@ TEST_F(ZarrImageTest, AnApertureImageOpensWithUuAndVv) {
     EXPECT_TRUE(FileExtInfoLoader(loader).FillFileExtInfo(extended_info, fixture.filename().string(), "APERTURE", message)) << message;
     EXPECT_EQ(extended_info.width(), 5);
     EXPECT_EQ(extended_info.height(), 4);
-    ZarrStores::Instance().Clear();
 }
 
 // The library opens every image of a dataset with two times, but CARTA displays one time, so none is
@@ -248,5 +248,4 @@ TEST_F(ZarrImageTest, ADatasetWithTwoTimesListsNoImage) {
     } catch (const casacore::AipsError& error) {
         EXPECT_NE(error.getMesg().find("singleton time axis"), std::string::npos) << error.getMesg();
     }
-    ZarrStores::Instance().Clear();
 }

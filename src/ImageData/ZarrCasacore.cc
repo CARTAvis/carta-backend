@@ -8,7 +8,7 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <sstream>
+#include <string>
 
 #include <casacore/casa/Arrays/Matrix.h>
 #include <casacore/casa/Exceptions/Error.h>
@@ -25,6 +25,7 @@
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/measures/Measures/MPosition.h>
 #include <casacore/measures/Measures/Stokes.h>
+#include <spdlog/fmt/fmt.h>
 
 namespace carta {
 namespace {
@@ -138,22 +139,22 @@ casacore::SpectralCoordinate MakeSpectralCoordinate(const carta::zarr::SpectralC
     }
 
     const std::string unit = descriptor.unit.empty() ? "Hz" : descriptor.unit;
-    casacore::Vector<casacore::Double> frequencies(static_cast<casacore::uInt>(descriptor.values.size()));
-    for (casacore::uInt index = 0; index < frequencies.size(); ++index) {
-        frequencies[index] = descriptor.values[index];
-    }
-    casacore::Quantum<casacore::Vector<casacore::Double>> frequency_values(frequencies, casacore::Unit(unit));
     const auto reference_type = SpectralReferenceFrame(descriptor.reference_frame);
+    const casacore::Quantity rest_frequency(descriptor.rest_frequency.value_or(0.0), unit);
 
     casacore::SpectralCoordinate coordinate;
     if (descriptor.reference_pixel && descriptor.reference_value && descriptor.increment) {
         const casacore::Quantity reference_value(*descriptor.reference_value, unit);
         const casacore::Quantity increment(*descriptor.increment, unit);
-        const casacore::Quantity rest_frequency(descriptor.rest_frequency.value_or(0.0), unit);
         coordinate =
             casacore::SpectralCoordinate(reference_type, reference_value, increment, *descriptor.reference_pixel - 1.0, rest_frequency);
     } else {
-        const casacore::Quantity rest_frequency(descriptor.rest_frequency.value_or(0.0), unit);
+        // Without a linear description, every channel's frequency
+        casacore::Vector<casacore::Double> frequencies(static_cast<casacore::uInt>(descriptor.values.size()));
+        for (casacore::uInt index = 0; index < frequencies.size(); ++index) {
+            frequencies[index] = descriptor.values[index];
+        }
+        const casacore::Quantum<casacore::Vector<casacore::Double>> frequency_values(frequencies, casacore::Unit(unit));
         coordinate = casacore::SpectralCoordinate(reference_type, frequency_values, rest_frequency);
     }
 
@@ -277,10 +278,9 @@ ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& des
     const auto& named = descriptor.direction->equinox;
     if (fixed && named && *named != *fixed) {
         const std::string read_as = casacore::MDirection::showType(type);
-        std::ostringstream equinox;
-        equinox << *named;
-        made.notes.push_back(ZarrNote{ZarrNoteTopic::celestial_frame, "equinox " + equinox.str() + " read as " + read_as,
-            "direction frame " + descriptor.direction->reference_frame + " names equinox " + equinox.str() +
+        const auto equinox = fmt::format("{:.6g}", *named);
+        made.notes.push_back(ZarrNote{ZarrNoteTopic::celestial_frame, "equinox " + equinox + " read as " + read_as,
+            "direction frame " + descriptor.direction->reference_frame + " names equinox " + equinox +
                 ", which casacore cannot hold; its coordinates are read as " + read_as});
     }
     return made;
@@ -302,30 +302,9 @@ casacore::ImageInfo::ImageTypes MakeZarrImageType(const std::string& sub_type) {
 
 ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore::uInt channels, casacore::uInt polarizations) {
     ZarrBeams result;
-    bool has_first_time_plane = false;
-    std::size_t max_channel = 0;
-    std::size_t max_polarization = 0;
-    for (const auto& beam : table) {
-        if (beam.time == 0) {
-            has_first_time_plane = true;
-            max_channel = std::max(max_channel, beam.channel);
-            max_polarization = std::max(max_polarization, beam.polarization);
-        }
-    }
-    if (!has_first_time_plane) {
-        return result;
-    }
-
     // The matrix is sized from the image, since casacore rejects a beam set that does not match the axes;
     // planes missing from the table keep the null beam. It is set as a whole, because casacore only
     // computes the smallest and largest beams then.
-    if (max_channel >= channels || max_polarization >= polarizations) {
-        // Beams for planes the image does not have
-        result.notes.push_back(ZarrNote{ZarrNoteTopic::none, "beam table ignored",
-            "beam table names channel " + std::to_string(max_channel) + " polarization " + std::to_string(max_polarization) +
-                " of an image with " + std::to_string(channels) + " and " + std::to_string(polarizations) + "; ignoring the beams"});
-        return result;
-    }
     casacore::Matrix<casacore::GaussianBeam> beam_matrix(channels, polarizations);
     std::size_t filled = 0;
     const carta::zarr::Beam* first = nullptr;
@@ -333,6 +312,13 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
     for (const auto& beam : table) {
         if (beam.time != 0) {
             continue;
+        }
+        if (beam.channel >= channels || beam.polarization >= polarizations) {
+            // A beam for a plane the image does not have
+            result.notes.push_back(ZarrNote{ZarrNoteTopic::none, "beam table ignored",
+                "beam table names channel " + std::to_string(beam.channel) + " polarization " + std::to_string(beam.polarization) +
+                    " of an image with " + std::to_string(channels) + " and " + std::to_string(polarizations) + "; ignoring the beams"});
+            return result;
         }
         // casacore throws for an invalid beam; the beams are then ignored rather than failing the image.
         // Made in the units a FITS image's beams are: casacore's FITS writer writes a BEAMS table's position
@@ -357,6 +343,9 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
             every_plane_alike = false;
         }
     }
+    if (first == nullptr) {
+        return result; // no beam at the first time
+    }
     const auto planes = static_cast<std::size_t>(channels) * polarizations;
     if (filled != planes) {
         const std::string covers = "covers " + std::to_string(filled) + " of " + std::to_string(planes) + " planes";
@@ -365,7 +354,7 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
 
     // The same beam on every plane is a single beam, so that consumers such as ImageMoments do not convolve
     // the cube to a common beam. Beams must be exactly equal.
-    if (every_plane_alike && first != nullptr && filled == planes) {
+    if (every_plane_alike && filled == planes) {
         result.beams = casacore::ImageBeamSet(beam_matrix(0, 0));
     } else {
         result.beams = casacore::ImageBeamSet(beam_matrix);

@@ -54,7 +54,10 @@ public:
 
 private:
     void SetUpImage();
-    void SetBeams();
+    // The beams at the first time, if the store has a table casacore accepts
+    std::optional<casacore::ImageBeamSet> ReadBeamSet();
+    // Logs each note and keeps it for the file info
+    void AddNotes(std::vector<ZarrNote> notes);
 
     std::string _filename;
     std::optional<carta::zarr::Image> _zarr_image;

@@ -15,6 +15,7 @@
 #include <casacore/casa/OS/Path.h>
 #include <casacore/casa/Quanta/Unit.h>
 #include <casacore/images/Images/ImageInfo.h>
+#include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
 
 #include "ZarrCasacore.h"
@@ -121,16 +122,7 @@ casacore::ImageInterface<float>* CartaZarrImage::cloneII() const {
 }
 
 std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
-    const auto format_shape = [](const std::vector<std::uint64_t>& values) {
-        std::string result = "[";
-        for (std::size_t index = 0; index < values.size(); ++index) {
-            if (index > 0) {
-                result += ", ";
-            }
-            result += std::to_string(values[index]);
-        }
-        return result + "]";
-    };
+    const auto format_shape = [](const std::vector<std::uint64_t>& values) { return fmt::format("[{}]", fmt::join(values, ", ")); };
 
     const auto& storage = _zarr_image->chunk_geometry();
     std::vector<StorageEntry> entries;
@@ -147,16 +139,9 @@ std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
 void CartaZarrImage::SetUpImage() {
     const auto& descriptor = _zarr_image->descriptor();
     try {
-        // Every note is logged in full; the file info shows the brief form beside the value it is about
-        _notes = NotesFromDiagnostics(descriptor.diagnostics);
-        for (const auto& note : _notes) {
-            spdlog::warn("XRADIO {}: {}", _filename, note.detail);
-        }
+        AddNotes(NotesFromDiagnostics(descriptor.diagnostics));
         auto made = MakeZarrCoordinateSystem(descriptor);
-        for (auto& note : made.notes) {
-            spdlog::warn("XRADIO {}: {}", _filename, note.detail);
-            _notes.push_back(std::move(note));
-        }
+        AddNotes(std::move(made.notes));
         setCoordinateInfo(made.coordinates);
         if (!descriptor.unit.empty()) {
             setUnits(casacore::Unit(descriptor.unit));
@@ -167,8 +152,10 @@ void CartaZarrImage::SetUpImage() {
         if (descriptor.observation && !descriptor.observation->object_name.empty()) {
             image_info.setObjectName(casacore::String(descriptor.observation->object_name));
         }
+        if (auto beams = ReadBeamSet()) {
+            image_info.setBeams(*beams);
+        }
         setImageInfo(image_info);
-        SetBeams();
     } catch (const casacore::AipsError&) {
         throw;
     } catch (const std::exception& error) {
@@ -177,29 +164,29 @@ void CartaZarrImage::SetUpImage() {
     }
 }
 
-void CartaZarrImage::SetBeams() {
+std::optional<casacore::ImageBeamSet> CartaZarrImage::ReadBeamSet() {
     auto beams = _zarr_image->ReadBeams();
     if (!beams) {
         spdlog::warn("Failed to read XRADIO image beams from {}: {}", _filename, beams.error().message);
-        return;
+        return std::nullopt;
     }
     if (beams.value().empty()) {
-        return;
+        return std::nullopt;
     }
 
     const auto channels = static_cast<casacore::uInt>(_shape(2));
     const auto polarizations = static_cast<casacore::uInt>(_shape(3));
     auto made = MakeZarrBeamSet(beams.value(), channels, polarizations);
-    for (auto& note : made.notes) {
+    AddNotes(std::move(made.notes));
+    return made.beams;
+}
+
+void CartaZarrImage::AddNotes(std::vector<ZarrNote> notes) {
+    // Every note is logged in full; the file info shows the brief form beside the value it is about
+    for (auto& note : notes) {
         spdlog::warn("XRADIO {}: {}", _filename, note.detail);
         _notes.push_back(std::move(note));
     }
-    if (!made.beams) {
-        return;
-    }
-    auto image_info = imageInfo();
-    image_info.setBeams(*made.beams);
-    setImageInfo(image_info);
 }
 
 } // namespace carta

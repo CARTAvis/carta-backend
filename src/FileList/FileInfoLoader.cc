@@ -79,10 +79,7 @@ bool FileInfoLoader::FillZarrFileInfo(CARTA::FileInfo& file_info) {
     file_info.set_size_is_declared(size.declared);
 
     _message = probe->why_not_openable;
-    if (!probe->dataset) {
-        return false;
-    }
-    // Only the images CARTA can display, the default first
+    // Only the images CARTA can display, the default first; none for a store that will not open
     for (const auto& image_id : probe->offered) {
         file_info.add_hdu_list(image_id);
     }
