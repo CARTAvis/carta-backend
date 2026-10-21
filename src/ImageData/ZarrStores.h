@@ -19,6 +19,7 @@
 #include <vector>
 
 #include <carta-zarr/carta_zarr.h>
+#include <casacore/casa/Arrays/IPosition.h>
 
 namespace carta {
 
@@ -29,6 +30,41 @@ struct ZarrStoreSize {
     int64_t bytes = 0;
     // The uncompressed size declared in the metadata, because the bytes on disk could not be measured
     bool declared = false;
+};
+
+// Whether CARTA can display an image, and its shape in CARTA's order: spatial X, spatial Y, spectral,
+// polarization. carta-zarr reads in the image's logical order, so that order must be CARTA's, then at most a
+// time axis of length one, with every length above zero and within CARTA's 32-bit limit. None, with the
+// reason, otherwise. The file list asks with the listing's axes before offering an image, and the image asks
+// with its descriptor before opening, so the two agree.
+std::optional<casacore::IPosition> CartaShape(const std::vector<carta::zarr::AxisDescriptor>& axes, std::string& reason);
+// The same for an opened image, which must also have spectral and polarization coordinates, and a direction
+// or, for an image of the aperture plane, an aperture coordinate
+std::optional<casacore::IPosition> CartaShape(const carta::zarr::ImageDescriptor& descriptor, std::string& reason);
+
+// The images of a dataset that CARTA offers, from the listing alone. The file list shows them, and an image
+// opened without an id opens the first.
+struct ZarrOffer {
+    struct Refused {
+        std::string id;
+        std::string reason;
+    };
+
+    // The images CARTA can display, in the library's order (SKY first)
+    std::vector<std::string> ids;
+    // Every other image, with the reason
+    std::vector<Refused> refused;
+    // Why nothing is offered, if nothing is: CARTA's reason first, then carta-zarr's, then that there is no image
+    std::string why_none;
+};
+
+ZarrOffer OfferedImages(const carta::zarr::DatasetDescriptor& dataset);
+
+// An image of a store, opened as CARTA displays it
+struct ZarrOpenedImage {
+    carta::zarr::Image image;
+    // In CARTA's order; see CartaShape
+    casacore::IPosition shape;
 };
 
 // What a path is, as far as Zarr goes
@@ -45,6 +81,8 @@ struct ZarrStoreLook {
 
     // The size of the store, measured on first use and then kept; zero for a store that will not open
     ZarrStoreSize Size() const;
+    // Image `id`, or without one the first offered, if CARTA can display it; none with the reason otherwise
+    std::optional<ZarrOpenedImage> OpenImage(const std::string& id, std::string& reason) const;
 
     std::string path;
 

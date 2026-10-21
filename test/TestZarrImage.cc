@@ -80,6 +80,17 @@ TEST_F(ZarrImageTest, LoaderIsSelectedAndShapeIsCarta) {
     EXPECT_EQ(shape(3), kStokes);
 }
 
+// The storage layout lists CARTA's four axes in CARTA's order, without the time axis: the fixture is chunked
+// one plane at a time, two l by five m
+TEST_F(ZarrImageTest, TheStorageLayoutIsInCartasOrder) {
+    CartaZarrImage image(kZarrFixture.string(), "SKY");
+    const auto entries = image.GetStorageInfo();
+    const auto chunk = std::find_if(entries.begin(), entries.end(), [](const StorageEntry& entry) { return entry.name == "Chunk shape"; });
+    ASSERT_NE(chunk, entries.end());
+    EXPECT_EQ(chunk->value, "[2, 5, 1, 1]");
+    EXPECT_TRUE(chunk->has_shape);
+}
+
 TEST_F(ZarrImageTest, TelescopePositionIsCartesian) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);

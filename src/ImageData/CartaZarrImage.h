@@ -15,8 +15,7 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/lattices/Lattices/TiledShape.h>
 
-#include "CartaZarrAxes.h"
-#include "ZarrNotes.h"
+#include "ZarrCasacore.h"
 
 namespace carta {
 
@@ -59,8 +58,8 @@ private:
 
     std::string _filename;
     std::optional<carta::zarr::Image> _zarr_image;
-    // Set with _zarr_image: an image CARTA cannot display is not opened.
-    std::optional<CartaZarrAxes> _axes;
+    // In CARTA's order; see CartaShape. An image CARTA cannot display is not opened.
+    casacore::IPosition _shape;
     std::vector<ZarrNote> _notes;
 };
 

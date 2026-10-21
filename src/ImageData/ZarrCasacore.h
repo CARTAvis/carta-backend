@@ -9,8 +9,6 @@
 
 #include <carta-zarr/descriptor.h>
 
-#include "ZarrNotes.h"
-
 #include <optional>
 #include <string>
 #include <vector>
@@ -25,13 +23,28 @@ namespace carta {
 // Builds the casacore coordinate system and beams of a Zarr image from carta-zarr's descriptors. Notes
 // are returned rather than logged, so that the caller can name the file and show them in the file info.
 
+// The file info value a note is about; a note about none is logged rather than shown
+enum class ZarrNoteTopic { none, reference_pixels, pixel_increment, celestial_frame, frequency, beam };
+
+// Something to know about a Zarr image's values, such as one that is approximate or was filled in: from
+// carta-zarr's diagnostics or from the backend. `brief` is shown as the comment of the file info entry it
+// is about, like a FITS header card comment; `detail` is the full sentence, for the log.
+struct ZarrNote {
+    ZarrNoteTopic topic = ZarrNoteTopic::none;
+    std::string brief;
+    std::string detail;
+};
+
+// carta-zarr's diagnostics as notes; an unknown code is kept with its name as `brief`
+std::vector<ZarrNote> NotesFromDiagnostics(const std::vector<carta::zarr::Diagnostic>& diagnostics);
+
 struct ZarrCoordinates {
     casacore::CoordinateSystem coordinates;
     std::vector<ZarrNote> notes;
 };
 
 // The coordinate system in CARTA's order (direction, spectral, Stokes) with the observation info, for an
-// image CartaZarrAxes accepted. An image of the aperture plane has a linear coordinate named UU and VV in
+// image CartaShape accepted. An image of the aperture plane has a linear coordinate named UU and VV in
 // place of the direction. Throws casacore::AipsError for a frame, projection or Stokes label casacore does
 // not know.
 ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor);

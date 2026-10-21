@@ -85,6 +85,10 @@ private:
     CARTA::FileType _type;
 };
 
+// Appends each of a Zarr image's notes to the comment of the computed entries it is about, found by the
+// names FileExtInfoLoader gives them. Returns the notes with no such entry.
+std::vector<ZarrNote> AnnotateEntries(CARTA::FileInfoExtended& extended_info, const std::vector<ZarrNote>& notes);
+
 } // namespace carta
 
 #endif // CARTA_SRC_FILELIST_FILEEXTINFOLOADER_H_

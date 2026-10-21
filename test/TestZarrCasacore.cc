@@ -25,6 +25,9 @@
 using carta::MakeZarrBeamSet;
 using carta::MakeZarrCoordinateSystem;
 using carta::MakeZarrImageType;
+using carta::NotesFromDiagnostics;
+using carta::ZarrNoteTopic;
+using carta::zarr::DiagnosticCode;
 
 namespace {
 
@@ -339,4 +342,35 @@ TEST(ZarrCasacore, ATableCasacoreRefusesIsIgnored) {
         EXPECT_EQ(made.notes.front().topic, carta::ZarrNoteTopic::none) << c.what;
         EXPECT_NE(made.notes.front().detail.find("ignoring the beams"), std::string::npos) << made.notes.front().detail;
     }
+}
+
+namespace {
+
+carta::zarr::Diagnostic Said(DiagnosticCode code, const std::string& axis) {
+    return carta::zarr::Diagnostic{code, "the whole sentence about " + axis, axis};
+}
+
+} // namespace
+
+TEST(ZarrNotes, ACoordinateDiagnosticQualifiesTheValueItIsAbout) {
+    const auto notes =
+        NotesFromDiagnostics({Said(DiagnosticCode::nonuniform_axis, "frequency"), Said(DiagnosticCode::inexact_reference_pixel, "l"),
+            Said(DiagnosticCode::nonuniform_axis, "m"), Said(DiagnosticCode::degenerate_axis, "frequency")});
+    ASSERT_EQ(notes.size(), 4u);
+    EXPECT_EQ(notes[0].topic, ZarrNoteTopic::frequency);
+    EXPECT_EQ(notes[0].brief, "channels not evenly spaced");
+    EXPECT_EQ(notes[0].detail, "the whole sentence about frequency") << "the library's sentence is kept for the log";
+    EXPECT_EQ(notes[1].topic, ZarrNoteTopic::reference_pixels);
+    EXPECT_EQ(notes[1].brief, "l reference pixel extrapolated");
+    EXPECT_EQ(notes[2].topic, ZarrNoteTopic::pixel_increment);
+    EXPECT_EQ(notes[2].brief, "m samples not evenly spaced");
+    EXPECT_EQ(notes[3].topic, ZarrNoteTopic::frequency);
+}
+
+// A code not about a shown value, or an unknown one, keeps its name and is left for the log
+TEST(ZarrNotes, ACodeWithNoValueToQualifyIsSaidByName) {
+    const auto notes = NotesFromDiagnostics({Said(DiagnosticCode::unreadable_array, "SKY")});
+    ASSERT_EQ(notes.size(), 1u);
+    EXPECT_EQ(notes[0].topic, ZarrNoteTopic::none);
+    EXPECT_EQ(notes[0].brief, "unreadable_array");
 }

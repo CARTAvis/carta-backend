@@ -29,6 +29,17 @@
 namespace carta {
 namespace {
 
+// The file info value a diagnostic on `axis` is about: frequency, `for_direction` for l, m, u or v, or none
+ZarrNoteTopic TopicFor(const std::string& axis, ZarrNoteTopic for_direction) {
+    if (axis == "frequency") {
+        return ZarrNoteTopic::frequency;
+    }
+    if (axis == "l" || axis == "m" || axis == "u" || axis == "v") {
+        return for_direction;
+    }
+    return ZarrNoteTopic::none;
+}
+
 casacore::MDirection::Types DirectionReferenceFrame(const std::string& frame) {
     if (frame.empty() || frame == "FK5") {
         return casacore::MDirection::J2000;
@@ -226,6 +237,35 @@ std::optional<double> EquinoxOf(casacore::MDirection::Types type) {
 }
 
 } // namespace
+
+std::vector<ZarrNote> NotesFromDiagnostics(const std::vector<carta::zarr::Diagnostic>& diagnostics) {
+    std::vector<ZarrNote> notes;
+    for (const auto& diagnostic : diagnostics) {
+        ZarrNote note;
+        note.detail = diagnostic.message;
+        const auto& axis = diagnostic.node_path;
+        switch (diagnostic.code) {
+            case carta::zarr::DiagnosticCode::nonuniform_axis:
+                note.brief = axis == "frequency" ? "channels not evenly spaced" : axis + " samples not evenly spaced";
+                note.topic = TopicFor(axis, ZarrNoteTopic::pixel_increment);
+                break;
+            case carta::zarr::DiagnosticCode::inexact_reference_pixel:
+                note.brief = axis + " reference pixel extrapolated";
+                note.topic = TopicFor(axis, ZarrNoteTopic::reference_pixels);
+                break;
+            case carta::zarr::DiagnosticCode::degenerate_axis:
+                note.brief = axis + " has no increment";
+                note.topic = TopicFor(axis, ZarrNoteTopic::pixel_increment);
+                break;
+            default:
+                // Not about a shown value, or a code newer than this: logged by name
+                note.brief = carta::zarr::DiagnosticCodeName(diagnostic.code);
+                break;
+        }
+        notes.push_back(std::move(note));
+    }
+    return notes;
+}
 
 ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor) {
     ZarrCoordinates made{MakeCoordinateSystemOnly(descriptor), {}};

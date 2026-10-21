@@ -6,6 +6,8 @@
 
 #include "CartaZarrImage.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <utility>
 
@@ -19,32 +21,31 @@
 #include "ZarrStores.h"
 
 namespace carta {
+namespace {
+
+// CARTA's axes: spatial X, spatial Y, spectral, polarization. An image's logical order is these, then at
+// most a time axis of length one; see CartaShape.
+constexpr std::size_t CARTA_AXES = 4;
+
+// Per-axis values in the image's order, such as a chunk shape, in CARTA's four axes: the time axis, last,
+// is left out, and a missing axis is 1
+std::vector<std::uint64_t> InCartaOrder(const std::vector<std::uint64_t>& values) {
+    std::vector<std::uint64_t> result(CARTA_AXES, 1);
+    std::copy_n(values.begin(), std::min(values.size(), result.size()), result.begin());
+    return result;
+}
+
+} // namespace
 
 CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& image_id) : _filename(filename) {
-    // The store the file list already opened
-    const auto look = ZarrStores::Instance().Look(filename);
-    if (!look->dataset) {
-        throw casacore::AipsError(
-            "Failed to open XRADIO dataset: " + (look->why_not_openable.empty() ? "not an image store" : look->why_not_openable));
-    }
-
-    // Without an id, the first image offered, which the file list shows first
-    if (image_id.empty() && look->offered.empty()) {
-        throw casacore::AipsError(look->why_not_openable);
-    }
-    const auto& id = image_id.empty() ? look->offered.front() : image_id;
-
-    auto image = look->dataset->OpenImage(id);
-    if (!image) {
-        throw casacore::AipsError("Failed to open XRADIO image '" + id + "': " + image.error().message);
-    }
-    _zarr_image = std::move(image.value());
-
+    // From the store the file list already opened
     std::string reason;
-    _axes = CartaZarrAxes::FromImage(_zarr_image->descriptor(), reason);
-    if (!_axes) {
+    auto opened = ZarrStores::Instance().Look(filename)->OpenImage(image_id, reason);
+    if (!opened) {
         throw casacore::AipsError(reason);
     }
+    _zarr_image = std::move(opened->image);
+    _shape = opened->shape;
 
     SetUpImage();
 }
@@ -58,11 +59,11 @@ casacore::String CartaZarrImage::name(bool stripPath) const {
 }
 
 casacore::IPosition CartaZarrImage::shape() const {
-    return _axes->Shape();
+    return _shape;
 }
 
 casacore::Bool CartaZarrImage::ok() const {
-    return coordinates().nPixelAxes() == _axes->Shape().size();
+    return coordinates().nPixelAxes() == _shape.size();
 }
 
 casacore::DataType CartaZarrImage::dataType() const {
@@ -134,9 +135,9 @@ std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
     const auto& storage = _zarr_image->chunk_geometry();
     std::vector<StorageEntry> entries;
     if (storage.sharded) {
-        entries.push_back({"Shard shape", format_shape(_axes->InCartaOrder(storage.shard_shape)), true});
+        entries.push_back({"Shard shape", format_shape(InCartaOrder(storage.shard_shape)), true});
     }
-    entries.push_back({"Chunk shape", format_shape(_axes->InCartaOrder(storage.chunk_shape)), true});
+    entries.push_back({"Chunk shape", format_shape(InCartaOrder(storage.chunk_shape)), true});
     if (!storage.compressor.empty()) {
         entries.push_back({"Compressor", storage.compressor, false});
     }
@@ -188,9 +189,8 @@ void CartaZarrImage::SetBeams() {
         return;
     }
 
-    const auto& shape = _axes->Shape();
-    const auto channels = static_cast<casacore::uInt>(shape(2));
-    const auto polarizations = static_cast<casacore::uInt>(shape(3));
+    const auto channels = static_cast<casacore::uInt>(_shape(2));
+    const auto polarizations = static_cast<casacore::uInt>(_shape(3));
     auto made = MakeZarrBeamSet(beams.value(), channels, polarizations);
     for (auto& note : made.notes) {
         spdlog::warn("XRADIO {}: {}", _filename, note.detail);

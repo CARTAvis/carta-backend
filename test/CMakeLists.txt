@@ -44,7 +44,6 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         ImageData/TestFitsUtil.cc
         TestBlockSmooth.cc
-        TestCartaZarrAxes.cc
         TestContour.cc
         TestCursorSpatialProfiles.cc
         TestExprImage.cc
@@ -74,7 +73,6 @@ set(TEST_SOURCES
         TestZarrCasacore.cc
         TestZarrContext.cc
         TestZarrImage.cc
-        TestZarrNotes.cc
         TestZarrStores.cc
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
