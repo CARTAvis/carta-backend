@@ -27,8 +27,8 @@ namespace {
 // most a time axis of length one; see CartaShape.
 constexpr std::size_t CARTA_AXES = 4;
 
-// Per-axis values in the image's order, such as a chunk shape, in CARTA's four axes: the time axis, last,
-// is left out, and a missing axis is 1
+// Per-axis values, such as a chunk shape, cut to CARTA's four axes. They are in the image's order, which
+// starts with CARTA's axes, so this drops a trailing time axis and fills a missing axis with 1.
 std::vector<std::uint64_t> InCartaOrder(const std::vector<std::uint64_t>& values) {
     std::vector<std::uint64_t> result(CARTA_AXES, 1);
     std::copy_n(values.begin(), std::min(values.size(), result.size()), result.begin());

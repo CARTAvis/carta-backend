@@ -20,15 +20,15 @@
 namespace carta {
 
 // One line of a Zarr image's storage layout, for the file info. `has_shape` says the value lists
-// the image's axes in the image's order, so it can be labelled like the image shape.
+// the image's axes in the image's order, so it can be labeled like the image shape.
 struct StorageEntry {
     std::string name;
     std::string value;
     bool has_shape = false;
 };
 
-// An XRADIO sky image in CARTA's axis order: spatial X, spatial Y, spectral, polarization. A time axis
-// is only accepted with a single time.
+// An XRADIO image of the sky or of the aperture plane, in CARTA's axis order: spatial X, spatial Y,
+// spectral, polarization. A time axis is only accepted with a single time.
 class CartaZarrImage : public casacore::ImageInterface<float> {
 public:
     explicit CartaZarrImage(const std::string& filename, const std::string& image_id = {});

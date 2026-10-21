@@ -149,7 +149,7 @@ TEST(ZarrCasacore, TheCoordinatesAreInCartasOrder) {
     EXPECT_EQ(coordinates.type(2), casacore::Coordinate::STOKES);
 }
 
-// u and v become a linear coordinate named as casacore's own Fourier transform of a direction names them
+// u and v become a linear coordinate named UU and VV, as casacore's FFT of a direction names them
 TEST(ZarrCasacore, AnApertureImageHasUuAndVvInPlaceOfADirection) {
     const auto made = MakeZarrCoordinateSystem(ApertureDescribed());
     const auto& coordinates = made.coordinates;
@@ -256,8 +256,8 @@ TEST(ZarrCasacore, TheSameBeamOnEveryPlaneIsOneBeam) {
 }
 
 // XRADIO stores beams in radians, and casacore's FITS writer writes a BEAMS table's position angle in
-// degrees under the unit the beam was made in. A beam made in radians was saved as 42.7 "rad", which
-// read back as -73.1 degrees, so beams are made in the units a FITS image's are.
+// degrees but labels it with the unit the beam was made in. A beam made in radians would be saved as
+// 42.7 "rad" and read back as -73.1 degrees, so beams are made in the units a FITS image's are.
 TEST(ZarrCasacore, BeamsAreInArcsecondsAndDegrees) {
     auto table = EveryPlane(4.5e-6);
     table.back().position_angle = 0.745;

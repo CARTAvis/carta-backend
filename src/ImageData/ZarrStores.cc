@@ -204,7 +204,7 @@ std::shared_ptr<const ZarrStoreProbe> ZarrStores::ProbeUncached(const std::strin
             code == carta::zarr::ErrorCode::unsupported_schema) {
             return probe;
         }
-        // A store that would not open is a malformed image only if the XRADIO profile recognises it
+        // A store that would not open is a malformed image only if the XRADIO profile recognizes it
         const auto probed = carta::zarr::ProbeSchema(path, carta::zarr::kXradioImageSchema);
         if (probed && probed.value().kind == carta::zarr::SchemaMatchKind::invalid) {
             probe->is_zarr = true;

@@ -112,7 +112,8 @@ casacore::DirectionCoordinate MakeDirectionCoordinate(const carta::zarr::Directi
     return coordinate;
 }
 
-// The aperture plane's u and v, named and in the unit casacore's own Fourier transform of a direction gives them
+// The aperture plane's u and v as a linear coordinate named UU and VV, as casacore's FFT of a direction names
+// them, in the descriptor's unit or else lambda
 casacore::LinearCoordinate MakeApertureCoordinate(const carta::zarr::ApertureCoordinate& descriptor) {
     const std::string unit = descriptor.unit.empty() ? "lambda" : descriptor.unit;
     casacore::Vector<casacore::String> names(2);
@@ -335,7 +336,8 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
         }
         // casacore throws for an invalid beam; the beams are then ignored rather than failing the image.
         // Made in the units a FITS image's beams are: casacore's FITS writer writes a BEAMS table's position
-        // angle in degrees under the unit the beam was made in, so a beam made in radians saved wrongly.
+        // angle in degrees but labels it with the unit the beam was made in, so a beam in radians would be
+        // saved wrongly.
         try {
             beam_matrix(static_cast<casacore::uInt>(beam.channel), static_cast<casacore::uInt>(beam.polarization)) =
                 casacore::GaussianBeam(casacore::Quantity(beam.major, beam.unit).get("arcsec"),

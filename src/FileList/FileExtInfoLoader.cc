@@ -1603,7 +1603,7 @@ bool StartsWith(const std::string& text, std::string_view prefix) {
     return text.compare(0, prefix.size(), prefix) == 0;
 }
 
-// Whether the computed entry `name`, as named above, shows the value of `topic`
+// Whether the computed entry `name`, as AddShapeEntries and AddComputedEntries name it, shows the value of `topic`
 bool EntryShowsTopic(const std::string& name, ZarrNoteTopic topic) {
     switch (topic) {
         case ZarrNoteTopic::reference_pixels:

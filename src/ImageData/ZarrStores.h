@@ -50,7 +50,7 @@ struct ZarrOffer {
         std::string reason;
     };
 
-    // The images CARTA can display, in the library's order (SKY first)
+    // The images CARTA can display, in the library's order, which puts its default first
     std::vector<std::string> ids;
     // Every other image, with the reason
     std::vector<Refused> refused;

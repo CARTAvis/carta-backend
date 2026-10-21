@@ -152,18 +152,15 @@ TEST_F(ZarrStoresTest, AMalformedStoreIsAnImageThatSaysWhyItWillNotOpen) {
     EXPECT_FALSE(probe->dataset.has_value());
     EXPECT_NE(probe->why_not_openable.find("coordinate_system_info"), std::string::npos) << probe->why_not_openable;
 
-    // Listed as an image
     std::string message;
     EXPECT_EQ(FolderImageType(store, message), CARTA::FileType::ZARR);
 
-    // Selecting it says why
     CARTA::FileInfo file_info;
     FileInfoLoader loader(store);
     EXPECT_FALSE(loader.FillFileInfo(file_info));
     EXPECT_EQ(file_info.type(), CARTA::FileType::ZARR);
     EXPECT_NE(loader.Message().find(probe->why_not_openable), std::string::npos) << loader.Message();
 
-    // So does opening it
     try {
         CartaZarrImage image(store);
         FAIL() << "a malformed store opened";
@@ -209,7 +206,7 @@ TEST_F(ZarrStoresTest, AZarrStoreOfSomethingElseIsNotAnImage) {
     EXPECT_NE(FolderImageType(store, message), CARTA::FileType::ZARR);
 }
 
-// Root metadata that does not parse is not recognised as an image
+// Root metadata that does not parse is not recognized as an image
 TEST_F(ZarrStoresTest, AnUnparseableRootIsNotAnImage) {
     const auto store = AnUnparseableRoot().string();
     const auto probe = ZarrStores::Instance().Probe(store);

@@ -99,7 +99,7 @@ TEST_F(ZarrImageTest, TelescopePositionIsCartesian) {
     ASSERT_NE(image, nullptr);
 
     const auto position = image->coordinates().obsInfo().telescopePosition();
-    const auto value = position.getValue().getValue(); // metres, x y z
+    const auto value = position.getValue().getValue(); // meters, x y z
     ASSERT_EQ(value.size(), 3);
     // longitude 2.0 rad, latitude -0.5 rad, radius 6371000 m
     EXPECT_NEAR(value(0), -2326709.631, 1.0);
