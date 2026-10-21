@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Added carta-zarr dependency and settings for reading Zarr images ([#1608](https://github.com/CARTAvis/carta-backend/issues/1608)).
 * Added Zarr file info and headers to the file browser ([#1609](https://github.com/CARTAvis/carta-backend/issues/1609)).
+* Added loading Zarr images for rendering and analysis ([#1610](https://github.com/CARTAvis/carta-backend/issues/1610)).
 
 ## [6.0.0]
 
