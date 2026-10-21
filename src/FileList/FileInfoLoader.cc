@@ -73,20 +73,20 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
 }
 
 bool FileInfoLoader::FillZarrFileInfo(CARTA::FileInfo& file_info) {
-    const auto look = ZarrStores::Instance().Look(_filename);
-    const auto size = look->Size();
+    const auto probe = ZarrStores::Instance().Probe(_filename);
+    const auto size = probe->Size();
     file_info.set_size(size.bytes);
     file_info.set_size_is_declared(size.declared);
 
-    _message = look->why_not_openable;
-    if (!look->dataset) {
+    _message = probe->why_not_openable;
+    if (!probe->dataset) {
         return false;
     }
     // Only the images CARTA can display, the default first
-    for (const auto& image_id : look->offered) {
+    for (const auto& image_id : probe->offered) {
         file_info.add_hdu_list(image_id);
     }
-    return !look->offered.empty();
+    return !probe->offered.empty();
 }
 
 CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
@@ -94,7 +94,7 @@ CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
     if (IsCompressedFits(filename)) {
         return CARTA::FileType::FITS;
     }
-    if (ZarrStores::Instance().Look(filename)->is_zarr) {
+    if (ZarrStores::Instance().Probe(filename)->is_zarr) {
         return CARTA::FileType::ZARR;
     }
 

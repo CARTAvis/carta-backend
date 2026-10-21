@@ -40,7 +40,7 @@ std::vector<std::uint64_t> InCartaOrder(const std::vector<std::uint64_t>& values
 CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& image_id) : _filename(filename) {
     // From the store the file list already opened
     std::string reason;
-    auto opened = ZarrStores::Instance().Look(filename)->OpenImage(image_id, reason);
+    auto opened = ZarrStores::Instance().Probe(filename)->OpenImage(image_id, reason);
     if (!opened) {
         throw casacore::AipsError(reason);
     }

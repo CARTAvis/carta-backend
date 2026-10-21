@@ -184,14 +184,14 @@ TEST_F(ZarrImageTest, EachImageFindsTheFlagXradioWroteForIt) {
     std::sort(listed.begin(), listed.end());
     EXPECT_EQ(listed, (std::vector<std::string>{"SKY", "SKY_OTHER"}));
 
-    const auto look = ZarrStores::Instance().Look(fixture.string());
-    ASSERT_TRUE(look->dataset) << look->why_not_openable;
+    const auto probe = ZarrStores::Instance().Probe(fixture.string());
+    ASSERT_TRUE(probe->dataset) << probe->why_not_openable;
     for (const auto& [image_id, flag_id] : {std::pair{"SKY", "FLAG_SKY"}, std::pair{"SKY_OTHER", "FLAG_SKY_OTHER"}}) {
         const CartaZarrImage image(fixture.string(), image_id);
         for (const auto& note : image.Notes()) {
             EXPECT_EQ(note.brief.find("pixel_mask"), std::string::npos) << image_id << ": " << note.brief;
         }
-        const auto opened = look->dataset->OpenImage(image_id);
+        const auto opened = probe->dataset->OpenImage(image_id);
         ASSERT_TRUE(opened) << image_id << ": " << opened.error().message;
         EXPECT_EQ(opened.value().descriptor().pixel_mask_id, flag_id) << image_id;
     }

@@ -30,7 +30,7 @@ namespace carta {
 namespace {
 
 // The file info value a diagnostic on `axis` is about: frequency, `for_direction` for l, m, u or v, or none
-ZarrNoteTopic TopicFor(const std::string& axis, ZarrNoteTopic for_direction) {
+ZarrNoteTopic TopicOfAxis(const std::string& axis, ZarrNoteTopic for_direction) {
     if (axis == "frequency") {
         return ZarrNoteTopic::frequency;
     }
@@ -178,20 +178,6 @@ casacore::StokesCoordinate MakeStokesCoordinate(const carta::zarr::PolarizationC
     return casacore::StokesCoordinate(stokes);
 }
 
-// The spatial, spectral and Stokes coordinates, in CARTA's axis order. The spatial coordinate is a sky image's
-// direction, or an aperture-plane image's u and v.
-casacore::CoordinateSystem MakeCoordinateSystemOnly(const carta::zarr::ImageDescriptor& descriptor) {
-    casacore::CoordinateSystem coordinate_system;
-    if (descriptor.aperture) {
-        coordinate_system.addCoordinate(MakeApertureCoordinate(*descriptor.aperture));
-    } else {
-        coordinate_system.addCoordinate(MakeDirectionCoordinate(*descriptor.direction));
-    }
-    coordinate_system.addCoordinate(MakeSpectralCoordinate(*descriptor.spectral));
-    coordinate_system.addCoordinate(MakeStokesCoordinate(*descriptor.polarization));
-    return coordinate_system;
-}
-
 void SetObservationInfo(casacore::CoordinateSystem& coordinate_system, const std::optional<carta::zarr::ObservationInfo>& descriptor,
     std::vector<ZarrNote>& notes) {
     if (!descriptor) {
@@ -247,15 +233,15 @@ std::vector<ZarrNote> NotesFromDiagnostics(const std::vector<carta::zarr::Diagno
         switch (diagnostic.code) {
             case carta::zarr::DiagnosticCode::nonuniform_axis:
                 note.brief = axis == "frequency" ? "channels not evenly spaced" : axis + " samples not evenly spaced";
-                note.topic = TopicFor(axis, ZarrNoteTopic::pixel_increment);
+                note.topic = TopicOfAxis(axis, ZarrNoteTopic::pixel_increment);
                 break;
             case carta::zarr::DiagnosticCode::inexact_reference_pixel:
                 note.brief = axis + " reference pixel extrapolated";
-                note.topic = TopicFor(axis, ZarrNoteTopic::reference_pixels);
+                note.topic = TopicOfAxis(axis, ZarrNoteTopic::reference_pixels);
                 break;
             case carta::zarr::DiagnosticCode::degenerate_axis:
                 note.brief = axis + " has no increment";
-                note.topic = TopicFor(axis, ZarrNoteTopic::pixel_increment);
+                note.topic = TopicOfAxis(axis, ZarrNoteTopic::pixel_increment);
                 break;
             default:
                 // Not about a shown value, or a code newer than this: logged by name
@@ -268,7 +254,16 @@ std::vector<ZarrNote> NotesFromDiagnostics(const std::vector<carta::zarr::Diagno
 }
 
 ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor) {
-    ZarrCoordinates made{MakeCoordinateSystemOnly(descriptor), {}};
+    ZarrCoordinates made;
+    // The spatial, spectral and Stokes coordinates, in CARTA's axis order. The spatial coordinate is a sky
+    // image's direction, or an aperture-plane image's u and v.
+    if (descriptor.aperture) {
+        made.coordinates.addCoordinate(MakeApertureCoordinate(*descriptor.aperture));
+    } else {
+        made.coordinates.addCoordinate(MakeDirectionCoordinate(*descriptor.direction));
+    }
+    made.coordinates.addCoordinate(MakeSpectralCoordinate(*descriptor.spectral));
+    made.coordinates.addCoordinate(MakeStokesCoordinate(*descriptor.polarization));
     SetObservationInfo(made.coordinates, descriptor.observation, made.notes);
     if (!descriptor.direction) {
         return made; // the aperture plane has no celestial frame

@@ -37,7 +37,7 @@ std::string AxisNames(const std::vector<carta::zarr::AxisDescriptor>& axes) {
 }
 
 // Absolute path with symlinks resolved, so that two names for one store share an entry
-std::string KeyFor(const std::string& path) {
+std::string CanonicalPath(const std::string& path) {
     std::error_code error;
     const auto resolved = fs::canonical(fs::path(path), error);
     return error ? path : resolved.string();
@@ -138,11 +138,11 @@ ZarrOffer OfferedImages(const carta::zarr::DatasetDescriptor& dataset) {
     }
     if (offer.ids.empty()) {
         if (!carta_refusal.empty()) {
-            offer.why_none = carta_refusal;
+            offer.why_not_openable = carta_refusal;
         } else if (!library_refusal.empty()) {
-            offer.why_none = library_refusal;
+            offer.why_not_openable = library_refusal;
         } else {
-            offer.why_none = "XRADIO dataset contains no image variables";
+            offer.why_not_openable = "XRADIO dataset contains no image variables";
         }
     }
     return offer;
@@ -155,17 +155,17 @@ ZarrStores& ZarrStores::Instance() {
     return stores;
 }
 
-std::shared_ptr<const ZarrStoreLook> ZarrStores::Look(const std::string& path) {
-    const auto key = KeyFor(path);
+std::shared_ptr<const ZarrStoreProbe> ZarrStores::Probe(const std::string& path) {
+    const auto key = CanonicalPath(path);
     const auto directory_mtime = DirectoryTime(key);
     {
         std::scoped_lock lock(_mutex);
         auto found = _records.find(key);
         if (found != _records.end()) {
-            if ((Clock::now() - found->second.looked_at) <= _ttl && found->second.directory_mtime == directory_mtime) {
+            if ((Clock::now() - found->second.probed_at) <= _ttl && found->second.directory_mtime == directory_mtime) {
                 _queue.remove(key);
                 _queue.push_front(key);
-                return found->second.look;
+                return found->second.probe;
             }
             _records.erase(found);
             _queue.remove(key);
@@ -173,7 +173,7 @@ std::shared_ptr<const ZarrStoreLook> ZarrStores::Look(const std::string& path) {
     }
 
     // Opened without the lock, since it walks the store; if two callers open the same path, the later one is kept
-    auto look = LookAt(key);
+    auto probe = ProbeUncached(key);
 
     std::scoped_lock lock(_mutex);
     if (_records.find(key) == _records.end()) {
@@ -183,17 +183,17 @@ std::shared_ptr<const ZarrStoreLook> ZarrStores::Look(const std::string& path) {
         }
         _queue.push_front(key);
     }
-    _records[key] = Record{directory_mtime, Clock::now(), look};
-    return look;
+    _records[key] = Record{directory_mtime, Clock::now(), probe};
+    return probe;
 }
 
-std::shared_ptr<const ZarrStoreLook> ZarrStores::LookAt(const std::string& path) {
-    auto look = std::make_shared<ZarrStoreLook>();
-    look->path = path;
+std::shared_ptr<const ZarrStoreProbe> ZarrStores::ProbeUncached(const std::string& path) {
+    auto probe = std::make_shared<ZarrStoreProbe>();
+    probe->path = path;
     std::error_code error;
     // Only a directory can be a store
     if (!fs::is_directory(fs::path(path), error)) {
-        return look;
+        return probe;
     }
 
     auto dataset = carta::zarr::Dataset::Open(GetZarrContext(), path);
@@ -202,29 +202,29 @@ std::shared_ptr<const ZarrStoreLook> ZarrStores::LookAt(const std::string& path)
         // Nothing there, not Zarr, or not an image store
         if (code == carta::zarr::ErrorCode::not_found || code == carta::zarr::ErrorCode::not_zarr ||
             code == carta::zarr::ErrorCode::unsupported_schema) {
-            return look;
+            return probe;
         }
         // A store that would not open is a malformed image only if the XRADIO profile recognises it
         const auto probed = carta::zarr::ProbeSchema(path, carta::zarr::kXradioImageSchema);
         if (probed && probed.value().kind == carta::zarr::SchemaMatchKind::invalid) {
-            look->is_zarr = true;
-            look->why_not_openable = dataset.error().message;
+            probe->is_zarr = true;
+            probe->why_not_openable = dataset.error().message;
         }
-        return look;
+        return probe;
     }
 
-    look->is_zarr = true;
+    probe->is_zarr = true;
     auto offer = OfferedImages(dataset.value().descriptor());
     for (const auto& refused : offer.refused) {
         spdlog::debug("Not offering Zarr image {} in {}: {}", refused.id, path, refused.reason);
     }
-    look->offered = std::move(offer.ids);
-    look->why_not_openable = std::move(offer.why_none);
-    look->dataset = std::move(dataset.value());
-    return look;
+    probe->offered = std::move(offer.ids);
+    probe->why_not_openable = std::move(offer.why_not_openable);
+    probe->dataset = std::move(dataset.value());
+    return probe;
 }
 
-ZarrStoreSize ZarrStoreLook::Size() const {
+ZarrStoreSize ZarrStoreProbe::Size() const {
     std::scoped_lock lock(_size_mutex);
     if (_size) {
         return *_size;
@@ -244,7 +244,7 @@ ZarrStoreSize ZarrStoreLook::Size() const {
     return size;
 }
 
-std::optional<ZarrOpenedImage> ZarrStoreLook::OpenImage(const std::string& id, std::string& reason) const {
+std::optional<ZarrOpenedImage> ZarrStoreProbe::OpenImage(const std::string& id, std::string& reason) const {
     if (!dataset) {
         reason = "Failed to open XRADIO dataset: " + (why_not_openable.empty() ? std::string("not an image store") : why_not_openable);
         return std::nullopt;

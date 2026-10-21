@@ -37,7 +37,7 @@ std::shared_ptr<FileLoader> FileLoader::GetLoader(const std::string& filename, c
         return std::make_shared<FitsLoader>(filename, true);
     } else if (IsRemoteHttpFile(filename)) {
         return std::make_shared<FitsLoader>(filename, false, true);
-    } else if (ZarrStores::Instance().Look(filename)->is_zarr) {
+    } else if (ZarrStores::Instance().Probe(filename)->is_zarr) {
         return std::make_shared<ZarrLoader>(filename);
     }
 

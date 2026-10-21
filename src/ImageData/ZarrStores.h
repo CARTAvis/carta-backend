@@ -54,8 +54,8 @@ struct ZarrOffer {
     std::vector<std::string> ids;
     // Every other image, with the reason
     std::vector<Refused> refused;
-    // Why nothing is offered, if nothing is: CARTA's reason first, then carta-zarr's, then that there is no image
-    std::string why_none;
+    // Why no image can be opened, if none is offered: CARTA's reason first, then carta-zarr's, then that there is no image
+    std::string why_not_openable;
 };
 
 ZarrOffer OfferedImages(const carta::zarr::DatasetDescriptor& dataset);
@@ -68,7 +68,7 @@ struct ZarrOpenedImage {
 };
 
 // What a path is, as far as Zarr goes
-struct ZarrStoreLook {
+struct ZarrStoreProbe {
     // A Zarr image store: one that opened, or an XRADIO one that will not open but is still listed as an
     // image so that opening it says why. Not a plain folder, a file, or a Zarr store of something else.
     bool is_zarr = false;
@@ -104,7 +104,7 @@ public:
     // Shared by all sessions
     static ZarrStores& Instance();
 
-    std::shared_ptr<const ZarrStoreLook> Look(const std::string& path);
+    std::shared_ptr<const ZarrStoreProbe> Probe(const std::string& path);
 
     // For tests
     void Clear();
@@ -114,11 +114,11 @@ private:
 
     struct Record {
         std::int64_t directory_mtime = 0;
-        Clock::time_point looked_at;
-        std::shared_ptr<const ZarrStoreLook> look;
+        Clock::time_point probed_at;
+        std::shared_ptr<const ZarrStoreProbe> probe;
     };
 
-    static std::shared_ptr<const ZarrStoreLook> LookAt(const std::string& path);
+    static std::shared_ptr<const ZarrStoreProbe> ProbeUncached(const std::string& path);
 
     const std::size_t _capacity;
     const std::chrono::seconds _ttl;

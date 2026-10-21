@@ -78,7 +78,7 @@ CARTA::FileType FolderImageType(const std::string& folder_path, std::string& mes
     }
 
     // A malformed Zarr image is still listed as one, so that opening it says why it will not open
-    if (carta::ZarrStores::Instance().Look(folder_path)->is_zarr) {
+    if (carta::ZarrStores::Instance().Probe(folder_path)->is_zarr) {
         return CARTA::FileType::ZARR;
     }
 

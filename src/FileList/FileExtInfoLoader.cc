@@ -1604,7 +1604,7 @@ bool StartsWith(const std::string& text, std::string_view prefix) {
 }
 
 // Whether the computed entry `name`, as named above, shows the value of `topic`
-bool Shows(ZarrNoteTopic topic, const std::string& name) {
+bool EntryShowsTopic(const std::string& name, ZarrNoteTopic topic) {
     switch (topic) {
         case ZarrNoteTopic::reference_pixels:
             return name == "Image reference pixels";
@@ -1628,7 +1628,7 @@ std::vector<ZarrNote> carta::AnnotateEntries(CARTA::FileInfoExtended& extended_i
     for (const auto& note : notes) {
         bool placed = false;
         for (auto& entry : *extended_info.mutable_computed_entries()) {
-            if (!Shows(note.topic, entry.name())) {
+            if (!EntryShowsTopic(entry.name(), note.topic)) {
                 continue;
             }
             placed = true;
