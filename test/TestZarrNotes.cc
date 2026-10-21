@@ -62,10 +62,10 @@ TEST(ZarrNotes, ACoordinateDiagnosticQualifiesTheValueItIsAbout) {
 
 // A code not about a shown value, or an unknown one, keeps its name and is left for the log
 TEST(ZarrNotes, ACodeWithNoValueToQualifyIsSaidByName) {
-    const auto notes = NotesFromDiagnostics({Said(DiagnosticCode::ambiguous_pixel_mask, "SKY")});
+    const auto notes = NotesFromDiagnostics({Said(DiagnosticCode::unreadable_array, "SKY")});
     ASSERT_EQ(notes.size(), 1u);
     EXPECT_EQ(notes[0].topic, ZarrNoteTopic::none);
-    EXPECT_EQ(notes[0].brief, "ambiguous_pixel_mask");
+    EXPECT_EQ(notes[0].brief, "unreadable_array");
 }
 
 TEST(ZarrNotes, ANoteIsTheCommentOfTheEntryItQualifies) {
@@ -100,7 +100,7 @@ TEST(ZarrNotes, ABeamNoteGoesOnEveryBeamEntry) {
 TEST(ZarrNotes, WhatHasNowhereToGoIsHandedBack) {
     auto info = PanelWith({"Name"});
     const auto unplaced = AnnotateEntries(
-        info, {ZarrNote{ZarrNoteTopic::none, "ambiguous_pixel_mask", ""}, ZarrNote{ZarrNoteTopic::beam, "table covers 5 of 6 planes", ""}});
+        info, {ZarrNote{ZarrNoteTopic::none, "unreadable_array", ""}, ZarrNote{ZarrNoteTopic::beam, "table covers 5 of 6 planes", ""}});
     ASSERT_EQ(unplaced.size(), 2u) << "no topic, and a topic whose entry the panel did not show";
 }
 
