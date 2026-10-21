@@ -215,8 +215,8 @@ std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsData(FileInfo::Data ds)
     }
 }
 
-bool Hdf5Loader::GetCursorSpectralData(
-    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
+bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+    std::mutex& image_mutex, const SpectralReadProgress& /*progress*/) {
     bool data_ok(false);
     std::unique_lock<std::mutex> ulock(image_mutex);
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
@@ -385,7 +385,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
     std::vector<float> slice_data;
 
     for (size_t x = x_start; x < max_x; ++x) {
-        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, height, image_mutex)) {
+        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, height, image_mutex, {})) {
             return false;
         }
 
