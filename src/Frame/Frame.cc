@@ -1467,8 +1467,44 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
             std::vector<float> spectral_data;
             int xy_count(1);
-            if (!Stokes::IsComputed(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
-                                                   (start_cursor.y + 0.5), xy_count, _image_mutex)) {
+            // A profile of the current stokes is of the stokes that was current when the read began, but every
+            // message is labeled with CurrentStokes(). If the user switches stokes, this profile is no longer
+            // wanted and must not be sent as the new stokes's profile. The switch brings a request of its own.
+            const bool current_stokes = coordinate == "z";
+            auto stokes_left = [this, current_stokes, stokes]() { return current_stokes && CurrentStokes() != stokes; };
+            auto wanted = [&]() { return _cursor == start_cursor && IsConnected() && HasSpectralConfig(config) && !stokes_left(); };
+            // A loader that reads the spectrum in steps reports each step here, and stops when this returns
+            // false. The final part of the profile goes out on the same cadence as the casacore loop below.
+            bool stopped(false);
+            auto t_start_partial = std::chrono::high_resolution_clock::now();
+            auto read_progress = [&](std::size_t channels_done, std::size_t channels_total) {
+                if (!wanted()) {
+                    stopped = true;
+                    return false;
+                }
+                auto t_now = std::chrono::high_resolution_clock::now();
+                if (channels_done < channels_total &&
+                    std::chrono::duration<double, std::milli>(t_now - t_start_partial).count() > TARGET_PARTIAL_CURSOR_TIME) {
+                    t_start_partial = t_now;
+                    auto profile_message =
+                        Message::SpectralProfileData(CurrentStokes(), static_cast<float>(channels_done) / channels_total);
+                    Message::AddProfile(profile_message, config.coordinate, config.all_stats[0], spectral_data);
+                    cb(profile_message);
+                }
+                return true;
+            };
+            const bool loader_read =
+                !Stokes::IsComputed(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
+                                                   (start_cursor.y + 0.5), xy_count, _image_mutex, read_progress);
+            if (stopped || (loader_read && !wanted())) {
+                // No longer wanted, so not sent, and not read again through casacore
+                if (!(_cursor == start_cursor) || !IsConnected()) {
+                    // cursor changed or file closed, cancel profiles
+                    return false;
+                }
+                continue;
+            }
+            if (loader_read) {
                 // Send final profile message with loader data
                 auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
                 Message::AddProfile(profile_message, config.coordinate, config.all_stats[0], spectral_data);
@@ -1542,8 +1578,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel all profiles
                         return false;
                     }
-                    if (!HasSpectralConfig(config)) {
-                        // requirements changed, cancel this profile
+                    if (!HasSpectralConfig(config) || stokes_left()) {
+                        // requirements or stokes changed, cancel this profile
                         break;
                     }
 
@@ -1780,7 +1816,7 @@ bool Frame::UseLoaderSpectralData(const casacore::IPosition& region_shape) {
 }
 
 bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point) {
-    return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
+    return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex, {});
 }
 
 bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

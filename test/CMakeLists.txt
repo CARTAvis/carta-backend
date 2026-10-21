@@ -46,6 +46,7 @@ set(TEST_SOURCES
         TestBlockSmooth.cc
         TestContour.cc
         TestCursorSpatialProfiles.cc
+        TestCursorSpectralRoutes.cc
         TestExprImage.cc
         TestFileInfo.cc
         TestFileList.cc

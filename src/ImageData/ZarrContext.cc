@@ -24,10 +24,15 @@ constexpr std::size_t BYTES_PER_GIB = 1024U * 1024U * 1024U;
 
 std::mutex context_mutex;
 std::optional<carta::zarr::Context> shared_context;
+// The cache size of the context configured at startup
+std::size_t configured_cache_bytes = 0;
 
-// The context with `options`, or with carta-zarr's defaults if it refuses them
-carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options) {
+// The context with `options`, or with carta-zarr's defaults if it refuses them, as `applied` says
+carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options, bool* applied = nullptr) {
     auto context = carta::zarr::Context::Create(options);
+    if (applied) {
+        *applied = context.has_value();
+    }
     if (context) {
         spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={}", options.io_threads,
             options.decode_threads,
@@ -62,9 +67,17 @@ carta::zarr::ContextOptions ZarrContextOptions(
 
 void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count) {
     const auto options = ZarrContextOptions(file_io_concurrency, data_copy_concurrency, cache_pool_gib, omp_thread_count);
-    auto context = CreateContext(options);
+    bool applied(false);
+    auto context = CreateContext(options, &applied);
     std::scoped_lock lock(context_mutex);
     shared_context = std::move(context);
+    // carta-zarr's defaults leave TensorStore's cache pool, which holds nothing
+    configured_cache_bytes = applied ? options.cache_bytes.value_or(0) : 0;
+}
+
+std::size_t ZarrCacheBytes() {
+    std::scoped_lock lock(context_mutex);
+    return configured_cache_bytes;
 }
 
 carta::zarr::Context GetZarrContext() {
