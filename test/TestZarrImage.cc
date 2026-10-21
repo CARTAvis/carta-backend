@@ -161,7 +161,7 @@ TEST_F(ZarrImageTest, EveryListedImageOpens) {
     }
 }
 
-// XRADIO stores a flag as an int8 and ties it to its image only through the root's data_groups. The
+// XRADIO stores a flag as a Zarr bool and names it as its image's flag in the root's data_groups. The
 // fixture was converted by XRADIO itself from two masked CASA images, so each image should be listed,
 // open without a pixel-mask note, and find its own flag.
 TEST_F(ZarrImageTest, EachImageFindsTheFlagXradioWroteForIt) {
