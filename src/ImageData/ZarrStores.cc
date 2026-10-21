@@ -13,7 +13,7 @@
 #include <system_error>
 #include <utility>
 
-#include <casacore/casa/OS/File.h>
+#include <casacore/casa/aipstype.h>
 #include <spdlog/spdlog.h>
 
 #include "ZarrContext.h"
@@ -230,12 +230,14 @@ ZarrStoreSize ZarrStoreProbe::Size() const {
         return *_size;
     }
 
-    // A store that will not open is not measured, since walking a large one has no time limit
+    // A store that will not open is not measured, since walking a large one has no time limit. Nor is one
+    // whose size carta-zarr cannot tell: the directory's own size would look like the store's.
     ZarrStoreSize size;
     if (dataset) {
-        size.bytes = casacore::File(path).size();
         auto measured = dataset->Size();
-        if (measured && measured.value().bytes <= static_cast<std::uint64_t>(std::numeric_limits<int64_t>::max())) {
+        if (!measured) {
+            spdlog::debug("Could not measure the Zarr store {}: {}", path, measured.error().message);
+        } else if (measured.value().bytes <= static_cast<std::uint64_t>(std::numeric_limits<int64_t>::max())) {
             size.bytes = static_cast<int64_t>(measured.value().bytes);
             size.declared = measured.value().basis == carta::zarr::SizeBasis::declared;
         }
