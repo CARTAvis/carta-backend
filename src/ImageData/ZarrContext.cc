@@ -22,19 +22,16 @@ namespace {
 
 constexpr std::size_t BYTES_PER_GIB = 1024U * 1024U * 1024U;
 
-std::mutex& ContextMutex() {
-    static std::mutex mutex;
-    return mutex;
-}
+std::mutex context_mutex;
+std::optional<carta::zarr::Context> shared_context;
 
-std::optional<carta::zarr::Context>& SharedContext() {
-    static std::optional<carta::zarr::Context> context;
-    return context;
-}
-
+// The context with `options`, or with carta-zarr's defaults if it refuses them
 carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options) {
     auto context = carta::zarr::Context::Create(options);
     if (context) {
+        spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={}", options.io_threads,
+            options.decode_threads,
+            options.cache_bytes ? fmt::format("{:g}", static_cast<double>(*options.cache_bytes) / BYTES_PER_GIB) : "default");
         return *std::move(context);
     }
 
@@ -66,22 +63,16 @@ carta::zarr::ContextOptions ZarrContextOptions(
 void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count) {
     const auto options = ZarrContextOptions(file_io_concurrency, data_copy_concurrency, cache_pool_gib, omp_thread_count);
     auto context = CreateContext(options);
-    {
-        std::scoped_lock lock(ContextMutex());
-        SharedContext() = std::move(context);
-    }
-
-    const std::string cache_size_gib = cache_pool_gib > 0 ? fmt::format("{}", cache_pool_gib) : "disabled";
-    spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={}", options.io_threads,
-        options.decode_threads, cache_size_gib);
+    std::scoped_lock lock(context_mutex);
+    shared_context = std::move(context);
 }
 
 carta::zarr::Context GetZarrContext() {
-    std::scoped_lock lock(ContextMutex());
-    if (!SharedContext()) {
-        SharedContext() = CreateContext({});
+    std::scoped_lock lock(context_mutex);
+    if (!shared_context) {
+        shared_context = CreateContext({});
     }
-    return *SharedContext();
+    return *shared_context;
 }
 
 } // namespace carta

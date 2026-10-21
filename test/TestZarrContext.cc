@@ -4,7 +4,10 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <optional>
 
 #include <gtest/gtest.h>
 
@@ -49,6 +52,15 @@ TEST(ZarrContextTest, CacheSizeOfZeroDisablesTheCache) {
     const auto options = ZarrContextOptions(2, -1, 0, 8);
     ASSERT_TRUE(options.cache_bytes.has_value());
     EXPECT_EQ(*options.cache_bytes, 0U);
+}
+
+TEST(ZarrContextTest, CacheSizeBelowZeroOrNotANumberHoldsNothing) {
+    EXPECT_EQ(ZarrContextOptions(2, -1, -1, 8).cache_bytes, std::optional<std::size_t>(0));
+    EXPECT_EQ(ZarrContextOptions(2, -1, std::nan(""), 8).cache_bytes, std::optional<std::size_t>(0));
+}
+
+TEST(ZarrContextTest, CacheSizeTooLargeForASizeIsCapped) {
+    EXPECT_EQ(ZarrContextOptions(2, -1, 1e300, 8).cache_bytes, std::optional<std::size_t>(std::numeric_limits<std::size_t>::max()));
 }
 
 TEST(ZarrContextTest, ConfigureThenGetDoesNotThrow) {
