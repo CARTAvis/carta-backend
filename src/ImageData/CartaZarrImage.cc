@@ -147,12 +147,10 @@ std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
 void CartaZarrImage::SetUpImage() {
     const auto& descriptor = _zarr_image->descriptor();
     try {
+        // Every note is logged in full; the file info shows the brief form beside the value it is about
         _notes = NotesFromDiagnostics(descriptor.diagnostics);
         for (const auto& note : _notes) {
-            if (note.topic == ZarrNoteTopic::none) {
-                // No file info entry to show it beside, so it is only logged
-                spdlog::warn("XRADIO {}: {}", _filename, note.detail);
-            }
+            spdlog::warn("XRADIO {}: {}", _filename, note.detail);
         }
         auto made = MakeZarrCoordinateSystem(descriptor);
         for (auto& note : made.notes) {

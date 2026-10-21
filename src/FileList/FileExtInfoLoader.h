@@ -86,8 +86,9 @@ private:
 };
 
 // Appends each of a Zarr image's notes to the comment of the computed entries it is about, found by the
-// names FileExtInfoLoader gives them. Returns the notes with no such entry.
-std::vector<ZarrNote> AnnotateEntries(CARTA::FileInfoExtended& extended_info, const std::vector<ZarrNote>& notes);
+// names FileExtInfoLoader gives them. A note with no such entry is left out here; the image logs every
+// note when it opens.
+void AnnotateEntries(CARTA::FileInfoExtended& extended_info, const std::vector<ZarrNote>& notes);
 
 } // namespace carta
 

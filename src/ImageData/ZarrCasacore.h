@@ -23,7 +23,7 @@ namespace carta {
 // Builds the casacore coordinate system and beams of a Zarr image from carta-zarr's descriptors. Notes
 // are returned rather than logged, so that the caller can name the file and show them in the file info.
 
-// The file info value a note is about; a note about none is logged rather than shown
+// The file info value a note is about; a note about none is only logged
 enum class ZarrNoteTopic { none, reference_pixels, pixel_increment, celestial_frame, frequency, beam };
 
 // Something to know about a Zarr image's values, such as one that is approximate or was filled in: from

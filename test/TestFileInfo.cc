@@ -5,7 +5,10 @@
 */
 
 #include <gtest/gtest.h>
+#include <spdlog/sinks/ringbuffer_sink.h>
+#include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -14,6 +17,7 @@
 #include "CommonTestUtilities.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
+#include "ImageData/CartaZarrImage.h"
 #include "Session/Session.h"
 #include "Util/Message.h"
 
@@ -308,9 +312,8 @@ const CARTA::HeaderEntry& Entry(const CARTA::FileInfoExtended& info, const std::
 
 TEST(ZarrNotes, ANoteIsTheCommentOfTheEntryItQualifies) {
     auto info = PanelWith({"Name", "Celestial frame", "Frequency range", "Pixel increment"});
-    const auto unplaced = AnnotateEntries(info, {ZarrNote{ZarrNoteTopic::frequency, "channels not evenly spaced", ""},
-                                                    ZarrNote{ZarrNoteTopic::celestial_frame, "equinox 1975 read as J2000", ""}});
-    EXPECT_TRUE(unplaced.empty());
+    AnnotateEntries(info, {ZarrNote{ZarrNoteTopic::frequency, "channels not evenly spaced", ""},
+                              ZarrNote{ZarrNoteTopic::celestial_frame, "equinox 1975 read as J2000", ""}});
     EXPECT_EQ(Entry(info, "Frequency range").comment(), "channels not evenly spaced");
     EXPECT_EQ(Entry(info, "Celestial frame").comment(), "equinox 1975 read as J2000");
     EXPECT_TRUE(Entry(info, "Name").comment().empty()) << "an entry no note is about is left alone";
@@ -335,11 +338,13 @@ TEST(ZarrNotes, ABeamNoteGoesOnEveryBeamEntry) {
     EXPECT_EQ(Entry(info, "Median area beam (Stokes Q)").comment(), "table covers 5 of 6 planes");
 }
 
-TEST(ZarrNotes, WhatHasNowhereToGoIsHandedBack) {
+// A note with no topic, or whose entry the panel does not show, changes nothing; the image has logged it
+TEST(ZarrNotes, ANoteWithNoEntryChangesNothing) {
     auto info = PanelWith({"Name"});
-    const auto unplaced = AnnotateEntries(
+    AnnotateEntries(
         info, {ZarrNote{ZarrNoteTopic::none, "unreadable_array", ""}, ZarrNote{ZarrNoteTopic::beam, "table covers 5 of 6 planes", ""}});
-    ASSERT_EQ(unplaced.size(), 2u) << "no topic, and a topic whose entry the panel did not show";
+    ASSERT_EQ(info.computed_entries_size(), 1);
+    EXPECT_TRUE(Entry(info, "Name").comment().empty());
 }
 
 // The fixture's channels are unevenly spaced, which shows in the file info
@@ -356,4 +361,42 @@ TEST(ZarrNotes, TheFileInfoSaysWhatTheLibrarySaid) {
     ASSERT_TRUE(ext_info_loader.FillFileExtInfo(info, fixture.string(), "SKY", message)) << message;
     EXPECT_NE(Entry(info, "Frequency range").comment().find("channels not evenly spaced"), std::string::npos)
         << "comment was '" << Entry(info, "Frequency range").comment() << "'";
+}
+
+// Every note is logged once when the image opens, including one shown in the file info, and filling the
+// file info logs none again
+TEST(ZarrNotes, EveryNoteIsLoggedOnce) {
+    const std::filesystem::path fixture{ZARR_XRADIO_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio fixture not found at " << fixture;
+    }
+    auto sink = std::make_shared<spdlog::sinks::ringbuffer_sink_mt>(1024);
+    sink->set_pattern("%v");
+    const auto previous = spdlog::default_logger();
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>("notes", sink));
+    std::vector<carta::ZarrNote> notes;
+    bool filled = false;
+    std::string message;
+    {
+        auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fixture.string()));
+        carta::FileExtInfoLoader ext_info_loader(loader);
+        CARTA::FileInfoExtended info;
+        filled = ext_info_loader.FillFileExtInfo(info, fixture.string(), "SKY", message);
+        if (filled) {
+            notes = dynamic_cast<const carta::CartaZarrImage&>(*loader->GetImage()).Notes();
+        }
+    }
+    spdlog::set_default_logger(previous);
+    const auto logged = sink->last_formatted();
+
+    ASSERT_TRUE(filled) << message;
+    ASSERT_FALSE(notes.empty());
+    EXPECT_TRUE(std::any_of(notes.begin(), notes.end(), [](const carta::ZarrNote& note) {
+        return note.topic != carta::ZarrNoteTopic::none;
+    })) << "the fixture should have a note the file info shows";
+    for (const auto& note : notes) {
+        const auto times = std::count_if(
+            logged.begin(), logged.end(), [&](const std::string& line) { return line.find(note.detail) != std::string::npos; });
+        EXPECT_EQ(times, 1) << note.detail;
+    }
 }
