@@ -8,11 +8,13 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <mutex>
 #include <optional>
 #include <string>
 
 #include <casacore/casa/Exceptions/Error.h>
+#include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
 
 namespace carta {
@@ -47,17 +49,21 @@ carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options) {
 } // namespace
 
 carta::zarr::ContextOptions ZarrContextOptions(
-    int file_io_concurrency, int data_copy_concurrency, int cache_pool_gib, int omp_thread_count) {
+    int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count) {
     carta::zarr::ContextOptions options;
     options.io_threads =
         static_cast<unsigned int>(file_io_concurrency > 0 ? file_io_concurrency : std::min(4, std::max(1, omp_thread_count)));
     // File IO threads mostly wait on reads, so they do not come out of the decode thread budget.
     options.decode_threads = static_cast<unsigned int>(data_copy_concurrency > 0 ? data_copy_concurrency : std::max(1, omp_thread_count));
-    options.cache_bytes = cache_pool_gib > 0 ? static_cast<std::size_t>(cache_pool_gib) * BYTES_PER_GIB : 0;
+    // Rounded down to whole bytes, and no more than a size can hold; zero, less or not a number holds nothing
+    const double cache_bytes = cache_pool_gib > 0 ? cache_pool_gib * static_cast<double>(BYTES_PER_GIB) : 0.0;
+    options.cache_bytes = cache_bytes < static_cast<double>(std::numeric_limits<std::size_t>::max())
+                              ? static_cast<std::size_t>(cache_bytes)
+                              : std::numeric_limits<std::size_t>::max();
     return options;
 }
 
-void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, int cache_pool_gib, int omp_thread_count) {
+void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count) {
     const auto options = ZarrContextOptions(file_io_concurrency, data_copy_concurrency, cache_pool_gib, omp_thread_count);
     auto context = CreateContext(options);
     {
@@ -65,7 +71,7 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, in
         SharedContext() = std::move(context);
     }
 
-    const std::string cache_size_gib = cache_pool_gib > 0 ? std::to_string(cache_pool_gib) : "disabled";
+    const std::string cache_size_gib = cache_pool_gib > 0 ? fmt::format("{}", cache_pool_gib) : "disabled";
     spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={}", options.io_threads,
         options.decode_threads, cache_size_gib);
 }

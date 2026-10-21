@@ -39,6 +39,12 @@ TEST(ZarrContextTest, CacheSizeIsGivenInGibibytes) {
     EXPECT_EQ(*options.cache_bytes, std::size_t{8} * 1024U * 1024U * 1024U);
 }
 
+TEST(ZarrContextTest, CacheSizeMayBeAFractionOfAGibibyte) {
+    const auto options = ZarrContextOptions(2, -1, 2.5, 8);
+    ASSERT_TRUE(options.cache_bytes.has_value());
+    EXPECT_EQ(*options.cache_bytes, std::size_t{5} * 512U * 1024U * 1024U);
+}
+
 TEST(ZarrContextTest, CacheSizeOfZeroDisablesTheCache) {
     const auto options = ZarrContextOptions(2, -1, 0, 8);
     ASSERT_TRUE(options.cache_bytes.has_value());
