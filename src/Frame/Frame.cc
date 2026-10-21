@@ -1046,18 +1046,48 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             required_stats.push_back(stats_config.stats_types(i));
         }
 
+        auto has_required_stats = [&required_stats](const std::map<CARTA::StatsType, double>& stats_map) {
+            return std::all_of(required_stats.begin(), required_stats.end(),
+                [&stats_map](CARTA::StatsType type) { return stats_map.find(type) != stats_map.end(); });
+        };
+
         // Use loader image stats
         auto& image_stats = _loader->GetImageStats(stokes, z);
+        if (image_stats.full && !image_stats.basic_stats.count(CARTA::StatsType::FluxDensity) &&
+            std::find(required_stats.begin(), required_stats.end(), CARTA::StatsType::FluxDensity) != required_stats.end()) {
+            casacore::SubImage<float> sub_image;
+            auto stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
+            if (GetSlicerSubImage(stokes_slicer, sub_image)) {
+                std::vector<double> flux_density;
+                bool flux_ok(false);
+                try {
+                    std::lock_guard<std::mutex> guard(_image_mutex);
+                    flux_ok = ComputeFluxDensityFromSum(sub_image, {image_stats.basic_stats.at(CARTA::StatsType::NumPixels)},
+                        {image_stats.basic_stats.at(CARTA::StatsType::Sum)}, flux_density);
+                } catch (const casacore::AipsError&) {
+                    // Unsupported coordinates or units cannot provide flux density.
+                }
+                image_stats.basic_stats[CARTA::StatsType::FluxDensity] = flux_ok && !flux_density.empty() ? flux_density[0] : DOUBLE_NAN;
+                _loader->CloseImageIfUpdated();
+            }
+        }
+
+        int cache_key(CacheKey(z, stokes));
+        auto& cached_stats = _image_stats[cache_key];
         if (image_stats.full) {
+            for (const auto& [type, value] : image_stats.basic_stats) {
+                cached_stats.try_emplace(type, value);
+            }
+        }
+        if (image_stats.full && has_required_stats(image_stats.basic_stats)) {
             FillStatistics(stats_data, required_stats, image_stats.basic_stats);
             stats_data_callback(stats_data);
             continue;
         }
 
         // Use cached stats
-        int cache_key(CacheKey(z, stokes));
-        if (_image_stats.count(cache_key)) {
-            auto stats_map = _image_stats[cache_key];
+        if (_image_stats.count(cache_key) && has_required_stats(_image_stats[cache_key])) {
+            auto& stats_map = _image_stats[cache_key];
             FillStatistics(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
             continue;
@@ -1068,9 +1098,12 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
         bool per_z(false);
         std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
-        if (GetSlicerStats(stokes_slicer, required_stats, per_z, stats_vector_map)) {
+        std::vector<CARTA::StatsType> missing_stats;
+        std::copy_if(required_stats.begin(), required_stats.end(), std::back_inserter(missing_stats),
+            [&cached_stats](CARTA::StatsType type) { return !cached_stats.count(type); });
+        if (GetSlicerStats(stokes_slicer, missing_stats, per_z, stats_vector_map)) {
             // convert vector to single value in map
-            std::map<CARTA::StatsType, double> stats_map;
+            auto& stats_map = cached_stats;
             for (auto& value : stats_vector_map) {
                 stats_map[value.first] = value.second[0];
             }
@@ -1078,9 +1111,6 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             // complete message
             FillStatistics(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
-
-            // cache results
-            _image_stats[cache_key] = stats_map;
 
             spdlog::performance("Fill image stats in {:.3f} ms", t.Elapsed().ms());
         }

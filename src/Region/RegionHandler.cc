@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <set>
 
 #include <casacore/casa/math.h>
 
@@ -658,9 +659,12 @@ void RegionHandler::ClearRegionCache(int region_id) {
     if (_region_histograms.find(region_id) != _region_histograms.end()) {
         _region_histograms[region_id]->ClearCache();
     }
-    for (auto& spcache : _spectral_cache) {
-        if (spcache.first.region_id == region_id) {
-            spcache.second.ClearProfiles();
+    {
+        std::lock_guard<std::mutex> guard(_spectral_mutex);
+        for (auto& spcache : _spectral_cache) {
+            if (spcache.first.region_id == region_id) {
+                spcache.second.ClearProfiles();
+            }
         }
     }
 
@@ -1560,18 +1564,30 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
     // Check cache
     CacheId cache_id(file_id, region_id, stokes_index);
-    if (_spectral_cache.count(cache_id) && !_spectral_cache[cache_id].profiles.empty()) {
+    std::map<CARTA::StatsType, std::vector<double>> cache_results;
+    {
+        std::lock_guard<std::mutex> guard(_spectral_mutex);
+        auto cache = _spectral_cache.find(cache_id);
+        if (cache != _spectral_cache.end()) {
+            cache_results = cache->second.profiles;
+        }
+    }
+    if (!cache_results.empty()) {
+        bool all_stats_cached(true);
         // Copy profiles to results map
         for (auto& result : results) {
             auto stats_type = result.first;
-            std::vector<double> profile;
-            if (_spectral_cache[cache_id].GetProfile(stats_type, profile)) {
-                results[stats_type] = profile;
+            auto profile = cache_results.find(stats_type);
+            if (profile != cache_results.end()) {
+                results[stats_type] = profile->second;
+            } else {
+                all_stats_cached = false;
             }
         }
-        progress = 1.0;
-        partial_results_callback(results, progress);
-        return true;
+        if (all_stats_cached) {
+            partial_results_callback(results, 1.0);
+            return true;
+        }
     }
 
     // Get 2D region with original image coordinate to check if inside image and whether to use loader
@@ -1589,7 +1605,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     RegionState initial_region_state = region->GetRegionState();
 
     // Use loader swizzled data for efficiency
-    if (frame->UseLoaderSpectralData(lc_region->shape())) {
+    const bool has_extra_stats = std::any_of(required_stats.begin(), required_stats.end(),
+        [this](CARTA::StatsType type) { return std::find(_spectral_stats.begin(), _spectral_stats.end(), type) == _spectral_stats.end(); });
+    if (!has_extra_stats && frame->UseLoaderSpectralData(lc_region->shape())) {
         // Use cursor spectral profile for point region
         if (initial_region_state.type == CARTA::RegionType::POINT) {
             casacore::IPosition origin = lc_region->boundingBox().start();
@@ -1699,21 +1717,36 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         }
     } // end loader swizzled data
 
-    // Initialize cache results for *all* spectral stats
-    std::map<CARTA::StatsType, std::vector<double>> cache_results;
-    for (const auto& stat : _spectral_stats) {
+    // Cache basic profiles together, but calculate robust profiles only on demand.
+    auto stats_to_calculate = _spectral_stats;
+    if (!Stokes::IsComputed(stokes_index)) {
+        for (auto stat : required_stats) {
+            if (std::find(stats_to_calculate.begin(), stats_to_calculate.end(), stat) == stats_to_calculate.end()) {
+                stats_to_calculate.push_back(stat);
+            }
+        }
+    }
+    stats_to_calculate.erase(std::remove_if(stats_to_calculate.begin(), stats_to_calculate.end(),
+                                 [&cache_results](CARTA::StatsType type) { return cache_results.count(type); }),
+        stats_to_calculate.end());
+    for (const auto& stat : stats_to_calculate) {
         cache_results[stat] = init_spectral;
     }
 
     // Calculate and cache profiles
+    std::vector<CARTA::StatsType> computed_stokes_extra_stats;
+    if (Stokes::IsComputed(stokes_index)) {
+        std::copy_if(required_stats.begin(), required_stats.end(), std::back_inserter(computed_stokes_extra_stats),
+            [this, &cache_results](CARTA::StatsType type) {
+                return std::find(_spectral_stats.begin(), _spectral_stats.end(), type) == _spectral_stats.end() &&
+                       !cache_results.count(type);
+            });
+    }
     size_t start_z(z_range.from), count(0), end_z(0), profile_start(0);
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
-
-    if (Stokes::IsComputed(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
-        lc_region = nullptr;
-    }
+    std::set<CARTA::StatsType> computed_cache_types;
 
     // Get per-z stats data for spectral profiles
     while (progress < 1.0) {
@@ -1729,10 +1762,12 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         auto get_stokes_profiles_data = [&](ProfilesMap& tmp_partial_profiles, int tmp_stokes_index) {
             casacore::ImageRegion image_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
-            if (GetImageRegion(region, frame, partial_z_range, tmp_stokes_index, lc_region, image_region)) {
-                StokesSource stokes_source(tmp_stokes_index, partial_z_range);
-                StokesRegion stokes_region(stokes_source, image_region);
-                return frame->GetRegionStats(stokes_region, _spectral_stats, per_z, tmp_partial_profiles);
+            StokesSource component_source(tmp_stokes_index, partial_z_range);
+            auto component_lc_region = region->GetLCRegion(
+                file_id, frame->CoordinateSystem(component_source), frame->ImageShape(component_source), component_source);
+            if (GetImageRegion(region, frame, partial_z_range, tmp_stokes_index, component_lc_region, image_region)) {
+                StokesRegion stokes_region(component_source, image_region);
+                return frame->GetRegionStats(stokes_region, stats_to_calculate, per_z, tmp_partial_profiles);
             }
             return false;
         };
@@ -1744,13 +1779,33 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         };
 
         ProfilesMap partial_profiles;
-        if (Stokes::IsComputed(stokes_index)) { // For computed stokes
-            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
+        if (!stats_to_calculate.empty()) {
+            if (Stokes::IsComputed(stokes_index)) { // For computed stokes
+                if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
+                    return false;
+                }
+            } else { // For regular stokes I, Q, U, or V
+                if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
+                    return false;
+                }
+            }
+        }
+
+        if (!computed_stokes_extra_stats.empty()) {
+            StokesSource computed_source(stokes_index, partial_z_range);
+            auto computed_lc_region =
+                region->GetLCRegion(file_id, frame->CoordinateSystem(computed_source), frame->ImageShape(computed_source), computed_source);
+            casacore::ImageRegion computed_image_region;
+            if (!GetImageRegion(region, frame, partial_z_range, stokes_index, computed_lc_region, computed_image_region)) {
                 return false;
             }
-        } else { // For regular stokes I, Q, U, or V
-            if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
+            StokesRegion computed_region(computed_source, computed_image_region);
+            ProfilesMap computed_profiles;
+            if (!frame->GetRegionStats(computed_region, computed_stokes_extra_stats, true, computed_profiles)) {
                 return false;
+            }
+            for (const auto& [type, values] : computed_profiles) {
+                partial_profiles[type] = values;
             }
         }
 
@@ -1761,7 +1816,12 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             if (results.count(stats_type)) {
                 memcpy(&results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
             }
+            if (!cache_results.count(stats_type)) {
+                // The shared calculator also returns the other quantiles for caching.
+                cache_results[stats_type] = init_spectral;
+            }
             memcpy(&cache_results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
+            computed_cache_types.insert(stats_type);
         }
 
         start_z += count;
@@ -1803,9 +1863,11 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             t_partial_profile_start = std::chrono::high_resolution_clock::now();
             partial_results_callback(results, progress);
             if (progress >= 1.0) {
-                // cache results for all stats types
-                // TODO: cache and load partial profiles
-                _spectral_cache[cache_id] = SpectralCache(cache_results);
+                std::lock_guard<std::mutex> guard(_spectral_mutex);
+                auto& cached_profiles = _spectral_cache[cache_id].profiles;
+                for (auto type : computed_cache_types) {
+                    cached_profiles[type] = std::move(cache_results[type]);
+                }
             }
         }
     }
