@@ -397,7 +397,7 @@ CARTA::RegionStyle CrtfImporter::ImportStyle(CARTA::RegionType region_type, std:
     CARTA::RegionStyle region_style;
 
     // Set name
-    auto name = GetProperty("name", properties);
+    auto name = GetProperty("label", properties);
     if (!name.empty()) {
         if (name.front() == '"' && name.back() == '"') {
             name = name.substr(1, name.length() - 2);
