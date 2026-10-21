@@ -190,15 +190,16 @@ casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels)
     return cursor;
 }
 
-carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer& section) const {
+carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
+    const carta::zarr::ReadOptions& options, const carta::zarr::ProgressCallback& progress) const {
     if (!section.isFixed() || section.ndim() != _shape.size()) {
         throw casacore::AipsError("CartaZarrImage::Read - the section must be fixed and have the image's rank");
     }
     buffer.resize(section.length());
     bool delete_storage(false);
     float* storage = buffer.getStorage(delete_storage);
-    auto read = _zarr_image->Read(
-        RequestFor(section, _zarr_image->descriptor().axes.size()), {storage, static_cast<std::size_t>(buffer.nelements())});
+    auto read = _zarr_image->Read(RequestFor(section, _zarr_image->descriptor().axes.size()),
+        {storage, static_cast<std::size_t>(buffer.nelements())}, options, progress);
     buffer.putStorage(storage, delete_storage);
     return read;
 }

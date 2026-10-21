@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_IMAGEDATA_FILELOADER_H_
 #define CARTA_SRC_IMAGEDATA_FILELOADER_H_
 
+#include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -98,9 +100,14 @@ public:
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
+    // Called as a cursor spectrum is read, with how many channels of `data` are final and how many there
+    // will be. Returning false stops the read. A loader that reads the spectrum in one go need not call it;
+    // the caller sends the whole spectrum when the read returns either way.
+    using SpectralReadProgress = std::function<bool(std::size_t channels_done, std::size_t channels_total)>;
+
     // Spectral profiles for cursor and region
-    virtual bool GetCursorSpectralData(
-        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
+    virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+        std::mutex& image_mutex, const SpectralReadProgress& progress);
     // Check if one can apply swizzled data under such image format and region condition
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,

@@ -858,8 +858,8 @@ FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int z) {
     return _empty_stats;
 }
 
-bool FileLoader::GetCursorSpectralData(
-    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
+bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+    std::mutex& image_mutex, const SpectralReadProgress& progress) {
     // Must be implemented in subclasses
     return false;
 }
