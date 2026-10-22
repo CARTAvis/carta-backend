@@ -9,15 +9,18 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <utility>
 
 #include <casacore/casa/Exceptions/Error.h>
 #include <casacore/casa/OS/Path.h>
 #include <casacore/casa/Quanta/Unit.h>
+#include <casacore/casa/Quanta/UnitMap.h>
 #include <casacore/images/Images/ImageInfo.h>
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
 
+#include "Util/Casacore.h"
 #include "ZarrCasacore.h"
 #include "ZarrStores.h"
 
@@ -34,6 +37,21 @@ std::vector<std::uint64_t> InCartaOrder(const std::vector<std::uint64_t>& values
     std::vector<std::uint64_t> result(CARTA_AXES, 1);
     std::copy_n(values.begin(), std::min(values.size(), result.size()), result.begin());
     return result;
+}
+
+// The image's unit, normalized as FileLoader normalizes every image's, with casacore's FITS units added as a FITS
+// image's are, so that an upper-case FITS spelling such as JY/BEAM or JY/PIXEL, which XRADIO copies from BUNIT
+// unchanged and casacore::Unit refuses, becomes Jy/beam or Jy/pixel. A unit that is still not valid is not set,
+// and a note says so: casacore's FITS reader would add it to casacore's global unit map instead, unguarded, while
+// other threads may be reading that map. Adding the FITS units is done once, under casacore's own lock.
+std::optional<casacore::Unit> BrightnessUnit(const std::string& unit) {
+    casacore::UnitMap::addFITS();
+    casacore::String normalized(unit);
+    NormalizeUnit(normalized);
+    if (!casacore::UnitVal::check(normalized)) {
+        return std::nullopt;
+    }
+    return casacore::Unit(normalized);
 }
 
 } // namespace
@@ -144,7 +162,12 @@ void CartaZarrImage::SetUpImage() {
         AddNotes(std::move(made.notes));
         setCoordinateInfo(made.coordinates);
         if (!descriptor.unit.empty()) {
-            setUnits(casacore::Unit(descriptor.unit));
+            if (const auto unit = BrightnessUnit(descriptor.unit)) {
+                setUnits(*unit);
+            } else {
+                AddNotes({ZarrNote{ZarrNoteTopic::none, "unit omitted",
+                    "unit " + descriptor.unit + " is one casacore does not know; the image is left without a unit"}});
+            }
         }
 
         casacore::ImageInfo image_info;

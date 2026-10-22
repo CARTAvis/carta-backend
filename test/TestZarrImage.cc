@@ -128,6 +128,24 @@ TEST_F(ZarrImageTest, ASkyImagesSubTypeIsItsImageType) {
     EXPECT_EQ(image->imageInfo().imageType(), casacore::ImageInfo::SpectralIndex);
 }
 
+// An image's unit is normalized as FileLoader normalizes every image's. XRADIO copies BUNIT unchanged, and an
+// upper-case FITS spelling, which casacore::Unit refuses, kept a store converted from such a file from opening
+// while the file itself opened. A unit casacore does not know is left out, and the image still opens.
+TEST_F(ZarrImageTest, AUnitIsNormalizedAndAnUnknownOneLeftOut) {
+    for (const auto& [written, read] : {std::pair<std::string, std::string>{"JY/BEAM", "Jy/beam"},
+             std::pair<std::string, std::string>{"JY/PIXEL", "Jy/pixel"}, std::pair<std::string, std::string>{"wombats", ""}}) {
+        // The same path each time, so that no probe of the last copy is kept
+        ZarrStores::Instance().Clear();
+        const auto copy = EditedFixture("unit.zarr", [&](const std::string& text) {
+            return std::regex_replace(
+                text, std::regex(R"("units"\s*:\s*"Jy/beam")"), "\"units\": \"" + written + "\"", std::regex_constants::format_first_only);
+        });
+        auto image = ImageThroughLoader(copy);
+        ASSERT_NE(image, nullptr) << written;
+        EXPECT_EQ(std::string(image->units().getName()), read) << written;
+    }
+}
+
 TEST_F(ZarrImageTest, BeamsThatAgreeOnEveryPlaneBecomeOne) {
     const std::filesystem::path fixture{ZARR_XRADIO_UNIFORM_BEAM_FIXTURE};
     if (!std::filesystem::exists(fixture)) {
