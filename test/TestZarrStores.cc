@@ -240,7 +240,12 @@ TEST_F(ZarrStoresTest, AChangedDirectoryIsProbedAgain) {
     const auto store = AStore();
 
     const auto first = stores.Probe(store.string());
+    const auto probed_time = fs::last_write_time(store);
     fs::create_directory(store / "NEW_VARIABLE");
+    // Moved on by a second, as a store edited after it was probed would be. A Linux file system stamps a
+    // directory with a clock that moves every few milliseconds, so one changed straight after it was made can
+    // keep the time it was made with.
+    fs::last_write_time(store, probed_time + std::chrono::seconds(1));
     const auto second = stores.Probe(store.string());
     EXPECT_NE(second, first);
     EXPECT_EQ(stores.Probe(store.string()), second);
