@@ -958,6 +958,70 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskIsReadAgain) {
     EXPECT_EQ(edited[CARTA::StatsType::Sum], fresh[CARTA::StatsType::Sum]);
 }
 
+// A region edited into another of as many pixels in the same bounding box differs only in which pixels, which
+// only the mask's hash tells: one column of the box and the next, each crossing both the hashed words and the
+// pixels after them
+TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskOfAsManyPixelsIsReadAgain) {
+    const casacore::IPosition origin(2, 1, 1);
+    std::mutex image_mutex;
+    const auto profile = [&](FileLoader& loader, const casacore::ArrayLattice<casacore::Bool>& mask) {
+        std::map<CARTA::StatsType, std::vector<double>> results;
+        float progress = 0.0;
+        for (int call = 0; progress < 1.0f; ++call) {
+            if (call == 100 ||
+                !loader.GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress)) {
+                ADD_FAILURE() << "the profile did not finish";
+                break;
+            }
+        }
+        return results;
+    };
+    const auto first_column = BoxMask([](int x, int) { return x == 0; });
+    const auto second_column = BoxMask([](int x, int) { return x == 1; });
+
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    const auto first = profile(*loader, first_column);
+    const auto edited = profile(*loader, second_column);
+
+    auto fresh_loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(fresh_loader, nullptr);
+    fresh_loader->OpenFile("");
+    const auto fresh = profile(*fresh_loader, second_column);
+    // The two masks hold as many pixels, valid or not
+    const auto covered = [](const std::map<CARTA::StatsType, std::vector<double>>& results) {
+        return results.at(CARTA::StatsType::NumPixels).front() + results.at(CARTA::StatsType::NanCount).front();
+    };
+    EXPECT_EQ(covered(edited), covered(first));
+    EXPECT_NE(edited.at(CARTA::StatsType::NumPixels), first.at(CARTA::StatsType::NumPixels));
+    EXPECT_EQ(edited.at(CARTA::StatsType::NumPixels), fresh.at(CARTA::StatsType::NumPixels));
+    EXPECT_EQ(edited.at(CARTA::StatsType::Sum), fresh.at(CARTA::StatsType::Sum));
+}
+
+// A pixel in the top byte of a hashed word reaches the whole hash. Folded in unmixed, a word's top byte
+// reached only the hash's top byte, and these two masks of an 8 x 8 box, each with four pixels in the last
+// column and differing only there, hashed alike
+TEST(ZarrRegionSpectralKey, MasksDifferingOnlyInTheirWordsTopBytesHaveDifferentKeys) {
+    struct Keyed : ZarrLoader {
+        using ZarrLoader::RegionSpectralKey;
+    };
+    const auto last_column = [](std::initializer_list<int> rows) {
+        casacore::Array<casacore::Bool> mask(casacore::IPosition(2, 8, 8), false);
+        for (const int y : rows) {
+            mask(casacore::IPosition(2, 7, y)) = true;
+        }
+        return mask;
+    };
+    const casacore::IPosition origin(2, 0, 0);
+    const AxisRange range(0, 1);
+    const auto one = Keyed::RegionSpectralKey::Of(origin, last_column({0, 1, 6, 7}), range);
+    const auto other = Keyed::RegionSpectralKey::Of(origin, last_column({0, 4, 5, 6}), range);
+    EXPECT_EQ(one.mask_pixels, other.mask_pixels);
+    EXPECT_FALSE(one == other);
+    EXPECT_TRUE(one == Keyed::RegionSpectralKey::Of(origin, last_column({0, 1, 6, 7}), range));
+}
+
 // A region whose bounding box changes size is read again, as any other region is
 TEST_F(ZarrImageTest, RegionSpectralDataOfAResizedRegionIsReadAgain) {
     const casacore::IPosition origin(2, 1, 1);

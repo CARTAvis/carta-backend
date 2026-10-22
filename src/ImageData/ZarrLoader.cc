@@ -7,9 +7,11 @@
 #include "ZarrLoader.h"
 
 #include <algorithm>
+#include <bitset>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -111,15 +113,43 @@ bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 
 namespace {
 
-// A 64-bit FNV-1a hash of a mask's pixels, and how many are in the region
+// MurmurHash3's finalizer: every bit of the word moves every bit of the result
+std::uint64_t MixWord(std::uint64_t word) {
+    word ^= word >> 33;
+    word *= 0xff51afd7ed558ccdULL;
+    word ^= word >> 33;
+    word *= 0xc4ceb9fe1a85ec53ULL;
+    word ^= word >> 33;
+    return word;
+}
+
+// A 64-bit hash of a mask's pixels, taken eight at a time, and how many are in the region.
+//
+// Taken on every call, so it is kept cheap: the mask of a 7763 x 4742 region took 26-36 ms a pixel at a time
+// and 6-9 ms eight at a time, mixed. A Bool is one byte of 0 or 1, so the pixels of a word in the region are
+// its set bits.
+//
+// Each word is mixed before it is folded in, as FNV-1a folds in a byte: a multiplication carries a change
+// only upward, so a pixel in a word's top byte would otherwise reach only the hash's top byte, and masks
+// differing only there would share one of 256 hashes.
 std::pair<std::uint64_t, std::size_t> MaskFingerprint(const casacore::Array<casacore::Bool>& mask) {
+    static_assert(sizeof(casacore::Bool) == 1, "a casacore Bool must be one byte to be hashed eight at a time");
     bool delete_storage(false);
     const casacore::Bool* pixels = mask.getStorage(delete_storage);
+    const auto* bytes = reinterpret_cast<const unsigned char*>(pixels);
+    const std::size_t size = mask.nelements();
     std::uint64_t hash = 14695981039346656037ULL;
     std::size_t count = 0;
-    for (std::size_t i = 0; i < mask.nelements(); ++i) {
-        hash = (hash ^ static_cast<std::uint64_t>(pixels[i] ? 1 : 0)) * 1099511628211ULL;
-        count += pixels[i] ? 1 : 0;
+    std::size_t i = 0;
+    for (; i + sizeof(std::uint64_t) <= size; i += sizeof(std::uint64_t)) {
+        std::uint64_t word;
+        std::memcpy(&word, bytes + i, sizeof(word));
+        hash = (hash ^ MixWord(word)) * 1099511628211ULL;
+        count += std::bitset<64>(word).count();
+    }
+    for (; i < size; ++i) {
+        hash = (hash ^ bytes[i]) * 1099511628211ULL;
+        count += bytes[i];
     }
     mask.freeStorage(pixels, delete_storage);
     return {hash, count};

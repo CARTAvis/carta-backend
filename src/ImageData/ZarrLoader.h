@@ -42,10 +42,10 @@ protected:
     std::chrono::milliseconds _region_spectral_time{TARGET_PARTIAL_REGION_TIME};
     std::uint32_t _region_spectral_channels_per_emit = 0;
 
-private:
     // What a profile is of: the region and the channel range. Another region or range starts the profile
     // again. The mask is kept as a hash of its pixels and their count rather than a copy, which for a large
-    // region would be tens of MB kept for as long as the image is open.
+    // region would be tens of MB kept for as long as the image is open. Protected so that a test can tell
+    // two masks' keys apart.
     struct RegionSpectralKey {
         std::int64_t x = 0;
         std::int64_t y = 0;
@@ -60,6 +60,7 @@ private:
         bool operator==(const RegionSpectralKey& other) const;
     };
 
+private:
     // What one region's profile of one stokes has so far. The caller calls GetRegionSpectralData until
     // progress is 1, and checks between calls that the region and the request are unchanged.
     struct RegionSpectralState {
