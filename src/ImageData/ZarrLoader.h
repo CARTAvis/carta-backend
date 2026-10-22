@@ -32,13 +32,19 @@ public:
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
     bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
-        float& progress) override;
+        float& progress, const SpectralReadWanted& still_wanted) override;
 
 protected:
     void AllocateImage(const std::string& hdu) override;
 
     // How long one GetRegionSpectralData call reads before it hands back what is finished, and how many
-    // channels carta-zarr finishes at a time; zero lets it choose
+    // channels carta-zarr finishes at a time; zero lets it choose.
+    //
+    // As long as the region handler waits between sending partial results. A shorter call would not stop a
+    // profile sooner, since the handler's checks reach a call as it reads, nor let other regions read sooner,
+    // since they do not wait for it; and read in calls of 50 ms, profiles took up to twice as long.
+    //
+    // Protected so that a test can make a call pause after every run, or never.
     std::chrono::milliseconds _region_spectral_time{TARGET_PARTIAL_REGION_TIME};
     std::uint32_t _region_spectral_channels_per_emit = 0;
 
@@ -84,14 +90,22 @@ private:
     // - A call's progress is the fewest channels this thread was handed, of this stokes and of every stokes
     //   the thread read since it last read this one. Those are the stokes this one is combined with, so a
     //   progress of 1 means all of them are finished, whatever another profile of the region read meanwhile.
+    //
+    // Held for a whole call, so that one region's profiles take turns. Another region's do not wait for it:
+    // a region covering a large image reads a whole layer of chunks before it can stop at the deadline.
     struct RegionSpectralPace {
+        std::mutex mutex;
         RegionSpectralKey key;
         std::size_t channels_done = 0;
         std::int64_t reads = 0;
         // By stokes, all of the region's key
         std::map<int, RegionSpectralState> stokes;
+
+        // Starts every stokes of the region again, for another key
+        void Reset(const RegionSpectralKey& other);
     };
 
+    // Held only to find or add a region's pace. A pace is never erased, so it stays where it is once found.
     std::mutex _region_spectral_mutex;
     // By region id
     std::map<int, RegionSpectralPace> _region_spectral;

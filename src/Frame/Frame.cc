@@ -1820,9 +1820,10 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
 }
 
 bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
+    const FileLoader::SpectralReadWanted& still_wanted) {
     // Get spectral data from loader (add image mutex for swizzled data)
-    return _loader->GetRegionSpectralData(region_id, z_range, stokes, mask, origin, _image_mutex, results, progress);
+    return _loader->GetRegionSpectralData(region_id, z_range, stokes, mask, origin, _image_mutex, results, progress, still_wanted);
 }
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,

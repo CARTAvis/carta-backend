@@ -7,11 +7,13 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <limits>
 #include <map>
 #include <mutex>
@@ -771,8 +773,8 @@ TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {
         float progress = 0.0;
         int rounds = 0;
         while (progress < 1.0) {
-            ASSERT_TRUE(loader->GetRegionSpectralData(
-                stokes, AxisRange(0, kDepth - 1), stokes, mask_lattice, casacore::IPosition(2, x0, y0), image_mutex, from_loader, progress))
+            ASSERT_TRUE(loader->GetRegionSpectralData(stokes, AxisRange(0, kDepth - 1), stokes, mask_lattice,
+                casacore::IPosition(2, x0, y0), image_mutex, from_loader, progress, {}))
                 << "stokes=" << stokes;
             ASSERT_LT(++rounds, 100) << "the profile never finished";
         }
@@ -844,7 +846,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataResumesWhereItPaused) {
     whole->OpenFile("");
     std::map<CARTA::StatsType, std::vector<double>> expected;
     float progress = 0.0;
-    ASSERT_TRUE(whole->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, expected, progress));
+    ASSERT_TRUE(whole->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, expected, progress, {}));
     ASSERT_EQ(progress, 1.0f);
 
     PausingZarrLoader paused(kZarrFixture.string());
@@ -853,7 +855,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataResumesWhereItPaused) {
     progress = 0.0;
     int calls = 0;
     while (progress < 1.0f) {
-        ASSERT_TRUE(paused.GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, resumed, progress));
+        ASSERT_TRUE(paused.GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, resumed, progress, {}));
         EXPECT_EQ(FinishedChannels(resumed), static_cast<int>(std::lround(progress * kDepth))) << "a reported channel is final";
         ASSERT_LT(++calls, 100);
     }
@@ -882,21 +884,106 @@ TEST_F(ZarrImageTest, RegionSpectralDataKeepsTheStokesOfARegionInStep) {
     std::map<CARTA::StatsType, std::vector<double>> q, u;
     float q_progress = 0.0, u_progress = 0.0;
     // Q pauses after its first channel; U could read every channel in the time it is given
-    ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
     ASSERT_LT(q_progress, 1.0f);
     loader.ReadFor(std::chrono::seconds(60));
-    ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
     EXPECT_EQ(u_progress, q_progress);
     EXPECT_EQ(FinishedChannels(u), FinishedChannels(q));
 
     // The next round finishes both. Q's call still reports less than 1, because its progress counts U, which
     // is still behind; U's call reports 1.
-    ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
     EXPECT_LT(q_progress, 1.0f);
-    ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
     EXPECT_EQ(u_progress, 1.0f);
     EXPECT_EQ(FinishedChannels(q), kDepth);
     EXPECT_EQ(FinishedChannels(u), kDepth);
+}
+
+// A profile no longer wanted stops part way through a call, as soon as carta-zarr next asks, rather than at the
+// end of the call, and keeps what it finished: the next call goes on to the same profile as one never stopped
+TEST_F(ZarrImageTest, RegionSpectralDataStopsOnceNotWantedAndGoesOnAfter) {
+    const auto mask = BoxMask([](int x, int y) { return (x + y) % 2 == 0; });
+    const casacore::IPosition origin(2, 1, 1);
+    std::mutex image_mutex;
+
+    auto whole = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(whole, nullptr);
+    whole->OpenFile("");
+    std::map<CARTA::StatsType, std::vector<double>> expected;
+    float progress = 0.0;
+    ASSERT_TRUE(whole->GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, expected, progress, {}));
+
+    for (const int wanted_for : {0, 1}) {
+        // A call long enough to read the whole profile, unless it is stopped
+        PausingZarrLoader loader(kZarrFixture.string());
+        loader.OpenFile("");
+        loader.ReadFor(std::chrono::hours(1));
+        int asked = 0;
+        const auto still_wanted = [&]() { return asked++ < wanted_for; };
+        std::map<CARTA::StatsType, std::vector<double>> stopped;
+        progress = 0.0;
+        EXPECT_FALSE(
+            loader.GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, stopped, progress, still_wanted))
+            << "wanted for " << wanted_for;
+        EXPECT_GT(asked, wanted_for) << "the loader did not ask whether the profile was still wanted";
+        EXPECT_EQ(progress, 0.0f);
+
+        std::map<CARTA::StatsType, std::vector<double>> resumed;
+        ASSERT_TRUE(loader.GetRegionSpectralData(0, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, resumed, progress, {}));
+        EXPECT_EQ(progress, 1.0f);
+        EXPECT_EQ(resumed[CARTA::StatsType::NumPixels], expected[CARTA::StatsType::NumPixels]);
+        EXPECT_EQ(resumed[CARTA::StatsType::Sum], expected[CARTA::StatsType::Sum]);
+    }
+}
+
+// One region's profile does not wait for another's to finish a call: a region covering a large image reads a
+// whole layer of chunks in one
+TEST_F(ZarrImageTest, RegionSpectralDataOfOneRegionDoesNotWaitForAnother) {
+    const auto mask = BoxMask([](int, int) { return true; });
+    const casacore::IPosition origin(2, 1, 1);
+    std::mutex image_mutex;
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+
+    // The first region's call stops inside its read, where carta-zarr asks whether it is still wanted, until
+    // the second region has been read or the test gives up
+    std::promise<void> inside;
+    std::promise<void> released;
+    const auto release = released.get_future().share();
+    std::atomic<bool> stopped_once(false);
+    std::thread first([&]() {
+        std::map<CARTA::StatsType, std::vector<double>> results;
+        float progress = 0.0;
+        const auto still_wanted = [&]() {
+            if (!stopped_once.exchange(true)) {
+                inside.set_value();
+                release.wait_for(std::chrono::seconds(10));
+            }
+            return true;
+        };
+        loader->GetRegionSpectralData(1, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, still_wanted);
+    });
+    const bool first_is_reading = inside.get_future().wait_for(std::chrono::seconds(10)) == std::future_status::ready;
+
+    auto second = std::async(std::launch::async, [&]() {
+        std::map<CARTA::StatsType, std::vector<double>> results;
+        float progress = 0.0;
+        for (int call = 0; progress < 1.0f && call < 100; ++call) {
+            if (!loader->GetRegionSpectralData(2, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, {})) {
+                return false;
+            }
+        }
+        return progress == 1.0f;
+    });
+    const bool second_finished = second.wait_for(std::chrono::seconds(5)) == std::future_status::ready;
+    released.set_value();
+    first.join();
+    EXPECT_TRUE(first_is_reading) << "the first region's read never asked whether it was still wanted";
+    EXPECT_TRUE(second_finished) << "the second region waited for the first";
+    EXPECT_TRUE(second.get());
 }
 
 // A stokes behind another of its region still stops after _region_spectral_time, instead of reading up to
@@ -911,16 +998,16 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAStokesCatchingUpPauses) {
     std::map<CARTA::StatsType, std::vector<double>> q, u;
     float q_progress = 0.0, u_progress = 0.0;
     loader.ReadFor(std::chrono::seconds(60));
-    ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
     ASSERT_EQ(u_progress, 1.0f);
 
     loader.ReadFor(std::chrono::milliseconds(0));
-    ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
     EXPECT_LT(q_progress, 1.0f);
     EXPECT_EQ(FinishedChannels(q), 1);
     int calls = 1;
     while (q_progress < 1.0f) {
-        ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress));
+        ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
         ASSERT_LT(++calls, 100);
     }
     EXPECT_EQ(FinishedChannels(q), kDepth);
@@ -938,8 +1025,12 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskIsReadAgain) {
     const auto profile = [&](const casacore::ArrayLattice<casacore::Bool>& mask) {
         std::map<CARTA::StatsType, std::vector<double>> results;
         float progress = 0.0;
-        while (progress < 1.0f) {
-            EXPECT_TRUE(loader->GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress));
+        for (int call = 0; progress < 1.0f; ++call) {
+            if (call == 100 ||
+                !loader->GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, {})) {
+                ADD_FAILURE() << "the profile did not finish";
+                break;
+            }
         }
         return results;
     };
@@ -969,7 +1060,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskOfAsManyPixelsIsReadAgain) 
         float progress = 0.0;
         for (int call = 0; progress < 1.0f; ++call) {
             if (call == 100 ||
-                !loader.GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress)) {
+                !loader.GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, {})) {
                 ADD_FAILURE() << "the profile did not finish";
                 break;
             }
@@ -1029,8 +1120,12 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAResizedRegionIsReadAgain) {
     const auto profile = [&](const std::shared_ptr<FileLoader>& loader, const casacore::ArrayLattice<casacore::Bool>& mask) {
         std::map<CARTA::StatsType, std::vector<double>> results;
         float progress = 0.0;
-        while (progress < 1.0f) {
-            EXPECT_TRUE(loader->GetRegionSpectralData(4, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress));
+        for (int call = 0; progress < 1.0f; ++call) {
+            if (call == 100 ||
+                !loader->GetRegionSpectralData(4, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, {})) {
+                ADD_FAILURE() << "the profile did not finish";
+                break;
+            }
         }
         return results;
     };
@@ -1064,16 +1159,16 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfARegionReadBeforeKeepsTheStokesInStep)
 
     // Q and U of the first mask finished, then Q of the edited one
     loader.ReadFor(std::chrono::seconds(60));
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, first, origin, image_mutex, q, q_progress));
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 2, first, origin, image_mutex, u, u_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, first, origin, image_mutex, q, q_progress, {}));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 2, first, origin, image_mutex, u, u_progress, {}));
     ASSERT_EQ(u_progress, 1.0f);
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, edited, origin, image_mutex, q, q_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, edited, origin, image_mutex, q, q_progress, {}));
 
     // Back to the first mask, with Q pausing after its first channel
     loader.ReadFor(std::chrono::milliseconds(0));
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, first, origin, image_mutex, q, q_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, first, origin, image_mutex, q, q_progress, {}));
     ASSERT_LT(q_progress, 1.0f);
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 2, first, origin, image_mutex, u, u_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 2, first, origin, image_mutex, u, u_progress, {}));
     EXPECT_EQ(u_progress, q_progress);
 }
 
@@ -1089,17 +1184,17 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAStokesReadPartwayBeforeKeepsInStep) {
     float q_progress = 0.0, u_progress = 0.0;
 
     // U's own profile, abandoned after its first channel
-    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
     ASSERT_LT(u_progress, 1.0f);
 
     // Q then U, as for a computed stokes, with U given time to read every channel
-    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
     loader.ReadFor(std::chrono::seconds(60));
-    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
     EXPECT_LE(u_progress, static_cast<float>(FinishedChannels(q)) / kDepth) << "U reported channels Q has not read";
 
-    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress));
-    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
+    ASSERT_TRUE(loader.GetRegionSpectralData(6, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
     EXPECT_EQ(u_progress, 1.0f);
     EXPECT_EQ(FinishedChannels(q), kDepth);
 }
@@ -1118,17 +1213,17 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfTwoProfilesAtOnceReportsWhatEachWasHan
     float a_progress = 0.0, b_progress = 0.0;
     std::thread profile_a([&] {
         // A reads Q partway
-        ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, a_q, a_progress));
+        ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, a_q, a_progress, {}));
         ASSERT_LT(a_progress, 1.0f);
         // B reads Q and U to the end
         on_a_thread([&] {
             loader.ReadFor(std::chrono::seconds(60));
-            ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, b_q, b_progress));
-            ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, b_u, b_progress));
+            ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, b_q, b_progress, {}));
+            ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, b_u, b_progress, {}));
             EXPECT_EQ(b_progress, 1.0f);
         });
         // A reads U: what it was handed of Q is not finished, whatever B read
-        ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, a_u, a_progress));
+        ASSERT_TRUE(loader.GetRegionSpectralData(8, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, a_u, a_progress, {}));
         EXPECT_LE(a_progress, static_cast<float>(FinishedChannels(a_q)) / kDepth);
     });
     profile_a.join();
@@ -1145,11 +1240,11 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfSomeChannels) {
 
     std::map<CARTA::StatsType, std::vector<double>> part, whole;
     float progress = 0.0;
-    ASSERT_TRUE(loader.GetRegionSpectralData(9, AxisRange(1, 1), 0, mask, origin, image_mutex, part, progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(9, AxisRange(1, 1), 0, mask, origin, image_mutex, part, progress, {}));
     EXPECT_EQ(progress, 1.0f);
     ASSERT_EQ(part[CARTA::StatsType::Sum].size(), 1u);
 
-    ASSERT_TRUE(loader.GetRegionSpectralData(9, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, whole, progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(9, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, whole, progress, {}));
     EXPECT_EQ(progress, 1.0f);
     ASSERT_EQ(whole[CARTA::StatsType::Sum].size(), static_cast<std::size_t>(kDepth));
     EXPECT_EQ(FinishedChannels(whole), kDepth);
@@ -1171,7 +1266,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfOnlyFlaggedPixels) {
 
     std::map<CARTA::StatsType, std::vector<double>> profile;
     float progress = 0.0;
-    ASSERT_TRUE(loader.GetRegionSpectralData(10, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, profile, progress));
+    ASSERT_TRUE(loader.GetRegionSpectralData(10, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, profile, progress, {}));
     EXPECT_EQ(progress, 1.0f);
     EXPECT_EQ(profile.count(CARTA::StatsType::FluxDensity), 0u);
     for (int z = 0; z < kDepth; ++z) {
@@ -1196,6 +1291,6 @@ TEST_F(ZarrImageTest, RegionSpectralDataRefusesAStokesTheImageDoesNotHave) {
     std::map<CARTA::StatsType, std::vector<double>> profile;
     float progress = 0.0;
     EXPECT_FALSE(loader.GetRegionSpectralData(
-        11, AxisRange(0, kDepth - 1), CARTA::PolarizationType::Plinear, mask, origin, image_mutex, profile, progress));
-    EXPECT_FALSE(loader.GetRegionSpectralData(11, AxisRange(0, kDepth - 1), kStokes, mask, origin, image_mutex, profile, progress));
+        11, AxisRange(0, kDepth - 1), CARTA::PolarizationType::Plinear, mask, origin, image_mutex, profile, progress, {}));
+    EXPECT_FALSE(loader.GetRegionSpectralData(11, AxisRange(0, kDepth - 1), kStokes, mask, origin, image_mutex, profile, progress, {}));
 }

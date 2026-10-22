@@ -185,7 +185,8 @@ public:
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
     bool GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress,
+        const FileLoader::SpectralReadWanted& still_wanted);
 
     // Moments calculation
     bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,

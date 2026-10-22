@@ -171,6 +171,13 @@ ZarrLoader::RegionSpectralKey ZarrLoader::RegionSpectralKey::Of(
     return key;
 }
 
+void ZarrLoader::RegionSpectralPace::Reset(const RegionSpectralKey& other) {
+    key = other;
+    channels_done = 0;
+    reads = 0;
+    stokes.clear();
+}
+
 bool ZarrLoader::RegionSpectralKey::operator==(const RegionSpectralKey& other) const {
     return x == other.x && y == other.y && width == other.width && height == other.height && mask_hash == other.mask_hash &&
            mask_pixels == other.mask_pixels && z_from == other.z_from && z_to == other.z_to;
@@ -181,7 +188,7 @@ bool ZarrLoader::RegionSpectralKey::operator==(const RegionSpectralKey& other) c
 // _region_spectral_time, and the next call continues from there, so no chunk is read twice.
 bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& /*image_mutex*/,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress, const SpectralReadWanted& still_wanted) {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
     if (!image || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
         return false;
@@ -201,12 +208,15 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     const bool has_flux = !std::isnan(beam_area);
 
     const auto key = RegionSpectralKey::Of(origin, mask_array, range);
-    std::scoped_lock lock(_region_spectral_mutex);
-    auto& pace = _region_spectral[region_id];
+    auto& pace = [&]() -> RegionSpectralPace& {
+        std::scoped_lock regions_lock(_region_spectral_mutex);
+        return _region_spectral[region_id];
+    }();
+    std::scoped_lock lock(pace.mutex);
     if (!(pace.key == key)) {
         // Every stokes of the region starts again. One kept from an earlier read of the same region may already
         // be finished, and would then report a computed stokes as finished while the others are not.
-        pace = RegionSpectralPace{key};
+        pace.Reset(key);
     }
     auto [found, added] = pace.stokes.try_emplace(stokes);
     auto& state = found->second;
@@ -248,6 +258,9 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         // Counted over the whole range rather than what is left of it, so that a profile read over several
         // calls keeps to one kind of pool
         options.control.cache_pool = PoolForSpectrum(*image, origin(0), origin(1), mask_shape(0), mask_shape(1), range.from, channels);
+        // Stops part way through a run once the profile is not wanted, rather than at the end of the call: a
+        // run of a region covering a large image is a whole layer of chunks
+        options.control.cancellation_requested = [&]() { return still_wanted && !still_wanted(); };
         const auto deadline = std::chrono::steady_clock::now() + _region_spectral_time;
         bool paused(false);
         // Looked up once rather than for every channel
@@ -301,10 +314,14 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
             return true;
         };
         const auto reduced = image->ZarrImage().ReduceSpectral(request, store, options);
-        // Stopping at the deadline is this loader's own choice; carta-zarr reports it as cancelled, which is
-        // not an error
+        // Stopping at the deadline is this loader's own choice, and stopping for a profile no longer wanted the
+        // caller's; carta-zarr reports both as cancelled, which is not an error. The channels finished before
+        // a stop are kept, and the next call goes on from them.
         if (!reduced && !paused) {
-            spdlog::warn("Could not reduce a region over the spectrum of a Zarr image: {}", reduced.error().message);
+            if (reduced.error().code != carta::zarr::ErrorCode::cancelled) {
+                spdlog::warn("Could not reduce a region over the spectrum of a Zarr image: {}", reduced.error().message);
+            }
+            pace.channels_done = std::max(pace.channels_done, state.channels_done);
             return false;
         }
         pace.channels_done = std::max(pace.channels_done, state.channels_done);

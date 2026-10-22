@@ -104,6 +104,9 @@ public:
     // will be. Returning false stops the read. A loader that reads the spectrum in one go need not call it;
     // the caller sends the whole spectrum when the read returns either way.
     using SpectralReadProgress = std::function<bool(std::size_t channels_done, std::size_t channels_total)>;
+    // Called as a region spectral profile is read, on the thread reading it: whether the profile is still
+    // wanted. The caller checks it between calls too, so a loader whose calls are short need not call it.
+    using SpectralReadWanted = std::function<bool()>;
 
     // Spectral profiles for cursor and region
     virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
@@ -112,7 +115,7 @@ public:
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress, const SpectralReadWanted& still_wanted);
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual bool GetChunk(
