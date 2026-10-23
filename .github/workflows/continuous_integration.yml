@@ -158,6 +158,8 @@ jobs:
         run: |
           uname -a
           sw_vers
+          echo "++++++++++++++++++ LISTING ROOT DIR"
+          ls -lh /
 
       - name: Build backend  
         shell: bash
