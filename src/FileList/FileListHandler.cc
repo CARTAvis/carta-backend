@@ -215,37 +215,46 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                     std::cerr << "+++++++++++++ in GetFileList while else" << std::endl;
                     try {
                         if (region_list) {
+                            std::cerr << "+++++++++++++ in GetFileList region list" << std::endl;
                             if (cc_file.isRegular(true)) {
                                 auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
 
                                 if (file_type == CARTA::UNKNOWN) {
+                                    std::cerr << "+++++++++++++ in GetFileList unknown" << std::endl;
                                     // Contents did not work, check extension (e.g. DS9 with no header)
                                     file_type = GuessRegionType(full_path, false);
                                 }
 
                                 if (file_type != CARTA::UNKNOWN) {
+                                    std::cerr << "+++++++++++++ in GetFileList not unknown" << std::endl;
                                     // Add file: known region file
                                     auto& file_info = *file_list_response.add_files();
                                     FillRegionFileInfo(file_info, full_path, file_type, false);
                                 }
                             } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
                                        CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN) {
+                                std::cerr << "+++++++++++++ in GetFileList add directory" << std::endl;
                                 // Add directory: not image type
                                 Message::AddDirectory(
                                     file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                             }
                         } else {
                             // Image list
+                            std::cerr << "+++++++++++++ in GetFileList image list" << std::endl;
                             bool add_image_file(false);
                             CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
 
                             if (cc_file.isRegular(true)) {
+                                std::cerr << "+++++++++++++ in GetFileList is regular" << std::endl;
                                 // Add file if known image file
+                                std::cerr << "+++++++++++++ " << full_path << std::endl;
                                 file_type = GuessImageType(full_path, filter_mode == CARTA::Content);
                                 add_image_file = file_type != CARTA::UNKNOWN;
                             } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
+                                std::cerr << "+++++++++++++ in GetFileList is directory and executble" << std::endl;
                                 // Determine if image or directory for image list
                                 std::string message;
+                                std::cerr << "+++++++++++++ " << full_path << std::endl;
                                 file_type = FolderImageType(full_path, message);
                                 switch (file_type) {
                                     case CARTA::FileType::CASA:
@@ -271,7 +280,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                             }
 
                             if (add_image_file) {
+                                std::cerr << "+++++++++++++ in GetFileList add image file" << std::endl;
                                 auto file_info = Message::AddFile(file_list_response, name_only);
+                                std::cerr << "+++++++++++++ " << full_path << std::endl;
                                 FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
                                 info_loader.FillFileInfo(*file_info);
                             }
