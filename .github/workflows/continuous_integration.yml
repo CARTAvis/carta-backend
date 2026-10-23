@@ -160,6 +160,10 @@ jobs:
           sw_vers
           echo "++++++++++++++++++ LISTING ROOT DIR"
           ls -lh /
+          echo "================== LISTING REAL HOME PATH"
+          ls -lh /System/Volumes/Data/home/
+          echo "================== LISTING REAL HOME PARENT"
+          ls -lh /System/Volumes/Data/
           echo "------------------ LISTING HOME DIR"
           ls -lh /home/
 
