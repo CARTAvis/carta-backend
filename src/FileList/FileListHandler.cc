@@ -34,24 +34,20 @@ FileListHandler::FileListHandler(const std::string& top_level_folder, const std:
       _regionlist_folder(INVALID_PATH_VALUE) {}
 
 void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
-    std::cerr << "+++++++++++++ in OnFileListRequest 1" << std::endl;
     // use scoped lock so that it only processes the file list a time for one user
     // TODO: Do we still need a lock here if there are no API keys?
     std::scoped_lock lock(_file_list_mutex);
     std::string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == _filelist_folder) {
-        std::cerr << "+++++++++++++ in OnFileListRequest 2" << std::endl;
         return;
     }
 
     _filelist_folder = folder;
 
-    std::cerr << "+++++++++++++ in OnFileListRequest 3" << std::endl;
     // get file list response and result message if any
     GetFileList(response, folder, result_msg, request.filter_mode());
 
-    std::cerr << "+++++++++++++ in OnFileListRequest 4" << std::endl;
     _filelist_folder = INVALID_PATH_VALUE; // ready for next file list request
 }
 
@@ -73,46 +69,38 @@ void FileListHandler::GetRelativePath(std::string& folder) {
 
 void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, const std::string& folder, ResultMsg& result_msg,
     CARTA::FileListFilterMode filter_mode, bool region_list) {
-    std::cerr << "+++++++++++++ in GetFileList 1" << std::endl;
     // Fill FileListResponse message for folder (or folder path).
     std::string requested_folder(folder);
 
     if (requested_folder.empty() || requested_folder.compare(".") == 0) {
-        std::cerr << "+++++++++++++ in GetFileList 2" << std::endl;
         // Resolve empty folder or current dir "." to top folder
         requested_folder = _top_level_folder;
     } else if (requested_folder.find("$BASE") != std::string::npos) {
-        std::cerr << "+++++++++++++ in GetFileList 3" << std::endl;
         // Resolve $BASE keyword to starting folder
         casacore::String folder_string(requested_folder);
         folder_string.gsub("$BASE", _starting_folder);
         requested_folder = folder_string;
     }
 
-    std::cerr << "+++++++++++++ in GetFileList 4" << std::endl;
     // Normalize requested folder relative to top (top + requested = full path)
     GetRelativePath(requested_folder);
 
-    std::cerr << "+++++++++++++ in GetFileList 5" << std::endl;
     // Resolve path (., .., ~, symlinks)
     std::string message;
     auto resolved_path = GetResolvedFilename(_top_level_folder, requested_folder, "", message);
 
     // Check resolved path
     if (resolved_path.empty()) {
-        std::cerr << "+++++++++++++ in GetFileList 6" << std::endl;
         file_list_response.set_success(false);
         file_list_response.set_message("File list failed: " + message);
         return;
     } else if ((_top_level_folder.find(resolved_path) == 0) && (resolved_path.length() < _top_level_folder.length())) {
-        std::cerr << "+++++++++++++ in GetFileList 7" << std::endl;
         // path is above top folder!
         file_list_response.set_success(false);
         file_list_response.set_message("Forbidden path.");
         return;
     }
 
-    std::cerr << "+++++++++++++ in GetFileList 8" << std::endl;
     casacore::File folder_path(resolved_path);
     if (!folder_path.isDirectory()) {
         file_list_response.set_success(false);
@@ -122,11 +110,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
 
     // Set response parent and directory
     if (requested_folder == ".") {
-        std::cerr << "+++++++++++++ in GetFileList 9" << std::endl;
         // is top folder; no directory
         file_list_response.set_parent(requested_folder);
     } else {
-        std::cerr << "+++++++++++++ in GetFileList 10" << std::endl;
         // Make full path to separate directory and base names
         casacore::Path full_path(_top_level_folder);
         full_path.append(requested_folder);
@@ -142,14 +128,12 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
     bool list_all_files(filter_mode == CARTA::AllFiles);
 
     if (list_all_files) {
-        std::cerr << "+++++++++++++ in GetFileList 11" << std::endl;
         // Check if input directory is an image
         std::string message;
         casacore::String full_path(folder_path.path().absoluteName());
         auto carta_file_type = FolderImageType(full_path, message);
 
         if (carta_file_type != CARTA::FileType::UNKNOWN) {
-            std::cerr << "+++++++++++++ in GetFileList 12" << std::endl;
             // Add image with file info
             // Directory is path above image
             casacore::Path image_path(full_path);
@@ -168,7 +152,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
             file_list_response.set_success(true);
             return;
         } else if (!message.empty()) {
-            std::cerr << "+++++++++++++ in GetFileList 13" << std::endl;
             // Unsupported image type
             file_list_response.set_success(false);
             file_list_response.set_message(message);
@@ -189,7 +172,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
         ListProgressReporter progress_reporter(start_dir.nEntries(), _progress_callback);
 
         while (!dir_iter.pastEnd()) {
-            std::cerr << "+++++++++++++ in GetFileList while" << std::endl;
             if (_stop_getting_file_list) {
                 file_list_response.set_cancel(true);
                 break;
@@ -203,7 +185,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                 std::string name_only = cc_file.path().baseName();
 
                 if (list_all_files) {
-                    std::cerr << "+++++++++++++ in GetFileList while if" << std::endl;
                     if (cc_file.isRegular(true)) {
                         auto file_info = Message::AddFile(file_list_response, name_only);
                         FileInfoLoader info_loader = FileInfoLoader(full_path, CARTA::FileType::UNKNOWN);
@@ -212,49 +193,39 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                         Message::AddDirectory(file_list_response, name_only, cc_file.modifyTime());
                     }
                 } else {
-                    std::cerr << "+++++++++++++ in GetFileList while else" << std::endl;
                     try {
                         if (region_list) {
-                            std::cerr << "+++++++++++++ in GetFileList region list" << std::endl;
                             if (cc_file.isRegular(true)) {
                                 auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
 
                                 if (file_type == CARTA::UNKNOWN) {
-                                    std::cerr << "+++++++++++++ in GetFileList unknown" << std::endl;
                                     // Contents did not work, check extension (e.g. DS9 with no header)
                                     file_type = GuessRegionType(full_path, false);
                                 }
 
                                 if (file_type != CARTA::UNKNOWN) {
-                                    std::cerr << "+++++++++++++ in GetFileList not unknown" << std::endl;
                                     // Add file: known region file
                                     auto& file_info = *file_list_response.add_files();
                                     FillRegionFileInfo(file_info, full_path, file_type, false);
                                 }
                             } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
                                        CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN) {
-                                std::cerr << "+++++++++++++ in GetFileList add directory" << std::endl;
                                 // Add directory: not image type
                                 Message::AddDirectory(
                                     file_list_response, name_only, cc_file.modifyTime(), GetNumItems(cc_file.path().absoluteName()));
                             }
                         } else {
                             // Image list
-                            std::cerr << "+++++++++++++ in GetFileList image list" << std::endl;
                             bool add_image_file(false);
                             CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
 
                             if (cc_file.isRegular(true)) {
-                                std::cerr << "+++++++++++++ in GetFileList is regular" << std::endl;
                                 // Add file if known image file
-                                std::cerr << "+++++++++++++ " << full_path << std::endl;
                                 file_type = GuessImageType(full_path, filter_mode == CARTA::Content);
                                 add_image_file = file_type != CARTA::UNKNOWN;
                             } else if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
-                                std::cerr << "+++++++++++++ in GetFileList is directory and executble" << std::endl;
                                 // Determine if image or directory for image list
                                 std::string message;
-                                std::cerr << "+++++++++++++ " << full_path << std::endl;
                                 file_type = FolderImageType(full_path, message);
                                 switch (file_type) {
                                     case CARTA::FileType::CASA:
@@ -280,16 +251,13 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                             }
 
                             if (add_image_file) {
-                                std::cerr << "+++++++++++++ in GetFileList add image file" << std::endl;
                                 auto file_info = Message::AddFile(file_list_response, name_only);
-                                std::cerr << "+++++++++++++ " << full_path << std::endl;
                                 FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
                                 info_loader.FillFileInfo(*file_info);
                             }
                         }
                     } catch (casacore::AipsError& err) {
                         // RegularFileIO error, skip item
-                        std::cerr << "+++++++++++++ in GetFileList catch" << std::endl;
                     }
                 }
             }
@@ -300,7 +268,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
             auto dt = progress_reporter.UpdateProgress();
 
             // report the progress if it fits the conditions
-            std::cerr << "+++++++++++++ in GetFileList 14" << std::endl;
             if (!_first_report_made && dt > FILE_LIST_FIRST_PROGRESS_AFTER_SECS) {
                 progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
                 _first_report_made = true;
@@ -309,7 +276,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
             }
         }
     } catch (casacore::AipsError& err) {
-        std::cerr << "+++++++++++++ in GetFileList catch 2" << std::endl;
         result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};
         file_list_response.set_success(false);
         file_list_response.set_message(err.getMesg());
