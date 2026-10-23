@@ -179,6 +179,8 @@ jobs:
           /usr/libexec/od_user_homes $USER || echo "++++++++++++++++++ EXIT STATUS: $?"
           echo "++++++++++++++++++ dsconfigad -show"
           dsconfigad -show
+          echo "++++++++++++++++++ id -u $USER"
+          id -u $USER || echo "++++++++++++++++++ EXIT STATUS: $?"
           echo "++++ END ++++"
 
       #- name: Build backend  
