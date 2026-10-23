@@ -173,8 +173,8 @@ jobs:
           #echo "------------------ LISTING HOME DIR"
           #ls -lh /home/
           echo "++++++++++++++++++ MY USERNAME: $USER"
-          echo "++++++++++++++++++ TRYING TO CALL /usr/libexec/od_user_homes acdc"
-          /usr/libexec/od_user_homes acdc
+          echo "++++++++++++++++++ ls -lh /usr/libexec/od_user_homes"
+          ls -lh /usr/libexec/od_user_homes
           echo "++++++++++++++++++ TRYING TO CALL /usr/libexec/od_user_homes $USER"
           /usr/libexec/od_user_homes $USER
           echo "++++ END ++++"
