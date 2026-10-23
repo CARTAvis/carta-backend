@@ -1051,7 +1051,9 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         Message::AddComputedEntry(extended_info, "Celestial frame", direction_frame);
     }
 
-    if (!found_specsys) {
+    if ((!found_specsys 
+        || specsys.empty()) 
+        && spectral_ctype.rfind("VELO", 0) == 0) {
         // Set if appended to CTYPE3 rather than in SPECSYS
         SplitCtypeDescriptor(spectral_ctype, specsys);
     }
