@@ -66,7 +66,9 @@ public:
         std::shared_ptr<FileListHandler> file_list_handler = std::make_shared<FileListHandler>(top_level_folder, starting_folder);
         CARTA::FileListResponse response;
         FileListHandler::ResultMsg result_msg;
+        std::cerr << "+++++++++++ before" << std::endl;
         file_list_handler->OnFileListRequest(request, response, result_msg);
+        std::cerr << "+++++++++++ after" << std::endl;
 
         EXPECT_EQ(response.success(), expected_success);
         if (!response.success()) {
