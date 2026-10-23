@@ -158,8 +158,9 @@ jobs:
         run: |
           uname -a
           sw_vers
-          echo "++++++++++++++++++ LISTING ROOT DIR"
-          ls -lh /
+        
+          echo "++++++++++++++++++ MOUNTED VOLUMES"
+          mount
           echo "================== LISTING REAL HOME PARENT"
           ls -lh /System/Volumes/Data/
           echo "================== LISTING REAL HOME AS DIR"
