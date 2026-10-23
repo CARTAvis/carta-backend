@@ -161,7 +161,7 @@ jobs:
           echo "++++++++++++++++++ LISTING ROOT DIR"
           ls -lh /
           echo "------------------ LISTING HOME DIR"
-          ls -lh /home
+          ls -lh /home/
 
       - name: Build backend  
         shell: bash
