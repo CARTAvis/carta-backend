@@ -176,8 +176,7 @@ jobs:
           echo "++++++++++++++++++ ls -lh /usr/libexec/od_user_homes"
           ls -lh /usr/libexec/od_user_homes
           echo "++++++++++++++++++ TRYING TO CALL /usr/libexec/od_user_homes $USER"
-          /usr/libexec/od_user_homes $USER
-          echo "++++++++++++++++++ EXIT STATUS: $?"
+          /usr/libexec/od_user_homes $USER || echo "++++++++++++++++++ EXIT STATUS: $?"
           echo "++++ END ++++"
 
       #- name: Build backend  
