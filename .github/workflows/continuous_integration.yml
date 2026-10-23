@@ -158,7 +158,6 @@ jobs:
         run: |
           uname -a
           sw_vers
-        
           echo "++++++++++++++++++ MOUNTED VOLUMES"
           mount
           echo "================== LISTING REAL HOME PARENT"
