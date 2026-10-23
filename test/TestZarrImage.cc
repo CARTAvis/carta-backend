@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <map>
 #include <regex>
 #include <sstream>
@@ -478,9 +479,8 @@ TEST_F(ZarrImageTest, AReadIntoPartOfALargerArrayFillsOnlyThatPart) {
     }
 }
 
-// A loader's masked read asks for each cursor's pixels and then its mask, and every mask is the one just
-// kept: none is left over
-TEST_F(ZarrImageTest, ALoaderReadUsesEveryKeptMask) {
+// A loader reads a Zarr slice's pixels in one read, flagged pixels NaN, and asks for no mask: none is kept for it
+TEST_F(ZarrImageTest, ALoaderReadKeepsNoMask) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
@@ -513,6 +513,71 @@ TEST_F(ZarrImageTest, AChunkThatWillNotDecodeFailsOnlyItsRead) {
     const casacore::Slicer whole(casacore::IPosition(4, 0, 0, 1, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
     image.getSlice(pixels, whole);
     EXPECT_FLOAT_EQ(pixels(casacore::IPosition(4, 1, 0, 0, 0)), ExpectedValue(1, 0, 1, 0));
+}
+
+// A loader reads an infinite pixel as NaN, as it reads a flagged one, so that nothing that skips NaN meets one
+TEST_F(ZarrImageTest, ALoaderReadsAnInfinitePixelAsNaN) {
+    // The first chunk written again uncompressed, with an infinity at two pixels that are not flagged
+    const auto copy = EditedFixture("infinite_pixels.zarr", [](const std::string& text) {
+        return std::regex_replace(text, std::regex(R"(,\s*\{\s*"name"\s*:\s*"zstd"\s*,\s*"configuration"\s*:\s*\{[^}]*\}\s*\})"), "");
+    });
+    const std::map<std::pair<int, int>, float> infinite{
+        {{0, 1}, std::numeric_limits<float>::infinity()}, {{1, 0}, -std::numeric_limits<float>::infinity()}};
+    std::vector<float> chunk;
+    for (int x = 0; x < 2; ++x) {
+        for (int y = 0; y < kHeight; ++y) {
+            const auto found = infinite.find({x, y});
+            chunk.push_back(found == infinite.end() ? ExpectedValue(x, y, 0, 0) : found->second);
+        }
+    }
+    std::ofstream(copy / "SKY" / "c" / "0" / "0" / "0" / "0" / "0", std::ios::binary | std::ios::trunc)
+        .write(reinterpret_cast<const char*>(chunk.data()), static_cast<std::streamsize>(chunk.size() * sizeof(float)));
+
+    auto loader = FileLoader::GetLoader(copy.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    const casacore::Slicer slicer(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, 2, kHeight, 1, 1));
+    casacore::Array<float> data(slicer.length());
+    ASSERT_TRUE(loader->GetSlice(data, StokesSlicer(StokesSource(), slicer)));
+    // And into an array that is not contiguous, a part of a larger one, which the loader reads a cursor at a time
+    casacore::Array<float> larger(casacore::IPosition(4, 3, kHeight, 1, 1), 7.0f);
+    casacore::Array<float> part = larger(casacore::Slicer(casacore::IPosition(4, 0, 0, 0, 0), slicer.length()));
+    ASSERT_FALSE(part.contiguousStorage());
+    ASSERT_TRUE(loader->GetSlice(part, StokesSlicer(StokesSource(), slicer)));
+    for (const auto& read : {data, part}) {
+        for (int x = 0; x < 2; ++x) {
+            for (int y = 0; y < kHeight; ++y) {
+                const float value = read(casacore::IPosition(4, x, y, 0, 0));
+                if (infinite.count({x, y}) || !ExpectedFlag(x, y)) {
+                    EXPECT_TRUE(std::isnan(value)) << "x=" << x << " y=" << y << " value=" << value;
+                } else {
+                    EXPECT_FLOAT_EQ(value, ExpectedValue(x, y, 0, 0)) << "x=" << x << " y=" << y;
+                }
+            }
+        }
+    }
+    // The rest of the larger array is left as it was
+    for (int y = 0; y < kHeight; ++y) {
+        EXPECT_FLOAT_EQ(larger(casacore::IPosition(4, 2, y, 0, 0)), 7.0f) << "y=" << y;
+    }
+}
+
+// A loader's read of a slice with a chunk that will not decode fails, and its other slices still read
+TEST_F(ZarrImageTest, ALoaderReadOfAChunkThatWillNotDecodeFails) {
+    const auto copy = EditedFixture("loader_broken_chunk.zarr", [](const std::string& text) { return text; });
+    const auto chunk = copy / "SKY" / "c" / "0" / "0" / "0" / "0" / "0";
+    std::filesystem::resize_file(chunk, std::filesystem::file_size(chunk) / 2);
+
+    auto loader = FileLoader::GetLoader(copy.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    const casacore::Slicer broken(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    casacore::Array<float> data(broken.length());
+    EXPECT_FALSE(loader->GetSlice(data, StokesSlicer(StokesSource(), broken)));
+
+    const casacore::Slicer whole(casacore::IPosition(4, 0, 0, 1, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    ASSERT_TRUE(loader->GetSlice(data, StokesSlicer(StokesSource(), whole)));
+    EXPECT_FLOAT_EQ(data(casacore::IPosition(4, 1, 0, 0, 0)), ExpectedValue(1, 0, 1, 0));
 }
 
 // Two threads reading their own planes of one image each get their own pixels and masks
