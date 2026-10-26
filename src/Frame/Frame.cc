@@ -1951,7 +1951,9 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     output_filename = abs_path / output_filename;
 
     if (fs::exists(output_filename)) {
-        if (output_filename.string() == in_file) {
+        // Compare the files themselves, since the output path may reach the source image through a symbolic link
+        std::error_code ec;
+        if (fs::equivalent(output_filename, in_file, ec)) {
             message = "Cannot overwrite the source image.";
         } else if (fs::is_other(output_filename)) {
             // Not a file, directory, or symlink
