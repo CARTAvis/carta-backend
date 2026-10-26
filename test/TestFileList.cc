@@ -140,8 +140,8 @@ TEST_F(FileListTest, SetTopLevelFolder) {
 
     // Request file list for default top folder "/"
     // 0 image files, > 0 subdirectories
-    // auto request5 = FileListTest::FileListRequest("");
-    // TestFileListSubdirectories("/", "", request5);
+    auto request5 = FileListTest::FileListRequest("");
+    TestFileListSubdirectories("/", "", request5);
 }
 
 TEST_F(FileListTest, SetStartingFolder) {
