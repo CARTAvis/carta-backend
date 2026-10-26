@@ -251,6 +251,7 @@ public:
 
     FRIEND_TEST(FileExtInfoLoaderTest, FitsHistoryEntries);
     FRIEND_TEST(FileExtInfoLoaderTest, FitsPathIsNotCfitsioSyntax);
+    FRIEND_TEST(FileExtInfoLoaderTest, Issue1620HistoryBeamHeaderEntries);
 };
 
 TEST_F(FileInfoLoaderTest, CasaFile) {
@@ -424,6 +425,33 @@ TEST_F(FileExtInfoLoaderTest, FitsSaveNameIsNotCfitsioSyntax) {
     EXPECT_TRUE(save("x.fits"));
     EXPECT_TRUE(fs::exists(tmp / "x.fits"));
     fs::remove_all(tmp);
+}
+
+TEST_F(FileExtInfoLoaderTest, Issue1620HistoryBeamHeaderEntries) {
+    // The beam is only in a HISTORY card (BMAJ twice BMIN), so BMAJ and BMIN are derived entries that must keep major and minor axes
+    // in order.
+    const fs::path folder = Issues("1620");
+    const std::string filename("history_beam.fits");
+
+    TestSession t_session;
+    string message;
+    std::string full_name;
+    std::string hdu;
+    CARTA::FileInfoExtended extended_info;
+    CARTA::FileInfo file_info;
+    bool support_aips_beam(true);
+    ASSERT_TRUE(t_session.FillExtendedFileInfo(extended_info, file_info, folder, filename, hdu, support_aips_beam, message, full_name));
+
+    std::map<std::string, double> beam_entries;
+    for (const auto& entry : extended_info.header_entries()) {
+        if (entry.comment() == "extracted from HISTORY") {
+            beam_entries[entry.name()] = entry.numeric_value();
+        }
+    }
+    ASSERT_EQ(beam_entries.size(), 3u);
+    EXPECT_DOUBLE_EQ(beam_entries["BMAJ"], 2.7778E-04);
+    EXPECT_DOUBLE_EQ(beam_entries["BMIN"], 1.3889E-04);
+    EXPECT_DOUBLE_EQ(beam_entries["BPA"], 30.0);
 }
 
 TEST_F(SessionFileInfoTest, FitsFile) {
