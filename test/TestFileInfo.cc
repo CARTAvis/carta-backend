@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <fitsio.h>
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
@@ -205,6 +206,7 @@ public:
     }
 
     FRIEND_TEST(FileExtInfoLoaderTest, FitsHistoryEntries);
+    FRIEND_TEST(FileExtInfoLoaderTest, FitsCelestialFrame);
 };
 
 TEST_F(FileInfoLoaderTest, CasaFile) {
@@ -263,6 +265,75 @@ TEST_F(FileExtInfoLoaderTest, FitsHistoryEntries) {
         }
     }
     EXPECT_EQ(num_history_entries, 15);
+}
+
+TEST_F(FileExtInfoLoaderTest, FitsCelestialFrame) {
+    // RADESYS defines the celestial frame, and EQUINOX only qualifies FK4 and FK5
+    struct FrameCase {
+        std::string ctype1;
+        std::string ctype2;
+        std::string radesys; // omitted if empty
+        double equinox;      // omitted if NaN
+        std::string expected_frame;
+    };
+    const double no_equinox = std::numeric_limits<double>::quiet_NaN();
+    const std::vector<FrameCase> cases = {
+        {"RA---TAN", "DEC--TAN", "ICRS", 2000.0, "ICRS"},
+        {"RA---TAN", "DEC--TAN", "ICRS", no_equinox, "ICRS"},
+        {"RA---TAN", "DEC--TAN", "FK5", 2000.0, "FK5, J2000"},
+        {"RA---TAN", "DEC--TAN", "FK4", 1950.0, "FK4, B1950"},
+        {"RA---TAN", "DEC--TAN", "", 2000.0, "FK5, J2000"},
+        {"RA---TAN", "DEC--TAN", "", 1950.0, "FK4, B1950"},
+        {"GLON-CAR", "GLAT-CAR", "", 2000.0, "GALACTIC"},
+    };
+
+    const fs::path folder = TestRoot() / "data" / "generated";
+    const std::string filename("celestial_frame.fits");
+
+    for (const auto& frame_case : cases) {
+        SCOPED_TRACE(frame_case.ctype1 + " RADESYS=" + frame_case.radesys + " EQUINOX=" + std::to_string(frame_case.equinox));
+        {
+            fitsfile* fptr(nullptr);
+            int status(0);
+            long naxes[2] = {4, 4};
+            fits_create_file(&fptr, ("!" + (folder / filename).string()).c_str(), &status);
+            fits_create_img(fptr, FLOAT_IMG, 2, naxes, &status);
+            fits_update_key_str(fptr, "CTYPE1", frame_case.ctype1.c_str(), nullptr, &status);
+            fits_update_key_str(fptr, "CTYPE2", frame_case.ctype2.c_str(), nullptr, &status);
+            double crval(10.0), cdelt(0.001), crpix(2.0);
+            for (const char* axis : {"1", "2"}) {
+                fits_update_key_dbl(fptr, (std::string("CRVAL") + axis).c_str(), crval, 8, nullptr, &status);
+                fits_update_key_dbl(fptr, (std::string("CDELT") + axis).c_str(), cdelt, 8, nullptr, &status);
+                fits_update_key_dbl(fptr, (std::string("CRPIX") + axis).c_str(), crpix, 8, nullptr, &status);
+                fits_update_key_str(fptr, (std::string("CUNIT") + axis).c_str(), "deg", nullptr, &status);
+            }
+            if (!frame_case.radesys.empty()) {
+                fits_update_key_str(fptr, "RADESYS", frame_case.radesys.c_str(), nullptr, &status);
+            }
+            if (!std::isnan(frame_case.equinox)) {
+                fits_update_key_dbl(fptr, "EQUINOX", frame_case.equinox, 6, nullptr, &status);
+            }
+            fits_close_file(fptr, &status);
+            ASSERT_EQ(status, 0);
+        }
+
+        TestSession t_session;
+        string message;
+        std::string full_name;
+        std::string hdu;
+        CARTA::FileInfoExtended extended_info;
+        CARTA::FileInfo file_info;
+        bool support_aips_beam(false);
+        ASSERT_TRUE(t_session.FillExtendedFileInfo(extended_info, file_info, folder, filename, hdu, support_aips_beam, message, full_name));
+
+        std::string celestial_frame;
+        for (const auto& entry : extended_info.computed_entries()) {
+            if (entry.name() == "Celestial frame") {
+                celestial_frame = entry.value();
+            }
+        }
+        EXPECT_EQ(celestial_frame, frame_case.expected_frame);
+    }
 }
 
 TEST_F(SessionFileInfoTest, FitsFile) {

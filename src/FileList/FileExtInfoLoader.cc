@@ -1033,20 +1033,20 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
 
     if (found_radesys || found_frame) {
         std::string direction_frame;
-        if (found_frame) {
-            if (frame == "J2000") {
-                direction_frame = "FK5, J2000";
-            } else if (frame == "B1950") {
-                direction_frame = "FK4, B1950";
-            } else if (frame == "ICRS") {
-                direction_frame = "ICRS, J2000";
-            } else {
-                direction_frame = frame;
-            }
-        } else if (found_radesys) {
+        if (found_radesys) {
+            // RADESYS takes precedence. Only FK4 and FK5 are defined by an equinox, which is ignored for other systems such as ICRS.
             direction_frame = radesys;
+            if (found_frame && ((radesys == "FK5") || (radesys.rfind("FK4", 0) == 0))) {
+                direction_frame = fmt::format("{}, {}", radesys, frame);
+            }
+        } else if (frame == "J2000") {
+            direction_frame = "FK5, J2000";
+        } else if (frame == "B1950") {
+            direction_frame = "FK4, B1950";
+        } else if (frame == "ICRS") {
+            direction_frame = "ICRS, J2000";
         } else {
-            direction_frame = fmt::format("{}, {}", radesys, frame);
+            direction_frame = frame;
         }
         Message::AddComputedEntry(extended_info, "Celestial frame", direction_frame);
     }
