@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Fixed error importing incorrect region name from a CRTF region file ([#1626](https://github.com/CARTAvis/carta-backend/issues/1626)). 
+* Fixed saving an image onto itself not being rejected when the output folder is reached through a symbolic link ([#1616](https://github.com/CARTAvis/carta-backend/issues/1616)).
 
 ## [6.0.0]
 

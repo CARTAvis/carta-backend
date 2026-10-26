@@ -5,6 +5,8 @@
 */
 
 #include <gtest/gtest.h>
+#include <fstream>
+#include <iterator>
 
 #include "ImageData/FileLoader.h"
 #include "src/Frame/Frame.h"
@@ -39,6 +41,39 @@ TEST_F(FitsImageTest, ExampleFriendTest) {
     std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
     EXPECT_TRUE(frame->IsValid());
     EXPECT_TRUE(frame->_open_image_error.empty());
+}
+
+TEST_F(FitsImageTest, SaveOntoSourceThroughSymlinkIsRejected) {
+    // The source image is opened by its real path, but the output folder is reached through a symbolic link
+    const fs::path generated = TestRoot() / "data" / "generated";
+    const fs::path real_folder = generated / "save_source_real";
+    const fs::path link_folder = generated / "save_source_link";
+    fs::create_directories(real_folder);
+    fs::copy_file(FitsImages() / "10x10.fits", real_folder / "10x10.fits", fs::copy_options::overwrite_existing);
+    fs::create_directory_symlink(real_folder, link_folder);
+
+    auto loader = carta::FileLoader::GetLoader(real_folder / "10x10.fits");
+    Frame frame(0, loader, "0");
+    ASSERT_TRUE(frame.IsValid());
+
+    auto read_file = [](const fs::path& path) {
+        std::ifstream file(path, std::ios::binary);
+        return std::string(std::istreambuf_iterator<char>(file), {});
+    };
+    const std::string original_contents = read_file(real_folder / "10x10.fits");
+
+    CARTA::SaveFile save_file;
+    save_file.set_output_file_name("10x10.fits");
+    save_file.set_output_file_directory("save_source_link");
+    save_file.set_output_file_type(CARTA::FileType::FITS);
+    save_file.set_overwrite(true);
+
+    CARTA::SaveFileAck ack;
+    frame.SaveFile(generated.string(), save_file, ack, nullptr);
+
+    EXPECT_FALSE(ack.success());
+    EXPECT_EQ(ack.message(), "Cannot overwrite the source image.");
+    EXPECT_TRUE(read_file(real_folder / "10x10.fits") == original_contents) << "The source image was modified";
 }
 
 TEST_F(FitsImageTest, CorrectShape2dImage) {
