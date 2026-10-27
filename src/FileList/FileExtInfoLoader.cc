@@ -1241,7 +1241,7 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
         if (is_history_beam) {
             // Append beam header entries in degrees
             std::map<std::string, double> beam_entries = {
-                {"BMIN", major.get("deg").getValue()}, {"BMAJ", minor.get("deg").getValue()}, {"BPA", pa}};
+                {"BMAJ", major.get("deg").getValue()}, {"BMIN", minor.get("deg").getValue()}, {"BPA", pa}};
 
             for (auto const& [name, value] : beam_entries) {
                 auto header_entry =
