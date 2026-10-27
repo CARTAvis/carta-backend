@@ -231,6 +231,36 @@ TEST_F(FileExtInfoLoaderTest, FitsFile) {
     CheckFileExtInfoLoader("M17_SWex_unit.fits", CARTA::FileType::FITS, "0");
 }
 
+TEST_F(FileExtInfoLoaderTest, Issue1633WavelengthLogAxis) {
+    auto path = Issues("1633") / "image.fits";
+    auto loader = FileLoader::GetLoader(path);
+    FileExtInfoLoader ext_info_loader(loader);
+    CARTA::FileInfoExtended file_info;
+    std::string message;
+
+    ASSERT_TRUE(ext_info_loader.FillFileExtInfo(file_info, path, "0", message)) << message;
+
+    bool found_wavelength_ctype(false);
+    bool found_spectral_frame(false);
+    bool found_channel_count(false);
+    for (const auto& entry : file_info.header_entries()) {
+        if (entry.name() == "CTYPE3" && entry.value() == "WAVE-LOG") {
+            found_wavelength_ctype = true;
+        }
+    }
+    for (const auto& entry : file_info.computed_entries()) {
+        if (entry.name() == "Spectral frame") {
+            found_spectral_frame = true;
+        } else if (entry.name() == "Number of channels" && entry.numeric_value() == 50) {
+            found_channel_count = true;
+        }
+    }
+
+    EXPECT_TRUE(found_wavelength_ctype);
+    EXPECT_TRUE(found_channel_count);
+    EXPECT_FALSE(found_spectral_frame);
+}
+
 TEST_F(FileExtInfoLoaderTest, Hdf5File) {
     CheckFileExtInfoLoader("M17_SWex_unit.hdf5", CARTA::FileType::HDF5, "0");
 }
