@@ -352,6 +352,10 @@ void MomentGenerator::SetMomentImageLogger(
         region_info += fmt::format(", {:.4f}deg]\n", region_state.rotation);
     }
 
+    std::string coordinate_info = fmt::format("Coordinate: {}{}\n",
+        moment_request.spectral_type().empty() ? "Unknown" : moment_request.spectral_type(),
+        moment_request.spectral_system().empty() ? "" : fmt::format(" ({})", moment_request.spectral_system()));
+
     // Set spectral range info
     int z_min = moment_request.spectral_range().min();
     int z_max = moment_request.spectral_range().max();
@@ -397,5 +401,5 @@ void MomentGenerator::SetMomentImageLogger(
 
     // Set the new logger
     _logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n"
-                    << input_image << region_info << spectral_range << stokes_info << mask_info << casacore::LogIO::POST;
+                    << input_image << region_info << coordinate_info << spectral_range << stokes_info << mask_info << casacore::LogIO::POST;
 }
