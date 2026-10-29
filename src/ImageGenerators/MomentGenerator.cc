@@ -352,37 +352,56 @@ void MomentGenerator::SetMomentImageLogger(
         region_info += fmt::format(", {:.4f}deg]\n", region_state.rotation);
     }
 
-    std::string coordinate_info = fmt::format("Coordinate: {}{}\n",
-        moment_request.spectral_type().empty() ? "Unknown" : moment_request.spectral_type(),
-        moment_request.spectral_system().empty() ? "" : fmt::format(" ({})", moment_request.spectral_system()));
+    std::string system_info =
+        fmt::format("System: {}\n", moment_request.spectral_system().empty() ? "Unknown" : moment_request.spectral_system());
 
-    // Set spectral range info
+    const std::string frequency_unit = "GHz";
+    const double rest_frequency = casacore::Quantity(moment_request.rest_freq(), "Hz").getValue(frequency_unit);
+    std::string rest_frequency_info = fmt::format("Rest Frequency: {} {}\n", rest_frequency, frequency_unit);
+
+    // Derive all spectral ranges from the same channel endpoints.
     int z_min = moment_request.spectral_range().min();
     int z_max = moment_request.spectral_range().max();
-    std::string spectral_range = fmt::format("Spectral range: [{}, {}](channel)", z_min, z_max);
-
-    std::shared_ptr<casacore::CoordinateSystem> coord_sys =
-        std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
-
-    if (coord_sys && coord_sys->hasSpectralAxis()) {
-        auto spectral_coord = coord_sys->spectralCoordinate();
-        casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
-        spectral_units(0) = ((spectral_units(0) == "Hz") ? "GHz" : spectral_units(0));
+    std::string spectral_range = fmt::format("Channel range: [{}, {}]\n", z_min, z_max);
+    auto coord_sys = _image->coordinates();
+    casacore::String conversion_error;
+    if (coord_sys.hasSpectralAxis() &&
+        (moment_request.spectral_system().empty() || coord_sys.setSpectralConversion(conversion_error, moment_request.spectral_system()))) {
+        auto spectral_coord = coord_sys.spectralCoordinate();
+        casacore::Vector<casacore::String> spectral_units(1);
+        spectral_units[0] = frequency_unit;
         spectral_coord.setWorldAxisUnits(spectral_units);
-        std::string velocity_units("km/s");
-        spectral_coord.setVelocity(velocity_units);
-        std::vector<double> frequencies(2);
-        std::vector<double> velocities(2);
-
+        casacore::Vector<double> frequencies(2);
         if (spectral_coord.toWorld(frequencies[0], z_min) && spectral_coord.toWorld(frequencies[1], z_max)) {
-            spectral_range += fmt::format(", [{:.4f}, {:.4f}]({})", frequencies[0], frequencies[1], spectral_units(0));
-        }
-        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], z_min) &&
-            spectral_coord.pixelToVelocity(velocities[1], z_max)) {
-            spectral_range += fmt::format(", [{:.4f}, {:.4f}]({})", velocities[0], velocities[1], velocity_units);
+            const auto append_range = [&](const std::string& label, const casacore::Vector<double>& values, const std::string& unit) {
+                spectral_range += fmt::format("{} range: [{:.4f}, {:.4f}]({})\n", label, values[0], values[1], unit);
+            };
+            append_range("Frequency", frequencies, frequency_unit);
+
+            const std::string velocity_unit = "km/s";
+            casacore::Vector<double> velocities;
+            if (spectral_coord.restFrequency() > 0) {
+                if (spectral_coord.setVelocity(velocity_unit, casacore::MDoppler::RADIO) &&
+                    spectral_coord.frequencyToVelocity(velocities, frequencies)) {
+                    append_range("Radio velocity", velocities, velocity_unit);
+                }
+                if (spectral_coord.setVelocity(velocity_unit, casacore::MDoppler::OPTICAL) &&
+                    spectral_coord.frequencyToVelocity(velocities, frequencies)) {
+                    append_range("Optical velocity", velocities, velocity_unit);
+                }
+            }
+
+            const std::string wavelength_unit = "mm";
+            spectral_coord.setWavelengthUnit(wavelength_unit);
+            casacore::Vector<double> wavelengths;
+            if (spectral_coord.frequencyToWavelength(wavelengths, frequencies)) {
+                append_range("Vacuum wavelength", wavelengths, wavelength_unit);
+            }
+            if (spectral_coord.frequencyToAirWavelength(wavelengths, frequencies)) {
+                append_range("Air wavelength", wavelengths, wavelength_unit);
+            }
         }
     }
-    spectral_range += "\n";
 
     // Set mask info
     float pixel_min = moment_request.pixel_range().min();
@@ -401,5 +420,6 @@ void MomentGenerator::SetMomentImageLogger(
 
     // Set the new logger
     _logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n"
-                    << input_image << region_info << coordinate_info << spectral_range << stokes_info << mask_info << casacore::LogIO::POST;
+                    << input_image << region_info << system_info << rest_frequency_info << spectral_range << stokes_info << mask_info
+                    << casacore::LogIO::POST;
 }

@@ -7,9 +7,13 @@
 #include <gtest/gtest.h>
 
 #include "ImageGenerators/ImageMoments.h"
+#include "ImageGenerators/MomentGenerator.h"
 #include "Logger/Logger.h"
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <casacore/images/Images/PagedImage.h>
+#include <casacore/images/Images/TempImage.h>
+#include <casacore/lattices/LRegions/LCBox.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
 
 #include "CommonTestUtilities.h"
@@ -147,4 +151,58 @@ TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
     int moment_axis(2);
 
     GenerateMoments(image, moment_axis);
+}
+
+TEST_F(MomentTest, ComputesSpectralRangesFromChannels) {
+    const casacore::IPosition shape(3, 2, 2, 4);
+    auto coordinates = casacore::CoordinateUtil::defaultCoords3D();
+    casacore::SpectralCoordinate spectral_coordinate(casacore::MFrequency::LSRK, 100e9, 1e9, 0, 230538000000.0);
+    coordinates.replaceCoordinate(spectral_coordinate, coordinates.findCoordinate(casacore::Coordinate::SPECTRAL));
+    auto image = std::make_shared<casacore::TempImage<float>>(casacore::TiledShape(shape), coordinates);
+    image->set(1.0f);
+
+    CARTA::MomentRequest request;
+    request.set_axis(CARTA::MomentAxis::SPECTRAL);
+    request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
+    request.mutable_spectral_range()->set_min(0);
+    request.mutable_spectral_range()->set_max(3);
+    request.set_rest_freq(230538000000.0);
+    request.set_spectral_system("LSRK");
+
+    RegionState region;
+    region.type = CARTA::RegionType::RECTANGLE;
+    region.control_points.resize(2);
+    region.control_points[0].set_x(0.5f);
+    region.control_points[0].set_y(0.5f);
+    region.control_points[1].set_x(2);
+    region.control_points[1].set_y(2);
+
+    MomentGenerator generator("test.fits", image);
+    CARTA::MomentResponse response;
+    std::vector<GeneratedImage> results;
+    const casacore::ImageRegion image_region{casacore::LCBox(shape)};
+    ASSERT_TRUE(generator.CalculateMoments(
+        0, image_region, coordinates.spectralAxisNumber(), -1, 0, [](float) {}, request, response, results, region, "I"))
+        << response.message();
+    ASSERT_EQ(results.size(), 1);
+
+    std::string history;
+    const auto& logger = results[0].image->logger();
+    for (auto iter = logger.begin(); iter != logger.end(); ++iter) {
+        history += iter->message();
+    }
+    EXPECT_NE(history.find("System: LSRK"), std::string::npos);
+    EXPECT_NE(history.find("Rest Frequency: 230.538 GHz"), std::string::npos);
+    EXPECT_NE(history.find("Channel range: [0, 3]\n"), std::string::npos);
+    EXPECT_NE(history.find("Frequency range: [100.0000, 103.0000](GHz)\n"), std::string::npos);
+    const double c_velocity = 299792.458;
+    const std::string velocity_unit = "km/s";
+    EXPECT_NE(history.find(fmt::format("Radio velocity range: [{:.4f}, {:.4f}]({})\n", c_velocity * (1 - 100e9 / request.rest_freq()),
+                  c_velocity * (1 - 103e9 / request.rest_freq()), velocity_unit)),
+        std::string::npos);
+    EXPECT_NE(history.find(fmt::format("Optical velocity range: [{:.4f}, {:.4f}]({})\n", c_velocity * (request.rest_freq() / 100e9 - 1),
+                  c_velocity * (request.rest_freq() / 103e9 - 1), velocity_unit)),
+        std::string::npos);
+    EXPECT_NE(history.find("Vacuum wavelength range: [2.9979, 2.9106](mm)\n"), std::string::npos);
+    EXPECT_NE(history.find("Air wavelength range: "), std::string::npos);
 }
