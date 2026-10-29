@@ -152,3 +152,22 @@ TEST(UtilTest, FolderImageType) {
     EXPECT_EQ(FolderImageType((pwd / "mix/M17_SWex_unit.image").string(), message), CARTA::FileType::CASA);
     EXPECT_EQ(FolderImageType((pwd / "mix/M17_SWex_unit.miriad").string(), message), CARTA::FileType::MIRIAD);
 }
+
+TEST(CasacoreSpectralSystemTest, ParsesFitsAndMeasureNames) {
+    const std::vector<std::pair<std::string, casacore::MFrequency::Types>> systems = {{"TOPOCENT", casacore::MFrequency::TOPO},
+        {"GEOCENTR", casacore::MFrequency::GEO}, {"BARYCENT", casacore::MFrequency::BARY}, {"HELIOCEN", casacore::MFrequency::BARY},
+        {"LSRK", casacore::MFrequency::LSRK}, {"LSRD", casacore::MFrequency::LSRD}, {"GALACTOC", casacore::MFrequency::GALACTO},
+        {"LOCALGRP", casacore::MFrequency::LGROUP}, {"CMBDIPOL", casacore::MFrequency::CMB}, {"SOURCE", casacore::MFrequency::REST},
+        {"TOPO", casacore::MFrequency::TOPO}, {"BARY", casacore::MFrequency::BARY}, {"GEO", casacore::MFrequency::GEO},
+        {"GALACTO", casacore::MFrequency::GALACTO}, {"LGROUP", casacore::MFrequency::LGROUP}, {"CMB", casacore::MFrequency::CMB},
+        {"REST", casacore::MFrequency::REST}, {"barycent", casacore::MFrequency::BARY}};
+    for (const auto& [name, expected] : systems) {
+        SCOPED_TRACE(name);
+        casacore::MFrequency::Types type = casacore::MFrequency::Undefined;
+        EXPECT_TRUE(ParseSpectralSystem(name, type));
+        EXPECT_EQ(type, expected);
+    }
+    casacore::MFrequency::Types type;
+    EXPECT_FALSE(ParseSpectralSystem("", type));
+    EXPECT_FALSE(ParseSpectralSystem("invalid-system", type));
+}
