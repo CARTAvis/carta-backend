@@ -7,6 +7,7 @@
 #include "Casacore.h"
 
 #include <regex>
+#include <unordered_map>
 
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
@@ -269,4 +270,19 @@ void NormalizeUnit(casacore::String& unit) {
  */
 bool IsGildasUnit(const casacore::String& unit) {
     return std::regex_match(unit, GILDAS_REGEX);
+}
+
+bool ParseSpectralSystem(const std::string& system, casacore::MFrequency::Types& type) {
+    casacore::String name(system);
+    name.upcase();
+    static const std::unordered_map<std::string, casacore::MFrequency::Types> fits_systems = {{"TOPOCENT", casacore::MFrequency::TOPO},
+        {"GEOCENTR", casacore::MFrequency::GEO}, {"BARYCENT", casacore::MFrequency::BARY}, {"HELIOCEN", casacore::MFrequency::BARY},
+        {"LSRK", casacore::MFrequency::LSRK}, {"LSRD", casacore::MFrequency::LSRD}, {"GALACTOC", casacore::MFrequency::GALACTO},
+        {"LOCALGRP", casacore::MFrequency::LGROUP}, {"CMBDIPOL", casacore::MFrequency::CMB}, {"SOURCE", casacore::MFrequency::REST}};
+    const auto match = fits_systems.find(name);
+    if (match != fits_systems.end()) {
+        type = match->second;
+        return true;
+    }
+    return !name.empty() && casacore::MFrequency::getType(type, name);
 }
