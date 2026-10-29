@@ -99,6 +99,13 @@ public:
     SpectralProfileTask(Session* session, int file_id, int region_id) : OnMessageTask(session), _file_id(file_id), _region_id(region_id) {}
 };
 
+class StatsRequirementsTask : public OnMessageTask {
+    void execute() override;
+
+public:
+    explicit StatsRequirementsTask(Session* session) : OnMessageTask(session) {}
+};
+
 class PvPreviewUpdateTask : public OnMessageTask {
     void execute() override;
     int _file_id, _region_id;

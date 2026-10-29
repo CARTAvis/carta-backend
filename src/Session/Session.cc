@@ -147,6 +147,9 @@ void Session::SetInitExitTimeout(int secs) {
 
 void Session::WaitForTaskCancellation() {
     _connected = false;
+    CARTA::SetStatsRequirements queued_stats;
+    while (_stats_requirements.try_pop(queued_stats)) {
+    }
     for (auto& frame : _frames) {
         frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
     }
@@ -1143,7 +1146,20 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
     }
 }
 
+void Session::QueueStatsRequirements(const CARTA::SetStatsRequirements& message) {
+    _stats_requirements.push(message);
+}
+
+void Session::ExecuteStatsRequirements() {
+    std::lock_guard<std::recursive_mutex> guard(_stats_mutex);
+    CARTA::SetStatsRequirements message;
+    if (_stats_requirements.try_pop(message)) {
+        OnSetStatsRequirements(message);
+    }
+}
+
 void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message) {
+    std::lock_guard<std::recursive_mutex> guard(_stats_mutex);
     auto file_id(message.file_id());
     auto region_id = message.region_id();
     bool requirements_set(false);
@@ -1900,6 +1916,7 @@ bool Session::SendRegionHistogramData(int file_id, int region_id, bool channel_c
 }
 
 bool Session::SendRegionStatsData(int file_id, int region_id) {
+    std::lock_guard<std::recursive_mutex> guard(_stats_mutex);
     // return true if data sent
     bool data_sent(false);
     if (region_id == ALL_REGIONS && !_region_handler) {

@@ -64,6 +64,10 @@ void SpectralProfileTask::execute() {
     _session->SendSpectralProfileData(_file_id, _region_id);
 }
 
+void StatsRequirementsTask::execute() {
+    _session->ExecuteStatsRequirements();
+}
+
 void PvPreviewUpdateTask::execute() {
     _session->SendPvPreview(_file_id, _region_id, _preview_region);
 }
