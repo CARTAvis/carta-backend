@@ -22,9 +22,13 @@ public:
         return this;
     }
     std::optional<ZarrPlaneRead> Plane(int z, int stokes) const override;
+    CubeHistogramStatus OnePassCubeHistogram(int stokes, int num_bins, BasicStats<float>& stats, Histogram& histogram,
+        const std::function<bool()>& cancelled, const CubeHistogramCallback& progress) override;
 
 protected:
     void AllocateImage(const std::string& hdu) override;
+    // Zero uses the library's memory budget. Tests can lower it to exercise multi-read scans.
+    std::size_t _histogram_read_budget_bytes = 0;
 };
 
 } // namespace carta

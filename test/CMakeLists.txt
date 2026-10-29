@@ -72,6 +72,7 @@ set(TEST_SOURCES
         TestTileEncoding.cc
         TestVoTable.cc
         TestZarrCasacore.cc
+        TestZarrCubeHistogram.cc
         TestZarrContext.cc
         TestZarrImage.cc
         TestZarrStores.cc

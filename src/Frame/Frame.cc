@@ -806,9 +806,15 @@ bool Frame::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramDat
         bool histogram_filled = !histogram_config.fixed_bounds && FillHistogramFromLoaderCache(z, stokes, num_bins, histogram);
 
         if (!histogram_filled) {
-            // must calculate cube histogram from Session
             if ((region_id == CUBE_REGION_ID) || (z == ALL_Z)) {
-                return false;
+                BasicStats<float> stats;
+                if (GetBasicStats(ALL_Z, stokes, stats) &&
+                    FillHistogramFromFrameCache(ALL_Z, stokes, num_bins, histogram_config.GetBounds(stats), histogram)) {
+                    region_histogram_callback(histogram_data);
+                    have_valid_histogram = true;
+                    continue;
+                }
+                return false; // calculate an uncached cube histogram in Session
             }
 
             // calculate image histogram
@@ -1005,6 +1011,29 @@ bool Frame::GetCubeHistogramConfig(HistogramConfig& config) {
         config = _cube_histogram_configs[0];
     }
     return have_config;
+}
+
+CubeHistogramStatus Frame::CalculateOnePassCubeHistogram(int stokes, const HistogramConfig& config,
+    BasicStats<float>& stats, Histogram& histogram, const std::function<bool()>& cancelled,
+    const CubeHistogramCallback& progress) {
+    std::shared_lock lock(GetActiveTaskMutex());
+    if (!_valid || config.fixed_bounds || Stokes::IsComputed(stokes)) {
+        return CubeHistogramStatus::declined;
+    }
+    const auto stopped = [&]() { return !IsConnected() || (cancelled && cancelled()); };
+    if (stopped()) {
+        return CubeHistogramStatus::cancelled;
+    }
+    const int bins = config.num_bins == AUTO_BIN_SIZE ? AutoBinSize() : config.num_bins;
+    const auto status = _loader->OnePassCubeHistogram(stokes, bins, stats, histogram, stopped, progress);
+    if (status == CubeHistogramStatus::finished && stopped()) {
+        return CubeHistogramStatus::cancelled;
+    }
+    if (status == CubeHistogramStatus::finished) {
+        CacheCubeStats(stokes, stats);
+        CacheCubeHistogram(stokes, histogram);
+    }
+    return status;
 }
 
 void Frame::CacheCubeStats(int stokes, BasicStats<float>& stats) {

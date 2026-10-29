@@ -146,6 +146,9 @@ public:
     bool GetBasicStats(int z, int stokes, BasicStats<float>& stats);
     bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
+    CubeHistogramStatus CalculateOnePassCubeHistogram(int stokes, const HistogramConfig& config,
+        BasicStats<float>& stats, Histogram& histogram, const std::function<bool()>& cancelled,
+        const CubeHistogramCallback& progress);
     void CacheCubeStats(int stokes, BasicStats<float>& stats);
     void CacheCubeHistogram(int stokes, Histogram& hist);
 

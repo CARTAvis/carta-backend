@@ -18,6 +18,7 @@
 #include <carta-protobuf/enums.pb.h>
 
 #include "ImageData/FileInfo.h"
+#include "ImageStats/CubeHistogram.h"
 #include "Util/Casacore.h"
 #include "Util/Stokes.h"
 
@@ -49,6 +50,12 @@ public:
     // directory only for ExprLoader, is_gz only for FitsLoader
     FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false, bool is_generated = false);
     virtual ~FileLoader() = default;
+
+    // A single pass over all pixels, when supported. A declined request leaves the outputs untouched.
+    virtual CubeHistogramStatus OnePassCubeHistogram(int /*stokes*/, int /*num_bins*/, BasicStats<float>& /*stats*/, Histogram& /*histogram*/,
+        const std::function<bool()>& /*cancelled*/, const CubeHistogramCallback& /*progress*/) {
+        return CubeHistogramStatus::declined;
+    }
 
     // Null for loaders that do not offer animation prefetching.
     virtual PlaneReadAhead* ReadAhead() {

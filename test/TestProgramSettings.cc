@@ -71,6 +71,7 @@ public:
         EXPECT_TRUE(p1.zarr_file_io_concurrency == p2.zarr_file_io_concurrency);
         EXPECT_TRUE(p1.zarr_data_copy_concurrency == p2.zarr_data_copy_concurrency);
         EXPECT_TRUE(p1.zarr_cache_pool_gib == p2.zarr_cache_pool_gib);
+        EXPECT_EQ(p1.zarr_histogram_method, p2.zarr_histogram_method);
         EXPECT_TRUE(p1.top_level_folder == p2.top_level_folder);
         EXPECT_TRUE(p1.starting_folder == p2.starting_folder);
         EXPECT_TRUE(p1.host == p2.host);
@@ -511,4 +512,35 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
 
     auto url_string = carta::HttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("files={},{}", fits_file, hdf5_file));
+}
+
+
+TEST_F(ProgramSettingsTest, ZarrCubeHistogramHasOnlyExactAndBinnedModes) {
+    EXPECT_EQ(carta::ProgramSettings().zarr_histogram_method, "exact");
+    for (const auto* method : {"exact", "binned"}) {
+        const auto settings = SettingsFromString(std::string("carta_backend --zarr_histogram_method=") + method);
+        EXPECT_EQ(settings.zarr_histogram_method, method);
+        EXPECT_EQ(settings.command_line_settings["zarr_histogram_method"], method);
+    }
+    for (const auto* method : {"sampled", "sampled:4", "unknown"}) {
+        const auto settings = SettingsFromString(std::string("carta_backend --zarr_histogram_method=") + method);
+        EXPECT_EQ(settings.zarr_histogram_method, "exact");
+        EXPECT_FALSE(settings.command_line_settings.contains("zarr_histogram_method"));
+        EXPECT_FALSE(settings.warning_msgs.empty());
+    }
+}
+
+TEST_F(ProgramSettingsTest, ZarrCubeHistogramModesAreValidatedInSettingsFiles) {
+    const auto path = fs::temp_directory_path() / fmt::format("carta-zarr-histogram-{}.json", ::getpid());
+    for (const auto* method : {"exact", "binned", "sampled", "sampled:4"}) {
+        std::ofstream(path) << nlohmann::json{{"zarr_histogram_method", method}};
+        carta::ProgramSettings settings;
+        auto validated = settings.JSONSettingsFromFile(path);
+        settings.SetSettingsFromJSON(validated);
+        EXPECT_EQ(settings.zarr_histogram_method, std::string(method) == "binned" ? "binned" : "exact");
+        if (std::string(method).rfind("sampled", 0) == 0) {
+            EXPECT_FALSE(validated.contains("zarr_histogram_method"));
+        }
+    }
+    fs::remove(path);
 }

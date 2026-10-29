@@ -74,6 +74,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
     _top_level_folder = settings.top_level_folder;
     _read_only_mode = settings.read_only_mode;
     _enable_scripting = settings.enable_scripting;
+    _one_pass_cube_histogram = settings.zarr_histogram_method == "binned";
 
     ++_num_sessions;
     UpdateLastMessageTimestamp();
@@ -1692,6 +1693,44 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             int request_id(0);
             size_t depth(_frames.at(file_id)->Depth());
             size_t total_z(depth * 2); // for progress; go through z twice, for stats then histogram
+
+            if (_one_pass_cube_histogram) {
+                BasicStats<float> stats;
+                Histogram histogram;
+                const auto cancelled = [this]() { return _histogram_context.is_group_execution_cancelled(); };
+                const auto report = [&](const CubeHistogramProgress& update) {
+                    if (cancelled()) {
+                        return false;
+                    }
+                    const auto now = std::chrono::high_resolution_clock::now();
+                    if (std::chrono::duration<double>(now - t_start).count() > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
+                        _histogram_progress = update.progress;
+                        auto message = Message::RegionHistogramData(
+                            file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
+                        BasicStats<float> partial_stats;
+                        Histogram partial;
+                        update.snapshot(partial_stats, partial);
+                        FillHistogram(message.mutable_histograms(), partial_stats, partial);
+                        SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, message);
+                        t_start = now;
+                    }
+                    return !cancelled();
+                };
+                const auto frame = _frames.at(file_id);
+                const auto status = frame->CalculateOnePassCubeHistogram(
+                    stokes, cube_histogram_config, stats, histogram, cancelled, report);
+                if (status != CubeHistogramStatus::declined) {
+                    _histogram_progress = 1.0;
+                    if (status != CubeHistogramStatus::finished) {
+                        return false;
+                    }
+                    cube_histogram_message = Message::RegionHistogramData(
+                        file_id, CUBE_REGION_ID, ALL_Z, stokes, 1.0, cube_histogram_config);
+                    FillHistogram(cube_histogram_message.mutable_histograms(), stats, histogram);
+                    spdlog::performance("Fill cube histogram in one pass in {:.3f} ms", t.Elapsed().ms());
+                    return true;
+                }
+            }
 
             // stats for entire cube
             BasicStats<float> cube_stats;

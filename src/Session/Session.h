@@ -312,6 +312,7 @@ protected:
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
+    bool _one_pass_cube_histogram = false;
 
     // message queue <msg, compress>
     concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;

@@ -156,6 +156,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("zarr_io", "thread pool size for Zarr file IO operations (0: min(4, omp_threads); suggested values: 2 for limited resources, 4 for general use, 8 for large parallel filesystems with 16+ CPU cores)", cxxopts::value<int>(), "<threads>")
         ("zarr_decode", "thread pool size for Zarr data copy/decode operations (0: max(1, omp_threads))", cxxopts::value<int>(), "<threads>")
         ("zarr_cache", "in-memory chunk cache size for Zarr stores in GiB, such as 2.5 (0 disables caching)", cxxopts::value<double>(), "<GiB>")
+        ("zarr_histogram_method", "Zarr cube histogram: exact (default, two passes) or binned (one pass over all pixels, approximate bins)", cxxopts::value<string>(), "<method>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
@@ -232,6 +233,9 @@ use, or 8 for large parallel filesystems with 16 or more CPU cores.
 copy/decode operations; if set to zero, it defaults to max(1, the number of
 OpenMP threads). 'zarr_cache' sets an in-memory chunk cache size in GiB,
 which may be fractional, such as 2.5 (default 1; zero disables caching).
+'zarr_histogram_method' chooses exact (default, two passes) or binned (one pass
+through all pixels with approximate bins). Fixed histogram bounds and computed
+Stokes use the two-pass path. No spatial sampling is performed.
 
 Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
 in the user's home directory. Logging to the file can be disabled with 'no_log'. 
@@ -304,6 +308,7 @@ global configuration files, respectively.
     applyOptionalArgument(zarr_file_io_concurrency, "zarr_io", result);
     applyOptionalArgument(zarr_data_copy_concurrency, "zarr_decode", result);
     applyOptionalArgument(zarr_cache_pool_gib, "zarr_cache", result);
+    applyOptionalArgument(zarr_histogram_method, "zarr_histogram_method", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);
     applyOptionalArgument(init_wait_time, "initial_timeout", result);
 
@@ -370,6 +375,12 @@ global configuration files, respectively.
         if (result.count(key)) {
             command_line_settings[key] = result[key].as<std::vector<int>>();
         }
+    }
+
+    if (zarr_histogram_method != "exact" && zarr_histogram_method != "binned") {
+        warning_msgs.push_back(fmt::format("Unknown zarr_histogram_method '{}'; using exact", zarr_histogram_method));
+        zarr_histogram_method = "exact";
+        command_line_settings.erase("zarr_histogram_method");
     }
 
     // Ignored, as the schema ignores a negative cache in a settings file
