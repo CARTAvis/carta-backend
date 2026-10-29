@@ -384,21 +384,28 @@ void MomentGenerator::SetMomentImageLogger(
         if (!valid_requested_system) {
             conversion_error = "Invalid spectral system: " + system;
         } else if (!conversion_set) {
-            if (coord_sys.setSpectralConversion(conversion_error, casacore::MFrequency::showType(requested_system))) {
+            const auto& obs_info = coord_sys.obsInfo();
+            const bool use_explicit_position =
+                coord_sys.hasDirectionCoordinate() && obs_info.isTelescopePositionSet() && obs_info.obsDate().getValue().get() > 0;
+            if (!use_explicit_position &&
+                coord_sys.setSpectralConversion(conversion_error, casacore::MFrequency::showType(requested_system))) {
                 spectral_coord = coord_sys.spectralCoordinate();
                 conversion_set = true;
             } else if (coord_sys.hasDirectionCoordinate()) {
                 const auto needs_only_direction = [](casacore::MFrequency::Types type) {
                     return type == casacore::MFrequency::LSRK || type == casacore::MFrequency::LSRD || type == casacore::MFrequency::BARY;
                 };
-                if (needs_only_direction(spectral_coord.frequencySystem()) && needs_only_direction(requested_system)) {
-                    // These systems need no observatory or epoch, unlike the CoordinateSystem helper.
+                if (use_explicit_position ||
+                    (needs_only_direction(spectral_coord.frequencySystem()) && needs_only_direction(requested_system))) {
+                    // Prefer supplied observing metadata over telescope-table positions; LSR/BARY need only direction.
                     casacore::MDirection direction;
                     const auto& direction_coord = coord_sys.directionCoordinate();
-                    const auto& obs_info = coord_sys.obsInfo();
                     conversion_set = direction_coord.toWorld(direction, direction_coord.referencePixel()) &&
                                      spectral_coord.setReferenceConversion(
                                          requested_system, obs_info.obsDate(), obs_info.telescopePosition(), direction);
+                    if (!conversion_set && conversion_error.empty()) {
+                        conversion_error = "Cannot convert spectral system with the supplied observing metadata";
+                    }
                 }
             }
         }

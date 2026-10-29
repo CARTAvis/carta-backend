@@ -21,6 +21,7 @@
 #include <casacore/measures/Measures/MCFrequency.h>
 #include <casacore/measures/Measures/MeasConvert.h>
 #include <casacore/measures/Measures/MeasFrame.h>
+#include <casacore/measures/Measures/MeasTable.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
 
 #include "CommonTestUtilities.h"
@@ -166,11 +167,13 @@ struct MomentLogCase {
     casacore::MFrequency::Types expected_system;
     double rest_frequency = 230538000000.0;
     bool has_direction = true;
+    bool has_observing_metadata = false;
+    std::string telescope = "CUSTOM-OBSERVATORY";
 };
 
 class MomentSystemLogTest : public MomentTest, public ::testing::WithParamInterface<MomentLogCase> {};
 
-TEST_P(MomentSystemLogTest, ComputesSpectralRangesWithoutObservatoryMetadata) {
+TEST_P(MomentSystemLogTest, ComputesSpectralRangesWithAvailableMetadata) {
     const auto& test_case = GetParam();
     const casacore::IPosition shape(3, 2, 2, 4);
     auto coordinates = casacore::CoordinateUtil::defaultCoords3D();
@@ -183,6 +186,15 @@ TEST_P(MomentSystemLogTest, ComputesSpectralRangesWithoutObservatoryMetadata) {
         coordinates = casacore::CoordinateSystem();
         coordinates.addCoordinate(casacore::LinearCoordinate(2));
         coordinates.addCoordinate(spectral_coordinate);
+    }
+    if (test_case.has_observing_metadata) {
+        auto obs_info = coordinates.obsInfo();
+        casacore::MPosition position;
+        ASSERT_TRUE(casacore::MeasTable::Observatory(position, "ALMA"));
+        obs_info.setTelescope(test_case.telescope);
+        obs_info.setTelescopePosition(position);
+        obs_info.setObsDate(casacore::MEpoch(casacore::Quantity(60000, "d")));
+        coordinates.setObsInfo(obs_info);
     }
     auto image = std::make_shared<casacore::TempImage<float>>(casacore::TiledShape(shape), coordinates);
     image->set(1.0f);
@@ -223,9 +235,9 @@ TEST_P(MomentSystemLogTest, ComputesSpectralRangesWithoutObservatoryMetadata) {
     EXPECT_NE(history.find("System: " + system_label), std::string::npos);
     EXPECT_NE(history.find(test_case.rest_frequency > 0 ? "Rest Frequency: 230.538000 GHz" : "Rest Frequency: Unknown"), std::string::npos);
     EXPECT_NE(history.find("Channel range: [0, 3]\n"), std::string::npos);
-    const bool unavailable =
-        test_case.expected_system == casacore::MFrequency::Undefined ||
-        (test_case.expected_system == casacore::MFrequency::TOPO && test_case.native_system != casacore::MFrequency::TOPO);
+    const bool unavailable = test_case.expected_system == casacore::MFrequency::Undefined ||
+                             (test_case.expected_system == casacore::MFrequency::TOPO &&
+                                 test_case.native_system != casacore::MFrequency::TOPO && !test_case.has_observing_metadata);
     if (unavailable) {
         EXPECT_NE(history.find("Spectral ranges unavailable: "), std::string::npos);
         EXPECT_EQ(history.find("Frequency range: "), std::string::npos);
@@ -240,6 +252,10 @@ TEST_P(MomentSystemLogTest, ComputesSpectralRangesWithoutObservatoryMetadata) {
         const auto& direction_coordinate = coordinates.directionCoordinate();
         ASSERT_TRUE(direction_coordinate.toWorld(direction, direction_coordinate.referencePixel()));
         casacore::MeasFrame frame(direction);
+        if (test_case.has_observing_metadata) {
+            frame.set(coordinates.obsInfo().obsDate());
+            frame.set(coordinates.obsInfo().telescopePosition());
+        }
         casacore::MFrequency::Convert converter(
             casacore::MFrequency::Ref(test_case.native_system, frame), casacore::MFrequency::Ref(test_case.expected_system, frame));
         first_frequency = converter(casacore::Quantity(100e9, "Hz")).getValue().getValue();
@@ -282,4 +298,8 @@ INSTANTIATE_TEST_SUITE_P(SpectralSystems, MomentSystemLogTest,
         MomentLogCase{casacore::MFrequency::LSRK, "", casacore::MFrequency::LSRK},
         MomentLogCase{casacore::MFrequency::LSRK, "LSRK", casacore::MFrequency::LSRK, 0},
         MomentLogCase{casacore::MFrequency::TOPO, "TOPOCENT", casacore::MFrequency::TOPO, 230538000000.0, false},
-        MomentLogCase{casacore::MFrequency::LSRK, "invalid-system", casacore::MFrequency::Undefined}));
+        MomentLogCase{casacore::MFrequency::LSRK, "invalid-system", casacore::MFrequency::Undefined},
+        MomentLogCase{casacore::MFrequency::LSRK, "TOPOCENT", casacore::MFrequency::TOPO, 230538000000.0, true, true},
+        MomentLogCase{casacore::MFrequency::TOPO, "LSRK", casacore::MFrequency::LSRK, 230538000000.0, true, true},
+        MomentLogCase{casacore::MFrequency::LSRK, "TOPOCENT", casacore::MFrequency::TOPO, 230538000000.0, true, true, "VLA"},
+        MomentLogCase{casacore::MFrequency::TOPO, "BARYCENT", casacore::MFrequency::BARY, 230538000000.0, true, true, "VLA"}));
