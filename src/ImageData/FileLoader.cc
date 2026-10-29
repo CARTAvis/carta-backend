@@ -341,6 +341,16 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
         if (image_type == "CartaFitsImage") {
             // Use cfitsio for slice
             return image->doGetSlice(data, slicer);
+        } else if (image_type == "CartaZarrImage") {
+            // carta-zarr already applies flags as NaN; read the plane without a masked iterator.
+            image->doGetSlice(data, slicer);
+            // Match the finite-pixel mask of the casacore iterator without reading a separate mask.
+            for (auto& value : data) {
+                if (std::isinf(value)) {
+                    value = FLOAT_NAN;
+                }
+            }
+            return true;
         } else if (image_type == "ImageExpr") {
             // Use ImageExpr for slice
             casacore::Array<float> slice_data;

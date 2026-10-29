@@ -23,6 +23,7 @@
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
 #include "ImageData/FileLoader.h"
+#include "ImageData/PlaneReadAhead.h"
 #include "ImageFitting/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
@@ -97,6 +98,7 @@ public:
     DimsInfo Dims();    // struct of all dimensions
     size_t Width();     // length of x axis
     size_t Height();    // length of y axis
+    std::shared_ptr<PlaneReadAhead> ReadAhead();
     size_t Depth();     // length of z axis
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();

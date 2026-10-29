@@ -29,4 +29,11 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
     _data_type = image->InternalDataType();
 }
 
+std::optional<ZarrPlaneRead> ZarrLoader::Plane(int z, int stokes) const {
+    if (!_image || _num_dims != 4 || z < 0 || z >= _image_shape(2) || stokes < 0 || stokes >= _image_shape(3)) {
+        return std::nullopt;
+    }
+    return static_cast<const CartaZarrImage&>(*_image).PlaneRead(z, stokes);
+}
+
 } // namespace carta

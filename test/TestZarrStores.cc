@@ -240,7 +240,10 @@ TEST_F(ZarrStoresTest, AChangedDirectoryIsProbedAgain) {
     const auto store = AStore();
 
     const auto first = stores.Probe(store.string());
+    const auto before = fs::last_write_time(store);
     fs::create_directory(store / "NEW_VARIABLE");
+    // Fast operations can share a filesystem timestamp tick; make the change deterministic.
+    fs::last_write_time(store, before + std::chrono::seconds(1));
     const auto second = stores.Probe(store.string());
     EXPECT_NE(second, first);
     EXPECT_EQ(stores.Probe(store.string()), second);

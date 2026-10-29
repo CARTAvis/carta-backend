@@ -23,6 +23,8 @@
 
 namespace carta {
 
+class PlaneReadAhead;
+
 struct StokesSlicer {
     StokesSource stokes_source;
     casacore::Slicer slicer;
@@ -47,6 +49,11 @@ public:
     // directory only for ExprLoader, is_gz only for FitsLoader
     FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false, bool is_generated = false);
     virtual ~FileLoader() = default;
+
+    // Null for loaders that do not offer animation prefetching.
+    virtual PlaneReadAhead* ReadAhead() {
+        return nullptr;
+    }
 
     static std::shared_ptr<FileLoader> GetLoader(const std::string& filename, const std::string& directory = "");
     // Access an image from the memory, not from the disk

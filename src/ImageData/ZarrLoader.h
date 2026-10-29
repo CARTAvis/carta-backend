@@ -10,12 +10,18 @@
 #include <string>
 
 #include "FileLoader.h"
+#include "PlaneReadAhead.h"
 
 namespace carta {
 
-class ZarrLoader : public FileLoader {
+class ZarrLoader : public FileLoader, public PlaneReadAhead {
 public:
     explicit ZarrLoader(const std::string& filename);
+
+    PlaneReadAhead* ReadAhead() override {
+        return this;
+    }
+    std::optional<ZarrPlaneRead> Plane(int z, int stokes) const override;
 
 protected:
     void AllocateImage(const std::string& hdu) override;

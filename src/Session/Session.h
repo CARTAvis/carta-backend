@@ -124,6 +124,7 @@ public:
     bool BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
     void ExecuteAnimationFrameInner(int animation_id);
+    std::vector<AnimatedPlane> AnimatedPlanes(const CARTA::AnimationFrame& frame);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
     int CurrentFlowWindowSize() {
