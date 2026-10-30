@@ -14,8 +14,10 @@
 #include <string>
 
 #include <casacore/casa/Exceptions/Error.h>
-#include <spdlog/fmt/fmt.h>
+#include <omp.h>
 #include <spdlog/spdlog.h>
+
+#include "Main/ProgramSettings.h"
 
 namespace carta {
 namespace {
@@ -25,21 +27,27 @@ constexpr std::size_t BYTES_PER_GIB = 1024U * 1024U * 1024U;
 std::mutex context_mutex;
 std::optional<carta::zarr::Context> shared_context;
 
-// The context with `options`, or with carta-zarr's defaults if it refuses them
+// The options in use, each a number: the backend settles every one rather than leaving any to carta-zarr
+void LogZarrContextOptions(const carta::zarr::ContextOptions& options) {
+    spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={:g}", options.io_threads,
+        options.decode_threads, static_cast<double>(options.cache_bytes.value_or(0)) / BYTES_PER_GIB);
+}
+
+// The context with `options`, or with the backend's defaults if carta-zarr refuses them
 carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options) {
     auto context = carta::zarr::Context::Create(options);
     if (context) {
-        spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={}", options.io_threads,
-            options.decode_threads,
-            options.cache_bytes ? fmt::format("{:g}", static_cast<double>(*options.cache_bytes) / BYTES_PER_GIB) : "default");
+        LogZarrContextOptions(options);
         return *std::move(context);
     }
 
-    spdlog::warn("Failed to apply requested carta-zarr resource limits ({}); using carta-zarr defaults", context.error().message);
-    auto default_context = carta::zarr::Context::Create();
+    spdlog::warn("Failed to apply requested carta-zarr resource limits ({}); using the defaults", context.error().message);
+    const auto defaults = DefaultZarrContextOptions();
+    auto default_context = carta::zarr::Context::Create(defaults);
     if (!default_context) {
         throw casacore::AipsError("Failed to create default carta-zarr context: " + default_context.error().message);
     }
+    LogZarrContextOptions(defaults);
     return *std::move(default_context);
 }
 
@@ -60,6 +68,10 @@ carta::zarr::ContextOptions ZarrContextOptions(
     return options;
 }
 
+carta::zarr::ContextOptions DefaultZarrContextOptions() {
+    return ZarrContextOptions(ZARR_FILE_IO_CONCURRENCY, ZARR_DATA_COPY_CONCURRENCY, ZARR_CACHE_POOL_GIB, omp_get_max_threads());
+}
+
 void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count) {
     const auto options = ZarrContextOptions(file_io_concurrency, data_copy_concurrency, cache_pool_gib, omp_thread_count);
     auto context = CreateContext(options);
@@ -70,7 +82,7 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, do
 carta::zarr::Context GetZarrContext() {
     std::scoped_lock lock(context_mutex);
     if (!shared_context) {
-        shared_context = CreateContext({});
+        shared_context = CreateContext(DefaultZarrContextOptions());
     }
     return *shared_context;
 }
