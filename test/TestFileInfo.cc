@@ -400,3 +400,33 @@ TEST(ZarrNotes, EveryNoteIsLoggedOnce) {
         EXPECT_EQ(times, 1) << note.detail;
     }
 }
+
+class FileExtInfoTestWithParam : public testing::TestWithParam<std::string> {};
+
+TEST_P(FileExtInfoTestWithParam, Issue1632) {
+    auto file_name = GetParam();
+    auto path = Issues("1632") / file_name;
+    auto loader = carta::FileLoader::GetLoader(path);
+    FileExtInfoLoader ext_info_loader(loader);
+    bool file_info_ok;
+    std::string message;
+    std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map;
+    CARTA::FileInfoExtended file_info_ext;
+
+    if (file_name.substr(file_name.size() - 3, 3) == ".gz") {
+        file_info_ok = ext_info_loader.FillFitsFileInfoMap(file_info_extended_map, path, message);
+        if (file_info_ok) {
+            file_info_ext = file_info_extended_map[""];
+        }
+    } else {
+        file_info_ok = ext_info_loader.FillFileExtInfo(file_info_ext, path, "", message);
+    }
+
+    for (auto header_entry : file_info_ext.header_entries()) {
+        if (header_entry.name() == "CDELT1" || header_entry.name() == "CDELT2") {
+            EXPECT_DOUBLE_EQ(header_entry.numeric_value(), 5E-5);
+        }
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(Issue1632Files, FileExtInfoTestWithParam, ::testing::Values("bad.fits", "bad.fits.gz"));
