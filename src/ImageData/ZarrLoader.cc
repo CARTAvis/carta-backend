@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -28,10 +29,11 @@ namespace carta {
 namespace {
 
 // The cache pool for a spectrum read. A spectrum reads a column of chunks through the whole depth, in
-// order. If the column fits in half of the shared cache, the default pool is used: the chunks stay cached,
-// so reading the same spectrum again is fast. Otherwise a pool that keeps nothing is used: a column larger
-// than the cache would evict its own chunks before they are reused, and one that fills much of it would
-// push out the chunks of the plane on show. With no shared cache there is nothing to protect.
+// order. If the column, as it decodes, fits in the shared cache, the default pool is used: the chunks stay
+// cached, so the spectrum of another pixel in the same chunks, as the cursor moves, reads from the cache. The
+// cache charges a little more than the decoded data for each chunk, so a column of nearly its size may lose a
+// chunk or two to it. Otherwise a pool that keeps nothing is used: a column larger than the cache would evict
+// its own chunks before they are reused. With no shared cache there is nothing to keep.
 std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& image, std::int64_t x, std::int64_t y, std::int64_t width,
     std::int64_t height, std::int64_t z, std::int64_t depth) {
     const auto cache_bytes = ZarrCacheBytes();
@@ -43,8 +45,8 @@ std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& imag
     const auto touched = [](std::int64_t from, std::int64_t count, std::int64_t unit) {
         return static_cast<std::uint64_t>((from + count - 1) / unit - from / unit + 1);
     };
-    const std::uint64_t chunks = touched(x, width, chunk(0)) * touched(y, height, chunk(1)) * touched(z, depth, chunk(2));
-    if (chunks * image.ZarrImage().DecodedChunkBytes() <= cache_bytes / 2) {
+    if (SpectrumKeepsItsChunks(touched(x, width, chunk(0)), touched(y, height, chunk(1)), touched(z, depth, chunk(2)),
+            image.ZarrImage().DecodedChunkBytes(), cache_bytes)) {
         return std::nullopt;
     }
     auto pool = GetZarrContext().CreateCachePool(0);
@@ -56,6 +58,20 @@ std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& imag
 }
 
 } // namespace
+
+bool SpectrumKeepsItsChunks(
+    std::uint64_t chunks_x, std::uint64_t chunks_y, std::uint64_t chunks_z, std::uint64_t chunk_bytes, std::size_t cache_bytes) {
+    // More chunks than a 64-bit count holds are more than any cache holds; wrapping would make them look few
+    std::uint64_t chunks = 1;
+    for (const auto count : {chunks_x, chunks_y, chunks_z}) {
+        if (count != 0 && chunks > std::numeric_limits<std::uint64_t>::max() / count) {
+            return false;
+        }
+        chunks *= count;
+    }
+    // Divided rather than multiplied, so that no count of chunks overflows into one that fits
+    return chunk_bytes == 0 || chunks <= cache_bytes / chunk_bytes;
+}
 
 ZarrLoader::ZarrLoader(const std::string& filename) : FileLoader(filename) {}
 

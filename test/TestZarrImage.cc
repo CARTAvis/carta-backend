@@ -1294,3 +1294,23 @@ TEST_F(ZarrImageTest, RegionSpectralDataRefusesAStokesTheImageDoesNotHave) {
         11, AxisRange(0, kDepth - 1), CARTA::PolarizationType::Plinear, mask, origin, image_mutex, profile, progress, {}));
     EXPECT_FALSE(loader.GetRegionSpectralData(11, AxisRange(0, kDepth - 1), kStokes, mask, origin, image_mutex, profile, progress, {}));
 }
+
+// A spectrum keeps its chunks whenever their column fits the shared cache as it decodes, the whole of it rather
+// than a part, so that the next pixel's spectrum in the same chunks reads from the cache
+TEST(ZarrSpectrumCache, AColumnKeepsItsChunksWheneverItFits) {
+    constexpr std::size_t kGib = std::size_t{1} << 30;
+    constexpr std::uint64_t kChunk = std::uint64_t{4} << 20;
+    EXPECT_TRUE(SpectrumKeepsItsChunks(1, 1, 128, kChunk, kGib));
+    EXPECT_TRUE(SpectrumKeepsItsChunks(2, 2, 64, kChunk, kGib));
+    EXPECT_FALSE(SpectrumKeepsItsChunks(1, 1, 257, kChunk, kGib));
+    EXPECT_FALSE(SpectrumKeepsItsChunks(1, 1, 1, kChunk, 0));
+    EXPECT_TRUE(SpectrumKeepsItsChunks(1, 1, 1, 0, kGib));
+    // Counts whose product would wrap to one that fits, 2^32 by 2^32 by 2 being 0 in 64 bits, do not fit
+    constexpr std::uint64_t kHuge = std::uint64_t{1} << 32;
+    EXPECT_FALSE(SpectrumKeepsItsChunks(kHuge, kHuge, 2, kChunk, kGib));
+    EXPECT_FALSE(SpectrumKeepsItsChunks(kHuge, kHuge, kHuge, kChunk, kGib));
+    // Nor a count whose bytes would wrap, 2^32 chunks of 2^32 bytes
+    EXPECT_FALSE(SpectrumKeepsItsChunks(1, 1, kHuge, kHuge, kGib));
+    // Nor in the largest cache, which a count held at its largest would equal
+    EXPECT_FALSE(SpectrumKeepsItsChunks(kHuge, kHuge, 1, 1, std::numeric_limits<std::size_t>::max()));
+}

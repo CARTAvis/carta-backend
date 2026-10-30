@@ -21,6 +21,12 @@
 
 namespace carta {
 
+// Whether a spectrum whose column is `chunks_x` by `chunks_y` by `chunks_z` chunks, each decoding to
+// `chunk_bytes`, keeps them in a shared cache of `cache_bytes`: whenever they fit as they decode, so that a
+// cursor moving within them reads them from the cache.
+bool SpectrumKeepsItsChunks(
+    std::uint64_t chunks_x, std::uint64_t chunks_y, std::uint64_t chunks_z, std::uint64_t chunk_bytes, std::size_t cache_bytes);
+
 class ZarrLoader : public FileLoader {
 public:
     explicit ZarrLoader(const std::string& filename);
