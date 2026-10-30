@@ -371,13 +371,6 @@ global configuration files, respectively.
             command_line_settings[key] = result[key].as<std::vector<int>>();
         }
     }
-
-    // Ignored, as the schema ignores a negative cache in a settings file
-    if (result.count("zarr_cache") && result["zarr_cache"].as<double>() < 0) {
-        warning_msgs.push_back(fmt::format("zarr_cache {} is not a cache size; ignoring it", result["zarr_cache"].as<double>()));
-        zarr_cache_pool_gib = ZARR_CACHE_POOL_GIB;
-        command_line_settings.erase("zarr_cache");
-    }
 }
 
 void ProgramSettings::ApplyJSONSettings() {
