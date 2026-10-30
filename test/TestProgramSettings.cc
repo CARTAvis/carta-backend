@@ -364,7 +364,8 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
     EXPECT_EQ(j.size(), 0);
 }
 
-// A config file may set the Zarr cache to a fraction of a GiB, but not below zero
+// A config file may set the Zarr cache to a fraction of a GiB. A negative size is kept as given, and the
+// carta-zarr context takes it as zero, as it takes zarr_io and zarr_decode
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithFractionalZarrCache) {
     const auto read_cache = [](const std::string& value) {
         const auto path = fs::temp_directory_path() / fmt::format("carta-zarr-cache-{}.json", ::getpid());
@@ -378,14 +379,14 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithFractionalZarrCache) {
     EXPECT_EQ(read_cache("2.5"), 2.5);
     EXPECT_EQ(read_cache("2"), 2.0);
     EXPECT_EQ(read_cache("0"), 0.0);
-    EXPECT_EQ(read_cache("-1"), 1.0) << "a negative size is ignored, leaving the default";
+    EXPECT_EQ(read_cache("-1"), -1.0);
 }
 
-// A negative cache is ignored on the command line too, so that it means the same wherever it is given
-TEST_F(ProgramSettingsTest, ANegativeZarrCacheIsIgnoredOnTheCommandLine) {
+// A negative cache on the command line is kept as given too, so that it means the same wherever it is given
+TEST_F(ProgramSettingsTest, ANegativeZarrCacheIsKeptOnTheCommandLine) {
     auto settings = SettingsFromString("carta_backend --zarr_cache=-1");
-    EXPECT_EQ(settings.zarr_cache_pool_gib, 1.0);
-    EXPECT_FALSE(settings.command_line_settings.contains("zarr_cache")) << "a settings file's value would be overridden";
+    EXPECT_EQ(settings.zarr_cache_pool_gib, -1.0);
+    EXPECT_EQ(settings.command_line_settings["zarr_cache"], -1.0);
 
     settings = SettingsFromString("carta_backend --zarr_cache=2.5");
     EXPECT_EQ(settings.zarr_cache_pool_gib, 2.5);
