@@ -387,7 +387,7 @@ CARTA::HeaderEntry* FileExtInfoLoader::AddNumericHeaderEntry(
     CARTA::FileInfoExtended& extended_info, const casacore::String& name, casacore::String& value) {
     // Convert string value to double, float, or int.  Set as string type if conversion fails.
     CARTA::HeaderEntry* entry;
-    if (value.contains(".")) {
+    if (value.contains(".") || value.contains("E") || value.contains("e")) {
         // Float or double type?
         try {
             double dvalue = std::stod(value);

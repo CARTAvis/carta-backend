@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Added carta-zarr dependency and settings for reading Zarr images ([#1608](https://github.com/CARTAvis/carta-backend/issues/1608)).
 
+### Fixed
+* Fixed incorrect scientic notation parsing ([#1632](https://github.com/CARTAvis/carta-backend/issues/1632)). 
+* Fixed error importing incorrect region name from a CRTF region file ([#1626](https://github.com/CARTAvis/carta-backend/issues/1626)). 
+
 ## [6.0.0]
 
 ### Fixed
