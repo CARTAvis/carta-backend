@@ -17,11 +17,14 @@ namespace carta {
 carta::zarr::ContextOptions ZarrContextOptions(
     int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count);
 
+// The options of the backend's own defaults for the zarr_* settings, each a number.
+carta::zarr::ContextOptions DefaultZarrContextOptions();
+
 // Creates the process-wide carta-zarr context. Called once at startup, before any Zarr file is
 // opened, so that every Zarr image shares one set of thread pools and one chunk cache.
 void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count);
 
-// The context configured at startup, or one with carta-zarr's defaults if none was.
+// The context configured at startup, or one with the backend's defaults if none was.
 carta::zarr::Context GetZarrContext();
 
 } // namespace carta
