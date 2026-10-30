@@ -215,8 +215,8 @@ std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsData(FileInfo::Data ds)
     }
 }
 
-bool Hdf5Loader::GetCursorSpectralData(
-    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
+bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+    std::mutex& image_mutex, const SpectralReadProgress& /*progress*/) {
     bool data_ok(false);
     std::unique_lock<std::mutex> ulock(image_mutex);
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
@@ -266,7 +266,7 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 
 bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress, const SpectralReadWanted& /*still_wanted*/) {
     // Return calculated stats if valid and complete,
     // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
     // Calling function should check for complete progress when x-range of region is complete
@@ -385,7 +385,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
     std::vector<float> slice_data;
 
     for (size_t x = x_start; x < max_x; ++x) {
-        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, height, image_mutex)) {
+        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, height, image_mutex, {})) {
             return false;
         }
 

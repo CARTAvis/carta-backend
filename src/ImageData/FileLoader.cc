@@ -874,8 +874,8 @@ FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int z) {
     return _empty_stats;
 }
 
-bool FileLoader::GetCursorSpectralData(
-    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
+bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+    std::mutex& image_mutex, const SpectralReadProgress& progress) {
     // Must be implemented in subclasses
     return false;
 }
@@ -887,7 +887,7 @@ bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 
 bool FileLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress, const SpectralReadWanted& still_wanted) {
     // Must be implemented in subclasses
     return false;
 }
