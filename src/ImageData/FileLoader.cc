@@ -6,6 +6,7 @@
 
 #include "FileLoader.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include <casacore/images/Images/SubImage.h>
@@ -15,6 +16,7 @@
 #include "Util/File.h"
 #include "Util/Nan.h"
 
+#include "CartaZarrImage.h"
 #include "CasaLoader.h"
 #include "CompListLoader.h"
 #include "ConcatLoader.h"
@@ -341,6 +343,20 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
         if (image_type == "CartaFitsImage") {
             // Use cfitsio for slice
             return image->doGetSlice(data, slicer);
+        } else if (auto* zarr_image = dynamic_cast<CartaZarrImage*>(image.get()); zarr_image && data.contiguousStorage()) {
+            // One read of the slice into the caller's own storage, with flagged and absent pixels NaN. carta-zarr
+            // cuts it to its read budget, and reads a single plane whole when the budget has room for a chunk per
+            // decode thread. The masked iterator below would read it a cursor at a time, each after the last, and
+            // then each cursor's mask; it still serves an array that is not contiguous, which Read would copy whole.
+            const auto read = zarr_image->Read(data, slicer);
+            if (!read) {
+                spdlog::error("Error loading image data: {}", read.error().message);
+                return false;
+            }
+            // An infinite pixel is NaN too, as the iterator makes it through the image's mask of finite pixels
+            std::replace_if(
+                data.data(), data.data() + data.nelements(), [](float value) { return !std::isfinite(value); }, FLOAT_NAN);
+            return true;
         } else if (image_type == "ImageExpr") {
             // Use ImageExpr for slice
             casacore::Array<float> slice_data;
