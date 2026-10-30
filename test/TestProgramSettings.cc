@@ -10,6 +10,7 @@
 #include "CommonTestUtilities.h"
 #include "HttpServer/HttpServer.h"
 #include "Main/ProgramSettings.h"
+#include "Util/Json.h"
 #include "Util/String.h"
 
 #include <fstream>
@@ -67,6 +68,9 @@ public:
         }
         EXPECT_TRUE(p1.omp_thread_count == p2.omp_thread_count);
         EXPECT_TRUE(p1.event_thread_count == p2.event_thread_count);
+        EXPECT_TRUE(p1.zarr_file_io_concurrency == p2.zarr_file_io_concurrency);
+        EXPECT_TRUE(p1.zarr_data_copy_concurrency == p2.zarr_data_copy_concurrency);
+        EXPECT_TRUE(p1.zarr_cache_pool_gib == p2.zarr_cache_pool_gib);
         EXPECT_TRUE(p1.top_level_folder == p2.top_level_folder);
         EXPECT_TRUE(p1.starting_folder == p2.starting_folder);
         EXPECT_TRUE(p1.host == p2.host);
@@ -131,6 +135,9 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
 
     EXPECT_EQ(settings.port.size(), 0);
     EXPECT_EQ(settings.omp_thread_count, -1);
+    EXPECT_EQ(settings.zarr_file_io_concurrency, 0);
+    EXPECT_EQ(settings.zarr_data_copy_concurrency, 0);
+    EXPECT_EQ(settings.zarr_cache_pool_gib, 1.0);
     EXPECT_EQ(settings.top_level_folder, "/");
     EXPECT_EQ(settings.starting_folder, ".");
     EXPECT_EQ(settings.host, "0.0.0.0");
@@ -151,6 +158,7 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
 TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
         "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --omp_threads 10"
+        " --zarr_io 3 --zarr_decode 7 --zarr_cache 2.5"
         " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode "
         "--enable_scripting");
     EXPECT_EQ(settings.verbosity, 6);
@@ -160,6 +168,9 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     EXPECT_EQ(settings.host, "helloworld");
     EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.omp_thread_count, 10);
+    EXPECT_EQ(settings.zarr_file_io_concurrency, 3);
+    EXPECT_EQ(settings.zarr_data_copy_concurrency, 7);
+    EXPECT_EQ(settings.zarr_cache_pool_gib, 2.5);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
     EXPECT_EQ(settings.frontend_folder, "/var");
     EXPECT_EQ(settings.wait_time, 10);
@@ -291,6 +302,9 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
         "host": "helloworld",
         "port": [1234],
         "omp_threads": 10,
+        "zarr_io": 3,
+        "zarr_decode": 7,
+        "zarr_cache": 0.5,
         "top_level_folder": "/tmp",
         "frontend_folder": "/var",
         "exit_timeout": 10,
@@ -310,6 +324,9 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.host, "helloworld");
     EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.omp_thread_count, 10);
+    EXPECT_EQ(settings.zarr_file_io_concurrency, 3);
+    EXPECT_EQ(settings.zarr_data_copy_concurrency, 7);
+    EXPECT_EQ(settings.zarr_cache_pool_gib, 0.5);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
     EXPECT_EQ(settings.frontend_folder, "/var");
     EXPECT_EQ(settings.wait_time, 10);
@@ -345,6 +362,81 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
     EXPECT_EQ(j.size(), 0);
+}
+
+// A config file may set the Zarr cache to a fraction of a GiB. A negative size is kept as given, and the
+// carta-zarr context takes it as zero, as it takes zarr_io and zarr_decode
+TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithFractionalZarrCache) {
+    const auto read_cache = [](const std::string& value) {
+        const auto path = fs::temp_directory_path() / fmt::format("carta-zarr-cache-{}.json", ::getpid());
+        std::ofstream(path) << "{\"zarr_cache\": " << value << "}";
+        carta::ProgramSettings settings;
+        auto j = settings.JSONSettingsFromFile(path);
+        settings.SetSettingsFromJSON(j);
+        fs::remove(path);
+        return settings.zarr_cache_pool_gib;
+    };
+    EXPECT_EQ(read_cache("2.5"), 2.5);
+    EXPECT_EQ(read_cache("2"), 2.0);
+    EXPECT_EQ(read_cache("0"), 0.0);
+    EXPECT_EQ(read_cache("-1"), -1.0);
+}
+
+// A negative cache on the command line is kept as given too, so that it means the same wherever it is given
+TEST_F(ProgramSettingsTest, ANegativeZarrCacheIsKeptOnTheCommandLine) {
+    auto settings = SettingsFromString("carta_backend --zarr_cache=-1");
+    EXPECT_EQ(settings.zarr_cache_pool_gib, -1.0);
+    EXPECT_EQ(settings.command_line_settings["zarr_cache"], -1.0);
+
+    settings = SettingsFromString("carta_backend --zarr_cache=2.5");
+    EXPECT_EQ(settings.zarr_cache_pool_gib, 2.5);
+    EXPECT_EQ(settings.command_line_settings["zarr_cache"], 2.5);
+}
+
+// A Zarr setting of the wrong type in a settings file is refused, rather than converted
+TEST_F(ProgramSettingsTest, ZarrSettingsOfTheWrongTypeAreRefused) {
+    const auto path = fs::temp_directory_path() / fmt::format("carta-zarr-types-{}.json", ::getpid());
+    std::ofstream(path) << R"({"zarr_io": 2.5, "zarr_decode": "4", "zarr_cache": "2.5"})";
+    carta::ProgramSettings settings;
+    auto j = settings.JSONSettingsFromFile(path);
+    fs::remove(path);
+    EXPECT_EQ(j.size(), 0) << j.dump();
+}
+
+// Each setting a settings file may hold has the schema type that lets the backend's values through, so that
+// the schema does not refuse a value the backend takes, as it once refused a fractional zarr_cache
+TEST_F(ProgramSettingsTest, TheSchemaTypesMatchTheSettings) {
+    const auto& properties = carta::Json::Schema("backend")["properties"];
+    carta::ProgramSettings settings;
+    const auto expect_type = [&](const std::string& key, const std::string& type) {
+        if (properties.contains(key)) {
+            EXPECT_EQ(properties[key].value("type", ""), type) << key;
+        }
+    };
+    for (const auto& [key, elem] : settings.int_keys_map) {
+        expect_type(key, "integer");
+    }
+    for (const auto& [key, elem] : settings.double_keys_map) {
+        expect_type(key, "number");
+    }
+    for (const auto& [key, elem] : settings.bool_keys_map) {
+        expect_type(key, "boolean");
+    }
+    for (const auto& [key, elem] : settings.strings_keys_map) {
+        expect_type(key, "string");
+    }
+}
+
+// The Zarr settings are in the schema, with the defaults the backend uses
+TEST_F(ProgramSettingsTest, TheSchemaHasTheZarrSettingsAndTheirDefaults) {
+    const auto& properties = carta::Json::Schema("backend")["properties"];
+    carta::ProgramSettings settings;
+    ASSERT_TRUE(properties.contains("zarr_io"));
+    ASSERT_TRUE(properties.contains("zarr_decode"));
+    ASSERT_TRUE(properties.contains("zarr_cache"));
+    EXPECT_EQ(properties["zarr_io"]["default"].get<int>(), settings.zarr_file_io_concurrency);
+    EXPECT_EQ(properties["zarr_decode"]["default"].get<int>(), settings.zarr_data_copy_concurrency);
+    EXPECT_EQ(properties["zarr_cache"]["default"].get<double>(), settings.zarr_cache_pool_gib);
 }
 
 TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
