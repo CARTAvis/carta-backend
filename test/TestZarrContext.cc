@@ -4,12 +4,14 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <limits>
 #include <optional>
 
 #include <gtest/gtest.h>
+#include <omp.h>
 
 #include "ImageData/ZarrContext.h"
 
@@ -61,6 +63,24 @@ TEST(ZarrContextTest, CacheSizeBelowZeroOrNotANumberHoldsNothing) {
 
 TEST(ZarrContextTest, CacheSizeTooLargeForASizeIsCapped) {
     EXPECT_EQ(ZarrContextOptions(2, -1, 1e300, 8).cache_bytes, std::optional<std::size_t>(std::numeric_limits<std::size_t>::max()));
+}
+
+// The backend's defaults are numbers, not values left to carta-zarr or TensorStore: file IO capped at four
+// threads, decoding on every OpenMP thread, and a cache of 1 GiB
+TEST(ZarrContextTest, TheDefaultsAreTheBackendsOwnNumbers) {
+    const auto options = carta::DefaultZarrContextOptions();
+    const auto threads = static_cast<unsigned int>(omp_get_max_threads());
+    EXPECT_EQ(options.io_threads, std::min(4U, threads));
+    EXPECT_EQ(options.decode_threads, threads);
+    EXPECT_EQ(options.cache_bytes, std::optional<std::size_t>(std::size_t{1} << 30));
+}
+
+// The cache size the loaders size spectra against is the one of the context in use
+TEST(ZarrContextTest, TheRecordedCacheIsTheConfiguredOne) {
+    carta::ConfigureZarrContext(2, 1, 0.5, 1);
+    EXPECT_EQ(carta::ZarrCacheBytes(), std::size_t{1} << 29);
+    carta::ConfigureZarrContext(2, 1, 0, 1);
+    EXPECT_EQ(carta::ZarrCacheBytes(), 0U);
 }
 
 TEST(ZarrContextTest, ConfigureThenGetDoesNotThrow) {
