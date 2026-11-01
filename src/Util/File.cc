@@ -148,18 +148,6 @@ bool IsCompressedFits(const std::string& filename) {
 }
 
 /**
- * @details This function uses a regular expression to determine if the provided filename
- * starts with "http://" or "https://", indicating that it is a remote file
- * accessible via HTTP.
- *
- * @note This function does not verify if the URL is accessible or valid beyond its prefix.
- */
-bool IsRemoteHttpFile(const std::string& filename) {
-    const std::regex is_http_url("^https?://");
-    return std::regex_search(filename, is_http_url);
-}
-
-/**
  * @details This function checks whether the provided 32-bit magic number matches the
  * gzip file signature (`0x1f8b`). The magic number is formatted as a hexadecimal
  * string and examined to see if it ends with "8b1f".

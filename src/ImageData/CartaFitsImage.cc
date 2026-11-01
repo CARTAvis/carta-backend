@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CartaFitsImage.cc : specialized casacore::ImageInterface implementation for FITS
+// # CartaFitsImage.cc : specialized casacore::ImageInterface implementation for FITS
 
 #include "CartaFitsImage.h"
 
@@ -27,7 +27,7 @@
 
 using namespace carta;
 
-CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu, bool is_http)
+CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
     : casacore::ImageInterface<float>(),
       _filename(filename),
       _hdu(hdu),
@@ -37,13 +37,10 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu, bo
       _equiv_bitpix(-32), // assume float
       _has_blanks(false),
       _pixel_mask(nullptr),
-      _is_http(is_http),
       _is_copy(false) {
-    if (!is_http) {
-        casacore::File ccfile(filename);
-        if (!ccfile.exists() || !ccfile.isReadable()) {
-            throw(casacore::AipsError("FITS file is not readable or does not exist."));
-        }
+    casacore::File ccfile(filename);
+    if (!ccfile.exists() || !ccfile.isReadable()) {
+        throw(casacore::AipsError("FITS file is not readable or does not exist."));
     }
 
     SetUpImage();
@@ -453,9 +450,7 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
     fits_free_memory(*header, &free_status);
 
     // Done with file setup
-    if (!_is_http) {
-        CloseFile();
-    }
+    CloseFile();
 }
 
 void CartaFitsImage::SetFitsHeaderStrings(int nheaders, const std::string& header) {
