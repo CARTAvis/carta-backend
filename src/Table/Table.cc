@@ -34,6 +34,7 @@ Table::Table(const std::string& filename, bool header_only) : _valid(false), _fi
         _valid = ConstructFromXML(header_only);
         _file_type = CARTA::VOTable;
     } else {
+        _parse_error_message = "Unrecognised table format: expected a FITS table or a VOTable!";
     }
 }
 
@@ -61,6 +62,36 @@ std::string Table::GetHeader(const std::string& filename) {
     return header_string;
 }
 
+// A VOTable may hold several resources, and DALI responses (such as SIA queries) precede the results with a
+// self-describing metadata resource, so the first resource is not necessarily the one holding the table.
+static pugi::xml_node FindTableResource(const pugi::xml_node& parent) {
+    // A results resource wins even when its table is nested inside it
+    for (auto& resource : parent.children("RESOURCE")) {
+        if (std::string(resource.attribute("type").as_string()) != "results") {
+            continue;
+        }
+        if (resource.child("TABLE")) {
+            return resource;
+        }
+        if (auto nested = FindTableResource(resource)) {
+            return nested;
+        }
+    }
+
+    for (auto& resource : parent.children("RESOURCE")) {
+        if (resource.child("TABLE")) {
+            return resource;
+        }
+    }
+
+    for (auto& resource : parent.children("RESOURCE")) {
+        if (auto nested = FindTableResource(resource)) {
+            return nested;
+        }
+    }
+    return pugi::xml_node();
+}
+
 bool Table::ConstructFromXML(bool header_only) {
     pugi::xml_document doc;
 
@@ -86,19 +117,15 @@ bool Table::ConstructFromXML(bool header_only) {
         return false;
     }
 
-    PopulateCoosys(votable);
-
-    auto resource = votable.child("RESOURCE");
+    auto resource = FindTableResource(votable);
     if (!resource) {
-        _parse_error_message = "Missing XML element RESOURCE!";
+        _parse_error_message = votable.child("RESOURCE") ? "Missing XML element TABLE!" : "Missing XML element RESOURCE!";
         return false;
     }
+
+    PopulateCoosys(votable, resource);
 
     auto table_node = resource.child("TABLE");
-    if (!table_node) {
-        _parse_error_message = "Missing XML element TABLE!";
-        return false;
-    }
 
     auto description = table_node.child("DESCRIPTION");
     if (description) {
@@ -129,13 +156,8 @@ bool Table::ConstructFromXML(bool header_only) {
     return true;
 }
 
-bool Table::PopulateCoosys(const pugi::xml_node& votable) {
-    if (!votable) {
-        return false;
-    }
-
-    auto resource = votable.child("RESOURCE");
-    if (!resource) {
+bool Table::PopulateCoosys(const pugi::xml_node& votable, const pugi::xml_node& resource) {
+    if (!votable || !resource) {
         return false;
     }
 

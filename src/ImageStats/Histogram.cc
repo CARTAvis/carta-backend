@@ -55,7 +55,9 @@ void Histogram::Fill(const float* data, const size_t data_size) {
         auto num_threads = omp_get_num_threads();
         auto thread_index = omp_get_thread_num();
 #pragma omp single
-        { temp_bins.resize(num_bins * num_threads); }
+        {
+            temp_bins.resize(num_bins * num_threads);
+        }
 #pragma omp for
         for (int64_t i = 0; i < num_elements; i++) {
             auto val = data[i];

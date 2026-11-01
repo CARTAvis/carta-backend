@@ -421,3 +421,47 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
     auto url_string = carta::HttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("files={},{}", fits_file, hdf5_file));
 }
+
+TEST_F(ProgramSettingsTest, SiaServicesDefaultNotEmpty) {
+    carta::ProgramSettings settings;
+    EXPECT_FALSE(settings.sia_services.empty());
+}
+
+TEST_F(ProgramSettingsTest, SiaServicesFromCommandLine) {
+    auto settings = SettingsFromVector({"carta_backend", "--sia_services", "GAVO|https://a.org/sia,https://b.org/sia"});
+    auto expected = std::vector<std::string>{"GAVO|https://a.org/sia", "https://b.org/sia"};
+    EXPECT_EQ(settings.sia_services, expected);
+}
+
+TEST_F(ProgramSettingsTest, SiaServicesFromJSON) {
+    nlohmann::json j = nlohmann::json::parse(R"({"sia_services": ["GAVO|https://a.org/sia", "https://b.org/sia"]})");
+    carta::ProgramSettings settings;
+    settings.SetSettingsFromJSON(j);
+    auto expected = std::vector<std::string>{"GAVO|https://a.org/sia", "https://b.org/sia"};
+    EXPECT_EQ(settings.sia_services, expected);
+}
+
+TEST_F(ProgramSettingsTest, SiaServicesJSONSingleString) {
+    nlohmann::json j = nlohmann::json::parse(R"({"sia_services": "https://only.example.com/sia"})");
+    carta::ProgramSettings settings;
+    settings.SetSettingsFromJSON(j);
+    auto expected = std::vector<std::string>{"https://only.example.com/sia"};
+    EXPECT_EQ(settings.sia_services, expected);
+}
+
+TEST_F(ProgramSettingsTest, RemoteFileMaxSizeDefault) {
+    carta::ProgramSettings settings;
+    EXPECT_GT(settings.remote_file_max_size_mb, 0);
+}
+
+TEST_F(ProgramSettingsTest, RemoteFileMaxSizeFromCommandLine) {
+    auto settings = SettingsFromVector({"carta_backend", "--remote_file_max_size_mb", "512"});
+    EXPECT_EQ(settings.remote_file_max_size_mb, 512);
+}
+
+TEST_F(ProgramSettingsTest, RemoteFileMaxSizeFromJSON) {
+    nlohmann::json j = nlohmann::json::parse(R"({"remote_file_max_size_mb": 0})");
+    carta::ProgramSettings settings;
+    settings.SetSettingsFromJSON(j);
+    EXPECT_EQ(settings.remote_file_max_size_mb, 0);
+}

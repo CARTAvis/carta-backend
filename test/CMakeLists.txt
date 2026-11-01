@@ -42,6 +42,7 @@ set(TEST_SOURCES
         TestExprImage.cc
         TestFileInfo.cc
         TestFileList.cc
+        TestFitsHduList.cc
         TestFitsImage.cc
         TestFitsTable.cc
         TestHdf5Attributes.cc
@@ -67,6 +68,8 @@ set(TEST_SOURCES
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc
         Util/TestUtilMemory.cc
+        Util/TestUtilRemoteFiles.cc
+        Util/TestUtilSia.cc
         Util/TestUtilString.cc)
 
 # Add all the sources in the main project and remove Main.cc

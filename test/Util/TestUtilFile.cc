@@ -26,7 +26,7 @@ private:
 TEST_F(FileUtilTest, ItemCountValidFolder) {
     auto pwd = TestRoot();
     EXPECT_EQ(GetNumItems((pwd / "data/tables").string()), 2);
-    EXPECT_EQ(GetNumItems((pwd / "data/tables/xml").string()), 6);
+    EXPECT_EQ(GetNumItems((pwd / "data/tables/xml").string()), 7);
 }
 
 TEST_F(FileUtilTest, ItemCountMissingFolder) {
