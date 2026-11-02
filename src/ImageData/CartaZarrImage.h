@@ -55,7 +55,7 @@ public:
 
 private:
     void SetUpImage();
-    // The beams at the first time, if the store has a table casacore accepts
+    // The beams of the first time slice, unless the store has no beam table or one casacore refuses
     std::optional<casacore::ImageBeamSet> ReadBeamSet();
     // Logs each note and keeps it for the file info
     void AddNotes(std::vector<ZarrNote> notes);

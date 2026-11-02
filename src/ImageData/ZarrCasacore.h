@@ -50,7 +50,7 @@ struct ZarrCoordinates {
 ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& descriptor);
 
 struct ZarrBeams {
-    // None if the table has no beam at the first time, or has beams for planes the image does not have
+    // None if the table has no beam at the first time slice, or has beams for planes the image does not have
     std::optional<casacore::ImageBeamSet> beams;
     std::vector<ZarrNote> notes;
 };
@@ -60,7 +60,7 @@ struct ZarrBeams {
 // default, for an image naming none or one casacore does not know.
 casacore::ImageInfo::ImageTypes MakeZarrImageType(const std::string& sub_type);
 
-// The beams at the first time, for an image of `channels` by `polarizations` planes. A table casacore
+// The beams at the first time slice, for an image of `channels` by `polarizations` planes. A table casacore
 // refuses is ignored and noted.
 ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore::uInt channels, casacore::uInt polarizations);
 

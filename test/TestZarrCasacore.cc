@@ -82,7 +82,7 @@ carta::zarr::Beam Beam(std::size_t time, std::size_t channel, std::size_t polari
     return beam;
 }
 
-// Every plane of a three-channel, two-polarization image at the first time, all with `major`.
+// Every plane of a three-channel, two-polarization image at the first time slice, all with `major`.
 std::vector<carta::zarr::Beam> EveryPlane(double major) {
     std::vector<carta::zarr::Beam> table;
     for (std::size_t channel = 0; channel < 3; ++channel) {
@@ -283,7 +283,7 @@ TEST(ZarrCasacore, BeamsThatDifferStayMany) {
     EXPECT_EQ(made.beams->nelements(), 6u);
 }
 
-TEST(ZarrCasacore, OnlyTheFirstTimeIsRead) {
+TEST(ZarrCasacore, OnlyTheFirstTimeSliceIsRead) {
     auto table = EveryPlane(2.0e-5);
     for (const auto& beam : EveryPlane(3.0e-5)) {
         auto later = beam;
@@ -292,14 +292,14 @@ TEST(ZarrCasacore, OnlyTheFirstTimeIsRead) {
     }
     const auto made = MakeZarrBeamSet(table, 3, 2);
     ASSERT_TRUE(made.beams.has_value());
-    EXPECT_EQ(made.beams->nelements(), 1u) << "a second time's beams are not this image's";
+    EXPECT_EQ(made.beams->nelements(), 1u) << "a second time slice's beams are not this image's";
     EXPECT_TRUE(made.notes.empty());
 
     std::vector<carta::zarr::Beam> later_only;
     for (const auto& beam : EveryPlane(2.0e-5)) {
         later_only.push_back(Beam(1, beam.channel, beam.polarization, beam.major));
     }
-    EXPECT_FALSE(MakeZarrBeamSet(later_only, 3, 2).beams.has_value()) << "nothing at the first time is no beam";
+    EXPECT_FALSE(MakeZarrBeamSet(later_only, 3, 2).beams.has_value()) << "nothing at the first time slice is no beam";
 }
 
 // Planes missing from the table get the null beam, with a note

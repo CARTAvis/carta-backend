@@ -344,7 +344,7 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
         }
     }
     if (first == nullptr) {
-        return result; // no beam at the first time
+        return result; // no beam at the first time slice
     }
     const auto planes = static_cast<std::size_t>(channels) * polarizations;
     if (filled != planes) {
