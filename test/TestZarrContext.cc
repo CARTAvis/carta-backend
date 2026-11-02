@@ -65,9 +65,9 @@ TEST(ZarrContextTest, CacheSizeTooLargeForASizeIsCapped) {
     EXPECT_EQ(ZarrContextOptions(2, -1, 1e300, 8).cache_bytes, std::optional<std::size_t>(std::numeric_limits<std::size_t>::max()));
 }
 
-// The backend's defaults are numbers, not values left to carta-zarr or TensorStore: file IO capped at four
-// threads, decoding on every OpenMP thread, and a cache of 1 GiB
-TEST(ZarrContextTest, TheDefaultsAreTheBackendsOwnNumbers) {
+// The defaults are the settings' defaults: file IO capped at four threads, decoding on every OpenMP thread, and
+// a cache of 1 GiB
+TEST(ZarrContextTest, TheDefaultsAreTheSettingsDefaults) {
     const auto options = carta::DefaultZarrContextOptions();
     const auto threads = static_cast<unsigned int>(omp_get_max_threads());
     EXPECT_EQ(options.io_threads, std::min(4U, threads));
