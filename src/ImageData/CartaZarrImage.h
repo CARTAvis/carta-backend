@@ -19,12 +19,13 @@
 
 namespace carta {
 
-// One line of a Zarr image's storage layout, for the file info. `has_shape` says the value lists
-// the image's axes in the image's order, so it can be labeled like the image shape.
+// One line of a Zarr image's storage layout, for the file info. `is_shape` is set for a chunk or shard
+// shape, whose numbers are in the order of the image's shape, so that the file info labels them with the
+// shape's axis names.
 struct StorageEntry {
     std::string name;
     std::string value;
-    bool has_shape = false;
+    bool is_shape = false;
 };
 
 // An XRADIO image of the sky or of the aperture plane, in CARTA's axis order: spatial X, spatial Y,

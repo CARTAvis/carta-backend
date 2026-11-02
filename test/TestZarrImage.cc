@@ -102,7 +102,7 @@ TEST_F(ZarrImageTest, TheStorageLayoutIsInCartasOrder) {
     const auto chunk = std::find_if(entries.begin(), entries.end(), [](const StorageEntry& entry) { return entry.name == "Chunk shape"; });
     ASSERT_NE(chunk, entries.end());
     EXPECT_EQ(chunk->value, "[2, 5, 1, 1]");
-    EXPECT_TRUE(chunk->has_shape);
+    EXPECT_TRUE(chunk->is_shape);
 }
 
 TEST_F(ZarrImageTest, TelescopePositionIsCartesian) {
