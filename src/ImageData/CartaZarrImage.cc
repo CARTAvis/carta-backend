@@ -28,7 +28,7 @@ namespace carta {
 namespace {
 
 // CARTA's axes: spatial X, spatial Y, spectral, polarization. An image's logical order is these, then at
-// most a time axis of length one; see CartaShape.
+// most a time axis of length one; see CartaShape in ZarrStores.h.
 constexpr std::size_t CARTA_AXES = 4;
 
 // Per-axis values, such as a chunk shape, cut to CARTA's four axes. They are in the image's order, which

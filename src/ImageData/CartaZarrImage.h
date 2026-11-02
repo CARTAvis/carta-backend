@@ -62,7 +62,7 @@ private:
 
     std::string _filename;
     std::optional<carta::zarr::Image> _zarr_image;
-    // In CARTA's order; see CartaShape. An image CARTA cannot display is not opened.
+    // CARTA's four axes in CARTA's order; see CartaShape in ZarrStores.h
     casacore::IPosition _shape;
     std::vector<ZarrNote> _notes;
 };
