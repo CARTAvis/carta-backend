@@ -29,7 +29,7 @@ std::optional<carta::zarr::Context> shared_context;
 // The cache size of the shared context
 std::size_t shared_cache_bytes = 0;
 
-// The options in use, each a number: the backend settles every one rather than leaving any to carta-zarr
+// The options in use
 void LogZarrContextOptions(const carta::zarr::ContextOptions& options) {
     spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={:g}", options.io_threads,
         options.decode_threads, static_cast<double>(options.cache_bytes.value_or(0)) / BYTES_PER_GIB);
