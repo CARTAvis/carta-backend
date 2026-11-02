@@ -27,7 +27,6 @@ public:
     }
 
 private:
-    bool FillZarrFileInfo(CARTA::FileInfo& file_info);
     CARTA::FileType GetCartaFileType(const std::string& filename);
     bool GetHdf5HduList(CARTA::FileInfo& file_info, const std::string& abs_filename);
 
