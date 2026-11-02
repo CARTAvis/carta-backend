@@ -27,7 +27,7 @@ constexpr std::size_t BYTES_PER_GIB = 1024U * 1024U * 1024U;
 std::mutex context_mutex;
 std::optional<carta::zarr::Context> shared_context;
 
-// The options in use, each a number: the backend settles every one rather than leaving any to carta-zarr
+// The options in use
 void LogZarrContextOptions(const carta::zarr::ContextOptions& options) {
     spdlog::debug("carta-zarr context: file_io_threads={}, data_copy_threads={}, cache_size_gib={:g}", options.io_threads,
         options.decode_threads, static_cast<double>(options.cache_bytes.value_or(0)) / BYTES_PER_GIB);
