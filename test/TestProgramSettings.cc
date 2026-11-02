@@ -364,9 +364,9 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
     EXPECT_EQ(j.size(), 0);
 }
 
-// A config file may set the Zarr cache to a fraction of a GiB. A negative size is kept as given, and the
-// carta-zarr context takes it as zero, as it takes zarr_io and zarr_decode
-TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithFractionalZarrCache) {
+// A settings file's Zarr cache is kept as given, a fraction of a GiB or a negative size too; the carta-zarr
+// context takes a negative size as zero, as it takes zarr_io and zarr_decode
+TEST_F(ProgramSettingsTest, AZarrCacheInAFileIsKeptAsGiven) {
     const auto read_cache = [](const std::string& value) {
         const auto path = fs::temp_directory_path() / fmt::format("carta-zarr-cache-{}.json", ::getpid());
         std::ofstream(path) << "{\"zarr_cache\": " << value << "}";
@@ -382,8 +382,8 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithFractionalZarrCache) {
     EXPECT_EQ(read_cache("-1"), -1.0);
 }
 
-// A negative cache on the command line is kept as given too, so that it means the same wherever it is given
-TEST_F(ProgramSettingsTest, ANegativeZarrCacheIsKeptOnTheCommandLine) {
+// A Zarr cache on the command line is kept as given, as one in a settings file is
+TEST_F(ProgramSettingsTest, AZarrCacheOnTheCommandLineIsKeptAsGiven) {
     auto settings = SettingsFromString("carta_backend --zarr_cache=-1");
     EXPECT_EQ(settings.zarr_cache_pool_gib, -1.0);
     EXPECT_EQ(settings.command_line_settings["zarr_cache"], -1.0);
@@ -404,7 +404,7 @@ TEST_F(ProgramSettingsTest, ZarrSettingsOfTheWrongTypeAreRefused) {
 }
 
 // Each setting a settings file may hold has the schema type that lets the backend's values through, so that
-// the schema does not refuse a value the backend takes, as it once refused a fractional zarr_cache
+// the schema does not refuse a value the backend takes
 TEST_F(ProgramSettingsTest, TheSchemaTypesMatchTheSettings) {
     const auto& properties = carta::Json::Schema("backend")["properties"];
     carta::ProgramSettings settings;
