@@ -342,11 +342,8 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
         if (image_type == "CartaFitsImage") {
             // Use cfitsio for slice
             return image->doGetSlice(data, slicer);
-        } else if (auto* zarr_image = dynamic_cast<CartaZarrImage*>(image.get()); zarr_image && data.contiguousStorage()) {
-            // One read of the slice into the caller's own storage, with flagged and absent pixels NaN. carta-zarr
-            // cuts it to its read budget, and reads a single plane whole when the budget has room for a chunk per
-            // decode thread. The masked iterator below would read it a cursor at a time, each after the last, and
-            // then each cursor's mask; it still serves an array that is not contiguous, which Read would copy whole.
+        } else if (auto* zarr_image = dynamic_cast<CartaZarrImage*>(image.get())) {
+            // Read sets masked pixels to NaN, so there is no mask to apply here
             const auto read = zarr_image->Read(data, slicer);
             if (!read) {
                 spdlog::error("Error loading image data: {}", read.error().message);

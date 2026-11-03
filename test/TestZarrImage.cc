@@ -540,7 +540,7 @@ TEST_F(ZarrImageTest, AnInfinitePixelReadsAsNaN) {
     const casacore::Slicer slicer(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, 2, kHeight, 1, 1));
     casacore::Array<float> data(slicer.length());
     ASSERT_TRUE(loader->GetSlice(data, StokesSlicer(StokesSource(), slicer)));
-    // And into an array that is not contiguous, a part of a larger one, which the loader reads a cursor at a time
+    // Read it again into an array that is not contiguous, a part of a larger array
     casacore::Array<float> larger(casacore::IPosition(4, 3, kHeight, 1, 1), 7.0f);
     casacore::Array<float> part = larger(casacore::Slicer(casacore::IPosition(4, 0, 0, 0, 0), slicer.length()));
     ASSERT_FALSE(part.contiguousStorage());
