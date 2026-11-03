@@ -60,7 +60,6 @@ carta::zarr::ContextOptions ZarrContextOptions(
         static_cast<unsigned int>(file_io_concurrency > 0 ? file_io_concurrency : std::min(4, std::max(1, omp_thread_count)));
     // File IO threads mostly wait on reads, so they do not come out of the decode thread budget.
     options.decode_threads = static_cast<unsigned int>(data_copy_concurrency > 0 ? data_copy_concurrency : std::max(1, omp_thread_count));
-    // Rounded down to whole bytes, and no more than a size can hold; zero, less or not a number holds nothing
     const double cache_bytes = cache_pool_gib > 0 ? cache_pool_gib * static_cast<double>(BYTES_PER_GIB) : 0.0;
     options.cache_bytes = cache_bytes < static_cast<double>(std::numeric_limits<std::size_t>::max())
                               ? static_cast<std::size_t>(cache_bytes)
