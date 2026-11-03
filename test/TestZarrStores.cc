@@ -242,9 +242,9 @@ TEST_F(ZarrStoresTest, AChangedDirectoryIsProbedAgain) {
     const auto first = stores.Probe(store.string());
     const auto probed_time = fs::last_write_time(store);
     fs::create_directory(store / "NEW_VARIABLE");
-    // Moved on by a second, as a store edited after it was probed would be. A Linux file system stamps a
-    // directory with a clock that moves every few milliseconds, so one changed straight after it was made can
-    // keep the time it was made with.
+    // Move the timestamp one second ahead, as if someone edited the store after the probe.
+    // We set it by hand because a Linux file system stamps a directory with a coarse clock that moves only
+    // every few milliseconds. A directory changed right after it was made can keep its old timestamp.
     fs::last_write_time(store, probed_time + std::chrono::seconds(1));
     const auto second = stores.Probe(store.string());
     EXPECT_NE(second, first);
@@ -295,7 +295,8 @@ TEST_F(ZarrStoresTest, ASizeIsMeasuredOnceForAProbe) {
     const int64_t first = file_info.size();
     EXPECT_GT(first, 0);
 
-    // The directory timestamp cannot see this growth, so an unchanged size is the kept one
+    // The directory timestamp does not change when a chunk grows, so the kept record is still used.
+    // The file info therefore shows the size measured before the chunk grew.
     GrowAChunk(store, 4096);
     EXPECT_EQ(FileInfoSize(store), first);
 

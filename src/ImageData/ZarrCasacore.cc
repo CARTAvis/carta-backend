@@ -30,7 +30,7 @@
 namespace carta {
 namespace {
 
-// The file info value a diagnostic on `axis` is about: frequency, `for_direction` for l, m, u or v, or none
+// Returns the file info value that a diagnostic on `axis` is about.
 ZarrNoteTopic TopicOfAxis(const std::string& axis, ZarrNoteTopic for_direction) {
     if (axis == "frequency") {
         return ZarrNoteTopic::frequency;
@@ -113,8 +113,8 @@ casacore::DirectionCoordinate MakeDirectionCoordinate(const carta::zarr::Directi
     return coordinate;
 }
 
-// The aperture plane's u and v as a linear coordinate named UU and VV, as casacore's FFT of a direction names
-// them, in the descriptor's unit or else lambda
+// Makes a linear coordinate for the u and v axes of the aperture plane.
+// The axes are named UU and VV. casacore uses the same names when it takes the FFT of a direction coordinate.
 casacore::LinearCoordinate MakeApertureCoordinate(const carta::zarr::ApertureCoordinate& descriptor) {
     const std::string unit = descriptor.unit.empty() ? "lambda" : descriptor.unit;
     casacore::Vector<casacore::String> names(2);
@@ -149,7 +149,6 @@ casacore::SpectralCoordinate MakeSpectralCoordinate(const carta::zarr::SpectralC
         coordinate =
             casacore::SpectralCoordinate(reference_type, reference_value, increment, *descriptor.reference_pixel - 1.0, rest_frequency);
     } else {
-        // Without a linear description, every channel's frequency
         casacore::Vector<casacore::Double> frequencies(static_cast<casacore::uInt>(descriptor.values.size()));
         for (casacore::uInt index = 0; index < frequencies.size(); ++index) {
             frequencies[index] = descriptor.values[index];
@@ -246,7 +245,8 @@ std::vector<ZarrNote> NotesFromDiagnostics(const std::vector<carta::zarr::Diagno
                 note.topic = TopicOfAxis(axis, ZarrNoteTopic::pixel_increment);
                 break;
             default:
-                // Not about a shown value, or a code newer than this: logged by name
+                // This code is not about a value that the file info shows, or this backend does not know it.
+                // The note has no topic, so it is only logged.
                 note.brief = carta::zarr::DiagnosticCodeName(diagnostic.code);
                 break;
         }
@@ -271,8 +271,9 @@ ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& des
         return made; // the aperture plane has no celestial frame
     }
 
-    // FK5 and FK4 become J2000 and B1950, which casacore has only at those equinoxes. Another equinox is
-    // read in that frame anyway (off by the precession in between) and noted.
+    // FK5 becomes J2000 and FK4 becomes B1950. casacore has these frames only at these two equinoxes.
+    // If the store names another equinox, we still use J2000 or B1950 and add a note. The positions are then
+    // off by the precession between the two equinoxes.
     const auto type = made.coordinates.directionCoordinate().directionType();
     const auto fixed = EquinoxOf(type);
     const auto& named = descriptor.direction->equinox;
@@ -302,9 +303,9 @@ casacore::ImageInfo::ImageTypes MakeZarrImageType(const std::string& sub_type) {
 
 ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore::uInt channels, casacore::uInt polarizations) {
     ZarrBeams result;
-    // The matrix is sized from the image, since casacore rejects a beam set that does not match the axes;
-    // planes missing from the table keep the null beam. It is set as a whole, because casacore only
-    // computes the smallest and largest beams then.
+    // The matrix size comes from the image, because casacore rejects a beam set that does not match the axes.
+    // A plane that is missing from the table keeps the null beam.
+    // We set the whole matrix at once, because casacore computes the smallest and largest beams only then.
     casacore::Matrix<casacore::GaussianBeam> beam_matrix(channels, polarizations);
     std::size_t filled = 0;
     const carta::zarr::Beam* first = nullptr;
@@ -320,10 +321,10 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
                     " of an image with " + std::to_string(channels) + " and " + std::to_string(polarizations) + "; ignoring the beams"});
             return result;
         }
-        // casacore throws for an invalid beam; the beams are then ignored rather than failing the image.
-        // Made in the units a FITS image's beams are: casacore's FITS writer writes a BEAMS table's position
-        // angle in degrees but labels it with the unit the beam was made in, so a beam in radians would be
-        // saved wrongly.
+        // casacore throws for an invalid beam. In that case we ignore all beams, and the image still opens.
+        // We make each beam in arcsec and degrees, the same units as the beams of a FITS image.
+        // The reason is casacore's FITS writer. It writes the position angle of a BEAMS table in degrees,
+        // but it labels the angle with the unit the beam was made in. So a beam made in radians is saved wrongly.
         try {
             beam_matrix(static_cast<casacore::uInt>(beam.channel), static_cast<casacore::uInt>(beam.polarization)) =
                 casacore::GaussianBeam(casacore::Quantity(beam.major, beam.unit).get("arcsec"),
@@ -344,7 +345,7 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
         }
     }
     if (first == nullptr) {
-        return result; // no beam at the first time
+        return result; // no beam at the first time slice
     }
     const auto planes = static_cast<std::size_t>(channels) * polarizations;
     if (filled != planes) {

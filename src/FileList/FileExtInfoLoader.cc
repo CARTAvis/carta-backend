@@ -742,7 +742,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     }
     Message::AddComputedEntry(extended_info, "Shape", shape_string);
 
-    // Storage entries with a shape list the same axes as the image shape, so they get the same labels
+    // A chunk or shard shape is in the order of the image shape, so it gets the same axis labels
     std::string axes_label;
     for (int i = 0; i < num_dims && i < (int)axes_names.size(); ++i) {
         axes_label += (i == 0 ? " (" : ", ") + std::string(axes_names[i]);
@@ -752,7 +752,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     }
 
     for (const auto& entry : storage_entries) {
-        Message::AddComputedEntry(extended_info, entry.name, entry.has_shape ? entry.value + axes_label : entry.value);
+        Message::AddComputedEntry(extended_info, entry.name, entry.is_shape ? entry.value + axes_label : entry.value);
     }
 
     if (axes.spectral >= 0) {
@@ -1603,7 +1603,7 @@ bool StartsWith(const std::string& text, std::string_view prefix) {
     return text.compare(0, prefix.size(), prefix) == 0;
 }
 
-// Whether the computed entry `name`, as AddShapeEntries and AddComputedEntries name it, shows the value of `topic`
+// `name` is an entry name that AddShapeEntries or AddComputedEntries writes, for example "Pixel increment".
 bool EntryShowsTopic(const std::string& name, ZarrNoteTopic topic) {
     switch (topic) {
         case ZarrNoteTopic::reference_pixels:
