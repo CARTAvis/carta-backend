@@ -63,8 +63,8 @@ std::optional<casacore::Unit> BrightnessUnit(const std::string& unit) {
     return casacore::Unit(normalized);
 }
 
-// A read of `section`, which is in CARTA's order, as a carta-zarr request for an image of `rank` axes; a
-// time axis is read at its one time
+// Makes a carta-zarr read request for `section`. The section is in CARTA's order, and the image has `rank` axes.
+// If the image has a time axis, the request reads its only time slice.
 carta::zarr::ReadRequest RequestFor(const casacore::Slicer& section, std::size_t rank) {
     carta::zarr::ReadRequest request;
     for (casacore::uInt axis = 0; axis < CARTA_AXES; ++axis) {
