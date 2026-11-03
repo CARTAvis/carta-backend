@@ -48,8 +48,8 @@ public:
     casacore::IPosition doNiceCursorShape(casacore::uInt max_pixels) const override;
     // The shape of one chunk of the store in CARTA's order: what is decoded together
     casacore::IPosition ChunkShape() const;
-    // The pixels of `section`, in CARTA's order, as carta-zarr read them. Throws casacore::AipsError for a
-    // section that is not fixed or not of the image's rank.
+    // The pixels of `section`, in CARTA's order, as carta-zarr read them. A pixel that is flagged, absent
+    // or not finite is NaN. Throws casacore::AipsError for a section that is not fixed or not of the image's rank.
     carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section) const;
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;

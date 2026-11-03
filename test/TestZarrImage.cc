@@ -515,8 +515,9 @@ TEST_F(ZarrImageTest, AChunkThatWillNotDecodeFailsOnlyItsRead) {
     EXPECT_FLOAT_EQ(pixels(casacore::IPosition(4, 1, 0, 0, 0)), ExpectedValue(1, 0, 1, 0));
 }
 
-// A loader reads an infinite pixel as NaN, as it reads a flagged one, so that nothing that skips NaN meets one
-TEST_F(ZarrImageTest, ALoaderReadsAnInfinitePixelAsNaN) {
+// An infinite pixel reads as NaN, the same as a flagged pixel. Code that skips NaN then never meets an infinity.
+// This holds for the loader and for casacore's own reads of the image.
+TEST_F(ZarrImageTest, AnInfinitePixelReadsAsNaN) {
     // The first chunk written again uncompressed, with an infinity at two pixels that are not flagged
     const auto copy = EditedFixture("infinite_pixels.zarr", [](const std::string& text) {
         return std::regex_replace(text, std::regex(R"(,\s*\{\s*"name"\s*:\s*"zstd"\s*,\s*"configuration"\s*:\s*\{[^}]*\}\s*\})"), "");
@@ -544,7 +545,9 @@ TEST_F(ZarrImageTest, ALoaderReadsAnInfinitePixelAsNaN) {
     casacore::Array<float> part = larger(casacore::Slicer(casacore::IPosition(4, 0, 0, 0, 0), slicer.length()));
     ASSERT_FALSE(part.contiguousStorage());
     ASSERT_TRUE(loader->GetSlice(part, StokesSlicer(StokesSource(), slicer)));
-    for (const auto& read : {data, part}) {
+    CartaZarrImage image(copy.string(), "SKY");
+    const casacore::Array<float> direct = image.getSlice(slicer);
+    for (const auto& read : {data, part, direct}) {
         for (int x = 0; x < 2; ++x) {
             for (int y = 0; y < kHeight; ++y) {
                 const float value = read(casacore::IPosition(4, x, y, 0, 0));

@@ -7,6 +7,7 @@
 #include "CartaZarrImage.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -22,6 +23,7 @@
 #include <spdlog/spdlog.h>
 
 #include "Util/Casacore.h"
+#include "Util/Nan.h"
 #include "ZarrCasacore.h"
 #include "ZarrStores.h"
 
@@ -223,6 +225,12 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
     float* storage = buffer.getStorage(delete_storage);
     auto read = _zarr_image->Read(
         RequestFor(section, _zarr_image->descriptor().axes.size()), {storage, static_cast<std::size_t>(buffer.nelements())});
+    if (read) {
+        // The mask is false for every pixel that is not finite. So we set infinite pixels to NaN as well,
+        // and every reader of the image meets only NaN.
+        std::replace_if(
+            storage, storage + buffer.nelements(), [](float value) { return !std::isfinite(value); }, FLOAT_NAN);
+    }
     buffer.putStorage(storage, delete_storage);
     return read;
 }

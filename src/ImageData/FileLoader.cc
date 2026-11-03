@@ -6,7 +6,6 @@
 
 #include "FileLoader.h"
 
-#include <algorithm>
 #include <cmath>
 
 #include <casacore/images/Images/SubImage.h>
@@ -353,9 +352,6 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
                 spdlog::error("Error loading image data: {}", read.error().message);
                 return false;
             }
-            // An infinite pixel is NaN too, as the iterator makes it through the image's mask of finite pixels
-            std::replace_if(
-                data.data(), data.data() + data.nelements(), [](float value) { return !std::isfinite(value); }, FLOAT_NAN);
             return true;
         } else if (image_type == "ImageExpr") {
             // Use ImageExpr for slice
