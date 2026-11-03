@@ -364,8 +364,8 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
     EXPECT_EQ(j.size(), 0);
 }
 
-// A settings file's Zarr cache is kept as given, a fraction of a GiB or a negative size too; the carta-zarr
-// context takes a negative size as zero, as it takes zarr_io and zarr_decode
+// The zarr_cache value in a settings file is kept as it is written, for example 2.5 or -1.
+// The settings do not change a negative value. The carta-zarr context treats it as zero later.
 TEST_F(ProgramSettingsTest, AZarrCacheInAFileIsKeptAsGiven) {
     const auto read_cache = [](const std::string& value) {
         const auto path = fs::temp_directory_path() / fmt::format("carta-zarr-cache-{}.json", ::getpid());
@@ -382,7 +382,6 @@ TEST_F(ProgramSettingsTest, AZarrCacheInAFileIsKeptAsGiven) {
     EXPECT_EQ(read_cache("-1"), -1.0);
 }
 
-// A Zarr cache on the command line is kept as given, as one in a settings file is
 TEST_F(ProgramSettingsTest, AZarrCacheOnTheCommandLineIsKeptAsGiven) {
     auto settings = SettingsFromString("carta_backend --zarr_cache=-1");
     EXPECT_EQ(settings.zarr_cache_pool_gib, -1.0);
@@ -403,8 +402,8 @@ TEST_F(ProgramSettingsTest, ZarrSettingsOfTheWrongTypeAreRefused) {
     EXPECT_EQ(j.size(), 0) << j.dump();
 }
 
-// Each setting a settings file may hold has the schema type that lets the backend's values through, so that
-// the schema does not refuse a value the backend takes
+// The schema gives each setting the type that the backend stores it as, for example "number" for a double.
+// This way the schema does not refuse a value that the backend accepts.
 TEST_F(ProgramSettingsTest, TheSchemaTypesMatchTheSettings) {
     const auto& properties = carta::Json::Schema("backend")["properties"];
     carta::ProgramSettings settings;

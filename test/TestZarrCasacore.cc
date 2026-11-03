@@ -57,7 +57,7 @@ carta::zarr::ImageDescriptor Described() {
     return descriptor;
 }
 
-// The same image on the aperture plane, as CASA's ia.fft writes one and XRADIO converts it
+// The same image on the aperture plane. CASA's ia.fft writes such an image, and XRADIO converts it to Zarr.
 carta::zarr::ImageDescriptor ApertureDescribed() {
     auto descriptor = Described();
     descriptor.direction.reset();
@@ -82,7 +82,7 @@ carta::zarr::Beam Beam(std::size_t time, std::size_t channel, std::size_t polari
     return beam;
 }
 
-// Every plane of a three-channel, two-polarization image at the first time, all with `major`.
+// Every plane of a three-channel, two-polarization image at the first time slice, all with `major`.
 std::vector<carta::zarr::Beam> EveryPlane(double major) {
     std::vector<carta::zarr::Beam> table;
     for (std::size_t channel = 0; channel < 3; ++channel) {
@@ -149,7 +149,8 @@ TEST(ZarrCasacore, TheCoordinatesAreInCartasOrder) {
     EXPECT_EQ(coordinates.type(2), casacore::Coordinate::STOKES);
 }
 
-// u and v become a linear coordinate named UU and VV, as casacore's FFT of a direction names them
+// u and v become a linear coordinate with axes named UU and VV.
+// casacore uses the same names when it takes the FFT of a direction coordinate.
 TEST(ZarrCasacore, AnApertureImageHasUuAndVvInPlaceOfADirection) {
     const auto made = MakeZarrCoordinateSystem(ApertureDescribed());
     const auto& coordinates = made.coordinates;
@@ -171,7 +172,7 @@ TEST(ZarrCasacore, AnApertureImageHasUuAndVvInPlaceOfADirection) {
     EXPECT_TRUE(made.notes.empty()) << "the aperture plane has no celestial frame to note";
 }
 
-// Without a linear description the channels are not evenly spaced, so the axis lists them
+// A spectral axis with no linear description lists the frequency of every channel
 TEST(ZarrCasacore, ASpectralAxisWithNoLinearDescriptionIsTabular) {
     auto descriptor = Described();
     descriptor.spectral->reference_pixel.reset();
@@ -255,9 +256,10 @@ TEST(ZarrCasacore, TheSameBeamOnEveryPlaneIsOneBeam) {
     EXPECT_TRUE(made.notes.empty());
 }
 
-// XRADIO stores beams in radians, and casacore's FITS writer writes a BEAMS table's position angle in
-// degrees but labels it with the unit the beam was made in. A beam made in radians would be saved as
-// 42.7 "rad" and read back as -73.1 degrees, so beams are made in the units a FITS image's are.
+// Beams are made in arcsec and degrees, the same units as the beams of a FITS image.
+// XRADIO stores beams in radians. casacore's FITS writer writes the position angle of a BEAMS table in
+// degrees, but it labels the angle with the unit the beam was made in. So a beam made in radians would be
+// saved as 42.7 "rad" and read back as -73.1 degrees.
 TEST(ZarrCasacore, BeamsAreInArcsecondsAndDegrees) {
     auto table = EveryPlane(4.5e-6);
     table.back().position_angle = 0.745;
@@ -283,7 +285,7 @@ TEST(ZarrCasacore, BeamsThatDifferStayMany) {
     EXPECT_EQ(made.beams->nelements(), 6u);
 }
 
-TEST(ZarrCasacore, OnlyTheFirstTimeIsRead) {
+TEST(ZarrCasacore, OnlyTheFirstTimeSliceIsRead) {
     auto table = EveryPlane(2.0e-5);
     for (const auto& beam : EveryPlane(3.0e-5)) {
         auto later = beam;
@@ -292,14 +294,14 @@ TEST(ZarrCasacore, OnlyTheFirstTimeIsRead) {
     }
     const auto made = MakeZarrBeamSet(table, 3, 2);
     ASSERT_TRUE(made.beams.has_value());
-    EXPECT_EQ(made.beams->nelements(), 1u) << "a second time's beams are not this image's";
+    EXPECT_EQ(made.beams->nelements(), 1u) << "a second time slice's beams are not this image's";
     EXPECT_TRUE(made.notes.empty());
 
     std::vector<carta::zarr::Beam> later_only;
     for (const auto& beam : EveryPlane(2.0e-5)) {
         later_only.push_back(Beam(1, beam.channel, beam.polarization, beam.major));
     }
-    EXPECT_FALSE(MakeZarrBeamSet(later_only, 3, 2).beams.has_value()) << "nothing at the first time is no beam";
+    EXPECT_FALSE(MakeZarrBeamSet(later_only, 3, 2).beams.has_value()) << "nothing at the first time slice is no beam";
 }
 
 // Planes missing from the table get the null beam, with a note
@@ -367,7 +369,8 @@ TEST(ZarrNotes, ACoordinateDiagnosticQualifiesTheValueItIsAbout) {
     EXPECT_EQ(notes[3].topic, ZarrNoteTopic::frequency);
 }
 
-// A code not about a shown value, or an unknown one, keeps its name and is left for the log
+// A code that is not about a value in the file info, or a code the backend does not know, has no topic.
+// Its brief is the code's name, and the note only goes to the log.
 TEST(ZarrNotes, ACodeWithNoValueToQualifyIsSaidByName) {
     const auto notes = NotesFromDiagnostics({Said(DiagnosticCode::unreadable_array, "SKY")});
     ASSERT_EQ(notes.size(), 1u);

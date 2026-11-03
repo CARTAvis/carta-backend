@@ -21,12 +21,14 @@
 
 namespace carta {
 
-// One line of a Zarr image's storage layout, for the file info. `has_shape` says the value lists
-// the image's axes in the image's order, so it can be labeled like the image shape.
+// One line of a Zarr image's storage layout, for the file info.
+// `is_shape` is true for a chunk shape or a shard shape, for example "[512, 512, 4, 1]".
+// The numbers of such a shape are in the same axis order as the image shape.
+// So the file info labels them with the same axis names as the image shape.
 struct StorageEntry {
     std::string name;
     std::string value;
-    bool has_shape = false;
+    bool is_shape = false;
 };
 
 // An XRADIO image of the sky or of the aperture plane, in CARTA's axis order: spatial X, spatial Y,
@@ -73,7 +75,7 @@ public:
 
 private:
     void SetUpImage();
-    // The beams at the first time, if the store has a table casacore accepts
+    // The beams of the first time slice, unless the store has no beam table or one casacore refuses
     std::optional<casacore::ImageBeamSet> ReadBeamSet();
     // Logs each note and keeps it for the file info
     void AddNotes(std::vector<ZarrNote> notes);
@@ -95,7 +97,7 @@ private:
 
     std::string _filename;
     std::optional<carta::zarr::Image> _zarr_image;
-    // In CARTA's order; see CartaShape. An image CARTA cannot display is not opened.
+    // CARTA's four axes in CARTA's order; see CartaShape in ZarrStores.h
     casacore::IPosition _shape;
     std::vector<ZarrNote> _notes;
 };

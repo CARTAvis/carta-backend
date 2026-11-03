@@ -29,22 +29,28 @@ namespace carta {
 namespace {
 
 // CARTA's axes: spatial X, spatial Y, spectral, polarization. An image's logical order is these, then at
-// most a time axis of length one; see CartaShape.
+// most a time axis of length one; see CartaShape in ZarrStores.h.
 constexpr std::size_t CARTA_AXES = 4;
 
-// Per-axis values, such as a chunk shape, cut to CARTA's four axes. They are in the image's order, which
-// starts with CARTA's axes, so this drops a trailing time axis and fills a missing axis with 1.
+// Returns per-axis values, such as a chunk shape, for CARTA's four axes only.
+// The values are in the image's axis order. That order starts with CARTA's four axes.
 std::vector<std::uint64_t> InCartaOrder(const std::vector<std::uint64_t>& values) {
     std::vector<std::uint64_t> result(CARTA_AXES, 1);
     std::copy_n(values.begin(), std::min(values.size(), result.size()), result.begin());
     return result;
 }
 
-// The image's unit, normalized as FileLoader normalizes every image's, with casacore's FITS units added as a FITS
-// image's are, so that an upper-case FITS spelling such as JY/BEAM or JY/PIXEL, which XRADIO copies from BUNIT
-// unchanged and casacore::Unit refuses, becomes Jy/beam or Jy/pixel. A unit that is still not valid is not set,
-// and a note says so: casacore's FITS reader would add it to casacore's global unit map instead, unguarded, while
-// other threads may be reading that map. Adding the FITS units is done once, under casacore's own lock.
+// Returns the image's unit as a casacore::Unit, or nothing if casacore does not know it.
+//
+// XRADIO copies the FITS BUNIT string into the store without changing it, so a unit can be written in
+// FITS style, for example JY/BEAM. casacore::Unit does not accept that spelling. We fix it with
+// NormalizeUnit, the same function FileLoader uses for every image, so JY/BEAM becomes Jy/beam.
+// NormalizeUnit needs casacore's FITS unit table, so we load it first with UnitMap::addFITS. casacore
+// loads the table only once and holds its own lock while doing so, so calling it for every image is safe.
+//
+// If the unit is still not valid, we leave the image without a unit and add a note. casacore's FITS
+// reader would add the unknown unit to casacore's global unit map instead. We do not do that, because
+// the map has no lock and other threads may be reading it at the same time.
 std::optional<casacore::Unit> BrightnessUnit(const std::string& unit) {
     casacore::UnitMap::addFITS();
     casacore::String normalized(unit);

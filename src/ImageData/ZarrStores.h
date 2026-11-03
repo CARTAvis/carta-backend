@@ -32,14 +32,19 @@ struct ZarrStoreSize {
     bool declared = false;
 };
 
-// Whether CARTA can display an image, and its shape in CARTA's order: spatial X, spatial Y, spectral,
-// polarization. carta-zarr reads in the image's logical order, so that order must be CARTA's, then at most a
-// time axis of length one, with every length above zero and within CARTA's 32-bit limit. None, with the
-// reason, otherwise. The file list asks with the listing's axes before offering an image, and the image asks
-// with its descriptor before opening, so the two agree.
+// Checks whether CARTA can display an image. If it can, returns the shape in CARTA's order: spatial X,
+// spatial Y, spectral, polarization. If it cannot, returns nothing and sets `reason`.
+//
+// carta-zarr reads in the image's logical axis order, so that order must be CARTA's order. After CARTA's
+// four axes, the image may have one more axis, a time axis of length one. Every axis length must be above
+// zero and fit CARTA's 32-bit limit.
+//
+// The file list calls this with the listing's axes before it offers an image. The image calls it with its
+// descriptor before it opens. Both use the same check, so they agree.
 std::optional<casacore::IPosition> CartaShape(const std::vector<carta::zarr::AxisDescriptor>& axes, std::string& reason);
-// The same for an opened image, which must also have spectral and polarization coordinates, and a direction
-// or, for an image of the aperture plane, an aperture coordinate
+// The same check for an opened image. An opened image must also have a spectral coordinate and a
+// polarization coordinate. A sky image must have a direction coordinate. An image of the aperture plane
+// must have an aperture coordinate instead.
 std::optional<casacore::IPosition> CartaShape(const carta::zarr::ImageDescriptor& descriptor, std::string& reason);
 
 // The images of a dataset that CARTA offers, from the listing alone. The file list shows them, and an image
@@ -67,10 +72,12 @@ struct ZarrOpenedImage {
     casacore::IPosition shape;
 };
 
-// What a path is, as far as Zarr goes
+// What the backend knows about a path when it checks the path for a Zarr store
 struct ZarrStoreProbe {
-    // A Zarr image store: one that opened, or an XRADIO one that will not open but is still listed as an
-    // image so that opening it says why. Not a plain folder, a file, or a Zarr store of something else.
+    // True for a Zarr image store. A store that carta-zarr opens is always an image store.
+    // A store that does not open counts only if the XRADIO image schema recognizes it as a malformed image.
+    // The file list still lists such a store, so that opening it shows the reason.
+    // False for a plain folder, a file, or a Zarr store that does not hold images.
     bool is_zarr = false;
     // Set when the store opened
     std::optional<carta::zarr::Dataset> dataset;
@@ -81,9 +88,11 @@ struct ZarrStoreProbe {
 
     // The size of the store, measured on first use and then kept; zero for a store that will not open
     ZarrStoreSize Size() const;
-    // Image `id`, or without one the first offered, if CARTA can display it; none with the reason otherwise
+    // Opens image `id`. With no id, it opens the first offered image.
+    // If CARTA cannot display the image, it returns nothing and sets `reason`.
     std::optional<ZarrOpenedImage> OpenImage(const std::string& id, std::string& reason) const;
 
+    // The store's absolute path with symlinks resolved
     std::string path;
 
 private:
@@ -91,9 +100,10 @@ private:
     mutable std::optional<ZarrStoreSize> _size;
 };
 
-// The Zarr stores this process has opened, kept for ZARR_STORES_TTL. The file list, the file info, the
-// choice of loader and the image all ask whether a path is a Zarr image store, what it offers and how
-// large it is, so each path is opened and sized once and shared.
+// The Zarr stores this process has opened. Each store is kept for ZARR_STORES_TTL.
+// The file list, the file info, the choice of loader and the image all ask the same questions about a path:
+// is it a Zarr image store, which images does it offer, and how large is it. This class opens and measures
+// each path once, and all of them share the result.
 //
 // An entry also expires when the directory's own timestamp changes. That only catches changes to its
 // entry list, not writes deeper in the store.

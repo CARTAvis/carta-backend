@@ -40,9 +40,20 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     }
 
     if (_type == CARTA::FileType::ZARR) {
+        const auto probe = ZarrStores::Instance().Probe(_filename);
+        const auto size = probe->Size();
         file_info.set_date(cc_file.modifyTime());
+        file_info.set_size(size.bytes);
+        file_info.set_size_is_declared(size.declared);
         file_info.set_type(_type);
-        return FillZarrFileInfo(file_info);
+
+        _message = probe->why_not_openable;
+        // List only the images that CARTA can display. The default image comes first.
+        // A store that does not open lists no images.
+        for (const auto& image_id : probe->offered) {
+            file_info.add_hdu_list(image_id);
+        }
+        return !probe->offered.empty();
     }
 
     // fill FileInfo submessage
@@ -70,20 +81,6 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     }
 
     return success;
-}
-
-bool FileInfoLoader::FillZarrFileInfo(CARTA::FileInfo& file_info) {
-    const auto probe = ZarrStores::Instance().Probe(_filename);
-    const auto size = probe->Size();
-    file_info.set_size(size.bytes);
-    file_info.set_size_is_declared(size.declared);
-
-    _message = probe->why_not_openable;
-    // Only the images CARTA can display, the default first; none for a store that will not open
-    for (const auto& image_id : probe->offered) {
-        file_info.add_hdu_list(image_id);
-    }
-    return !probe->offered.empty();
 }
 
 CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
