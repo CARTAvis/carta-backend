@@ -57,7 +57,7 @@ carta::zarr::ImageDescriptor Described() {
     return descriptor;
 }
 
-// The same image on the aperture plane, as CASA's ia.fft writes one and XRADIO converts it
+// The same image on the aperture plane. CASA's ia.fft writes such an image, and XRADIO converts it to Zarr.
 carta::zarr::ImageDescriptor ApertureDescribed() {
     auto descriptor = Described();
     descriptor.direction.reset();
@@ -149,7 +149,8 @@ TEST(ZarrCasacore, TheCoordinatesAreInCartasOrder) {
     EXPECT_EQ(coordinates.type(2), casacore::Coordinate::STOKES);
 }
 
-// u and v become a linear coordinate named UU and VV, as casacore's FFT of a direction names them
+// u and v become a linear coordinate with axes named UU and VV.
+// casacore uses the same names when it takes the FFT of a direction coordinate.
 TEST(ZarrCasacore, AnApertureImageHasUuAndVvInPlaceOfADirection) {
     const auto made = MakeZarrCoordinateSystem(ApertureDescribed());
     const auto& coordinates = made.coordinates;
@@ -171,7 +172,7 @@ TEST(ZarrCasacore, AnApertureImageHasUuAndVvInPlaceOfADirection) {
     EXPECT_TRUE(made.notes.empty()) << "the aperture plane has no celestial frame to note";
 }
 
-// Without a linear description the channels are not evenly spaced, so the axis lists them
+// A spectral axis with no linear description lists the frequency of every channel
 TEST(ZarrCasacore, ASpectralAxisWithNoLinearDescriptionIsTabular) {
     auto descriptor = Described();
     descriptor.spectral->reference_pixel.reset();
@@ -255,9 +256,10 @@ TEST(ZarrCasacore, TheSameBeamOnEveryPlaneIsOneBeam) {
     EXPECT_TRUE(made.notes.empty());
 }
 
-// XRADIO stores beams in radians, and casacore's FITS writer writes a BEAMS table's position angle in
-// degrees but labels it with the unit the beam was made in. A beam made in radians would be saved as
-// 42.7 "rad" and read back as -73.1 degrees, so beams are made in the units a FITS image's are.
+// Beams are made in arcsec and degrees, the same units as the beams of a FITS image.
+// XRADIO stores beams in radians. casacore's FITS writer writes the position angle of a BEAMS table in
+// degrees, but it labels the angle with the unit the beam was made in. So a beam made in radians would be
+// saved as 42.7 "rad" and read back as -73.1 degrees.
 TEST(ZarrCasacore, BeamsAreInArcsecondsAndDegrees) {
     auto table = EveryPlane(4.5e-6);
     table.back().position_angle = 0.745;
@@ -367,7 +369,8 @@ TEST(ZarrNotes, ACoordinateDiagnosticQualifiesTheValueItIsAbout) {
     EXPECT_EQ(notes[3].topic, ZarrNoteTopic::frequency);
 }
 
-// A code not about a shown value, or an unknown one, keeps its name and is left for the log
+// A code that is not about a value in the file info, or a code the backend does not know, has no topic.
+// Its brief is the code's name, and the note only goes to the log.
 TEST(ZarrNotes, ACodeWithNoValueToQualifyIsSaidByName) {
     const auto notes = NotesFromDiagnostics({Said(DiagnosticCode::unreadable_array, "SKY")});
     ASSERT_EQ(notes.size(), 1u);

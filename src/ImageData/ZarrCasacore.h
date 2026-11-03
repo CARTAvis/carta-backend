@@ -23,12 +23,13 @@ namespace carta {
 // Builds the casacore coordinate system and beams of a Zarr image from carta-zarr's descriptors. Notes
 // are returned rather than logged, so that the caller can name the file and show them in the file info.
 
-// The file info value a note is about; a note about none is only logged
+// The file info value that a note is about. A note with topic `none` is only logged.
 enum class ZarrNoteTopic { none, reference_pixels, pixel_increment, celestial_frame, frequency, beam };
 
-// Something to know about a Zarr image's values, such as one that is approximate or was filled in: from
-// carta-zarr's diagnostics or from the backend. `brief` is shown as the comment of the file info entry it
-// is about, like a FITS header card comment; `detail` is the full sentence, for the log.
+// Something the user should know about a Zarr image's values, for example that a value is approximate
+// or was filled in. A note comes from a carta-zarr diagnostic or from the backend.
+// The file info shows `brief` as the comment of the entry that the note is about, like a FITS header card
+// comment. `detail` is the full sentence, and it goes to the log.
 struct ZarrNote {
     ZarrNoteTopic topic = ZarrNoteTopic::none;
     std::string brief;
@@ -55,9 +56,10 @@ struct ZarrBeams {
     std::vector<ZarrNote> notes;
 };
 
-// The casacore image type a sky image's sub_type names, as FITS and HDF5 images take theirs from BTYPE. XRADIO
-// spells casacore's type names without their spaces ("SpectralIndex" for "Spectral Index"). Intensity, casacore's
-// default, for an image naming none or one casacore does not know.
+// Returns the casacore image type that a sky image's sub_type names.
+// This is the Zarr version of BTYPE: FITS and HDF5 images take their image type from BTYPE.
+// XRADIO writes casacore's type names without spaces, for example "SpectralIndex" for "Spectral Index".
+// If sub_type is empty or casacore does not know it, the type is Intensity, which is casacore's default.
 casacore::ImageInfo::ImageTypes MakeZarrImageType(const std::string& sub_type);
 
 // The beams at the first time slice, for an image of `channels` by `polarizations` planes. A table casacore

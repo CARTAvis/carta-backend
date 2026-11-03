@@ -94,8 +94,8 @@ TEST_F(ZarrImageTest, LoaderIsSelectedAndShapeIsCarta) {
     EXPECT_EQ(shape(3), kStokes);
 }
 
-// The storage layout lists CARTA's four axes in CARTA's order, without the time axis: the fixture is chunked
-// one plane at a time, two l by five m
+// The storage layout lists CARTA's four axes in CARTA's order, without the time axis.
+// The fixture has one plane per chunk, and each chunk is two pixels in l by five pixels in m.
 TEST_F(ZarrImageTest, TheStorageLayoutIsInCartasOrder) {
     CartaZarrImage image(kZarrFixture.string(), "SKY");
     const auto entries = image.GetStorageInfo();
@@ -118,7 +118,7 @@ TEST_F(ZarrImageTest, TelescopePositionIsCartesian) {
     EXPECT_NEAR(value(2), -3054420.106, 1.0);
 }
 
-// A sky image's sub_type is its image type, as BTYPE is a FITS image's
+// A sky image's sub_type gives its image type, in the same way BTYPE gives a FITS image's type
 TEST_F(ZarrImageTest, ASkyImagesSubTypeIsItsImageType) {
     const auto copy = EditedFixture("spectral_index.zarr", [](const std::string& text) {
         return std::regex_replace(text, std::regex(R"("type"\s*:\s*"sky")"), R"("type": "sky", "sub_type": "SpectralIndex")");
@@ -128,9 +128,9 @@ TEST_F(ZarrImageTest, ASkyImagesSubTypeIsItsImageType) {
     EXPECT_EQ(image->imageInfo().imageType(), casacore::ImageInfo::SpectralIndex);
 }
 
-// An image's unit is normalized as FileLoader normalizes every image's. XRADIO copies BUNIT unchanged, and an
-// upper-case FITS spelling, which casacore::Unit refuses, kept a store converted from such a file from opening
-// while the file itself opened. A unit casacore does not know is left out, and the image still opens.
+// An image's unit is normalized in the same way FileLoader normalizes the unit of every image.
+// XRADIO copies BUNIT without changing it, so a store can have a FITS spelling such as JY/BEAM. It becomes Jy/beam.
+// A unit that casacore does not know is left out, and the image still opens.
 TEST_F(ZarrImageTest, AUnitIsNormalizedAndAnUnknownOneLeftOut) {
     for (const auto& [written, read] : {std::pair<std::string, std::string>{"JY/BEAM", "Jy/beam"},
              std::pair<std::string, std::string>{"JY/PIXEL", "Jy/pixel"}, std::pair<std::string, std::string>{"wombats", ""}}) {

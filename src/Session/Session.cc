@@ -205,7 +205,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
                 if (ext_info_loader.FillFileExtInfo(file_info_ext, fullname, image_id, message)) {
                     hdu_info_map[image_id] = file_info_ext;
                 } else {
-                    // Left out of the HDU menu, so say why somewhere
+                    // The HDU menu leaves this image out, so log the reason
                     spdlog::warn("No file info for image {} of {}: {}", image_id, fullname, message);
                 }
             }

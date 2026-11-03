@@ -230,8 +230,9 @@ ZarrStoreSize ZarrStoreProbe::Size() const {
         return *_size;
     }
 
-    // A store that will not open is not measured, since walking a large one has no time limit. Nor is one
-    // whose size carta-zarr cannot tell: the directory's own size would look like the store's.
+    // We do not measure a store that does not open, because walking a large store has no time limit.
+    // We also do not measure a store whose size carta-zarr cannot tell. The size of the directory itself
+    // would then look like the size of the store.
     ZarrStoreSize size;
     if (dataset) {
         auto measured = dataset->Size();
@@ -251,11 +252,11 @@ std::optional<ZarrOpenedImage> ZarrStoreProbe::OpenImage(const std::string& id, 
         reason = "Failed to open XRADIO dataset: " + (why_not_openable.empty() ? std::string("not an image store") : why_not_openable);
         return std::nullopt;
     }
-    // Without an id, the first image offered, which the file list shows first
     if (id.empty() && offered.empty()) {
         reason = why_not_openable;
         return std::nullopt;
     }
+    // With no id, open the first offered image. The file list also shows that image first.
     const auto& image_id = id.empty() ? offered.front() : id;
 
     auto image = dataset->OpenImage(image_id);

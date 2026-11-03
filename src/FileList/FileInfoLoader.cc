@@ -48,7 +48,8 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
         file_info.set_type(_type);
 
         _message = probe->why_not_openable;
-        // Only the images CARTA can display, the default first; none for a store that will not open
+        // List only the images that CARTA can display. The default image comes first.
+        // A store that does not open lists no images.
         for (const auto& image_id : probe->offered) {
             file_info.add_hdu_list(image_id);
         }

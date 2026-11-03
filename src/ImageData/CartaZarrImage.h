@@ -19,9 +19,10 @@
 
 namespace carta {
 
-// One line of a Zarr image's storage layout, for the file info. `is_shape` is set for a chunk or shard
-// shape, whose numbers are in the order of the image's shape, so that the file info labels them with the
-// shape's axis names.
+// One line of a Zarr image's storage layout, for the file info.
+// `is_shape` is true for a chunk shape or a shard shape, for example "[512, 512, 4, 1]".
+// The numbers of such a shape are in the same axis order as the image shape.
+// So the file info labels them with the same axis names as the image shape.
 struct StorageEntry {
     std::string name;
     std::string value;

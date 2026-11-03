@@ -338,7 +338,8 @@ TEST(ZarrNotes, ABeamNoteGoesOnEveryBeamEntry) {
     EXPECT_EQ(Entry(info, "Median area beam (Stokes Q)").comment(), "table covers 5 of 6 planes");
 }
 
-// A note with no topic, or whose entry the panel does not show, changes nothing; the image has logged it
+// A note changes nothing in the file info if it has no topic, or if the panel does not show its entry.
+// The image has already logged such a note.
 TEST(ZarrNotes, ANoteWithNoEntryChangesNothing) {
     auto info = PanelWith({"Name"});
     AnnotateEntries(
@@ -363,8 +364,8 @@ TEST(ZarrNotes, TheFileInfoSaysWhatTheLibrarySaid) {
         << "comment was '" << Entry(info, "Frequency range").comment() << "'";
 }
 
-// Every note is logged once when the image opens, including one shown in the file info, and filling the
-// file info logs none again
+// The image logs every note once, when it opens. This includes notes that the file info shows.
+// Filling the file info does not log them again.
 TEST(ZarrNotes, EveryNoteIsLoggedOnce) {
     const std::filesystem::path fixture{ZARR_XRADIO_FIXTURE};
     if (!std::filesystem::exists(fixture)) {
