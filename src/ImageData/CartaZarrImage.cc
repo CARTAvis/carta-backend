@@ -77,13 +77,6 @@ carta::zarr::ReadRequest RequestFor(const casacore::Slicer& section, std::size_t
     return request;
 }
 
-// casacore hears of a failed read as an exception
-void ThrowIfUnread(const carta::zarr::Result<std::size_t>& read, const char* where) {
-    if (!read) {
-        throw casacore::AipsError(std::string("CartaZarrImage::") + where + " - " + read.error().message);
-    }
-}
-
 // The mask of a Zarr image as a read-only lattice. It holds its own copy of the image, since casacore keeps
 // clones of it after the image it came from is gone.
 class ZarrPixelMask : public casacore::Lattice<casacore::Bool> {
@@ -231,7 +224,10 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
 }
 
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
-    ThrowIfUnread(Read(buffer, section), "doGetSlice");
+    // casacore expects a failed read to throw
+    if (const auto read = Read(buffer, section); !read) {
+        throw casacore::AipsError("CartaZarrImage::doGetSlice - " + read.error().message);
+    }
 
     // Keep the section's mask for the mask read that follows, so that the section is not read and decoded twice.
     // casacore reads a section's mask right after its pixels. The mask takes a quarter of the pixels' memory.
@@ -297,7 +293,9 @@ casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& b
     }
 
     casacore::Array<float> pixels;
-    ThrowIfUnread(Read(pixels, section), "doGetMaskSlice");
+    if (const auto read = Read(pixels, section); !read) {
+        throw casacore::AipsError("CartaZarrImage::doGetMaskSlice - " + read.error().message);
+    }
     buffer.resize(section.length());
     buffer = isFinite(pixels);
     return false;
