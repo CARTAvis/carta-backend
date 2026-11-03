@@ -77,11 +77,6 @@ carta::zarr::ReadRequest RequestFor(const casacore::Slicer& section, std::size_t
     return request;
 }
 
-// A section this size or smaller keeps its mask for the mask read that follows, which casacore's cube walks
-// and CARTA's own reads always make: reading the section again would decode it twice. The mask takes a
-// quarter of what the section's pixels did.
-constexpr casacore::Int MASK_CACHE_MAX_PIXELS = 1 << 30;
-
 // casacore hears of a failed read as an exception
 void ThrowIfUnread(const carta::zarr::Result<std::size_t>& read, const char* where) {
     if (!read) {
@@ -238,20 +233,12 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
     ThrowIfUnread(Read(buffer, section), "doGetSlice");
 
-    const bool keep = section.length().product() <= MASK_CACHE_MAX_PIXELS;
-    casacore::Array<casacore::Bool> mask;
-    if (keep) {
-        mask.reference(isFinite(buffer));
-    }
+    // Keep the section's mask for the mask read that follows, so that the section is not read and decoded twice.
+    // casacore reads a section's mask right after its pixels. The mask takes a quarter of the pixels' memory.
+    casacore::Array<casacore::Bool> mask(isFinite(buffer));
     std::scoped_lock lock(_mask_cache.mutex);
-    if (keep) {
-        _mask_cache.section = section;
-        _mask_cache.mask.reference(mask);
-    } else {
-        // A section too large to keep drops what an earlier one kept
-        _mask_cache.section.reset();
-        _mask_cache.mask.resize();
-    }
+    _mask_cache.section = section;
+    _mask_cache.mask.reference(mask);
     return false;
 }
 
@@ -294,7 +281,7 @@ casacore::Lattice<casacore::Bool>& CartaZarrImage::pixelMask() {
 
 casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& buffer, const casacore::Slicer& section) {
     {
-        // The mask of the section just read, which is let go once read: a cube walk's last one may be a gibibyte.
+        // The mask of the section just read. We let it go once it is read, because it can be large.
         // Compared by start, length and stride, since a casacore iterator asks for the pixels by length and
         // the mask by end.
         std::scoped_lock lock(_mask_cache.mutex);
