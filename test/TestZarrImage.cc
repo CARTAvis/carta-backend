@@ -657,6 +657,26 @@ TEST_F(ZarrImageTest, NiceCursorShapeIsTheChunk) {
     EXPECT_LE(cursor.product(), static_cast<casacore::Int>(image->advisedMaxPixels()));
 }
 
+// The image is 4 pixels wide, and here a chunk is 3 pixels wide. The cursor covers the whole width.
+// It does not stop at one chunk, which would leave a second read of 1 pixel.
+TEST_F(ZarrImageTest, NiceCursorShapeCoversAnAxisThatIsNotWholeChunks) {
+    const auto copy = EditedFixture("chunk_not_dividing.zarr", [](const std::string& text) {
+        return std::regex_replace(
+            text, std::regex(R"("chunk_shape"\s*:\s*\[\s*1\s*,\s*1\s*,\s*1\s*,\s*2\s*,)"), R"("chunk_shape": [1, 1, 1, 3,)");
+    });
+    ZarrStores::Instance().Clear();
+    auto image = ImageThroughLoader(copy);
+    ASSERT_NE(image, nullptr);
+    const auto cursor = image->niceCursorShape(image->advisedMaxPixels());
+    ASSERT_EQ(cursor.size(), 4);
+    EXPECT_EQ(cursor(0), kWidth);
+    EXPECT_EQ(cursor(1), kHeight);
+    // With room for only one chunk, the cursor stays one chunk wide
+    const auto one_chunk = image->niceCursorShape(3 * kHeight);
+    EXPECT_EQ(one_chunk(0), 3);
+    EXPECT_EQ(one_chunk(1), kHeight);
+}
+
 // A chunk declared longer than an int is clipped to the image, not narrowed to a zero step
 TEST_F(ZarrImageTest, NiceCursorShapeClipsAChunkLongerThanAnInt) {
     for (const char* extent : {"4294967296", "3000000000"}) {

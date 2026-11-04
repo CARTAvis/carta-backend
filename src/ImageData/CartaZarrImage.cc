@@ -194,11 +194,16 @@ casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels)
     for (casacore::uInt axis = _shape.size(); axis > 2 && cursor.product() > most_pixels; --axis) {
         cursor(axis - 1) = 1;
     }
-    // Grow by whole chunks while the cursor still fits, so that each read covers as many chunks as allowed
+    // Grow by whole chunks while the cursor still fits, so that each read covers as many chunks as allowed.
+    // The last step may be a part of a chunk. It stops at the edge of the image, so the cursor can cover the whole axis.
     for (casacore::uInt axis = 0; axis < 2; ++axis) {
         const auto step = cursor(axis);
-        while (cursor(axis) + step <= _shape(axis) && (cursor.product() / cursor(axis)) * (cursor(axis) + step) <= most_pixels) {
-            cursor(axis) += step;
+        while (cursor(axis) < _shape(axis)) {
+            const auto next = std::min(cursor(axis) + step, _shape(axis));
+            if ((cursor.product() / cursor(axis)) * next > most_pixels) {
+                break;
+            }
+            cursor(axis) = next;
         }
     }
     return cursor;
