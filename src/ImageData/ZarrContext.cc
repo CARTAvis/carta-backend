@@ -26,7 +26,7 @@ constexpr std::size_t BYTES_PER_GIB = 1024U * 1024U * 1024U;
 
 std::mutex context_mutex;
 std::optional<carta::zarr::Context> shared_context;
-// The cache size of the shared context
+// The cache size of the shared context, in bytes
 std::size_t shared_cache_bytes = 0;
 
 // The options in use
@@ -35,8 +35,8 @@ void LogZarrContextOptions(const carta::zarr::ContextOptions& options) {
         options.decode_threads, static_cast<double>(options.cache_bytes.value_or(0)) / BYTES_PER_GIB);
 }
 
-// The context with `options`, or with the backend's defaults if carta-zarr refuses them; `used` is set to the
-// options of the one made
+// Makes a context with `options`. If carta-zarr refuses them, makes one with the backend's defaults.
+// Sets `used` to the options of the context that was made.
 carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options, carta::zarr::ContextOptions& used) {
     auto context = carta::zarr::Context::Create(options);
     if (context) {
@@ -56,7 +56,8 @@ carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options, c
     return *std::move(default_context);
 }
 
-// The shared context, made with the backend's defaults if none was configured; context_mutex is held
+// Returns the shared context. If none was configured, makes one with the backend's defaults.
+// The caller must hold context_mutex.
 const carta::zarr::Context& SharedContext() {
     if (!shared_context) {
         carta::zarr::ContextOptions used;

@@ -100,12 +100,14 @@ public:
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
-    // Called as a cursor spectrum is read, with how many channels of `data` are final and how many there
-    // will be. Returning false stops the read. A loader that reads the spectrum in one go need not call it;
-    // the caller sends the whole spectrum when the read returns either way.
+    // A loader calls this while it reads a cursor spectrum. It passes how many channels of `data` are final,
+    // and how many channels there are in all. Returning false stops the read.
+    // A loader that reads the whole spectrum at once does not need to call it.
+    // In both cases, the caller sends the whole spectrum after the read returns.
     using SpectralReadProgress = std::function<bool(std::size_t channels_done, std::size_t channels_total)>;
-    // Called as a region spectral profile is read, on the thread reading it: whether the profile is still
-    // wanted. The caller checks it between calls too, so a loader whose calls are short need not call it.
+    // Returns whether a region spectral profile is still wanted. A loader may call it during a read,
+    // on the thread that reads. The caller also checks it between calls, so a loader whose calls are short
+    // does not need to call it.
     using SpectralReadWanted = std::function<bool()>;
 
     // Spectral profiles for cursor and region

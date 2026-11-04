@@ -75,7 +75,7 @@ TEST(ZarrContextTest, TheDefaultsAreTheSettingsDefaults) {
     EXPECT_EQ(options.cache_bytes, std::optional<std::size_t>(std::size_t{1} << 30));
 }
 
-// The cache size the loaders size spectra against is the one of the context in use
+// ZarrCacheBytes is the cache size of the context in use. The loaders use it to choose a spectrum's cache pool.
 TEST(ZarrContextTest, TheRecordedCacheIsTheConfiguredOne) {
     carta::ConfigureZarrContext(2, 1, 0.5, 1);
     EXPECT_EQ(carta::ZarrCacheBytes(), std::size_t{1} << 29);

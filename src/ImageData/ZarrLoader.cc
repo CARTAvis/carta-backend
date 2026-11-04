@@ -28,12 +28,13 @@
 namespace carta {
 namespace {
 
-// The cache pool for a spectrum read. A spectrum reads a column of chunks through the whole depth, in
-// order. If the column, as it decodes, fits in the shared cache, the default pool is used: the chunks stay
-// cached, so the spectrum of another pixel in the same chunks, as the cursor moves, reads from the cache. The
-// cache charges a little more than the decoded data for each chunk, so a column of nearly its size may lose a
-// chunk or two to it. Otherwise a pool that keeps nothing is used: a column larger than the cache would evict
-// its own chunks before they are reused. With no shared cache there is nothing to keep.
+// The cache pool for a spectrum read. A spectrum reads a column of chunks through the whole depth, in order.
+// If the whole column fits in the shared cache as it decodes, the default pool is used. The chunks then
+// stay cached. When the cursor moves to another pixel in the same chunks, its spectrum reads from the cache.
+// The cache charges a little more than the decoded size for each chunk, so a column of nearly the cache's
+// size may lose a chunk or two.
+// Otherwise a pool that keeps nothing is used. A column larger than the cache would evict its own chunks
+// before they are used again. With no shared cache, there is nothing to keep.
 std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& image, std::int64_t x, std::int64_t y, std::int64_t width,
     std::int64_t height, std::int64_t z, std::int64_t depth) {
     const auto cache_bytes = ZarrCacheBytes();
@@ -41,7 +42,7 @@ std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& imag
         return std::nullopt;
     }
     const auto chunk = image.ChunkShape();
-    // The chunks along an axis that [from, from + count) touches
+    // The number of chunks along an axis that [from, from + count) touches
     const auto touched = [](std::int64_t from, std::int64_t count, std::int64_t unit) {
         return static_cast<std::uint64_t>((from + count - 1) / unit - from / unit + 1);
     };
@@ -61,7 +62,7 @@ std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& imag
 
 bool SpectrumKeepsItsChunks(
     std::uint64_t chunks_x, std::uint64_t chunks_y, std::uint64_t chunks_z, std::uint64_t chunk_bytes, std::size_t cache_bytes) {
-    // More chunks than a 64-bit count holds are more than any cache holds; wrapping would make them look few
+    // If the chunk count does not fit in 64 bits, it is more than any cache holds. A wrapped count could look small.
     std::uint64_t chunks = 1;
     for (const auto count : {chunks_x, chunks_y, chunks_z}) {
         if (count != 0 && chunks > std::numeric_limits<std::uint64_t>::max() / count) {
@@ -69,7 +70,7 @@ bool SpectrumKeepsItsChunks(
         }
         chunks *= count;
     }
-    // Divided rather than multiplied, so that no count of chunks overflows into one that fits
+    // Divide instead of multiplying chunks by chunk_bytes. The product could overflow and look small enough to fit.
     return chunk_bytes == 0 || chunks <= cache_bytes / chunk_bytes;
 }
 
@@ -93,8 +94,9 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
 bool ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
     std::mutex& /*image_mutex*/, const SpectralReadProgress& progress) {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    // One pixel only: the HDF5 loader lays out several pixels' spectra channel fastest, and a read in CARTA's
-    // order would not be. carta-zarr's finished prefix is then the first channels, which progress counts.
+    // Read one pixel only. For several pixels, the HDF5 loader puts the channel axis fastest,
+    // and a read in CARTA's order gives another layout. With one pixel, the part that carta-zarr has
+    // finished is the first channels, and progress counts them.
     if (!image || _num_dims != 4 || count_x != 1 || count_y != 1 || cursor_x < 0 || cursor_y < 0 || stokes < 0 ||
         cursor_x >= _image_shape(0) || cursor_y >= _image_shape(1) || stokes >= _image_shape(3)) {
         return false;
@@ -102,7 +104,7 @@ bool ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     const auto depth = _image_shape(2);
 
     const casacore::Slicer section(casacore::IPosition(4, cursor_x, cursor_y, 0, stokes), casacore::IPosition(4, 1, 1, depth, 1));
-    // NaN rather than zero for the channels not read yet: the caller sends this buffer before it is full
+    // Fill the channels not read yet with NaN, not zero. The caller sends this buffer before it is full.
     data.assign(static_cast<std::size_t>(depth), FLOAT_NAN);
     casacore::Array<float> destination(section.length(), data.data(), casacore::StorageInitPolicy::SHARE);
 
@@ -121,15 +123,16 @@ bool ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return true;
 }
 
-// Zarr keeps one copy of the pixels, so whatever the region's shape this reads only the chunks it covers,
-// in one pass. The HDF5 loader chooses because it has two copies, and the wrong one is slow.
+// True for a 4-D Zarr image. A Zarr store has one copy of the pixels. So for any region shape, the read
+// covers only the chunks that the region touches, in one pass. The HDF5 loader has two copies, the image
+// and the swizzled dataset, so it must choose one. The wrong one is slow.
 bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& /*image_mutex*/) {
     return std::dynamic_pointer_cast<CartaZarrImage>(_image) != nullptr && _num_dims == 4 && region_shape.size() >= 2;
 }
 
 namespace {
 
-// MurmurHash3's finalizer: every bit of the word moves every bit of the result
+// MurmurHash3's finalizer. A change in any bit of the word can change every bit of the result.
 std::uint64_t MixWord(std::uint64_t word) {
     word ^= word >> 33;
     word *= 0xff51afd7ed558ccdULL;
@@ -139,15 +142,15 @@ std::uint64_t MixWord(std::uint64_t word) {
     return word;
 }
 
-// A 64-bit hash of a mask's pixels, taken eight at a time, and how many are in the region.
+// A 64-bit hash of a mask's pixels, and the number of pixels in the region. It reads the pixels eight at a time.
 //
-// Taken on every call, so it is kept cheap: the mask of a 7763 x 4742 region took 26-36 ms a pixel at a time
-// and 6-9 ms eight at a time, mixed. A Bool is one byte of 0 or 1, so the pixels of a word in the region are
-// its set bits.
+// It runs on every call, so it must be cheap. For the mask of a 7763 x 4742 region, it took 26-36 ms
+// one pixel at a time, and 6-9 ms eight at a time with mixing. A Bool is one byte of 0 or 1, so the
+// pixels of a word that are in the region are its set bits.
 //
-// Each word is mixed before it is folded in, as FNV-1a folds in a byte: a multiplication carries a change
-// only upward, so a pixel in a word's top byte would otherwise reach only the hash's top byte, and masks
-// differing only there would share one of 256 hashes.
+// Each word is mixed before it is folded in, the same way FNV-1a folds in a byte. A multiplication carries
+// a change only toward higher bits. Without mixing, a pixel in a word's top byte would change only the
+// hash's top byte. Masks that differ only there would then share one of 256 hashes.
 std::pair<std::uint64_t, std::size_t> MaskFingerprint(const casacore::Array<casacore::Bool>& mask) {
     static_assert(sizeof(casacore::Bool) == 1, "a casacore Bool must be one byte to be hashed eight at a time");
     bool delete_storage(false);
@@ -180,7 +183,7 @@ ZarrLoader::RegionSpectralKey ZarrLoader::RegionSpectralKey::Of(
     key.y = origin(1);
     key.width = mask.shape()(0);
     key.height = mask.shape()(1);
-    // A region edited within the same bounding box has the same origin and shape, and another mask
+    // A region edited within the same bounding box keeps its origin and shape. Only the mask tells it apart.
     std::tie(key.mask_hash, key.mask_pixels) = MaskFingerprint(mask);
     key.z_from = range.from;
     key.z_to = range.to;
@@ -200,8 +203,8 @@ bool ZarrLoader::RegionSpectralKey::operator==(const RegionSpectralKey& other) c
 }
 
 // Reads a region's profile in runs of whole channels, in channel order. Each reported channel is final, and
-// the channels not read yet are NaN. A call stops at the end of a run once it has read for
-// _region_spectral_time, and the next call continues from there, so no chunk is read twice.
+// the channels not read yet are NaN. A call stops at the end of a run after it has read for
+// _region_spectral_time. The next call continues from there, so no chunk is read twice.
 bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& /*image_mutex*/,
     std::map<CARTA::StatsType, std::vector<double>>& results, float& progress, const SpectralReadWanted& still_wanted) {
@@ -230,8 +233,8 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     }();
     std::scoped_lock lock(pace.mutex);
     if (!(pace.key == key)) {
-        // Every stokes of the region starts again. One kept from an earlier read of the same region may already
-        // be finished, and would then report a computed stokes as finished while the others are not.
+        // Start every stokes of the region again. A stokes kept from an earlier read may already be finished.
+        // It would then report a computed stokes as finished while the other stokes are not.
         pace.Reset(key);
     }
     auto [found, added] = pace.stokes.try_emplace(stokes);
@@ -250,9 +253,9 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     const auto previous_read = state.reads.count(thread) ? state.reads[thread].read_index : -1;
 
     if (state.channels_done < channels) {
-        // If another stokes of this region is further along, read only up to where it got, so that this stokes
-        // catches up without getting ahead. Either way stop after _region_spectral_time: without that limit, a
-        // stokes catching up with one that already finished would read to the end in one call.
+        // If another stokes of this region is further along, read only up to where it got. This stokes then
+        // catches up without getting ahead. In both cases, stop after _region_spectral_time. Without that limit,
+        // a stokes that catches up with a finished one would read to the end in one call.
         const auto last = state.channels_done < pace.channels_done ? pace.channels_done : channels;
 
         static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to lend a mask");
@@ -271,11 +274,11 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         request.emit_every_channels = _region_spectral_channels_per_emit;
 
         carta::zarr::ReadOptions options;
-        // Counted over the whole range rather than what is left of it, so that a profile read over several
-        // calls keeps to one kind of pool
+        // Choose the pool from the whole range, not from what is left of it. Then a profile read over several
+        // calls uses the same kind of pool in every call.
         options.control.cache_pool = PoolForSpectrum(*image, origin(0), origin(1), mask_shape(0), mask_shape(1), range.from, channels);
-        // Stops part way through a run once the profile is not wanted, rather than at the end of the call: a
-        // run of a region covering a large image is a whole layer of chunks
+        // Stop part way through a run once the profile is not wanted, not only at the end of the call.
+        // For a region that covers a large image, one run is a whole layer of chunks.
         options.control.cancellation_requested = [&]() { return still_wanted && !still_wanted(); };
         const auto deadline = std::chrono::steady_clock::now() + _region_spectral_time;
         bool paused(false);
@@ -293,7 +296,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         auto* flux_density = has_flux ? &state.stats[CARTA::StatsType::FluxDensity] : nullptr;
         const auto store = [&](const carta::zarr::SpectralBlock& block) {
             if (!block.complete) {
-                // Partial sums of a run: the same channels come again, complete
+                // These are partial sums of a run. The same channels come again later, complete.
                 return true;
             }
             for (std::uint64_t c = 0; c < block.channel_count; ++c) {
@@ -303,18 +306,18 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
                 num_pixels[z] = n;
                 nan_count[z] = counted.nan_count;
                 if (n == 0.0) {
-                    // Every other statistic of a channel with no valid pixel is NaN, as the HDF5 loader reports
+                    // For a channel with no valid pixel, every other statistic stays NaN. The HDF5 loader reports the same.
                     continue;
                 }
-                // As the HDF5 loader reports them, but for the spread
+                // The same values as the HDF5 loader reports, except for sigma
                 sum[z] = counted.sum;
                 sum_sq[z] = counted.sum_sq;
                 min[z] = counted.min;
                 max[z] = counted.max;
                 mean[z] = counted.sum / n;
                 rms[z] = std::sqrt(counted.sum_sq / n);
-                // The spread from the centered moment rather than from sum_sq - sum^2 / n, which loses a small
-                // spread about a large mean
+                // Compute sigma from the centered moment, not from sum_sq - sum^2 / n. That formula loses a small
+                // spread about a large mean.
                 sigma[z] = n > 1.0 ? std::sqrt(counted.sum_sq_dev / (n - 1.0)) : 0.0;
                 extrema[z] = std::abs(counted.min) > std::abs(counted.max) ? counted.min : counted.max;
                 if (flux_density) {
@@ -330,9 +333,9 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
             return true;
         };
         const auto reduced = image->ZarrImage().ReduceSpectral(request, store, options);
-        // Stopping at the deadline is this loader's own choice, and stopping for a profile no longer wanted the
-        // caller's; carta-zarr reports both as cancelled, which is not an error. The channels finished before
-        // a stop are kept, and the next call goes on from them.
+        // carta-zarr reports two kinds of stop as cancelled. This loader stops at the deadline, and the caller stops
+        // a profile that is no longer wanted. Neither is an error. The channels finished before a stop are kept,
+        // and the next call continues from them.
         if (!reduced && !paused) {
             if (reduced.error().code != carta::zarr::ErrorCode::cancelled) {
                 spdlog::warn("Could not reduce a region over the spectrum of a Zarr image: {}", reduced.error().message);

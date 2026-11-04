@@ -27,7 +27,7 @@ public:
 
     bool HasData(FileInfo::Data ds) const override;
 
-    // Reads the spectrum from the swizzled dataset in one go, so `progress` is not called.
+    // Reads the spectrum from the swizzled dataset at once, so it does not call `progress`.
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
         std::mutex& image_mutex, const SpectralReadProgress& progress) override;
 

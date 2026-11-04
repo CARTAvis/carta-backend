@@ -1467,14 +1467,15 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
             std::vector<float> spectral_data;
             int xy_count(1);
-            // A profile of the current stokes is of the stokes that was current when the read began, but every
-            // message is labeled with CurrentStokes(). If the user switches stokes, this profile is no longer
-            // wanted and must not be sent as the new stokes's profile. The switch brings a request of its own.
+            // For the current stokes ("z"), this reads the stokes that was current when the read began.
+            // But every message is labeled with CurrentStokes(). So if the user switches stokes during the read,
+            // this profile is no longer wanted, and it must not be sent as the new stokes's profile.
+            // The switch starts a profile read of its own.
             const bool current_stokes = coordinate == "z";
             auto stokes_left = [this, current_stokes, stokes]() { return current_stokes && CurrentStokes() != stokes; };
             auto wanted = [&]() { return _cursor == start_cursor && IsConnected() && HasSpectralConfig(config) && !stokes_left(); };
-            // A loader that reads the spectrum in steps reports each step here, and stops when this returns
-            // false. The final part of the profile goes out on the same cadence as the casacore loop below.
+            // A loader that reads the spectrum in steps calls this after each step. The read stops when this
+            // returns false. Partial profiles are sent at the same interval as in the casacore loop below.
             bool stopped(false);
             auto t_start_partial = std::chrono::high_resolution_clock::now();
             auto read_progress = [&](std::size_t channels_done, std::size_t channels_total) {
@@ -1497,7 +1498,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 !Stokes::IsComputed(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
                                                    (start_cursor.y + 0.5), xy_count, _image_mutex, read_progress);
             if (stopped || (loader_read && !wanted())) {
-                // No longer wanted, so not sent, and not read again through casacore
+                // The profile is no longer wanted. Do not send it, and do not read it again through casacore.
                 if (!(_cursor == start_cursor) || !IsConnected()) {
                     // cursor changed or file closed, cancel profiles
                     return false;

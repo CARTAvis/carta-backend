@@ -1637,8 +1637,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             auto t_start = std::chrono::high_resolution_clock::now();
             auto t_latest = t_start;
 
-            // Cancel if region or frame is closing, or if region, current stokes, or spectral requirements changed.
-            // Checked between the loader's calls, and by a loader that can stop part way as it reads.
+            // Whether the profile is still wanted. It is false if the region or the frame is closing, or if the region,
+            // the current stokes or the spectral requirements changed. It is checked between the loader's calls,
+            // and by a loader that can stop part way through a read.
             const auto still_wanted = [&]() {
                 return RegionFileIdsValid(region_id, file_id) && region->GetRegionState() == initial_region_state &&
                        !(use_current_stokes && (stokes_index != frame->CurrentStokes())) &&
