@@ -7,8 +7,10 @@
 #include "CartaZarrImage.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <utility>
 
@@ -21,6 +23,7 @@
 #include <spdlog/spdlog.h>
 
 #include "Util/Casacore.h"
+#include "Util/Nan.h"
 #include "ZarrCasacore.h"
 #include "ZarrStores.h"
 
@@ -59,6 +62,47 @@ std::optional<casacore::Unit> BrightnessUnit(const std::string& unit) {
     }
     return casacore::Unit(normalized);
 }
+
+// Makes a carta-zarr read request for `section`. The section is in CARTA's order, and the image has `rank` axes.
+// If the image has a time axis, the request reads its only time slice.
+carta::zarr::ReadRequest RequestFor(const casacore::Slicer& section, std::size_t rank) {
+    carta::zarr::ReadRequest request;
+    for (casacore::uInt axis = 0; axis < CARTA_AXES; ++axis) {
+        request.axes.push_back({static_cast<std::uint64_t>(section.start()(axis)), static_cast<std::uint64_t>(section.length()(axis)),
+            static_cast<std::uint64_t>(section.stride()(axis))});
+    }
+    if (rank > CARTA_AXES) {
+        request.axes.push_back({0, 1, 1});
+    }
+    return request;
+}
+
+// The mask of a Zarr image, as a read-only lattice. It holds its own copy of the image.
+// casacore can keep a clone of the mask after the original image is destroyed, for example in ImageConcat.
+class ZarrPixelMask : public casacore::Lattice<casacore::Bool> {
+public:
+    explicit ZarrPixelMask(std::shared_ptr<CartaZarrImage> image) : _image(std::move(image)) {}
+
+    casacore::Lattice<casacore::Bool>* clone() const override {
+        return new ZarrPixelMask(*this);
+    }
+    casacore::IPosition shape() const override {
+        return _image->shape();
+    }
+    casacore::Bool isWritable() const override {
+        return false;
+    }
+    casacore::Bool doGetSlice(casacore::Array<casacore::Bool>& buffer, const casacore::Slicer& section) override {
+        return _image->doGetMaskSlice(buffer, section);
+    }
+    void doPutSlice(const casacore::Array<casacore::Bool>& /*buffer*/, const casacore::IPosition& /*where*/,
+        const casacore::IPosition& /*stride*/) override {
+        throw casacore::AipsError("ZarrPixelMask::doPutSlice - the mask is not writable");
+    }
+
+private:
+    std::shared_ptr<CartaZarrImage> _image;
+};
 
 } // namespace
 
@@ -124,8 +168,80 @@ casacore::DataType CartaZarrImage::InternalDataType() const {
     }
 }
 
-casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& /*buffer*/, const casacore::Slicer& /*section*/) {
-    throw casacore::AipsError("CartaZarrImage::doGetSlice - reading Zarr pixels is not supported yet");
+casacore::IPosition CartaZarrImage::ChunkShape() const {
+    const auto chunk = InCartaOrder(_zarr_image->chunk_geometry().chunk_shape);
+    casacore::IPosition shape(chunk.size());
+    for (casacore::uInt axis = 0; axis < chunk.size(); ++axis) {
+        shape(axis) = static_cast<ssize_t>(chunk[axis]);
+    }
+    return shape;
+}
+
+// A cursor smaller than a chunk still decodes the whole chunk. So the cursor is at least one chunk
+// in each spatial axis, even when that is more than max_pixels.
+// The non-spatial axes are set to 1 when needed, so that the cursor fits in max_pixels.
+casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels) const {
+    const auto chunk = ChunkShape();
+    // Start with one chunk, clipped to the image, because a chunk may be declared longer than the array.
+    // The clipping is done in IPosition's 64-bit integers, so a chunk longer than an int keeps its value.
+    // Every axis of an image that CARTA displays is at least 1 long; see CartaShape.
+    casacore::IPosition cursor(_shape.size());
+    for (casacore::uInt axis = 0; axis < _shape.size(); ++axis) {
+        cursor(axis) = std::clamp<ssize_t>(chunk(axis), 1, _shape(axis));
+    }
+    const auto most_pixels = static_cast<ssize_t>(max_pixels);
+
+    // Set the non-spatial axes to 1, slowest first, until the cursor fits in max_pixels
+    for (casacore::uInt axis = _shape.size(); axis > 2 && cursor.product() > most_pixels; --axis) {
+        cursor(axis - 1) = 1;
+    }
+    // Grow by whole chunks while the cursor still fits, so that each read covers as many chunks as allowed.
+    // The last step may be a part of a chunk. It stops at the edge of the image, so the cursor can cover the whole axis.
+    for (casacore::uInt axis = 0; axis < 2; ++axis) {
+        const auto step = cursor(axis);
+        while (cursor(axis) < _shape(axis)) {
+            const auto next = std::min(cursor(axis) + step, _shape(axis));
+            if ((cursor.product() / cursor(axis)) * next > most_pixels) {
+                break;
+            }
+            cursor(axis) = next;
+        }
+    }
+    return cursor;
+}
+
+carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& buffer, const casacore::Slicer& section) const {
+    if (!section.isFixed() || section.ndim() != _shape.size()) {
+        throw casacore::AipsError("CartaZarrImage::Read - the section must be fixed and have the image's rank");
+    }
+    buffer.resize(section.length());
+    bool delete_storage(false);
+    float* storage = buffer.getStorage(delete_storage);
+    auto read = _zarr_image->Read(
+        RequestFor(section, _zarr_image->descriptor().axes.size()), {storage, static_cast<std::size_t>(buffer.nelements())});
+    if (read) {
+        // The mask is false for every pixel that is not finite. So we set infinite pixels to NaN as well,
+        // and every reader of the image sees only NaN.
+        std::replace_if(
+            storage, storage + buffer.nelements(), [](float value) { return !std::isfinite(value); }, FLOAT_NAN);
+    }
+    buffer.putStorage(storage, delete_storage);
+    return read;
+}
+
+casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
+    // casacore expects a failed read to throw
+    if (const auto read = Read(buffer, section); !read) {
+        throw casacore::AipsError("CartaZarrImage::doGetSlice - " + read.error().message);
+    }
+
+    // Keep the section's mask for the mask read that follows, so that the section is not read and decoded twice.
+    // casacore reads a section's mask right after its pixels. The mask takes a quarter of the pixels' memory.
+    casacore::Array<casacore::Bool> mask(isFinite(buffer));
+    std::scoped_lock lock(_mask_cache.mutex);
+    _mask_cache.section = section;
+    _mask_cache.mask.reference(mask);
+    return false;
 }
 
 void CartaZarrImage::doPutSlice(
@@ -143,6 +259,59 @@ void CartaZarrImage::resize(const casacore::TiledShape& /*newShape*/) {
 
 casacore::ImageInterface<float>* CartaZarrImage::cloneII() const {
     return new CartaZarrImage(*this);
+}
+
+casacore::Bool CartaZarrImage::isMasked() const {
+    return true;
+}
+
+casacore::Bool CartaZarrImage::hasPixelMask() const {
+    return true;
+}
+
+const casacore::Lattice<casacore::Bool>& CartaZarrImage::pixelMask() const {
+    std::scoped_lock lock(_mask_cache.mutex);
+    if (!_mask_cache.lattice) {
+        _mask_cache.lattice = std::make_unique<ZarrPixelMask>(std::make_shared<CartaZarrImage>(*this));
+    }
+    return *_mask_cache.lattice;
+}
+
+casacore::Lattice<casacore::Bool>& CartaZarrImage::pixelMask() {
+    return const_cast<casacore::Lattice<casacore::Bool>&>(std::as_const(*this).pixelMask());
+}
+
+casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& buffer, const casacore::Slicer& section) {
+    {
+        // Use the mask kept from the pixel read, if it is for this section. Release it once it is used,
+        // because it can be large.
+        // Compare start, length and stride, not the Slicers with ==. A casacore iterator gives the pixel read
+        // a start and a length, and the mask read a start and an end. Slicer's == also compares how the Slicer
+        // was made, so it says that two Slicers for the same section differ.
+        std::scoped_lock lock(_mask_cache.mutex);
+        const auto& kept = _mask_cache.section;
+        if (kept && kept->start().isEqual(section.start()) && kept->length().isEqual(section.length()) &&
+            kept->stride().isEqual(section.stride())) {
+            buffer.resize(section.length());
+            buffer = _mask_cache.mask;
+            _mask_cache.section.reset();
+            _mask_cache.mask.resize();
+            return false;
+        }
+    }
+
+    casacore::Array<float> pixels;
+    if (const auto read = Read(pixels, section); !read) {
+        throw casacore::AipsError("CartaZarrImage::doGetMaskSlice - " + read.error().message);
+    }
+    buffer.resize(section.length());
+    buffer = isFinite(pixels);
+    return false;
+}
+
+std::size_t CartaZarrImage::MaskCacheBytes() const {
+    std::scoped_lock lock(_mask_cache.mutex);
+    return _mask_cache.mask.nelements() * sizeof(casacore::Bool);
 }
 
 std::vector<StorageEntry> CartaZarrImage::GetStorageInfo() const {
