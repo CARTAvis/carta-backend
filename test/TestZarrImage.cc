@@ -52,12 +52,12 @@ constexpr int kHeight = 5;
 constexpr int kDepth = 2;
 constexpr int kStokes = 3;
 
-// The pixel fixture's values say where they are, and a third of its pixels are flagged
+// Each pixel value of the fixture encodes the pixel's position. A third of the pixels are flagged.
 float ExpectedValue(int x, int y, int z, int stokes) {
     return static_cast<float>((z * 1000) + (stokes * 100) + (x * 10) + y);
 }
 
-// The chunk the fixture leaves unwritten, which reads as NaN
+// The chunk that the fixture leaves unwritten. Its pixels read as NaN.
 bool InMissingChunk(int x, int z, int stokes) {
     return z == 1 && stokes == 2 && x >= 2;
 }
@@ -345,8 +345,8 @@ TEST_F(ZarrImageTest, GetSliceHonorsASubRegion) {
     }
 }
 
-// The mask casacore sees is the finiteness of the pixels, which is how a flagged or absent pixel
-// reaches every casacore consumer that has no NaN handling of its own
+// casacore sees a mask that is true where a pixel is finite. So a flagged or absent pixel is masked
+// for every casacore consumer, even one that does not check for NaN.
 TEST_F(ZarrImageTest, MaskMarksFlaggedPixels) {
     auto image = ImageThroughLoader(kZarrFixture);
     ASSERT_NE(image, nullptr);
@@ -408,7 +408,7 @@ TEST_F(ZarrImageTest, CachedMaskAgreesWithADirectMaskRead) {
     }
 }
 
-// A section's mask is kept for the mask read that follows, and let go once read
+// A pixel read keeps the section's mask for the mask read that follows. The mask read releases it.
 TEST_F(ZarrImageTest, AKeptMaskIsReleasedOnceItIsRead) {
     CartaZarrImage image(kZarrFixture.string());
     const casacore::Slicer cube(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 2, 1));
@@ -424,8 +424,8 @@ TEST_F(ZarrImageTest, AKeptMaskIsReleasedOnceItIsRead) {
     EXPECT_TRUE(allEQ(mask, again));
 }
 
-// A strided section reads every other pixel, and its kept mask is not handed to the section of the same start
-// and length at unit stride
+// A strided section reads every other pixel. Its kept mask is not given to a section with the same start
+// and length but a stride of 1.
 TEST_F(ZarrImageTest, AStridedSectionKeepsItsOwnMask) {
     CartaZarrImage image(kZarrFixture.string());
     const casacore::Slicer strided(
@@ -452,8 +452,8 @@ TEST_F(ZarrImageTest, AStridedSectionKeepsItsOwnMask) {
     EXPECT_EQ(image.MaskCacheBytes(), 0u);
 }
 
-// A read into part of a larger array fills that part and leaves the rest alone, for the pixels and for a mask
-// handed back from the read
+// A read into part of a larger array fills only that part. This holds for the pixels, and for a mask
+// taken from the pixel read.
 TEST_F(ZarrImageTest, AReadIntoPartOfALargerArrayFillsOnlyThatPart) {
     CartaZarrImage image(kZarrFixture.string());
     const casacore::Slicer plane(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, kWidth, kHeight, 1, 1));
@@ -485,7 +485,8 @@ TEST_F(ZarrImageTest, AReadIntoPartOfALargerArrayFillsOnlyThatPart) {
     }
 }
 
-// A loader reads a Zarr slice's pixels in one read, flagged pixels NaN, and asks for no mask: none is kept for it
+// A loader reads a Zarr slice in one read, with flagged pixels as NaN. It does not ask for a mask,
+// so no mask is kept.
 TEST_F(ZarrImageTest, ALoaderReadKeepsNoMask) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
@@ -499,7 +500,7 @@ TEST_F(ZarrImageTest, ALoaderReadKeepsNoMask) {
     EXPECT_EQ(image->MaskCacheBytes(), 0u);
 }
 
-// A chunk that will not decode fails the read with a casacore error, and the rest of the image still reads
+// A chunk that cannot be decoded makes its read fail with a casacore error. The rest of the image still reads.
 TEST_F(ZarrImageTest, AChunkThatWillNotDecodeFailsOnlyItsRead) {
     const auto copy = EditedFixture("broken_chunk.zarr", [](const std::string& text) { return text; });
     const auto chunk = copy / "SKY" / "c" / "0" / "0" / "0" / "0" / "0";
@@ -521,8 +522,9 @@ TEST_F(ZarrImageTest, AChunkThatWillNotDecodeFailsOnlyItsRead) {
     EXPECT_FLOAT_EQ(pixels(casacore::IPosition(4, 1, 0, 0, 0)), ExpectedValue(1, 0, 1, 0));
 }
 
-// A loader reads an infinite pixel as NaN, as it reads a flagged one, so that nothing that skips NaN meets one
-TEST_F(ZarrImageTest, ALoaderReadsAnInfinitePixelAsNaN) {
+// An infinite pixel reads as NaN, the same as a flagged pixel. Code that skips NaN then never meets an infinity.
+// This holds for the loader and for casacore's own reads of the image.
+TEST_F(ZarrImageTest, AnInfinitePixelReadsAsNaN) {
     // The first chunk written again uncompressed, with an infinity at two pixels that are not flagged
     const auto copy = EditedFixture("infinite_pixels.zarr", [](const std::string& text) {
         return std::regex_replace(text, std::regex(R"(,\s*\{\s*"name"\s*:\s*"zstd"\s*,\s*"configuration"\s*:\s*\{[^}]*\}\s*\})"), "");
@@ -545,12 +547,14 @@ TEST_F(ZarrImageTest, ALoaderReadsAnInfinitePixelAsNaN) {
     const casacore::Slicer slicer(casacore::IPosition(4, 0, 0, 0, 0), casacore::IPosition(4, 2, kHeight, 1, 1));
     casacore::Array<float> data(slicer.length());
     ASSERT_TRUE(loader->GetSlice(data, StokesSlicer(StokesSource(), slicer)));
-    // And into an array that is not contiguous, a part of a larger one, which the loader reads a cursor at a time
+    // Read it again into an array that is not contiguous, a part of a larger array
     casacore::Array<float> larger(casacore::IPosition(4, 3, kHeight, 1, 1), 7.0f);
     casacore::Array<float> part = larger(casacore::Slicer(casacore::IPosition(4, 0, 0, 0, 0), slicer.length()));
     ASSERT_FALSE(part.contiguousStorage());
     ASSERT_TRUE(loader->GetSlice(part, StokesSlicer(StokesSource(), slicer)));
-    for (const auto& read : {data, part}) {
+    CartaZarrImage image(copy.string(), "SKY");
+    const casacore::Array<float> direct = image.getSlice(slicer);
+    for (const auto& read : {data, part, direct}) {
         for (int x = 0; x < 2; ++x) {
             for (int y = 0; y < kHeight; ++y) {
                 const float value = read(casacore::IPosition(4, x, y, 0, 0));
@@ -568,7 +572,7 @@ TEST_F(ZarrImageTest, ALoaderReadsAnInfinitePixelAsNaN) {
     }
 }
 
-// A loader's read of a slice with a chunk that will not decode fails, and its other slices still read
+// A loader's read fails for a slice with a chunk that cannot be decoded. Its other slices still read.
 TEST_F(ZarrImageTest, ALoaderReadOfAChunkThatWillNotDecodeFails) {
     const auto copy = EditedFixture("loader_broken_chunk.zarr", [](const std::string& text) { return text; });
     const auto chunk = copy / "SKY" / "c" / "0" / "0" / "0" / "0" / "0";
@@ -586,7 +590,7 @@ TEST_F(ZarrImageTest, ALoaderReadOfAChunkThatWillNotDecodeFails) {
     EXPECT_FLOAT_EQ(data(casacore::IPosition(4, 1, 0, 0, 0)), ExpectedValue(1, 0, 1, 0));
 }
 
-// Two threads reading their own planes of one image each get their own pixels and masks
+// Two threads read their own planes of one image. Each thread gets its own pixels and masks.
 TEST_F(ZarrImageTest, ThreadsReadingOneImageGetTheirOwnPlanes) {
     CartaZarrImage image(kZarrFixture.string());
     const auto read_plane = [&](int z, int& wrong) {
@@ -617,8 +621,8 @@ TEST_F(ZarrImageTest, ThreadsReadingOneImageGetTheirOwnPlanes) {
     EXPECT_EQ(wrong_1, 0);
 }
 
-// The whole mask is a lattice of its own, so that casacore can concatenate Zarr images, as the Stokes files
-// of a hypercube are, and keep reading the mask after the images it was given are gone
+// The whole mask is a lattice of its own. So casacore can concatenate Zarr images, for example the Stokes
+// files of a hypercube. It can keep reading the mask after the images it was given are destroyed.
 TEST_F(ZarrImageTest, TheMaskIsALatticeThatOutlivesTheImage) {
     casacore::LatticeConcat<float> concat(3);
     {
@@ -634,7 +638,7 @@ TEST_F(ZarrImageTest, TheMaskIsALatticeThatOutlivesTheImage) {
     const casacore::Slicer plane(casacore::IPosition(4, 0, 0, 0, kStokes), casacore::IPosition(4, kWidth, kHeight, 1, 1));
     casacore::Array<bool> mask;
     concat.getMaskSlice(mask, plane);
-    // Through the concatenation's own mask lattice, which reads the views it was given
+    // Read again through the concatenation's mask lattice. It reads the masks of the images it was given.
     casacore::Array<bool> from_lattice;
     concat.pixelMask().getSlice(from_lattice, plane);
     for (int y = 0; y < kHeight; ++y) {
@@ -645,8 +649,8 @@ TEST_F(ZarrImageTest, TheMaskIsALatticeThatOutlivesTheImage) {
     }
 }
 
-// The fixture is chunked (l, m) = (2, 5), one plane per chunk. The cursor is whole chunks, grown within
-// the advised maximum (here up to the whole plane), rather than casacore's default of one row.
+// The fixture has one plane per chunk, and a chunk is 2 by 5 pixels in (l, m). The cursor is made of
+// whole chunks. It grows within the advised maximum, here up to the whole plane.
 TEST_F(ZarrImageTest, NiceCursorShapeIsTheChunk) {
     auto image = ImageThroughLoader(kZarrFixture);
     ASSERT_NE(image, nullptr);
@@ -660,7 +664,27 @@ TEST_F(ZarrImageTest, NiceCursorShapeIsTheChunk) {
     EXPECT_LE(cursor.product(), static_cast<casacore::Int>(image->advisedMaxPixels()));
 }
 
-// A chunk declared longer than an int is clipped to the image, not narrowed to a zero step
+// The image is 4 pixels wide, and here a chunk is 3 pixels wide. The cursor covers the whole width.
+// It does not stop at one chunk, which would leave a second read of 1 pixel.
+TEST_F(ZarrImageTest, NiceCursorShapeCoversAnAxisThatIsNotWholeChunks) {
+    const auto copy = EditedFixture("chunk_not_dividing.zarr", [](const std::string& text) {
+        return std::regex_replace(
+            text, std::regex(R"("chunk_shape"\s*:\s*\[\s*1\s*,\s*1\s*,\s*1\s*,\s*2\s*,)"), R"("chunk_shape": [1, 1, 1, 3,)");
+    });
+    ZarrStores::Instance().Clear();
+    auto image = ImageThroughLoader(copy);
+    ASSERT_NE(image, nullptr);
+    const auto cursor = image->niceCursorShape(image->advisedMaxPixels());
+    ASSERT_EQ(cursor.size(), 4);
+    EXPECT_EQ(cursor(0), kWidth);
+    EXPECT_EQ(cursor(1), kHeight);
+    // With room for only one chunk, the cursor stays one chunk wide
+    const auto one_chunk = image->niceCursorShape(3 * kHeight);
+    EXPECT_EQ(one_chunk(0), 3);
+    EXPECT_EQ(one_chunk(1), kHeight);
+}
+
+// A chunk declared longer than an int is clipped to the image. It does not become a step of zero.
 TEST_F(ZarrImageTest, NiceCursorShapeClipsAChunkLongerThanAnInt) {
     for (const char* extent : {"4294967296", "3000000000"}) {
         const auto copy = EditedFixture(std::string("wide_chunk_") + extent + ".zarr", [&](const std::string& text) {

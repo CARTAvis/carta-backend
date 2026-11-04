@@ -46,15 +46,17 @@ public:
     casacore::DataType InternalDataType() const;
     casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) override;
     casacore::IPosition doNiceCursorShape(casacore::uInt max_pixels) const override;
-    // The shape of one chunk of the store in CARTA's order: what is decoded together
+    // The shape of one chunk of the store, in CARTA's order. carta-zarr decodes a whole chunk at a time.
     casacore::IPosition ChunkShape() const;
-    // The pixels of `section`, in CARTA's order, as carta-zarr read them, with carta-zarr's read options and
-    // progress callback. Throws casacore::AipsError for a section that is not fixed or not of the image's rank.
-    // Virtual so that a test can count the reads made of an image.
+    // Reads the pixels of `section` into `buffer`, with carta-zarr's read options and progress callback.
+    // The section is in CARTA's order. A pixel that is flagged, absent or not finite becomes NaN.
+    // Returns carta-zarr's error if the read fails.
+    // Throws casacore::AipsError if the section is not fixed or does not have the image's rank.
+    // It is virtual, so that a test can count the reads of an image.
     virtual carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {}, const carta::zarr::ProgressCallback& progress = {}) const;
-    // The carta-zarr image, for what casacore has no call for: reductions and chunk sizes. Its axes are in
-    // CARTA's order, as Read's are.
+    // The carta-zarr image, for the work that casacore has no call for, such as reductions and chunk sizes.
+    // Its axes are in CARTA's order, the same as in Read.
     const carta::zarr::Image& ZarrImage() const {
         return *_zarr_image;
     }
@@ -63,15 +65,17 @@ public:
     void resize(const casacore::TiledShape& newShape) override;
     casacore::ImageInterface<float>* cloneII() const override;
 
-    // carta-zarr reads a flagged or absent pixel as NaN, so the mask is the finiteness of the pixels
+    // The image always has a mask. The mask is true where a pixel is finite.
+    // carta-zarr reads flagged and absent pixels as NaN, so the mask is false for them.
     casacore::Bool isMasked() const override;
     casacore::Bool hasPixelMask() const override;
-    // The mask as a read-only lattice, for casacore code that asks for the whole mask, such as concatenating
-    // the Stokes files of a hypercube. It reads each section as doGetMaskSlice does.
+    // The mask as a read-only lattice. casacore code that needs the whole mask uses it,
+    // for example to concatenate the Stokes files of a hypercube.
+    // The lattice reads each section through doGetMaskSlice, so the whole mask is never held in memory.
     const casacore::Lattice<casacore::Bool>& pixelMask() const override;
     casacore::Lattice<casacore::Bool>& pixelMask() override;
     casacore::Bool doGetMaskSlice(casacore::Array<casacore::Bool>& buffer, const casacore::Slicer& section) override;
-    // Bytes of mask held for the mask read that follows a pixel read
+    // The size in bytes of the mask kept from the last pixel read. Tests use it to check that the mask is released.
     std::size_t MaskCacheBytes() const;
 
     std::vector<StorageEntry> GetStorageInfo() const;
@@ -87,14 +91,14 @@ private:
     // Logs each note and keeps it for the file info
     void AddNotes(std::vector<ZarrNote> notes);
 
-    // What the mask reads keep. A copy of the image starts with none of it.
+    // The state that the mask reads keep. A copy of the image starts empty, because the copy constructor copies none of it.
     struct MaskCache {
         std::mutex mutex;
-        // The section of the last pixel read and its mask: casacore asks for a section's pixels and then
-        // its mask, so the mask is computed with the pixels instead of reading them again
+        // The section of the last pixel read, and its mask.
+        // casacore reads a section's pixels and then its mask, so we keep the mask from the pixel read.
         std::optional<casacore::Slicer> section;
         casacore::Array<casacore::Bool> mask;
-        // The mask as a lattice, made when pixelMask is first called
+        // The mask lattice. pixelMask makes it on its first call.
         std::unique_ptr<casacore::Lattice<casacore::Bool>> lattice;
 
         MaskCache() = default;
