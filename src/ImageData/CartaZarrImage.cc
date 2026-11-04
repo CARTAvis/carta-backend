@@ -77,8 +77,8 @@ carta::zarr::ReadRequest RequestFor(const casacore::Slicer& section, std::size_t
     return request;
 }
 
-// The mask of a Zarr image as a read-only lattice. It holds its own copy of the image, since casacore keeps
-// clones of it after the image it came from is gone.
+// The mask of a Zarr image, as a read-only lattice. It holds its own copy of the image.
+// casacore can keep a clone of the mask after the original image is destroyed, for example in ImageConcat.
 class ZarrPixelMask : public casacore::Lattice<casacore::Bool> {
 public:
     explicit ZarrPixelMask(std::shared_ptr<CartaZarrImage> image) : _image(std::move(image)) {}
@@ -177,20 +177,21 @@ casacore::IPosition CartaZarrImage::ChunkShape() const {
     return shape;
 }
 
-// max_pixels is followed only as far as it helps: a cursor smaller than a chunk decodes the whole chunk
-// anyway, so the non-spatial axes are collapsed to fit, and the spatial chunk is kept even when it holds
-// more than max_pixels
+// A cursor smaller than a chunk still decodes the whole chunk. So the cursor is at least one chunk
+// in each spatial axis, even when that is more than max_pixels.
+// The non-spatial axes are set to 1 when needed, so that the cursor fits in max_pixels.
 casacore::IPosition CartaZarrImage::doNiceCursorShape(casacore::uInt max_pixels) const {
     const auto chunk = ChunkShape();
-    // Clipped to the image in IPosition's 64-bit width: a chunk may be declared longer than its array. Every
-    // axis of an image CARTA displays is at least one long; see CartaShape.
+    // Start with one chunk, clipped to the image, because a chunk may be declared longer than the array.
+    // The clipping is done in IPosition's 64-bit integers, so a chunk longer than an int keeps its value.
+    // Every axis of an image that CARTA displays is at least 1 long; see CartaShape.
     casacore::IPosition cursor(_shape.size());
     for (casacore::uInt axis = 0; axis < _shape.size(); ++axis) {
         cursor(axis) = std::clamp<ssize_t>(chunk(axis), 1, _shape(axis));
     }
     const auto most_pixels = static_cast<ssize_t>(max_pixels);
 
-    // Collapse the non-spatial axes, slowest first, until the cursor fits in max_pixels
+    // Set the non-spatial axes to 1, slowest first, until the cursor fits in max_pixels
     for (casacore::uInt axis = _shape.size(); axis > 2 && cursor.product() > most_pixels; --axis) {
         cursor(axis - 1) = 1;
     }
@@ -220,7 +221,7 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
         RequestFor(section, _zarr_image->descriptor().axes.size()), {storage, static_cast<std::size_t>(buffer.nelements())});
     if (read) {
         // The mask is false for every pixel that is not finite. So we set infinite pixels to NaN as well,
-        // and every reader of the image meets only NaN.
+        // and every reader of the image sees only NaN.
         std::replace_if(
             storage, storage + buffer.nelements(), [](float value) { return !std::isfinite(value); }, FLOAT_NAN);
     }
@@ -282,9 +283,11 @@ casacore::Lattice<casacore::Bool>& CartaZarrImage::pixelMask() {
 
 casacore::Bool CartaZarrImage::doGetMaskSlice(casacore::Array<casacore::Bool>& buffer, const casacore::Slicer& section) {
     {
-        // The mask of the section just read. We let it go once it is read, because it can be large.
-        // Compared by start, length and stride, since a casacore iterator asks for the pixels by length and
-        // the mask by end.
+        // Use the mask kept from the pixel read, if it is for this section. Release it once it is used,
+        // because it can be large.
+        // Compare start, length and stride, not the Slicers with ==. A casacore iterator gives the pixel read
+        // a start and a length, and the mask read a start and an end. Slicer's == also compares how the Slicer
+        // was made, so it says that two Slicers for the same section differ.
         std::scoped_lock lock(_mask_cache.mutex);
         const auto& kept = _mask_cache.section;
         if (kept && kept->start().isEqual(section.start()) && kept->length().isEqual(section.length()) &&
