@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARRCONTEXT_H_
 #define CARTA_SRC_IMAGEDATA_ZARRCONTEXT_H_
 
+#include <cstddef>
+
 #include <carta-zarr/carta_zarr.h>
 
 namespace carta {
@@ -27,6 +29,10 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, do
 // Returns the context that ConfigureZarrContext created at startup.
 // If ConfigureZarrContext was never called, it returns a context with the backend's default options.
 carta::zarr::Context GetZarrContext();
+
+// The bytes of decoded chunks the shared cache may hold: the configured size, or the backend's default when the
+// context was made without configuring it or carta-zarr refused the configured settings.
+std::size_t ZarrCacheBytes();
 
 } // namespace carta
 

@@ -75,6 +75,14 @@ TEST(ZarrContextTest, TheDefaultsAreTheSettingsDefaults) {
     EXPECT_EQ(options.cache_bytes, std::optional<std::size_t>(std::size_t{1} << 30));
 }
 
+// The cache size the loaders size spectra against is the one of the context in use
+TEST(ZarrContextTest, TheRecordedCacheIsTheConfiguredOne) {
+    carta::ConfigureZarrContext(2, 1, 0.5, 1);
+    EXPECT_EQ(carta::ZarrCacheBytes(), std::size_t{1} << 29);
+    carta::ConfigureZarrContext(2, 1, 0, 1);
+    EXPECT_EQ(carta::ZarrCacheBytes(), 0U);
+}
+
 TEST(ZarrContextTest, ConfigureThenGetDoesNotThrow) {
     EXPECT_NO_THROW(carta::ConfigureZarrContext(2, 1, 0, 1));
     EXPECT_NO_THROW(carta::GetZarrContext());
