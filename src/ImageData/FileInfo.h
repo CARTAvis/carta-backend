@@ -27,7 +27,7 @@ struct ImageStats {
 
     bool valid = false;
     // Remove this check when we drop support for the old schema.
-    bool full;
+    bool full = false;
 };
 
 struct RegionStatsId {
