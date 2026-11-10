@@ -84,10 +84,10 @@ private:
     int _region_id;
 
     /** @brief Requirements map. */
-    std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _configs;
+    std::unordered_map<ConfigId, RegionStatsConfig> _configs;
 
     /** @brief Cache to hold calculations. */
-    std::unordered_map<CacheId, StatsCache, CacheIdHash> _cache;
+    std::unordered_map<CacheId, StatsCache> _cache;
 };
 
 } // namespace carta

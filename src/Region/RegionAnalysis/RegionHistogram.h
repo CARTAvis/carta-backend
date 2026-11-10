@@ -111,10 +111,10 @@ private:
     int _region_id;
 
     /** @brief Histogram configurations stored as vector of HistogramConfig structs. */
-    std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _configs;
+    std::unordered_map<ConfigId, RegionHistogramConfig> _configs;
 
     /** @brief Cache to hold calculated histograms. */
-    std::unordered_map<CacheId, HistogramCache, CacheIdHash> _cache;
+    std::unordered_map<CacheId, HistogramCache> _cache;
 };
 
 } // namespace carta

@@ -162,8 +162,8 @@ private:
     std::mutex _spatial_mutex;
 
     // Spectral profile requirements, cache, and list of supported stats
-    std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> _spectral_req;
-    std::unordered_map<CacheId, SpectralCache, CacheIdHash> _spectral_cache;
+    std::unordered_map<ConfigId, RegionSpectralConfig> _spectral_req;
+    std::unordered_map<CacheId, SpectralCache> _spectral_cache;
     std::mutex _spectral_mutex;
     std::vector<CARTA::StatsType> _spectral_stats = {CARTA::StatsType::Sum, CARTA::StatsType::FluxDensity, CARTA::StatsType::Mean,
         CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max,
