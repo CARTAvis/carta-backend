@@ -10,13 +10,13 @@
 #include "schemas/preference_backend_schema_2.json.h"
 #include "schemas/preferences_schema_2.json.h"
 #include "schemas/snippet_schema_1.json.h"
-#include "schemas/workspace_schema_1.json.h"
+#include "schemas/workspace_schema_2.json.h"
 
 using namespace carta;
 
 const std::unordered_map<std::string, std::string_view> Json::_schema_strings{{"layout", CARTASCHEMA::layout_schema_2},
     {"preferences", CARTASCHEMA::preferences_schema_2}, {"snippet", CARTASCHEMA::snippet_schema_1},
-    {"workspace", CARTASCHEMA::workspace_schema_1}, {"backend", CARTASCHEMA::preference_backend_schema_2}};
+    {"workspace", CARTASCHEMA::workspace_schema_2}, {"backend", CARTASCHEMA::preference_backend_schema_2}};
 
 std::unordered_map<std::string, json> Json::_schemas{};
 std::unordered_map<std::string, json_schema::json_validator> Json::_validators{};
