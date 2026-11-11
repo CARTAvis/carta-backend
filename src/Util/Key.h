@@ -38,11 +38,7 @@ struct Key {
         std::size_t h(0);
         std::size_t m(1);
 
-        std::apply(
-            [&h, &m](const T&... arg) {
-                ((h += std::hash<T>{}(arg)*m, m *= 31), ...);
-            },
-            as_tuple);
+        std::apply([&h, &m](const T&... arg) { ((h += std::hash<T>{}(arg)*m, m *= 31), ...); }, as_tuple);
 
         return h;
     }
