@@ -51,6 +51,10 @@ fs::path MixedImages() {
     return ImagesPath() / "mix";
 }
 
+fs::path ContourData() {
+    return TestRoot() / "data" / "contours";
+}
+
 fs::path Issues(std::string issue) {
     return TestRoot() / "data" / "issues" / issue;
 }
