@@ -205,6 +205,7 @@ public:
     }
 
     FRIEND_TEST(FileExtInfoLoaderTest, FitsHistoryEntries);
+    FRIEND_TEST(FileExtInfoLoaderTest, Issue1511CelestialFrame);
 };
 
 TEST_F(FileInfoLoaderTest, CasaFile) {
@@ -263,6 +264,40 @@ TEST_F(FileExtInfoLoaderTest, FitsHistoryEntries) {
         }
     }
     EXPECT_EQ(num_history_entries, 15);
+}
+
+TEST_F(FileExtInfoLoaderTest, Issue1511CelestialFrame) {
+    // RADESYS defines the celestial frame, and EQUINOX only qualifies FK4 and FK5
+    const std::vector<std::pair<std::string, std::string>> cases = {
+        {"icrs_equinox_2000.fits", "ICRS"},
+        {"icrs_no_equinox.fits", "ICRS"},
+        {"fk5_equinox_2000.fits", "FK5, J2000"},
+        {"fk4_equinox_1950.fits", "FK4, B1950"},
+        {"no_radesys_equinox_2000.fits", "FK5, J2000"},
+        {"no_radesys_equinox_1950.fits", "FK4, B1950"},
+        {"galactic_equinox_2000.fits", "GALACTIC"},
+    };
+    const fs::path folder = Issues("1511");
+
+    for (const auto& [filename, expected_frame] : cases) {
+        SCOPED_TRACE(filename);
+        TestSession t_session;
+        string message;
+        std::string full_name;
+        std::string hdu;
+        CARTA::FileInfoExtended extended_info;
+        CARTA::FileInfo file_info;
+        bool support_aips_beam(false);
+        ASSERT_TRUE(t_session.FillExtendedFileInfo(extended_info, file_info, folder, filename, hdu, support_aips_beam, message, full_name));
+
+        std::string celestial_frame;
+        for (const auto& entry : extended_info.computed_entries()) {
+            if (entry.name() == "Celestial frame") {
+                celestial_frame = entry.value();
+            }
+        }
+        EXPECT_EQ(celestial_frame, expected_frame);
+    }
 }
 
 TEST_F(SessionFileInfoTest, FitsFile) {
