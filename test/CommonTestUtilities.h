@@ -30,6 +30,7 @@ fs::path CasaImages();
 fs::path Hdf5Images();
 fs::path MixedImages();
 fs::path ContourData();
+fs::path Issues(std::string issue);
 
 class DataReader {
 public:
