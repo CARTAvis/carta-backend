@@ -31,7 +31,7 @@ private:
 
     std::string _top_level_folder;
     std::string _concatenated_name;
-    std::map<CARTA::PolarizationType, std::unique_ptr<FileLoader>> _loaders;
+    std::map<CARTA::PolarizationType, std::shared_ptr<FileLoader>> _loaders;
 };
 
 } // namespace carta

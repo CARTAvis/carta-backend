@@ -9,6 +9,7 @@
 #include <casacore/casa/OS/File.h>
 
 #include "Logger/Logger.h"
+#include "Util/Message.h"
 
 using namespace carta;
 
