@@ -12,6 +12,7 @@
 
 #include <casacore/casa/Exceptions/Error.h>
 
+#include "ImageData/CompressedFits.h"
 #include "Logger/Logger.h"
 #include "Util/File.h"
 
@@ -48,6 +49,29 @@ void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& er
     if (hdu_list.empty() && error.empty()) {
         error = "No images found in FITS file.";
     }
+}
+
+bool FitsHduList::GetFirstImageHdu(const std::string& filename, std::string& hdu, std::string& error) {
+    if (IsCompressedFits(filename)) {
+        if (!CompressedFits(filename).GetFirstImageHdu(hdu)) {
+            error = "No image HDU found for FITS.";
+            return false;
+        }
+        return true;
+    }
+
+    std::vector<std::string> hdu_list;
+    FitsHduList(filename).GetHduList(hdu_list, error);
+    if (hdu_list.empty()) {
+        if (error.empty()) {
+            error = "No image HDU found for FITS.";
+        }
+        return false;
+    }
+
+    // Entries are "N" or "N: EXTNAME", but casacore only parses a bare number
+    hdu = hdu_list[0].substr(0, hdu_list[0].find(':'));
+    return true;
 }
 
 void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu_list, std::string& error) {

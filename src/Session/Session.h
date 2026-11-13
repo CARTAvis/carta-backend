@@ -36,6 +36,7 @@
 #include "Table/TableController.h"
 #include "Util/Concurrency.h"
 #include "Util/Message.h"
+#include "Util/Sia.h"
 
 #define HISTOGRAM_CANCEL -1.0
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
@@ -97,6 +98,7 @@ public:
     void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
     void OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id);
+    void OnSiaQuery(const CARTA::SiaQueryRequest& message, uint32_t request_id);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id);
 
@@ -288,8 +290,16 @@ protected:
     int _last_file_id;
     std::mutex _frame_mutex;
 
+    bool ResolveRemoteFileUrl(const CARTA::RemoteFileRequest& message, std::string& url, std::string& err_message);
+
+    // Remote file and SIA handlers run on task threads, so they may overlap within a session
+    std::mutex _remote_file_mutex;
     // Suffix for opening multiple remote files
-    int _remote_file_index;
+    std::atomic<int> _remote_file_index;
+    // Loadable locations of this session's last SIA query results, guarded by _remote_file_mutex
+    std::vector<SiaResultEntry> _sia_results;
+    // Downloaded remote files, guarded by _remote_file_mutex, removed when the session closes
+    std::vector<std::string> _remote_temp_files;
 
     const std::unique_ptr<TableController> _table_controller;
 

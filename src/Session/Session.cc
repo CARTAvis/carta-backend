@@ -34,6 +34,7 @@
 #include "Util/File.h"
 #include "Util/Message.h"
 #include "Util/RemoteFiles.h"
+#include "Util/Sia.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
@@ -102,6 +103,10 @@ void ExitNoSessions(int s) {
 }
 
 Session::~Session() {
+    for (const auto& temp_file : _remote_temp_files) {
+        std::error_code error_code;
+        fs::remove(temp_file, error_code);
+    }
     --_num_sessions;
     spdlog::debug("{} ~Session : num sessions = {}", fmt::ptr(this), _num_sessions);
     if (!_num_sessions) {
@@ -261,23 +266,8 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 
             if (hdu.empty() && (file_info.type() == CARTA::FileType::FITS)) {
                 // File info adds empty string for FITS
-                if (IsCompressedFits(fullname)) {
-                    CompressedFits cfits(fullname);
-                    if (!cfits.GetFirstImageHdu(hdu)) {
-                        message = "No image HDU found for FITS.";
-                        return file_info_ok;
-                    }
-                } else {
-                    std::vector<std::string> hdu_list;
-                    FitsHduList fits_hdu_list(fullname);
-                    fits_hdu_list.GetHduList(hdu_list, message);
-
-                    if (hdu_list.empty()) {
-                        message = "No image HDU found for FITS.";
-                        return file_info_ok;
-                    }
-
-                    hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
+                if (!FitsHduList::GetFirstImageHdu(fullname, hdu, message)) {
+                    return file_info_ok;
                 }
             }
         }
@@ -1600,40 +1590,132 @@ void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParamete
     }
 }
 
+void Session::OnSiaQuery(const CARTA::SiaQueryRequest& message, uint32_t request_id) {
+    CARTA::SiaQueryResponse response;
+    std::string err_message;
+
+    auto services = ParseSiaServices(ProgramSettings::GetInstance().sia_services);
+    auto service =
+        std::find_if(services.begin(), services.end(), [&](const SiaService& entry) { return entry.query_url == message.service_url(); });
+
+    bool success(false);
+    std::string query_url;
+    if (service == services.end()) {
+        err_message = "not a configured SIA service";
+    } else if (BuildSiaQueryUrl(message, query_url, err_message)) {
+        spdlog::info("Running SIA query {}", query_url);
+        std::vector<CARTA::SiaRecord> records;
+        try {
+            success = RunSiaQuery(query_url, records, err_message);
+        } catch (const std::exception& err) {
+            // The handler runs on a task thread, whose worker loop would terminate on an escaping exception
+            err_message = err.what();
+            success = false;
+        }
+        if (success) {
+            std::vector<SiaResultEntry> results;
+            for (auto& record : records) {
+                results.push_back({record.access_url(), record.access_format()});
+                *response.add_records() = std::move(record);
+            }
+            std::lock_guard<std::mutex> guard(_remote_file_mutex);
+            _sia_results = std::move(results);
+        }
+    }
+
+    if (!success) {
+        response.set_message(err_message);
+    }
+    response.set_success(success);
+    SendEvent(CARTA::SIA_QUERY_RESPONSE, request_id, response);
+}
+
+bool Session::ResolveRemoteFileUrl(const CARTA::RemoteFileRequest& message, std::string& url, std::string& err_message) {
+    if (message.sia_record_index() <= 0) {
+        // hips2fits: server-built URL, size-bounded by HIPS_MAX_PIXELS
+        return GenerateUrlFromRequest(message, url, err_message);
+    }
+
+    SiaResultEntry entry;
+    {
+        std::lock_guard<std::mutex> guard(_remote_file_mutex);
+        size_t index = message.sia_record_index() - 1;
+        if (index >= _sia_results.size()) {
+            err_message = "no such SIA result; run an SIA query first";
+            return false;
+        }
+        entry = _sia_results[index];
+    }
+
+    // The URL comes from service data, so it is validated, DataLink-resolved and size-checked
+    return ResolveSiaFileUrl(entry.access_url, IsDataLinkFormat(entry.access_format),
+        static_cast<int64_t>(ProgramSettings::GetInstance().remote_file_max_size_mb) * 1048576, url, err_message);
+}
+
 void Session::OnRemoteFileRequest(const CARTA::RemoteFileRequest& message, uint32_t request_id) {
     auto file_id(message.file_id());
 
     CARTA::RemoteFileResponse response;
     std::string url, err_message;
-    bool success = GenerateUrlFromRequest(message, url, err_message);
+    // Never repeats, so a concurrent request cannot take this one's temp path or display name
+    const int file_index = ++_remote_file_index;
+    bool success = ResolveRemoteFileUrl(message, url, err_message);
     if (success) {
-        spdlog::info("Fetching remote file from url {}", url);
-        auto loader = _loaders.Get(url, "");
+        // Downloaded here rather than by cfitsio, which buffers the whole file in memory,
+        // cannot report progress, and rejects encodings some archive stores use
+        spdlog::info("Downloading remote file from url {}", url);
+        auto temp_path = fs::temp_directory_path() / fmt::format("carta_remote_{}_{}_{}.fits", getpid(), _id, file_index);
 
-        CARTA::OpenFileAck ack;
+        DownloadProgressThrottle throttle;
+        auto report_progress = [&](int64_t downloaded, int64_t total) {
+            float progress(0);
+            if (throttle.ShouldReport(downloaded, total, progress)) {
+                SendEvent(CARTA::REMOTE_FILE_PROGRESS, request_id, Message::RemoteFileProgress(file_id, progress, downloaded, total));
+            }
+        };
+
+        success = CurlDownloadFile(url, temp_path.string(),
+            static_cast<int64_t>(ProgramSettings::GetInstance().remote_file_max_size_mb) * 1048576, err_message, report_progress);
+        if (success) {
+            std::lock_guard<std::mutex> guard(_remote_file_mutex);
+            _remote_temp_files.push_back(temp_path.string());
+            url = temp_path.string();
+        }
+    }
+    if (success) {
+        spdlog::info("Opening remote file from {}", url);
+        // Archive files may be tile-compressed, with the image in an extension
+        std::string hdu;
         try {
-            loader->OpenFile("0");
+            // A server may return anything: the loader is null unless the download really is an image
+            auto loader = _loaders.Get(url, "");
+            success = loader && FitsHduList::GetFirstImageHdu(url, hdu, err_message);
+            if (!loader) {
+                err_message = "downloaded file is not a supported image";
+            } else if (success) {
+                loader->OpenFile(hdu);
 
-            std::string remote_file_name;
-            auto index = ++_remote_file_index;
-            if (index > 0) {
-                remote_file_name = fmt::format("remote_file{}.fits", index);
-            } else {
-                remote_file_name = "remote_file.fits";
+                auto remote_file_name = RemoteFileDisplayName(message.filename(), file_index);
+                spdlog::info("Opening remote file: {}", remote_file_name);
+
+                success = OnOpenFile(file_id, remote_file_name, loader->GetImage(), response.mutable_open_file_ack());
+                if (!success) {
+                    err_message = response.open_file_ack().message();
+                }
             }
-            spdlog::info("Opening remote file: {}", remote_file_name);
-
-            auto image = loader->GetImage();
-
-            success = OnOpenFile(file_id, remote_file_name, image, response.mutable_open_file_ack());
-            if (success) {
-                response.set_message("File opened successfully");
-            }
+            response.set_message(success ? "File opened successfully" : err_message);
         } catch (const casacore::AipsError& err) {
             err_message = err.getMesg();
             response.set_message(err_message);
             success = false;
+        } catch (const std::exception& err) {
+            // The handler runs on a task thread, whose worker loop would terminate on an escaping exception
+            err_message = err.what();
+            response.set_message(err_message);
+            success = false;
         }
+        // OnOpenFile builds its own loader from the image, so this one is done either way
+        _loaders.Remove(url);
     } else {
         response.set_message(err_message);
     }

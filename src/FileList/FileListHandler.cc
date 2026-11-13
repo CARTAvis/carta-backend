@@ -21,8 +21,7 @@
 #include "Util/File.h"
 #include "Util/Message.h"
 
-#define INVALID_PATH_VALUE \
-    { '\0' }
+#define INVALID_PATH_VALUE {'\0'}
 
 using namespace carta;
 

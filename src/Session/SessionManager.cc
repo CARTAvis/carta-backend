@@ -55,6 +55,7 @@ std::unordered_map<CARTA::EventType, SessionManager::MessageHandler> SessionMana
     {CARTA::EventType::STOP_PV_PREVIEW, &SessionManager::StopPvPreviewHandler},
     {CARTA::EventType::CLOSE_PV_PREVIEW, &SessionManager::ClosePvPreviewHandler},
     {CARTA::EventType::REMOTE_FILE_REQUEST, &SessionManager::RemoteFileRequestHandler},
+    {CARTA::EventType::SIA_QUERY_REQUEST, &SessionManager::SiaQueryRequestHandler},
     {CARTA::EventType::CHANNEL_MAP_FLOW_CONTROL, &SessionManager::ChannelMapFlowControlHandler}};
 
 SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
@@ -576,8 +577,16 @@ void SessionManager::ClosePvPreviewHandler(Session* session, std::string_view sv
 };
 
 void SessionManager::RemoteFileRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+    // Queued rather than run inline: downloading on the loop thread would block progress messages
     auto message = Message::DecodeMessage<CARTA::RemoteFileRequest>(sv_message);
-    session->OnRemoteFileRequest(message, head.request_id);
+    OnMessageTask* tsk = new GeneralMessageTask<CARTA::RemoteFileRequest>(session, message, head.request_id);
+    ThreadManager::QueueTask(tsk);
+}
+
+void SessionManager::SiaQueryRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
+    auto message = Message::DecodeMessage<CARTA::SiaQueryRequest>(sv_message);
+    OnMessageTask* tsk = new GeneralMessageTask<CARTA::SiaQueryRequest>(session, message, head.request_id);
+    ThreadManager::QueueTask(tsk);
 };
 
 void SessionManager::ChannelMapFlowControlHandler(Session* session, std::string_view sv_message, const EventHeader& head) {
