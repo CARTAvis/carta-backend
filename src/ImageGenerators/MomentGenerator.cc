@@ -6,8 +6,11 @@
 
 #include "MomentGenerator.h"
 
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+
 #include "../Logger/Logger.h"
 #include "ImageGenerator.h"
+#include "Util/Casacore.h"
 
 using namespace carta;
 
@@ -352,33 +355,100 @@ void MomentGenerator::SetMomentImageLogger(
         region_info += fmt::format(", {:.4f}deg]\n", region_state.rotation);
     }
 
-    // Set spectral range info
-    int z_min = moment_request.spectral_range().min();
-    int z_max = moment_request.spectral_range().max();
-    std::string spectral_range = fmt::format("Spectral range: [{}, {}](channel)", z_min, z_max);
-
-    std::shared_ptr<casacore::CoordinateSystem> coord_sys =
-        std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
-
-    if (coord_sys && coord_sys->hasSpectralAxis()) {
-        auto spectral_coord = coord_sys->spectralCoordinate();
-        casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
-        spectral_units(0) = ((spectral_units(0) == "Hz") ? "GHz" : spectral_units(0));
-        spectral_coord.setWorldAxisUnits(spectral_units);
-        std::string velocity_units("km/s");
-        spectral_coord.setVelocity(velocity_units);
-        std::vector<double> frequencies(2);
-        std::vector<double> velocities(2);
-
-        if (spectral_coord.toWorld(frequencies[0], z_min) && spectral_coord.toWorld(frequencies[1], z_max)) {
-            spectral_range += fmt::format(", [{:.4f}, {:.4f}]({})", frequencies[0], frequencies[1], spectral_units(0));
-        }
-        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], z_min) &&
-            spectral_coord.pixelToVelocity(velocities[1], z_max)) {
-            spectral_range += fmt::format(", [{:.4f}, {:.4f}]({})", velocities[0], velocities[1], velocity_units);
+    auto coord_sys = _image->coordinates();
+    std::string system = moment_request.spectral_system();
+    if (system.empty() && coord_sys.hasSpectralAxis()) {
+        const auto native_system = coord_sys.spectralCoordinate().frequencySystem(true);
+        if (native_system != casacore::MFrequency::Undefined) {
+            system = casacore::MFrequency::showType(native_system);
         }
     }
-    spectral_range += "\n";
+    std::string system_info = fmt::format("System: {}\n", system.empty() ? "Unknown" : system);
+
+    const std::string frequency_unit = "GHz";
+    std::string rest_frequency_info = moment_request.rest_freq() > 0
+                                          ? fmt::format("Rest Frequency: {:.6f} {}\n", moment_request.rest_freq() / 1e9, frequency_unit)
+                                          : "Rest Frequency: Unknown\n";
+
+    // Derive all spectral ranges from the same channel endpoints.
+    int z_min = moment_request.spectral_range().min();
+    int z_max = moment_request.spectral_range().max();
+    std::string spectral_range = fmt::format("Channel range: [{}, {}]\n", z_min, z_max);
+    if (coord_sys.hasSpectralAxis()) {
+        auto spectral_coord = coord_sys.spectralCoordinate();
+        casacore::MFrequency::Types requested_system = casacore::MFrequency::Undefined;
+        const bool has_requested_system = !moment_request.spectral_system().empty();
+        const bool valid_requested_system = !has_requested_system || ParseSpectralSystem(system, requested_system);
+        bool conversion_set = !has_requested_system || (valid_requested_system && requested_system == spectral_coord.frequencySystem(true));
+        casacore::String conversion_error;
+        if (!valid_requested_system) {
+            conversion_error = "Invalid spectral system: " + system;
+        } else if (!conversion_set) {
+            const auto& obs_info = coord_sys.obsInfo();
+            const bool use_explicit_position =
+                coord_sys.hasDirectionCoordinate() && obs_info.isTelescopePositionSet() && obs_info.obsDate().getValue().get() > 0;
+            if (!use_explicit_position &&
+                coord_sys.setSpectralConversion(conversion_error, casacore::MFrequency::showType(requested_system))) {
+                spectral_coord = coord_sys.spectralCoordinate();
+                conversion_set = true;
+            } else if (coord_sys.hasDirectionCoordinate()) {
+                const auto needs_only_direction = [](casacore::MFrequency::Types type) {
+                    return type == casacore::MFrequency::LSRK || type == casacore::MFrequency::LSRD || type == casacore::MFrequency::BARY;
+                };
+                if (use_explicit_position ||
+                    (needs_only_direction(spectral_coord.frequencySystem()) && needs_only_direction(requested_system))) {
+                    // Prefer supplied observing metadata over telescope-table positions; LSR/BARY need only direction.
+                    casacore::MDirection direction;
+                    const auto& direction_coord = coord_sys.directionCoordinate();
+                    conversion_set = direction_coord.toWorld(direction, direction_coord.referencePixel()) &&
+                                     spectral_coord.setReferenceConversion(
+                                         requested_system, obs_info.obsDate(), obs_info.telescopePosition(), direction);
+                    if (!conversion_set && conversion_error.empty()) {
+                        conversion_error = "Cannot convert spectral system with the supplied observing metadata";
+                    }
+                }
+            }
+        }
+        if (conversion_set) {
+            casacore::Vector<casacore::String> spectral_units(1);
+            spectral_units[0] = frequency_unit;
+            spectral_coord.setWorldAxisUnits(spectral_units);
+            casacore::Vector<double> frequencies(2);
+            if (spectral_coord.toWorld(frequencies[0], z_min) && spectral_coord.toWorld(frequencies[1], z_max)) {
+                const auto append_range = [&](const std::string& label, const casacore::Vector<double>& values, const std::string& unit,
+                                              const char* number_format = "{:.4f}") {
+                    spectral_range += fmt::format("{} range: [{}, {}]({})\n", label, fmt::format(number_format, values[0]),
+                        fmt::format(number_format, values[1]), unit);
+                };
+                append_range("Frequency", frequencies, frequency_unit, "{:.6f}");
+
+                const std::string velocity_unit = "km/s";
+                casacore::Vector<double> velocities;
+                if (spectral_coord.restFrequency() > 0) {
+                    if (spectral_coord.setVelocity(velocity_unit, casacore::MDoppler::RADIO) &&
+                        spectral_coord.frequencyToVelocity(velocities, frequencies)) {
+                        append_range("Radio velocity", velocities, velocity_unit);
+                    }
+                    if (spectral_coord.setVelocity(velocity_unit, casacore::MDoppler::OPTICAL) &&
+                        spectral_coord.frequencyToVelocity(velocities, frequencies)) {
+                        append_range("Optical velocity", velocities, velocity_unit);
+                    }
+                }
+
+                const std::string wavelength_unit = "mm";
+                spectral_coord.setWavelengthUnit(wavelength_unit);
+                casacore::Vector<double> wavelengths;
+                if (spectral_coord.frequencyToWavelength(wavelengths, frequencies)) {
+                    append_range("Vacuum wavelength", wavelengths, wavelength_unit, "{:.6E}");
+                }
+                if (spectral_coord.frequencyToAirWavelength(wavelengths, frequencies)) {
+                    append_range("Air wavelength", wavelengths, wavelength_unit, "{:.6E}");
+                }
+            }
+        } else {
+            spectral_range += fmt::format("Spectral ranges unavailable: {}\n", conversion_error);
+        }
+    }
 
     // Set mask info
     float pixel_min = moment_request.pixel_range().min();
@@ -397,5 +467,6 @@ void MomentGenerator::SetMomentImageLogger(
 
     // Set the new logger
     _logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n"
-                    << input_image << region_info << spectral_range << stokes_info << mask_info << casacore::LogIO::POST;
+                    << input_image << region_info << system_info << rest_frequency_info << spectral_range << stokes_info << mask_info
+                    << casacore::LogIO::POST;
 }
