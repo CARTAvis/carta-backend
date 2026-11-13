@@ -56,6 +56,7 @@ private:
 
 // A Zarr loader whose cursor read follows a script from the test. It can read the way the real loader does,
 // return false without reading, or be stopped by the frame because the cursor or the stokes changed during the read.
+// It can also return false and then change the stokes while the frame reads the spectrum through casacore.
 class ScriptedCursorLoader : public ZarrLoader {
 public:
     enum class Script { read, refuse, cursor_moves, stokes_changes, stokes_changes_while_casacore_reads };

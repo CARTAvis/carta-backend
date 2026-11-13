@@ -748,8 +748,8 @@ TEST_F(ZarrImageTest, CursorSpectralDataIsTheColumnAndReportsProgress) {
 }
 
 // A read that the caller stops returns false and leaves no spectrum. The loader refuses a read of more than one
-// pixel, because the HDF5 loader puts the channel axis fastest for several pixels. It also refuses a pixel outside
-// the image.
+// pixel, because the HDF5 loader puts the channel axis fastest for several pixels. It also refuses a pixel or
+// a stokes outside the image.
 TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenToldAndReadsOnlyOnePixel) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
@@ -828,7 +828,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {
 
 namespace {
 
-// A Zarr loader that hands back a region's profile after every run of channels. A loader that reads a large image
+// A Zarr loader that hands back a region's profile after every channel. A loader that reads a large image
 // does the same after TARGET_PARTIAL_REGION_TIME.
 class PausingZarrLoader : public ZarrLoader {
 public:
@@ -898,7 +898,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataResumesWhereItPaused) {
 }
 
 // The stokes of a computed stokes are read in turn, with one progress for all of them. No call reads past the
-// channel that the first stokes reached, and the progress is true for all of them.
+// channel that the first stokes reached, and each call's progress counts all of them.
 TEST_F(ZarrImageTest, RegionSpectralDataKeepsTheStokesOfARegionInStep) {
     const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
@@ -927,8 +927,8 @@ TEST_F(ZarrImageTest, RegionSpectralDataKeepsTheStokesOfARegionInStep) {
 }
 
 // A profile that is no longer wanted stops part way through a call, the next time carta-zarr asks. It does not
-// wait for the end of the call. It keeps the channels it finished, and the next call ends with the same profile
-// as a read that was never stopped.
+// wait for the end of the call. The stopped call returns false. The profile keeps the channels it finished,
+// and the next call ends with the same profile as a read that was never stopped.
 TEST_F(ZarrImageTest, RegionSpectralDataStopsOnceNotWantedAndGoesOnAfter) {
     const auto mask = BoxMask([](int x, int y) { return (x + y) % 2 == 0; });
     const casacore::IPosition origin(2, 1, 1);
@@ -1338,7 +1338,7 @@ TEST(ZarrSpectrumCache, AColumnKeepsItsChunksWheneverItFits) {
     EXPECT_FALSE(SpectrumKeepsItsChunks(kHuge, kHuge, kHuge, kChunk, kGib));
     // A count whose bytes would wrap does not fit either, such as 2^32 chunks of 2^32 bytes.
     EXPECT_FALSE(SpectrumKeepsItsChunks(1, 1, kHuge, kHuge, kGib));
-    // They do not fit in the largest cache either. A count clamped to the largest 64-bit value would equal that
-    // cache and look like it fits.
+    // They do not fit in the largest cache either. If the count were clamped to the largest 64-bit value,
+    // it would equal that cache and look like it fits.
     EXPECT_FALSE(SpectrumKeepsItsChunks(kHuge, kHuge, 1, 1, std::numeric_limits<std::size_t>::max()));
 }

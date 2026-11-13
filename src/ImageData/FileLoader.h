@@ -103,7 +103,7 @@ public:
     // A loader calls this while it reads a cursor spectrum. It passes how many channels of `data` are final,
     // and how many channels there are in all. Returning false stops the read.
     // A loader that reads the whole spectrum at once does not need to call it.
-    // In both cases, the caller sends the whole spectrum after the read returns.
+    // When the read returns true, the caller sends the whole spectrum if the profile is still wanted.
     using SpectralReadProgress = std::function<bool(std::size_t channels_done, std::size_t channels_total)>;
     // Returns whether a region spectral profile is still wanted. A loader may call it during a read,
     // on the thread that reads. The caller also checks it between calls, so a loader whose calls are short

@@ -32,7 +32,8 @@ class ZarrLoader : public FileLoader {
 public:
     explicit ZarrLoader(const std::string& filename);
 
-    // Reads the spectrum of one pixel with carta-zarr. Returns false for more than one pixel.
+    // Reads the spectrum of one pixel with carta-zarr. Returns false for an image that is not 4-D, for more than
+    // one pixel, for a pixel or stokes outside the image, and when the read fails or is stopped.
     // It calls `progress` with the number of final channels as the read goes. The read stops if `progress` returns false.
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
         std::mutex& image_mutex, const SpectralReadProgress& progress) override;

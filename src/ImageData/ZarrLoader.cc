@@ -28,13 +28,14 @@
 namespace carta {
 namespace {
 
-// The cache pool for a spectrum read. A spectrum reads a column of chunks through the whole depth, in order.
+// The cache pool for a spectrum read. A spectrum reads a column of chunks through its channel range, in order.
 // If the whole column fits in the shared cache as it decodes, the default pool is used. The chunks then
 // stay cached. When the cursor moves to another pixel in the same chunks, its spectrum reads from the cache.
 // The cache charges a little more than the decoded size for each chunk, so a column of nearly the cache's
 // size may lose a chunk or two.
 // Otherwise a pool that keeps nothing is used. A column larger than the cache would evict its own chunks
-// before they are used again. With no shared cache, there is nothing to keep.
+// before they are used again. If that pool cannot be made, the read uses the shared cache and logs a warning.
+// With no shared cache, there is nothing to keep.
 std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& image, std::int64_t x, std::int64_t y, std::int64_t width,
     std::int64_t height, std::int64_t z, std::int64_t depth) {
     const auto cache_bytes = ZarrCacheBytes();
@@ -123,9 +124,9 @@ bool ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return true;
 }
 
-// True for a 4-D Zarr image. A Zarr store has one copy of the pixels. So for any region shape, the read
-// covers only the chunks that the region touches, in one pass. The HDF5 loader has two copies, the image
-// and the swizzled dataset, so it must choose one. The wrong one is slow.
+// True for a 4-D Zarr image and a region of at least two axes. A Zarr store has one copy of the pixels.
+// So for any region shape, the read covers only the chunks that the region touches, in one pass.
+// The HDF5 loader has two copies, the image and the swizzled dataset, so it must choose one. The wrong one is slow.
 bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& /*image_mutex*/) {
     return std::dynamic_pointer_cast<CartaZarrImage>(_image) != nullptr && _num_dims == 4 && region_shape.size() >= 2;
 }
@@ -204,7 +205,7 @@ bool ZarrLoader::RegionSpectralKey::operator==(const RegionSpectralKey& other) c
 
 // Reads a region's profile in runs of whole channels, in channel order. Each reported channel is final, and
 // the channels not read yet are NaN. A call stops at the end of a run after it has read for
-// _region_spectral_time. The next call continues from there, so no chunk is read twice.
+// _region_spectral_time. The next call continues from there, so it does not read the finished channels again.
 bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& /*image_mutex*/,
     std::map<CARTA::StatsType, std::vector<double>>& results, float& progress, const SpectralReadWanted& still_wanted) {
@@ -333,9 +334,10 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
             return true;
         };
         const auto reduced = image->ZarrImage().ReduceSpectral(request, store, options);
-        // carta-zarr reports two kinds of stop as cancelled. This loader stops at the deadline, and the caller stops
-        // a profile that is no longer wanted. Neither is an error. The channels finished before a stop are kept,
-        // and the next call continues from them.
+        // carta-zarr reports two kinds of stop as cancelled. At the deadline, this loader stops the read, and the call
+        // returns true with the channels finished so far. When the caller stops a profile that is no longer wanted,
+        // the call returns false. Neither stop logs a warning. In both cases the finished channels are kept,
+        // and a later call for the same region continues from them.
         if (!reduced && !paused) {
             if (reduced.error().code != carta::zarr::ErrorCode::cancelled) {
                 spdlog::warn("Could not reduce a region over the spectrum of a Zarr image: {}", reduced.error().message);
