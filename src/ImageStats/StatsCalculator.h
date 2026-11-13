@@ -32,7 +32,11 @@ static std::unordered_map<CARTA::StatsType, casacore::LatticeStatsBase::Statisti
     {CARTA::StatsType::Sum, casacore::LatticeStatsBase::SUM}, {CARTA::StatsType::Mean, casacore::LatticeStatsBase::MEAN},
     {CARTA::StatsType::RMS, casacore::LatticeStatsBase::RMS}, {CARTA::StatsType::Sigma, casacore::LatticeStatsBase::SIGMA},
     {CARTA::StatsType::SumSq, casacore::LatticeStatsBase::SUMSQ}, {CARTA::StatsType::Min, casacore::LatticeStatsBase::MIN},
-    {CARTA::StatsType::Extrema, casacore::LatticeStatsBase::MIN}, {CARTA::StatsType::Max, casacore::LatticeStatsBase::MAX}};
+    {CARTA::StatsType::Extrema, casacore::LatticeStatsBase::MIN}, {CARTA::StatsType::Max, casacore::LatticeStatsBase::MAX},
+    {CARTA::StatsType::Median, casacore::LatticeStatsBase::MEDIAN},
+    {CARTA::StatsType::MedAbsDevMed, casacore::LatticeStatsBase::MEDABSDEVMED},
+    {CARTA::StatsType::Quartile, casacore::LatticeStatsBase::QUARTILE}, {CARTA::StatsType::Q1, casacore::LatticeStatsBase::Q1},
+    {CARTA::StatsType::Q3, casacore::LatticeStatsBase::Q3}};
 
 /** @brief Calculate basic stats from a float vector using BasicStatsCalculator
  *  @param stats The results returned in a BasicStats struct
@@ -87,6 +91,16 @@ void GetPositionStats(const casacore::ImageInterface<float>& image, casacore::Im
  */
 bool ComputeFluxDensity(
     const casacore::ImageInterface<float>& image, casacore::ImageStatistics<float> image_stats, std::vector<double>& result);
+
+/** @brief Calculate flux density from cached pixel counts and sums without reading image pixels
+ *  @param image The image or channel subimage providing units, coordinates, and beam metadata
+ *  @param npts Valid pixel count per plane
+ *  @param sums Pixel sum per plane
+ *  @param result Flux density per plane
+ *  @return Whether the image metadata supports the conversion
+ */
+bool ComputeFluxDensityFromSum(const casacore::ImageInterface<float>& image, const std::vector<double>& npts,
+    const std::vector<double>& sums, std::vector<double>& result);
 
 /** @brief Get the area of the beam in the given unit for an image or a region applied to an image
  *  @param image The image or region applied to an image (casacore::SubImage)

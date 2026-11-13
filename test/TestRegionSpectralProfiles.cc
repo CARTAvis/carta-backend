@@ -7,6 +7,10 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
+#include <casacore/images/Images/TempImage.h>
+#include <cmath>
+
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
@@ -135,6 +139,108 @@ TEST_F(RegionSpectralProfileTest, TestPolygonSpectralProfile) {
             auto expected_profile = GetExpectedMeanProfile(image_path, num_channels, CARTA::POLYGON);
             auto actual_profile = GetSpectralProfileValues<double>(profile);
             CmpVectors<double>(actual_profile, expected_profile);
+        }
+    }
+}
+
+TEST_F(RegionSpectralProfileTest, TestExtraStatisticsAfterBasicProfile) {
+    for (const auto& image_path : {FitsImages() / "noise_3d.fits", Hdf5Images() / "10x10x10.hdf5"}) {
+        SCOPED_TRACE(image_path.string());
+        auto loader = FileLoader::GetLoader(image_path);
+        auto frame = std::make_shared<Frame>(0, loader, "0");
+        carta::RegionHandler handler;
+        int region_id(-1);
+        ASSERT_TRUE(SetRegion(handler, 0, region_id, {0, 0, 0, 3, 3, 3, 3, 0}, frame->CoordinateSystem(), false));
+        CARTA::SetSpectralRequirements_SpectralConfig config;
+        config.set_coordinate("z");
+        config.add_stats_types(CARTA::StatsType::Mean);
+        CARTA::SpectralProfileData data;
+        auto receive = [&data](CARTA::SpectralProfileData response) { data = response; };
+        ASSERT_TRUE(handler.SetSpectralRequirements(region_id, 0, frame, {config}));
+        ASSERT_TRUE(handler.FillSpectralProfileData(receive, region_id, 0, false));
+        for (auto type : {CARTA::StatsType::Median, CARTA::StatsType::Q1, CARTA::StatsType::Q3, CARTA::StatsType::Quartile,
+                 CARTA::StatsType::MedAbsDevMed}) {
+            config.add_stats_types(type);
+            ASSERT_TRUE(handler.SetSpectralRequirements(region_id, 0, frame, {config}));
+            ASSERT_TRUE(handler.FillSpectralProfileData(receive, region_id, 0, false));
+            EXPECT_EQ(data.progress(), 1.0);
+            bool found(false);
+            for (const auto& profile : data.profiles()) {
+                if (profile.stats_type() == type) {
+                    found = true;
+                    auto values = GetSpectralProfileValues<double>(profile);
+                    ASSERT_EQ(values.size(), frame->Depth());
+                    for (auto value : values) {
+                        EXPECT_TRUE(std::isfinite(value));
+                    }
+                }
+            }
+            EXPECT_TRUE(found);
+        }
+    }
+}
+
+TEST_F(RegionSpectralProfileTest, TestComputedStokesExtraStatisticsUseDerivedPixels) {
+    auto image = std::make_shared<casacore::TempImage<float>>(
+        casacore::TiledShape(casacore::IPosition(4, 2, 2, 4, 12)), casacore::CoordinateUtil::defaultCoords4D());
+    auto loader = FileLoader::GetLoader(image, "computed-stats-test");
+    auto frame = std::make_shared<Frame>(0, loader, "0");
+    auto axes = frame->Axes();
+    int intensity_stokes, q_stokes, u_stokes;
+    ASSERT_TRUE(frame->GetStokesTypeIndex("I", intensity_stokes));
+    ASSERT_TRUE(frame->GetStokesTypeIndex("Q", q_stokes));
+    ASSERT_TRUE(frame->GetStokesTypeIndex("U", u_stokes));
+
+    casacore::Array<float> pixels(image->shape(), 0.0F);
+    for (int z = 0; z < frame->Depth(); ++z) {
+        for (int y = 0; y < 2; ++y) {
+            for (int x = 0; x < 2; ++x) {
+                casacore::IPosition position(4, 0);
+                position(axes.x) = x;
+                position(axes.y) = y;
+                position(axes.z) = z;
+                position(axes.stokes) = intensity_stokes;
+                pixels(position) = (y == 0 ? (x == 0 ? 10.0F : 20.0F) : (x == 0 ? 30.0F : 40.0F));
+                position(axes.stokes) = q_stokes;
+                pixels(position) = (y == 0 ? (x == 0 ? 1.0F : 4.0F) : (x == 0 ? 9.0F : 16.0F)) * (z + 1);
+                position(axes.stokes) = u_stokes;
+                pixels(position) = 0.0F;
+            }
+        }
+    }
+    image->put(pixels);
+
+    carta::RegionHandler handler;
+    int region_id(-1);
+    ASSERT_TRUE(SetRegion(handler, 0, region_id, {0, 0, 1, 1, 1, 1, 1, 0}, frame->CoordinateSystem(), false));
+    CARTA::SetSpectralRequirements_SpectralConfig config;
+    config.set_coordinate("PFlinearz");
+    for (auto type : {CARTA::StatsType::Median, CARTA::StatsType::MedAbsDevMed, CARTA::StatsType::Q1, CARTA::StatsType::Q3,
+             CARTA::StatsType::Quartile}) {
+        config.add_stats_types(type);
+    }
+    ASSERT_TRUE(handler.SetSpectralRequirements(region_id, 0, frame, {config}));
+
+    CARTA::SpectralProfileData data;
+    ASSERT_TRUE(handler.FillSpectralProfileData([&data](CARTA::SpectralProfileData response) { data = response; }, region_id, 0, false));
+    ASSERT_EQ(data.progress(), 1.0);
+    ASSERT_EQ(data.profiles_size(), 5);
+    for (const auto& profile : data.profiles()) {
+        auto values = GetSpectralProfileValues<double>(profile);
+        ASSERT_EQ(values.size(), 12);
+        for (int z = 0; z < 12; ++z) {
+            const double scale = z + 1;
+            if (profile.stats_type() == CARTA::StatsType::Median) {
+                EXPECT_DOUBLE_EQ(values[z], 20.0 * scale);
+            } else if (profile.stats_type() == CARTA::StatsType::MedAbsDevMed) {
+                EXPECT_DOUBLE_EQ(values[z], 10.0 * scale);
+            } else if (profile.stats_type() == CARTA::StatsType::Q1) {
+                EXPECT_DOUBLE_EQ(values[z], 10.0 * scale);
+            } else if (profile.stats_type() == CARTA::StatsType::Q3) {
+                EXPECT_DOUBLE_EQ(values[z], 40.0 * scale);
+            } else if (profile.stats_type() == CARTA::StatsType::Quartile) {
+                EXPECT_DOUBLE_EQ(values[z], 30.0 * scale);
+            }
         }
     }
 }

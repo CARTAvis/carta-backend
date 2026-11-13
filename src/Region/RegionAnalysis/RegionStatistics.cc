@@ -8,6 +8,8 @@
 
 #include "RegionStatistics.h"
 
+#include <algorithm>
+
 #include "Util/File.h"
 #include "Util/Message.h"
 
@@ -57,11 +59,15 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
 
     // Check cache
     CacheId cache_id = CacheId(file_id, _region_id, stokes_index, z);
+    std::map<CARTA::StatsType, double> stats_results;
     if (_cache.find(cache_id) != _cache.end()) {
-        std::map<CARTA::StatsType, double> stats_results;
         if (_cache[cache_id].GetStats(stats_results)) {
-            FillStatistics(stats_data_message, required_stats, stats_results); // Message helper
-            return true;
+            bool all_stats_cached = std::all_of(required_stats.begin(), required_stats.end(),
+                [&stats_results](CARTA::StatsType type) { return stats_results.find(type) != stats_results.end(); });
+            if (all_stats_cached) {
+                FillStatistics(stats_data_message, required_stats, stats_results); // Message helper
+                return true;
+            }
         }
     }
 
@@ -82,9 +88,11 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
     // Calculate stats
     bool per_z(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_map;
-    if (frame->GetRegionStats(stokes_region, required_stats, per_z, stats_map)) {
+    std::vector<CARTA::StatsType> missing_stats;
+    std::copy_if(required_stats.begin(), required_stats.end(), std::back_inserter(missing_stats),
+        [&stats_results](CARTA::StatsType type) { return !stats_results.count(type); });
+    if (frame->GetRegionStats(stokes_region, missing_stats, per_z, stats_map)) {
         // convert vector to single value in map
-        std::map<CARTA::StatsType, double> stats_results;
         for (const auto& [type, statistic] : stats_map) {
             stats_results[type] = statistic[0];
         }
