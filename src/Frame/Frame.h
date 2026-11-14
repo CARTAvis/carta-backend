@@ -76,7 +76,7 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
     {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
     {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
-class Frame {
+class Frame : public enable_shared_from_this<Frame> {
 public:
     // Load image cache for default_z, except for PV preview image which needs cube
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
@@ -215,11 +215,41 @@ public:
     // Close image with cached data
     void CloseCachedImage(const std::string& file);
 
-    // For vector field setting and calculation
-    bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    /**
+     * @brief Sets the parameters of the calculation as set in the front-end VectorOverlay widget
+     *
+     * This functions calls SetVectorOverlayParameters function in the _vector_field member object
+     *
+     * @param parameter Protobuf message with parameters of the calculation specified in the front-end
+     */
+    void SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& parameter);
+
+    /**
+     * @brief Performs downsampling of the provided tile/image data
+     *
+     * @param data Tile/image data
+     * @param downsampled_width output value of the width after downsampling
+     * @param downsampled_height output value of the height after downsampling
+     * @param z  Z axis index (TODO : verify this)
+     * @param stokes Stokes axis index (TODO : verify this)
+     * @param bounds parameters of the tile
+     * @param mip downsampling factor
+     */
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
-    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
+
+    /**
+     * @brief Performs a new calculation of the vector field overlay based
+     *
+     * The calculation if performed based on the parameters passed from the front-end and
+     * specified by the user in the VectorOverlay widget
+     *
+     * @param callback Callback function to return the results of the calculations.
+     * @param stokes_changed The flag specifying if the Stokes image has changed (TODO : confirm what it is ?)
+     * @param z_changed The flag specifying if the Z axis has changed (TODO : confirm what it is ?)
+     */
+    bool CalculateVectorField(
+        const std::function<void(CARTA::VectorOverlayTileData&)>& callback, bool stokes_changed = false, bool z_changed = false);
 
 protected:
     // Validate z and stokes index values
@@ -264,9 +294,6 @@ protected:
     inline int CacheKey(int z, int stokes) {
         return (z * 10) + stokes;
     }
-
-    // For vector field calculation
-    bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // Setup
     uint32_t _session_id;
@@ -336,7 +363,13 @@ protected:
     // Image fitter
     std::unique_ptr<ImageFitter> _image_fitter;
 
-    // Vector field settings
+    /**
+     * @brief A member object for managing the vector field calculations
+
+     * The class VectorField manages a list of calculator objects (VectorFieldCalculator) and provides functions to set parameters
+     * (SetVectorOverlayParameters),
+     * start new calculation (NewCalculation) and cancel on-going calculation (StopCalculations)
+     */
     VectorField _vector_field;
 };
 
