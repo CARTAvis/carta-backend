@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_CARTAZARRIMAGE_H_
-#define CARTA_SRC_IMAGEDATA_CARTAZARRIMAGE_H_
+#ifndef CARTA_SRC_IMAGEDATA_ZARR_CARTAZARRIMAGE_H_
+#define CARTA_SRC_IMAGEDATA_ZARR_CARTAZARRIMAGE_H_
 
 #include <optional>
 #include <string>
@@ -70,4 +70,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEDATA_CARTAZARRIMAGE_H_
+#endif // CARTA_SRC_IMAGEDATA_ZARR_CARTAZARRIMAGE_H_
