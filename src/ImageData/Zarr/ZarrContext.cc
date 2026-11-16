@@ -35,8 +35,7 @@ void LogZarrContextOptions(const carta::zarr::ContextOptions& options) {
         options.decode_threads, static_cast<double>(options.cache_bytes.value_or(0)) / BYTES_PER_GIB);
 }
 
-// Makes a context with `options`. If carta-zarr refuses them, makes one with the backend's defaults.
-// Sets `used` to the options of the context that was made.
+// Makes a context with `options`, or with the defaults if carta-zarr refuses them. Sets `used` to the options used.
 carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options, carta::zarr::ContextOptions& used) {
     auto context = carta::zarr::Context::Create(options);
     if (context) {
@@ -56,8 +55,7 @@ carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options, c
     return *std::move(default_context);
 }
 
-// Returns the shared context. If none was configured, makes one with the backend's defaults.
-// The caller must hold context_mutex.
+// The shared context, made with the defaults if none was configured. The caller holds context_mutex.
 const carta::zarr::Context& SharedContext() {
     if (!shared_context) {
         carta::zarr::ContextOptions used;

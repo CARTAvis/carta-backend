@@ -25,9 +25,7 @@ namespace {
 
 const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
 
-// A Zarr image that counts the reads that the frame makes through the loader's GetSlice or through casacore.
-// The frame reads a spectrum this way when the loader does not read it. These reads pass no progress callback.
-// The loader's own cursor read passes one, and is not counted.
+// A Zarr image that counts the frame's own reads. The loader's cursor read has a progress callback, and is not counted.
 class CountingImage : public CartaZarrImage {
 public:
     CountingImage(const CartaZarrImage& image, int& reads, std::function<void()>& on_read)
@@ -54,9 +52,7 @@ private:
     std::function<void()>& _on_read;
 };
 
-// A Zarr loader whose cursor read follows a script from the test. It can read the way the real loader does,
-// return false without reading, or be stopped by the frame because the cursor or the stokes changed during the read.
-// It can also return false and then change the stokes while the frame reads the spectrum through casacore.
+// A Zarr loader whose cursor read follows a script from the test
 class ScriptedCursorLoader : public ZarrLoader {
 public:
     enum class Script { read, refuse, cursor_moves, stokes_changes, stokes_changes_while_casacore_reads };
@@ -101,8 +97,7 @@ public:
     Frame* frame = nullptr;
     std::function<void()> on_casacore_read;
 
-    // A stokes change during a casacore read must not reload the plane. The reload would wait for the image mutex,
-    // which the read holds. With a tile cache and mips, the frame instead loads tiles when they are asked for.
+    // With a tile cache and mips, a stokes change does not reload the plane. A reload would wait for the image mutex.
     bool UseTileCache() const override {
         return _script == Script::stokes_changes_while_casacore_reads || ZarrLoader::UseTileCache();
     }
@@ -130,8 +125,7 @@ struct CursorProfile {
     bool progress_answer = true;
 };
 
-// The spectrum that the frame sends for a cursor at (2, 2) of the pixel fixture. It is of the current stokes ("z")
-// or of a fixed stokes.
+// The spectrum that the frame sends for a cursor at (2, 2)
 CursorProfile FillCursorProfile(ScriptedCursorLoader::Script script, const std::string& coordinate = "z") {
     auto loader = std::make_shared<ScriptedCursorLoader>(kZarrFixture.string(), script);
     loader->OpenFile("");
@@ -177,7 +171,6 @@ public:
 
 } // namespace
 
-// The loader's read is the profile, and nothing else is read
 TEST_F(CursorSpectralRoutesTest, TheLoadersReadIsTheProfile) {
     const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::read);
     EXPECT_TRUE(profile.filled);
@@ -186,8 +179,6 @@ TEST_F(CursorSpectralRoutesTest, TheLoadersReadIsTheProfile) {
     EXPECT_EQ(FinalValues(profile), kSpectrum);
 }
 
-// A loader that returns false without being stopped leaves the spectrum to the frame. The frame then reads it
-// through casacore.
 TEST_F(CursorSpectralRoutesTest, AReadThatReturnsFalseIsLeftToTheFrame) {
     const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::refuse);
     EXPECT_TRUE(profile.filled);
@@ -195,7 +186,6 @@ TEST_F(CursorSpectralRoutesTest, AReadThatReturnsFalseIsLeftToTheFrame) {
     EXPECT_EQ(FinalValues(profile), kSpectrum);
 }
 
-// The frame stops a read once the cursor has moved, and sends nothing for it
 TEST_F(CursorSpectralRoutesTest, AReadTheCursorLeftIsStopped) {
     const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::cursor_moves);
     EXPECT_FALSE(profile.progress_answer);
@@ -204,8 +194,7 @@ TEST_F(CursorSpectralRoutesTest, AReadTheCursorLeftIsStopped) {
     EXPECT_TRUE(profile.messages.empty());
 }
 
-// The frame stops a read of the current stokes once the user turns to another stokes. It does not send the profile
-// as the new stokes's profile, and it does not read it again through casacore.
+// The stopped profile is not read again through casacore.
 TEST_F(CursorSpectralRoutesTest, AReadOfAStokesTheUserLeftIsStopped) {
     const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::stokes_changes);
     EXPECT_FALSE(profile.progress_answer);
@@ -215,8 +204,6 @@ TEST_F(CursorSpectralRoutesTest, AReadOfAStokesTheUserLeftIsStopped) {
     EXPECT_TRUE(profile.messages.empty());
 }
 
-// A profile of a fixed stokes is still wanted when the user turns to another stokes. The loader returns false,
-// so the frame reads it through casacore.
 TEST_F(CursorSpectralRoutesTest, AFixedStokesProfileOutlivesAStokesChange) {
     const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::stokes_changes, "Qz");
     EXPECT_TRUE(profile.progress_answer);
@@ -226,8 +213,6 @@ TEST_F(CursorSpectralRoutesTest, AFixedStokesProfileOutlivesAStokesChange) {
     EXPECT_EQ(FinalValues(profile), (std::vector<float>{122.0f, 1122.0f}));
 }
 
-// The frame's own casacore read of the current stokes also stops when the user turns to another stokes.
-// It is not sent as the new stokes's profile.
 TEST_F(CursorSpectralRoutesTest, ACasacoreReadOfAStokesTheUserLeftIsNotSent) {
     const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::stokes_changes_while_casacore_reads);
     EXPECT_GT(profile.casacore_reads, 0);

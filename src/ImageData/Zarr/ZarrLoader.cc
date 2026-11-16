@@ -28,14 +28,9 @@
 namespace carta {
 namespace {
 
-// The cache pool for a spectrum read. A spectrum reads a column of chunks through its channel range, in order.
-// If the whole column fits in the shared cache as it decodes, the default pool is used. The chunks then
-// stay cached. When the cursor moves to another pixel in the same chunks, its spectrum reads from the cache.
-// The cache charges a little more than the decoded size for each chunk, so a column of nearly the cache's
-// size may lose a chunk or two.
-// Otherwise a pool that keeps nothing is used. A column larger than the cache would evict its own chunks
-// before they are used again. If that pool cannot be made, the read uses the shared cache and logs a warning.
-// With no shared cache, there is nothing to keep.
+// The cache pool for a spectrum read. If its column of chunks fits in the shared cache, the default pool keeps
+// the chunks for the next pixel. Otherwise a pool that keeps nothing is used, because the column would evict its
+// own chunks. If that pool cannot be made, the shared cache is used.
 std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& image, std::int64_t x, std::int64_t y, std::int64_t width,
     std::int64_t height, std::int64_t z, std::int64_t depth) {
     const auto cache_bytes = ZarrCacheBytes();
@@ -63,7 +58,7 @@ std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& imag
 
 bool SpectrumKeepsItsChunks(
     std::uint64_t chunks_x, std::uint64_t chunks_y, std::uint64_t chunks_z, std::uint64_t chunk_bytes, std::size_t cache_bytes) {
-    // If the chunk count does not fit in 64 bits, it is more than any cache holds. A wrapped count could look small.
+    // A chunk count that overflows 64 bits does not fit.
     std::uint64_t chunks = 1;
     for (const auto count : {chunks_x, chunks_y, chunks_z}) {
         if (count != 0 && chunks > std::numeric_limits<std::uint64_t>::max() / count) {
@@ -71,7 +66,7 @@ bool SpectrumKeepsItsChunks(
         }
         chunks *= count;
     }
-    // Divide instead of multiplying chunks by chunk_bytes. The product could overflow and look small enough to fit.
+    // Divide, because chunks * chunk_bytes can overflow.
     return chunk_bytes == 0 || chunks <= cache_bytes / chunk_bytes;
 }
 
@@ -95,9 +90,7 @@ void ZarrLoader::AllocateImage(const std::string& hdu) {
 bool ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
     std::mutex& /*image_mutex*/, const SpectralReadProgress& progress) {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
-    // Read one pixel only. For several pixels, the HDF5 loader puts the channel axis fastest,
-    // and a read in CARTA's order gives another layout. With one pixel, the part that carta-zarr has
-    // finished is the first channels, and progress counts them.
+    // One pixel only. For several pixels, the HDF5 loader puts the channel axis fastest.
     if (!image || _num_dims != 4 || count_x != 1 || count_y != 1 || cursor_x < 0 || cursor_y < 0 || stokes < 0 ||
         cursor_x >= _image_shape(0) || cursor_y >= _image_shape(1) || stokes >= _image_shape(3)) {
         return false;
@@ -105,7 +98,7 @@ bool ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     const auto depth = _image_shape(2);
 
     const casacore::Slicer section(casacore::IPosition(4, cursor_x, cursor_y, 0, stokes), casacore::IPosition(4, 1, 1, depth, 1));
-    // Fill the channels not read yet with NaN, not zero. The caller sends this buffer before it is full.
+    // NaN, not zero, for the channels not read yet. The caller sends the buffer before it is full.
     data.assign(static_cast<std::size_t>(depth), FLOAT_NAN);
     casacore::Array<float> destination(section.length(), data.data(), casacore::StorageInitPolicy::SHARE);
 
@@ -124,16 +117,15 @@ bool ZarrLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return true;
 }
 
-// True for a 4-D Zarr image and a region of at least two axes. A Zarr store has one copy of the pixels.
-// So for any region shape, the read covers only the chunks that the region touches, in one pass.
-// The HDF5 loader has two copies, the image and the swizzled dataset, so it must choose one. The wrong one is slow.
+// True for a 4-D Zarr image and a region of at least two axes.
+// The HDF5 loader chooses between two copies of the pixels, but a Zarr store has only one.
 bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& /*image_mutex*/) {
     return std::dynamic_pointer_cast<CartaZarrImage>(_image) != nullptr && _num_dims == 4 && region_shape.size() >= 2;
 }
 
 namespace {
 
-// MurmurHash3's finalizer. A change in any bit of the word can change every bit of the result.
+// MurmurHash3's finalizer
 std::uint64_t MixWord(std::uint64_t word) {
     word ^= word >> 33;
     word *= 0xff51afd7ed558ccdULL;
@@ -143,15 +135,9 @@ std::uint64_t MixWord(std::uint64_t word) {
     return word;
 }
 
-// A 64-bit hash of a mask's pixels, and the number of pixels in the region. It reads the pixels eight at a time.
-//
-// It runs on every call, so it must be cheap. For the mask of a 7763 x 4742 region, it took 26-36 ms
-// one pixel at a time, and 6-9 ms eight at a time with mixing. A Bool is one byte of 0 or 1, so the
-// pixels of a word that are in the region are its set bits.
-//
-// Each word is mixed before it is folded in, the same way FNV-1a folds in a byte. A multiplication carries
-// a change only toward higher bits. Without mixing, a pixel in a word's top byte would change only the
-// hash's top byte. Masks that differ only there would then share one of 256 hashes.
+// A 64-bit hash of a mask's pixels, and the number of pixels in the region. It runs on every call, so it reads
+// eight pixels at a time. For a 7763 x 4742 mask, this takes 6-9 ms, and one pixel at a time takes 26-36 ms.
+// Each word is mixed before it is folded in. Without mixing, masks that differ only in a word's top byte could share a hash.
 std::pair<std::uint64_t, std::size_t> MaskFingerprint(const casacore::Array<casacore::Bool>& mask) {
     static_assert(sizeof(casacore::Bool) == 1, "a casacore Bool must be one byte to be hashed eight at a time");
     bool delete_storage(false);
@@ -184,7 +170,7 @@ ZarrLoader::RegionSpectralKey ZarrLoader::RegionSpectralKey::Of(
     key.y = origin(1);
     key.width = mask.shape()(0);
     key.height = mask.shape()(1);
-    // A region edited within the same bounding box keeps its origin and shape. Only the mask tells it apart.
+    // An edited region can keep its origin and shape, so the mask is part of the key.
     std::tie(key.mask_hash, key.mask_pixels) = MaskFingerprint(mask);
     key.z_from = range.from;
     key.z_to = range.to;
@@ -203,9 +189,8 @@ bool ZarrLoader::RegionSpectralKey::operator==(const RegionSpectralKey& other) c
            mask_pixels == other.mask_pixels && z_from == other.z_from && z_to == other.z_to;
 }
 
-// Reads a region's profile in runs of whole channels, in channel order. Each reported channel is final, and
-// the channels not read yet are NaN. A call stops at the end of a run after it has read for
-// _region_spectral_time. The next call continues from there, so it does not read the finished channels again.
+// Reads a region's profile in runs of whole channels. A call returns after _region_spectral_time,
+// and the next call continues from there. The channels not read yet are NaN.
 bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
     const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& /*image_mutex*/,
     std::map<CARTA::StatsType, std::vector<double>>& results, float& progress, const SpectralReadWanted& still_wanted) {
@@ -234,8 +219,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     }();
     std::scoped_lock lock(pace.mutex);
     if (!(pace.key == key)) {
-        // Start every stokes of the region again. A stokes kept from an earlier read may already be finished.
-        // It would then report a computed stokes as finished while the other stokes are not.
+        // Start every stokes again. Otherwise a stokes finished for an earlier key would report a computed stokes as finished.
         pace.Reset(key);
     }
     auto [found, added] = pace.stokes.try_emplace(stokes);
@@ -254,9 +238,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     const auto previous_read = state.reads.count(thread) ? state.reads[thread].read_index : -1;
 
     if (state.channels_done < channels) {
-        // If another stokes of this region is further along, read only up to where it got. This stokes then
-        // catches up without getting ahead. In both cases, stop after _region_spectral_time. Without that limit,
-        // a stokes that catches up with a finished one would read to the end in one call.
+        // A stokes behind another stokes of the region reads only up to it. It still stops after _region_spectral_time.
         const auto last = state.channels_done < pace.channels_done ? pace.channels_done : channels;
 
         static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to lend a mask");
@@ -275,15 +257,12 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         request.emit_every_channels = _region_spectral_channels_per_emit;
 
         carta::zarr::ReadOptions options;
-        // Choose the pool from the whole range, not from what is left of it. Then a profile read over several
-        // calls uses the same kind of pool in every call.
+        // Choose the pool from the whole range, so that every call of a profile uses the same kind of pool.
         options.control.cache_pool = PoolForSpectrum(*image, origin(0), origin(1), mask_shape(0), mask_shape(1), range.from, channels);
-        // Stop part way through a run once the profile is not wanted, not only at the end of the call.
-        // For a region that covers a large image, one run is a whole layer of chunks.
+        // Stop part way through a run once the profile is not wanted. One run can be a whole layer of chunks.
         options.control.cancellation_requested = [&]() { return still_wanted && !still_wanted(); };
         const auto deadline = std::chrono::steady_clock::now() + _region_spectral_time;
         bool paused(false);
-        // Looked up once rather than for every channel
         auto& num_pixels = state.stats[CARTA::StatsType::NumPixels];
         auto& nan_count = state.stats[CARTA::StatsType::NanCount];
         auto& sum = state.stats[CARTA::StatsType::Sum];
@@ -297,7 +276,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         auto* flux_density = has_flux ? &state.stats[CARTA::StatsType::FluxDensity] : nullptr;
         const auto store = [&](const carta::zarr::SpectralBlock& block) {
             if (!block.complete) {
-                // These are partial sums of a run. The same channels come again later, complete.
+                // Partial sums. The same channels come again, complete.
                 return true;
             }
             for (std::uint64_t c = 0; c < block.channel_count; ++c) {
@@ -307,18 +286,16 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
                 num_pixels[z] = n;
                 nan_count[z] = counted.nan_count;
                 if (n == 0.0) {
-                    // For a channel with no valid pixel, every other statistic stays NaN. The HDF5 loader reports the same.
+                    // For a channel with no valid pixel, the other statistics stay NaN.
                     continue;
                 }
-                // The same values as the HDF5 loader reports, except for sigma
                 sum[z] = counted.sum;
                 sum_sq[z] = counted.sum_sq;
                 min[z] = counted.min;
                 max[z] = counted.max;
                 mean[z] = counted.sum / n;
                 rms[z] = std::sqrt(counted.sum_sq / n);
-                // Compute sigma from the centered moment, not from sum_sq - sum^2 / n. That formula loses a small
-                // spread about a large mean.
+                // Sigma from the centered moment. The formula sum_sq - sum^2 / n loses a small spread about a large mean.
                 sigma[z] = n > 1.0 ? std::sqrt(counted.sum_sq_dev / (n - 1.0)) : 0.0;
                 extrema[z] = std::abs(counted.min) > std::abs(counted.max) ? counted.min : counted.max;
                 if (flux_density) {
@@ -327,17 +304,15 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
             }
             state.channels_done = first + static_cast<std::size_t>(block.first_channel + block.channel_count);
             if (state.channels_done < last && std::chrono::steady_clock::now() >= deadline) {
-                // Hand back what is finished, so the caller can send it and decide whether the profile is still wanted
+                // Hand back what is finished
                 paused = true;
                 return false;
             }
             return true;
         };
         const auto reduced = image->ZarrImage().ReduceSpectral(request, store, options);
-        // carta-zarr reports two kinds of stop as cancelled. At the deadline, this loader stops the read, and the call
-        // returns true with the channels finished so far. When the caller stops a profile that is no longer wanted,
-        // the call returns false. Neither stop logs a warning. In both cases the finished channels are kept,
-        // and a later call for the same region continues from them.
+        // carta-zarr reports both stops as cancelled. At the deadline the call returns true. When the profile is not
+        // wanted, it returns false. Neither stop logs a warning, and the finished channels are kept.
         if (!reduced && !paused) {
             if (reduced.error().code != carta::zarr::ErrorCode::cancelled) {
                 spdlog::warn("Could not reduce a region over the spectrum of a Zarr image: {}", reduced.error().message);

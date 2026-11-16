@@ -30,9 +30,8 @@ void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, do
 // If ConfigureZarrContext was never called, it returns a context with the backend's default options.
 carta::zarr::Context GetZarrContext();
 
-// The size in bytes of decoded chunks that the shared cache can hold. This is the configured size.
-// It is the backend's default size if ConfigureZarrContext was never called,
-// or if carta-zarr refused the configured settings.
+// The size in bytes of the shared cache in use. It is the backend's default if ConfigureZarrContext
+// was not called, or if its settings were refused.
 std::size_t ZarrCacheBytes();
 
 } // namespace carta

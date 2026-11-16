@@ -703,8 +703,6 @@ TEST_F(ZarrImageTest, NiceCursorShapeClipsAChunkLongerThanAnInt) {
     }
 }
 
-// The loader's cursor spectrum is the same column that casacore reads. A one-pixel read reports the final channels
-// as it goes.
 TEST_F(ZarrImageTest, CursorSpectralDataIsTheColumnAndReportsProgress) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
@@ -747,9 +745,7 @@ TEST_F(ZarrImageTest, CursorSpectralDataIsTheColumnAndReportsProgress) {
     }
 }
 
-// A read that the caller stops returns false and leaves no spectrum. The loader refuses a read of more than one
-// pixel, because the HDF5 loader puts the channel axis fastest for several pixels. It also refuses a pixel or
-// a stokes outside the image.
+// The loader also refuses a pixel or a stokes outside the image.
 TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenToldAndReadsOnlyOnePixel) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
@@ -765,8 +761,6 @@ TEST_F(ZarrImageTest, CursorSpectralDataStopsWhenToldAndReadsOnlyOnePixel) {
     EXPECT_FALSE(loader->GetCursorSpectralData(data, kStokes, 0, 1, 0, 1, image_mutex, {}));
 }
 
-// The loader's region spectral profile equals the statistics that casacore computes over the same masked region,
-// one channel at a time.
 TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {
     auto loader = FileLoader::GetLoader(kZarrFixture.string());
     ASSERT_NE(loader, nullptr);
@@ -828,8 +822,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataAgreesWithCasacore) {
 
 namespace {
 
-// A Zarr loader that hands back a region's profile after every channel. A loader that reads a large image
-// does the same after TARGET_PARTIAL_REGION_TIME.
+// A Zarr loader whose calls return after every channel
 class PausingZarrLoader : public ZarrLoader {
 public:
     explicit PausingZarrLoader(const std::string& filename) : ZarrLoader(filename) {
@@ -841,7 +834,7 @@ public:
     }
 };
 
-// A mask over the 3 x 4 box at (1, 1) of the pixel fixture. `pattern` decides which pixels are in it.
+// A mask over the 3 x 4 box at (1, 1). `pattern` picks the pixels.
 casacore::ArrayLattice<casacore::Bool> BoxMask(const std::function<bool(int x, int y)>& pattern) {
     casacore::Array<casacore::Bool> mask(casacore::IPosition(2, 3, 4));
     for (int y = 0; y < 4; ++y) {
@@ -860,7 +853,6 @@ int FinishedChannels(std::map<CARTA::StatsType, std::vector<double>>& profile) {
 
 } // namespace
 
-// A profile that is handed back partway continues where it stopped. It ends the same as a profile read in one call.
 TEST_F(ZarrImageTest, RegionSpectralDataResumesWhereItPaused) {
     const auto mask = BoxMask([](int x, int y) { return (x + y) % 2 == 0; });
     const casacore::IPosition origin(2, 1, 1);
@@ -897,8 +889,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataResumesWhereItPaused) {
     }
 }
 
-// The stokes of a computed stokes are read in turn, with one progress for all of them. No call reads past the
-// channel that the first stokes reached, and each call's progress counts all of them.
+// Q and U are read in turn, the same way as for a computed stokes.
 TEST_F(ZarrImageTest, RegionSpectralDataKeepsTheStokesOfARegionInStep) {
     const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
@@ -916,8 +907,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataKeepsTheStokesOfARegionInStep) {
     EXPECT_EQ(u_progress, q_progress);
     EXPECT_EQ(FinishedChannels(u), FinishedChannels(q));
 
-    // The next round finishes both. Q's call still reports less than 1, because its progress counts U, and U is
-    // still behind. U's call reports 1.
+    // The next round finishes both. Q's progress counts U, which is still behind.
     ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
     EXPECT_LT(q_progress, 1.0f);
     ASSERT_TRUE(loader.GetRegionSpectralData(7, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
@@ -926,9 +916,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataKeepsTheStokesOfARegionInStep) {
     EXPECT_EQ(FinishedChannels(u), kDepth);
 }
 
-// A profile that is no longer wanted stops part way through a call, the next time carta-zarr asks. It does not
-// wait for the end of the call. The stopped call returns false. The profile keeps the channels it finished,
-// and the next call ends with the same profile as a read that was never stopped.
+// The stopped call returns false. The next call ends with the same profile.
 TEST_F(ZarrImageTest, RegionSpectralDataStopsOnceNotWantedAndGoesOnAfter) {
     const auto mask = BoxMask([](int x, int y) { return (x + y) % 2 == 0; });
     const casacore::IPosition origin(2, 1, 1);
@@ -964,8 +952,6 @@ TEST_F(ZarrImageTest, RegionSpectralDataStopsOnceNotWantedAndGoesOnAfter) {
     }
 }
 
-// One region's profile does not wait for another region's call to finish. A region that covers a large image reads
-// a whole layer of chunks in one call.
 TEST_F(ZarrImageTest, RegionSpectralDataOfOneRegionDoesNotWaitForAnother) {
     const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
@@ -974,8 +960,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfOneRegionDoesNotWaitForAnother) {
     ASSERT_NE(loader, nullptr);
     loader->OpenFile("");
 
-    // The first region's call waits inside its read, at the point where carta-zarr asks whether it is still wanted.
-    // It waits until the second region has been read, or until the test gives up.
+    // The first region's call waits inside its read until the second region is read.
     std::promise<void> inside;
     std::promise<void> released;
     const auto release = released.get_future().share();
@@ -1012,9 +997,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfOneRegionDoesNotWaitForAnother) {
     EXPECT_TRUE(second.get());
 }
 
-// A stokes that is behind another stokes of its region still stops after _region_spectral_time. It does not read
-// up to the other stokes in one call. After U's profile is finished, Q's profile is still handed back one run at
-// a time.
+// Q catches up with U, which is finished, one channel per call.
 TEST_F(ZarrImageTest, RegionSpectralDataOfAStokesCatchingUpPauses) {
     const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
@@ -1040,8 +1023,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAStokesCatchingUpPauses) {
     EXPECT_EQ(FinishedChannels(q), kDepth);
 }
 
-// A region edited within its bounding box keeps its origin and shape, but has another mask. So its profile is read
-// again, not handed back from before.
+// An edited region keeps its origin and shape, but its mask differs.
 TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskIsReadAgain) {
     const casacore::IPosition origin(2, 1, 1);
     std::mutex image_mutex;
@@ -1076,9 +1058,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskIsReadAgain) {
     EXPECT_EQ(edited[CARTA::StatsType::Sum], fresh[CARTA::StatsType::Sum]);
 }
 
-// A region can be edited into another region with as many pixels, in the same bounding box. Then only the mask's
-// hash tells the two apart. Here the two masks are one column of the box and the next column. Each column crosses
-// the hashed words and also the pixels after the last whole word.
+// Two columns of the box have as many pixels, so only the mask's hash tells them apart.
 TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskOfAsManyPixelsIsReadAgain) {
     const casacore::IPosition origin(2, 1, 1);
     std::mutex image_mutex;
@@ -1117,9 +1097,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskOfAsManyPixelsIsReadAgain) 
     EXPECT_EQ(edited.at(CARTA::StatsType::Sum), fresh.at(CARTA::StatsType::Sum));
 }
 
-// A pixel in the top byte of a hashed word changes the whole hash. If words were folded in without mixing,
-// a word's top byte would change only the hash's top byte. These two masks of an 8 x 8 box would then hash alike.
-// Each has four pixels in the last column, and they differ only there.
+// Without mixing, these masks would hash alike. Each has four pixels in the last column, in the words' top bytes.
 TEST(ZarrRegionSpectralKey, MasksDifferingOnlyInTheirWordsTopBytesHaveDifferentKeys) {
     struct Keyed : ZarrLoader {
         using ZarrLoader::RegionSpectralKey;
@@ -1140,7 +1118,6 @@ TEST(ZarrRegionSpectralKey, MasksDifferingOnlyInTheirWordsTopBytesHaveDifferentK
     EXPECT_TRUE(one == Keyed::RegionSpectralKey::Of(origin, last_column({0, 1, 6, 7}), range));
 }
 
-// A region whose bounding box changes size is read again, the same as any other new region.
 TEST_F(ZarrImageTest, RegionSpectralDataOfAResizedRegionIsReadAgain) {
     const casacore::IPosition origin(2, 1, 1);
     std::mutex image_mutex;
@@ -1172,8 +1149,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAResizedRegionIsReadAgain) {
     EXPECT_EQ(resized[CARTA::StatsType::Sum], fresh[CARTA::StatsType::Sum]);
 }
 
-// Going back to a region that was read before reads every stokes of it again. Otherwise a stokes that finished then
-// would report a computed stokes as finished while the other stokes are still being read.
+// Going back to an earlier mask starts every stokes again.
 TEST_F(ZarrImageTest, RegionSpectralDataOfARegionReadBeforeKeepsTheStokesInStep) {
     const auto first = BoxMask([](int, int) { return true; });
     const auto edited = BoxMask([](int x, int) { return x == 0; });
@@ -1199,8 +1175,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfARegionReadBeforeKeepsTheStokesInStep)
     EXPECT_EQ(u_progress, q_progress);
 }
 
-// U is read partway for its own profile, which is then abandoned. When U is next read with Q for a computed
-// stokes, its progress counts Q too.
+// U's own profile is abandoned partway. When U is then read with Q, its progress counts Q.
 TEST_F(ZarrImageTest, RegionSpectralDataOfAStokesReadPartwayBeforeKeepsInStep) {
     const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
@@ -1226,8 +1201,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAStokesReadPartwayBeforeKeepsInStep) {
     EXPECT_EQ(FinishedChannels(q), kDepth);
 }
 
-// Two profiles of one region are read at once, each on its own thread. Each profile's progress counts the channels
-// that it was given, whatever the other profile read of the same stokes in between.
+// Each profile's progress counts only the channels that it was given.
 TEST_F(ZarrImageTest, RegionSpectralDataOfTwoProfilesAtOnceReportsWhatEachWasHanded) {
     const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
@@ -1256,8 +1230,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfTwoProfilesAtOnceReportsWhatEachWasHan
     profile_a.join();
 }
 
-// A profile of some channels, such as the PV generator asks for, covers only those channels. A later profile of
-// all the channels is read again.
+// A profile of some channels, such as the PV generator asks for, covers only those channels.
 TEST_F(ZarrImageTest, RegionSpectralDataOfSomeChannels) {
     const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
@@ -1279,8 +1252,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfSomeChannels) {
     EXPECT_DOUBLE_EQ(whole[CARTA::StatsType::NumPixels][1], part[CARTA::StatsType::NumPixels][0]);
 }
 
-// A region with no valid pixel counts its flagged pixels, and every other statistic is NaN. The HDF5 loader reports
-// the same. The fixture has no beam, so there is no flux density.
+// The fixture has no beam, so there is no flux density.
 TEST_F(ZarrImageTest, RegionSpectralDataOfOnlyFlaggedPixels) {
     // The box is at (1, 1). A pixel is flagged where (x + y) % 3 == 0.
     const auto mask = BoxMask([](int x, int y) { return ((x + 1) + (y + 1)) % 3 == 0; });
@@ -1306,8 +1278,7 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfOnlyFlaggedPixels) {
     }
 }
 
-// The caller makes a computed stokes from the stokes that the image has. The loader refuses a computed stokes,
-// and a stokes that the image does not have.
+// The caller makes a computed stokes from other stokes, so the loader refuses one.
 TEST_F(ZarrImageTest, RegionSpectralDataRefusesAStokesTheImageDoesNotHave) {
     const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
@@ -1322,8 +1293,6 @@ TEST_F(ZarrImageTest, RegionSpectralDataRefusesAStokesTheImageDoesNotHave) {
     EXPECT_FALSE(loader.GetRegionSpectralData(11, AxisRange(0, kDepth - 1), kStokes, mask, origin, image_mutex, profile, progress, {}));
 }
 
-// A spectrum keeps its chunks whenever the whole column fits in the shared cache as it decodes. Then the next
-// pixel's spectrum in the same chunks reads from the cache.
 TEST(ZarrSpectrumCache, AColumnKeepsItsChunksWheneverItFits) {
     constexpr std::size_t kGib = std::size_t{1} << 30;
     constexpr std::uint64_t kChunk = std::uint64_t{4} << 20;
@@ -1338,7 +1307,6 @@ TEST(ZarrSpectrumCache, AColumnKeepsItsChunksWheneverItFits) {
     EXPECT_FALSE(SpectrumKeepsItsChunks(kHuge, kHuge, kHuge, kChunk, kGib));
     // A count whose bytes would wrap does not fit either, such as 2^32 chunks of 2^32 bytes.
     EXPECT_FALSE(SpectrumKeepsItsChunks(1, 1, kHuge, kHuge, kGib));
-    // They do not fit in the largest cache either. If the count were clamped to the largest 64-bit value,
-    // it would equal that cache and look like it fits.
+    // A count clamped to the largest value would equal this cache and look like it fits.
     EXPECT_FALSE(SpectrumKeepsItsChunks(kHuge, kHuge, 1, 1, std::numeric_limits<std::size_t>::max()));
 }

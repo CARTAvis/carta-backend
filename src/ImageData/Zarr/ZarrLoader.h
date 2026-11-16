@@ -21,10 +21,8 @@
 
 namespace carta {
 
-// Whether a spectrum read keeps its chunks in the shared cache. The spectrum covers a column of
-// `chunks_x` by `chunks_y` by `chunks_z` chunks, and each chunk decodes to `chunk_bytes`.
-// It returns true when the whole column fits in a cache of `cache_bytes`. Then a cursor that moves
-// within the same chunks reads them from the cache.
+// Returns true if a column of `chunks_x` by `chunks_y` by `chunks_z` chunks, each of `chunk_bytes`,
+// fits in a cache of `cache_bytes`.
 bool SpectrumKeepsItsChunks(
     std::uint64_t chunks_x, std::uint64_t chunks_y, std::uint64_t chunks_z, std::uint64_t chunk_bytes, std::size_t cache_bytes);
 
@@ -32,9 +30,8 @@ class ZarrLoader : public FileLoader {
 public:
     explicit ZarrLoader(const std::string& filename);
 
-    // Reads the spectrum of one pixel with carta-zarr. Returns false for an image that is not 4-D, for more than
-    // one pixel, for a pixel or stokes outside the image, and when the read fails or is stopped.
-    // It calls `progress` with the number of final channels as the read goes. The read stops if `progress` returns false.
+    // Reads the spectrum of one pixel. Returns false for several pixels, for a pixel or stokes outside the image,
+    // and for a failed or stopped read.
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
         std::mutex& image_mutex, const SpectralReadProgress& progress) override;
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
@@ -45,22 +42,14 @@ public:
 protected:
     void AllocateImage(const std::string& hdu) override;
 
-    // How long one GetRegionSpectralData call reads before it hands back what is finished.
-    // It is the same as the time the region handler waits between partial results. A shorter time does not help.
-    // It would not stop a profile sooner, because the handler's checks reach a call while it reads.
-    // It would not let other regions read sooner, because they do not wait for this one.
-    // With calls of 50 ms, profiles took up to twice as long.
-    //
+    // How long one GetRegionSpectralData call reads before it returns. It matches the region handler's interval.
     // _region_spectral_channels_per_emit is how many channels carta-zarr finishes at a time. Zero lets carta-zarr choose.
-    //
-    // Both are protected, so that a test can make a call pause after every run, or never.
+    // Both are protected, so that a test can change them.
     std::chrono::milliseconds _region_spectral_time{TARGET_PARTIAL_REGION_TIME};
     std::uint32_t _region_spectral_channels_per_emit = 0;
 
-    // What a profile is of: the region and the channel range. Another region or range starts the profile again.
-    // The key keeps a hash of the mask's pixels and their count, not a copy of the mask.
-    // For a large region, a copy would be tens of MB, kept for as long as the image is open.
-    // It is protected, so that a test can tell the keys of two masks apart.
+    // What a profile is of. A new key starts the profile again. The key keeps a hash of the mask, not a copy,
+    // because the mask of a large region can be tens of MB. It is protected, so that a test can use it.
     struct RegionSpectralKey {
         std::int64_t x = 0;
         std::int64_t y = 0;
@@ -76,13 +65,11 @@ protected:
     };
 
 private:
-    // What one region's profile of one stokes has so far. The caller calls GetRegionSpectralData until
-    // progress is 1. Between calls, it checks that the region and the request have not changed.
+    // The progress and statistics of one stokes of a region's profile
     struct RegionSpectralState {
         std::size_t channels_done = 0;
         std::map<CARTA::StatsType, std::vector<double>> stats;
-        // The last read of this stokes by each thread. It keeps the read's index among the region's reads,
-        // and how many channels the thread was given then. One profile is read on one thread from start to end.
+        // The last read of this stokes by each thread, for the progress
         struct Read {
             std::int64_t read_index = -1;
             std::size_t channels_done = 0;
@@ -91,32 +78,23 @@ private:
     };
 
     // How far the profiles of one region have got, across all stokes.
-    //
-    // A computed stokes, such as Plinear, is made from several stokes. The caller reads them in turn, call
-    // after call, and reports one progress for all of them. So that they advance together:
-    // - A stokes behind the furthest one reads no further than it.
-    // - Every call stops after _region_spectral_time.
-    // - A call's progress is the smallest number of channels that this thread was given, for this stokes
-    //   and for every stokes the thread read since it last read this one. Those are the stokes that this one
-    //   is combined with. So a progress of 1 means that all of them are finished, even if another profile
-    //   of the region read more in the meantime.
-    //
-    // The mutex is held for a whole call, so that the profiles of one region take turns. The profiles of
-    // other regions do not wait for it. This matters because a region that covers a large image reads
-    // a whole layer of chunks before it can stop at the deadline.
+    // A computed stokes, such as Plinear, reads several stokes in turn and reports one progress. So a stokes reads
+    // no further than the furthest one, and every call stops after _region_spectral_time. A call's progress is the
+    // smallest among this stokes and the stokes that this thread read since it last read this one.
+    // The mutex is held for a whole call, so the profiles of one region take turns. Other regions do not wait.
     struct RegionSpectralPace {
         std::mutex mutex;
         RegionSpectralKey key;
         std::size_t channels_done = 0;
         std::int64_t reads = 0;
-        // The state of each stokes, by stokes index. All of them are for `key`.
+        // The state of each stokes, by stokes index
         std::map<int, RegionSpectralState> stokes;
 
         // Starts every stokes of the region again, for the key `other`
         void Reset(const RegionSpectralKey& other);
     };
 
-    // Held only while finding or adding a region's pace. A pace is never erased, so a reference to it stays valid.
+    // Held only while finding or adding a pace. A pace is never erased.
     std::mutex _region_spectral_mutex;
     // The pace of each region, by region id
     std::map<int, RegionSpectralPace> _region_spectral;
