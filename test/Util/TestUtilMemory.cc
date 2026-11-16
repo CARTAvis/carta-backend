@@ -10,7 +10,12 @@
 
 class MemoryUtilTest : public ::testing::Test {};
 
-TEST_F(MemoryUtilTest, TestPageAlignedFloatArray) {
+TEST_F(MemoryUtilTest, TestUniqueAlignedDataPtr) {
     auto data = MakeUniqueAlignedDataPtr<float>(10);
+    EXPECT_EQ(reinterpret_cast<uintptr_t>(data.get()) % sysconf(_SC_PAGE_SIZE), 0);
+}
+
+TEST_F(MemoryUtilTest, TestSharedAlignedDataPtr) {
+    auto data = MakeSharedAlignedDataPtr<float>(10);
     EXPECT_EQ(reinterpret_cast<uintptr_t>(data.get()) % sysconf(_SC_PAGE_SIZE), 0);
 }
