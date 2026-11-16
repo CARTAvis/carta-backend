@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_TCC_
-#define CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_TCC_
+#ifndef CARTA_SRC_IMAGEDATA_FITS_CARTAFITSIMAGE_TCC_
+#define CARTA_SRC_IMAGEDATA_FITS_CARTAFITSIMAGE_TCC_
 
 #include <casacore/casa/Arrays/ArrayMath.h>
 #include <casacore/images/Images/SubImage.h>
@@ -168,4 +168,4 @@ bool CartaFitsImage::GetNanPixelMask(casacore::ArrayLattice<bool>& mask) {
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_TCC_
+#endif // CARTA_SRC_IMAGEDATA_FITS_CARTAFITSIMAGE_TCC_

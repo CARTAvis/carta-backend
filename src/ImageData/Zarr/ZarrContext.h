@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_ZARRCONTEXT_H_
-#define CARTA_SRC_IMAGEDATA_ZARRCONTEXT_H_
+#ifndef CARTA_SRC_IMAGEDATA_ZARR_ZARRCONTEXT_H_
+#define CARTA_SRC_IMAGEDATA_ZARR_ZARRCONTEXT_H_
 
 #include <carta-zarr/carta_zarr.h>
 
@@ -30,4 +30,4 @@ carta::zarr::Context GetZarrContext();
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEDATA_ZARRCONTEXT_H_
+#endif // CARTA_SRC_IMAGEDATA_ZARR_ZARRCONTEXT_H_

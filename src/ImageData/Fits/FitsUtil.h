@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_FITSUTIL_H_
-#define CARTA_SRC_IMAGEDATA_FITSUTIL_H_
+#ifndef CARTA_SRC_IMAGEDATA_FITS_FITSUTIL_H_
+#define CARTA_SRC_IMAGEDATA_FITS_FITSUTIL_H_
 
 #include <string>
 #include <vector>
@@ -23,4 +23,4 @@
  */
 bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa);
 
-#endif // CARTA_SRC_IMAGEDATA_FITSUTIL_H_
+#endif // CARTA_SRC_IMAGEDATA_FITS_FITSUTIL_H_

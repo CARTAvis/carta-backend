@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_FITSLOADER_H_
-#define CARTA_SRC_IMAGEDATA_FITSLOADER_H_
+#ifndef CARTA_SRC_IMAGEDATA_FITS_FITSLOADER_H_
+#define CARTA_SRC_IMAGEDATA_FITS_FITSLOADER_H_
 
 #include <fitsio.h>
 
@@ -39,4 +39,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEDATA_FITSLOADER_H_
+#endif // CARTA_SRC_IMAGEDATA_FITS_FITSLOADER_H_
