@@ -144,7 +144,7 @@ private:
     int _region_id;
 
     /** @brief Spatial profile configurations. */
-    std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _configs;
+    std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>> _configs;
 
     /** @brief Lock to add/remove configurations. */
     std::mutex _config_mutex;
