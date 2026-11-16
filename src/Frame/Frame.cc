@@ -893,7 +893,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
         }
         return false; // calculate and cache in Session
     } else {
-        int cache_key(CacheKey(z, stokes));
+        ChannelKey cache_key(stokes, z);
         if (_image_basic_stats.count(cache_key)) {
             stats = _image_basic_stats[cache_key]; // get from cache
             return true;
@@ -924,7 +924,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
 
 bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Get image histogram results from cache
-    int cache_key(CacheKey(z, stokes));
+    ChannelKey cache_key(stokes, z);
     if (_image_histograms.count(cache_key)) {
         // get from cache if correct num_bins
         auto results_for_key = _image_histograms[cache_key];
@@ -984,7 +984,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
 
     // cache image histogram
     if ((region_id == IMAGE_REGION_ID) || (Depth() == 1)) {
-        int cache_key(CacheKey(z, stokes));
+        ChannelKey cache_key(stokes, z);
         _image_histograms[cache_key].push_back(hist);
     }
 
@@ -1055,7 +1055,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         }
 
         // Use cached stats
-        int cache_key(CacheKey(z, stokes));
+        ChannelKey cache_key(stokes, z);
         if (_image_stats.count(cache_key)) {
             auto stats_map = _image_stats[cache_key];
             FillStatistics(stats_data, required_stats, stats_map);
