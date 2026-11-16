@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_ZARRCASACORE_H_
-#define CARTA_SRC_IMAGEDATA_ZARRCASACORE_H_
+#ifndef CARTA_SRC_IMAGEDATA_ZARR_ZARRCASACORE_H_
+#define CARTA_SRC_IMAGEDATA_ZARR_ZARRCASACORE_H_
 
 #include <carta-zarr/descriptor.h>
 
@@ -68,4 +68,4 @@ ZarrBeams MakeZarrBeamSet(const std::vector<carta::zarr::Beam>& table, casacore:
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEDATA_ZARRCASACORE_H_
+#endif // CARTA_SRC_IMAGEDATA_ZARR_ZARRCASACORE_H_
