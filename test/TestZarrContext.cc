@@ -13,7 +13,7 @@
 #include <gtest/gtest.h>
 #include <omp.h>
 
-#include "ImageData/ZarrContext.h"
+#include "ImageData/Zarr/ZarrContext.h"
 
 using carta::ZarrContextOptions;
 

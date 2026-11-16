@@ -244,21 +244,21 @@ set(SOURCE_FILES
         src/FileList/FitsHduList.cc
         src/Frame/Frame.cc
         src/HttpServer/HttpServer.cc
-        src/ImageData/CartaFitsImage.cc
-        src/ImageData/CartaHdf5Image.cc
-        src/ImageData/CartaMiriadImage.cc
         src/ImageData/CartaZarrImage.cc
-        src/ImageData/CompressedFits.cc
         src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc
-        src/ImageData/FitsLoader.cc
-        src/ImageData/FitsUtil.cc
-        src/ImageData/Hdf5Attributes.cc
-        src/ImageData/Hdf5Loader.cc
         src/ImageData/PolarizationCalculator.cc
         src/ImageData/StokesFilesConnector.cc
+        src/ImageData/Fits/CartaFitsImage.cc
+        src/ImageData/Fits/CompressedFits.cc
+        src/ImageData/Fits/FitsLoader.cc
+        src/ImageData/Fits/FitsUtil.cc
+        src/ImageData/Hdf5/CartaHdf5Image.cc
+        src/ImageData/Hdf5/Hdf5Attributes.cc
+        src/ImageData/Hdf5/Hdf5Loader.cc
+        src/ImageData/Miriad/CartaMiriadImage.cc
+        src/ImageData/Zarr/ZarrContext.cc
         src/ImageData/ZarrCasacore.cc
-        src/ImageData/ZarrContext.cc
         src/ImageData/ZarrLoader.cc
         src/ImageData/ZarrStores.cc
         src/ImageFitting/ImageFitter.cc

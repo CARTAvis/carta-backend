@@ -9,7 +9,7 @@
 
 #include <fitsio.h>
 
-#include "FileLoader.h"
+#include "../FileLoader.h"
 
 namespace carta {
 

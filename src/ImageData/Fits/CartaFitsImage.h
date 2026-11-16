@@ -17,7 +17,7 @@
 
 #include <fitsio.h>
 
-#include "../Logger/Logger.h"
+#include "../../Logger/Logger.h"
 
 namespace carta {
 
