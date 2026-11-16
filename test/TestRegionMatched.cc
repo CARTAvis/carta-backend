@@ -6,6 +6,11 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
@@ -455,4 +460,268 @@ TEST_F(RegionMatchedTest, TestMatchedImagePolygonRecord) {
     ASSERT_FLOAT_EQ(y[1], points[3] + 1.0);
     ASSERT_FLOAT_EQ(y[2], points[5] + 1.0);
     ASSERT_FLOAT_EQ(y[3], points[7] + 1.0);
+}
+
+TEST_F(RegionMatchedTest, TestConcurrentColdMatchedImageConversions) {
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto loader0 = carta::FileLoader::GetLoader(image_path0);
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+
+    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto loader1 = carta::FileLoader::GetLoader(image_path1);
+    std::shared_ptr<Frame> frame1(new Frame(1, loader1, "0"));
+
+    std::vector<CARTA::Point> points = {
+        Message::Point(5.0, 5.0),
+        Message::Point(4.0, 3.0),
+    };
+    RegionState state(0, CARTA::RegionType::RECTANGLE, points, 0.0);
+
+    RegionConverter converter(state, frame0->CoordinateSystem());
+    const auto output_csys = frame1->CoordinateSystem();
+    const auto image_shape = frame1->ImageShape();
+
+    constexpr size_t thread_count = 8;
+    std::mutex start_mutex;
+    std::condition_variable start_cv;
+    bool start = false;
+
+    std::vector<std::shared_ptr<casacore::LCRegion>> results(thread_count);
+    std::vector<std::thread> threads;
+    threads.reserve(thread_count);
+
+    for (size_t i = 0; i < thread_count; ++i) {
+        threads.emplace_back([&, i] {
+            {
+                std::unique_lock<std::mutex> lock(start_mutex);
+                start_cv.wait(lock, [&] { return start; });
+            }
+
+            // Unique IDs prevent one worker from using another worker's cached result.
+            results[i] = converter.GetImageRegion(
+                static_cast<int>(i + 1), output_csys, image_shape);
+        });
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(start_mutex);
+        start = true;
+    }
+    start_cv.notify_all();
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    for (const auto& result : results) {
+        ASSERT_TRUE(result);
+        ASSERT_EQ(result->shape(), casacore::IPosition(2, 5, 3));
+    }
+}
+
+TEST_F(RegionMatchedTest, TestConcurrentColdMatchedRegionConversions) {
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto loader0 = carta::FileLoader::GetLoader(image_path0);
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+
+    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto loader1 = carta::FileLoader::GetLoader(image_path1);
+    std::shared_ptr<Frame> frame1(new Frame(1, loader1, "0"));
+
+    carta::RegionHandler region_handler;
+    int region_id = -1;
+    const std::vector<float> points = {5.0, 5.0, 4.0, 3.0};
+    const auto reference_csys = frame0->CoordinateSystem();
+
+    ASSERT_TRUE(SetRegion(region_handler, 0, region_id, CARTA::RegionType::RECTANGLE, points, 0.0, reference_csys));
+    auto region = region_handler.GetRegion(region_id);
+    ASSERT_TRUE(region);
+
+    const auto output_csys = frame1->CoordinateSystem();
+    const auto image_shape = frame1->ImageShape();
+
+    constexpr std::size_t thread_count = 8;
+    std::mutex start_mutex;
+    std::condition_variable start_cv;
+    bool start = false;
+
+    std::vector<std::shared_ptr<casacore::LCRegion>> results(thread_count);
+    std::vector<std::thread> threads;
+    threads.reserve(thread_count);
+
+    for (std::size_t i = 0; i < thread_count; ++i) {
+        threads.emplace_back([&, i] {
+            {
+                std::unique_lock<std::mutex> lock(start_mutex);
+                start_cv.wait(lock, [&] { return start; });
+            }
+
+            // Unique IDs prevent a cached result from bypassing converter initialization.
+            results[i] = region->GetLCRegion(static_cast<int>(i + 1), output_csys, image_shape);
+        });
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(start_mutex);
+        start = true;
+    }
+    start_cv.notify_all();
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    for (const auto& result : results) {
+        ASSERT_TRUE(result);
+        ASSERT_EQ(result->shape(), casacore::IPosition(2, 5, 3));
+    }
+}
+
+TEST_F(RegionMatchedTest, TestConcurrentMatchedRegionUpdatesAndConversions) {
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto loader0 = carta::FileLoader::GetLoader(image_path0);
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+
+    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto loader1 = carta::FileLoader::GetLoader(image_path1);
+    std::shared_ptr<Frame> frame1(new Frame(1, loader1, "0"));
+
+    carta::RegionHandler region_handler;
+    int region_id = -1;
+    auto reference_csys = frame0->CoordinateSystem();
+    auto output_csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
+
+    std::vector<float> points = {5.0f, 5.0f, 4.0f, 3.0f};
+    ASSERT_TRUE(SetRegion(region_handler, 0, region_id, CARTA::RegionType::RECTANGLE, points, 0.0f, reference_csys));
+
+    auto region = region_handler.GetRegion(region_id);
+    ASSERT_TRUE(region);
+
+    constexpr size_t reader_count = 8;
+    constexpr size_t update_iterations = 200;
+
+    std::mutex start_mutex;
+    std::condition_variable start_cv;
+    bool start = false;
+
+    std::atomic<int> failures{0};
+
+    std::vector<std::thread> readers;
+    readers.reserve(reader_count);
+
+    for (size_t i = 0; i < reader_count; ++i) {
+        readers.emplace_back([&, i] {
+            {
+                std::unique_lock<std::mutex> lock(start_mutex);
+                start_cv.wait(lock, [&] { return start; });
+            }
+
+            for (size_t j = 0; j < update_iterations; ++j) {
+                auto lc = region->GetLCRegion(1, output_csys, image_shape);
+                if (!lc || lc->ndim() != 2 || lc->shape().size() != 2) {
+                    failures.fetch_add(1, std::memory_order_relaxed);
+                    break;
+                }
+                std::this_thread::yield();
+            }
+        });
+    }
+
+    std::thread updater([&] {
+        {
+            std::unique_lock<std::mutex> lock(start_mutex);
+            start_cv.wait(lock, [&] { return start; });
+        }
+
+        for (size_t i = 0; i < update_iterations; ++i) {
+            float width = (i % 2 == 0) ? 4.0f : 6.0f;
+            RegionState new_state(0, CARTA::RegionType::RECTANGLE, {Message::Point(5.0f, 5.0f), Message::Point(width, 3.0f)}, 0.0f);
+            if (!region->UpdateRegion(new_state)) {
+                failures.fetch_add(1, std::memory_order_relaxed);
+                break;
+            }
+            std::this_thread::yield();
+        }
+    });
+
+    {
+        std::lock_guard<std::mutex> lock(start_mutex);
+        start = true;
+    }
+    start_cv.notify_all();
+
+    for (auto& reader : readers) {
+        reader.join();
+    }
+    updater.join();
+
+    EXPECT_EQ(failures.load(), 0);
+}
+
+TEST_F(RegionMatchedTest, TestConcurrentColdMatchedRegionConversionsSameFile) {
+    auto image_path0 = FitsImages() / "noise_10px_10px.fits";
+    auto loader0 = carta::FileLoader::GetLoader(image_path0);
+    std::shared_ptr<Frame> frame0(new Frame(0, loader0, "0"));
+
+    auto image_path1 = Hdf5Images() / "noise_10px_10px.hdf5";
+    auto loader1 = carta::FileLoader::GetLoader(image_path1);
+    std::shared_ptr<Frame> frame1(new Frame(1, loader1, "0"));
+
+    carta::RegionHandler region_handler;
+    int region_id = -1;
+    auto reference_csys = frame0->CoordinateSystem();
+    auto output_csys = frame1->CoordinateSystem();
+    auto image_shape = frame1->ImageShape();
+
+    std::vector<float> points = {5.0f, 5.0f, 4.0f, 3.0f};
+    ASSERT_TRUE(SetRegion(region_handler, 0, region_id, CARTA::RegionType::RECTANGLE, points, 0.0f, reference_csys));
+
+    auto region = region_handler.GetRegion(region_id);
+    ASSERT_TRUE(region);
+
+    constexpr size_t thread_count = 8;
+    std::mutex start_mutex;
+    std::condition_variable start_cv;
+    bool start = false;
+
+    std::vector<std::shared_ptr<casacore::LCRegion>> results(thread_count);
+    std::vector<std::thread> threads;
+    threads.reserve(thread_count);
+
+    std::atomic<int> failures{0};
+
+    for (size_t i = 0; i < thread_count; ++i) {
+        threads.emplace_back([&, i] {
+            {
+                std::unique_lock<std::mutex> lock(start_mutex);
+                start_cv.wait(lock, [&] { return start; });
+            }
+
+            auto result = region->GetLCRegion(1, output_csys, image_shape);
+            if (!result || result->ndim() != 2 || result->shape().size() != 2) {
+                failures.fetch_add(1, std::memory_order_relaxed);
+                return;
+            }
+
+            results[i] = result;
+        });
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(start_mutex);
+        start = true;
+    }
+    start_cv.notify_all();
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    EXPECT_EQ(failures.load(), 0);
+
+    for (const auto& result : results) {
+        ASSERT_TRUE(result);
+        ASSERT_EQ(result->shape(), casacore::IPosition(2, 5, 3));
+    }
 }
