@@ -95,9 +95,9 @@ private:
     };
 
     // Held only while finding or adding a pace. A pace is never erased.
-    std::mutex _region_spectral_mutex;
+    std::mutex _region_spectral_paces_mutex;
     // The pace of each region, by region id
-    std::map<int, RegionSpectralPace> _region_spectral;
+    std::map<int, RegionSpectralPace> _region_spectral_paces;
 };
 
 } // namespace carta

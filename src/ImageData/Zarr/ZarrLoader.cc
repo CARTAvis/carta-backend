@@ -167,8 +167,8 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
 
     const auto key = RegionSpectralKey::Of(origin, mask_array, range);
     auto& pace = [&]() -> RegionSpectralPace& {
-        std::scoped_lock regions_lock(_region_spectral_mutex);
-        return _region_spectral[region_id];
+        std::scoped_lock regions_lock(_region_spectral_paces_mutex);
+        return _region_spectral_paces[region_id];
     }();
     std::scoped_lock lock(pace.mutex);
     if (!(pace.key == key)) {
