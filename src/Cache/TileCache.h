@@ -13,9 +13,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Cache/TileCacheKey.h"
 #include "Cache/TilePool.h"
 #include "ImageData/FileLoader.h"
+#include "Util/Key.h"
 
 #define MAX_TILE_CACHE_CAPACITY 4096
 
@@ -29,11 +29,10 @@ using TilePtr = std::shared_ptr<std::vector<float>>;
  * is reached, the least recently used tile is discarded first.
  *  @see FileLoader::UseTileCache
  *  @see TilePool
- *  @see TileCacheKey
  */
 class TileCache {
 public:
-    using Key = TileCacheKey;
+    using Key = CoordinatesKey;
 
     /** @brief Default constructor */
     TileCache() {}
