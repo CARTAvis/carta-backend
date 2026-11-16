@@ -137,6 +137,7 @@ std::uint64_t MixWord(std::uint64_t word) {
 
 // A 64-bit hash of a mask's pixels, and the number of pixels in the region. It runs on every call, so it reads
 // eight pixels at a time. For a 7763 x 4742 mask, this takes 6-9 ms, and one pixel at a time takes 26-36 ms.
+// A Bool is one byte, 0 or 1. So the number of bits that are 1 in a word is the number of its pixels in the region.
 // Each word is mixed before it is folded in. Without mixing, masks that differ only in a word's top byte could share a hash.
 std::pair<std::uint64_t, std::size_t> MaskFingerprint(const casacore::Array<casacore::Bool>& mask) {
     static_assert(sizeof(casacore::Bool) == 1, "a casacore Bool must be one byte to be hashed eight at a time");

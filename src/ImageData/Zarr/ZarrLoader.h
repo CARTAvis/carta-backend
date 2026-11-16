@@ -43,6 +43,7 @@ protected:
     void AllocateImage(const std::string& hdu) override;
 
     // How long one GetRegionSpectralData call reads before it returns. It matches the region handler's interval.
+    // A shorter time does not help. With calls of 50 ms, profiles took up to twice as long.
     // _region_spectral_channels_per_emit is how many channels carta-zarr finishes at a time. Zero lets carta-zarr choose.
     // Both are protected, so that a test can change them.
     std::chrono::milliseconds _region_spectral_time{TARGET_PARTIAL_REGION_TIME};
