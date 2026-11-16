@@ -82,12 +82,12 @@ var NAVTREEINDEX =
 [
 "AnimationObject_8h.html",
 "Image_8h.html#a9a542ab2ca3525dedc7a1f5c9ca4e637",
-"classMessage.html#a2e8cdef60c335b1a50208053aa4b7f22",
-"classcarta_1_1CartaFitsImage.html#aff1f2daec6344390f8d626744eebaafd",
-"classcarta_1_1CompressedFits.html#a7d1a86de8246054b56ff34759f89c974",
-"classcarta_1_1Ds9Importer.html#ad65f2b2bb3b9c2697555f657b02deda0",
-"classcarta_1_1FileLoader.html#ac537d1dacf89775b6b2d581785b47928",
-"classcarta_1_1Frame.html#aa4b9e045d2b184a995017be80dbbe832",
+"classMessage.html#a2d981a1cec15972f98b2fe2ec5716ae6",
+"classcarta_1_1CartaFitsImage.html#afaac20c0c6137f4492de3b54dec402e2",
+"classcarta_1_1CompressedFits.html#a7b8f78975fde83745be105f72780bdec",
+"classcarta_1_1Ds9Importer.html#ad55b0047e3533c0944100c1bbca08e17",
+"classcarta_1_1FileLoader.html#ac4f8082b373a3f7235d0bd7704e82600",
+"classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918",
 "classcarta_1_1HttpServer.html#a5a0f38bf0416026e852b3ab1f69f7c57",
 "classcarta_1_1ImageMoments.html#acb4a7db206b7801f9a4e95d260011f68",
 "classcarta_1_1PolarizationCalculator.html#a7c9af289416b028051a34fd1c223d7f5",
@@ -97,10 +97,10 @@ var NAVTREEINDEX =
 "classcarta_1_1SessionManager.html#a47a87d0d20b600de143cbb5b29eb2170",
 "classcarta_1_1TableController.html#a4867d1e5f224b6c2f6e9a3d1786e3fd7",
 "classcarta_1_1concurrent__queue.html#a96518f3339a904ffa60edb0a800de392",
-"namespacecarta.html#aaae2c5eb4387c657d0d7e4edea59e63c",
-"structcarta_1_1EnumClassHash.html#ad3d70e8b43be01d6a19b1b5b551f46cf",
-"structcarta_1_1ProgramSettings.html#a2d0a0e0bbef87c89e16bbb3e0d5b1d7c",
-"structcarta_1_1TableParam.html#a2e2979a28ad68b7fd6bcbb8b33e3ed30"
+"namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2dacaf0be8e445f96a65381ba9c429d65cce5",
+"structcarta_1_1FileInfo_1_1ImageStats.html",
+"structcarta_1_1PreviewCutParameters.html#afdb21764c8a7a6a258387480ea2ada5e",
+"structcarta_1_1StokesSlicer.html#ad1362dcf8f073b4aa8ac2c2997a4f12a"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

@@ -9,7 +9,7 @@ var classcarta_1_1RegionStatistics =
     [ "GetConfigurations", "classcarta_1_1RegionStatistics.html#a96e40aa6c0e916bdacd3d591aa105afa", null ],
     [ "GetRegionStatsData", "classcarta_1_1RegionStatistics.html#a786c9eb2ddec95a83a14596b17b588a0", null ],
     [ "SetConfigurations", "classcarta_1_1RegionStatistics.html#a57fd53b346bccff4616d9d18b3e81d43", null ],
-    [ "_cache", "classcarta_1_1RegionStatistics.html#a1718712bcb05c0b56a19ef9530a5ec5b", null ],
-    [ "_configs", "classcarta_1_1RegionStatistics.html#a3ad1b2c4b4445a87901185571199ca09", null ],
+    [ "_cache", "classcarta_1_1RegionStatistics.html#a0fb214ed403bb044ffcb08c835c45d3e", null ],
+    [ "_configs", "classcarta_1_1RegionStatistics.html#a871962ecb42264abd17dbfc1e28af2ab", null ],
     [ "_region_id", "classcarta_1_1RegionStatistics.html#a0465a5736a833f9e983a27242f919b3c", null ]
 ];

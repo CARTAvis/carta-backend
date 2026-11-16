@@ -1,3 +1,9 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classcarta_1_1HttpServer.html" title=" " alt="" coords="5,5,139,31"/>
+<area shape="rect" id="Node000000" href="$structcarta_1_1Key.html" title=" " alt="" coords="5,55,164,80"/>
+<area shape="rect" id="Node000001" href="$structcarta_1_1ChannelKey.html" title="A key containing a polarization index and a Z index." alt="" coords="225,5,365,31"/>
+<area shape="poly" id="edge11_Node000000_Node000001" title=" " alt="" coords="152,49,239,28,240,33,153,54"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1CoordinatesKey.html" title="A key containing a pair of (X, Y) coordinates." alt="" coords="212,55,377,80"/>
+<area shape="poly" id="edge12_Node000000_Node000002" title=" " alt="" coords="178,65,212,65,212,70,178,70"/>
+<area shape="rect" id="Node000003" href="$structcarta_1_1FileRegionKey.html" title="A key containing a file ID and a region ID." alt="" coords="217,104,372,129"/>
+<area shape="poly" id="edge13_Node000000_Node000003" title=" " alt="" coords="153,81,240,101,239,107,152,86"/>
 </map>

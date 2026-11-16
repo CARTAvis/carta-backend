@@ -1,0 +1,9 @@
+<map id="carta::FileRegionKey" name="carta::FileRegionKey">
+<area shape="rect" id="Node000001" title="A key containing a file ID and a region ID." alt="" coords="99,196,254,221"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1Key.html" title=" " alt="" coords="5,93,164,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,127,168,194,164,198,103,131"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="33,5,137,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="87,45,87,93,82,93,82,45"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="188,93,227,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="202,133,183,197,178,195,197,131"/>
+</map>

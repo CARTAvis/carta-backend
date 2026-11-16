@@ -297,8 +297,6 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:ab8d23e30f45472bdf614e4830610289f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a789314994a5e12391e4e97d65bef436d" id="r_a789314994a5e12391e4e97d65bef436d"><td class="memItemLeft" align="right" valign="top">casacore::Slicer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a789314994a5e12391e4e97d65bef436d">GetExportRegionSlicer</a> (const CARTA::SaveFile &amp;save_file_msg, casacore::IPosition image_shape, casacore::IPosition region_shape, casacore::LattRegionHolder &amp;latt_region_holder)</td></tr>
 <tr class="separator:a789314994a5e12391e4e97d65bef436d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1614c68dbc09df9dd7212cbcf909fa43" id="r_a1614c68dbc09df9dd7212cbcf909fa43"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a1614c68dbc09df9dd7212cbcf909fa43">CacheKey</a> (int z, int stokes)</td></tr>
-<tr class="separator:a1614c68dbc09df9dd7212cbcf909fa43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0556decdd99bffc1dd869599f4db918" id="r_aa0556decdd99bffc1dd869599f4db918"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918">DoVectorFieldCalculation</a> (const std::function&lt; void(CARTA::VectorOverlayTileData &amp;)&gt; &amp;callback)</td></tr>
 <tr class="separator:aa0556decdd99bffc1dd869599f4db918"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -372,16 +370,16 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:ac1afbfd516275d2f606f01484e69c715"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9680f8c87f3cd7ab504076cf35d06ba" id="r_aa9680f8c87f3cd7ab504076cf35d06ba"><td class="memItemLeft" align="right" valign="top">std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#aa9680f8c87f3cd7ab504076cf35d06ba">_spectral_mutex</a></td></tr>
 <tr class="separator:aa9680f8c87f3cd7ab504076cf35d06ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a858ea876a75693a7df9a235b53e00d6a" id="r_a858ea876a75693a7df9a235b53e00d6a"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, std::vector&lt; <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a858ea876a75693a7df9a235b53e00d6a">_image_histograms</a></td></tr>
-<tr class="separator:a858ea876a75693a7df9a235b53e00d6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad566c63d88933eb7b577d10b9c960f33" id="r_ad566c63d88933eb7b577d10b9c960f33"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, std::vector&lt; <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#ad566c63d88933eb7b577d10b9c960f33">_cube_histograms</a></td></tr>
 <tr class="separator:ad566c63d88933eb7b577d10b9c960f33"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad92c2335ca68b26ddb5a96704d3941db" id="r_ad92c2335ca68b26ddb5a96704d3941db"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#ad92c2335ca68b26ddb5a96704d3941db">_image_basic_stats</a></td></tr>
-<tr class="separator:ad92c2335ca68b26ddb5a96704d3941db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac44837d3d10e104fa0939b149b9dd57c" id="r_ac44837d3d10e104fa0939b149b9dd57c"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#ac44837d3d10e104fa0939b149b9dd57c">_cube_basic_stats</a></td></tr>
 <tr class="separator:ac44837d3d10e104fa0939b149b9dd57c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a323f67abca0828312283da11b7348961" id="r_a323f67abca0828312283da11b7348961"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, std::map&lt; CARTA::StatsType, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a323f67abca0828312283da11b7348961">_image_stats</a></td></tr>
-<tr class="separator:a323f67abca0828312283da11b7348961"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49a7f548f5fa56babdea5cc84f85cd5c" id="r_a49a7f548f5fa56babdea5cc84f85cd5c"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1ChannelKey.html">ChannelKey</a>, std::vector&lt; <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a49a7f548f5fa56babdea5cc84f85cd5c">_image_histograms</a></td></tr>
+<tr class="separator:a49a7f548f5fa56babdea5cc84f85cd5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a891c02b9893392761ed71091447bfba4" id="r_a891c02b9893392761ed71091447bfba4"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1ChannelKey.html">ChannelKey</a>, <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a891c02b9893392761ed71091447bfba4">_image_basic_stats</a></td></tr>
+<tr class="separator:a891c02b9893392761ed71091447bfba4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b14606b2bf1abd0879c6b93109367a0" id="r_a1b14606b2bf1abd0879c6b93109367a0"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1ChannelKey.html">ChannelKey</a>, std::map&lt; CARTA::StatsType, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a1b14606b2bf1abd0879c6b93109367a0">_image_stats</a></td></tr>
+<tr class="separator:a1b14606b2bf1abd0879c6b93109367a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a78c8051c09e2ed5425621dd31cd33e93" id="r_a78c8051c09e2ed5425621dd31cd33e93"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1MomentGenerator.html">MomentGenerator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a78c8051c09e2ed5425621dd31cd33e93">_moment_generator</a></td></tr>
 <tr class="separator:a78c8051c09e2ed5425621dd31cd33e93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a50f57b7cabe1887f311ea05c5bffc0d7" id="r_a50f57b7cabe1887f311ea05c5bffc0d7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a50f57b7cabe1887f311ea05c5bffc0d7">_moment_name_index</a></td></tr>
@@ -569,47 +567,6 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
-
-</div>
-</div>
-<a id="a1614c68dbc09df9dd7212cbcf909fa43" name="a1614c68dbc09df9dd7212cbcf909fa43"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1614c68dbc09df9dd7212cbcf909fa43">&#9670;&#160;</a></span>CacheKey()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">int carta::Frame::CacheKey </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>z</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>stokes</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a1614c68dbc09df9dd7212cbcf909fa43_icgraph.svg" width="100%" height="448"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
-</div>
 
 </div>
 </div>
@@ -1684,7 +1641,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a1bd6cad34fcc337311218150f6771850_cgraph.svg" width="100%" height="581"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a1bd6cad34fcc337311218150f6771850_cgraph.svg" width="100%" height="574"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -1821,11 +1778,6 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_ac69e2783075a77c44ffc888d4e09a9b8_cgraph.svg" width="459" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -4013,8 +3965,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="ad92c2335ca68b26ddb5a96704d3941db" name="ad92c2335ca68b26ddb5a96704d3941db"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad92c2335ca68b26ddb5a96704d3941db">&#9670;&#160;</a></span>_image_basic_stats</h2>
+<a id="a891c02b9893392761ed71091447bfba4" name="a891c02b9893392761ed71091447bfba4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a891c02b9893392761ed71091447bfba4">&#9670;&#160;</a></span>_image_basic_stats</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -4023,7 +3975,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::unordered_map&lt;int, <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt;float&gt; &gt; carta::Frame::_image_basic_stats</td>
+          <td class="memname">std::unordered_map&lt;<a class="el" href="structcarta_1_1ChannelKey.html">ChannelKey</a>, <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt;float&gt; &gt; carta::Frame::_image_basic_stats</td>
         </tr>
       </table>
   </td>
@@ -4145,8 +4097,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a858ea876a75693a7df9a235b53e00d6a" name="a858ea876a75693a7df9a235b53e00d6a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a858ea876a75693a7df9a235b53e00d6a">&#9670;&#160;</a></span>_image_histograms</h2>
+<a id="a49a7f548f5fa56babdea5cc84f85cd5c" name="a49a7f548f5fa56babdea5cc84f85cd5c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a49a7f548f5fa56babdea5cc84f85cd5c">&#9670;&#160;</a></span>_image_histograms</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -4155,7 +4107,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::unordered_map&lt;int, std::vector&lt;<a class="el" href="classcarta_1_1Histogram.html">Histogram</a>&gt; &gt; carta::Frame::_image_histograms</td>
+          <td class="memname">std::unordered_map&lt;<a class="el" href="structcarta_1_1ChannelKey.html">ChannelKey</a>, std::vector&lt;<a class="el" href="classcarta_1_1Histogram.html">Histogram</a>&gt; &gt; carta::Frame::_image_histograms</td>
         </tr>
       </table>
   </td>
@@ -4233,8 +4185,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a323f67abca0828312283da11b7348961" name="a323f67abca0828312283da11b7348961"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a323f67abca0828312283da11b7348961">&#9670;&#160;</a></span>_image_stats</h2>
+<a id="a1b14606b2bf1abd0879c6b93109367a0" name="a1b14606b2bf1abd0879c6b93109367a0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b14606b2bf1abd0879c6b93109367a0">&#9670;&#160;</a></span>_image_stats</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -4243,7 +4195,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::unordered_map&lt;int, std::map&lt;CARTA::StatsType, double&gt; &gt; carta::Frame::_image_stats</td>
+          <td class="memname">std::unordered_map&lt;<a class="el" href="structcarta_1_1ChannelKey.html">ChannelKey</a>, std::map&lt;CARTA::StatsType, double&gt; &gt; carta::Frame::_image_stats</td>
         </tr>
       </table>
   </td>

@@ -13,7 +13,7 @@ var classcarta_1_1RegionSpatialProfile =
     [ "HasConfiguration", "classcarta_1_1RegionSpatialProfile.html#a1c628bafee491476380e0c11e3f2a367", null ],
     [ "SetConfigurations", "classcarta_1_1RegionSpatialProfile.html#a07420f29aeb92f15b06f1be7ee3c82c5", null ],
     [ "_config_mutex", "classcarta_1_1RegionSpatialProfile.html#addc18d14ac45e138a18b642e4e0eeca8", null ],
-    [ "_configs", "classcarta_1_1RegionSpatialProfile.html#a7273ad08909d8df2eedf62f393881dbf", null ],
+    [ "_configs", "classcarta_1_1RegionSpatialProfile.html#a5abbae30ec53a9b24727895b585e9810", null ],
     [ "_profile_mutex", "classcarta_1_1RegionSpatialProfile.html#a368ef9059eb3d0c728f3351752df6fdc", null ],
     [ "_region_id", "classcarta_1_1RegionSpatialProfile.html#a3ccf2067a47bf0653bc85c005f2d3a47", null ]
 ];

@@ -96,12 +96,14 @@ $(document).ready(function(){initNavTree('RequirementsCache_8h.html',''); initRe
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle"><div class="title">RequirementsCache.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="BasicStatsCalculator_8h.html">ImageStats/BasicStatsCalculator.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Histogram_8h.html">ImageStats/Histogram.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Key_8h.html">Util/Key.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Message_8h.html">Util/Message.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for RequirementsCache.h:</div>
@@ -116,14 +118,6 @@ This graph shows which files directly or indirectly include this file:</div>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1ConfigId.html">carta::ConfigId</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1ConfigIdHash.html">carta::ConfigIdHash</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1CacheId.html">carta::CacheId</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1CacheIdHash.html">carta::CacheIdHash</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1HistogramConfig.html">carta::HistogramConfig</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1RegionHistogramConfig.html">carta::RegionHistogramConfig</a></td></tr>
@@ -145,6 +139,15 @@ Classes</h2></td></tr>
 Namespaces</h2></td></tr>
 <tr class="memitem:namespacecarta" id="r_namespacecarta"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html">carta</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a8545648961939c8707e3b43cbc59eaf1" id="r_a8545648961939c8707e3b43cbc59eaf1"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a8545648961939c8707e3b43cbc59eaf1">carta::ConfigId</a> = <a class="el" href="structcarta_1_1FileRegionKey.html">FileRegionKey</a></td></tr>
+<tr class="memdesc:a8545648961939c8707e3b43cbc59eaf1"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcarta_1_1Key.html" title="Class for grouping helper functions for shared key functionality.">Key</a> used to store configs per file and region.  <br /></td></tr>
+<tr class="separator:a8545648961939c8707e3b43cbc59eaf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac74c2e0f3fd2f93a7d22155beab08db0" id="r_ac74c2e0f3fd2f93a7d22155beab08db0"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#ac74c2e0f3fd2f93a7d22155beab08db0">carta::CacheId</a> = <a class="el" href="structcarta_1_1FileRegionChannelKey.html">FileRegionChannelKey</a></td></tr>
+<tr class="memdesc:ac74c2e0f3fd2f93a7d22155beab08db0"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcarta_1_1Key.html" title="Class for grouping helper functions for shared key functionality.">Key</a> used to store cached data per file, region, polarization, and Z.  <br /></td></tr>
+<tr class="separator:ac74c2e0f3fd2f93a7d22155beab08db0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -145,7 +145,7 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a0dd4f14bfb38b9dcb5d42e081e231cfc" id="r_a0dd4f14bfb38b9dcb5d42e081e231cfc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a0dd4f14bfb38b9dcb5d42e081e231cfc">GetNumBins</a> (const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; frame, casacore::ImageRegion &amp;image_region)</td></tr>
 <tr class="memdesc:a0dd4f14bfb38b9dcb5d42e081e231cfc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get number of bins from config and calculate if not supplied.  <br /></td></tr>
 <tr class="separator:a0dd4f14bfb38b9dcb5d42e081e231cfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7be797944d5fc08f6bd113e3914e75e0" id="r_a7be797944d5fc08f6bd113e3914e75e0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a7be797944d5fc08f6bd113e3914e75e0">AddCachedHistogram</a> (<a class="el" href="structcarta_1_1CacheId.html">CacheId</a> &amp;cache_id, const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, int num_bins, CARTA::RegionHistogramData &amp;histogram_data_message)</td></tr>
+<tr class="memitem:a7be797944d5fc08f6bd113e3914e75e0" id="r_a7be797944d5fc08f6bd113e3914e75e0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a7be797944d5fc08f6bd113e3914e75e0">AddCachedHistogram</a> (<a class="el" href="namespacecarta.html#ac74c2e0f3fd2f93a7d22155beab08db0">CacheId</a> &amp;cache_id, const <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> &amp;config, int num_bins, CARTA::RegionHistogramData &amp;histogram_data_message)</td></tr>
 <tr class="memdesc:a7be797944d5fc08f6bd113e3914e75e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> from cache if it exists.  <br /></td></tr>
 <tr class="separator:a7be797944d5fc08f6bd113e3914e75e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7e70857b43c04060abf93c7a0d5b9956" id="r_a7e70857b43c04060abf93c7a0d5b9956"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a7e70857b43c04060abf93c7a0d5b9956">AddDefaultHistogram</a> (CARTA::RegionHistogramData &amp;histogram_data)</td></tr>
@@ -157,12 +157,12 @@ Private Attributes</h2></td></tr>
 <tr class="memitem:a93887f33e03ac34c7d25ccc2022712f2" id="r_a93887f33e03ac34c7d25ccc2022712f2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a93887f33e03ac34c7d25ccc2022712f2">_region_id</a></td></tr>
 <tr class="memdesc:a93887f33e03ac34c7d25ccc2022712f2"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcarta_1_1Region.html">Region</a> id for this object, for config and cache ids.  <br /></td></tr>
 <tr class="separator:a93887f33e03ac34c7d25ccc2022712f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d89c74ecb313202bc93710bf404f8d8" id="r_a7d89c74ecb313202bc93710bf404f8d8"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1ConfigId.html">ConfigId</a>, <a class="el" href="structcarta_1_1RegionHistogramConfig.html">RegionHistogramConfig</a>, <a class="el" href="structcarta_1_1ConfigIdHash.html">ConfigIdHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a7d89c74ecb313202bc93710bf404f8d8">_configs</a></td></tr>
-<tr class="memdesc:a7d89c74ecb313202bc93710bf404f8d8"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcarta_1_1Histogram.html">Histogram</a> configurations stored as vector of <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> structs.  <br /></td></tr>
-<tr class="separator:a7d89c74ecb313202bc93710bf404f8d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a24b3b5d75b44a683d4aecd553362d8d7" id="r_a24b3b5d75b44a683d4aecd553362d8d7"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="structcarta_1_1CacheId.html">CacheId</a>, <a class="el" href="structcarta_1_1HistogramCache.html">HistogramCache</a>, <a class="el" href="structcarta_1_1CacheIdHash.html">CacheIdHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a24b3b5d75b44a683d4aecd553362d8d7">_cache</a></td></tr>
-<tr class="memdesc:a24b3b5d75b44a683d4aecd553362d8d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cache to hold calculated histograms.  <br /></td></tr>
-<tr class="separator:a24b3b5d75b44a683d4aecd553362d8d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9be34ead3c59fba36d0bdf1e07d9ea88" id="r_a9be34ead3c59fba36d0bdf1e07d9ea88"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="namespacecarta.html#a8545648961939c8707e3b43cbc59eaf1">ConfigId</a>, <a class="el" href="structcarta_1_1RegionHistogramConfig.html">RegionHistogramConfig</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a9be34ead3c59fba36d0bdf1e07d9ea88">_configs</a></td></tr>
+<tr class="memdesc:a9be34ead3c59fba36d0bdf1e07d9ea88"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcarta_1_1Histogram.html">Histogram</a> configurations stored as vector of <a class="el" href="structcarta_1_1HistogramConfig.html">HistogramConfig</a> structs.  <br /></td></tr>
+<tr class="separator:a9be34ead3c59fba36d0bdf1e07d9ea88"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a906492ef655a6eb5bb4d392f89859fa6" id="r_a906492ef655a6eb5bb4d392f89859fa6"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="namespacecarta.html#ac74c2e0f3fd2f93a7d22155beab08db0">CacheId</a>, <a class="el" href="structcarta_1_1HistogramCache.html">HistogramCache</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHistogram.html#a906492ef655a6eb5bb4d392f89859fa6">_cache</a></td></tr>
+<tr class="memdesc:a906492ef655a6eb5bb4d392f89859fa6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cache to hold calculated histograms.  <br /></td></tr>
+<tr class="separator:a906492ef655a6eb5bb4d392f89859fa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a210903cfcbe4420c57c0cf7e19335c53" name="a210903cfcbe4420c57c0cf7e19335c53"></a>
@@ -254,7 +254,7 @@ Here is the call graph for this function:</div>
         <tr>
           <td class="memname">bool carta::RegionHistogram::AddCachedHistogram </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structcarta_1_1CacheId.html">CacheId</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacecarta.html#ac74c2e0f3fd2f93a7d22155beab08db0">CacheId</a> &amp;&#160;</td>
           <td class="paramname"><em>cache_id</em>, </td>
         </tr>
         <tr>
@@ -291,7 +291,7 @@ Here is the call graph for this function:</div>
 <p>Add <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> from cache if it exists. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">cache_id</td><td><a class="el" href="structcarta_1_1CacheId.html">CacheId</a> struct </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">cache_id</td><td>CacheId struct </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">config</td><td><a class="el" href="classcarta_1_1Histogram.html">Histogram</a> configuration </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_bins</td><td>Number of histogram bins </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">histogram_data_message</td><td><a class="el" href="classcarta_1_1Region.html">Region</a> histogram data message </td></tr>
@@ -700,8 +700,8 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a24b3b5d75b44a683d4aecd553362d8d7" name="a24b3b5d75b44a683d4aecd553362d8d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a24b3b5d75b44a683d4aecd553362d8d7">&#9670;&#160;</a></span>_cache</h2>
+<a id="a906492ef655a6eb5bb4d392f89859fa6" name="a906492ef655a6eb5bb4d392f89859fa6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a906492ef655a6eb5bb4d392f89859fa6">&#9670;&#160;</a></span>_cache</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -710,7 +710,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::unordered_map&lt;<a class="el" href="structcarta_1_1CacheId.html">CacheId</a>, <a class="el" href="structcarta_1_1HistogramCache.html">HistogramCache</a>, <a class="el" href="structcarta_1_1CacheIdHash.html">CacheIdHash</a>&gt; carta::RegionHistogram::_cache</td>
+          <td class="memname">std::unordered_map&lt;<a class="el" href="namespacecarta.html#ac74c2e0f3fd2f93a7d22155beab08db0">CacheId</a>, <a class="el" href="structcarta_1_1HistogramCache.html">HistogramCache</a>&gt; carta::RegionHistogram::_cache</td>
         </tr>
       </table>
   </td>
@@ -724,8 +724,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a7d89c74ecb313202bc93710bf404f8d8" name="a7d89c74ecb313202bc93710bf404f8d8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7d89c74ecb313202bc93710bf404f8d8">&#9670;&#160;</a></span>_configs</h2>
+<a id="a9be34ead3c59fba36d0bdf1e07d9ea88" name="a9be34ead3c59fba36d0bdf1e07d9ea88"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9be34ead3c59fba36d0bdf1e07d9ea88">&#9670;&#160;</a></span>_configs</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -734,7 +734,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::unordered_map&lt;<a class="el" href="structcarta_1_1ConfigId.html">ConfigId</a>, <a class="el" href="structcarta_1_1RegionHistogramConfig.html">RegionHistogramConfig</a>, <a class="el" href="structcarta_1_1ConfigIdHash.html">ConfigIdHash</a>&gt; carta::RegionHistogram::_configs</td>
+          <td class="memname">std::unordered_map&lt;<a class="el" href="namespacecarta.html#a8545648961939c8707e3b43cbc59eaf1">ConfigId</a>, <a class="el" href="structcarta_1_1RegionHistogramConfig.html">RegionHistogramConfig</a>&gt; carta::RegionHistogram::_configs</td>
         </tr>
       </table>
   </td>

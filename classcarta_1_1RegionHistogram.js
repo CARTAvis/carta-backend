@@ -12,7 +12,7 @@ var classcarta_1_1RegionHistogram =
     [ "GetNumBins", "classcarta_1_1RegionHistogram.html#a0dd4f14bfb38b9dcb5d42e081e231cfc", null ],
     [ "GetRegionHistogramData", "classcarta_1_1RegionHistogram.html#a321b3705f07785c1c801048934f47595", null ],
     [ "SetConfigurations", "classcarta_1_1RegionHistogram.html#ad76235d4a5bae130aae6eacfab6128d2", null ],
-    [ "_cache", "classcarta_1_1RegionHistogram.html#a24b3b5d75b44a683d4aecd553362d8d7", null ],
-    [ "_configs", "classcarta_1_1RegionHistogram.html#a7d89c74ecb313202bc93710bf404f8d8", null ],
+    [ "_cache", "classcarta_1_1RegionHistogram.html#a906492ef655a6eb5bb4d392f89859fa6", null ],
+    [ "_configs", "classcarta_1_1RegionHistogram.html#a9be34ead3c59fba36d0bdf1e07d9ea88", null ],
     [ "_region_id", "classcarta_1_1RegionHistogram.html#a93887f33e03ac34c7d25ccc2022712f2", null ]
 ];

@@ -183,7 +183,7 @@ var searchData=
   ['getrotboxrecord_180',['GetRotboxRecord',['../classcarta_1_1RegionConverter.html#aef302421fc95fc4d33c76e730e56d7f9',1,'carta::RegionConverter']]],
   ['getrotboxrecordforlcregion_181',['GetRotboxRecordForLCRegion',['../classcarta_1_1Region.html#a6df7292ce53d0440835844bf74fee9ae',1,'carta::Region']]],
   ['getseparationtolerance_182',['GetSeparationTolerance',['../classcarta_1_1LineBoxRegions.html#a622d3a3a2a21711de9a278543fe0fc40',1,'carta::LineBoxRegions']]],
-  ['getshape_183',['getshape',['../classcarta_1_1FileLoader.html#a86c9100a30061a92c1d7f4b50a5facae',1,'carta::FileLoader::GetShape()'],['../classcarta_1_1ImageMoments.html#a0af6c0af588a8ea87843c74ed7fc0621',1,'carta::ImageMoments::getShape()'],['../classcarta_1_1CompressedFits.html#a4bd8ce5412d89f601493adccd4aa5c17',1,'carta::CompressedFits::GetShape()']]],
+  ['getshape_183',['getshape',['../classcarta_1_1ImageMoments.html#a0af6c0af588a8ea87843c74ed7fc0621',1,'carta::ImageMoments::getShape()'],['../classcarta_1_1CompressedFits.html#a4bd8ce5412d89f601493adccd4aa5c17',1,'carta::CompressedFits::GetShape()'],['../classcarta_1_1FileLoader.html#a86c9100a30061a92c1d7f4b50a5facae',1,'carta::FileLoader::GetShape()']]],
   ['getslice_184',['GetSlice',['../classcarta_1_1FileLoader.html#a1ef8462007320a75dcdc04929cdb28b0',1,'carta::FileLoader']]],
   ['getslicerdata_185',['GetSlicerData',['../classcarta_1_1Frame.html#a79c789ebc62771151da94673a325a31a',1,'carta::Frame']]],
   ['getslicerstats_186',['GetSlicerStats',['../classcarta_1_1Frame.html#a1dd3e980e9f7d62f8dea923ea79a3183',1,'carta::Frame']]],

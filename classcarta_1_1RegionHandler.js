@@ -70,9 +70,9 @@ var classcarta_1_1RegionHandler =
     [ "_region_statistics", "classcarta_1_1RegionHandler.html#a4ee3ba04a3662862334bc3cd4112fa01", null ],
     [ "_regions", "classcarta_1_1RegionHandler.html#a0a0216f5a72b22e01b7745bc07133b79", null ],
     [ "_spatial_mutex", "classcarta_1_1RegionHandler.html#a29231752632059fa71e0234c9a223c7e", null ],
-    [ "_spectral_cache", "classcarta_1_1RegionHandler.html#a1f1546481a69319bcfabcc2ee701b1dc", null ],
+    [ "_spectral_cache", "classcarta_1_1RegionHandler.html#a0b10459c310f3d465404496b78103b65", null ],
     [ "_spectral_mutex", "classcarta_1_1RegionHandler.html#a77e45a485c15d880372000c8a11f68db", null ],
-    [ "_spectral_req", "classcarta_1_1RegionHandler.html#a64a5ae175a87f52630a7a7fb34ad4245", null ],
+    [ "_spectral_req", "classcarta_1_1RegionHandler.html#aa3d21cd52b9ebb7bc5beba6c7fdf4e69", null ],
     [ "_spectral_stats", "classcarta_1_1RegionHandler.html#a5b3cc330128db83deff8b70319c123fd", null ],
     [ "_stop_pv", "classcarta_1_1RegionHandler.html#a037682014bb7a934c6b77b337c9ac0e7", null ]
 ];

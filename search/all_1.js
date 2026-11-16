@@ -79,11 +79,12 @@ var searchData=
   ['applyjsonsettings_76',['ApplyJSONSettings',['../structcarta_1_1ProgramSettings.html#af79fed2fb510be1e30123ce5f788b4a7',1,'carta::ProgramSettings']]],
   ['applyoptionalargument_77',['applyOptionalArgument',['../namespacecarta.html#aa3581dda6f86c582d960a381773a4192',1,'carta']]],
   ['applythreadlimit_78',['ApplyThreadLimit',['../classcarta_1_1ThreadManager.html#a82cbb5d8370c091ac96c24d0fc4984dc',1,'carta::ThreadManager']]],
-  ['asan_20flags_79',['Building with ASAN flags',['../md_docs_2static_2faq.html#autotoc_md1',1,'']]],
-  ['auto_5fbin_5fsize_80',['AUTO_BIN_SIZE',['../Image_8h.html#a0d7c8081a29b46e6a70f0065eda31de2',1,'Image.h']]],
-  ['autobinsize_81',['AutoBinSize',['../classcarta_1_1Frame.html#a54fa0e39d0db24c3f5913668935f69ef',1,'carta::Frame']]],
-  ['availablerows_82',['AvailableRows',['../classcarta_1_1Table.html#ad7fd87f6305aa6321438ac79d34a1b13',1,'carta::Table']]],
-  ['axes_83',['Axes',['../classcarta_1_1Frame.html#aa72016c533484bdcaeefa9cb95df9553',1,'carta::Frame']]],
-  ['axesinfo_84',['axesinfo',['../structAxesInfo.html#a926656b9703a5bee01cc02e9f12824d7',1,'AxesInfo::AxesInfo(const std::vector&lt; int &gt; render, const std::vector&lt; int &gt; spatial, int spectral)'],['../structAxesInfo.html#a8c8d3cfa85926250af812828d04fe8da',1,'AxesInfo::AxesInfo()'],['../structAxesInfo.html',1,'AxesInfo'],['../structAxesInfo.html#aa336889948ea6c4c19d6b59d2c5e5b93',1,'AxesInfo::AxesInfo()']]],
-  ['axisrange_85',['axisrange',['../structAxisRange.html#afe27315ca30282545d389919e2ad9cd8',1,'AxisRange::AxisRange(int from_, int to_)'],['../structAxisRange.html#a145c438deed0a187f00335a4c3b8d024',1,'AxisRange::AxisRange(int from_and_to_)'],['../structAxisRange.html#a17ff4d17c50573253c06cfba37fa479c',1,'AxisRange::AxisRange()'],['../structAxisRange.html',1,'AxisRange']]]
+  ['as_5ftuple_79',['as_tuple',['../structcarta_1_1Key.html#a7e5b4fd993485e96c1e18e66b0559d7e',1,'carta::Key']]],
+  ['asan_20flags_80',['Building with ASAN flags',['../md_docs_2static_2faq.html#autotoc_md1',1,'']]],
+  ['auto_5fbin_5fsize_81',['AUTO_BIN_SIZE',['../Image_8h.html#a0d7c8081a29b46e6a70f0065eda31de2',1,'Image.h']]],
+  ['autobinsize_82',['AutoBinSize',['../classcarta_1_1Frame.html#a54fa0e39d0db24c3f5913668935f69ef',1,'carta::Frame']]],
+  ['availablerows_83',['AvailableRows',['../classcarta_1_1Table.html#ad7fd87f6305aa6321438ac79d34a1b13',1,'carta::Table']]],
+  ['axes_84',['Axes',['../classcarta_1_1Frame.html#aa72016c533484bdcaeefa9cb95df9553',1,'carta::Frame']]],
+  ['axesinfo_85',['axesinfo',['../structAxesInfo.html#a8c8d3cfa85926250af812828d04fe8da',1,'AxesInfo::AxesInfo()'],['../structAxesInfo.html#aa336889948ea6c4c19d6b59d2c5e5b93',1,'AxesInfo::AxesInfo(const std::vector&lt; int &gt; render, std::vector&lt; int &gt; spatial, int spectral, int z, int stokes)'],['../structAxesInfo.html',1,'AxesInfo'],['../structAxesInfo.html#a926656b9703a5bee01cc02e9f12824d7',1,'AxesInfo::AxesInfo()']]],
+  ['axisrange_86',['axisrange',['../structAxisRange.html#afe27315ca30282545d389919e2ad9cd8',1,'AxisRange::AxisRange(int from_, int to_)'],['../structAxisRange.html#a145c438deed0a187f00335a4c3b8d024',1,'AxisRange::AxisRange(int from_and_to_)'],['../structAxisRange.html#a17ff4d17c50573253c06cfba37fa479c',1,'AxisRange::AxisRange()'],['../structAxisRange.html',1,'AxisRange']]]
 ];

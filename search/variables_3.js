@@ -3,7 +3,7 @@ var searchData=
   ['carta_5fstats_5fto_5fcasacore_0',['carta_stats_to_casacore',['../namespacecarta.html#a558a4b2833be3a1ee6039f6dcce54971',1,'carta']]],
   ['center_5fx_1',['center_x',['../structcarta_1_1GaussianParams.html#a8f9a153b1cfcfcbc4cc1862e3d4ddb8e',1,'carta::GaussianParams']]],
   ['center_5fy_2',['center_y',['../structcarta_1_1GaussianParams.html#a358c0d24c721730e1acfdfc18d6e1f32',1,'carta::GaussianParams']]],
-  ['channel_3',['channel',['../structcarta_1_1HistogramConfig.html#ab76cfbc624e77e4bce8fdc615a990099',1,'carta::HistogramConfig::channel'],['../structcarta_1_1CacheId.html#a23f6d01589e311f32d293db38ba5f339',1,'carta::CacheId::channel']]],
+  ['channel_3',['channel',['../structcarta_1_1HistogramConfig.html#ab76cfbc624e77e4bce8fdc615a990099',1,'carta::HistogramConfig']]],
   ['chisq_4',['chisq',['../structcarta_1_1FitStatus.html#a75c2e761044fbe625b876efb7ed3eabc',1,'carta::FitStatus']]],
   ['chisq0_5',['chisq0',['../structcarta_1_1FitStatus.html#ad6b680e816346f91b04dae7bac78eca3',1,'carta::FitStatus']]],
   ['chunk_5fsize_6',['chunk_size',['../structcarta_1_1ContourSettings.html#ae823bf613b06e4315ca087448e855edf',1,'carta::ContourSettings']]],

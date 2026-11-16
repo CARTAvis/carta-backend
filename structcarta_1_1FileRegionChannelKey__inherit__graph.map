@@ -1,0 +1,5 @@
+<map id="carta::FileRegionChannelKey" name="carta::FileRegionChannelKey">
+<area shape="rect" id="Node000001" title="A key containing a file ID, a region ID, a polarization index, and a Z index." alt="" coords="5,93,213,119"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1Key.html" title=" " alt="" coords="35,5,183,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,59,112,93,107,93,107,59"/>
+</map>
