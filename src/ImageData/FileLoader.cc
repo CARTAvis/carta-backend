@@ -24,8 +24,8 @@
 #include "ImagePtrLoader.h"
 #include "Miriad/MiriadLoader.h"
 #include "PolarizationCalculator.h"
-#include "ZarrLoader.h"
-#include "ZarrStores.h"
+#include "Zarr/ZarrLoader.h"
+#include "Zarr/ZarrStores.h"
 
 using namespace carta;
 

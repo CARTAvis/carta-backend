@@ -21,9 +21,9 @@
 #include <casacore/images/Images/ImageInterface.h>
 
 #include <carta-protobuf/file_info.pb.h>
-#include "ImageData/CartaZarrImage.h"
 #include "ImageData/FileLoader.h"
 #include "ImageData/Fits/CompressedFits.h"
+#include "ImageData/Zarr/CartaZarrImage.h"
 
 namespace carta {
 
