@@ -49,15 +49,14 @@ protected:
     std::chrono::milliseconds _region_spectral_time{TARGET_PARTIAL_REGION_TIME};
     std::uint32_t _region_spectral_channels_per_emit = 0;
 
-    // What a profile is of. A new key starts the profile again. The key keeps a hash of the mask, not a copy,
-    // because the mask of a large region can be tens of MB. It is protected, so that a test can use it.
+    // The key of a profile is the region's bounding box and the channel range. A new key starts the profile again.
+    // Like the HDF5 loader, the key does not include the mask. So an edited region that keeps its bounding box
+    // continues the old profile.
     struct RegionSpectralKey {
         std::int64_t x = 0;
         std::int64_t y = 0;
         std::int64_t width = 0;
         std::int64_t height = 0;
-        std::uint64_t mask_hash = 0;
-        std::size_t mask_pixels = 0;
         int z_from = 0;
         int z_to = -1;
 

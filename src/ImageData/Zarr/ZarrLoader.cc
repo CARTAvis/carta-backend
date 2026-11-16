@@ -7,16 +7,12 @@
 #include "ZarrLoader.h"
 
 #include <algorithm>
-#include <bitset>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <cstring>
 #include <limits>
 #include <memory>
 #include <optional>
-#include <tuple>
-#include <utility>
 
 #include <spdlog/spdlog.h>
 
@@ -123,47 +119,6 @@ bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
     return std::dynamic_pointer_cast<CartaZarrImage>(_image) != nullptr && _num_dims == 4 && region_shape.size() >= 2;
 }
 
-namespace {
-
-// MurmurHash3's finalizer
-std::uint64_t MixWord(std::uint64_t word) {
-    word ^= word >> 33;
-    word *= 0xff51afd7ed558ccdULL;
-    word ^= word >> 33;
-    word *= 0xc4ceb9fe1a85ec53ULL;
-    word ^= word >> 33;
-    return word;
-}
-
-// A 64-bit hash of a mask's pixels, and the number of pixels in the region. It runs on every call, so it reads
-// eight pixels at a time. For a 7763 x 4742 mask, this takes 6-9 ms, and one pixel at a time takes 26-36 ms.
-// A Bool is one byte, 0 or 1. So the number of bits that are 1 in a word is the number of its pixels in the region.
-// Each word is mixed before it is folded in. Without mixing, masks that differ only in a word's top byte could share a hash.
-std::pair<std::uint64_t, std::size_t> MaskFingerprint(const casacore::Array<casacore::Bool>& mask) {
-    static_assert(sizeof(casacore::Bool) == 1, "a casacore Bool must be one byte to be hashed eight at a time");
-    bool delete_storage(false);
-    const casacore::Bool* pixels = mask.getStorage(delete_storage);
-    const auto* bytes = reinterpret_cast<const unsigned char*>(pixels);
-    const std::size_t size = mask.nelements();
-    std::uint64_t hash = 14695981039346656037ULL;
-    std::size_t count = 0;
-    std::size_t i = 0;
-    for (; i + sizeof(std::uint64_t) <= size; i += sizeof(std::uint64_t)) {
-        std::uint64_t word;
-        std::memcpy(&word, bytes + i, sizeof(word));
-        hash = (hash ^ MixWord(word)) * 1099511628211ULL;
-        count += std::bitset<64>(word).count();
-    }
-    for (; i < size; ++i) {
-        hash = (hash ^ bytes[i]) * 1099511628211ULL;
-        count += bytes[i];
-    }
-    mask.freeStorage(pixels, delete_storage);
-    return {hash, count};
-}
-
-} // namespace
-
 ZarrLoader::RegionSpectralKey ZarrLoader::RegionSpectralKey::Of(
     const casacore::IPosition& origin, const casacore::Array<casacore::Bool>& mask, const AxisRange& range) {
     RegionSpectralKey key;
@@ -171,8 +126,6 @@ ZarrLoader::RegionSpectralKey ZarrLoader::RegionSpectralKey::Of(
     key.y = origin(1);
     key.width = mask.shape()(0);
     key.height = mask.shape()(1);
-    // An edited region can keep its origin and shape, so the mask is part of the key.
-    std::tie(key.mask_hash, key.mask_pixels) = MaskFingerprint(mask);
     key.z_from = range.from;
     key.z_to = range.to;
     return key;
@@ -186,8 +139,7 @@ void ZarrLoader::RegionSpectralPace::Reset(const RegionSpectralKey& other) {
 }
 
 bool ZarrLoader::RegionSpectralKey::operator==(const RegionSpectralKey& other) const {
-    return x == other.x && y == other.y && width == other.width && height == other.height && mask_hash == other.mask_hash &&
-           mask_pixels == other.mask_pixels && z_from == other.z_from && z_to == other.z_to;
+    return x == other.x && y == other.y && width == other.width && height == other.height && z_from == other.z_from && z_to == other.z_to;
 }
 
 // Reads a region's profile in runs of whole channels. A call returns after _region_spectral_time,

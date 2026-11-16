@@ -1023,101 +1023,6 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAStokesCatchingUpPauses) {
     EXPECT_EQ(FinishedChannels(q), kDepth);
 }
 
-// An edited region keeps its origin and shape, but its mask differs.
-TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskIsReadAgain) {
-    const casacore::IPosition origin(2, 1, 1);
-    std::mutex image_mutex;
-    auto loader = FileLoader::GetLoader(kZarrFixture.string());
-    ASSERT_NE(loader, nullptr);
-    loader->OpenFile("");
-
-    const auto profile = [&](const casacore::ArrayLattice<casacore::Bool>& mask) {
-        std::map<CARTA::StatsType, std::vector<double>> results;
-        float progress = 0.0;
-        for (int call = 0; progress < 1.0f; ++call) {
-            if (call == 100 ||
-                !loader->GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, {})) {
-                ADD_FAILURE() << "the profile did not finish";
-                break;
-            }
-        }
-        return results;
-    };
-    const auto all = BoxMask([](int, int) { return true; });
-    const auto column = BoxMask([](int x, int) { return x == 0; });
-    auto first = profile(all);
-    auto edited = profile(column);
-
-    // The profile of the same mask, from a loader that has read nothing before
-    loader = FileLoader::GetLoader(kZarrFixture.string());
-    ASSERT_NE(loader, nullptr);
-    loader->OpenFile("");
-    auto fresh = profile(column);
-    EXPECT_NE(edited[CARTA::StatsType::NumPixels], first[CARTA::StatsType::NumPixels]);
-    EXPECT_EQ(edited[CARTA::StatsType::NumPixels], fresh[CARTA::StatsType::NumPixels]);
-    EXPECT_EQ(edited[CARTA::StatsType::Sum], fresh[CARTA::StatsType::Sum]);
-}
-
-// Two columns of the box have as many pixels, so only the mask's hash tells them apart.
-TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskOfAsManyPixelsIsReadAgain) {
-    const casacore::IPosition origin(2, 1, 1);
-    std::mutex image_mutex;
-    const auto profile = [&](FileLoader& loader, const casacore::ArrayLattice<casacore::Bool>& mask) {
-        std::map<CARTA::StatsType, std::vector<double>> results;
-        float progress = 0.0;
-        for (int call = 0; progress < 1.0f; ++call) {
-            if (call == 100 ||
-                !loader.GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, {})) {
-                ADD_FAILURE() << "the profile did not finish";
-                break;
-            }
-        }
-        return results;
-    };
-    const auto first_column = BoxMask([](int x, int) { return x == 0; });
-    const auto second_column = BoxMask([](int x, int) { return x == 1; });
-
-    auto loader = FileLoader::GetLoader(kZarrFixture.string());
-    ASSERT_NE(loader, nullptr);
-    loader->OpenFile("");
-    const auto first = profile(*loader, first_column);
-    const auto edited = profile(*loader, second_column);
-
-    auto fresh_loader = FileLoader::GetLoader(kZarrFixture.string());
-    ASSERT_NE(fresh_loader, nullptr);
-    fresh_loader->OpenFile("");
-    const auto fresh = profile(*fresh_loader, second_column);
-    // The two masks have the same number of pixels, valid or not
-    const auto covered = [](const std::map<CARTA::StatsType, std::vector<double>>& results) {
-        return results.at(CARTA::StatsType::NumPixels).front() + results.at(CARTA::StatsType::NanCount).front();
-    };
-    EXPECT_EQ(covered(edited), covered(first));
-    EXPECT_NE(edited.at(CARTA::StatsType::NumPixels), first.at(CARTA::StatsType::NumPixels));
-    EXPECT_EQ(edited.at(CARTA::StatsType::NumPixels), fresh.at(CARTA::StatsType::NumPixels));
-    EXPECT_EQ(edited.at(CARTA::StatsType::Sum), fresh.at(CARTA::StatsType::Sum));
-}
-
-// Without mixing, these masks would hash alike. Each has four pixels in the last column, in the words' top bytes.
-TEST(ZarrRegionSpectralKey, MasksDifferingOnlyInTheirWordsTopBytesHaveDifferentKeys) {
-    struct Keyed : ZarrLoader {
-        using ZarrLoader::RegionSpectralKey;
-    };
-    const auto last_column = [](std::initializer_list<int> rows) {
-        casacore::Array<casacore::Bool> mask(casacore::IPosition(2, 8, 8), false);
-        for (const int y : rows) {
-            mask(casacore::IPosition(2, 7, y)) = true;
-        }
-        return mask;
-    };
-    const casacore::IPosition origin(2, 0, 0);
-    const AxisRange range(0, 1);
-    const auto one = Keyed::RegionSpectralKey::Of(origin, last_column({0, 1, 6, 7}), range);
-    const auto other = Keyed::RegionSpectralKey::Of(origin, last_column({0, 4, 5, 6}), range);
-    EXPECT_EQ(one.mask_pixels, other.mask_pixels);
-    EXPECT_FALSE(one == other);
-    EXPECT_TRUE(one == Keyed::RegionSpectralKey::Of(origin, last_column({0, 1, 6, 7}), range));
-}
-
 TEST_F(ZarrImageTest, RegionSpectralDataOfAResizedRegionIsReadAgain) {
     const casacore::IPosition origin(2, 1, 1);
     std::mutex image_mutex;
@@ -1149,10 +1054,9 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAResizedRegionIsReadAgain) {
     EXPECT_EQ(resized[CARTA::StatsType::Sum], fresh[CARTA::StatsType::Sum]);
 }
 
-// Going back to an earlier mask starts every stokes again.
+// Going back to an earlier key starts every stokes again.
 TEST_F(ZarrImageTest, RegionSpectralDataOfARegionReadBeforeKeepsTheStokesInStep) {
-    const auto first = BoxMask([](int, int) { return true; });
-    const auto edited = BoxMask([](int x, int) { return x == 0; });
+    const auto mask = BoxMask([](int, int) { return true; });
     const casacore::IPosition origin(2, 1, 1);
     std::mutex image_mutex;
     PausingZarrLoader loader(kZarrFixture.string());
@@ -1160,18 +1064,18 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfARegionReadBeforeKeepsTheStokesInStep)
     std::map<CARTA::StatsType, std::vector<double>> q, u;
     float q_progress = 0.0, u_progress = 0.0;
 
-    // Q and U of the first mask are finished, then Q of the edited mask
+    // Q and U of all channels are finished, then Q of the first channel only
     loader.ReadFor(std::chrono::seconds(60));
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, first, origin, image_mutex, q, q_progress, {}));
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 2, first, origin, image_mutex, u, u_progress, {}));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
     ASSERT_EQ(u_progress, 1.0f);
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, edited, origin, image_mutex, q, q_progress, {}));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, 0), 1, mask, origin, image_mutex, q, q_progress, {}));
 
-    // Back to the first mask, with Q pausing after its first channel
+    // Back to all channels, with Q pausing after its first channel
     loader.ReadFor(std::chrono::milliseconds(0));
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, first, origin, image_mutex, q, q_progress, {}));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 1, mask, origin, image_mutex, q, q_progress, {}));
     ASSERT_LT(q_progress, 1.0f);
-    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 2, first, origin, image_mutex, u, u_progress, {}));
+    ASSERT_TRUE(loader.GetRegionSpectralData(5, AxisRange(0, kDepth - 1), 2, mask, origin, image_mutex, u, u_progress, {}));
     EXPECT_EQ(u_progress, q_progress);
 }
 
