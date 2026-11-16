@@ -7,10 +7,8 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
-#include <functional>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "Frame/Frame.h"
@@ -28,34 +26,28 @@ const std::filesystem::path kZarrFixture{ZARR_PIXEL_FIXTURE};
 // A Zarr image that counts the frame's own reads. The loader's cursor read has a progress callback, and is not counted.
 class CountingImage : public CartaZarrImage {
 public:
-    CountingImage(const CartaZarrImage& image, int& reads, std::function<void()>& on_read)
-        : CartaZarrImage(image), _reads(reads), _on_read(on_read) {}
+    CountingImage(const CartaZarrImage& image, int& reads) : CartaZarrImage(image), _reads(reads) {}
 
     carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {}, const carta::zarr::ProgressCallback& progress = {}) const override {
         if (!progress) {
             ++_reads;
-            // Run it once, at the next read
-            if (auto once = std::exchange(_on_read, nullptr)) {
-                once();
-            }
         }
         return CartaZarrImage::Read(buffer, section, options, progress);
     }
     // casacore's SubImage reads a clone, so the clone must count too
     casacore::ImageInterface<float>* cloneII() const override {
-        return new CountingImage(*this, _reads, _on_read);
+        return new CountingImage(*this, _reads);
     }
 
 private:
     int& _reads;
-    std::function<void()>& _on_read;
 };
 
 // A Zarr loader whose cursor read follows a script from the test
 class ScriptedCursorLoader : public ZarrLoader {
 public:
-    enum class Script { read, refuse, cursor_moves, stokes_changes, stokes_changes_while_casacore_reads };
+    enum class Script { read, refuse, cursor_moves };
 
     ScriptedCursorLoader(const std::string& filename, Script script) : ZarrLoader(filename), _script(script) {}
 
@@ -71,22 +63,6 @@ public:
                 frame->SetCursor(0, 0);
                 progress_answer = progress(0, 2);
                 return false;
-            case Script::stokes_changes: {
-                // The user turns to Q while I is being read
-                std::string message;
-                EXPECT_TRUE(frame->SetImageChannels(frame->CurrentZ(), 1, message)) << message;
-                // The frame reads the plane of the new stokes. Only the reads after this one are for the profile.
-                casacore_reads = 0;
-                progress_answer = progress(0, 2);
-                return false;
-            }
-            case Script::stokes_changes_while_casacore_reads:
-                // The user turns to Q while the frame reads I through casacore
-                on_casacore_read = [this] {
-                    std::string message;
-                    EXPECT_TRUE(frame->SetImageChannels(frame->CurrentZ(), 1, message)) << message;
-                };
-                return false;
         }
         return false;
     }
@@ -95,21 +71,12 @@ public:
     int casacore_reads = 0;
     bool progress_answer = true;
     Frame* frame = nullptr;
-    std::function<void()> on_casacore_read;
-
-    // With a tile cache and mips, a stokes change does not reload the plane. A reload would wait for the image mutex.
-    bool UseTileCache() const override {
-        return _script == Script::stokes_changes_while_casacore_reads || ZarrLoader::UseTileCache();
-    }
-    bool HasMip(int mip) const override {
-        return (_script == Script::stokes_changes_while_casacore_reads && mip == 2) || ZarrLoader::HasMip(mip);
-    }
 
 protected:
     void AllocateImage(const std::string& hdu) override {
         ZarrLoader::AllocateImage(hdu);
         if (auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image); image && !std::dynamic_pointer_cast<CountingImage>(_image)) {
-            _image = std::make_shared<CountingImage>(*image, casacore_reads, on_casacore_read);
+            _image = std::make_shared<CountingImage>(*image, casacore_reads);
         }
     }
 
@@ -126,7 +93,7 @@ struct CursorProfile {
 };
 
 // The spectrum that the frame sends for a cursor at (2, 2)
-CursorProfile FillCursorProfile(ScriptedCursorLoader::Script script, const std::string& coordinate = "z") {
+CursorProfile FillCursorProfile(ScriptedCursorLoader::Script script) {
     auto loader = std::make_shared<ScriptedCursorLoader>(kZarrFixture.string(), script);
     loader->OpenFile("");
     Frame frame(0, loader, "");
@@ -134,7 +101,7 @@ CursorProfile FillCursorProfile(ScriptedCursorLoader::Script script, const std::
     frame.SetCursor(2, 2);
 
     CARTA::SetSpectralRequirements_SpectralConfig config;
-    config.set_coordinate(coordinate);
+    config.set_coordinate("z");
     config.add_stats_types(CARTA::StatsType::Sum);
     EXPECT_TRUE(frame.SetSpectralRequirements(CURSOR_REGION_ID, {config}));
 
@@ -191,30 +158,5 @@ TEST_F(CursorSpectralRoutesTest, AReadTheCursorLeftIsStopped) {
     EXPECT_FALSE(profile.progress_answer);
     EXPECT_FALSE(profile.filled);
     EXPECT_EQ(profile.casacore_reads, 0);
-    EXPECT_TRUE(profile.messages.empty());
-}
-
-// The stopped profile is not read again through casacore.
-TEST_F(CursorSpectralRoutesTest, AReadOfAStokesTheUserLeftIsStopped) {
-    const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::stokes_changes);
-    EXPECT_FALSE(profile.progress_answer);
-    EXPECT_TRUE(profile.filled);
-    EXPECT_EQ(profile.cursor_reads, 1);
-    EXPECT_EQ(profile.casacore_reads, 0);
-    EXPECT_TRUE(profile.messages.empty());
-}
-
-TEST_F(CursorSpectralRoutesTest, AFixedStokesProfileOutlivesAStokesChange) {
-    const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::stokes_changes, "Qz");
-    EXPECT_TRUE(profile.progress_answer);
-    EXPECT_TRUE(profile.filled);
-    EXPECT_EQ(profile.cursor_reads, 1);
-    EXPECT_GT(profile.casacore_reads, 0);
-    EXPECT_EQ(FinalValues(profile), (std::vector<float>{122.0f, 1122.0f}));
-}
-
-TEST_F(CursorSpectralRoutesTest, ACasacoreReadOfAStokesTheUserLeftIsNotSent) {
-    const auto profile = FillCursorProfile(ScriptedCursorLoader::Script::stokes_changes_while_casacore_reads);
-    EXPECT_GT(profile.casacore_reads, 0);
     EXPECT_TRUE(profile.messages.empty());
 }

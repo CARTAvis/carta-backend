@@ -1467,11 +1467,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
             std::vector<float> spectral_data;
             int xy_count(1);
-            // A profile of the current stokes ("z") reads the stokes that was current at the start. If the user switches
-            // stokes during the read, the profile is not wanted, because it would be sent labeled as the new stokes.
-            const bool current_stokes = coordinate == "z";
-            auto stokes_left = [this, current_stokes, stokes]() { return current_stokes && CurrentStokes() != stokes; };
-            auto wanted = [&]() { return _cursor == start_cursor && IsConnected() && HasSpectralConfig(config) && !stokes_left(); };
+            auto wanted = [&]() { return _cursor == start_cursor && IsConnected() && HasSpectralConfig(config); };
             // Called by a loader that reads in steps. Sends partial profiles, and stops the read once it is not wanted.
             bool stopped(false);
             auto t_start_partial = std::chrono::high_resolution_clock::now();
@@ -1576,8 +1572,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel all profiles
                         return false;
                     }
-                    if (!HasSpectralConfig(config) || stokes_left()) {
-                        // requirements or stokes changed, cancel this profile
+                    if (!HasSpectralConfig(config)) {
+                        // requirements changed, cancel this profile
                         break;
                     }
 
