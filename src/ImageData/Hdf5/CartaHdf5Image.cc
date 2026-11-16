@@ -18,7 +18,7 @@
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
-#include "../Logger/Logger.h"
+#include "../../Logger/Logger.h"
 #include "Util/String.h"
 
 #include "Hdf5Attributes.h"

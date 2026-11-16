@@ -19,8 +19,8 @@
 #include <casacore/images/Images/ImageInterface.h>
 
 #include <carta-protobuf/file_info.pb.h>
-#include "ImageData/CompressedFits.h"
 #include "ImageData/FileLoader.h"
+#include "ImageData/Fits/CompressedFits.h"
 
 namespace carta {
 

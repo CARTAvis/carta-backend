@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
-#include "ImageData/FitsUtil.h"
+#include "ImageData/Fits/FitsUtil.h"
 #include "Util/Casacore.h"
 #include "Util/String.h"
 
