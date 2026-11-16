@@ -17,7 +17,7 @@
 #include "CommonTestUtilities.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
-#include "ImageData/CartaZarrImage.h"
+#include "ImageData/Zarr/CartaZarrImage.h"
 #include "Session/Session.h"
 #include "Util/Message.h"
 

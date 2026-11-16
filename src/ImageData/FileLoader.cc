@@ -15,18 +15,18 @@
 #include "Util/File.h"
 #include "Util/Nan.h"
 
-#include "CartaZarrImage.h"
 #include "CasaLoader.h"
 #include "CompListLoader.h"
 #include "ConcatLoader.h"
 #include "ExprLoader.h"
-#include "FitsLoader.h"
-#include "Hdf5Loader.h"
+#include "Fits/FitsLoader.h"
+#include "Hdf5/Hdf5Loader.h"
 #include "ImagePtrLoader.h"
-#include "MiriadLoader.h"
+#include "Miriad/MiriadLoader.h"
 #include "PolarizationCalculator.h"
-#include "ZarrLoader.h"
-#include "ZarrStores.h"
+#include "Zarr/CartaZarrImage.h"
+#include "Zarr/ZarrLoader.h"
+#include "Zarr/ZarrStores.h"
 
 using namespace carta;
 

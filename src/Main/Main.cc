@@ -11,7 +11,7 @@
 
 #include "FileList/FileListHandler.h"
 #include "HttpServer/HttpServer.h"
-#include "ImageData/ZarrContext.h"
+#include "ImageData/Zarr/ZarrContext.h"
 #include "Logger/CartaLogSink.h"
 #include "Logger/Logger.h"
 #include "ProgramSettings.h"

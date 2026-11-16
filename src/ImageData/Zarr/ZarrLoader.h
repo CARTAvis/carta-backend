@@ -16,7 +16,7 @@
 #include <thread>
 #include <vector>
 
-#include "FileLoader.h"
+#include "../FileLoader.h"
 #include "Util/Image.h"
 
 namespace carta {

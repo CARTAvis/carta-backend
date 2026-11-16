@@ -6,7 +6,7 @@
 
 #include "Hdf5Loader.h"
 
-#include "../Logger/Logger.h"
+#include "../../Logger/Logger.h"
 #include "Util/Image.h"
 #include "Util/Nan.h"
 

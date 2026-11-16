@@ -23,8 +23,8 @@
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/MFrequency.h>
 
-#include "../ImageData/CartaFitsImage.h"
-#include "../ImageData/CartaHdf5Image.h"
+#include "../ImageData/Fits/CartaFitsImage.h"
+#include "../ImageData/Hdf5/CartaHdf5Image.h"
 #include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
 #include "Util/Casacore.h"

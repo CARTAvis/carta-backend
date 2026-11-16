@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "Frame/Frame.h"
-#include "ImageData/CartaZarrImage.h"
-#include "ImageData/ZarrLoader.h"
+#include "ImageData/Zarr/CartaZarrImage.h"
+#include "ImageData/Zarr/ZarrLoader.h"
 
 #include "CommonTestUtilities.h"
 

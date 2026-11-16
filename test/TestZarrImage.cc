@@ -35,10 +35,10 @@
 #include "CommonTestUtilities.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
-#include "ImageData/CartaZarrImage.h"
 #include "ImageData/FileLoader.h"
-#include "ImageData/ZarrLoader.h"
-#include "ImageData/ZarrStores.h"
+#include "ImageData/Zarr/CartaZarrImage.h"
+#include "ImageData/Zarr/ZarrLoader.h"
+#include "ImageData/Zarr/ZarrStores.h"
 #include "ImageStats/StatsCalculator.h"
 
 using namespace carta;

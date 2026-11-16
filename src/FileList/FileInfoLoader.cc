@@ -13,7 +13,7 @@
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 
-#include "ImageData/ZarrStores.h"
+#include "ImageData/Zarr/ZarrStores.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
 

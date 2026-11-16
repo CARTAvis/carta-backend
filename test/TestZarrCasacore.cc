@@ -20,7 +20,7 @@
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
 
-#include "ImageData/ZarrCasacore.h"
+#include "ImageData/Zarr/ZarrCasacore.h"
 
 using carta::MakeZarrBeamSet;
 using carta::MakeZarrCoordinateSystem;

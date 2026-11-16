@@ -14,8 +14,8 @@
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/lattices/LEL/LatticeExprNode.h>
 
-#include "CartaHdf5Image.h"
 #include "FileLoader.h"
+#include "Hdf5/CartaHdf5Image.h"
 #include "Util/FileSystem.h"
 
 namespace carta {
