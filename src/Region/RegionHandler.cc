@@ -1451,7 +1451,7 @@ bool RegionHandler::FillSpectralProfileData(
     }
 
     std::unique_lock<std::mutex> ulock(_spectral_mutex);
-    std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> region_configs;
+    std::unordered_map<ConfigId, RegionSpectralConfig> region_configs;
     region_configs.insert(_spectral_req.begin(), _spectral_req.end());
     ulock.unlock();
 
