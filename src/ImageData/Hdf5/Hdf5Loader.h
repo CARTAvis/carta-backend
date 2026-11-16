@@ -15,8 +15,8 @@
 
 #include "Frame/Frame.h"
 
+#include "../FileLoader.h"
 #include "CartaHdf5Image.h"
-#include "FileLoader.h"
 #include "Hdf5Attributes.h"
 
 namespace carta {

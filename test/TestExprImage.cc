@@ -7,8 +7,8 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
-#include "ImageData/CartaHdf5Image.h"
 #include "ImageData/FileLoader.h"
+#include "ImageData/Hdf5/CartaHdf5Image.h"
 #include "Logger/Logger.h"
 
 using namespace carta;

@@ -11,8 +11,8 @@
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
 
-#include "ImageData/CartaMiriadImage.h"
-#include "ImageData/ZarrStores.h"
+#include "ImageData/Miriad/CartaMiriadImage.h"
+#include "ImageData/Zarr/ZarrStores.h"
 #include "Logger/Logger.h"
 
 const std::regex GILDAS_REGEX(" *[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\) *");

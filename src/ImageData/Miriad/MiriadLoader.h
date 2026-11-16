@@ -9,8 +9,8 @@
 
 #include <casacore/mirlib/miriad.h>
 
+#include "../FileLoader.h"
 #include "CartaMiriadImage.h"
-#include "FileLoader.h"
 
 namespace carta {
 
