@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# CartaFitsImage.cc : specialized casacore::ImageInterface implementation for FITS
+// # CartaFitsImage.cc : specialized casacore::ImageInterface implementation for FITS
 
 #include "CartaFitsImage.h"
 
@@ -24,6 +24,8 @@
 #include <wcslib/wcsfix.h>
 #include <wcslib/wcshdr.h>
 #include <wcslib/wcsmath.h>
+
+#include "Util/Casacore.h"
 
 using namespace carta;
 
@@ -1090,14 +1092,7 @@ casacore::MFrequency::Types CartaFitsImage::GetFrequencyType(const ::wcsprm& wcs
     casacore::String specsys(wcs_spectral.specsys);
     specsys.upcase();
 
-    std::unordered_map<std::string, casacore::MFrequency::Types> specsys_freq_types = {{"TOPOCENT", casacore::MFrequency::TOPO},
-        {"GEOCENTR", casacore::MFrequency::GEO}, {"BARYCENT", casacore::MFrequency::BARY}, {"HELIOCEN", casacore::MFrequency::BARY},
-        {"LSRK", casacore::MFrequency::LSRK}, {"LSRD", casacore::MFrequency::LSRD}, {"GALACTOC", casacore::MFrequency::GALACTO},
-        {"LOCALGRP", casacore::MFrequency::LGROUP}, {"CMBDIPOL", casacore::MFrequency::CMB}, {"SOURCE", casacore::MFrequency::REST}};
-
-    if (specsys_freq_types.count(specsys)) {
-        freq_type = specsys_freq_types[specsys];
-
+    if (ParseSpectralSystem(specsys, freq_type)) {
         if (specsys[0] == 'H') {
             spdlog::debug("HELIOCEN reference frame unsupported, using BARYCENT instead.");
         }

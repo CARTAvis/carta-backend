@@ -11,6 +11,7 @@
 
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
+#include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
 
 /**
@@ -101,5 +102,8 @@ void NormalizeUnit(casacore::String& unit);
  * @return `true` if a GILDAS unit.
  */
 bool IsGildasUnit(const casacore::String& unit);
+
+// Parse FITS SPECSYS names and casacore measure names. HELIOCEN uses BARY, as in FITS loading.
+bool ParseSpectralSystem(const std::string& system, casacore::MFrequency::Types& type);
 
 #endif // CARTA_SRC_UTIL_CASACORE_H_
