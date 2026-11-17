@@ -32,6 +32,7 @@
 #include "Util/Concurrency.h"
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
+#include "Util/Key.h"
 #include "Util/Memory.h"
 #include "Util/Message.h"
 
@@ -260,11 +261,6 @@ protected:
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
         casacore::IPosition region_shape, casacore::LattRegionHolder& latt_region_holder);
 
-    // For convenience, create int map key for storing cache by z and stokes
-    inline int CacheKey(int z, int stokes) {
-        return (z * 10) + stokes;
-    }
-
     // For vector field calculation
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
@@ -325,9 +321,11 @@ protected:
 
     // Cache maps
     // For image, key is cache key (z/stokes); for cube, key is stokes.
-    std::unordered_map<int, std::vector<Histogram>> _image_histograms, _cube_histograms;
-    std::unordered_map<int, BasicStats<float>> _image_basic_stats, _cube_basic_stats;
-    std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
+    std::unordered_map<int, std::vector<Histogram>> _cube_histograms;
+    std::unordered_map<int, BasicStats<float>> _cube_basic_stats;
+    std::unordered_map<ChannelKey, std::vector<Histogram>> _image_histograms;
+    std::unordered_map<ChannelKey, BasicStats<float>> _image_basic_stats;
+    std::unordered_map<ChannelKey, std::map<CARTA::StatsType, double>> _image_stats;
 
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
