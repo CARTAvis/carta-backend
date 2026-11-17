@@ -66,6 +66,7 @@ set(TEST_SOURCES
         Util/TestUtilCasacore.cc
         Util/TestUtilFile.cc
         Util/TestUtilImage.cc
+        Util/TestUtilKey.cc
         Util/TestUtilMemory.cc
         Util/TestUtilString.cc)
 
