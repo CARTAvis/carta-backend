@@ -30,13 +30,13 @@
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool load_image_cache)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
       _tile_cache(0),
-      _z_index(default_z),
-      _stokes_index(DEFAULT_STOKES),
+      _z_index(0),
+      _stokes_index(0),
       _image_cache_valid(false),
       _tile_pool(std::make_shared<TilePool>()),
       _use_tile_cache(false),
@@ -81,7 +81,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _use_tile_cache = _loader->UseTileCache();
 
     // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
-    if (load_image_cache && !(_use_tile_cache && _loader->HasMip(2)) && !FillImageCache()) {
+    if (!(_use_tile_cache && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;

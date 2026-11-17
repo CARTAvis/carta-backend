@@ -79,9 +79,7 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
 
 class Frame {
 public:
-    // Load image cache for default_z, except for PV preview image which needs cube
-    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
-        bool load_image_cache = true);
+    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu);
     ~Frame(){};
 
     bool IsValid();
@@ -299,7 +297,7 @@ protected:
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;       // only one disk access at a time
-    bool _cache_loaded;            // channel cache is set
+
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 
