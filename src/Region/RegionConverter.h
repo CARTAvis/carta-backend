@@ -10,6 +10,7 @@
 #define CARTA_SRC_REGION_REGIONCONVERTER_H_
 
 #include <atomic>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -86,6 +87,7 @@ private:
     // Reference region: control points converted to world coords,
     // cached as WCRegion, and flag that WCRegion was attempted
     // (may be null if outside coordinate system)
+    std::mutex _reference_region_mutex;
     std::vector<casacore::Quantity> _wcs_control_points;
     std::shared_ptr<casacore::WCRegion> _reference_region;
     bool _reference_region_set;

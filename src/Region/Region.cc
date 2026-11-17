@@ -28,26 +28,21 @@ bool Region::UpdateRegion(const RegionState& new_state) {
     bool valid = CheckPoints(new_state.control_points, new_state.type);
 
     if (valid) {
-        // discern changes
+        std::lock_guard<std::mutex> converter_guard(_region_converter_mutex);
         auto state = GetRegionState();
         _region_changed = (state.RegionChanged(new_state));
         if (_region_changed) {
-            ResetRegionCache();
+            ResetRegionCacheLocked();
         }
-
-        // set new region state
         std::lock_guard<std::mutex> guard(_region_state_mutex);
         _region_state = new_state;
-    } else { // keep existing state
-        _region_changed = false;
     }
 
     return valid;
 }
 
-void Region::ResetRegionCache() {
-    // Invalid when region changes
-    std::lock_guard<std::mutex> guard(_lcregion_mutex);
+void Region::ResetRegionCacheLocked() {
+    std::lock_guard<std::mutex> lock(_lcregion_mutex);
     _lcregion.reset();
     _lcregion_set = false;
     _region_converter.reset();
@@ -173,8 +168,9 @@ std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared
                 }
             }
         } else {
+            std::lock_guard<std::mutex> guard(_region_converter_mutex);
             if (!_region_converter) {
-                _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
+                _region_converter = std::make_unique<RegionConverter>(GetRegionState(), _coord_sys);
             }
             return _region_converter->GetImageRegion(file_id, image_csys, image_shape, stokes_source, report_error);
         }
@@ -195,8 +191,9 @@ std::shared_ptr<casacore::LCRegion> Region::GetCachedLCRegion(int file_id, const
         std::lock_guard<std::mutex> guard(_lcregion_mutex);
         return _lcregion;
     } else {
+        std::lock_guard<std::mutex> guard(_region_converter_mutex);
         if (!_region_converter) {
-            _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
+            _region_converter = std::make_unique<RegionConverter>(GetRegionState(), _coord_sys);
         }
         return _region_converter->GetCachedLCRegion(file_id);
     }
@@ -239,8 +236,9 @@ casacore::TableRecord Region::GetImageRegionRecord(
     if (IsInReferenceImage(file_id)) {
         record = GetControlPointsRecord(image_shape);
     } else {
+        std::lock_guard<std::mutex> guard(_region_converter_mutex);
         if (!_region_converter) {
-            _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
+            _region_converter = std::make_unique<RegionConverter>(GetRegionState(), _coord_sys);
         }
         record = _region_converter->GetImageRegionRecord(file_id, csys, image_shape);
     }
