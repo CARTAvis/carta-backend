@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Fixed incorrect scientic notation parsing ([#1632](https://github.com/CARTAvis/carta-backend/issues/1632)). 
 * Fixed error importing incorrect region name from a CRTF region file ([#1626](https://github.com/CARTAvis/carta-backend/issues/1626)). 
+* Fixed race condition during initialization and cache invalidation in concurrent region conversions ([#1639](https://github.com/CARTAvis/carta-backend/issues/1639)). 
 
 ## [6.0.0]
 
