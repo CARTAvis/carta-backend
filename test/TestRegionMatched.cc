@@ -6,6 +6,11 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"

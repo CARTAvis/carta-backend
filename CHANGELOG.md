@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed error importing incorrect region name from a CRTF region file ([#1626](https://github.com/CARTAvis/carta-backend/issues/1626)).
 * Fixed regression that prevented calculation of image stats for computed Stokes ([#1652](https://github.com/CARTAvis/carta-backend/issues/1652)).
 * Fixed key clash affecting some cached channel histograms and stats ([#1651](https://github.com/CARTAvis/carta-backend/issues/1651)).
+* Fixed race condition during initialization and cache invalidation in concurrent region conversions ([#1639](https://github.com/CARTAvis/carta-backend/issues/1639)).
 
 ## [6.0.0]
 

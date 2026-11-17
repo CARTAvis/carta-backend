@@ -239,6 +239,7 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetCachedLCRegion(int file_
 
 std::shared_ptr<casacore::LCRegion> RegionConverter::GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
     const casacore::IPosition& output_shape, const StokesSource& stokes_source, bool report_error) {
+    std::lock_guard<std::mutex> reference_region_guard(_reference_region_mutex);
     // Apply region to non-reference image, possibly as an approximate polygon to avoid distortion.
     std::shared_ptr<casacore::LCRegion> lc_region;
 
@@ -661,6 +662,7 @@ bool RegionConverter::ValuesNear(float val1, float val2) {
 
 casacore::TableRecord RegionConverter::GetImageRegionRecord(
     int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape) {
+    std::lock_guard<std::mutex> reference_region_guard(_reference_region_mutex);
     // Return Record describing Region applied to output image in pixel coordinates
     casacore::TableRecord record;
 

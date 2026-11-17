@@ -88,7 +88,7 @@ private:
     bool PointsFinite(const std::vector<CARTA::Point>& points);
 
     // Cached LCRegion
-    void ResetRegionCache();
+    void ResetRegionCacheLocked();
     std::shared_ptr<casacore::LCRegion> GetCachedLCRegion(int file_id, const StokesSource& stokes_source);
 
     // Record in pixel coordinates from control points, for reference image
@@ -113,6 +113,7 @@ private:
     bool _lcregion_set; // may be nullptr if outside image
 
     // Converter to handle region applied to matched image
+    std::mutex _region_converter_mutex;
     std::unique_ptr<RegionConverter> _region_converter;
 
     // Communication:
