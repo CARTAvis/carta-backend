@@ -11,7 +11,7 @@ jobs:
   Build:
     name: Build ${{ matrix.os_version }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 10
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

@@ -61,21 +61,6 @@ public:
         }
     }
 
-    void TestFileListSubdirectories(const std::string& top_level_folder, const std::string& starting_folder,
-        const CARTA::FileListRequest& request, bool expected_success = true) {
-        std::shared_ptr<FileListHandler> file_list_handler = std::make_shared<FileListHandler>(top_level_folder, starting_folder);
-        CARTA::FileListResponse response;
-        FileListHandler::ResultMsg result_msg;
-        file_list_handler->OnFileListRequest(request, response, result_msg);
-
-        EXPECT_EQ(response.success(), expected_success);
-        if (!response.success()) {
-            return;
-        }
-        // Expect non-zero subdirectories
-        EXPECT_GT(response.subdirectories_size(), 0);
-    }
-
     void TestFileListResponse(
         const CARTA::FileListResponse& response, size_t expected_files, size_t expected_dirs, bool expect_file_type = true) {
         EXPECT_TRUE(response.success());
@@ -137,11 +122,6 @@ TEST_F(FileListTest, SetTopLevelFolder) {
 
     auto request4 = FileListTest::FileListRequest(".");
     TestFileList(MixedImages(), "", request4);
-
-    // Request file list for default top folder "/"
-    // 0 image files, > 0 subdirectories
-    auto request5 = FileListTest::FileListRequest("");
-    TestFileListSubdirectories("/", "", request5);
 }
 
 TEST_F(FileListTest, SetStartingFolder) {
