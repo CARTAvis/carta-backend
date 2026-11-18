@@ -158,8 +158,7 @@ TEST_F(RegionStatsTest, Issue1641ConcurrentStatsAndRegionUpdates) {
             }
 
             while (!stop.load(std::memory_order_relaxed)) {
-                region_handler.FillRegionStatsData(
-                    [](CARTA::RegionStatsData) {}, region_id, file_id);
+                region_handler.FillRegionStatsData([](CARTA::RegionStatsData) {}, region_id, file_id);
             }
         });
     }
@@ -171,8 +170,7 @@ TEST_F(RegionStatsTest, Issue1641ConcurrentStatsAndRegionUpdates) {
         // Move the polygon slightly while stats work is in flight. A changed
         // region causes RegionHandler to clear the region statistics cache.
         float offset = (i % 20) * 0.25f;
-        points = {25.0f + offset, 25.0f, 25.0f + offset, 475.0f,
-            475.0f, 475.0f, 475.0f, 25.0f};
+        points = {25.0f + offset, 25.0f, 25.0f + offset, 475.0f, 475.0f, 475.0f, 475.0f, 25.0f};
 
         if (!SetRegion(region_handler, file_id, region_id, points, csys, false)) {
             updates_succeeded = false;
@@ -201,8 +199,7 @@ TEST_F(RegionStatsTest, Issue1641ConcurrentStatsAndRegionLifecycle) {
     ASSERT_TRUE(SetRegion(region_handler, file_id, region_id, points, csys, false));
 
     auto stats_req = SetStatsRequirements(file_id, region_id);
-    std::vector<CARTA::SetStatsRequirements_StatsConfig> configs = {
-        stats_req.stats_configs().begin(), stats_req.stats_configs().end()};
+    std::vector<CARTA::SetStatsRequirements_StatsConfig> configs = {stats_req.stats_configs().begin(), stats_req.stats_configs().end()};
     ASSERT_TRUE(region_handler.SetStatsRequirements(region_id, file_id, frame, configs));
 
     constexpr int worker_count = 4;
