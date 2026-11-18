@@ -10,6 +10,7 @@
 
 #include <spdlog/fmt/fmt.h>
 
+#include <casacore/casa/BasicMath/Math.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
 #include "Util/App.h"
@@ -421,8 +422,11 @@ std::string Ds9Exporter::GetRegionWorldLine(CARTA::RegionType region_type, const
         }
         case CARTA::RegionType::ANNULUS:
         case CARTA::RegionType::ANNANNULUS: {
-            if (control_points[2].getValue() == control_points[3].getValue() &&
-                control_points[4].getValue() == control_points[5].getValue()) {
+            // Converting the radii to world coordinates adds rounding error, so compare them with a tolerance.
+            auto same_axes = [](const casacore::Quantity& a, const casacore::Quantity& b) {
+                return casacore::near(a.get("arcsec").getValue(), b.get("arcsec").getValue(), 1e-6);
+            };
+            if (same_axes(control_points[2], control_points[3]) && same_axes(control_points[4], control_points[5])) {
                 file_line = fmt::format("annulus({:.9f}, {:.9f}, {:.9g}\", {:.9g}\")", control_points[0].get("deg").getValue(),
                     control_points[1].get("deg").getValue(), control_points[4].get("arcsec").getValue(),
                     control_points[2].get("arcsec").getValue());
