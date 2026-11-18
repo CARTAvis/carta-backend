@@ -194,8 +194,7 @@ TEST_F(RegionHistogramTest, Issue1641ConcurrentHistogramAndRegionLifecycle) {
     ASSERT_TRUE(SetRegion(region_handler, file_id, region_id, points, csys, false));
 
     auto histogram_req = SetHistogramRequirements(file_id, region_id);
-    std::vector<CARTA::HistogramConfig> configs = {
-        histogram_req.histograms().begin(), histogram_req.histograms().end()};
+    std::vector<CARTA::HistogramConfig> configs = {histogram_req.histograms().begin(), histogram_req.histograms().end()};
     ASSERT_TRUE(region_handler.SetHistogramRequirements(region_id, file_id, frame, configs));
 
     constexpr int worker_count = 4;
@@ -210,8 +209,7 @@ TEST_F(RegionHistogramTest, Issue1641ConcurrentHistogramAndRegionLifecycle) {
                 std::this_thread::yield();
             }
             while (!stop.load(std::memory_order_acquire)) {
-                if (region_handler.FillRegionHistogramData(
-                        [](CARTA::RegionHistogramData) {}, region_id, file_id)) {
+                if (region_handler.FillRegionHistogramData([](CARTA::RegionHistogramData) {}, region_id, file_id)) {
                     ++completed_requests;
                 }
             }
