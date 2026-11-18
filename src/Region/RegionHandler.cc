@@ -499,10 +499,14 @@ bool RegionHandler::SetStatsRequirements(
     _frames[file_id] = frame;
 
     // Set configurations
-    if (_region_statistics.find(region_id) == _region_statistics.end()) {
-        _region_statistics[region_id] = std::make_unique<RegionStatistics>(region_id, file_id, configs);
-    } else {
-        _region_statistics[region_id]->SetConfigurations(file_id, configs);
+    {
+        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        auto stats_it = _region_statistics.find(region_id);
+        if (stats_it == _region_statistics.end()) {
+            _region_statistics[region_id] = std::make_shared<RegionStatistics>(region_id, file_id, configs);
+        } else {
+            stats_it->second->SetConfigurations(file_id, configs);
+        }
     }
     return true;
 }
@@ -511,7 +515,10 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for all regions or a specific region
     if (region_id == ALL_REGIONS) {
         _region_histograms.clear();
-        _region_statistics.clear();
+        {
+            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            _region_statistics.clear();
+        }
 
         std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         _region_spatial_profiles.clear();
@@ -532,7 +539,8 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             _region_histograms.erase(region_id);
         }
 
-        if (_region_statistics.find(region_id) != _region_statistics.end()) {
+        {
+            std::lock_guard<std::mutex> lock(_statistics_mutex);
             _region_statistics.erase(region_id);
         }
 
@@ -584,7 +592,10 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         spatial_lock.unlock();
 
         _region_histograms.clear();
-        _region_statistics.clear();
+        {
+            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            _region_statistics.clear();
+        }
 
         std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         _spectral_req.clear();
@@ -601,7 +612,15 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
             region_histogram->ClearFileConfigsCache(file_id);
         }
 
-        for (const auto& [_, region_statistics] : _region_statistics) {
+        std::vector<std::shared_ptr<RegionStatistics>> region_statistics_snapshot;
+        {
+            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            region_statistics_snapshot.reserve(_region_statistics.size());
+            for (const auto& [_, region_statistics] : _region_statistics) {
+                region_statistics_snapshot.push_back(region_statistics);
+            }
+        }
+        for (const auto& region_statistics : region_statistics_snapshot) {
             region_statistics->ClearFileConfigsCache(file_id);
         }
 
@@ -664,8 +683,16 @@ void RegionHandler::ClearRegionCache(int region_id) {
         }
     }
 
-    if (_region_statistics.find(region_id) != _region_statistics.end()) {
-        _region_statistics[region_id]->ClearCache();
+    std::shared_ptr<RegionStatistics> region_statistics;
+    {
+        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        auto stats_it = _region_statistics.find(region_id);
+        if (stats_it != _region_statistics.end()) {
+            region_statistics = stats_it->second;
+        }
+    }
+    if (region_statistics) {
+        region_statistics->ClearCache();
     }
 }
 
@@ -1820,17 +1847,25 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
         return false;
     }
 
-    if ((region_id > 0) && (_region_statistics.find(region_id) == _region_statistics.end())) {
-        return false;
+    bool success(false);
+    std::vector<std::pair<int, std::shared_ptr<RegionStatistics>>> region_statistics_snapshot;
+    {
+        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        if (region_id > 0) {
+            auto stats_it = _region_statistics.find(region_id);
+            if (stats_it == _region_statistics.end()) {
+                return false;
+            }
+            region_statistics_snapshot.emplace_back(stats_it->first, stats_it->second);
+        } else {
+            region_statistics_snapshot.reserve(_region_statistics.size());
+            for (const auto& [stats_region_id, region_statistics] : _region_statistics) {
+                region_statistics_snapshot.emplace_back(stats_region_id, region_statistics);
+            }
+        }
     }
 
-    bool success(false);
-
-    for (const auto& [stats_region_id, region_statistics] : _region_statistics) {
-        if ((region_id > 0) && (stats_region_id != region_id)) {
-            continue;
-        }
-
+    for (const auto& [stats_region_id, region_statistics] : region_statistics_snapshot) {
         auto config_file_ids = region_statistics->GetConfigFileIds(file_id);
         if (config_file_ids.empty()) {
             continue;
