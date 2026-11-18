@@ -156,7 +156,8 @@ private:
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
     // Region analysis
-    std::unordered_map<int, std::unique_ptr<RegionHistogram>> _region_histograms;
+    std::unordered_map<int, std::shared_ptr<RegionHistogram>> _region_histograms;
+    std::mutex _histogram_mutex;
     std::unordered_map<int, std::shared_ptr<RegionSpatialProfile>> _region_spatial_profiles;
     std::unordered_map<int, std::shared_ptr<RegionStatistics>> _region_statistics;
     std::mutex _statistics_mutex;

@@ -27,11 +27,13 @@ void RegionHistogram::SetConfigurations(int file_id, const std::vector<CARTA::Hi
     }
 
     ConfigId config_id(file_id, _region_id);
+    std::lock_guard<std::mutex> lock(_mutex);
     _configs[config_id].configs = input_configs;
 }
 
 bool RegionHistogram::GetConfigurations(int file_id, std::vector<HistogramConfig>& configs) {
     ConfigId config_id(file_id, _region_id);
+    std::lock_guard<std::mutex> lock(_mutex);
     if (_configs.find(config_id) != _configs.end()) {
         configs = _configs.at(config_id).configs;
         return true;
@@ -40,6 +42,7 @@ bool RegionHistogram::GetConfigurations(int file_id, std::vector<HistogramConfig
 }
 
 std::vector<int> RegionHistogram::GetConfigFileIds(int file_id) {
+    std::lock_guard<std::mutex> lock(_mutex);
     std::vector<int> file_ids;
     for (const auto& [config_id, _] : _configs) {
         if ((file_id == ALL_FILES) || (config_id.file_id == file_id)) {
@@ -80,28 +83,48 @@ bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame>
     int stokes_index = stokes_source.stokes;
     int z = stokes_source.z_range.from;
     CacheId cache_id(file_id, _region_id, stokes_index, z);
-    if (AddCachedHistogram(cache_id, config, num_bins, histogram_data_message)) {
-        return true;
+    std::uint64_t cache_generation;
+    BasicStats<float> stats;
+    bool has_basic_stats(false);
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        cache_generation = _cache_generation;
+        auto cache_it = _cache.find(cache_id);
+        if (cache_it != _cache.end() && cache_it->second.GetBasicStats(stats)) {
+            has_basic_stats = true;
+            auto bounds = config.GetBounds(stats);
+            Histogram cached_histogram;
+            if (cache_it->second.GetHistogram(num_bins, bounds, cached_histogram)) {
+                auto* histogram_submessage = histogram_data_message.mutable_histograms();
+                FillHistogram(histogram_submessage, stats, cached_histogram); // Message helper
+                return true;
+            }
+        }
     }
 
-    // Calculate stats and histogram
     std::vector<float> region_data;
     if (!frame->GetRegionData(stokes_region, region_data, false)) {
         return false;
     }
-
-    BasicStats<float> stats;
-    if (!_cache[cache_id].GetBasicStats(stats)) {
+    if (!has_basic_stats) {
         CalcBasicStats(stats, region_data.data(), region_data.size());
-        _cache[cache_id].SetBasicStats(stats);
     }
+
     auto bounds = config.GetBounds(stats);
     Histogram calculated_histogram = CalcHistogram(num_bins, bounds, region_data.data(), region_data.size());
-    _cache[cache_id].SetHistogram(num_bins, calculated_histogram);
 
     // Add histogram to histogram data message
     auto* histogram_submessage = histogram_data_message.mutable_histograms();
     FillHistogram(histogram_submessage, stats, calculated_histogram); // Message helper
+
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        if (cache_generation == _cache_generation) {
+            auto& cache = _cache[cache_id];
+            cache.SetBasicStats(stats);
+            cache.SetHistogram(num_bins, calculated_histogram);
+        }
+    }
     return true;
 }
 
@@ -114,32 +137,16 @@ int RegionHistogram::GetNumBins(const HistogramConfig& config, std::shared_ptr<F
     return num_bins;
 }
 
-bool RegionHistogram::AddCachedHistogram(
-    CacheId& cache_id, const HistogramConfig& config, int num_bins, CARTA::RegionHistogramData& histogram_data) {
-    bool success(false);
-    // check cache
-    if (_cache.find(cache_id) != _cache.end()) {
-        BasicStats<float> stats;
-        if (_cache[cache_id].GetBasicStats(stats)) {
-            auto bounds = config.GetBounds(stats);
-            Histogram cached_histogram;
-            if (_cache[cache_id].GetHistogram(num_bins, bounds, cached_histogram)) {
-                auto* histogram_submessage = histogram_data.mutable_histograms();
-                FillHistogram(histogram_submessage, stats, cached_histogram); // Message helper
-                success = true;
-            }
-        }
-    }
-    return success;
-}
-
 void RegionHistogram::ClearCache() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    ++_cache_generation;
     for (auto& cache : _cache) {
         cache.second.ClearHistograms();
     }
 }
 
 void RegionHistogram::ClearFileConfigsCache(int file_id) {
+    std::lock_guard<std::mutex> lock(_mutex);
     for (auto it = _configs.begin(); it != _configs.end();) {
         if ((*it).first.file_id == file_id) {
             it = _configs.erase(it);
@@ -148,6 +155,7 @@ void RegionHistogram::ClearFileConfigsCache(int file_id) {
         }
     }
 
+    ++_cache_generation;
     for (auto it = _cache.begin(); it != _cache.end();) {
         if ((*it).first.file_id == file_id) {
             it = _cache.erase(it);

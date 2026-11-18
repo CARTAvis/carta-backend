@@ -9,6 +9,9 @@
 #ifndef CARTA_SRC_REGION_REGIONANALYSIS_REGIONHISTOGRAM_H_
 #define CARTA_SRC_REGION_REGIONANALYSIS_REGIONHISTOGRAM_H_
 
+#include <cstdint>
+#include <mutex>
+
 #include "Cache/RequirementsCache.h"
 #include "Frame/Frame.h"
 
@@ -91,17 +94,6 @@ private:
     int GetNumBins(const HistogramConfig& config, std::shared_ptr<Frame> frame, casacore::ImageRegion& image_region);
 
     /**
-     * @brief Add Histogram from cache if it exists.
-     * @param[in] cache_id CacheId struct
-     * @param[in] config Histogram configuration
-     * @param[in] num_bins Number of histogram bins
-     * @param[in, out] histogram_data_message Region histogram data message
-     * @return Whether cached histogram was added
-     */
-    bool AddCachedHistogram(
-        CacheId& cache_id, const HistogramConfig& config, int num_bins, CARTA::RegionHistogramData& histogram_data_message);
-
-    /**
      * @brief Add default histogram to message.
      * @param[in, out] histogram_data Histogram data message
      */
@@ -113,8 +105,14 @@ private:
     /** @brief Histogram configurations stored as vector of HistogramConfig structs. */
     std::unordered_map<ConfigId, RegionHistogramConfig> _configs;
 
+    /** @brief Lock for configurations and cached histograms. */
+    std::mutex _mutex;
+
     /** @brief Cache to hold calculated histograms. */
     std::unordered_map<CacheId, HistogramCache> _cache;
+
+    /** @brief Detect cache invalidation during a histogram calculation. */
+    std::uint64_t _cache_generation = 0;
 };
 
 } // namespace carta
