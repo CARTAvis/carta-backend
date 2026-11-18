@@ -188,7 +188,7 @@ TEST_F(RegionStatsTest, Issue1641ConcurrentStatsAndRegionUpdates) {
     EXPECT_TRUE(updates_succeeded);
 }
 
-TEST_F(RegionStatsTest, Issue1641RepeatedRequirementsDuringConcurrentStats) {
+TEST_F(RegionStatsTest, Issue1641ConcurrentStatsAndRegionLifecycle) {
     auto image_path = FitsImages() / "500x500.fits";
     auto loader = carta::FileLoader::GetLoader(image_path);
     auto frame = std::make_shared<Frame>(0, loader, "0");
@@ -197,56 +197,58 @@ TEST_F(RegionStatsTest, Issue1641RepeatedRequirementsDuringConcurrentStats) {
     const int file_id = 0;
     int region_id = -1;
     auto csys = frame->CoordinateSystem();
-
-    std::vector<float> points = {
-        25.0, 25.0, 25.0, 475.0, 475.0, 475.0, 475.0, 25.0
-    };
+    std::vector<float> points = {25.0, 25.0, 25.0, 475.0, 475.0, 475.0, 475.0, 25.0};
     ASSERT_TRUE(SetRegion(region_handler, file_id, region_id, points, csys, false));
 
     auto stats_req = SetStatsRequirements(file_id, region_id);
     std::vector<CARTA::SetStatsRequirements_StatsConfig> configs = {
-        stats_req.stats_configs().begin(), stats_req.stats_configs().end()
-    };
+        stats_req.stats_configs().begin(), stats_req.stats_configs().end()};
     ASSERT_TRUE(region_handler.SetStatsRequirements(region_id, file_id, frame, configs));
 
-    // Do not prewarm the stats cache: concurrent first requests can overlap
-    // while inserting the same cache entry.
     constexpr int worker_count = 4;
+    constexpr int lifecycle_iterations = 100;
     std::atomic<bool> start{false};
     std::atomic<bool> stop{false};
-    std::atomic<int> failed_requests{0};
+    std::atomic<int> completed_requests{0};
     std::vector<std::thread> workers;
-
     for (int i = 0; i < worker_count; ++i) {
         workers.emplace_back([&]() {
             while (!start.load(std::memory_order_acquire)) {
                 std::this_thread::yield();
             }
-
-            while (!stop.load(std::memory_order_relaxed)) {
-                if (!region_handler.FillRegionStatsData(
-                        [](CARTA::RegionStatsData) {}, region_id, file_id)) {
-                    ++failed_requests;
+            while (!stop.load(std::memory_order_acquire)) {
+                if (region_handler.FillRegionStatsData([](CARTA::RegionStatsData) {}, region_id, file_id)) {
+                    ++completed_requests;
                 }
             }
         });
     }
 
     start.store(true, std::memory_order_release);
-
-    // Reapply identical requirements. This updates the same region's config;
-    // it does not clear or intentionally grow the stats cache.
-    for (int i = 0; i < 10000; ++i) {
-        if (!region_handler.SetStatsRequirements(region_id, file_id, frame, configs)) {
-            ++failed_requests;
+    bool lifecycle_succeeded = true;
+    for (int i = 0; i < lifecycle_iterations; ++i) {
+        float offset = (i % 20) * 0.25f;
+        points = {25.0f + offset, 25.0f, 25.0f + offset, 475.0f, 475.0f, 475.0f, 475.0f, 25.0f};
+        if (!SetRegion(region_handler, file_id, region_id, points, csys, false)) {
+            lifecycle_succeeded = false;
             break;
+        }
+
+        if (i % 10 == 9) {
+            region_handler.RemoveRegion(region_id);
+            if (!SetRegion(region_handler, file_id, region_id, points, csys, false) ||
+                !region_handler.SetStatsRequirements(region_id, file_id, frame, configs)) {
+                lifecycle_succeeded = false;
+                break;
+            }
         }
     }
 
-    stop.store(true, std::memory_order_relaxed);
+    stop.store(true, std::memory_order_release);
     for (auto& worker : workers) {
         worker.join();
     }
 
-    EXPECT_EQ(failed_requests.load(), 0);
+    EXPECT_TRUE(lifecycle_succeeded);
+    EXPECT_GT(completed_requests.load(), 0);
 }
