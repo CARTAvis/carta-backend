@@ -295,10 +295,14 @@ bool RegionHandler::SetHistogramRequirements(
     // Save frame pointer
     _frames[file_id] = frame;
 
-    if (_region_histograms.find(region_id) == _region_histograms.end()) {
-        _region_histograms[region_id] = std::make_unique<RegionHistogram>(region_id, file_id, configs);
-    } else {
-        _region_histograms[region_id]->SetConfigurations(file_id, configs);
+    {
+        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        auto histogram_it = _region_histograms.find(region_id);
+        if (histogram_it == _region_histograms.end()) {
+            _region_histograms[region_id] = std::make_shared<RegionHistogram>(region_id, file_id, configs);
+        } else {
+            histogram_it->second->SetConfigurations(file_id, configs);
+        }
     }
 
     return true;
@@ -514,7 +518,10 @@ bool RegionHandler::SetStatsRequirements(
 void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for all regions or a specific region
     if (region_id == ALL_REGIONS) {
-        _region_histograms.clear();
+        {
+            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            _region_histograms.clear();
+        }
         {
             std::lock_guard<std::mutex> lock(_statistics_mutex);
             _region_statistics.clear();
@@ -535,7 +542,8 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         _pv_preview_cubes.clear();
     } else {
         // Remove region analysis for region_id
-        if (_region_histograms.find(region_id) != _region_histograms.end()) {
+        {
+            std::lock_guard<std::mutex> lock(_histogram_mutex);
             _region_histograms.erase(region_id);
         }
 
@@ -591,7 +599,10 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         _region_spatial_profiles.clear();
         spatial_lock.unlock();
 
-        _region_histograms.clear();
+        {
+            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            _region_histograms.clear();
+        }
         {
             std::lock_guard<std::mutex> lock(_statistics_mutex);
             _region_statistics.clear();
@@ -608,7 +619,15 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         _pv_preview_cubes.clear();
     } else {
         // Remove region analysis for file_id
-        for (const auto& [_, region_histogram] : _region_histograms) {
+        std::vector<std::shared_ptr<RegionHistogram>> region_histogram_snapshot;
+        {
+            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            region_histogram_snapshot.reserve(_region_histograms.size());
+            for (const auto& [_, region_histogram] : _region_histograms) {
+                region_histogram_snapshot.push_back(region_histogram);
+            }
+        }
+        for (const auto& region_histogram : region_histogram_snapshot) {
             region_histogram->ClearFileConfigsCache(file_id);
         }
 
@@ -674,8 +693,16 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
 
 void RegionHandler::ClearRegionCache(int region_id) {
     // Remove cached data when region changes
-    if (_region_histograms.find(region_id) != _region_histograms.end()) {
-        _region_histograms[region_id]->ClearCache();
+    std::shared_ptr<RegionHistogram> region_histogram;
+    {
+        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        auto histogram_it = _region_histograms.find(region_id);
+        if (histogram_it != _region_histograms.end()) {
+            region_histogram = histogram_it->second;
+        }
+    }
+    if (region_histogram) {
+        region_histogram->ClearCache();
     }
     for (auto& spcache : _spectral_cache) {
         if (spcache.first.region_id == region_id) {
@@ -1403,17 +1430,25 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
         return false;
     }
 
-    if ((region_id > 0) && (_region_histograms.find(region_id) == _region_histograms.end())) {
-        return false;
+    bool success(false);
+    std::vector<std::pair<int, std::shared_ptr<RegionHistogram>>> region_histogram_snapshot;
+    {
+        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        if (region_id > 0) {
+            auto histogram_it = _region_histograms.find(region_id);
+            if (histogram_it == _region_histograms.end()) {
+                return false;
+            }
+            region_histogram_snapshot.emplace_back(histogram_it->first, histogram_it->second);
+        } else {
+            region_histogram_snapshot.reserve(_region_histograms.size());
+            for (const auto& [hist_region_id, region_histogram] : _region_histograms) {
+                region_histogram_snapshot.emplace_back(hist_region_id, region_histogram);
+            }
+        }
     }
 
-    bool success(false);
-    for (const auto& [hist_region_id, region_histogram] : _region_histograms) {
-        // Find histogram configurations with region_id and file_id
-        if ((region_id > 0) && (hist_region_id != region_id)) {
-            continue;
-        }
-
+    for (const auto& [hist_region_id, region_histogram] : region_histogram_snapshot) {
         auto config_file_ids = region_histogram->GetConfigFileIds(file_id);
         if (config_file_ids.empty()) {
             continue;
