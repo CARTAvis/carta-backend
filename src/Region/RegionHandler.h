@@ -158,7 +158,8 @@ private:
     // Region analysis
     std::unordered_map<int, std::unique_ptr<RegionHistogram>> _region_histograms;
     std::unordered_map<int, std::shared_ptr<RegionSpatialProfile>> _region_spatial_profiles;
-    std::unordered_map<int, std::unique_ptr<RegionStatistics>> _region_statistics;
+    std::unordered_map<int, std::shared_ptr<RegionStatistics>> _region_statistics;
+    std::mutex _statistics_mutex;
     std::mutex _spatial_mutex;
 
     // Spectral profile requirements, cache, and list of supported stats
