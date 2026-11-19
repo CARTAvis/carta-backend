@@ -185,7 +185,7 @@ RegionProperties Ds9Importer::SetRegion(std::string& file_line) {
         if (std::find(unsupported_regions.begin(), unsupported_regions.end(), region_name) != unsupported_regions.end()) {
             _errors.append("DS9 " + region_name + " region not supported.\n");
         } else {
-            bool is_annulus = (region_name == "ellipse" || region_name == "box") && parameters.size() > 6;
+            bool is_annulus = (region_name == "annulus") || ((region_name == "ellipse" || region_name == "box") && parameters.size() > 6);
             if (!is_annulus) { // error already appended
                 _errors.append("Invalid DS9 region syntax: " + region_name + "\n");
             }
@@ -455,10 +455,16 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
         if (region_name == "ellipse" && nparam > 7) {
             rotation = param_quantities[6].getValue();
         }
+        const bool no_explicit_angle = (region_name == "annulus") || (nparam <= 7);
         if (transformed_ellipse_rotation) {
-            rotation = converted_ellipse_rotation;
-            if (rotation < 0.0) {
-                rotation += 360.0;
+            if (no_explicit_angle && control_points.size() > 1 &&
+                IsApproximatelyCircular(control_points[1].x(), control_points[1].y())) {
+                rotation = 0.0;
+            } else {
+                rotation = converted_ellipse_rotation;
+                if (rotation < 0.0) {
+                    rotation += 360.0;
+                }
             }
         } else if (control_points.size() > 1 && control_points[1].x() != control_points[1].y()) {
             rotation -= 90.0;

@@ -515,6 +515,87 @@ TEST(AnnulusExportTest, MatchedRotationPreservesGeometry) {
     EXPECT_EQ(selected_pixels(*region, 1, matched), selected_pixels(restored, 0, roundtrip)) << contents;
 }
 
+TEST(AnnulusExportTest, Ds9WorldEllipticalAnnulusMatchesEllipseAngle) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    auto reference = csys->referencePixel();
+    reference(0) = reference(1) = 50;
+    ASSERT_TRUE(csys->setReferencePixel(reference));
+    const casacore::IPosition shape(2, 100, 100);
+    const float pa = 35.0f;
+
+    auto ellipse = std::make_shared<Region>(RegionState(0, CARTA::ELLIPSE, {Message::Point(50, 50), Message::Point(20, 12)}, pa), csys);
+    auto annulus = std::make_shared<Region>(
+        RegionState(0, CARTA::ANNULUS, {Message::Point(50, 50), Message::Point(20, 12), Message::Point(10, 6)}, pa), csys);
+
+    auto export_ds9_world = [&](const std::shared_ptr<Region>& region) {
+        Ds9Exporter ds9(csys, shape, false);
+        RegionExporter& exporter = ds9;
+        std::string error, contents;
+        EXPECT_TRUE(exporter.AddRegion(0, region, CARTA::RegionStyle(), false, &error)) << error;
+        CARTA::ExportRegionAck ack;
+        exporter.ExportRegions("", error, ack);
+        EXPECT_TRUE(ack.success()) << error;
+        for (const auto& line : ack.contents()) {
+            contents += line;
+        }
+        return contents;
+    };
+
+    const std::string ellipse_contents = export_ds9_world(ellipse);
+    const std::string annulus_contents = export_ds9_world(annulus);
+    auto parse_angle = [](const std::string& ds9_text) {
+        const auto open = ds9_text.find("ellipse(");
+        const auto close = ds9_text.find(')', open);
+        const auto comma = ds9_text.rfind(',', close);
+        return std::stod(ds9_text.substr(comma + 1, close - comma - 1));
+    };
+    EXPECT_NEAR(parse_angle(ellipse_contents), 125.0, 1e-3) << ellipse_contents;
+    EXPECT_NEAR(parse_angle(annulus_contents), parse_angle(ellipse_contents), 1e-3) << annulus_contents;
+
+    const std::string import_contents = "fk5\nellipse(0, 0, 1200\", 720\", 125)\nellipse(0, 0, 600\", 360\", 1200\", 720\", 125)\n";
+    Ds9Importer importer(csys, 0, import_contents, false);
+    std::string error;
+    auto imported = importer.GetRegions(error);
+    ASSERT_EQ(imported.size(), 2) << error;
+    EXPECT_EQ(imported[0].state.type, CARTA::ELLIPSE);
+    EXPECT_EQ(imported[1].state.type, CARTA::ANNULUS);
+    EXPECT_NEAR(imported[0].state.rotation, 35.0, 1e-3);
+    EXPECT_NEAR(imported[1].state.rotation, 35.0, 1e-3);
+}
+
+TEST(AnnulusExportTest, Ds9WorldCircularAnnulusOffReferenceHasZeroRotation) {
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords2D());
+    // Use 0.05 arcsec/pixel so off-reference projection distortion stays below Ds9Exporter's 1e-6 axis tolerance
+    // and exports an annulus(...) line, matching astronomical sub-arcsecond images.
+    auto increments = csys->increment();
+    increments /= 1200.0;
+    ASSERT_TRUE(csys->setIncrement(increments));
+    auto reference = csys->referencePixel();
+    reference(0) = reference(1) = 50;
+    ASSERT_TRUE(csys->setReferencePixel(reference));
+    const casacore::IPosition shape(2, 100, 100);
+
+    auto region = std::make_shared<Region>(
+        RegionState(0, CARTA::ANNULUS, {Message::Point(25, 65), Message::Point(10, 10), Message::Point(4, 4)}, 0.0f), csys);
+    Ds9Exporter ds9(csys, shape, false);
+    RegionExporter& exporter = ds9;
+    std::string error, contents;
+    ASSERT_TRUE(exporter.AddRegion(0, region, CARTA::RegionStyle(), false, &error)) << error;
+    CARTA::ExportRegionAck ack;
+    exporter.ExportRegions("", error, ack);
+    ASSERT_TRUE(ack.success()) << error;
+    for (const auto& line : ack.contents()) {
+        contents += line;
+    }
+    EXPECT_THAT(contents, testing::HasSubstr("annulus("));
+
+    Ds9Importer importer(csys, 0, contents, false);
+    auto imported = importer.GetRegions(error);
+    ASSERT_EQ(imported.size(), 1) << error << contents;
+    EXPECT_EQ(imported[0].state.type, CARTA::ANNULUS);
+    EXPECT_FLOAT_EQ(imported[0].state.rotation, 0.0f);
+}
+
 class RegionImportExportTest : public ::testing::Test {
 public:
     static bool SetRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, CARTA::RegionType type,
@@ -1022,6 +1103,7 @@ TEST_F(RegionImportExportTest, TestInvalidAnnulusImportReportsReason) {
     EXPECT_FALSE(ack.success());
     EXPECT_THAT(ack.message(), testing::HasSubstr("exactly two radii"));
     EXPECT_THAT(ack.message(), testing::HasSubstr("multiple rings"));
+    EXPECT_THAT(ack.message(), testing::Not(testing::HasSubstr("Invalid DS9 region syntax")));
 }
 
 TEST_F(RegionImportExportTest, TestDs9AnnulusAxisRoundingIsNormalized) {

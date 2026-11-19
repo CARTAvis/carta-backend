@@ -18,8 +18,9 @@
 namespace carta {
 
 namespace {
-// Local pixel-to-world matrix. Celestial axes are east/north in radians; signed
-// offsets retain WCS rotation, reflection, projection, and coordinate-frame conversion.
+// Local pixel-to-world matrix. Celestial axes are west/north in radians (matching
+// DS9's CCW-from-west sky convention); signed offsets retain WCS rotation, reflection,
+// projection, and coordinate-frame conversion.
 bool PixelToWorldEllipseTransform(const casacore::CoordinateSystem& coord_sys, const casacore::Vector<casacore::Double>& center,
     const std::string& world_frame, EllipseWcsTransform& cached) {
     if (cached.initialized) {
@@ -60,7 +61,7 @@ bool PixelToWorldEllipseTransform(const casacore::CoordinateSystem& coord_sys, c
                 }
                 const double distance = origin.separation(world);
                 const double angle = origin.positionAngle(world);
-                offsets[end][0] = distance * std::sin(angle);
+                offsets[end][0] = -distance * std::sin(angle);
                 offsets[end][1] = distance * std::cos(angle);
             }
             transform(0, axis) = offsets[1][0] - offsets[0][0];
