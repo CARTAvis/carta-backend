@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
@@ -45,7 +46,9 @@ public:
 
         // Define RegionState and set region
         CARTA::RegionType region_type;
-        if (control_points.size() > 1) {
+        if (control_points.size() == 3) {
+            region_type = CARTA::ANNULUS;
+        } else if (control_points.size() > 1) {
             region_type = is_annotation ? CARTA::ANNPOLYGON : CARTA::POLYGON;
         } else {
             region_type = is_annotation ? CARTA::ANNPOINT : CARTA::POINT;
@@ -189,4 +192,67 @@ TEST_F(RegionSpectralProfileTest, TestAnnPointSpectralProfile) {
     CARTA::SpectralProfileData spectral_data;
     bool ok = SpectralProfile(image_path, points, spectral_data, true);
     ASSERT_FALSE(ok);
+}
+
+TEST_F(RegionSpectralProfileTest, TestAnnulusSpectralProfile) {
+    auto image_path = FitsImages() / "noise_3d.fits";
+    std::vector<float> points = {2.5, 2.5, 2.0, 2.0, 1.0, 1.0};
+    CARTA::SpectralProfileData spectral_data;
+    bool ok = SpectralProfile(image_path, points, spectral_data);
+
+    ASSERT_TRUE(ok);
+    ASSERT_EQ(spectral_data.file_id(), 0);
+    ASSERT_EQ(spectral_data.region_id(), 1);
+    ASSERT_EQ(spectral_data.stokes(), 0);
+    ASSERT_EQ(spectral_data.progress(), 1.0);
+    ASSERT_GT(spectral_data.profiles_size(), 0);
+    FitsDataReader reader(image_path);
+    std::vector<double> expected_means;
+    for (hsize_t channel = 0; channel < 10; ++channel) {
+        auto data = reader.ReadRegion({1, 1, channel}, {5, 5, channel + 1});
+        double sum = 0;
+        for (int index : {1, 2, 4, 7, 8, 11, 13, 14})
+            sum += data[index];
+        expected_means.push_back(sum / 8);
+    }
+    for (const auto& profile : spectral_data.profiles()) {
+        if (profile.stats_type() == CARTA::StatsType::NumPixels) {
+            CmpVectors<double>(GetSpectralProfileValues<double>(profile), std::vector<double>(10, 8));
+        } else if (profile.stats_type() == CARTA::StatsType::Mean) {
+            CmpVectors<double>(GetSpectralProfileValues<double>(profile), expected_means);
+        }
+    }
+}
+
+TEST_F(RegionSpectralProfileTest, TestAnnulusSwizzledHdf5SpectralProfile) {
+    auto image_path = Hdf5Images() / "10x10x10.hdf5";
+    auto loader = FileLoader::GetLoader(image_path);
+    Frame frame(0, loader, "0");
+    ASSERT_TRUE(frame.IsValid());
+    // This fixture has no sky coordinates; use identical sky systems to exercise matched masks.
+    auto csys = std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::defaultCoords3D());
+    Region region(RegionState(0, CARTA::ANNULUS, {Message::Point(2.5, 2.5), Message::Point(2, 2), Message::Point(1, 1)}, 0), csys);
+    Hdf5DataReader reader(image_path);
+    std::vector<double> expected_means;
+    for (hsize_t channel = 0; channel < frame.Depth(); ++channel) {
+        auto data = reader.ReadRegion({1, 1, channel}, {5, 5, channel + 1});
+        double sum = 0;
+        for (int index : {1, 2, 4, 7, 8, 11, 13, 14})
+            sum += data[index];
+        expected_means.push_back(sum / 8);
+    }
+    for (int file_id : {0, 1}) {
+        auto lc = region.GetLCRegion(file_id, csys, frame.ImageShape());
+        ASSERT_TRUE(lc);
+        auto mask = region.GetImageRegionMask(file_id);
+        ASSERT_EQ(mask.ndim(), 2);
+        const auto origin = lc->boundingBox().start().keepAxes(casacore::IPosition(2, 0, 1));
+        std::map<CARTA::StatsType, std::vector<double>> results;
+        float progress = 0;
+        while (progress < 1) {
+            ASSERT_TRUE(frame.GetLoaderSpectralData(file_id + 1, AxisRange(0, frame.Depth() - 1), 0, mask, origin, results, progress));
+        }
+        CmpVectors<double>(results.at(CARTA::StatsType::NumPixels), std::vector<double>(frame.Depth(), 8));
+        CmpVectors<double>(results.at(CARTA::StatsType::Mean), expected_means);
+    }
 }

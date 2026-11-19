@@ -34,9 +34,10 @@ protected:
      * @brief Add file line for region in pixel coordinates
      * @param region_state Region definition parameters
      * @param region_style Region style parameters
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether adding the region file line is successful
      */
-    bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) override;
+    bool AddRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style, std::string& error) override;
 
     /**
      * @brief Add file line for region in world coordinates or in matched image
@@ -44,10 +45,11 @@ protected:
      * @param control_points Region control points in world coordinates
      * @param rotation Region rotation
      * @param region_style Region style parameters
+     * @param[out] error Message describing why the region could not be exported
      * @return Whether adding the region file line is successful
      */
     bool AddRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation,
-        const CARTA::RegionStyle& region_style) override;
+        const CARTA::RegionStyle& region_style, std::string& error) override;
 
     /**
      * @brief Write region file lines to filename.
@@ -74,11 +76,12 @@ private:
      * @param[in] region_style Region style parameters
      * @param[out] ann_base Pointer to return new AnnotationBase region
      * @param[out] ann_region Pointer to return new AnnRegion region
+     * @param[out] error Message describing why the region could not be created
      * @return Whether the region was created
      */
     bool GetAnnRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style, casa::AnnotationBase*& ann_base,
-        casa::AnnRegion*& ann_region);
+        casa::AnnRegion*& ann_region, std::string& error);
 
     /**
      * @brief Add file line after adjusting line printed by CASA region

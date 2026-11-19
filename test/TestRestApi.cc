@@ -31,6 +31,7 @@ public:
     FRIEND_TEST(RestApiTest, UpdatePrefsEmpty);
     FRIEND_TEST(RestApiTest, UpdatePrefsNotJson);
     FRIEND_TEST(RestApiTest, UpdatePrefsInvalidResult);
+    FRIEND_TEST(RestApiTest, UpdatePrefsRegionTypeAnnulus);
     FRIEND_TEST(RestApiTest, UpdatePrefsSingleKey);
     FRIEND_TEST(RestApiTest, UpdatePrefsKeyList);
     FRIEND_TEST(RestApiTest, UpdatePrefsExistingMalformed);
@@ -283,6 +284,17 @@ TEST_F(RestApiTest, UpdatePrefsInvalidResult) {
     json prefs = {{"beamColor", 3}};
     auto status = _frontend_server->UpdatePreferencesFromString(prefs.dump());
     EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, UpdatePrefsRegionTypeAnnulus) {
+    WriteDefaultPrefs();
+    json annulus_prefs = {{"regionType", 5}};
+    EXPECT_EQ(_frontend_server->UpdatePreferencesFromString(annulus_prefs.dump()), HTTP_200);
+    auto existing_preferences = _frontend_server->GetExistingPreferences();
+    EXPECT_EQ(existing_preferences["regionType"], 5);
+
+    json annotation_prefs = {{"regionType", 7}};
+    EXPECT_EQ(_frontend_server->UpdatePreferencesFromString(annotation_prefs.dump()), HTTP_400);
 }
 
 TEST_F(RestApiTest, UpdatePrefsSingleKey) {

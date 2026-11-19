@@ -57,7 +57,7 @@ private:
         int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape, bool has_distortion);
     std::vector<std::vector<CARTA::Point>> GetReferencePolygonPoints(int num_vertices, bool has_distortion);
     std::vector<std::vector<CARTA::Point>> GetApproximatePolygonPoints(int num_vertices, bool has_distortion);
-    std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
+    std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices, const CARTA::Point* axes = nullptr);
     double GetTotalSegmentLength(std::vector<CARTA::Point>& points);
     void RemoveHorizontalPolygonPoints(casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
     bool ValuesNear(float val1, float val2);
@@ -70,7 +70,11 @@ private:
     casacore::TableRecord GetLineRecord(std::shared_ptr<casacore::CoordinateSystem> image_csys);
     casacore::TableRecord GetPolygonRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
     casacore::TableRecord GetRotboxRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
-    casacore::TableRecord GetEllipseRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
+    casacore::TableRecord GetEllipseRecord(
+        const std::vector<casacore::Quantity>& ellipse_points, float rotation, std::shared_ptr<casacore::CoordinateSystem> output_csys);
+    casacore::TableRecord GetAnnulusRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
+    bool GetAnnulusPixelTransform(std::shared_ptr<casacore::CoordinateSystem> output_csys, casacore::Vector<casacore::Double>& center,
+        casacore::Matrix<casacore::Double>& transform);
 
     // Utilities for pixel/world conversion
     bool PointsToImagePixels(const std::vector<CARTA::Point>& points, std::shared_ptr<casacore::CoordinateSystem> output_csys,

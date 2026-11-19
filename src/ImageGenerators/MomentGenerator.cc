@@ -337,6 +337,8 @@ void MomentGenerator::SetMomentImageLogger(
         region_info = "Region: ellipse[";
     } else if (region_state.type == CARTA::RegionType::POLYGON) {
         region_info = "Region: poly[";
+    } else if (region_state.type == CARTA::RegionType::ANNULUS) {
+        region_info = "Region: annulus[";
     }
 
     for (auto point : control_points) {
