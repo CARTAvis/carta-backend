@@ -457,8 +457,7 @@ RegionState Ds9Importer::ImportAnnulusRegion(std::vector<std::string>& parameter
         }
         const bool no_explicit_angle = (region_name == "annulus") || (nparam <= 7);
         if (transformed_ellipse_rotation) {
-            if (no_explicit_angle && control_points.size() > 1 &&
-                IsApproximatelyCircular(control_points[1].x(), control_points[1].y())) {
+            if (no_explicit_angle && control_points.size() > 1 && IsApproximatelyCircular(control_points[1].x(), control_points[1].y())) {
                 rotation = 0.0;
             } else {
                 rotation = converted_ellipse_rotation;
