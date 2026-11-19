@@ -9,6 +9,8 @@
 #ifndef CARTA_SRC_REGION_REGIONANALYSIS_REGIONSTATISTICS_H_
 #define CARTA_SRC_REGION_REGIONANALYSIS_REGIONSTATISTICS_H_
 
+#include <cstdint>
+#include <mutex>
 #include <vector>
 
 #include "Cache/RequirementsCache.h"
@@ -86,8 +88,14 @@ private:
     /** @brief Requirements map. */
     std::unordered_map<ConfigId, RegionStatsConfig> _configs;
 
+    /** @brief Lock for configurations and cached statistics. */
+    std::mutex _mutex;
+
     /** @brief Cache to hold calculations. */
     std::unordered_map<CacheId, StatsCache> _cache;
+
+    /** @brief Detect cache invalidation during a statistics calculation. */
+    std::uint64_t _cache_generation = 0;
 };
 
 } // namespace carta

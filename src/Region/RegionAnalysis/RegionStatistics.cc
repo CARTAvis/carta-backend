@@ -20,11 +20,13 @@ RegionStatistics::RegionStatistics(int region_id, int file_id, const std::vector
 
 void RegionStatistics::SetConfigurations(int file_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs) {
     ConfigId config_id(file_id, _region_id);
+    std::lock_guard<std::mutex> lock(_mutex);
     _configs[config_id].configs = configs;
 }
 
 bool RegionStatistics::GetConfigurations(int file_id, std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs) {
     ConfigId config_id(file_id, _region_id);
+    std::lock_guard<std::mutex> lock(_mutex);
     if (_configs.find(config_id) != _configs.end()) {
         configs = _configs.at(config_id).configs;
         return true;
@@ -33,6 +35,7 @@ bool RegionStatistics::GetConfigurations(int file_id, std::vector<CARTA::SetStat
 }
 
 std::vector<int> RegionStatistics::GetConfigFileIds(int file_id) {
+    std::lock_guard<std::mutex> lock(_mutex);
     std::vector<int> file_ids;
     for (const auto& [config_id, _] : _configs) {
         if ((file_id == ALL_FILES) || (config_id.file_id == file_id)) {
@@ -57,11 +60,17 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
 
     // Check cache
     CacheId cache_id = CacheId(file_id, _region_id, stokes_index, z);
-    if (_cache.find(cache_id) != _cache.end()) {
-        std::map<CARTA::StatsType, double> stats_results;
-        if (_cache[cache_id].GetStats(stats_results)) {
-            FillStatistics(stats_data_message, required_stats, stats_results); // Message helper
-            return true;
+    std::uint64_t cache_generation;
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        cache_generation = _cache_generation;
+        auto cache_it = _cache.find(cache_id);
+        if (cache_it != _cache.end()) {
+            std::map<CARTA::StatsType, double> stats_results;
+            if (cache_it->second.GetStats(stats_results)) {
+                FillStatistics(stats_data_message, required_stats, stats_results); // Message helper
+                return true;
+            }
         }
     }
 
@@ -93,7 +102,12 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
         FillStatistics(stats_data_message, required_stats, stats_results); // Message helper
 
         // cache results
-        _cache[cache_id] = StatsCache(stats_results);
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            if (cache_generation == _cache_generation) {
+                _cache[cache_id] = StatsCache(stats_results);
+            }
+        }
         return true;
     }
 
@@ -101,12 +115,15 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
 }
 
 void RegionStatistics::ClearCache() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    ++_cache_generation;
     for (auto& cache : _cache) {
         cache.second.ClearStats();
     }
 }
 
 void RegionStatistics::ClearFileConfigsCache(int file_id) {
+    std::lock_guard<std::mutex> lock(_mutex);
     for (auto it = _configs.begin(); it != _configs.end();) {
         if ((*it).first.file_id == file_id) {
             it = _configs.erase(it);
@@ -115,6 +132,7 @@ void RegionStatistics::ClearFileConfigsCache(int file_id) {
         }
     }
 
+    ++_cache_generation;
     for (auto it = _cache.begin(); it != _cache.end();) {
         if ((*it).first.file_id == file_id) {
             it = _cache.erase(it);

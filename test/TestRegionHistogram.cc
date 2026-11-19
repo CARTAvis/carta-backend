@@ -6,6 +6,8 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <atomic>
+#include <thread>
 
 #include "CommonTestUtilities.h"
 #include "Frame/Frame.h"
@@ -177,4 +179,68 @@ TEST_F(RegionHistogramTest, TestMatchedRegionHistogram) {
     ASSERT_TRUE(histogram_data.has_config());
     int expected_num_bins = sqrt(4 * 4); // region bounding box is 4x4
     ASSERT_EQ(histogram_data.histograms().num_bins(), expected_num_bins);
+}
+
+TEST_F(RegionHistogramTest, Issue1641ConcurrentHistogramAndRegionLifecycle) {
+    auto image_path = FitsImages() / "500x500.fits";
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    auto frame = std::make_shared<Frame>(0, loader, "0");
+
+    carta::RegionHandler region_handler;
+    const int file_id = 0;
+    int region_id = -1;
+    auto csys = frame->CoordinateSystem();
+    std::vector<float> points = {25.0, 25.0, 25.0, 475.0, 475.0, 475.0, 475.0, 25.0};
+    ASSERT_TRUE(SetRegion(region_handler, file_id, region_id, points, csys, false));
+
+    auto histogram_req = SetHistogramRequirements(file_id, region_id);
+    std::vector<CARTA::HistogramConfig> configs = {histogram_req.histograms().begin(), histogram_req.histograms().end()};
+    ASSERT_TRUE(region_handler.SetHistogramRequirements(region_id, file_id, frame, configs));
+
+    constexpr int worker_count = 4;
+    constexpr int lifecycle_iterations = 100;
+    std::atomic<bool> start{false};
+    std::atomic<bool> stop{false};
+    std::atomic<int> completed_requests{0};
+    std::vector<std::thread> workers;
+    for (int i = 0; i < worker_count; ++i) {
+        workers.emplace_back([&, region_id]() {
+            while (!start.load(std::memory_order_acquire)) {
+                std::this_thread::yield();
+            }
+            while (!stop.load(std::memory_order_acquire)) {
+                if (region_handler.FillRegionHistogramData([](CARTA::RegionHistogramData) {}, region_id, file_id)) {
+                    ++completed_requests;
+                }
+            }
+        });
+    }
+
+    start.store(true, std::memory_order_release);
+    bool lifecycle_succeeded = true;
+    for (int i = 0; i < lifecycle_iterations; ++i) {
+        float offset = (i % 20) * 0.25f;
+        points = {25.0f + offset, 25.0f, 25.0f + offset, 475.0f, 475.0f, 475.0f, 475.0f, 25.0f};
+        if (!SetRegion(region_handler, file_id, region_id, points, csys, false)) {
+            lifecycle_succeeded = false;
+            break;
+        }
+
+        if (i % 10 == 9) {
+            region_handler.RemoveRegion(region_id);
+            if (!SetRegion(region_handler, file_id, region_id, points, csys, false) ||
+                !region_handler.SetHistogramRequirements(region_id, file_id, frame, configs)) {
+                lifecycle_succeeded = false;
+                break;
+            }
+        }
+    }
+
+    stop.store(true, std::memory_order_release);
+    for (auto& worker : workers) {
+        worker.join();
+    }
+
+    EXPECT_TRUE(lifecycle_succeeded);
+    EXPECT_GT(completed_requests.load(), 0);
 }

@@ -101,13 +101,26 @@ void RegionHandler::RemoveRegion(int region_id) {
         return;
     }
 
-    // Disconnect region(s)
-    if (region_id == ALL_REGIONS) {
-        for (auto& region : _regions) {
-            region.second->WaitForTaskCancellation();
+    // Collect region(s) under lock,
+    // disconnect without holding the lock
+    std::vector<std::shared_ptr<Region>> regions_to_disconnect;
+    {
+        std::lock_guard<std::mutex> region_guard(_region_mutex);
+        if (region_id == ALL_REGIONS) {
+            for (auto& region : _regions) {
+                regions_to_disconnect.push_back(region.second);
+            }
+        } else {
+            auto region_it = _regions.find(region_id);
+            if (region_it != _regions.end()) {
+                regions_to_disconnect.push_back(region_it->second);
+            }
         }
-    } else {
-        _regions.at(region_id)->WaitForTaskCancellation();
+    }
+
+    for (auto& region : regions_to_disconnect) {
+        // WaitForTaskCancellation blocks until running tasks release the region
+        region->WaitForTaskCancellation();
     }
 
     // Erase region(s)
@@ -123,12 +136,13 @@ void RegionHandler::RemoveRegion(int region_id) {
 }
 
 std::shared_ptr<Region> RegionHandler::GetRegion(int region_id) {
-    if (RegionSet(region_id)) {
-        std::lock_guard<std::mutex> region_guard(_region_mutex);
-        return _regions.at(region_id);
-    } else {
-        return std::shared_ptr<Region>();
+    // Look up and return region under a single lock so it cannot be erased between check and access
+    std::lock_guard<std::mutex> region_guard(_region_mutex);
+    auto region_it = _regions.find(region_id);
+    if (region_it != _regions.end() && region_it->second->IsConnected()) {
+        return region_it->second;
     }
+    return std::shared_ptr<Region>();
 }
 
 bool RegionHandler::RegionSet(int region_id, bool check_annotation) {
@@ -295,10 +309,14 @@ bool RegionHandler::SetHistogramRequirements(
     // Save frame pointer
     _frames[file_id] = frame;
 
-    if (_region_histograms.find(region_id) == _region_histograms.end()) {
-        _region_histograms[region_id] = std::make_unique<RegionHistogram>(region_id, file_id, configs);
-    } else {
-        _region_histograms[region_id]->SetConfigurations(file_id, configs);
+    {
+        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        auto histogram_it = _region_histograms.find(region_id);
+        if (histogram_it == _region_histograms.end()) {
+            _region_histograms[region_id] = std::make_shared<RegionHistogram>(region_id, file_id, configs);
+        } else {
+            histogram_it->second->SetConfigurations(file_id, configs);
+        }
     }
 
     return true;
@@ -499,10 +517,14 @@ bool RegionHandler::SetStatsRequirements(
     _frames[file_id] = frame;
 
     // Set configurations
-    if (_region_statistics.find(region_id) == _region_statistics.end()) {
-        _region_statistics[region_id] = std::make_unique<RegionStatistics>(region_id, file_id, configs);
-    } else {
-        _region_statistics[region_id]->SetConfigurations(file_id, configs);
+    {
+        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        auto stats_it = _region_statistics.find(region_id);
+        if (stats_it == _region_statistics.end()) {
+            _region_statistics[region_id] = std::make_shared<RegionStatistics>(region_id, file_id, configs);
+        } else {
+            stats_it->second->SetConfigurations(file_id, configs);
+        }
     }
     return true;
 }
@@ -510,8 +532,14 @@ bool RegionHandler::SetStatsRequirements(
 void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for all regions or a specific region
     if (region_id == ALL_REGIONS) {
-        _region_histograms.clear();
-        _region_statistics.clear();
+        {
+            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            _region_histograms.clear();
+        }
+        {
+            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            _region_statistics.clear();
+        }
 
         std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         _region_spatial_profiles.clear();
@@ -528,11 +556,13 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         _pv_preview_cubes.clear();
     } else {
         // Remove region analysis for region_id
-        if (_region_histograms.find(region_id) != _region_histograms.end()) {
+        {
+            std::lock_guard<std::mutex> lock(_histogram_mutex);
             _region_histograms.erase(region_id);
         }
 
-        if (_region_statistics.find(region_id) != _region_statistics.end()) {
+        {
+            std::lock_guard<std::mutex> lock(_statistics_mutex);
             _region_statistics.erase(region_id);
         }
 
@@ -583,8 +613,14 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         _region_spatial_profiles.clear();
         spatial_lock.unlock();
 
-        _region_histograms.clear();
-        _region_statistics.clear();
+        {
+            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            _region_histograms.clear();
+        }
+        {
+            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            _region_statistics.clear();
+        }
 
         std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         _spectral_req.clear();
@@ -597,11 +633,27 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         _pv_preview_cubes.clear();
     } else {
         // Remove region analysis for file_id
-        for (const auto& [_, region_histogram] : _region_histograms) {
+        std::vector<std::shared_ptr<RegionHistogram>> region_histogram_snapshot;
+        {
+            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            region_histogram_snapshot.reserve(_region_histograms.size());
+            for (const auto& [_, region_histogram] : _region_histograms) {
+                region_histogram_snapshot.push_back(region_histogram);
+            }
+        }
+        for (const auto& region_histogram : region_histogram_snapshot) {
             region_histogram->ClearFileConfigsCache(file_id);
         }
 
-        for (const auto& [_, region_statistics] : _region_statistics) {
+        std::vector<std::shared_ptr<RegionStatistics>> region_statistics_snapshot;
+        {
+            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            region_statistics_snapshot.reserve(_region_statistics.size());
+            for (const auto& [_, region_statistics] : _region_statistics) {
+                region_statistics_snapshot.push_back(region_statistics);
+            }
+        }
+        for (const auto& region_statistics : region_statistics_snapshot) {
             region_statistics->ClearFileConfigsCache(file_id);
         }
 
@@ -655,8 +707,16 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
 
 void RegionHandler::ClearRegionCache(int region_id) {
     // Remove cached data when region changes
-    if (_region_histograms.find(region_id) != _region_histograms.end()) {
-        _region_histograms[region_id]->ClearCache();
+    std::shared_ptr<RegionHistogram> region_histogram;
+    {
+        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        auto histogram_it = _region_histograms.find(region_id);
+        if (histogram_it != _region_histograms.end()) {
+            region_histogram = histogram_it->second;
+        }
+    }
+    if (region_histogram) {
+        region_histogram->ClearCache();
     }
     for (auto& spcache : _spectral_cache) {
         if (spcache.first.region_id == region_id) {
@@ -664,8 +724,16 @@ void RegionHandler::ClearRegionCache(int region_id) {
         }
     }
 
-    if (_region_statistics.find(region_id) != _region_statistics.end()) {
-        _region_statistics[region_id]->ClearCache();
+    std::shared_ptr<RegionStatistics> region_statistics;
+    {
+        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        auto stats_it = _region_statistics.find(region_id);
+        if (stats_it != _region_statistics.end()) {
+            region_statistics = stats_it->second;
+        }
+    }
+    if (region_statistics) {
+        region_statistics->ClearCache();
     }
 }
 
@@ -1376,19 +1444,37 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
         return false;
     }
 
-    if ((region_id > 0) && (_region_histograms.find(region_id) == _region_histograms.end())) {
-        return false;
+    bool success(false);
+    std::vector<std::pair<int, std::shared_ptr<RegionHistogram>>> region_histogram_snapshot;
+    {
+        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        if (region_id > 0) {
+            auto histogram_it = _region_histograms.find(region_id);
+            if (histogram_it == _region_histograms.end()) {
+                return false;
+            }
+            region_histogram_snapshot.emplace_back(histogram_it->first, histogram_it->second);
+        } else {
+            region_histogram_snapshot.reserve(_region_histograms.size());
+            for (const auto& [hist_region_id, region_histogram] : _region_histograms) {
+                region_histogram_snapshot.emplace_back(hist_region_id, region_histogram);
+            }
+        }
     }
 
-    bool success(false);
-    for (const auto& [hist_region_id, region_histogram] : _region_histograms) {
-        // Find histogram configurations with region_id and file_id
-        if ((region_id > 0) && (hist_region_id != region_id)) {
+    for (const auto& [hist_region_id, region_histogram] : region_histogram_snapshot) {
+        auto config_file_ids = region_histogram->GetConfigFileIds(file_id);
+        if (config_file_ids.empty()) {
             continue;
         }
 
-        auto config_file_ids = region_histogram->GetConfigFileIds(file_id);
-        if (config_file_ids.empty()) {
+        // Region may be removed concurrently; hold shared_ptr and active task lock while in use
+        auto region = GetRegion(hist_region_id);
+        if (!region) {
+            continue;
+        }
+        std::shared_lock region_lock(region->GetActiveTaskMutex());
+        if (!region->IsConnected()) {
             continue;
         }
 
@@ -1417,7 +1503,6 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 AxisRange z_range(z);
                 StokesSource stokes_source(stokes_index, z_range);
 
-                auto region = GetRegion(hist_region_id);
                 auto lc_region = region->GetLCRegion(
                     hist_file_id, frame->CoordinateSystem(stokes_source), frame->ImageShape(stokes_source), stokes_source);
 
@@ -1820,17 +1905,25 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
         return false;
     }
 
-    if ((region_id > 0) && (_region_statistics.find(region_id) == _region_statistics.end())) {
-        return false;
+    bool success(false);
+    std::vector<std::pair<int, std::shared_ptr<RegionStatistics>>> region_statistics_snapshot;
+    {
+        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        if (region_id > 0) {
+            auto stats_it = _region_statistics.find(region_id);
+            if (stats_it == _region_statistics.end()) {
+                return false;
+            }
+            region_statistics_snapshot.emplace_back(stats_it->first, stats_it->second);
+        } else {
+            region_statistics_snapshot.reserve(_region_statistics.size());
+            for (const auto& [stats_region_id, region_statistics] : _region_statistics) {
+                region_statistics_snapshot.emplace_back(stats_region_id, region_statistics);
+            }
+        }
     }
 
-    bool success(false);
-
-    for (const auto& [stats_region_id, region_statistics] : _region_statistics) {
-        if ((region_id > 0) && (stats_region_id != region_id)) {
-            continue;
-        }
-
+    for (const auto& [stats_region_id, region_statistics] : region_statistics_snapshot) {
         auto config_file_ids = region_statistics->GetConfigFileIds(file_id);
         if (config_file_ids.empty()) {
             continue;
