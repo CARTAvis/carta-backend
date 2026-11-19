@@ -101,13 +101,26 @@ void RegionHandler::RemoveRegion(int region_id) {
         return;
     }
 
-    // Disconnect region(s)
-    if (region_id == ALL_REGIONS) {
-        for (auto& region : _regions) {
-            region.second->WaitForTaskCancellation();
+    // Collect region(s) under lock, 
+    // disconnect without holding the lock
+    std::vector<std::shared_ptr<Region>> regions_to_disconnect;
+    {
+        std::lock_guard<std::mutex> region_guard(_region_mutex);
+        if (region_id == ALL_REGIONS) {
+            for (auto& region : _regions) {
+                regions_to_disconnect.push_back(region.second);
+            }
+        } else {
+            auto region_it = _regions.find(region_id);
+            if (region_it != _regions.end()) {
+                regions_to_disconnect.push_back(region_it->second);
+            }
         }
-    } else {
-        _regions.at(region_id)->WaitForTaskCancellation();
+    }
+
+    for (auto& region : regions_to_disconnect) {
+        // WaitForTaskCancellation blocks until running tasks release the region
+        region->WaitForTaskCancellation();
     }
 
     // Erase region(s)
@@ -123,12 +136,13 @@ void RegionHandler::RemoveRegion(int region_id) {
 }
 
 std::shared_ptr<Region> RegionHandler::GetRegion(int region_id) {
-    if (RegionSet(region_id)) {
-        std::lock_guard<std::mutex> region_guard(_region_mutex);
-        return _regions.at(region_id);
-    } else {
-        return std::shared_ptr<Region>();
+    // Look up and return region under a single lock so it cannot be erased between check and access
+    std::lock_guard<std::mutex> region_guard(_region_mutex);
+    auto region_it = _regions.find(region_id);
+    if (region_it != _regions.end() && region_it->second->IsConnected()) {
+        return region_it->second;
     }
+    return std::shared_ptr<Region>();
 }
 
 bool RegionHandler::RegionSet(int region_id, bool check_annotation) {
@@ -1454,6 +1468,16 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
             continue;
         }
 
+        // Region may be removed concurrently; hold shared_ptr and active task lock while in use
+        auto region = GetRegion(hist_region_id);
+        if (!region) {
+            continue;
+        }
+        std::shared_lock region_lock(region->GetActiveTaskMutex());
+        if (!region->IsConnected()) {
+            continue;
+        }
+
         for (int hist_file_id : config_file_ids) {
             // Get histogram for specific region id and file id
             if (!RegionFileIdsValid(hist_region_id, hist_file_id)) {
@@ -1479,7 +1503,6 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 AxisRange z_range(z);
                 StokesSource stokes_source(stokes_index, z_range);
 
-                auto region = GetRegion(hist_region_id);
                 auto lc_region = region->GetLCRegion(
                     hist_file_id, frame->CoordinateSystem(stokes_source), frame->ImageShape(stokes_source), stokes_source);
 

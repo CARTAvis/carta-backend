@@ -204,7 +204,7 @@ TEST_F(RegionHistogramTest, Issue1641ConcurrentHistogramAndRegionLifecycle) {
     std::atomic<int> completed_requests{0};
     std::vector<std::thread> workers;
     for (int i = 0; i < worker_count; ++i) {
-        workers.emplace_back([&]() {
+        workers.emplace_back([&, region_id]() {
             while (!start.load(std::memory_order_acquire)) {
                 std::this_thread::yield();
             }
