@@ -101,7 +101,7 @@ void RegionHandler::RemoveRegion(int region_id) {
         return;
     }
 
-    // Collect region(s) under lock, 
+    // Collect region(s) under lock,
     // disconnect without holding the lock
     std::vector<std::shared_ptr<Region>> regions_to_disconnect;
     {
