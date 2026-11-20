@@ -296,6 +296,9 @@ set(SOURCE_FILES
         src/Util/Token.cc)
 
 add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
+if (USE_ADIOS)
+   add_definitions(-DUSE_ADIOS)
+endif (USE_ADIOS)
 add_executable(carta_backend ${SOURCE_FILES})
 
 add_dependencies(carta_backend carta-schemas)

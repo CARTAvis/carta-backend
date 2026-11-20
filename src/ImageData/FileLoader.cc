@@ -370,8 +370,76 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
         // Get data slice with mask applied.
         // Apply slicer to image first to get appropriate cursor, and use read-only iterator
         casacore::SubImage<float> subimage(*image, slicer);
-        casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
 
+#ifdef USE_ADIOS
+        // 2. Create a memory-resident copy (TempImage)
+        casacore::TempImage<float> memImage(subimage.shape(), subimage.coordinates());
+
+        // reference to actual image either memImage for the lattice_iter constructor later
+        MaskedLattice<float>* actual_image = &subimage;
+
+        if (image_type == "ADIOSImage") {
+            auto adiosImage = dynamic_cast<ADIOSImage<float>*>(image.get());
+            if (adiosImage) {
+                // 1. Create an empty array. The 'casacore::True' flag in your
+                //    map_p.getSlice() implementation will automatically size it.
+                // casacore::Array<float> ramSlice;
+                casacore::Array<float> ramSlice(slicer.length());
+                ramSlice = std::numeric_limits<float>::quiet_NaN();
+
+                // 2. ONLY read the requested 2D slice from the ADIOS2 file
+                adiosImage->doGetSlice(ramSlice, slicer);
+
+                // 3. Only touch the mask column if this table actually has one.
+                // Older/plain ADIOS2 files have no "mask" column at all; treat
+                // every pixel in those as valid and skip NaN-unmasking entirely.
+                if (adiosImage->hasMaskColumn()) {
+                    // Pre-allocate and initialize mask to false -> NaN if the corners
+                    // are empty and not read at all.
+                    // masking logic is: true - valid pixel, false - flagged pixel.
+                    casacore::Array<bool> mask(slicer.length());
+                    mask = false;
+
+                    // Read the requested 2D mask slice
+                    adiosImage->doGetMaskSlice(mask, slicer);
+
+                    // Apply NaNs to the 2D slice: true means valid value, if not all
+                    // mask values are true -> some are false -> have to be set to NaN
+                    if (!casacore::allTrue(mask)) {
+                        // set NaN where mask=0 (mask=1 means a valid value):
+                        ramSlice(!mask) = std::numeric_limits<float>::quiet_NaN();
+                    }
+                    printf("DEBUG FileLoader::GetSlice : value[0] = %.8f , mask[0] = %d\n", *ramSlice.begin(), (int)(*mask.begin()));
+
+                    // --- DEBUG BLOCK START ---
+                    // Get the coordinates for the corner [0,0] and the dead center of the slice
+                    casacore::IPosition corner(ramSlice.ndim(), 0);
+                    casacore::IPosition center = ramSlice.shape() / 2;
+
+                    // slicer.start() usually contains [X, Y, Channel, Stokes]
+                    int currentChannel = (slicer.start().nelements() > 2) ? slicer.start()[2] : 0;
+
+                    printf("--- DEBUG CHANNEL %d ---\n", currentChannel);
+                    printf("CORNER: Mask = %s | Value = %f\n", mask(corner) ? "TRUE (Valid)" : "FALSE (NaN)", ramSlice(corner));
+                    printf("CENTER: Mask = %s | Value = %f\n", mask(center) ? "TRUE (Valid)" : "FALSE (NaN)", ramSlice(center));
+                    printf("------------------------\n");
+                    // --- DEBUG BLOCK END ---
+                } else {
+                    printf("DEBUG FileLoader::GetSlice : no mask column present, value[0] = %.8f\n", *ramSlice.begin());
+                }
+
+                // Put the sliced RAM into your memImage
+                memImage.put(ramSlice);
+
+                // change the reference to memImage
+                actual_image = &memImage;
+            }
+        }
+
+        casacore::RO_MaskedLatticeIterator<float> lattice_iter(*actual_image);
+#else
+        casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
+#endif
         for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
             casacore::Array<float> cursor_data = lattice_iter.cursor();
 
