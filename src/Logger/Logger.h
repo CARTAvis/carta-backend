@@ -111,9 +111,8 @@ private:
 namespace carta {
 namespace logger {
 void InitLogger();
-void LogReceivedEventType(const CARTA::EventType& event_type);
-void LogSentEventType(const CARTA::EventType& event_type);
 void FlushLogFile();
+
 } // namespace logger
 } // namespace carta
 

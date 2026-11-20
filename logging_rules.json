@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "match": ".*TILE_DATA|SPATIAL_PROFILE_DATA",
+      "action": "throttle",
+      "first_n": 3,
+      "every_m": 500
+    },
+    {
+      "match": "SET_CURSOR|SET_SPATIAL_REQUIREMENTS",
+      "action": "throttle",
+      "first_n": 5,
+      "every_m": 100
+    },
+    {
+      "match": "EVENT_LOOP_.*|HEARTBEAT.*",
+      "action": "none"
+    }
+  ]
+}

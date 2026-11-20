@@ -8,6 +8,10 @@
 
 #include "Main/ProgramSettings.h"
 
+#include <fstream>
+#include <functional>
+#include <nlohmann/json.hpp>
+#include <regex>
 #include <string>
 
 namespace carta {
@@ -114,28 +118,6 @@ void InitLogger() {
     }
 
     spdlog::flush_every(std::chrono::seconds(3));
-}
-
-void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (log_protocol_messages) {
-        auto event_name = CARTA::EventType_Name(event_type);
-        if (!event_name.empty()) {
-            spdlog::debug("[protocol] <== {}", event_name);
-        } else {
-            spdlog::debug("[protocol] <== unknown event type: {}!", event_type);
-        }
-    }
-}
-
-void LogSentEventType(const CARTA::EventType& event_type) {
-    if (log_protocol_messages) {
-        auto event_name = CARTA::EventType_Name(event_type);
-        if (!event_name.empty()) {
-            spdlog::debug("[protocol] ==> {}", event_name);
-        } else {
-            spdlog::debug("[protocol] ==> unknown event type: {}!", event_type);
-        }
-    }
 }
 
 void FlushLogFile() {

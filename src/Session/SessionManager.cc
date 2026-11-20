@@ -205,7 +205,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             return;
         }
 
-        logger::LogReceivedEventType(event_type);
+        ProtocolLogger::Instance().LogEvent(event_type, ProtocolLogger::RECEIVE);
 
         MessageHandler handler;
         try {
