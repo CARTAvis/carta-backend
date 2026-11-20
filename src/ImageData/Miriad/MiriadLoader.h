@@ -4,13 +4,13 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_MIRIADLOADER_H_
-#define CARTA_SRC_IMAGEDATA_MIRIADLOADER_H_
+#ifndef CARTA_SRC_IMAGEDATA_MIRIAD_MIRIADLOADER_H_
+#define CARTA_SRC_IMAGEDATA_MIRIAD_MIRIADLOADER_H_
 
 #include <casacore/mirlib/miriad.h>
 
+#include "../FileLoader.h"
 #include "CartaMiriadImage.h"
-#include "FileLoader.h"
 
 namespace carta {
 
@@ -71,4 +71,4 @@ void MiriadLoader::AllocateImage(const std::string& /*hdu*/) {
 
 } // namespace carta
 
-#endif // CARTA_SRC_IMAGEDATA_MIRIADLOADER_H_
+#endif // CARTA_SRC_IMAGEDATA_MIRIAD_MIRIADLOADER_H_

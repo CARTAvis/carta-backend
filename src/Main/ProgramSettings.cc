@@ -95,6 +95,13 @@ void ProgramSettings::SetSettingsFromJSON(const json& j) {
         *elem = j[key];
     }
 
+    for (const auto& [key, elem] : double_keys_map) {
+        if (!j.contains(key)) {
+            continue;
+        }
+        *elem = j[key];
+    }
+
     for (const auto& [key, elem] : bool_keys_map) {
         if (!j.contains(key)) {
             continue;
@@ -146,6 +153,9 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<std::vector<int>>(), "<port>")
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
+        ("zarr_io", "thread pool size for Zarr file IO operations (0: min(4, omp_threads); suggested values: 2 for limited resources, 4 for general use, 8 for large parallel filesystems with 16+ CPU cores)", cxxopts::value<int>(), "<threads>")
+        ("zarr_decode", "thread pool size for Zarr data copy/decode operations (0: max(1, omp_threads))", cxxopts::value<int>(), "<threads>")
+        ("zarr_cache", "in-memory chunk cache size for Zarr stores in GiB, such as 2.5 (0 disables caching)", cxxopts::value<double>(), "<GiB>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
@@ -213,6 +223,15 @@ end.
 
 By default the number of OpenMP threads is automatically set to the detected 
 number of logical cores. A fixed number may be set with 'omp_threads'.
+
+Zarr images are read through carta-zarr. 'zarr_io' (default 0)
+sets the thread pool size for file IO operations; zero uses min(4, the number
+of OpenMP threads). Suggested values are 2 for limited resources, 4 for general
+use, or 8 for large parallel filesystems with 16 or more CPU cores.
+'zarr_decode' (default 0) sets the thread pool size for data
+copy/decode operations; if set to zero, it defaults to max(1, the number of
+OpenMP threads). 'zarr_cache' sets an in-memory chunk cache size in GiB,
+which may be fractional, such as 2.5 (default 1; zero disables caching).
 
 Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
 in the user's home directory. Logging to the file can be disabled with 'no_log'. 
@@ -282,6 +301,9 @@ global configuration files, respectively.
     applyOptionalArgument(http_url_prefix, "http_url_prefix", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
+    applyOptionalArgument(zarr_file_io_concurrency, "zarr_io", result);
+    applyOptionalArgument(zarr_data_copy_concurrency, "zarr_decode", result);
+    applyOptionalArgument(zarr_cache_pool_gib, "zarr_cache", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);
     applyOptionalArgument(init_wait_time, "initial_timeout", result);
 
@@ -327,6 +349,11 @@ global configuration files, respectively.
     for (const auto& [key, elem] : int_keys_map) {
         if (result.count(key)) {
             command_line_settings[key] = result[key].as<int>();
+        }
+    }
+    for (const auto& [key, elem] : double_keys_map) {
+        if (result.count(key)) {
+            command_line_settings[key] = result[key].as<double>();
         }
     }
     for (const auto& [key, elem] : bool_keys_map) {

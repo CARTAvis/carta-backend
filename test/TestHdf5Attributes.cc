@@ -7,7 +7,7 @@
 
 #include <gtest/gtest.h>
 
-#include "ImageData/Hdf5Attributes.h"
+#include "ImageData/Hdf5/Hdf5Attributes.h"
 #include "src/Frame/Frame.h"
 
 #include "CommonTestUtilities.h"
