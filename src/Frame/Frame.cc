@@ -369,6 +369,10 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
     return updated;
 }
 
+void Frame::ReserveTilePool(int capacity) {
+    _tile_pool->Reserve(capacity);
+}
+
 bool Frame::SetCursor(float x, float y) {
     bool changed = ((x != _cursor.x) || (y != _cursor.y));
     _cursor = PointXy(x, y);
@@ -414,19 +418,22 @@ void Frame::InvalidateImageCache() {
     _image_cache_valid = false;
 }
 
-void Frame::GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes) {
+bool Frame::GetZSlice(std::vector<float>& z_slice, size_t z, size_t stokes) {
     // fill slice for given z and stokes
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
     z_slice.resize(stokes_slicer.slicer.length().product());
-    GetSlicerData(stokes_slicer, z_slice.data());
+    return GetSlicerData(stokes_slicer, z_slice.data());
 }
 
 // ****************************************************
 // Raster Data
 
-bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
+bool Frame::GetRasterData(
+    int z, std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter, int stokes, const float* channel_data) {
     // apply bounds and downsample image cache
-    if (!_valid || (z == _z_index && !_image_cache_valid)) {
+    int requested_stokes = stokes == CURRENT_STOKES ? _stokes_index : stokes;
+    bool use_image_cache = z == _z_index && requested_stokes == _stokes_index;
+    if (!_valid || !CheckStokes(requested_stokes) || (use_image_cache && !channel_data && !_image_cache_valid)) {
         return false;
     }
 
@@ -458,14 +465,13 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     Timer t;
-    float* z_data;
     std::vector<float> z_slice;
-    if (z == _z_index) {
-        // Use image cache for current z
-        z_data = _image_cache.get();
-    } else {
-        // Load data for requested z
-        GetZSlice(z_slice, z, _stokes_index);
+    const float* z_data = channel_data ? channel_data : (use_image_cache ? _image_cache.get() : nullptr);
+    if (!z_data) {
+        // Load data for the requested z and Stokes
+        if (!GetZSlice(z_slice, z, requested_stokes)) {
+            return false;
+        }
         z_data = z_slice.data();
     }
 
@@ -487,13 +493,18 @@ bool Frame::GetRasterData(int z, std::vector<float>& image_data, CARTA::ImageBou
 
 // Tile data
 bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
-    CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error) {
+    CARTA::CompressionType compression_type, float compression_quality, bool is_current_z, bool& error, int tile_width, int tile_height,
+    const TilePtr& tile_data_ptr) {
     // Early exit if z or stokes has changed and using current z
     if (is_current_z && ZStokesChanged(z, stokes)) {
         return false;
-    } else if (!is_current_z && stokes != _stokes_index) {
+    }
+
+    if (!tile_data_ptr || tile_width <= 0 || tile_height <= 0 || tile_data_ptr->size() != static_cast<size_t>(tile_width * tile_height)) {
+        error = true;
         return false;
     }
+    auto& tile_data = *tile_data_ptr;
 
     raster_tile_data.set_channel(z);
     raster_tile_data.set_stokes(stokes);
@@ -508,128 +519,89 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     tile_ptr->set_x(tile.x);
     tile_ptr->set_y(tile.y);
 
-    std::shared_ptr<std::vector<float>> tile_data_ptr;
-    int tile_width;
-    int tile_height;
-    if (GetRasterTileData(z, tile_data_ptr, tile, tile_width, tile_height, error)) {
-        size_t tile_image_data_size = sizeof(float) * tile_data_ptr->size(); // tile image data size in bytes
+    size_t tile_image_data_size = sizeof(float) * tile_data.size();
+
+    if (is_current_z && ZStokesChanged(z, stokes)) {
+        return false;
+    }
+    tile_ptr->set_width(tile_width);
+    tile_ptr->set_height(tile_height);
+    if (compression_type == CARTA::CompressionType::NONE) {
+        tile_ptr->set_image_data(tile_data.data(), tile_image_data_size);
+        return true;
+    } else if (compression_type == CARTA::CompressionType::ZFP) {
+        auto nan_encodings = GetNanEncodingsBlock(tile_data, 0, tile_width, tile_height);
+        tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
 
         if (is_current_z && ZStokesChanged(z, stokes)) {
             return false;
-        } else if (!is_current_z && stokes != _stokes_index) {
-            return false;
         }
-        tile_ptr->set_width(tile_width);
-        tile_ptr->set_height(tile_height);
-        if (compression_type == CARTA::CompressionType::NONE) {
-            tile_ptr->set_image_data(tile_data_ptr->data(), sizeof(float) * tile_data_ptr->size());
-            return true;
-        } else if (compression_type == CARTA::CompressionType::ZFP) {
-            auto nan_encodings = GetNanEncodingsBlock(*tile_data_ptr, 0, tile_width, tile_height);
-            tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
 
-            if (is_current_z && ZStokesChanged(z, stokes)) {
-                return false;
-            } else if (!is_current_z && stokes != _stokes_index) {
-                return false;
+        Timer t;
+
+        // compress the data
+        std::vector<char> compression_buffer;
+        size_t compressed_size;
+
+        // originally requested precision
+        int requested_precision(lround(compression_quality));
+
+        auto find_precision = [&](const auto& self, int current, float previous_ratio) -> int {
+            Compress(tile_data, 0, compression_buffer, compressed_size, tile_width, tile_height, current);
+            float compression_ratio = (float)tile_image_data_size / compressed_size;
+
+            // Very large ratio, probably caused by a NaN block: precision makes no difference
+            if (compression_ratio == previous_ratio) {
+                return current;
             }
 
-            Timer t;
-
-            // compress the data
-            std::vector<char> compression_buffer;
-            size_t compressed_size;
-
-            // originally requested precision
-            int requested_precision(lround(compression_quality));
-
-            auto find_precision = [&](const auto& self, int current, float previous_ratio) -> int {
-                Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, current);
-                float compression_ratio = (float)tile_image_data_size / compressed_size;
-
-                // Very large ratio, probably caused by a NaN block: precision makes no difference
-                if (compression_ratio == previous_ratio) {
-                    return current;
-                }
-
-                // Acceptable ratio or no higher precisions to try
-                if (compression_ratio <= 20 || current == MAX_COMPRESSION_QUALITY) {
-                    return current;
-                }
-
-                // Otherwise try a higher precision
-                int next((current + MAX_COMPRESSION_QUALITY + 1) / 2);
-                return self(self, next, compression_ratio);
-            };
-
-            // attempt to select a precision which results in a compression ratio below an acceptable threshold
-            int precision(find_precision(find_precision, requested_precision, -1));
-            if (precision > requested_precision) {
-                spdlog::debug("Upgraded precision to {} (originally requested precision: {}).", precision, requested_precision);
+            // Acceptable ratio or no higher precisions to try
+            if (compression_ratio <= 20 || current == MAX_COMPRESSION_QUALITY) {
+                return current;
             }
 
-            raster_tile_data.set_compression_quality((float)precision);
-            tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+            // Otherwise try a higher precision
+            int next((current + MAX_COMPRESSION_QUALITY + 1) / 2);
+            return self(self, next, compression_ratio);
+        };
 
-            // Measure duration for compress tile data
-            auto dt = t.Elapsed();
-            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height, dt.ms(),
-                (float)(tile_width * tile_height) / dt.us());
-
-            if (is_current_z) {
-                return !(ZStokesChanged(z, stokes));
-            } else {
-                return stokes == _stokes_index;
-            }
+        // attempt to select a precision which results in a compression ratio below an acceptable threshold
+        int precision(find_precision(find_precision, requested_precision, -1));
+        if (precision > requested_precision) {
+            spdlog::debug("Upgraded precision to {} (originally requested precision: {}).", precision, requested_precision);
         }
+
+        raster_tile_data.set_compression_quality((float)precision);
+        tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+
+        // Measure duration for compress tile data
+        auto dt = t.Elapsed();
+        spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height, dt.ms(),
+            (float)(tile_width * tile_height) / dt.us());
+
+        if (is_current_z) {
+            return !ZStokesChanged(z, stokes);
+        }
+        return true;
     }
 
     return false;
 }
 
-bool Frame::GetRasterTileData(
-    int z, std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height, bool& error) {
-    int mip = Tile::LayerToMip(tile.layer, _dims.width, _dims.height, TILE_SIZE, TILE_SIZE);
-    if (mip == -1) {
-        spdlog::error("Invalid tile layer {} for image size {}x{}.", tile.layer, _dims.width, _dims.height);
-        error = true;
-        return false;
-    }
-    int tile_size_original = TILE_SIZE * mip;
+TilePtr Frame::GetRasterTileData(const CARTA::ImageBounds& bounds, int z, int stokes, int mip, bool& loaded) {
+    auto tile_data = _tile_pool->Pull();
+    loaded = false;
 
-    // crop to image size
-    CARTA::ImageBounds bounds;
-    bounds.set_x_min(std::max(0, tile.x * tile_size_original));
-    bounds.set_x_max(std::min((int)_dims.width, (tile.x + 1) * tile_size_original));
-    bounds.set_y_min(std::max(0, tile.y * tile_size_original));
-    bounds.set_y_max(std::min((int)_dims.height, (tile.y + 1) * tile_size_original));
-
-    const int req_height = bounds.y_max() - bounds.y_min();
-    const int req_width = bounds.x_max() - bounds.x_min();
-    width = std::ceil((float)req_width / mip);
-    height = std::ceil((float)req_height / mip);
-
-    tile_data_ptr = _tile_pool->Pull();
-    bool loaded_data(0);
-
-    if (mip > 1 && !Stokes::IsComputed(_stokes_index)) {
-        // Try to load downsampled data from the image file
-        loaded_data = _loader->GetDownsampledRasterData(*tile_data_ptr, _z_index, _stokes_index, bounds, mip, _image_mutex);
-    } else if (z == _z_index && !_image_cache_valid && _use_tile_cache) {
-        // Load a tile from the tile cache if the full image cache isn't populated
-        auto cache_tile_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
-        if (cache_tile_ptr) {
-            tile_data_ptr->assign(cache_tile_ptr->begin(), cache_tile_ptr->end());
-            return true;
+    if (mip == 1 && z == _z_index && stokes == _stokes_index && !_image_cache_valid && _use_tile_cache) {
+        auto cached_data = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        if (cached_data) {
+            // Compression replaces NaNs in its input, so keep the cached tile immutable.
+            tile_data->assign(cached_data->begin(), cached_data->end());
+            loaded = true;
         }
     }
 
-    // Fall back to using the full image cache.
-    if (!loaded_data) {
-        loaded_data = GetRasterData(z, *tile_data_ptr, bounds, mip, true);
-    }
-
-    return loaded_data;
+    return tile_data;
 }
 
 // ****************************************************
@@ -647,8 +619,9 @@ bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
     return false;
 }
 
-bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel) {
-    bool use_image_cache(channel == CurrentZ());
+bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel, int stokes) {
+    int contour_stokes = stokes == CURRENT_STOKES ? CurrentStokes() : stokes;
+    bool use_image_cache(channel == CurrentZ() && contour_stokes == CurrentStokes());
     if (use_image_cache) {
         // Always use the full image cache (for now)
         FillImageCache();
@@ -668,7 +641,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
         } else {
             // Get channel data
             std::vector<float> channel_data;
-            GetZSlice(channel_data, channel, CurrentStokes());
+            GetZSlice(channel_data, channel, contour_stokes);
             TraceContours(channel_data.data(), _dims.width, _dims.height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback);
         }
@@ -692,7 +665,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
         } else {
             // Get channel data
             std::vector<float> channel_data;
-            GetZSlice(channel_data, channel, CurrentStokes());
+            GetZSlice(channel_data, channel, contour_stokes);
             smooth_successful = GaussianSmooth(channel_data.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
                 _contour_settings.smoothing_factor);
         }
@@ -708,7 +681,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback, int channel)
         // Block averaging
         CARTA::ImageBounds image_bounds = Message::ImageBounds(0, _dims.width, 0, _dims.height);
         std::vector<float> dest_vector;
-        if (GetRasterData(channel, dest_vector, image_bounds, _contour_settings.smoothing_factor, true)) {
+        if (GetRasterData(channel, dest_vector, image_bounds, _contour_settings.smoothing_factor, true, contour_stokes)) {
             // Perform contouring with an offset based on the block size, and a scale factor equal to block size
             offset = 0;
             scale = _contour_settings.smoothing_factor;
@@ -2425,8 +2398,8 @@ void Frame::CloseCachedImage(const std::string& file) {
     }
 }
 
-bool Frame::GetDownsampledRasterData(
-    std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip) {
+bool Frame::GetDownsampledRasterData(std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes,
+    CARTA::ImageBounds& bounds, int mip, const float* channel_data) {
     int tile_original_width = bounds.x_max() - bounds.x_min();
     int tile_original_height = bounds.y_max() - bounds.y_min();
     if (tile_original_width * tile_original_height == 0) {
@@ -2435,16 +2408,23 @@ bool Frame::GetDownsampledRasterData(
 
     downsampled_width = std::ceil((float)tile_original_width / mip);
     downsampled_height = std::ceil((float)tile_original_height / mip);
+
+    bool use_image_cache = z == _z_index && stokes == _stokes_index && _image_cache_valid;
+    if (use_image_cache) {
+        return GetRasterData(z, data, bounds, mip, true, stokes);
+    }
+
     std::vector<float> tile_data;
     bool use_loader_downsampled_data(false);
+    bool use_loader_mipmaps = !Stokes::IsComputed(stokes);
 
     // Check does the (HDF5) loader has the right (mip) downsampled data
-    if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
+    if (use_loader_mipmaps && _loader->HasMip(mip) && _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
         return true;
     }
 
     // Check is there another downsampled data that we can use to downsample
-    for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
+    for (int sub_mip = 2; use_loader_mipmaps && sub_mip < mip; ++sub_mip) {
         if (mip % sub_mip == 0) {
             int loader_mip = mip / sub_mip;
             if (_loader->HasMip(loader_mip) && _loader->GetDownsampledRasterData(tile_data, z, stokes, bounds, loader_mip, _image_mutex)) {
@@ -2457,6 +2437,10 @@ bool Frame::GetDownsampledRasterData(
                 break;
             }
         }
+    }
+
+    if (!use_loader_downsampled_data && channel_data) {
+        return GetRasterData(z, data, bounds, mip, true, stokes, channel_data);
     }
 
     if (!use_loader_downsampled_data) {
@@ -2483,14 +2467,16 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
     return _vector_field.SetParameters(message, _axes.stokes);
 }
 
-bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    if (_vector_field.ClearParameters(callback, _z_index)) {
+bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel, int stokes) {
+    int vector_channel = channel == CURRENT_Z ? _z_index : channel;
+    if (_vector_field.ClearParameters(callback, vector_channel)) {
         return true;
     }
-    return DoVectorFieldCalculation(callback);
+    int vector_stokes = stokes == CURRENT_STOKES ? _stokes_index : stokes;
+    return DoVectorFieldCalculation(callback, vector_channel, vector_stokes);
 }
 
-bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int channel, int stokes) {
     // Prevent deleting the Frame while this task is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
@@ -2528,7 +2514,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 
         // Get current stokes data
         if (current_stokes_as_pi || current_stokes_as_pa) {
-            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, CurrentStokes(), bounds, mip)) {
+            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, channel, stokes, bounds, mip)) {
                 return false;
             }
         }
@@ -2538,14 +2524,14 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
             for (auto one : stokes_flag) {
                 std::string stokes = one.first;
                 if (stokes_flag[stokes] &&
-                    !GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, mip)) {
+                    !GetDownsampledRasterData(stokes_data[stokes], width, height, channel, stokes_indices[stokes], bounds, mip)) {
                     return false;
                 }
             }
         }
 
         // Calculate PI or PA and then send a partial response message
-        _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+        _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, channel, progress, callback);
     }
     return true;
 }

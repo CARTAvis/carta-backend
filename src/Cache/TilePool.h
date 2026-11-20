@@ -28,6 +28,8 @@ struct TilePool : std::enable_shared_from_this<TilePool> {
      *  @param size the size increment to be added
      */
     void Grow(int size);
+    /** @brief Ensure that the pool can retain at least the requested number of tiles. */
+    void Reserve(int capacity);
     /** @brief Request a tile object from the pool.
      *  @return A tile object.
      *  @details If the pool is empty, a new tile object will be created.
