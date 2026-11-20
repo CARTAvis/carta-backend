@@ -256,7 +256,11 @@ set(SOURCE_FILES
         src/ImageData/Hdf5/Hdf5Attributes.cc
         src/ImageData/Hdf5/Hdf5Loader.cc
         src/ImageData/Miriad/CartaMiriadImage.cc
+        src/ImageData/Zarr/CartaZarrImage.cc
+        src/ImageData/Zarr/ZarrCasacore.cc
         src/ImageData/Zarr/ZarrContext.cc
+        src/ImageData/Zarr/ZarrLoader.cc
+        src/ImageData/Zarr/ZarrStores.cc
         src/ImageFitting/ImageFitter.cc
         src/ImageFitting/InitialValueCalculator.cc
         src/ImageGenerators/MomentGenerator.cc

@@ -229,7 +229,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
                                 file_type = FolderImageType(full_path, message);
                                 switch (file_type) {
                                     case CARTA::FileType::CASA:
-                                    case CARTA::FileType::MIRIAD: {
+                                    case CARTA::FileType::MIRIAD:
+                                    case CARTA::FileType::ZARR: {
                                         add_image_file = true;
                                         break;
                                     }
