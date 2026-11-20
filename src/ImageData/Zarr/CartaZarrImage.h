@@ -48,10 +48,18 @@ public:
     casacore::IPosition doNiceCursorShape(casacore::uInt max_pixels) const override;
     // The shape of one chunk of the store, in CARTA's order. carta-zarr decodes a whole chunk at a time.
     casacore::IPosition ChunkShape() const;
-    // Reads the pixels of `section` into `buffer`. The section is in CARTA's order.
-    // A pixel that is flagged, absent or not finite becomes NaN. Returns carta-zarr's error if the read fails.
+    // Reads the pixels of `section` into `buffer`, with carta-zarr's read options and progress callback.
+    // The section is in CARTA's order. A pixel that is flagged, absent or not finite becomes NaN.
+    // Returns carta-zarr's error if the read fails.
     // Throws casacore::AipsError if the section is not fixed or does not have the image's rank.
-    carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section) const;
+    // It is virtual, so that a test can count the reads of an image.
+    virtual carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
+        const carta::zarr::ReadOptions& options = {}, const carta::zarr::ProgressCallback& progress = {}) const;
+    // The carta-zarr image, for the work that casacore has no call for, such as reductions and chunk sizes.
+    // Its axes are in CARTA's order, the same as in Read.
+    const carta::zarr::Image& ZarrImage() const {
+        return *_zarr_image;
+    }
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;
     void resize(const casacore::TiledShape& newShape) override;
