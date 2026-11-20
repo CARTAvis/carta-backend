@@ -15,13 +15,12 @@ namespace carta {
 
 class FitsLoader : public FileLoader {
 public:
-    FitsLoader(const std::string& filename, bool is_gz = false, bool is_http = false);
+    FitsLoader(const std::string& filename, bool is_gz = false);
     ~FitsLoader();
 
 private:
     std::string _unzip_file;
     casacore::uInt _hdu_num;
-    bool _is_http;
 
     void AllocateImage(const std::string& hdu) override;
     int GetNumImageHeaders(unsigned int hdu_num, std::string& error);

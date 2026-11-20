@@ -116,7 +116,8 @@ if (Protobuf_VERSION VERSION_GREATER_EQUAL "4.25.3")
             ${PROTOBUF_LIBRARY}
             absl_hash
             absl_log_internal_message
-            absl_log_internal_nullguard)
+            absl_log_internal_nullguard
+            absl_log_internal_check_op)
     message(STATUS "Newer protobuf version (${Protobuf_VERSION}) includes abseil libraries")
 endif ()
 
@@ -187,6 +188,8 @@ add_subdirectory(third-party/nlohmann_json)
 set(nlohmann_json_VERSION "v3.11.3")
 add_subdirectory(third-party/json-schema-validator)
 
+FIND_PACKAGE(CURL REQUIRED)
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
@@ -197,6 +200,7 @@ set(LINK_LIBS
         zfp
         zstd
         cfitsio
+        CURL::libcurl
         wcs
         gsl
         nlohmann_json::nlohmann_json
@@ -291,6 +295,7 @@ set(SOURCE_FILES
         src/Util/Memory.cc
         src/Util/Message.cc
         src/Util/RemoteFiles.cc
+        src/Util/Sia.cc
         src/Util/Stokes.cc
         src/Util/String.cc
         src/Util/Token.cc)

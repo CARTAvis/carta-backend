@@ -19,6 +19,10 @@ public:
     FitsHduList(const std::string& filename);
     void GetHduList(std::vector<std::string>& hdu_list, std::string& error);
 
+    // Returns the first image HDU of a FITS file, as accepted by FileLoader::OpenFile.
+    // Handles gzipped files, and tile-compressed files whose primary HDU is empty.
+    static bool GetFirstImageHdu(const std::string& filename, std::string& hdu, std::string& error);
+
 private:
     void CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu_list, std::string& error);
 

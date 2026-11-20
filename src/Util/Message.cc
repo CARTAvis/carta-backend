@@ -274,6 +274,15 @@ CARTA::FittingProgress Message::FittingProgress(int32_t file_id, float progress)
     return message;
 }
 
+CARTA::RemoteFileProgress Message::RemoteFileProgress(int32_t file_id, float progress, int64_t downloaded_bytes, int64_t total_bytes) {
+    CARTA::RemoteFileProgress message;
+    message.set_file_id(file_id);
+    message.set_progress(progress);
+    message.set_downloaded_bytes(downloaded_bytes);
+    message.set_total_bytes(total_bytes);
+    return message;
+}
+
 CARTA::RegionHistogramData Message::RegionHistogramData(
     int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress, const carta::HistogramConfig& hist_config) {
     CARTA::RegionHistogramData message;

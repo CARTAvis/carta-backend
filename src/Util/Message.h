@@ -119,6 +119,7 @@ public:
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress, int32_t preview_id = 0);
     static CARTA::FittingProgress FittingProgress(int32_t file_id, float progress);
+    static CARTA::RemoteFileProgress RemoteFileProgress(int32_t file_id, float progress, int64_t downloaded_bytes, int64_t total_bytes);
     static CARTA::RegionHistogramData RegionHistogramData(
         int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress, const carta::HistogramConfig& hist_config);
     static CARTA::ContourImageData ContourImageData(

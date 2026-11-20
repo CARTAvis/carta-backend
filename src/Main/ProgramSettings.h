@@ -68,6 +68,11 @@ struct ProgramSettings {
     bool read_only_mode = false;
     bool enable_scripting = false;
     bool controller_deployment = false;
+    // Curated SIA 2.0 services offered to clients, as "Name|query-url" entries
+    std::vector<std::string> sia_services{"GAVO Data Center (Heidelberg)|https://dc.g-vo.org/__system__/siap2/sitewide/siap2.xml",
+        "CADC|https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/sia/v2query", "IRSA (IPAC)|https://irsa.ipac.caltech.edu/SIA"};
+    // Maximum size of a client-requested remote file, probed before fetching; 0 disables the check
+    int remote_file_max_size_mb = 4096;
 
     std::string browser;
 
@@ -87,7 +92,8 @@ struct ProgramSettings {
         {"event_thread_count", &event_thread_count},
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
-        {"idle_timeout", &idle_session_wait_time}
+        {"idle_timeout", &idle_session_wait_time},
+        {"remote_file_max_size_mb", &remote_file_max_size_mb}
     };
 
     std::unordered_map<std::string, bool*> bool_keys_map{
@@ -115,7 +121,11 @@ struct ProgramSettings {
     std::unordered_map<std::string, std::vector<int>*> vector_int_keys_map {
         {"port", &port}
     };
-    
+
+    std::unordered_map<std::string, std::vector<std::string>*> vector_string_keys_map {
+        {"sia_services", &sia_services}
+    };
+
     std::unordered_map<std::string, std::string> deprecated_options {
         {"base", "Use positional parameters instead to set the starting directory or open files on startup."},
         {"root", "Use top_level_folder instead."},

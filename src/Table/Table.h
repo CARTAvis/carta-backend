@@ -47,7 +47,7 @@ public:
 
 protected:
     bool ConstructFromXML(bool header_only = false);
-    bool PopulateCoosys(const pugi::xml_node& votable);
+    bool PopulateCoosys(const pugi::xml_node& votable, const pugi::xml_node& resource);
     bool PopulateParams(const pugi::xml_node& table);
     bool PopulateFields(const pugi::xml_node& table);
     bool PopulateRows(const pugi::xml_node& table);

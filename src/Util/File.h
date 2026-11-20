@@ -117,15 +117,6 @@ bool IsCompressedFits(const std::string& filename);
 bool IsGzMagicNumber(uint32_t magic_number);
 
 /**
- * @brief Checks whether a given filename represents a remote HTTP or HTTPS URL.
- *
- * @param[in] filename The string to be checked.
- *
- * @return `true` if the filename is an HTTP or HTTPS URL, otherwise `false`.
- */
-bool IsRemoteHttpFile(const std::string& filename);
-
-/**
  * @brief Counts the number of items in a given directory.
  *
  * @param[in] path The path to the directory whose items are to be counted.

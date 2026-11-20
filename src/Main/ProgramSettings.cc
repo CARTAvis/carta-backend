@@ -122,6 +122,20 @@ void ProgramSettings::SetSettingsFromJSON(const json& j) {
             elem->at(0) = j[key];
         }
     }
+
+    for (const auto& [key, elem] : vector_string_keys_map) {
+        if (!j.contains(key)) {
+            continue;
+        }
+        if (j[key].is_array()) {
+            elem->resize(j[key].size());
+            for (int i = 0; i < j[key].size(); ++i) {
+                elem->at(i) = j[key][i];
+            }
+        } else {
+            *elem = {j[key]};
+        }
+    }
 }
 
 void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
@@ -153,6 +167,8 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
         ("read_only_mode", "disable write requests", cxxopts::value<bool>())
         ("enable_scripting", "enable HTTP scripting interface", cxxopts::value<bool>())
+        ("sia_services", "curated SIA 2.0 services offered to clients, as Name|query-url entries; an empty list disables SIA queries", cxxopts::value<std::vector<string>>(), "<services>")
+        ("remote_file_max_size_mb", "maximum size in MB of a client-requested remote file (probed before fetching); 0 disables the check", cxxopts::value<int>(), "<MB>")
         ("files", "files to load", cxxopts::value<std::vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
@@ -288,6 +304,8 @@ global configuration files, respectively.
     applyOptionalArgument(idle_session_wait_time, "idle_timeout", result);
 
     applyOptionalArgument(browser, "browser", result);
+    applyOptionalArgument(sia_services, "sia_services", result);
+    applyOptionalArgument(remote_file_max_size_mb, "remote_file_max_size_mb", result);
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
@@ -342,6 +360,11 @@ global configuration files, respectively.
     for (const auto& [key, elem] : vector_int_keys_map) {
         if (result.count(key)) {
             command_line_settings[key] = result[key].as<std::vector<int>>();
+        }
+    }
+    for (const auto& [key, elem] : vector_string_keys_map) {
+        if (result.count(key)) {
+            command_line_settings[key] = result[key].as<std::vector<std::string>>();
         }
     }
 }

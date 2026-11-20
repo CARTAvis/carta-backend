@@ -14,6 +14,7 @@
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
 #include "Util/Json.h"
+#include "Util/Sia.h"
 #include "Util/String.h"
 #include "Util/Token.h"
 
@@ -112,6 +113,11 @@ void HttpServer::RegisterRoutes() {
 
 void HttpServer::HandleGetConfig(Res* res, Req* req) {
     json runtime_config = {{"apiAddress", fmt::format("{}/api", _url_prefix)}};
+    json sia_services = json::array();
+    for (const auto& service : ParseSiaServices(ProgramSettings::GetInstance().sia_services)) {
+        sia_services.push_back({{"name", service.name}, {"queryUrl", service.query_url}});
+    }
+    runtime_config["siaServices"] = sia_services;
     res->writeStatus(HTTP_200);
     res->writeHeader("Content-Type", "application/json");
     res->end(runtime_config.dump());

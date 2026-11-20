@@ -33,8 +33,6 @@ std::shared_ptr<FileLoader> FileLoader::GetLoader(const std::string& filename, c
         return std::make_shared<ExprLoader>(filename, directory);
     } else if (IsCompressedFits(filename)) {
         return std::make_shared<FitsLoader>(filename, true);
-    } else if (IsRemoteHttpFile(filename)) {
-        return std::make_shared<FitsLoader>(filename, false, true);
     }
 
     switch (CasacoreImageType(filename)) {

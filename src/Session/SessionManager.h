@@ -87,6 +87,7 @@ private:
     void StopPvPreviewHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void ClosePvPreviewHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void RemoteFileRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head);
+    void SiaQueryRequestHandler(Session* session, std::string_view sv_message, const EventHeader& head);
     void ChannelMapFlowControlHandler(Session* session, std::string_view sv_message, const EventHeader& head);
 
     // Sessions map

@@ -53,6 +53,27 @@ TEST_F(VoTableTest, ParseMissingData) {
     EXPECT_EQ(table.NumRows(), 0);
 }
 
+TEST_F(VoTableTest, ParseWithLeadingMetaResource) {
+    Table table(XmlTables() / "meta_resource.xml");
+    EXPECT_TRUE(table.IsValid());
+    EXPECT_EQ(table.NumRows(), 2);
+    EXPECT_EQ(table.NumColumns(), 3);
+    EXPECT_EQ(table[0]->name, "RA");
+    EXPECT_EQ(table[2]->name, "Name");
+}
+
+TEST_F(VoTableTest, ParseWithLeadingMetaResourceHeaderOnly) {
+    Table table(XmlTables() / "meta_resource.xml", true);
+    EXPECT_TRUE(table.IsValid());
+    EXPECT_EQ(table.NumColumns(), 3);
+}
+
+TEST_F(VoTableTest, CoosysFromResourceHoldingTable) {
+    Table table(XmlTables() / "meta_resource.xml");
+    EXPECT_EQ(table.Coosys().system(), "ICRS");
+    EXPECT_EQ(table.Coosys().equinox(), "2000");
+}
+
 TEST_F(VoTableTest, ParseIvoaExampleHeaderOnly) {
     Table table(XmlTables() / "ivoa_example.xml", true);
     EXPECT_TRUE(table.IsValid());
