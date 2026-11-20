@@ -119,27 +119,11 @@ bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
     return std::dynamic_pointer_cast<CartaZarrImage>(_image) != nullptr && _num_dims == 4 && region_shape.size() >= 2;
 }
 
-ZarrLoader::RegionSpectralKey ZarrLoader::RegionSpectralKey::Of(
-    const casacore::IPosition& origin, const casacore::Array<casacore::Bool>& mask, const AxisRange& range) {
-    RegionSpectralKey key;
-    key.x = origin(0);
-    key.y = origin(1);
-    key.width = mask.shape()(0);
-    key.height = mask.shape()(1);
-    key.z_from = range.from;
-    key.z_to = range.to;
-    return key;
-}
-
 void ZarrLoader::RegionSpectralPace::Reset(const RegionSpectralKey& other) {
     key = other;
     channels_done = 0;
     reads = 0;
     stokes.clear();
-}
-
-bool ZarrLoader::RegionSpectralKey::operator==(const RegionSpectralKey& other) const {
-    return x == other.x && y == other.y && width == other.width && height == other.height && z_from == other.z_from && z_to == other.z_to;
 }
 
 // Reads a region's profile in runs of whole channels. A call returns after _region_spectral_time,
@@ -165,13 +149,13 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     const double beam_area = CalculateBeamArea();
     const bool has_flux = !std::isnan(beam_area);
 
-    const auto key = RegionSpectralKey::Of(origin, mask_array, range);
+    const RegionSpectralKey key(origin, mask_shape, range);
     auto& pace = [&]() -> RegionSpectralPace& {
         std::scoped_lock regions_lock(_region_spectral_paces_mutex);
         return _region_spectral_paces[region_id];
     }();
     std::scoped_lock lock(pace.mutex);
-    if (!(pace.key == key)) {
+    if (pace.key != key) {
         // Start every stokes again. Otherwise a stokes finished for an earlier key would report a computed stokes as finished.
         pace.Reset(key);
     }

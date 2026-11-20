@@ -18,6 +18,7 @@
 
 #include "../FileLoader.h"
 #include "Util/Image.h"
+#include "Util/Key.h"
 
 namespace carta {
 
@@ -52,16 +53,10 @@ protected:
     // The key of a profile is the region's bounding box and the channel range. A new key starts the profile again.
     // Like the HDF5 loader, the key does not include the mask. So an edited region that keeps its bounding box
     // continues the old profile.
-    struct RegionSpectralKey {
-        std::int64_t x = 0;
-        std::int64_t y = 0;
-        std::int64_t width = 0;
-        std::int64_t height = 0;
-        int z_from = 0;
-        int z_to = -1;
-
-        static RegionSpectralKey Of(const casacore::IPosition& origin, const casacore::Array<casacore::Bool>& mask, const AxisRange& range);
-        bool operator==(const RegionSpectralKey& other) const;
+    struct RegionSpectralKey : public Key<int, int, std::int64_t, std::int64_t, std::int64_t, std::int64_t> {
+        RegionSpectralKey() {}
+        RegionSpectralKey(const casacore::IPosition& origin, const casacore::IPosition& mask_shape, const AxisRange& range)
+            : Key({range.from, range.to, mask_shape(0), mask_shape(1), origin(0), origin(1)}) {}
     };
 
 private:
