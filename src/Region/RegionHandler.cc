@@ -203,7 +203,8 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 // Style strings go into region file lines, where a control character starts a new line and a ; starts a new DS9 region
 static void CleanStyleText(CARTA::RegionStyle& region_style) {
     auto clean = [](std::string text) {
-        std::replace_if(text.begin(), text.end(), [](unsigned char c) { return std::iscntrl(c) || c == ';'; }, ' ');
+        std::replace_if(
+            text.begin(), text.end(), [](unsigned char c) { return std::iscntrl(c) || c == ';'; }, ' ');
         return text;
     };
     region_style.set_name(clean(region_style.name()));
