@@ -105,9 +105,9 @@ var sectionId = 'dynsection-13';
 <g id="Node000005" class="node">
 <title>Node5</title>
 <g id="a_Node000005"><a xlink:href="structcarta_1_1BeamTableInfo.html#ac36f8de727c7981962435ea0ca13a400" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="465,-434 345,-434 345,-404 465,-404 465,-434"/>
-<text text-anchor="start" x="353" y="-422" font-family="Helvetica,sans-Serif" font-size="10.00">carta::BeamTableInfo</text>
-<text text-anchor="middle" x="405" y="-411" font-family="Helvetica,sans-Serif" font-size="10.00">::clear</text>
+<polygon fill="white" stroke="#666666" points="465,-415 345,-415 345,-385 465,-385 465,-415"/>
+<text text-anchor="start" x="353" y="-403" font-family="Helvetica,sans-Serif" font-size="10.00">carta::BeamTableInfo</text>
+<text text-anchor="middle" x="405" y="-392" font-family="Helvetica,sans-Serif" font-size="10.00">::clear</text>
 </a>
 </g>
 </g>
@@ -115,8 +115,8 @@ var sectionId = 'dynsection-13';
 <g id="edge4_Node000001_Node000005" class="edge">
 <title>Node1&#45;&gt;Node5</title>
 <g id="a_edge4_Node000001_Node000005"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M78.14,-321.17C95.97,-338.64 127.83,-366.77 161,-381 216.43,-404.79 284.68,-413.9 334.73,-417.28"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="334.6,-420.78 344.8,-417.9 335.03,-413.79 334.6,-420.78"/>
+<path fill="none" stroke="#63b8ff" d="M77.64,-321.3C95.24,-339.18 127.11,-367.98 161,-381 216.8,-402.44 285.01,-406.01 334.95,-404.89"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="335.1,-408.39 345,-404.6 334.9,-401.39 335.1,-408.39"/>
 </a>
 </g>
 </g>
@@ -205,58 +205,39 @@ var sectionId = 'dynsection-13';
 </g>
 </g>
 <!-- Node1&#45;&gt;Node12 -->
-<g id="edge19_Node000001_Node000012" class="edge">
+<g id="edge20_Node000001_Node000012" class="edge">
 <title>Node1&#45;&gt;Node12</title>
-<g id="a_edge19_Node000001_Node000012"><a xlink:title=" ">
+<g id="a_edge20_Node000001_Node000012"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M67.54,-321.07C77.29,-354.13 105.5,-432.81 161,-467 212,-498.42 280.9,-500.9 332.31,-496.84"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="332.7,-500.32 342.35,-495.95 332.08,-493.35 332.7,-500.32"/>
-</a>
-</g>
-</g>
-<!-- Node14 -->
-<g id="Node000014" class="node">
-<title>Node14</title>
-<g id="a_Node000014"><a xlink:href="classcarta_1_1CompressedFits.html#a3f351f377123ea8f6041f78ef57f4d55" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="292,-544 167,-544 167,-514 292,-514 292,-544"/>
-<text text-anchor="start" x="175" y="-532" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
-<text text-anchor="middle" x="229.5" y="-521" font-family="Helvetica,sans-Serif" font-size="10.00">::IsImageHdu</text>
-</a>
-</g>
-</g>
-<!-- Node1&#45;&gt;Node14 -->
-<g id="edge14_Node000001_Node000014" class="edge">
-<title>Node1&#45;&gt;Node14</title>
-<g id="a_edge14_Node000001_Node000014"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M67.21,-321.02C76.77,-356.74 105.43,-447.67 161,-500 164.53,-503.32 168.5,-506.3 172.7,-508.96"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="171.15,-512.1 181.57,-513.98 174.59,-506.01 171.15,-512.1"/>
 </a>
 </g>
 </g>
 <!-- Node15 -->
 <g id="Node000015" class="node">
 <title>Node15</title>
-<g id="a_Node000015"><a xlink:href="structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="289,-211.5 170,-211.5 170,-192.5 289,-192.5 289,-211.5"/>
-<text text-anchor="middle" x="229.5" y="-199.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::TimeDelta::ms</text>
+<g id="a_Node000015"><a xlink:href="classcarta_1_1CompressedFits.html#a3f351f377123ea8f6041f78ef57f4d55" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="292,-544 167,-544 167,-514 292,-514 292,-544"/>
+<text text-anchor="start" x="175" y="-532" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
+<text text-anchor="middle" x="229.5" y="-521" font-family="Helvetica,sans-Serif" font-size="10.00">::IsImageHdu</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node15 -->
-<g id="edge17_Node000001_Node000015" class="edge">
+<g id="edge15_Node000001_Node000015" class="edge">
 <title>Node1&#45;&gt;Node15</title>
-<g id="a_edge17_Node000001_Node000015"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M76.82,-290.82C94.31,-271.8 126.83,-239.48 161,-221 165.2,-218.73 169.69,-216.71 174.29,-214.92"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="175.56,-218.18 183.83,-211.55 173.23,-211.58 175.56,-218.18"/>
+<g id="a_edge15_Node000001_Node000015"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M67.21,-321.02C76.77,-356.74 105.43,-447.67 161,-500 164.53,-503.32 168.5,-506.3 172.7,-508.96"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="171.15,-512.1 181.57,-513.98 174.59,-506.01 171.15,-512.1"/>
 </a>
 </g>
 </g>
 <!-- Node16 -->
 <g id="Node000016" class="node">
 <title>Node16</title>
-<g id="a_Node000016"><a xlink:href="classcarta_1_1CompressedFits.html#ab9ca1735c175f61848ebf768295ccc5c" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="292,-174 167,-174 167,-144 292,-144 292,-174"/>
-<text text-anchor="start" x="175" y="-162" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
-<text text-anchor="middle" x="229.5" y="-151" font-family="Helvetica,sans-Serif" font-size="10.00">::OpenGzFile</text>
+<g id="a_Node000016"><a xlink:href="structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="289,-211.5 170,-211.5 170,-192.5 289,-192.5 289,-211.5"/>
+<text text-anchor="middle" x="229.5" y="-199.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::TimeDelta::ms</text>
 </a>
 </g>
 </g>
@@ -264,37 +245,37 @@ var sectionId = 'dynsection-13';
 <g id="edge18_Node000001_Node000016" class="edge">
 <title>Node1&#45;&gt;Node16</title>
 <g id="a_edge18_Node000001_Node000016"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M71.97,-290.66C86.82,-265.1 119.9,-213.69 161,-184 163.63,-182.1 166.43,-180.32 169.33,-178.67"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="170.97,-181.76 178.26,-174.08 167.76,-175.54 170.97,-181.76"/>
+<path fill="none" stroke="#63b8ff" d="M76.82,-290.82C94.31,-271.8 126.83,-239.48 161,-221 165.2,-218.73 169.69,-216.71 174.29,-214.92"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="175.56,-218.18 183.83,-211.55 173.23,-211.58 175.56,-218.18"/>
 </a>
 </g>
 </g>
 <!-- Node17 -->
 <g id="Node000017" class="node">
 <title>Node17</title>
-<g id="a_Node000017"><a xlink:href="classcarta_1_1CompressedFits.html#a9b6e48a8fa3983af8ca125921fb6c2f1" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="292,-126 167,-126 167,-96 292,-96 292,-126"/>
-<text text-anchor="start" x="175" y="-114" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
-<text text-anchor="middle" x="229.5" y="-103" font-family="Helvetica,sans-Serif" font-size="10.00">::ReadBeamsTable</text>
+<g id="a_Node000017"><a xlink:href="classcarta_1_1CompressedFits.html#ab9ca1735c175f61848ebf768295ccc5c" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="292,-174 167,-174 167,-144 292,-144 292,-174"/>
+<text text-anchor="start" x="175" y="-162" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
+<text text-anchor="middle" x="229.5" y="-151" font-family="Helvetica,sans-Serif" font-size="10.00">::OpenGzFile</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node17 -->
-<g id="edge20_Node000001_Node000017" class="edge">
+<g id="edge19_Node000001_Node000017" class="edge">
 <title>Node1&#45;&gt;Node17</title>
-<g id="a_edge20_Node000001_Node000017"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M68.09,-290.84C78.87,-257.77 108.86,-178.66 161,-135 162.54,-133.71 164.15,-132.49 165.82,-131.33"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="167.82,-134.22 174.59,-126.07 164.22,-128.22 167.82,-134.22"/>
+<g id="a_edge19_Node000001_Node000017"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M71.97,-290.66C86.82,-265.1 119.9,-213.69 161,-184 163.63,-182.1 166.43,-180.32 169.33,-178.67"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="170.97,-181.76 178.26,-174.08 167.76,-175.54 170.97,-181.76"/>
 </a>
 </g>
 </g>
 <!-- Node18 -->
 <g id="Node000018" class="node">
 <title>Node18</title>
-<g id="a_Node000018"><a xlink:href="classcarta_1_1CompressedFits.html#a8d385844900700791fabde4c698ef11f" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="292,-78 167,-78 167,-48 292,-48 292,-78"/>
-<text text-anchor="start" x="175" y="-66" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
-<text text-anchor="middle" x="229.5" y="-55" font-family="Helvetica,sans-Serif" font-size="10.00">::SetBeam</text>
+<g id="a_Node000018"><a xlink:href="classcarta_1_1CompressedFits.html#a9b6e48a8fa3983af8ca125921fb6c2f1" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="292,-126 167,-126 167,-96 292,-96 292,-126"/>
+<text text-anchor="start" x="175" y="-114" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
+<text text-anchor="middle" x="229.5" y="-103" font-family="Helvetica,sans-Serif" font-size="10.00">::ReadBeamsTable</text>
 </a>
 </g>
 </g>
@@ -302,18 +283,18 @@ var sectionId = 'dynsection-13';
 <g id="edge21_Node000001_Node000018" class="edge">
 <title>Node1&#45;&gt;Node18</title>
 <g id="a_edge21_Node000001_Node000018"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M66,-290.87C73.29,-251.56 98.08,-145.24 161,-87 162.29,-85.81 163.64,-84.68 165.04,-83.6"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="167.11,-86.43 173.56,-78.02 163.27,-80.57 167.11,-86.43"/>
+<path fill="none" stroke="#63b8ff" d="M68.09,-290.84C78.87,-257.77 108.86,-178.66 161,-135 162.54,-133.71 164.15,-132.49 165.82,-131.33"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="167.82,-134.22 174.59,-126.07 164.22,-128.22 167.82,-134.22"/>
 </a>
 </g>
 </g>
 <!-- Node19 -->
 <g id="Node000019" class="node">
 <title>Node19</title>
-<g id="a_Node000019"><a xlink:href="classcarta_1_1CompressedFits.html#a329de09f59620a426d4a1c63fe007052" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="292,-30 167,-30 167,0 292,0 292,-30"/>
-<text text-anchor="start" x="175" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
-<text text-anchor="middle" x="229.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::SetHistoryBeam</text>
+<g id="a_Node000019"><a xlink:href="classcarta_1_1CompressedFits.html#a8d385844900700791fabde4c698ef11f" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="292,-78 167,-78 167,-48 292,-48 292,-78"/>
+<text text-anchor="start" x="175" y="-66" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
+<text text-anchor="middle" x="229.5" y="-55" font-family="Helvetica,sans-Serif" font-size="10.00">::SetBeam</text>
 </a>
 </g>
 </g>
@@ -321,6 +302,25 @@ var sectionId = 'dynsection-13';
 <g id="edge22_Node000001_Node000019" class="edge">
 <title>Node1&#45;&gt;Node19</title>
 <g id="a_edge22_Node000001_Node000019"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M66,-290.87C73.29,-251.56 98.08,-145.24 161,-87 162.29,-85.81 163.64,-84.68 165.04,-83.6"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="167.11,-86.43 173.56,-78.02 163.27,-80.57 167.11,-86.43"/>
+</a>
+</g>
+</g>
+<!-- Node20 -->
+<g id="Node000020" class="node">
+<title>Node20</title>
+<g id="a_Node000020"><a xlink:href="classcarta_1_1CompressedFits.html#a329de09f59620a426d4a1c63fe007052" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="292,-30 167,-30 167,0 292,0 292,-30"/>
+<text text-anchor="start" x="175" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
+<text text-anchor="middle" x="229.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::SetHistoryBeam</text>
+</a>
+</g>
+</g>
+<!-- Node1&#45;&gt;Node20 -->
+<g id="edge23_Node000001_Node000020" class="edge">
+<title>Node1&#45;&gt;Node20</title>
+<g id="a_edge23_Node000001_Node000020"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M64.62,-290.95C68.77,-246.16 87.06,-112.31 161,-39 162.08,-37.93 163.2,-36.91 164.37,-35.94"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="166.47,-38.74 172.65,-30.14 162.45,-33.01 166.47,-38.74"/>
 </a>
@@ -386,8 +386,8 @@ var sectionId = 'dynsection-13';
 <g id="edge11_Node000011_Node000005" class="edge">
 <title>Node11&#45;&gt;Node5</title>
 <g id="a_edge11_Node000011_Node000005"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M292.16,-434.47C305.95,-432.56 320.67,-430.53 334.75,-428.58"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="335.44,-432.02 344.87,-427.18 334.48,-425.08 335.44,-432.02"/>
+<path fill="none" stroke="#63b8ff" d="M291.18,-427.96C305.31,-424.46 320.46,-420.7 334.93,-417.12"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="335.95,-420.47 344.81,-414.67 334.27,-413.68 335.95,-420.47"/>
 </a>
 </g>
 </g>
@@ -397,6 +397,24 @@ var sectionId = 'dynsection-13';
 <g id="a_edge12_Node000011_Node000012"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M291.18,-458.04C304.79,-461.41 319.33,-465.02 333.3,-468.48"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="332.8,-471.96 343.35,-470.97 334.49,-465.17 332.8,-471.96"/>
+</a>
+</g>
+</g>
+<!-- Node14 -->
+<g id="Node000014" class="node">
+<title>Node14</title>
+<g id="a_Node000014"><a xlink:href="String_8cc.html#ac169e525f15ae5ec3c0ccc36d1702454" target="_top" xlink:title="Converts a string to an integer.">
+<polygon fill="white" stroke="#666666" points="439,-452.5 371,-452.5 371,-433.5 439,-433.5 439,-452.5"/>
+<text text-anchor="middle" x="405" y="-440.5" font-family="Helvetica,sans-Serif" font-size="10.00">StringToInt</text>
+</a>
+</g>
+</g>
+<!-- Node11&#45;&gt;Node14 -->
+<g id="edge14_Node000011_Node000014" class="edge">
+<title>Node11&#45;&gt;Node14</title>
+<g id="a_edge14_Node000011_Node000014"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M292.16,-443C314.82,-443 339.99,-443 360.7,-443"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="360.78,-446.5 370.78,-443 360.78,-439.5 360.78,-446.5"/>
 </a>
 </g>
 </g>
@@ -418,37 +436,37 @@ var sectionId = 'dynsection-13';
 </a>
 </g>
 </g>
-<!-- Node14&#45;&gt;Node2 -->
-<g id="edge15_Node000014_Node000002" class="edge">
-<title>Node14&#45;&gt;Node2</title>
-<g id="a_edge15_Node000014_Node000002"><a xlink:title=" ">
+<!-- Node15&#45;&gt;Node2 -->
+<g id="edge16_Node000015_Node000002" class="edge">
+<title>Node15&#45;&gt;Node2</title>
+<g id="a_edge16_Node000015_Node000002"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M292.16,-537.53C305.12,-539.32 318.9,-541.23 332.2,-543.07"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="331.86,-546.55 342.25,-544.46 332.82,-539.62 331.86,-546.55"/>
 </a>
 </g>
 </g>
-<!-- Node14&#45;&gt;Node12 -->
-<g id="edge16_Node000014_Node000012" class="edge">
-<title>Node14&#45;&gt;Node12</title>
-<g id="a_edge16_Node000014_Node000012"><a xlink:title=" ">
+<!-- Node15&#45;&gt;Node12 -->
+<g id="edge17_Node000015_Node000012" class="edge">
+<title>Node15&#45;&gt;Node12</title>
+<g id="a_edge17_Node000015_Node000012"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M291.18,-513.96C304.79,-510.59 319.33,-506.98 333.3,-503.52"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="334.49,-506.83 343.35,-501.03 332.8,-500.04 334.49,-506.83"/>
 </a>
 </g>
 </g>
-<!-- Node20 -->
-<g id="Node000020" class="node">
-<title>Node20</title>
-<g id="a_Node000020"><a xlink:href="FitsUtil_8cc.html#a460085220f0ce6d3fe661fba5877a796" target="_top" xlink:title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression.">
+<!-- Node21 -->
+<g id="Node000021" class="node">
+<title>Node21</title>
+<g id="a_Node000021"><a xlink:href="FitsUtil_8cc.html#a460085220f0ce6d3fe661fba5877a796" target="_top" xlink:title="Parses an AIPS&#45;style beam header to extract beam parameters with regular expression.">
 <polygon fill="white" stroke="#666666" points="476,-24.5 334,-24.5 334,-5.5 476,-5.5 476,-24.5"/>
 <text text-anchor="middle" x="405" y="-12.5" font-family="Helvetica,sans-Serif" font-size="10.00">ParseHistoryBeamHeader</text>
 </a>
 </g>
 </g>
-<!-- Node19&#45;&gt;Node20 -->
-<g id="edge23_Node000019_Node000020" class="edge">
-<title>Node19&#45;&gt;Node20</title>
-<g id="a_edge23_Node000019_Node000020"><a xlink:title=" ">
+<!-- Node20&#45;&gt;Node21 -->
+<g id="edge24_Node000020_Node000021" class="edge">
+<title>Node20&#45;&gt;Node21</title>
+<g id="a_edge24_Node000020_Node000021"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M292.16,-15C302.42,-15 313.19,-15 323.83,-15"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="323.97,-18.5 333.97,-15 323.97,-11.5 323.97,-18.5"/>
 </a>
