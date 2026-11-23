@@ -873,6 +873,15 @@ bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return false;
 }
 
+FileLoader::LoaderScan FileLoader::GetPlaneStats(int, const std::function<bool()>&, const PlaneStatsCallback&) {
+    return LoaderScan::unsupported;
+}
+
+FileLoader::LoaderScan FileLoader::GetPlaneHistograms(
+    int, int, const HistogramBounds&, const std::function<bool()>&, const PlaneHistogramCallback&) {
+    return LoaderScan::unsupported;
+}
+
 bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
     // Must be implemented in subclasses; should call before GetRegionSpectralData
     return false;

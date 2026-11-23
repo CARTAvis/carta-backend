@@ -20,6 +20,8 @@
 #include <carta-protobuf/enums.pb.h>
 
 #include "ImageData/FileInfo.h"
+#include "ImageStats/BasicStatsCalculator.h"
+#include "ImageStats/Histogram.h"
 #include "Util/Casacore.h"
 #include "Util/Stokes.h"
 
@@ -121,6 +123,18 @@ public:
 
     virtual bool HasMip(int mip) const;
     virtual bool UseTileCache() const;
+
+    // How a scan done by the loader itself ended. Unsupported means the loader did not start it, so the caller
+    // does the work its own way.
+    enum class LoaderScan { unsupported, finished, cancelled, failed };
+    // Called with each plane when it is finished. Returning false stops the scan.
+    using PlaneStatsCallback = std::function<bool(int z, const BasicStats<float>& stats)>;
+    using PlaneHistogramCallback = std::function<bool(int z, const Histogram& histogram)>;
+    // Basic statistics and histograms of every plane of one stokes, read in one scan over the cube.
+    // The scan stops when `cancelled` returns true. The default returns unsupported.
+    virtual LoaderScan GetPlaneStats(int stokes, const std::function<bool()>& cancelled, const PlaneStatsCallback& plane);
+    virtual LoaderScan GetPlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds, const std::function<bool()>& cancelled,
+        const PlaneHistogramCallback& plane);
 
     // Get the full name of image file
     std::string GetFileName();

@@ -40,6 +40,7 @@
 #include "ImageData/Zarr/ZarrLoader.h"
 #include "ImageData/Zarr/ZarrStores.h"
 #include "ImageStats/StatsCalculator.h"
+#include "src/Frame/Frame.h"
 
 using namespace carta;
 
@@ -1213,4 +1214,113 @@ TEST(ZarrSpectrumCache, AColumnKeepsItsChunksWheneverItFits) {
     EXPECT_FALSE(SpectrumKeepsItsChunks(1, 1, kHuge, kHuge, kGib));
     // A count clamped to the largest value would equal this cache and look like it fits.
     EXPECT_FALSE(SpectrumKeepsItsChunks(kHuge, kHuge, 1, 1, std::numeric_limits<std::size_t>::max()));
+}
+
+namespace {
+
+// Expects two values to agree, or both to be NaN
+void ExpectSameValue(double scanned, double expected) {
+    if (std::isnan(expected)) {
+        EXPECT_TRUE(std::isnan(scanned));
+    } else {
+        EXPECT_NEAR(scanned, expected, 1e-9 * std::max(1.0, std::abs(expected)));
+    }
+}
+
+} // namespace
+
+// The loader's scan over the cube gives the same statistics and histograms as reading the planes one at a time.
+TEST_F(ZarrImageTest, LoaderScansMatchThePlanesReadOneAtATime) {
+    const int num_bins = 5;
+    for (int stokes = 0; stokes < kStokes; ++stokes) {
+        Frame scanning(0, FileLoader::GetLoader(kZarrFixture.string()), "");
+        Frame reading(0, FileLoader::GetLoader(kZarrFixture.string()), "");
+        ASSERT_TRUE(scanning.IsValid());
+        ASSERT_TRUE(reading.IsValid());
+
+        std::map<int, BasicStats<float>> scanned_stats;
+        const auto stats_scan = scanning.GetLoaderPlaneStats(stokes, {}, [&](int z, const BasicStats<float>& stats) {
+            scanned_stats[z] = stats;
+            return true;
+        });
+        ASSERT_EQ(stats_scan, FileLoader::LoaderScan::finished);
+        ASSERT_EQ(scanned_stats.size(), kDepth);
+
+        BasicStats<float> cube;
+        for (int z = 0; z < kDepth; ++z) {
+            BasicStats<float> expected;
+            ASSERT_TRUE(reading.GetBasicStats(z, stokes, expected));
+            const auto& scanned = scanned_stats.at(z);
+            EXPECT_EQ(scanned.num_pixels, expected.num_pixels);
+            EXPECT_EQ(scanned.min_val, expected.min_val);
+            EXPECT_EQ(scanned.max_val, expected.max_val);
+            ExpectSameValue(scanned.sum, expected.sum);
+            ExpectSameValue(scanned.sumSq, expected.sumSq);
+            ExpectSameValue(scanned.mean, expected.mean);
+            ExpectSameValue(scanned.rms, expected.rms);
+            ExpectSameValue(scanned.stdDev, expected.stdDev);
+            cube.join(expected);
+        }
+
+        const HistogramBounds bounds(cube.min_val, cube.max_val);
+        ASSERT_LT(bounds.min, bounds.max);
+        std::map<int, std::vector<int>> scanned_bins;
+        const auto histogram_scan = scanning.GetLoaderPlaneHistograms(stokes, num_bins, bounds, {}, [&](int z, const Histogram& histogram) {
+            scanned_bins[z] = histogram.GetHistogramBins();
+            return true;
+        });
+        ASSERT_EQ(histogram_scan, FileLoader::LoaderScan::finished);
+        ASSERT_EQ(scanned_bins.size(), kDepth);
+        for (int z = 0; z < kDepth; ++z) {
+            Histogram expected;
+            ASSERT_TRUE(reading.CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, expected));
+            EXPECT_EQ(scanned_bins.at(z), expected.GetHistogramBins()) << "stokes " << stokes << ", z " << z;
+        }
+    }
+}
+
+// The scan caches each plane's statistics, so a later request for a plane does not read it again.
+TEST_F(ZarrImageTest, PlaneStatsScanFillsTheFrameCache) {
+    Frame frame(0, FileLoader::GetLoader(kZarrFixture.string()), "");
+    ASSERT_TRUE(frame.IsValid());
+    ASSERT_EQ(frame.GetLoaderPlaneStats(1, {}, [](int, const BasicStats<float>&) { return true; }), FileLoader::LoaderScan::finished);
+    BasicStats<float> cached;
+    ASSERT_TRUE(frame.GetBasicStats(1, 1, cached));
+    EXPECT_GT(cached.num_pixels, 0);
+    // Every plane is cached now, so the caller reads the cache instead of scanning again.
+    EXPECT_EQ(frame.GetLoaderPlaneStats(1, {}, [](int, const BasicStats<float>&) { return true; }), FileLoader::LoaderScan::unsupported);
+}
+
+// An empty range is left to the caller, which makes the single bin over [0, 0].
+TEST_F(ZarrImageTest, PlaneHistogramScanLeavesAnEmptyRangeToTheCaller) {
+    Frame frame(0, FileLoader::GetLoader(kZarrFixture.string()), "");
+    ASSERT_TRUE(frame.IsValid());
+    const auto scan = frame.GetLoaderPlaneHistograms(0, 5, HistogramBounds(1.0, 1.0), {}, [](int, const Histogram&) { return true; });
+    EXPECT_EQ(scan, FileLoader::LoaderScan::unsupported);
+}
+
+// A request that carta-zarr would refuse is left to the caller too.
+TEST_F(ZarrImageTest, PlaneHistogramScanLeavesARefusedRequestToTheCaller) {
+    Frame frame(0, FileLoader::GetLoader(kZarrFixture.string()), "");
+    ASSERT_TRUE(frame.IsValid());
+    const auto any = [](int, const Histogram&) { return true; };
+    const int too_many = static_cast<int>(carta::zarr::kMaxHistogramBins) + 1;
+    EXPECT_EQ(frame.GetLoaderPlaneHistograms(0, too_many, HistogramBounds(0.0, 1.0), {}, any), FileLoader::LoaderScan::unsupported);
+    EXPECT_EQ(frame.GetLoaderPlaneHistograms(0, 5, HistogramBounds(0.0, 1e300), {}, any), FileLoader::LoaderScan::unsupported);
+}
+
+// A scan stops when it is cancelled, or when the callback returns false.
+TEST_F(ZarrImageTest, LoaderScansStop) {
+    Frame frame(0, FileLoader::GetLoader(kZarrFixture.string()), "");
+    ASSERT_TRUE(frame.IsValid());
+    int planes(0);
+    const auto count = [&](int, const BasicStats<float>&) {
+        ++planes;
+        return true;
+    };
+    EXPECT_EQ(frame.GetLoaderPlaneStats(
+                  0, [] { return true; }, count),
+        FileLoader::LoaderScan::cancelled);
+    EXPECT_EQ(planes, 0);
+    EXPECT_EQ(frame.GetLoaderPlaneStats(0, {}, [](int, const BasicStats<float>&) { return false; }), FileLoader::LoaderScan::cancelled);
 }

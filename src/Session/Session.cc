@@ -1693,19 +1693,21 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             size_t depth(_frames.at(file_id)->Depth());
             size_t total_z(depth * 2); // for progress; go through z twice, for stats then histogram
 
+            auto cancelled = [this]() { return _histogram_context.is_group_execution_cancelled(); };
+            // Set when a scan or a loop stops for a cancel. The flag can be reset by a new request before it is read again.
+            bool stopped(false);
+
             // stats for entire cube
             BasicStats<float> cube_stats;
-            for (size_t z = 0; z < depth; ++z) {
-                // stats for this z
-                BasicStats<float> z_stats;
-                if (!_frames.at(file_id)->GetBasicStats(z, stokes, z_stats)) {
-                    return calculated;
-                }
-                cube_stats.join(z_stats);
+            // Add the stats for one z, and send progress. Returns false to stop.
+            auto add_z_stats = [&](int z, const BasicStats<float>& z_stats) {
+                BasicStats<float> added(z_stats);
+                cube_stats.join(added);
 
                 // check for cancel
-                if (_histogram_context.is_group_execution_cancelled()) {
-                    break;
+                if (cancelled()) {
+                    stopped = true;
+                    return false;
                 }
 
                 // check for progress update
@@ -1721,13 +1723,33 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                     t_start = t_end;
                 }
+                return true;
+            };
+
+            // Use the loader's scan over the cube if it has one, else calculate each z
+            const auto stats_scan = _frames.at(file_id)->GetLoaderPlaneStats(stokes, cancelled, add_z_stats);
+            if (stats_scan == FileLoader::LoaderScan::failed) {
+                return calculated;
+            }
+            stopped = stopped || stats_scan == FileLoader::LoaderScan::cancelled;
+            if (stats_scan == FileLoader::LoaderScan::unsupported) {
+                for (size_t z = 0; z < depth; ++z) {
+                    // stats for this z
+                    BasicStats<float> z_stats;
+                    if (!_frames.at(file_id)->GetBasicStats(z, stokes, z_stats)) {
+                        return calculated;
+                    }
+                    if (!add_z_stats(z, z_stats)) {
+                        break;
+                    }
+                }
             }
 
             // Set histogram bounds
             auto bounds = cube_histogram_config.GetBounds(cube_stats);
 
             // check cancel and proceed
-            if (!_histogram_context.is_group_execution_cancelled()) {
+            if (!stopped && !_histogram_context.is_group_execution_cancelled()) {
                 _frames.at(file_id)->CacheCubeStats(stokes, cube_stats);
 
                 // send progress message: half done
@@ -1738,22 +1760,21 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
 
                 // get histogram bins for each z and accumulate bin counts in cube_bins
-                Histogram z_histogram; // histogram for each z using cube stats
                 Histogram cube_histogram;
-                for (size_t z = 0; z < depth; ++z) {
-                    if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
-                        return calculated; // z histogram failed
-                    }
-
-                    if (z == 0) {
-                        cube_histogram = std::move(z_histogram);
+                bool have_histogram(false);
+                // Add the histogram for one z, and send progress. Returns false to stop.
+                auto add_z_histogram = [&](int z, const Histogram& z_histogram) {
+                    if (!have_histogram) {
+                        cube_histogram = z_histogram;
+                        have_histogram = true;
                     } else {
                         cube_histogram.Add(z_histogram);
                     }
 
                     // check for cancel
-                    if (_histogram_context.is_group_execution_cancelled()) {
-                        break;
+                    if (cancelled()) {
+                        stopped = true;
+                        return false;
                     }
 
                     auto t_end = std::chrono::high_resolution_clock::now();
@@ -1769,10 +1790,30 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                         t_start = t_end;
                     }
+                    return true;
+                };
+
+                // Use the loader's scan over the cube if it has one, else calculate each z
+                const auto histogram_scan =
+                    _frames.at(file_id)->GetLoaderPlaneHistograms(stokes, num_bins, bounds, cancelled, add_z_histogram);
+                if (histogram_scan == FileLoader::LoaderScan::failed) {
+                    return calculated;
+                }
+                stopped = stopped || histogram_scan == FileLoader::LoaderScan::cancelled;
+                if (histogram_scan == FileLoader::LoaderScan::unsupported) {
+                    Histogram z_histogram; // histogram for each z using cube stats
+                    for (size_t z = 0; z < depth; ++z) {
+                        if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
+                            return calculated; // z histogram failed
+                        }
+                        if (!add_z_histogram(z, z_histogram)) {
+                            break;
+                        }
+                    }
                 }
 
                 // set completed cube histogram
-                if (!_histogram_context.is_group_execution_cancelled()) {
+                if (!stopped && !_histogram_context.is_group_execution_cancelled()) {
                     cube_histogram_message.set_file_id(file_id);
                     cube_histogram_message.set_region_id(CUBE_REGION_ID);
                     cube_histogram_message.set_channel(ALL_Z);

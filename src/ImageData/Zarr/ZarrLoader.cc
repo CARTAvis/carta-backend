@@ -50,6 +50,33 @@ std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& imag
     return *pool;
 }
 
+// The statistics that CalcBasicStats gives for the same pixels. Sigma comes from the centered moment instead
+// of sum_sq - sum^2 / n, which loses a small spread about a large mean.
+BasicStats<float> ToBasicStats(const carta::zarr::SpectralTotals& counted) {
+    const auto count = static_cast<std::size_t>(counted.num_pixels);
+    if (count == 0) {
+        return BasicStats<float>{
+            0, 0.0, DOUBLE_NAN, DOUBLE_NAN, std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest(), DOUBLE_NAN, 0.0};
+    }
+    const double n = counted.num_pixels;
+    const double sigma = count > 1 ? std::sqrt(counted.sum_sq_dev / (n - 1.0)) : DOUBLE_NAN;
+    return BasicStats<float>{count, counted.sum, counted.sum / n, sigma, static_cast<float>(counted.min), static_cast<float>(counted.max),
+        std::sqrt(counted.sum_sq / n), counted.sum_sq};
+}
+
+// What a scan's result means to the caller. A failure is logged, because the caller only sees that it failed.
+template <typename T>
+FileLoader::LoaderScan ScanOutcome(const carta::zarr::Result<T>& result, const char* what) {
+    if (result) {
+        return FileLoader::LoaderScan::finished;
+    }
+    if (result.error().code == carta::zarr::ErrorCode::cancelled) {
+        return FileLoader::LoaderScan::cancelled;
+    }
+    spdlog::warn("Could not {} of a Zarr image: {}", what, result.error().message);
+    return FileLoader::LoaderScan::failed;
+}
+
 } // namespace
 
 bool SpectrumKeepsItsChunks(
@@ -271,6 +298,105 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     }
     progress = static_cast<float>(done) / static_cast<float>(channels);
     return true;
+}
+
+FileLoader::LoaderScan ZarrLoader::GetPlaneStats(int stokes, const std::function<bool()>& cancelled, const PlaneStatsCallback& plane) {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    if (!image || !plane || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {
+        return LoaderScan::unsupported;
+    }
+    const auto width = static_cast<std::uint64_t>(_image_shape(0));
+    const auto height = static_cast<std::uint64_t>(_image_shape(1));
+    const auto depth = static_cast<std::uint64_t>(_image_shape(2));
+
+    // One region that covers the whole plane, with no mask
+    carta::zarr::RegionMask region;
+    region.width = width;
+    region.height = height;
+    carta::zarr::SpectralReduceRequest request;
+    request.planes.spectral = {0, depth, 1};
+    request.planes.polarization = static_cast<std::uint64_t>(stokes);
+    request.regions = {&region, 1};
+    request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum | carta::zarr::Statistic::sum_sq |
+                         carta::zarr::Statistic::min | carta::zarr::Statistic::max | carta::zarr::Statistic::sum_sq_dev;
+
+    carta::zarr::ReadOptions options;
+    // The cube does not fit in the shared cache, so this reads through a pool that keeps nothing.
+    options.control.cache_pool = PoolForSpectrum(*image, 0, 0, _image_shape(0), _image_shape(1), 0, _image_shape(2));
+    options.control.cancellation_requested = cancelled;
+
+    const auto reduced = image->ZarrImage().ReduceSpectral(
+        request,
+        [&](const carta::zarr::SpectralBlock& block) {
+            if (!block.complete) {
+                return true;
+            }
+            for (std::uint64_t c = 0; c < block.channel_count; ++c) {
+                if (!plane(static_cast<int>(block.first_channel + c), ToBasicStats(block.Totals(0, c)))) {
+                    return false;
+                }
+            }
+            return true;
+        },
+        options);
+    return ScanOutcome(reduced, "compute the plane statistics");
+}
+
+FileLoader::LoaderScan ZarrLoader::GetPlaneHistograms(
+    int stokes, int num_bins, const HistogramBounds& bounds, const std::function<bool()>& cancelled, const PlaneHistogramCallback& plane) {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    // An empty range gets one bin over [0, 0] from CalcHistogram. carta-zarr cannot make that, so the caller does.
+    // carta-zarr also refuses more than kMaxHistogramBins bins and bounds that do not fit in a float.
+    const auto fits_float = [](double value) {
+        return std::isfinite(value) && std::abs(value) <= static_cast<double>(std::numeric_limits<float>::max());
+    };
+    if (!image || !plane || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3) || num_bins <= 0 ||
+        static_cast<std::uint64_t>(num_bins) > carta::zarr::kMaxHistogramBins || !fits_float(bounds.min) || !fits_float(bounds.max) ||
+        !(bounds.min < bounds.max)) {
+        return LoaderScan::unsupported;
+    }
+    const auto depth = static_cast<std::uint64_t>(_image_shape(2));
+
+    carta::zarr::HistogramRequest request;
+    request.planes.spectral = {0, depth, 1};
+    request.planes.polarization = static_cast<std::uint64_t>(stokes);
+    request.bin_count = static_cast<std::uint32_t>(num_bins);
+    request.lower = bounds.min;
+    request.upper = bounds.max;
+
+    carta::zarr::ReadOptions options;
+    options.control.cache_pool = PoolForSpectrum(*image, 0, 0, _image_shape(0), _image_shape(1), 0, _image_shape(2));
+    options.control.cancellation_requested = cancelled;
+
+    std::vector<int> bins(static_cast<std::size_t>(num_bins));
+    bool capped(false);
+    const auto computed = image->ZarrImage().ComputeHistogram(
+        request,
+        [&](const carta::zarr::HistogramBlock& block) {
+            if (!block.complete) {
+                return true;
+            }
+            for (std::uint64_t c = 0; c < block.channel_count; ++c) {
+                // A Histogram counts in int. A larger count is held at the largest int.
+                const auto* counts = block.Counts(c);
+                for (std::size_t b = 0; b < bins.size(); ++b) {
+                    capped = capped || counts[b] > static_cast<std::uint64_t>(std::numeric_limits<int>::max());
+                    bins[b] = static_cast<int>(std::min<std::uint64_t>(counts[b], std::numeric_limits<int>::max()));
+                }
+                Histogram histogram(num_bins, bounds, nullptr, 0);
+                histogram.SetHistogramBins(bins);
+                if (!plane(static_cast<int>(block.first_channel + c), histogram)) {
+                    return false;
+                }
+            }
+            return true;
+        },
+        options);
+    if (capped) {
+        spdlog::warn(
+            "A Zarr plane histogram has a bin with more than {} pixels. It is shown as that many.", std::numeric_limits<int>::max());
+    }
+    return ScanOutcome(computed, "compute the plane histograms");
 }
 
 } // namespace carta

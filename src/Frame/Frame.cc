@@ -922,6 +922,31 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
     return false;
 }
 
+FileLoader::LoaderScan Frame::GetLoaderPlaneStats(
+    int stokes, const std::function<bool()>& cancelled, const FileLoader::PlaneStatsCallback& plane) {
+    // When every plane is cached, reading the cache is faster than a scan.
+    bool all_cached(true);
+    for (size_t z = 0; all_cached && z < Depth(); ++z) {
+        all_cached = _image_basic_stats.count(ChannelKey(stokes, z)) > 0;
+    }
+    if (all_cached) {
+        return FileLoader::LoaderScan::unsupported;
+    }
+    return _loader->GetPlaneStats(stokes, cancelled, [&](int z, const BasicStats<float>& stats) {
+        // Add only the planes that are not cached, as GetBasicStats does.
+        _image_basic_stats.try_emplace(ChannelKey(stokes, z), stats);
+        return plane(z, stats);
+    });
+}
+
+FileLoader::LoaderScan Frame::GetLoaderPlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds,
+    const std::function<bool()>& cancelled, const FileLoader::PlaneHistogramCallback& plane) {
+    if (num_bins == AUTO_BIN_SIZE) {
+        num_bins = AutoBinSize();
+    }
+    return _loader->GetPlaneHistograms(stokes, num_bins, bounds, cancelled, plane);
+}
+
 bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Get image histogram results from cache
     ChannelKey cache_key(stokes, z);
