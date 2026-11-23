@@ -300,6 +300,16 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     return true;
 }
 
+std::optional<ZarrPlaneRead> ZarrLoader::Plane(int z, int stokes) const {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    if (!image || _num_dims != 4 || z < 0 || z >= _image_shape(2) || stokes < 0 || stokes >= _image_shape(3)) {
+        return std::nullopt;
+    }
+    const casacore::Slicer plane(casacore::IPosition(4, 0, 0, z, stokes), casacore::IPosition(4, _image_shape(0), _image_shape(1), 1, 1));
+    // A plane is read with the default options, so through the shared cache. Reading ahead decodes into that cache.
+    return ZarrPlaneRead{image->ZarrImage(), carta::zarr::ReadOptions{}, image->Request(plane)};
+}
+
 FileLoader::LoaderScan ZarrLoader::GetPlaneStats(int stokes, const std::function<bool()>& cancelled, const PlaneStatsCallback& plane) {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
     if (!image || !plane || _num_dims != 4 || stokes < 0 || stokes >= _image_shape(3)) {

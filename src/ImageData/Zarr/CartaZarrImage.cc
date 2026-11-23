@@ -230,6 +230,10 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
     return read;
 }
 
+carta::zarr::ReadRequest CartaZarrImage::Request(const casacore::Slicer& section) const {
+    return RequestFor(section, _zarr_image->descriptor().axes.size());
+}
+
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
     // casacore expects a failed read to throw
     if (const auto read = Read(buffer, section); !read) {

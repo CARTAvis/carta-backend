@@ -70,6 +70,19 @@ private:
     H5::DataSet _dataset;
 };
 
+// Gives the shared Zarr context a chunk cache of `gib` GiB while it is in scope. Then it restores the old cache size.
+// A test that needs the shared cache uses it, because another test may leave the context with no cache.
+class ScopedZarrCache {
+public:
+    explicit ScopedZarrCache(double gib);
+    ~ScopedZarrCache();
+    ScopedZarrCache(const ScopedZarrCache&) = delete;
+    ScopedZarrCache& operator=(const ScopedZarrCache&) = delete;
+
+private:
+    std::size_t _bytes_before;
+};
+
 class CartaEnvironment : public ::testing::Environment {
 public:
     virtual ~CartaEnvironment();

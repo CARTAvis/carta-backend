@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "../FileLoader.h"
+#include "PlaneReadAhead.h"
 #include "Util/Image.h"
 #include "Util/Key.h"
 
@@ -27,7 +28,7 @@ namespace carta {
 bool SpectrumKeepsItsChunks(
     std::uint64_t chunks_x, std::uint64_t chunks_y, std::uint64_t chunks_z, std::uint64_t chunk_bytes, std::size_t cache_bytes);
 
-class ZarrLoader : public FileLoader {
+class ZarrLoader : public FileLoader, public PlaneReadAhead {
 public:
     explicit ZarrLoader(const std::string& filename);
 
@@ -39,6 +40,10 @@ public:
     bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
         float& progress, const SpectralReadWanted& still_wanted) override;
+    PlaneReadAhead* ReadAhead() override {
+        return this;
+    }
+    std::optional<ZarrPlaneRead> Plane(int z, int stokes) const override;
     // Scan the whole cube once through carta-zarr, so the planes are not read one at a time through casacore.
     LoaderScan GetPlaneStats(int stokes, const std::function<bool()>& cancelled, const PlaneStatsCallback& plane) override;
     LoaderScan GetPlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds, const std::function<bool()>& cancelled,

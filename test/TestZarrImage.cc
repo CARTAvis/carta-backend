@@ -1324,3 +1324,63 @@ TEST_F(ZarrImageTest, LoaderScansStop) {
     EXPECT_EQ(planes, 0);
     EXPECT_EQ(frame.GetLoaderPlaneStats(0, {}, [](int, const BasicStats<float>&) { return false; }), FileLoader::LoaderScan::cancelled);
 }
+
+namespace {
+
+// Whether the loader can read plane (z, stokes). A read that throws counts as a failure.
+bool PlaneReads(FileLoader& loader, int z, int stokes, casacore::Array<float>& data) {
+    const casacore::Slicer slicer(casacore::IPosition(4, 0, 0, z, stokes), casacore::IPosition(4, kWidth, kHeight, 1, 1));
+    data.resize(slicer.length());
+    try {
+        return loader.GetSlice(data, StokesSlicer(StokesSource(), slicer));
+    } catch (const std::exception&) {
+        return false;
+    }
+}
+
+} // namespace
+
+// A plane that was prefetched is read from the cache. After the prefetch the chunk files are emptied.
+// The prefetched plane still reads as before, with its flags. The next plane was not prefetched, and fails to read.
+TEST_F(ZarrImageTest, APrefetchedPlaneIsReadWithoutGoingToStorage) {
+    const ScopedZarrCache cache(1.0 / 16);
+    casacore::Array<float> before;
+    {
+        // Read the original fixture, so that the copy below has nothing in the cache.
+        auto reference = FileLoader::GetLoader(kZarrFixture.string());
+        reference->OpenFile("");
+        ASSERT_TRUE(PlaneReads(*reference, 0, 1, before));
+    }
+
+    const auto copy = TestRoot() / "data" / "generated" / "prefetched.zarr";
+    std::filesystem::remove_all(copy);
+    std::filesystem::copy(kZarrFixture, copy, std::filesystem::copy_options::recursive);
+    auto loader = FileLoader::GetLoader(copy.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    auto* read_ahead = loader->ReadAhead();
+    ASSERT_NE(read_ahead, nullptr);
+    const auto plane = read_ahead->Plane(0, 1);
+    ASSERT_TRUE(plane.has_value());
+    ASSERT_TRUE(plane->image.Prefetch(plane->request, plane->options).has_value());
+
+    for (const char* array : {"SKY", "FLAG"}) {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(copy / array / "c")) {
+            if (entry.is_regular_file()) {
+                std::filesystem::resize_file(entry.path(), 0);
+            }
+        }
+    }
+
+    casacore::Array<float> after;
+    ASSERT_TRUE(PlaneReads(*loader, 0, 1, after)) << "a prefetched plane was read from storage";
+    ASSERT_EQ(after.shape(), before.shape());
+    auto a = after.begin();
+    for (auto b = before.begin(); b != before.end(); ++a, ++b) {
+        EXPECT_TRUE((std::isnan(*a) && std::isnan(*b)) || *a == *b);
+    }
+    casacore::Array<float> next;
+    EXPECT_FALSE(PlaneReads(*loader, 1, 1, next)) << "a plane that was not prefetched still read, so this test shows nothing";
+    EXPECT_FALSE(read_ahead->Plane(0, kStokes).has_value()) << "a stokes that the image does not have has a plane";
+    std::filesystem::remove_all(copy);
+}

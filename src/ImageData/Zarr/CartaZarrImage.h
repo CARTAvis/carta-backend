@@ -55,6 +55,8 @@ public:
     // It is virtual, so that a test can count the reads of an image.
     virtual carta::zarr::Result<std::size_t> Read(casacore::Array<float>& buffer, const casacore::Slicer& section,
         const carta::zarr::ReadOptions& options = {}, const carta::zarr::ProgressCallback& progress = {}) const;
+    // The carta-zarr read request that Read makes for `section`. The section is in CARTA's order.
+    carta::zarr::ReadRequest Request(const casacore::Slicer& section) const;
     // The carta-zarr image, for the work that casacore has no call for, such as reductions and chunk sizes.
     // Its axes are in CARTA's order, the same as in Read.
     const carta::zarr::Image& ZarrImage() const {

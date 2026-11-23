@@ -9,7 +9,10 @@
 
 #include <chrono>
 #include <iostream>
+#include <memory>
+#include <vector>
 
+#include "AnimationReadAhead.h"
 #include "SessionContext.h"
 
 #include <carta-protobuf/animation.pb.h>
@@ -21,6 +24,14 @@ const int InitialWindowScale = 1;
 } // namespace CARTA
 
 namespace carta {
+
+// Where an animation goes after a frame: the next frame, the direction, and whether there is a next frame.
+// An animation that reverses at an end plays the end frame again.
+struct AnimationStep {
+    CARTA::AnimationFrame frame;
+    bool going_forward = true;
+    bool more = true;
+};
 
 class AnimationObject {
     friend class Session;
@@ -50,6 +61,10 @@ class AnimationObject {
     volatile bool _waiting_flow_event;
     SessionContext _context;
     std::vector<int> _stokes_indices; // stokes index order in the animation
+    // Decodes chunks ahead of the frames that need them. Null if no animated file can read ahead, or after
+    // the animation stops or a file closes. Access it only through the functions below, which use atomic
+    // operations, because a frame task reads it while another task may release it.
+    std::shared_ptr<AnimationReadAhead> _read_ahead;
 
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
@@ -99,6 +114,51 @@ public:
         _last_flow_frame = start_frame;
         _waits_per_second = CARTA::InitialAnimationWaitsPerSecond;
         _window_scale = CARTA::InitialWindowScale;
+    }
+    // The step after `frame` in the given direction. At an end, a looping animation goes to the other end,
+    // a reversing animation turns around, and any other animation stops.
+    // The animation and reading ahead both use this, so the frames read ahead are the frames that play.
+    AnimationStep Step(const CARTA::AnimationFrame& frame, bool going_forward) const {
+        const int sign = going_forward ? 1 : -1;
+        CARTA::AnimationFrame next;
+        next.set_channel(frame.channel() + sign * _delta_frame.channel());
+        next.set_stokes(frame.stokes() + sign * _delta_frame.stokes());
+        const bool past_end = going_forward ? (next.channel() > _last_frame.channel() || next.stokes() > _last_frame.stokes())
+                                            : (next.channel() < _first_frame.channel() || next.stokes() < _first_frame.stokes());
+        if (!past_end) {
+            return {next, going_forward, true};
+        }
+        if (_reverse_at_end) {
+            return {frame, !going_forward, true};
+        }
+        if (_looping) {
+            return {going_forward ? _first_frame : _last_frame, going_forward, true};
+        }
+        return {frame, going_forward, false};
+    }
+    // The next `count` frames to play, starting with the next frame. Fewer if the animation stops before then.
+    std::vector<CARTA::AnimationFrame> Upcoming(int count) const {
+        std::vector<CARTA::AnimationFrame> frames;
+        AnimationStep step{_next_frame, _going_forward, true};
+        while (static_cast<int>(frames.size()) < count) {
+            frames.push_back(step.frame);
+            step = Step(step.frame, step.going_forward);
+            if (!step.more) {
+                break;
+            }
+        }
+        return frames;
+    }
+    std::shared_ptr<AnimationReadAhead> ReadAhead() const {
+        return std::atomic_load(&_read_ahead);
+    }
+    void SetReadAhead(std::shared_ptr<AnimationReadAhead> read_ahead) {
+        std::atomic_store(&_read_ahead, std::move(read_ahead));
+    }
+    // Cancels the decoding under way and drops the read-ahead, so that it no longer keeps the loaders alive.
+    // A frame that still holds a copy keeps it until the frame ends. Does not wait for the decoding thread.
+    void ReleaseReadAhead() {
+        AnimationReadAhead::Release(std::atomic_exchange(&_read_ahead, std::shared_ptr<AnimationReadAhead>()));
     }
     int CurrentFlowWindowSize() {
         return (_frame_rate / _waits_per_second) * _window_scale;

@@ -157,6 +157,7 @@ void Session::WaitForTaskCancellation() {
             _animation_object->_stop_called = true; // stop the animation
         }
         _animation_object->CancelExecution();
+        _animation_object->ReleaseReadAhead();
     }
     if (_channel_map_settings) {
         _channel_map_settings->RemoveFile(ALL_FILES);
@@ -2236,6 +2237,13 @@ bool Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
         _frames.at(file_id)->SetAnimationViewSettings(msg.required_tiles());
         _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
             msg.matched_frames(), stokes_indices, frame_rate, looping, reverse_at_end, always_wait));
+        std::map<int, std::shared_ptr<PlaneReadAhead>> animated{{file_id, _frames.at(file_id)->ReadAhead()}};
+        for (const auto& entry : _animation_object->_matched_frames) {
+            if (_frames.count(entry.first)) {
+                animated.emplace(entry.first, _frames.at(entry.first)->ReadAhead());
+            }
+        }
+        _animation_object->SetReadAhead(AnimationReadAhead::For(animated));
         auto ack_message = Message::StartAnimationAck(true, _animation_id, "Starting animation");
         SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
     } else {
@@ -2423,47 +2431,27 @@ bool Session::ExecuteAnimationFrame() {
         }
 
         curr_frame = _animation_object->_next_frame;
+        // A copy, so that the read-ahead outlives this frame even if the animation is replaced or stopped meanwhile.
+        const auto read_ahead = _animation_object->ReadAhead();
+        const auto began = std::chrono::steady_clock::now();
         ExecuteAnimationFrameInner(animation_id);
+        const bool late = std::chrono::steady_clock::now() - began > _animation_object->_frame_interval;
 
-        CARTA::AnimationFrame tmp_frame;
-        CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
+        const auto step = _animation_object->Step(curr_frame, _animation_object->_going_forward);
+        _animation_object->_next_frame = step.frame;
+        _animation_object->_going_forward = step.going_forward;
+        recycle_task = step.more;
 
-        if (_animation_object->_going_forward) {
-            tmp_frame.set_channel(curr_frame.channel() + delta_frame.channel());
-            tmp_frame.set_stokes(curr_frame.stokes() + delta_frame.stokes());
-
-            if ((tmp_frame.channel() > _animation_object->_last_frame.channel()) ||
-                (tmp_frame.stokes() > _animation_object->_last_frame.stokes())) {
-                if (_animation_object->_reverse_at_end) {
-                    _animation_object->_going_forward = false;
-                } else if (_animation_object->_looping) {
-                    tmp_frame.set_channel(_animation_object->_first_frame.channel());
-                    tmp_frame.set_stokes(_animation_object->_first_frame.stokes());
-                    _animation_object->_next_frame = tmp_frame;
-                } else {
-                    recycle_task = false;
+        // Skip it if the animation stopped, a file closed, or a new animation replaced this one during the frame.
+        if (read_ahead && !_animation_object->_stop_called && _animation_object->_file_open &&
+            read_ahead == _animation_object->ReadAhead()) {
+            std::vector<std::vector<AnimatedPlane>> upcoming;
+            if (step.more) {
+                for (const auto& frame : _animation_object->Upcoming(AnimationReadAhead::UPCOMING_FRAMES)) {
+                    upcoming.push_back(AnimatedPlanes(frame));
                 }
-            } else {
-                _animation_object->_next_frame = tmp_frame;
             }
-        } else { // going backwards;
-            tmp_frame.set_channel(curr_frame.channel() - delta_frame.channel());
-            tmp_frame.set_stokes(curr_frame.stokes() - delta_frame.stokes());
-
-            if ((tmp_frame.channel() < _animation_object->_first_frame.channel()) ||
-                (tmp_frame.stokes() < _animation_object->_first_frame.stokes())) {
-                if (_animation_object->_reverse_at_end) {
-                    _animation_object->_going_forward = true;
-                } else if (_animation_object->_looping) {
-                    tmp_frame.set_channel(_animation_object->_last_frame.channel());
-                    tmp_frame.set_stokes(_animation_object->_last_frame.stokes());
-                    _animation_object->_next_frame = tmp_frame;
-                } else {
-                    recycle_task = false;
-                }
-            } else {
-                _animation_object->_next_frame = tmp_frame;
-            }
+            read_ahead->Served(began, late, AnimatedPlanes(curr_frame), upcoming);
         }
         _animation_object->_t_last = std::chrono::high_resolution_clock::now();
     }
@@ -2482,6 +2470,46 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     }
 
     _animation_object->_stop_called = true;
+    _animation_object->ReleaseReadAhead();
+}
+
+std::vector<AnimatedPlane> Session::AnimatedPlanes(const CARTA::AnimationFrame& frame) {
+    std::vector<AnimatedPlane> planes;
+    const auto active_file_id = _animation_object->_file_id;
+    const auto& stokes_indices = _animation_object->_stokes_indices;
+    if (frame.stokes() < 0 || frame.stokes() >= static_cast<int>(stokes_indices.size())) {
+        return planes;
+    }
+    planes.push_back({active_file_id, frame.channel(), stokes_indices[frame.stokes()]});
+
+    // The matched files move as in ExecuteAnimationFrameInner: by the offset from the first frame, through
+    // each file's list of channels, rounded and clamped to the file's depth.
+    const auto offset = frame.channel() - _animation_object->_first_frame.channel();
+    if (offset < 0) {
+        return planes;
+    }
+    for (const auto& [file_id, frame_numbers] : _animation_object->_matched_frames) {
+        if (file_id == active_file_id || offset >= static_cast<int>(frame_numbers.size())) {
+            continue;
+        }
+        const auto z_value = frame_numbers[offset];
+        if (!std::isfinite(z_value)) {
+            continue;
+        }
+        // A file may close at any time, so the frame is copied under the lock.
+        std::shared_ptr<Frame> matched;
+        {
+            std::unique_lock<std::mutex> lock(_frame_mutex);
+            const auto found = _frames.find(file_id);
+            if (found == _frames.end()) {
+                continue;
+            }
+            matched = found->second;
+        }
+        const int z = std::round(std::clamp(z_value, 0.0f, static_cast<float>(matched->Depth() - 1)));
+        planes.push_back({file_id, z, matched->CurrentStokes()});
+    }
+    return planes;
 }
 
 int Session::CalculateAnimationFlowWindow() {
@@ -2526,6 +2554,7 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
     }
     _animation_object->_file_open = false;
     _animation_object->CancelExecution();
+    _animation_object->ReleaseReadAhead();
 }
 
 void Session::CancelExistingAnimation() {

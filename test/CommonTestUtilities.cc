@@ -7,12 +7,16 @@
 #include <functional>
 #include <stdexcept>
 
+#include <omp.h>
+
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/PagedImage.h>
 #include <casacore/images/Images/SubImage.h>
 #include <lattices/Lattices/MaskedLatticeIterator.h>
 
 #include "CommonTestUtilities.h"
+#include "ImageData/Zarr/ZarrContext.h"
+#include "ImageData/Zarr/ZarrStores.h"
 #include "Logger/Logger.h"
 #include "Util/App.h"
 
@@ -212,6 +216,18 @@ hid_t Hdf5DataReader::GroupId() {
 }
 
 CartaEnvironment::~CartaEnvironment() {}
+
+// An open store keeps the context it was opened with, so the stores are closed whenever the context changes.
+ScopedZarrCache::ScopedZarrCache(double gib) : _bytes_before(carta::ZarrCacheBytes()) {
+    carta::ZarrStores::Instance().Clear();
+    carta::ConfigureZarrContext(0, 0, gib, omp_get_max_threads());
+}
+
+ScopedZarrCache::~ScopedZarrCache() {
+    carta::ZarrStores::Instance().Clear();
+    carta::ConfigureZarrContext(
+        0, 0, static_cast<double>(_bytes_before) / static_cast<double>(std::size_t{1} << 30), omp_get_max_threads());
+}
 
 void CartaEnvironment::SetUp() {
     // create directory for generated images

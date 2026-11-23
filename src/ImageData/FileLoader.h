@@ -44,6 +44,8 @@ struct StokesRegion {
         : stokes_source(stokes_source_), image_region(image_region_) {}
 };
 
+class PlaneReadAhead;
+
 class FileLoader {
 public:
     using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
@@ -123,6 +125,11 @@ public:
 
     virtual bool HasMip(int mip) const;
     virtual bool UseTileCache() const;
+    // How planes are read, for reading them ahead of an animation. Null for a loader that cannot, which is
+    // every loader but the Zarr loader.
+    virtual PlaneReadAhead* ReadAhead() {
+        return nullptr;
+    }
 
     // How a scan done by the loader itself ended. Unsupported means the loader did not start it, so the caller
     // does the work its own way.

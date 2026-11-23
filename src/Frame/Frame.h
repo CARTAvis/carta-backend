@@ -23,6 +23,7 @@
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
 #include "ImageData/FileLoader.h"
+#include "ImageData/Zarr/PlaneReadAhead.h"
 #include "ImageFitting/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
@@ -110,6 +111,9 @@ public:
     int ZAxis();
     AxesInfo Axes(); // struct of all axes
     bool GetBeams(std::vector<CARTA::Beam>& beams);
+    // How the loader reads planes, for reading them ahead of an animation. It keeps the loader alive while it is held.
+    // Null if the loader cannot read ahead.
+    std::shared_ptr<PlaneReadAhead> ReadAhead();
 
     // Slicer to set z and stokes ranges with full xy plane
     StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);
