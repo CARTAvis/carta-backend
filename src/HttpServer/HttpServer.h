@@ -70,6 +70,7 @@ private:
 
     bool WritePreferencesFile(nlohmann::json& obj);
     void WritePreferencesBackup();
+    fs::path GetObjectPath(const std::string& object_type, const std::string& object_name);
     bool WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj);
     void WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback);
 
