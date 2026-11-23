@@ -154,6 +154,7 @@ var namespacecarta =
     [ "CalcHistogram", "namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b", null ],
     [ "CalcStatsValues", "namespacecarta.html#ad170096e224b353fb6640af99aa07cd2", null ],
     [ "clamp", "namespacecarta.html#a89ce55ad3ee994c42310eee6787f1a14", null ],
+    [ "CleanStyleText", "namespacecarta.html#ad9881fd6821f3fcd827f6692c711aef5", null ],
     [ "ColumnFromFitsType", "namespacecarta.html#a11ed15851bcfe3fd2f2e01dd9a1c812b", null ],
     [ "Compress", "namespacecarta.html#a10f0d86089ef00182ca768e7971e1657", null ],
     [ "Compress", "namespacecarta.html#ab893c6b5f03810d00b2d92e29bb9b545", null ],
