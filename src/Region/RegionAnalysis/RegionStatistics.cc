@@ -43,7 +43,8 @@ std::vector<int> RegionStatistics::GetConfigFileIds(int file_id) {
 }
 
 bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> frame, const CARTA::SetStatsRequirements_StatsConfig& config,
-    StokesRegion& stokes_region, CARTA::RegionStatsData& stats_data_message) {
+    StokesRegion& stokes_region, const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& xy_origin,
+    CARTA::RegionStatsData& stats_data_message) {
     bool success(false);
     int z(stokes_region.stokes_source.z_range.from);
     int stokes_index(stokes_region.stokes_source.stokes);
@@ -79,7 +80,14 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
         return true;
     }
 
-    // Calculate stats
+    // The loader computes the statistics if it can. Otherwise casacore does.
+    std::map<CARTA::StatsType, double> loader_results;
+    if (frame->GetLoaderRegionStats(stokes_region, mask, xy_origin, required_stats, loader_results)) {
+        FillStatistics(stats_data_message, required_stats, loader_results);
+        _cache[cache_id] = StatsCache(loader_results);
+        return true;
+    }
+
     bool per_z(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_map;
     if (frame->GetRegionStats(stokes_region, required_stats, per_z, stats_map)) {

@@ -209,24 +209,24 @@ casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
     // Return pixel mask for region applied to image.
     // Requires that LCRegion for this file id has been set and cached (via GetImageRegion),
     // else returns empty mask.
-    casacore::ArrayLattice<casacore::Bool> mask;
     auto stokes_source = StokesSource();
     auto lcregion = GetCachedLCRegion(file_id, stokes_source);
+    return lcregion ? GetImageRegionMask(*lcregion) : casacore::ArrayLattice<casacore::Bool>();
+}
 
-    if (lcregion) {
-        // LCRegion is an extension region or a fixed region, depending on whether image is reference or matched.
-        auto extended_region = dynamic_cast<casacore::LCExtension*>(lcregion.get());
-        if (extended_region) {
-            auto& fixed_region = static_cast<const casacore::LCRegionFixed&>(extended_region->region());
-            mask = fixed_region.getMask();
-        } else {
-            auto fixed_region = dynamic_cast<casacore::LCRegionFixed*>(lcregion.get());
-            if (fixed_region) {
-                mask = fixed_region->getMask();
-            }
+casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(const casacore::LCRegion& lcregion) {
+    casacore::ArrayLattice<casacore::Bool> mask;
+    // LCRegion is an extension region or a fixed region, depending on whether image is reference or matched.
+    auto extended_region = dynamic_cast<const casacore::LCExtension*>(&lcregion);
+    if (extended_region) {
+        auto& fixed_region = static_cast<const casacore::LCRegionFixed&>(extended_region->region());
+        mask = fixed_region.getMask();
+    } else {
+        auto fixed_region = dynamic_cast<const casacore::LCRegionFixed*>(&lcregion);
+        if (fixed_region) {
+            mask = fixed_region->getMask();
         }
     }
-
     return mask;
 }
 

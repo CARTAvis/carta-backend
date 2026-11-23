@@ -88,6 +88,17 @@ void GetPositionStats(const casacore::ImageInterface<float>& image, casacore::Im
 bool ComputeFluxDensity(
     const casacore::ImageInterface<float>& image, casacore::ImageStatistics<float> image_stats, std::vector<double>& result);
 
+/** @brief Calculate flux density from the number of pixels and the sum of each plane
+ *  @param image The image or region applied to an image (casacore::SubImage). Its unit, pixel size and beams are used.
+ *  @param npts The number of pixels of each plane
+ *  @param sums The sum of each plane
+ *  @param result Double vector to return the flux density result
+ *  @return Whether the calculation succeeded
+ *  @see ComputeFluxDensity
+ */
+bool ComputeFluxDensity(const casacore::ImageInterface<float>& image, const std::vector<double>& npts, const std::vector<double>& sums,
+    std::vector<double>& result);
+
 /** @brief Get the area of the beam in the given unit for an image or a region applied to an image
  *  @param image The image or region applied to an image (casacore::SubImage)
  *  @param channel The channel index for the beam in the image beam set

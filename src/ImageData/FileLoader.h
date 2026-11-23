@@ -142,6 +142,13 @@ public:
     virtual LoaderScan GetPlaneStats(int stokes, const std::function<bool()>& cancelled, const PlaneStatsCallback& plane);
     virtual LoaderScan GetPlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds, const std::function<bool()>& cancelled,
         const PlaneHistogramCallback& plane);
+    // Whether GetRegionStats computes region statistics.
+    virtual bool HasRegionStats() const;
+    // Statistics of the pixels of a region in plane z. `mask` covers the region's bounding box, which starts at `origin`.
+    // The results are NumPixels, Sum, SumSq, Mean, RMS, Sigma, Min, Max and Extrema. A statistic with no value is NaN.
+    // Returns false if the loader cannot compute them. Then the caller uses casacore.
+    virtual bool GetRegionStats(int z, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
+        std::map<CARTA::StatsType, double>& results);
 
     // Get the full name of image file
     std::string GetFileName();

@@ -28,6 +28,7 @@
 #include <casacore/images/Images/ImageInfo.h>
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/LRegions/LCBox.h>
+#include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCPixelSet.h>
 #include <casacore/lattices/Lattices/LatticeConcat.h>
 #include <casacore/measures/Measures/MPosition.h>
@@ -40,6 +41,9 @@
 #include "ImageData/Zarr/ZarrLoader.h"
 #include "ImageData/Zarr/ZarrStores.h"
 #include "ImageStats/StatsCalculator.h"
+#include "Region/Region.h"
+#include "Region/RegionHandler.h"
+#include "Util/Message.h"
 #include "src/Frame/Frame.h"
 
 using namespace carta;
@@ -1383,4 +1387,188 @@ TEST_F(ZarrImageTest, APrefetchedPlaneIsReadWithoutGoingToStorage) {
     EXPECT_FALSE(PlaneReads(*loader, 1, 1, next)) << "a plane that was not prefetched still read, so this test shows nothing";
     EXPECT_FALSE(read_ahead->Plane(0, kStokes).has_value()) << "a stokes that the image does not have has a plane";
     std::filesystem::remove_all(copy);
+}
+
+namespace {
+
+// A Zarr loader that counts the region statistics it computes. One that does not compute them leaves them to casacore.
+class RegionStatsZarrLoader : public ZarrLoader {
+public:
+    RegionStatsZarrLoader(const std::string& filename, bool computes) : ZarrLoader(filename), _computes(computes) {}
+    bool HasRegionStats() const override {
+        return _computes;
+    }
+    bool GetRegionStats(int z, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
+        std::map<CARTA::StatsType, double>& results) override {
+        ++computed;
+        return ZarrLoader::GetRegionStats(z, stokes, mask, origin, results);
+    }
+    int computed = 0;
+
+private:
+    bool _computes;
+};
+
+// The statistics that the frontend asks for by default
+const std::vector<CARTA::StatsType> kRegionStats{CARTA::StatsType::NumPixels, CARTA::StatsType::Sum, CARTA::StatsType::FluxDensity,
+    CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
+    CARTA::StatsType::Max, CARTA::StatsType::Extrema};
+
+// The statistics of a region in plane (z, stokes), as the region handler sends them. Empty if it sends none.
+std::map<CARTA::StatsType, double> RegionStatsOf(const std::shared_ptr<RegionStatsZarrLoader>& loader, CARTA::RegionType type,
+    const std::vector<CARTA::Point>& points, int z, int stokes, const std::vector<CARTA::StatsType>& stats = kRegionStats,
+    float rotation = 0.0, const std::string& coordinate = "") {
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    std::string message;
+    // SetImageChannels returns false when the plane is already the current one.
+    if ((z != frame->CurrentZ() || stokes != frame->CurrentStokes()) && !frame->SetImageChannels(z, stokes, message)) {
+        return {};
+    }
+    carta::RegionHandler handler;
+    int region_id(-1);
+    RegionState state(0, type, points, rotation);
+    if (!handler.SetRegion(region_id, state, frame->CoordinateSystem())) {
+        return {};
+    }
+    CARTA::SetStatsRequirements_StatsConfig config;
+    config.set_coordinate(coordinate);
+    for (const auto stat : stats) {
+        config.add_stats_types(stat);
+    }
+    if (!handler.SetStatsRequirements(region_id, 0, frame, {config})) {
+        return {};
+    }
+    std::map<CARTA::StatsType, double> values;
+    handler.FillRegionStatsData(
+        [&](CARTA::RegionStatsData data) {
+            for (const auto& value : data.statistics()) {
+                values[value.stats_type()] = value.value();
+            }
+        },
+        region_id, 0);
+    return values;
+}
+
+// Compares the statistics computed by the loader with casacore's, for every plane of `store`.
+// Returns how many planes the loader computed.
+int ExpectLoaderRegionStatsAgreeWithCasacore(
+    const std::filesystem::path& store, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation = 0.0) {
+    auto fast = std::make_shared<RegionStatsZarrLoader>(store.string(), true);
+    auto slow = std::make_shared<RegionStatsZarrLoader>(store.string(), false);
+    fast->OpenFile("");
+    const auto shape = fast->GetImage()->shape();
+    for (int stokes = 0; stokes < shape(3); ++stokes) {
+        for (int z = 0; z < shape(2); ++z) {
+            const auto where = store.filename().string() + " type=" + std::to_string(type) + " z=" + std::to_string(z) +
+                               " stokes=" + std::to_string(stokes);
+            const auto from_loader = RegionStatsOf(fast, type, points, z, stokes, kRegionStats, rotation);
+            const auto from_casacore = RegionStatsOf(slow, type, points, z, stokes, kRegionStats, rotation);
+            EXPECT_EQ(from_loader.size(), kRegionStats.size()) << where;
+            EXPECT_EQ(from_casacore.size(), kRegionStats.size()) << where;
+            for (const auto stat : kRegionStats) {
+                if (!from_loader.count(stat) || !from_casacore.count(stat)) {
+                    continue;
+                }
+                const double loader_value = from_loader.at(stat);
+                const double casacore_value = from_casacore.at(stat);
+                if (std::isnan(casacore_value)) {
+                    EXPECT_TRUE(std::isnan(loader_value)) << where << " stat=" << stat << " loader=" << loader_value;
+                } else {
+                    EXPECT_NEAR(loader_value, casacore_value, 1e-9 * (1.0 + std::abs(casacore_value))) << where << " stat=" << stat;
+                }
+            }
+        }
+    }
+    EXPECT_EQ(slow->computed, 0) << "a loader that does not compute region statistics was asked to";
+    return fast->computed;
+}
+
+} // namespace
+
+// A polygon across the chunk boundary at x = 2, and across the unwritten chunk at z = 1, stokes 2.
+// Some of its pixels are flagged.
+TEST_F(ZarrImageTest, RegionStatsOfAPolygonAgreeWithCasacore) {
+    const std::vector<CARTA::Point> polygon{Message::Point(0.6, 0.6), Message::Point(3.4, 1.2), Message::Point(2.6, 4.4)};
+    EXPECT_EQ(ExpectLoaderRegionStatsAgreeWithCasacore(kZarrFixture, CARTA::RegionType::POLYGON, polygon), kDepth * kStokes);
+}
+
+TEST_F(ZarrImageTest, RegionStatsOfAnEllipseAgreeWithCasacore) {
+    const std::vector<CARTA::Point> ellipse{Message::Point(1.5, 2.0), Message::Point(1.6, 2.2)};
+    EXPECT_EQ(ExpectLoaderRegionStatsAgreeWithCasacore(kZarrFixture, CARTA::RegionType::ELLIPSE, ellipse), kDepth * kStokes);
+}
+
+// Pixel (1, 0) is the only one, and it is not flagged. Pixel (0, 0) is flagged, so its region has no pixel.
+TEST_F(ZarrImageTest, RegionStatsOfOnePixelAndOfNoPixelAgreeWithCasacore) {
+    ASSERT_TRUE(ExpectedFlag(1, 0));
+    ASSERT_FALSE(ExpectedFlag(0, 0));
+    for (const float x : {1.0f, 0.0f}) {
+        const std::vector<CARTA::Point> box{Message::Point(x, 0.0), Message::Point(1.0, 1.0)};
+        EXPECT_EQ(ExpectLoaderRegionStatsAgreeWithCasacore(kZarrFixture, CARTA::RegionType::RECTANGLE, box), kDepth * kStokes) << "x=" << x;
+    }
+}
+
+// The flux density needs the unit and the beam. The fixtures have one beam, a beam per plane, and flagged pixels.
+TEST_F(ZarrImageTest, RegionFluxDensityAgreesWithCasacore) {
+    const std::vector<CARTA::Point> box{Message::Point(1.5, 2.0), Message::Point(3.0, 4.0)};
+    for (const std::filesystem::path store : {ZARR_XRADIO_UNIFORM_BEAM_FIXTURE, ZARR_XRADIO_FIXTURE, ZARR_XRADIO_FLAGGED_FIXTURE}) {
+        if (!std::filesystem::exists(store)) {
+            GTEST_SKIP() << "fixture not found at " << store;
+        }
+        EXPECT_GT(ExpectLoaderRegionStatsAgreeWithCasacore(store, CARTA::RegionType::RECTANGLE, box), 0) << store;
+        auto fast = std::make_shared<RegionStatsZarrLoader>(store.string(), true);
+        const auto values = RegionStatsOf(fast, CARTA::RegionType::RECTANGLE, box, 0, 0);
+        ASSERT_TRUE(values.count(CARTA::StatsType::FluxDensity)) << store;
+        EXPECT_FALSE(std::isnan(values.at(CARTA::StatsType::FluxDensity))) << store << ": the fixture has no flux density to compare";
+    }
+}
+
+TEST_F(ZarrImageTest, RegionStatsTheLoaderDoesNotHaveAreLeftToCasacore) {
+    const std::vector<CARTA::Point> box{Message::Point(1.5, 2.0), Message::Point(2.0, 2.0)};
+    auto loader = std::make_shared<RegionStatsZarrLoader>(kZarrFixture.string(), true);
+    const auto values = RegionStatsOf(loader, CARTA::RegionType::RECTANGLE, box, 0, 0, {CARTA::StatsType::Sum, CARTA::StatsType::Blc});
+    EXPECT_EQ(loader->computed, 0);
+    EXPECT_EQ(values.size(), 2u);
+}
+
+TEST_F(ZarrImageTest, RegionStatsOfARotatedBoxAgreeWithCasacore) {
+    const std::vector<CARTA::Point> box{Message::Point(1.5, 2.0), Message::Point(2.5, 3.5)};
+    EXPECT_EQ(ExpectLoaderRegionStatsAgreeWithCasacore(kZarrFixture, CARTA::RegionType::RECTANGLE, box, 30.0), kDepth * kStokes);
+}
+
+// One box reaches past the right and the top edges. The other reaches past the left and the bottom edges,
+// so its origin is clipped to 0.
+TEST_F(ZarrImageTest, RegionStatsOfABoxPartlyOutsideTheImageAgreeWithCasacore) {
+    for (const auto& center : {Message::Point(kWidth - 1.0, kHeight - 1.0), Message::Point(0.0, 0.0)}) {
+        const std::vector<CARTA::Point> box{center, Message::Point(3.0, 3.0)};
+        EXPECT_EQ(ExpectLoaderRegionStatsAgreeWithCasacore(kZarrFixture, CARTA::RegionType::RECTANGLE, box), kDepth * kStokes)
+            << "center=(" << center.x() << ", " << center.y() << ")";
+    }
+}
+
+// Plinear is computed from Q and U, so casacore computes its statistics.
+TEST_F(ZarrImageTest, RegionStatsOfAComputedStokesAreLeftToCasacore) {
+    const std::vector<CARTA::Point> box{Message::Point(1.5, 2.0), Message::Point(2.0, 2.0)};
+    auto loader = std::make_shared<RegionStatsZarrLoader>(kZarrFixture.string(), true);
+    const auto values = RegionStatsOf(loader, CARTA::RegionType::RECTANGLE, box, 0, 0, kRegionStats, 0.0, "Plinearz");
+    EXPECT_EQ(loader->computed, 0);
+    EXPECT_EQ(values.size(), kRegionStats.size());
+    EXPECT_GT(values.at(CARTA::StatsType::NumPixels), 0.0);
+}
+
+TEST(ZarrRegionMask, TheMaskOfACapturedRegionIsTheMaskOfThatRegion) {
+    casacore::Array<casacore::Bool> pattern(casacore::IPosition(2, 3, 2));
+    pattern = true;
+    pattern(casacore::IPosition(2, 1, 0)) = false;
+    const casacore::LCBox box(casacore::IPosition(2, 1, 1), casacore::IPosition(2, 3, 2), casacore::IPosition(2, 4, 5));
+    const casacore::LCPixelSet region(pattern, box);
+    const auto mask = carta::Region::GetImageRegionMask(region);
+    ASSERT_EQ(mask.shape(), pattern.shape());
+    EXPECT_TRUE(casacore::allEQ(mask.asArray(), pattern));
+
+    // A region in a matched image is the 2-D region extended over the other axes.
+    const casacore::LCBox extent(casacore::IPosition(2, 0, 0), casacore::IPosition(2, 1, 2), casacore::IPosition(2, 2, 3));
+    const casacore::LCExtension extended(region, casacore::IPosition(2, 2, 3), extent);
+    const auto extended_mask = carta::Region::GetImageRegionMask(extended);
+    ASSERT_EQ(extended_mask.shape(), pattern.shape());
+    EXPECT_TRUE(casacore::allEQ(extended_mask.asArray(), pattern));
 }

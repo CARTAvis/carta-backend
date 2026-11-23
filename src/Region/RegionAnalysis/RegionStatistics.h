@@ -57,11 +57,14 @@ public:
      * @param[in] frame Image frame
      * @param[in] config Statistics configuration
      * @param[in] stokes_region Struct holding image region and struct describing stokes and z range
+     * @param[in] mask Mask of the region's bounding box, for the loader. Empty if the loader does not compute statistics.
+     * @param[in] xy_origin Start of the region's bounding box in x and y
      * @param[in, out] stats_data_message Region stats data message
      * @return Whether statistics were added
      */
     bool GetRegionStatsData(int file_id, std::shared_ptr<Frame> frame, const CARTA::SetStatsRequirements_StatsConfig& config,
-        StokesRegion& stokes_region, CARTA::RegionStatsData& stats_data_message);
+        StokesRegion& stokes_region, const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& xy_origin,
+        CARTA::RegionStatsData& stats_data_message);
 
     /** @brief Clear cache when region changes. */
     void ClearCache();

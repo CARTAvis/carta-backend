@@ -877,6 +877,15 @@ FileLoader::LoaderScan FileLoader::GetPlaneStats(int, const std::function<bool()
     return LoaderScan::unsupported;
 }
 
+bool FileLoader::HasRegionStats() const {
+    return false;
+}
+
+bool FileLoader::GetRegionStats(
+    int, int, const casacore::ArrayLattice<casacore::Bool>&, const casacore::IPosition&, std::map<CARTA::StatsType, double>&) {
+    return false;
+}
+
 FileLoader::LoaderScan FileLoader::GetPlaneHistograms(
     int, int, const HistogramBounds&, const std::function<bool()>&, const PlaneHistogramCallback&) {
     return LoaderScan::unsupported;

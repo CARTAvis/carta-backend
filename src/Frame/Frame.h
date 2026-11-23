@@ -186,6 +186,13 @@ public:
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
 
     // Returns stats_values map for spectral profiles and stats data
+    // Whether the loader computes region statistics. A caller builds the mask for GetLoaderRegionStats only then.
+    bool HasLoaderRegionStats() const;
+    // Statistics of a region in one plane, computed by the loader. `mask` covers the region's bounding box, which starts
+    // at `xy_origin`. Returns false if the loader cannot compute them all. Then the caller uses GetRegionStats.
+    bool GetLoaderRegionStats(const StokesRegion& stokes_region, const casacore::ArrayLattice<casacore::Bool>& mask,
+        const casacore::IPosition& xy_origin, const std::vector<CARTA::StatsType>& required_stats,
+        std::map<CARTA::StatsType, double>& stats_values);
     bool GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,

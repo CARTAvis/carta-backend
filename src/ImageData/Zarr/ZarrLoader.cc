@@ -310,6 +310,68 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
     return true;
 }
 
+bool ZarrLoader::GetRegionStats(int z, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
+    std::map<CARTA::StatsType, double>& results) {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    if (!image || _num_dims != 4 || z < 0 || z >= _image_shape(2) || stokes < 0 || stokes >= _image_shape(3)) {
+        return false;
+    }
+    const auto& mask_array = mask.asArray();
+    const auto mask_shape = mask_array.shape();
+    if (mask_shape.size() != 2 || origin.size() < 2 || !mask_array.contiguousStorage()) {
+        return false;
+    }
+    static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to lend a mask");
+    const carta::zarr::RegionMask region{static_cast<std::uint64_t>(origin(0)), static_cast<std::uint64_t>(origin(1)),
+        static_cast<std::uint64_t>(mask_shape(0)), static_cast<std::uint64_t>(mask_shape(1)),
+        {reinterpret_cast<const std::uint8_t*>(mask_array.data()), static_cast<std::size_t>(mask_array.nelements())}};
+
+    carta::zarr::SpectralReduceRequest request;
+    request.planes.spectral = {static_cast<std::uint64_t>(z), 1, 1};
+    request.planes.polarization = static_cast<std::uint64_t>(stokes);
+    request.regions = {&region, 1};
+    request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum | carta::zarr::Statistic::sum_sq |
+                         carta::zarr::Statistic::min | carta::zarr::Statistic::max | carta::zarr::Statistic::sum_sq_dev;
+
+    std::optional<carta::zarr::SpectralTotals> totals;
+    const auto store = [&](const carta::zarr::SpectralBlock& block) {
+        if (block.complete && block.channel_count == 1) {
+            totals = block.Totals(0, 0);
+        }
+        return true;
+    };
+    // Read through the shared cache. The region is in the displayed plane, so its chunks are often there already.
+    const auto reduced = image->ZarrImage().ReduceSpectral(request, store, carta::zarr::ReadOptions{});
+    if (!reduced || !totals) {
+        if (!reduced) {
+            spdlog::warn("Could not reduce a region of a Zarr image: {}", reduced.error().message);
+        }
+        return false;
+    }
+
+    const double n = totals->num_pixels;
+    results.clear();
+    results[CARTA::StatsType::NumPixels] = n;
+    for (const auto stat : {CARTA::StatsType::Sum, CARTA::StatsType::SumSq, CARTA::StatsType::Mean, CARTA::StatsType::RMS,
+             CARTA::StatsType::Sigma, CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::Extrema}) {
+        results[stat] = DOUBLE_NAN;
+    }
+    if (n == 0.0) {
+        // With no valid pixel, the other statistics stay NaN.
+        return true;
+    }
+    results[CARTA::StatsType::Sum] = totals->sum;
+    results[CARTA::StatsType::SumSq] = totals->sum_sq;
+    results[CARTA::StatsType::Mean] = totals->sum / n;
+    results[CARTA::StatsType::RMS] = std::sqrt(totals->sum_sq / n);
+    // Sigma from the centered moment. The formula sum_sq - sum^2 / n loses a small spread about a large mean.
+    results[CARTA::StatsType::Sigma] = n > 1.0 ? std::sqrt(totals->sum_sq_dev / (n - 1.0)) : 0.0;
+    results[CARTA::StatsType::Min] = totals->min;
+    results[CARTA::StatsType::Max] = totals->max;
+    results[CARTA::StatsType::Extrema] = std::abs(totals->min) > std::abs(totals->max) ? totals->min : totals->max;
+    return true;
+}
+
 std::optional<ZarrPlaneRead> ZarrLoader::Plane(int z, int stokes) const {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
     if (!image || _num_dims != 4 || z < 0 || z >= _image_shape(2) || stokes < 0 || stokes >= _image_shape(3)) {

@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <set>
 #include <thread>
 
 #include <casacore/images/Images/SubImage.h>
@@ -1821,6 +1822,50 @@ bool Frame::GetRegionStats(const StokesRegion& stokes_region, const std::vector<
     }
 
     return subimage_ok;
+}
+
+bool Frame::HasLoaderRegionStats() const {
+    return _loader->HasRegionStats();
+}
+
+bool Frame::GetLoaderRegionStats(const StokesRegion& stokes_region, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& xy_origin, const std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, double>& stats_values) {
+    // The statistics that the loader computes, and flux density, which is computed here from the sum.
+    static const std::set<CARTA::StatsType> computed{CARTA::StatsType::NumPixels, CARTA::StatsType::Sum, CARTA::StatsType::FluxDensity,
+        CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
+        CARTA::StatsType::Max, CARTA::StatsType::Extrema};
+    const auto& stokes_source = stokes_region.stokes_source;
+    if (mask.shape().empty() || stokes_source.z_range.from != stokes_source.z_range.to ||
+        std::any_of(required_stats.begin(), required_stats.end(), [](CARTA::StatsType stat) { return !computed.count(stat); })) {
+        return false;
+    }
+
+    std::map<CARTA::StatsType, double> values;
+    if (!_loader->GetRegionStats(stokes_source.z_range.from, stokes_source.stokes, mask, xy_origin, values)) {
+        return false;
+    }
+
+    stats_values.clear();
+    for (const auto stat : required_stats) {
+        if (stat != CARTA::StatsType::FluxDensity) {
+            stats_values[stat] = values.at(stat);
+            continue;
+        }
+        // Flux density depends on the unit, the pixel size and the beam. casacore's function computes it, so the value is the same.
+        stats_values[stat] = DOUBLE_NAN;
+        const double num_pixels = values.at(CARTA::StatsType::NumPixels);
+        casacore::SubImage<float> sub_image;
+        if (num_pixels > 0.0 && GetRegionSubImage(stokes_region, sub_image)) {
+            _loader->CloseImageIfUpdated();
+            std::vector<double> flux_density;
+            std::lock_guard<std::mutex> guard(_image_mutex);
+            if (ComputeFluxDensity(sub_image, {num_pixels}, {values.at(CARTA::StatsType::Sum)}, flux_density) && flux_density.size() == 1) {
+                stats_values[stat] = flux_density[0];
+            }
+        }
+    }
+    return true;
 }
 
 bool Frame::GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,

@@ -181,8 +181,7 @@ bool ComputeFluxDensity(
     // Compute flux density when image has compatible units.  Value returned in flux_density.
     // Returns whether calculation succeeded.
     // Return if no image unit.
-    casacore::String bunit(image.units().getName());
-    if (bunit.empty()) {
+    if (image.units().getName().empty()) {
         return false;
     }
 
@@ -196,6 +195,15 @@ bool ComputeFluxDensity(
         return false;
     }
     auto sums = stats_result.tovector();
+    return ComputeFluxDensity(image, npts, sums, result);
+}
+
+bool ComputeFluxDensity(const casacore::ImageInterface<float>& image, const std::vector<double>& npts, const std::vector<double>& sums,
+    std::vector<double>& result) {
+    casacore::String bunit(image.units().getName());
+    if (bunit.empty()) {
+        return false;
+    }
 
     // Separate unit parts
     casacore::String flux_unit(bunit);

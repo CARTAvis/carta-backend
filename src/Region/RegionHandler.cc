@@ -1868,7 +1868,18 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 StokesRegion stokes_region(stokes_source, image_region);
                 CARTA::RegionStatsData stats_data_message;
 
-                if (region_statistics->GetRegionStatsData(stats_file_id, frame, stats_config, stokes_region, stats_data_message)) {
+                // The mask of the region's bounding box, for a loader that computes the statistics itself.
+                // The mask and the origin come from the same `lc_region`, because the region can change meanwhile.
+                // A computed stokes is made from other stokes, so a loader cannot compute it.
+                casacore::ArrayLattice<casacore::Bool> mask;
+                casacore::IPosition xy_origin;
+                if (lc_region && !Stokes::IsComputed(stokes_index) && frame->HasLoaderRegionStats()) {
+                    mask = Region::GetImageRegionMask(*lc_region);
+                    xy_origin = lc_region->boundingBox().start().keepAxes(casacore::IPosition(2, 0, 1));
+                }
+
+                if (region_statistics->GetRegionStatsData(
+                        stats_file_id, frame, stats_config, stokes_region, mask, xy_origin, stats_data_message)) {
                     cb(stats_data_message);
                     success = true;
                 }
