@@ -1945,10 +1945,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
-    // Get the full resolved name of the output image
-    fs::path temp_path = fs::path(root_folder) / directory;
-    fs::path abs_path = fs::absolute(temp_path);
-    output_filename = abs_path / output_filename;
+    // Get the full name of the output image. As with other paths from the frontend, a leading / is the top-level folder.
+    fs::path top_path = fs::absolute(root_folder);
+    output_filename = GetPathInFolder((top_path / directory.relative_path() / output_filename.relative_path()).string(), top_path.string());
+
+    if (output_filename.empty()) {
+        save_file_ack.set_success(false);
+        save_file_ack.set_message("Cannot save image: forbidden path.");
+        return;
+    }
 
     if (fs::exists(output_filename)) {
         if (output_filename.string() == in_file) {

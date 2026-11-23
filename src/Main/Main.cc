@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         sigaction(SIGINT, &sig_handler, nullptr);
 
         // Main
-        auto settings = ProgramSettings::Initialise(argc, argv);
+        auto& settings = ProgramSettings::Initialise(argc, argv);
 
         if (settings.help || settings.version) {
             exit(0);
