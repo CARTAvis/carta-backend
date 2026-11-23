@@ -89,18 +89,18 @@ var NAVTREEINDEX =
 "classcarta_1_1FileLoader.html#ac4f8082b373a3f7235d0bd7704e82600",
 "classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918",
 "classcarta_1_1HttpServer.html#a5a0f38bf0416026e852b3ab1f69f7c57",
-"classcarta_1_1ImageMoments.html#acb4a7db206b7801f9a4e95d260011f68",
-"classcarta_1_1PolarizationCalculator.html#a7c9af289416b028051a34fd1c223d7f5",
-"classcarta_1_1RegionConverter.html#a77a82b99c8e7f2bcf84d1a78c1963005",
-"classcarta_1_1RegionHistogram.html#a038ac814989d2267f21ff2a41ae58d73",
-"classcarta_1_1Session.html#a670a5624189550af16a31c4d06360fa9",
-"classcarta_1_1SessionManager.html#a47a87d0d20b600de143cbb5b29eb2170",
-"classcarta_1_1TableController.html#a4867d1e5f224b6c2f6e9a3d1786e3fd7",
-"classcarta_1_1concurrent__queue.html#a96518f3339a904ffa60edb0a800de392",
-"namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2dacaed7b76497605be385d17f3e7c5e16fd8",
-"structcarta_1_1EventHeader.html#aee18d56213e8780ddd554870aaae64ed",
-"structcarta_1_1PreviewCutParameters.html#adda0b79bd8f392f8f1603b9bf944d6e9",
-"structcarta_1_1StokesSlicer.html#abe392c8f75711d04bdb2462758d6dcea"
+"classcarta_1_1ImageMoments.html#ac21df37d8356a2c8b6b71d8269344ade",
+"classcarta_1_1PolarizationCalculator.html#a7b287776319ca3cce5e310f5045be40a",
+"classcarta_1_1RegionConverter.html#a6cfef4d37011edbd984fcb3f3ad82637",
+"classcarta_1_1RegionHistogram.html",
+"classcarta_1_1Session.html#a66f8796f9b5f6d783fe058a316b079c3",
+"classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950",
+"classcarta_1_1TableController.html#a429ef193778c7d7ece134f68e0f465e3",
+"classcarta_1_1concurrent__queue.html#a61d160c52a707c132849c358ff18872a",
+"namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2daca4dfd5f04c4247881e1e54ccc7fddef11",
+"structcarta_1_1EventHeader.html#ac147156d67a6592ef1f30b15259332d6",
+"structcarta_1_1PreviewCutParameters.html#acd3a13f48a5959a71e5924c61b591b2d",
+"structcarta_1_1StokesSlicer.html#a6b17c49b898af9ebb6e0a8e8964a7750"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

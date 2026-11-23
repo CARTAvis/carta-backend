@@ -56,39 +56,39 @@
 </a>
 </g>
 </g>
-<!-- Node5 -->
-<g id="Node000005" class="node">
-<title>Node5</title>
-<g id="a_Node000005"><a xlink:href="classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" target="_top" xlink:title=" ">
+<!-- Node6 -->
+<g id="Node000006" class="node">
+<title>Node6</title>
+<g id="a_Node000006"><a xlink:href="classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="260.5,-78 154.5,-78 154.5,-48 260.5,-48 260.5,-78"/>
 <text text-anchor="start" x="162.5" y="-66" font-family="Helvetica,sans-Serif" font-size="10.00">carta::HttpServer::</text>
 <text text-anchor="middle" x="207.5" y="-55" font-family="Helvetica,sans-Serif" font-size="10.00">IsAuthenticated</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node5 -->
-<g id="edge4_Node000001_Node000005" class="edge">
-<title>Node1&#45;&gt;Node5</title>
-<g id="a_edge4_Node000001_Node000005"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node6 -->
+<g id="edge5_Node000001_Node000006" class="edge">
+<title>Node1&#45;&gt;Node6</title>
+<g id="a_edge5_Node000001_Node000006"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M108.41,-78.54C120.06,-76.69 132.48,-74.73 144.43,-72.83"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="145,-76.29 154.33,-71.26 143.91,-69.37 145,-76.29"/>
 </a>
 </g>
 </g>
-<!-- Node8 -->
-<g id="Node000008" class="node">
-<title>Node8</title>
-<g id="a_Node000008"><a xlink:href="classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" target="_top" xlink:title=" ">
+<!-- Node9 -->
+<g id="Node000009" class="node">
+<title>Node9</title>
+<g id="a_Node000009"><a xlink:href="classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="260.5,-30 154.5,-30 154.5,0 260.5,0 260.5,-30"/>
 <text text-anchor="start" x="162.5" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::HttpServer::</text>
 <text text-anchor="middle" x="207.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">WaitForData</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node8 -->
-<g id="edge7_Node000001_Node000008" class="edge">
-<title>Node1&#45;&gt;Node8</title>
-<g id="a_edge7_Node000001_Node000008"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node9 -->
+<g id="edge8_Node000001_Node000009" class="edge">
+<title>Node1&#45;&gt;Node9</title>
+<g id="a_edge8_Node000001_Node000009"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M81.03,-71.82C98.54,-61.89 122.3,-48.97 144,-39 147.8,-37.25 151.77,-35.52 155.78,-33.84"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="157.24,-37.03 165.17,-30.01 154.59,-30.55 157.24,-37.03"/>
 </a>
@@ -113,30 +113,31 @@
 </a>
 </g>
 </g>
-<!-- Node6 -->
-<g id="Node000006" class="node">
-<title>Node6</title>
-<g id="a_Node000006"><a xlink:href="Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" target="_top" xlink:title="Validate an HTTP request.">
-<polygon fill="white" stroke="#666666" points="414,-72.5 307,-72.5 307,-53.5 414,-53.5 414,-72.5"/>
-<text text-anchor="middle" x="360.5" y="-60.5" font-family="Helvetica,sans-Serif" font-size="10.00">ValidateAuthToken</text>
+<!-- Node5 -->
+<g id="Node000005" class="node">
+<title>Node5</title>
+<g id="a_Node000005"><a xlink:href="classcarta_1_1HttpServer.html#a7d7487b4f2f39bdf058bc2eb7215d80a" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="413.5,-126 307.5,-126 307.5,-96 413.5,-96 413.5,-126"/>
+<text text-anchor="start" x="315.5" y="-114" font-family="Helvetica,sans-Serif" font-size="10.00">carta::HttpServer::</text>
+<text text-anchor="middle" x="360.5" y="-103" font-family="Helvetica,sans-Serif" font-size="10.00">GetObjectPath</text>
 </a>
 </g>
 </g>
-<!-- Node5&#45;&gt;Node6 -->
-<g id="edge5_Node000005_Node000006" class="edge">
-<title>Node5&#45;&gt;Node6</title>
-<g id="a_edge5_Node000005_Node000006"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M260.89,-63C272.42,-63 284.74,-63 296.64,-63"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="296.95,-66.5 306.95,-63 296.95,-59.5 296.95,-66.5"/>
+<!-- Node4&#45;&gt;Node5 -->
+<g id="edge4_Node000004_Node000005" class="edge">
+<title>Node4&#45;&gt;Node5</title>
+<g id="a_edge4_Node000004_Node000005"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M271.23,-111C279.75,-111 288.5,-111 297.02,-111"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="297.27,-114.5 307.27,-111 297.27,-107.5 297.27,-114.5"/>
 </a>
 </g>
 </g>
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title="Performs a constant&#45;time comparison of two strings.">
-<polygon fill="white" stroke="#666666" points="608,-72.5 450,-72.5 450,-53.5 608,-53.5 608,-72.5"/>
-<text text-anchor="middle" x="529" y="-60.5" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
+<g id="a_Node000007"><a xlink:href="Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" target="_top" xlink:title="Validate an HTTP request.">
+<polygon fill="white" stroke="#666666" points="414,-72.5 307,-72.5 307,-53.5 414,-53.5 414,-72.5"/>
+<text text-anchor="middle" x="360.5" y="-60.5" font-family="Helvetica,sans-Serif" font-size="10.00">ValidateAuthToken</text>
 </a>
 </g>
 </g>
@@ -144,6 +145,24 @@
 <g id="edge6_Node000006_Node000007" class="edge">
 <title>Node6&#45;&gt;Node7</title>
 <g id="a_edge6_Node000006_Node000007"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M260.89,-63C272.42,-63 284.74,-63 296.64,-63"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="296.95,-66.5 306.95,-63 296.95,-59.5 296.95,-66.5"/>
+</a>
+</g>
+</g>
+<!-- Node8 -->
+<g id="Node000008" class="node">
+<title>Node8</title>
+<g id="a_Node000008"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title="Performs a constant&#45;time comparison of two strings.">
+<polygon fill="white" stroke="#666666" points="608,-72.5 450,-72.5 450,-53.5 608,-53.5 608,-72.5"/>
+<text text-anchor="middle" x="529" y="-60.5" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
+</a>
+</g>
+</g>
+<!-- Node7&#45;&gt;Node8 -->
+<g id="edge7_Node000007_Node000008" class="edge">
+<title>Node7&#45;&gt;Node8</title>
+<g id="a_edge7_Node000007_Node000008"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M414.18,-63C422.33,-63 430.93,-63 439.61,-63"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="439.81,-66.5 449.81,-63 439.81,-59.5 439.81,-66.5"/>
 </a>

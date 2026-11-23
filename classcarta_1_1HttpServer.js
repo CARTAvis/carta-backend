@@ -13,6 +13,7 @@ var classcarta_1_1HttpServer =
     [ "GetExistingPreferences", "classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9", null ],
     [ "GetFileUrlString", "classcarta_1_1HttpServer.html#a81a867dc29b7be0f8d8e2f901ebbf688", null ],
     [ "GetObjectFromPath", "classcarta_1_1HttpServer.html#aaab6a34328959ceedbb8ebf63b1479dd", null ],
+    [ "GetObjectPath", "classcarta_1_1HttpServer.html#a7d7487b4f2f39bdf058bc2eb7215d80a", null ],
     [ "HandleClearObject", "classcarta_1_1HttpServer.html#aef99e62efe9a7250f3f0a867d114f426", null ],
     [ "HandleClearPreferences", "classcarta_1_1HttpServer.html#a45673f54c55bb8e02fbacf5fb3340f93", null ],
     [ "HandleGetConfig", "classcarta_1_1HttpServer.html#ab0d40a7fbc2c74aaf9ad45ba35d2f912", null ],
