@@ -24,9 +24,20 @@
 namespace carta {
 namespace {
 
+// A cache pool that keeps nothing, so a read does not evict chunks from the shared cache.
+// If the pool cannot be made, the read uses the shared cache.
+std::optional<carta::zarr::CachePool> PoolThatKeepsNothing() {
+    auto pool = GetZarrContext().CreateCachePool(0);
+    if (!pool) {
+        spdlog::warn("A spectrum reads through the session's cache: {}", pool.error().message);
+        return std::nullopt;
+    }
+    return *pool;
+}
+
 // The cache pool for a spectrum read. If its column of chunks fits in the shared cache, the default pool keeps
 // the chunks for the next pixel. Otherwise a pool that keeps nothing is used, because the column would evict its
-// own chunks. If that pool cannot be made, the shared cache is used.
+// own chunks.
 std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& image, std::int64_t x, std::int64_t y, std::int64_t width,
     std::int64_t height, std::int64_t z, std::int64_t depth) {
     const auto cache_bytes = ZarrCacheBytes();
@@ -42,12 +53,7 @@ std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& imag
             image.ZarrImage().DecodedChunkBytes(), cache_bytes)) {
         return std::nullopt;
     }
-    auto pool = GetZarrContext().CreateCachePool(0);
-    if (!pool) {
-        spdlog::warn("A spectrum reads through the session's cache: {}", pool.error().message);
-        return std::nullopt;
-    }
-    return *pool;
+    return PoolThatKeepsNothing();
 }
 
 } // namespace
@@ -194,8 +200,9 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         request.emit_every_channels = _region_spectral_channels_per_emit;
 
         carta::zarr::ReadOptions options;
-        // Choose the pool from the whole range, so that every call of a profile uses the same kind of pool.
-        options.control.cache_pool = PoolForSpectrum(*image, origin(0), origin(1), mask_shape(0), mask_shape(1), range.from, channels);
+        // The chunks are not kept. The finished channels are kept in the pace, so the chunks are rarely read again.
+        // Keeping them would evict the chunks of the displayed plane.
+        options.control.cache_pool = ZarrCacheBytes() == 0 ? std::nullopt : PoolThatKeepsNothing();
         // Stop part way through a run once the profile is not wanted. One run can be a whole layer of chunks.
         options.control.cancellation_requested = [&]() { return still_wanted && !still_wanted(); };
         const auto deadline = std::chrono::steady_clock::now() + _region_spectral_time;
