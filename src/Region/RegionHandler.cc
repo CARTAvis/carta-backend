@@ -330,7 +330,7 @@ bool RegionHandler::SetHistogramRequirements(
     _frames[file_id] = frame;
 
     {
-        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        std::lock_guard<std::mutex> histogram_guard(_histogram_mutex);
         auto histogram_it = _region_histograms.find(region_id);
         if (histogram_it == _region_histograms.end()) {
             _region_histograms[region_id] = std::make_shared<RegionHistogram>(region_id, file_id, configs);
@@ -364,7 +364,7 @@ bool RegionHandler::SetSpatialRequirements(
     // Save frame pointer
     _frames[file_id] = frame;
 
-    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
     if (_region_spatial_profiles.find(region_id) == _region_spatial_profiles.end()) {
         _region_spatial_profiles[region_id] = std::make_shared<RegionSpatialProfile>(region_id, file_id, configs);
     } else {
@@ -400,9 +400,9 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     ConfigId config_id(file_id, region_id);
     if (spectral_profiles.empty()) {
         if (_spectral_req.count(config_id)) {
-            std::unique_lock<std::mutex> ulock(_spectral_mutex);
+            std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
             _spectral_req[config_id].configs.clear();
-            ulock.unlock();
+            spectral_lock.unlock();
         }
         return true;
     }
@@ -436,9 +436,9 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     if (_spectral_req.count(config_id) && !_spectral_req[config_id].configs.empty()) {
         // Diff existing requirements to set new_stats in new_configs
         std::vector<SpectralConfig> current_configs;
-        std::unique_lock<std::mutex> ulock(_spectral_mutex);
+        std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         current_configs.insert(current_configs.begin(), _spectral_req[config_id].configs.begin(), _spectral_req[config_id].configs.end());
-        ulock.unlock();
+        spectral_lock.unlock();
 
         // Find matching requirement to set new_stats in new configs
         for (auto& new_config : new_configs) {
@@ -468,9 +468,9 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     // Update region config in spectral req map
     RegionSpectralConfig region_config;
     region_config.configs = new_configs;
-    std::unique_lock<std::mutex> ulock(_spectral_mutex);
+    std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
     _spectral_req[config_id] = region_config;
-    ulock.unlock();
+    spectral_lock.unlock();
 
     return true;
 }
@@ -481,9 +481,9 @@ bool RegionHandler::HasSpectralRequirements(
     // Used to check for cancellation.
     ConfigId config_id(file_id, region_id);
     std::vector<SpectralConfig> spectral_configs;
-    std::unique_lock<std::mutex> ulock(_spectral_mutex);
+    std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
     spectral_configs.insert(spectral_configs.begin(), _spectral_req[config_id].configs.begin(), _spectral_req[config_id].configs.end());
-    ulock.unlock();
+    spectral_lock.unlock();
 
     bool has_stat(false);
     for (auto& config : spectral_configs) {
@@ -504,7 +504,7 @@ bool RegionHandler::HasSpectralRequirements(
 
 void RegionHandler::UpdateNewSpectralRequirements(int region_id) {
     // Set all requirements "new" when region changes
-    std::lock_guard<std::mutex> guard(_spectral_mutex);
+    std::lock_guard<std::mutex> spectral_guard(_spectral_mutex);
     for (auto& req : _spectral_req) {
         if (req.first.region_id == region_id) {
             for (auto& spec_config : req.second.configs) {
@@ -538,7 +538,7 @@ bool RegionHandler::SetStatsRequirements(
 
     // Set configurations
     {
-        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        std::lock_guard<std::mutex> statistics_guard(_statistics_mutex);
         auto stats_it = _region_statistics.find(region_id);
         if (stats_it == _region_statistics.end()) {
             _region_statistics[region_id] = std::make_shared<RegionStatistics>(region_id, file_id, configs);
@@ -553,11 +553,11 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for all regions or a specific region
     if (region_id == ALL_REGIONS) {
         {
-            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            std::lock_guard<std::mutex> histogram_guard(_histogram_mutex);
             _region_histograms.clear();
         }
         {
-            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            std::lock_guard<std::mutex> statistics_guard(_statistics_mutex);
             _region_statistics.clear();
         }
 
@@ -577,12 +577,12 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     } else {
         // Remove region analysis for region_id
         {
-            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            std::lock_guard<std::mutex> histogram_guard(_histogram_mutex);
             _region_histograms.erase(region_id);
         }
 
         {
-            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            std::lock_guard<std::mutex> statistics_guard(_statistics_mutex);
             _region_statistics.erase(region_id);
         }
 
@@ -634,11 +634,11 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         spatial_lock.unlock();
 
         {
-            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            std::lock_guard<std::mutex> histogram_guard(_histogram_mutex);
             _region_histograms.clear();
         }
         {
-            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            std::lock_guard<std::mutex> statistics_guard(_statistics_mutex);
             _region_statistics.clear();
         }
 
@@ -655,7 +655,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
         // Remove region analysis for file_id
         std::vector<std::shared_ptr<RegionHistogram>> region_histogram_snapshot;
         {
-            std::lock_guard<std::mutex> lock(_histogram_mutex);
+            std::lock_guard<std::mutex> histogram_guard(_histogram_mutex);
             region_histogram_snapshot.reserve(_region_histograms.size());
             for (const auto& [_, region_histogram] : _region_histograms) {
                 region_histogram_snapshot.push_back(region_histogram);
@@ -667,7 +667,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
 
         std::vector<std::shared_ptr<RegionStatistics>> region_statistics_snapshot;
         {
-            std::lock_guard<std::mutex> lock(_statistics_mutex);
+            std::lock_guard<std::mutex> statistics_guard(_statistics_mutex);
             region_statistics_snapshot.reserve(_region_statistics.size());
             for (const auto& [_, region_statistics] : _region_statistics) {
                 region_statistics_snapshot.push_back(region_statistics);
@@ -729,7 +729,7 @@ void RegionHandler::ClearRegionCache(int region_id) {
     // Remove cached data when region changes
     std::shared_ptr<RegionHistogram> region_histogram;
     {
-        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        std::lock_guard<std::mutex> histogram_guard(_histogram_mutex);
         auto histogram_it = _region_histograms.find(region_id);
         if (histogram_it != _region_histograms.end()) {
             region_histogram = histogram_it->second;
@@ -746,7 +746,7 @@ void RegionHandler::ClearRegionCache(int region_id) {
 
     std::shared_ptr<RegionStatistics> region_statistics;
     {
-        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        std::lock_guard<std::mutex> statistics_guard(_statistics_mutex);
         auto stats_it = _region_statistics.find(region_id);
         if (stats_it != _region_statistics.end()) {
             region_statistics = stats_it->second;
@@ -970,7 +970,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
         if (!preview_image) {
             // Apply preview region or slicer to get SubImage, and set preview region origin.
             casacore::SubImage<float> sub_image;
-            std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
+            std::unique_lock<std::mutex> line_profile_lock(_line_profile_mutex);
 
             if (is_image_region) {
                 // Apply slicer to source image to get SubImage
@@ -1018,7 +1018,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
                 pv_response.set_message(message);
                 return false;
             }
-            profile_lock.unlock();
+            line_profile_lock.unlock();
         }
 
         // Preview image is now set, make frame to access it.
@@ -1105,7 +1105,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     preview_data_matrix = FLOAT_NAN;
 
     // Do not collide with line spatial profile (coord sys copy crash)
-    std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
+    std::unique_lock<std::mutex> line_profile_lock(_line_profile_mutex);
     for (size_t iregion = 0; iregion < num_regions; ++iregion) {
         // Set box region with next temp region id
         int box_region_id(TEMP_REGION_ID);
@@ -1158,7 +1158,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
         }
     }
 
-    profile_lock.unlock();
+    line_profile_lock.unlock();
     RemoveRegion(preview_cut_id);
 
     // Use PvGenerator to set PV image for headers only
@@ -1467,7 +1467,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
     bool success(false);
     std::vector<std::pair<int, std::shared_ptr<RegionHistogram>>> region_histogram_snapshot;
     {
-        std::lock_guard<std::mutex> lock(_histogram_mutex);
+        std::lock_guard<std::mutex> histogram_guard(_histogram_mutex);
         if (region_id > 0) {
             auto histogram_it = _region_histograms.find(region_id);
             if (histogram_it == _region_histograms.end()) {
@@ -1555,10 +1555,10 @@ bool RegionHandler::FillSpectralProfileData(
         return false;
     }
 
-    std::unique_lock<std::mutex> ulock(_spectral_mutex);
+    std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
     std::unordered_map<ConfigId, RegionSpectralConfig> region_configs;
     region_configs.insert(_spectral_req.begin(), _spectral_req.end());
-    ulock.unlock();
+    spectral_lock.unlock();
 
     bool profile_ok(false);
     // Fill spectral profile for region with file requirement
@@ -1928,7 +1928,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
     bool success(false);
     std::vector<std::pair<int, std::shared_ptr<RegionStatistics>>> region_statistics_snapshot;
     {
-        std::lock_guard<std::mutex> lock(_statistics_mutex);
+        std::lock_guard<std::mutex> statistics_guard(_statistics_mutex);
         if (region_id > 0) {
             auto stats_it = _region_statistics.find(region_id);
             if (stats_it == _region_statistics.end()) {
@@ -2002,7 +2002,7 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
     }
 
     std::vector<int> spatial_region_ids;
-    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
     if (region_id > 0) {
         if (_region_spatial_profiles.find(region_id) == _region_spatial_profiles.end()) {
             return false;
@@ -2014,18 +2014,18 @@ bool RegionHandler::FillSpatialProfileData(std::function<void(CARTA::SpatialProf
             spatial_region_ids.push_back(spatial_region_id);
         }
     }
-    ulock.unlock();
+    spatial_lock.unlock();
 
     bool success(false);
     for (int spatial_region_id : spatial_region_ids) {
         // Get region spatial profile
-        std::unique_lock<std::mutex> ulock(_spatial_mutex);
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         if (_region_spatial_profiles.find(spatial_region_id) == _region_spatial_profiles.end()) {
-            ulock.unlock();
+            spatial_lock.unlock();
             continue;
         }
         auto spatial_profile = _region_spatial_profiles.at(spatial_region_id);
-        ulock.unlock();
+        spatial_lock.unlock();
 
         // Get file ids in spatial profile configurations
         std::vector<int> spatial_file_ids;
@@ -2250,7 +2250,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int file_id, Re
         return profile;
     }
 
-    std::lock_guard<std::mutex> guard(_line_profile_mutex);
+    std::lock_guard<std::mutex> line_profile_guard(_line_profile_mutex);
     // Set temporary region
     int temp_region_id(TEMP_REGION_ID);
     SetRegion(temp_region_id, region_state, reference_csys);
@@ -2265,9 +2265,9 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int file_id, Re
     SpectralConfig spectral_config(coordinate, required_stats);
     RegionSpectralConfig region_config;
     region_config.configs.push_back(spectral_config);
-    std::unique_lock<std::mutex> ulock(_spectral_mutex);
+    std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
     _spectral_req[config_id] = region_config;
-    ulock.unlock();
+    spectral_lock.unlock();
 
     // Check cancel: currently temp per-z profile is only for PV image generator
     if (_stop_pv[file_id]) {
