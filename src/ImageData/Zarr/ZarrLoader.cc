@@ -25,8 +25,11 @@ namespace carta {
 namespace {
 
 // A cache pool that keeps nothing, so a read does not evict chunks from the shared cache.
-// If the pool cannot be made, the read uses the shared cache.
+// Returns nothing if there is no shared cache, or if the pool cannot be made. Then the read uses the default pool.
 std::optional<carta::zarr::CachePool> PoolThatKeepsNothing() {
+    if (ZarrCacheBytes() == 0) {
+        return std::nullopt;
+    }
     auto pool = GetZarrContext().CreateCachePool(0);
     if (!pool) {
         spdlog::warn("A spectrum reads through the session's cache: {}", pool.error().message);
@@ -229,7 +232,7 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         carta::zarr::ReadOptions options;
         // The chunks are not kept. The finished channels are kept in the pace, so the chunks are rarely read again.
         // Keeping them would evict the chunks of the displayed plane.
-        options.control.cache_pool = ZarrCacheBytes() == 0 ? std::nullopt : PoolThatKeepsNothing();
+        options.control.cache_pool = PoolThatKeepsNothing();
         // Stop part way through a run once the profile is not wanted. One run can be a whole layer of chunks.
         options.control.cancellation_requested = [&]() { return still_wanted && !still_wanted(); };
         const auto deadline = std::chrono::steady_clock::now() + _region_spectral_time;
@@ -339,7 +342,7 @@ FileLoader::LoaderScan ZarrLoader::GetPlaneStats(int stokes, const std::function
 
     carta::zarr::ReadOptions options;
     // The chunks are not kept. Even when the whole cube fits in the cache, the histogram pass is no faster with them.
-    options.control.cache_pool = ZarrCacheBytes() == 0 ? std::nullopt : PoolThatKeepsNothing();
+    options.control.cache_pool = PoolThatKeepsNothing();
     options.control.cancellation_requested = cancelled;
 
     const auto reduced = image->ZarrImage().ReduceSpectral(
@@ -382,7 +385,7 @@ FileLoader::LoaderScan ZarrLoader::GetPlaneHistograms(
     request.upper = bounds.max;
 
     carta::zarr::ReadOptions options;
-    options.control.cache_pool = ZarrCacheBytes() == 0 ? std::nullopt : PoolThatKeepsNothing();
+    options.control.cache_pool = PoolThatKeepsNothing();
     options.control.cancellation_requested = cancelled;
 
     std::vector<int> bins(static_cast<std::size_t>(num_bins));
