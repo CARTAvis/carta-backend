@@ -338,8 +338,8 @@ FileLoader::LoaderScan ZarrLoader::GetPlaneStats(int stokes, const std::function
                          carta::zarr::Statistic::min | carta::zarr::Statistic::max | carta::zarr::Statistic::sum_sq_dev;
 
     carta::zarr::ReadOptions options;
-    // The cube does not fit in the shared cache, so this reads through a pool that keeps nothing.
-    options.control.cache_pool = PoolForSpectrum(*image, 0, 0, _image_shape(0), _image_shape(1), 0, _image_shape(2));
+    // The chunks are not kept. Even when the whole cube fits in the cache, the histogram pass is no faster with them.
+    options.control.cache_pool = ZarrCacheBytes() == 0 ? std::nullopt : PoolThatKeepsNothing();
     options.control.cancellation_requested = cancelled;
 
     const auto reduced = image->ZarrImage().ReduceSpectral(
@@ -382,7 +382,7 @@ FileLoader::LoaderScan ZarrLoader::GetPlaneHistograms(
     request.upper = bounds.max;
 
     carta::zarr::ReadOptions options;
-    options.control.cache_pool = PoolForSpectrum(*image, 0, 0, _image_shape(0), _image_shape(1), 0, _image_shape(2));
+    options.control.cache_pool = ZarrCacheBytes() == 0 ? std::nullopt : PoolThatKeepsNothing();
     options.control.cancellation_requested = cancelled;
 
     std::vector<int> bins(static_cast<std::size_t>(num_bins));
