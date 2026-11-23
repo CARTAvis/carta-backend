@@ -40,8 +40,11 @@ public:
 
 private:
     // Reference region in world coordinates (reference coordinate system)
+    // Must be called with _reference_region_mutex held
     void SetReferenceWCRegion();
-    bool ReferenceRegionValid();
+    // Set reference region if needed and return a local copy of the shared pointer
+    std::shared_ptr<casacore::WCRegion> GetReferenceRegion();
+    std::shared_ptr<const std::vector<casacore::Quantity>> GetWcsControlPoints();
     bool RectangleControlPointsToWorld(std::vector<casacore::Quantity>& wcs_points);
     bool EllipseControlPointsToWorld(std::vector<casacore::Quantity>& wcs_points, float& ellipse_rotation);
     bool CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
@@ -85,10 +88,12 @@ private:
 
     // Reference region: control points converted to world coords,
     // cached as WCRegion, and flag that WCRegion was attempted
-    // (may be null if outside coordinate system)
-    std::vector<casacore::Quantity> _wcs_control_points;
+    // (may be null if outside coordinate system).
+    // Shared pointers so callers can hold a local copy; all three guarded by _reference_region_mutex.
+    std::shared_ptr<const std::vector<casacore::Quantity>> _wcs_control_points;
     std::shared_ptr<casacore::WCRegion> _reference_region;
     bool _reference_region_set;
+    std::mutex _reference_region_mutex;
 
     // Converted regions: reference region applied to image,
     // or as polygon approximation applied to image.

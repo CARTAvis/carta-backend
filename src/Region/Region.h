@@ -91,6 +91,9 @@ private:
     void ResetRegionCache();
     std::shared_ptr<casacore::LCRegion> GetCachedLCRegion(int file_id, const StokesSource& stokes_source);
 
+    // Create region converter if needed and return a local copy of the shared pointer
+    std::shared_ptr<RegionConverter> GetRegionConverter();
+
     // Record in pixel coordinates from control points, for reference image
     casacore::TableRecord GetControlPointsRecord(const casacore::IPosition& shape);
     casacore::TableRecord GetRotboxRecordForLCRegion(const casacore::IPosition& shape);
@@ -113,7 +116,9 @@ private:
     bool _lcregion_set; // may be nullptr if outside image
 
     // Converter to handle region applied to matched image
-    std::unique_ptr<RegionConverter> _region_converter;
+    // Shared pointer so callers can hold a local copy while another thread resets it
+    std::shared_ptr<RegionConverter> _region_converter;
+    std::mutex _region_converter_mutex;
 
     // Communication:
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction

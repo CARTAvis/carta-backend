@@ -32,16 +32,32 @@ RegionConverter::RegionConverter(const RegionState& state, std::shared_ptr<casac
 // ****************************************************************************
 // Apply region to reference image in world coordinates (WCRegion) and save wcs control points
 
-bool RegionConverter::ReferenceRegionValid() {
-    return _reference_region_set && bool(_reference_region);
+std::shared_ptr<casacore::WCRegion> RegionConverter::GetReferenceRegion() {
+    // Set reference region if needed and return a local copy so it is safe from concurrent access
+    std::lock_guard<std::mutex> guard(_reference_region_mutex);
+    if (!_reference_region_set) {
+        SetReferenceWCRegion();
+    }
+    return _reference_region;
+}
+
+std::shared_ptr<const std::vector<casacore::Quantity>> RegionConverter::GetWcsControlPoints() {
+    // Set wcs control points if needed and return a local copy so it is safe from concurrent access
+    std::lock_guard<std::mutex> guard(_reference_region_mutex);
+    if (!_reference_region_set) {
+        SetReferenceWCRegion();
+    }
+    return _wcs_control_points;
 }
 
 void RegionConverter::SetReferenceWCRegion() {
     // Create WCRegion (world coordinate region) in the reference image according to type using wcs control points.
-    // Sets _reference_region (including to nullptr if fails) and _reference_region_set (attempted).
+    // Sets _wcs_control_points, _reference_region (including to nullptr if fails) and _reference_region_set (attempted).
+    // Must be called with _reference_region_mutex held.
     // Supports closed (not line-type) annotation regions, for conversion to matched image LCRegion then Record for export.
     // Rotated box is rotated, do not use for Record!
     casacore::WCRegion* region(nullptr);
+    std::vector<casacore::Quantity> wcs_control_points;
     std::vector<casacore::Quantity> world_points; // for converting one point at a time
     casacore::IPosition pixel_axes(2, 0, 1);      // first and second axes only
     casacore::Vector<casacore::Int> abs_rel;
@@ -52,9 +68,9 @@ void RegionConverter::SetReferenceWCRegion() {
             case CARTA::POINT:
             case CARTA::ANNPOINT: {
                 // Convert one point for wcs control points
-                if (CartaPointToWorld(_region_state.control_points[0], _wcs_control_points)) {
+                if (CartaPointToWorld(_region_state.control_points[0], wcs_control_points)) {
                     // WCBox blc and trc are same point
-                    casacore::Vector<casacore::Quantity> const wcs_points(_wcs_control_points);
+                    casacore::Vector<casacore::Quantity> const wcs_points(wcs_control_points);
                     region = new casacore::WCBox(wcs_points, wcs_points, pixel_axes, *_reference_coord_sys, abs_rel);
                 }
                 break;
@@ -66,29 +82,29 @@ void RegionConverter::SetReferenceWCRegion() {
             case CARTA::ANNTEXT: {    // 4 corners of text box
                 // Use corners/vertices for wcs control points: x0, y0, x1, y1, etc.
                 if (type == CARTA::RECTANGLE || type == CARTA::ANNRECTANGLE || type == CARTA::ANNTEXT) {
-                    if (!RectangleControlPointsToWorld(_wcs_control_points)) {
-                        _wcs_control_points.clear();
+                    if (!RectangleControlPointsToWorld(wcs_control_points)) {
+                        wcs_control_points.clear();
                     }
                 } else {
                     for (auto& point : _region_state.control_points) {
                         if (CartaPointToWorld(point, world_points)) {
-                            _wcs_control_points.push_back(world_points[0]);
-                            _wcs_control_points.push_back(world_points[1]);
+                            wcs_control_points.push_back(world_points[0]);
+                            wcs_control_points.push_back(world_points[1]);
                         } else {
-                            _wcs_control_points.clear();
+                            wcs_control_points.clear();
                             break;
                         }
                     }
                 }
 
-                if (!_wcs_control_points.empty()) {
+                if (!wcs_control_points.empty()) {
                     // Convert from Vector<Quantum> (wcs control points) to Quantum<Vector> for WCPolygon
                     casacore::Quantum<casacore::Vector<casacore::Double>> qx, qy;
                     // Separate x and y
                     std::vector<double> x, y;
-                    for (size_t i = 0; i < _wcs_control_points.size(); i += 2) {
-                        x.push_back(_wcs_control_points[i].getValue());
-                        y.push_back(_wcs_control_points[i + 1].getValue());
+                    for (size_t i = 0; i < wcs_control_points.size(); i += 2) {
+                        x.push_back(wcs_control_points[i].getValue());
+                        y.push_back(wcs_control_points[i + 1].getValue());
                     }
                     casacore::Vector<casacore::Double> x_v(x), y_v(y);
                     casacore::Vector<casacore::String> world_units = _reference_coord_sys->worldAxisUnits();
@@ -105,12 +121,12 @@ void RegionConverter::SetReferenceWCRegion() {
             case CARTA::ANNELLIPSE:   // [(cx, cy), (bmaj, bmin)]
             case CARTA::ANNCOMPASS: { // [(cx, cy), (length, length)}
                 float ellipse_rotation;
-                if (EllipseControlPointsToWorld(_wcs_control_points, ellipse_rotation)) {
+                if (EllipseControlPointsToWorld(wcs_control_points, ellipse_rotation)) {
                     // wcs control points order: xcenter, ycenter, major axis, minor axis
                     casacore::Quantity theta(ellipse_rotation, "deg");
                     theta.convert("rad");
-                    region = new casacore::WCEllipsoid(_wcs_control_points[0], _wcs_control_points[1], _wcs_control_points[2],
-                        _wcs_control_points[3], theta, 0, 1, *_reference_coord_sys);
+                    region = new casacore::WCEllipsoid(wcs_control_points[0], wcs_control_points[1], wcs_control_points[2],
+                        wcs_control_points[3], theta, 0, 1, *_reference_coord_sys);
                 }
                 break;
             }
@@ -122,7 +138,8 @@ void RegionConverter::SetReferenceWCRegion() {
     }
 
     std::shared_ptr<casacore::WCRegion> shared_region = std::shared_ptr<casacore::WCRegion>(region);
-    std::atomic_store(&_reference_region, shared_region);
+    _wcs_control_points = std::make_shared<const std::vector<casacore::Quantity>>(std::move(wcs_control_points));
+    _reference_region = shared_region;
 
     // Flag indicates that attempt was made, to avoid repeated attempts
     _reference_region_set = true;
@@ -298,12 +315,8 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetConvertedLCRegion(int fi
 
     try {
         // Convert reference WCRegion to LCRegion using output csys and shape
-        if (!_reference_region_set) {
-            SetReferenceWCRegion();
-        }
-
-        if (ReferenceRegionValid()) {
-            std::shared_ptr<const casacore::WCRegion> reference_region = std::atomic_load(&_reference_region);
+        auto reference_region = GetReferenceRegion();
+        if (reference_region) {
             lc_region.reset(reference_region->toLCRegion(*output_csys.get(), output_shape));
         }
     } catch (const casacore::AipsError& err) {
@@ -697,9 +710,6 @@ casacore::TableRecord RegionConverter::GetRegionPointsRecord(
     // Convert control points to output coord sys if needed, and return completed record.
     // Used when LCRegion::toRecord() fails, usually outside image.
     casacore::TableRecord record;
-    if (!_reference_region_set) {
-        SetReferenceWCRegion(); // set wcs control points
-    }
 
     switch (_region_state.type) {
         case CARTA::RegionType::POINT:
@@ -741,10 +751,17 @@ casacore::TableRecord RegionConverter::GetPointRecord(
     std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape) {
     // Convert wcs points to output image in format of LCBox::toRecord()
     casacore::TableRecord record;
+    auto wcs_control_points = GetWcsControlPoints();
+    if (!wcs_control_points || wcs_control_points->size() < 2) {
+        spdlog::error("Error converting point to image.");
+        return record;
+    }
+
     try {
         // wcs control points is single point (x, y)
+        std::vector<casacore::Quantity> world_point(wcs_control_points->begin(), wcs_control_points->begin() + 2);
         casacore::Vector<casacore::Double> pixel_point;
-        if (WorldPointToImagePixels(_wcs_control_points, output_csys, pixel_point)) {
+        if (WorldPointToImagePixels(world_point, output_csys, pixel_point)) {
             auto ndim = output_shape.size();
             casacore::Vector<casacore::Float> blc(ndim), trc(ndim);
             blc = 0.0;
@@ -787,16 +804,21 @@ casacore::TableRecord RegionConverter::GetPolygonRecord(std::shared_ptr<casacore
     // This is for POLYGON or RECTANGLE (points are four corners of box)
     casacore::TableRecord record;
     auto type = _region_state.type;
+    auto wcs_control_points = GetWcsControlPoints();
+    if (!wcs_control_points || wcs_control_points->empty()) {
+        spdlog::error("Error converting region type {} to image pixels.", type);
+        return record;
+    }
 
     try {
-        size_t npoints(_wcs_control_points.size() / 2);
+        size_t npoints(wcs_control_points->size() / 2);
         casacore::Vector<casacore::Float> x(npoints), y(npoints); // Record fields
 
         // Convert each wcs control point to pixel coords in output csys
-        for (size_t i = 0; i < _wcs_control_points.size(); i += 2) {
+        for (size_t i = 0; i + 1 < wcs_control_points->size(); i += 2) {
             std::vector<casacore::Quantity> world_point(2);
-            world_point[0] = _wcs_control_points[i];
-            world_point[1] = _wcs_control_points[i + 1];
+            world_point[0] = (*wcs_control_points)[i];
+            world_point[1] = (*wcs_control_points)[i + 1];
             casacore::Vector<casacore::Double> pixel_point;
             if (WorldPointToImagePixels(world_point, output_csys, pixel_point)) {
                 // Add to x and y Vectors
@@ -888,11 +910,16 @@ casacore::TableRecord RegionConverter::GetEllipseRecord(std::shared_ptr<casacore
     // Convert wcs points to output image in format of LCEllipsoid::toRecord()
     casacore::TableRecord record;
     casacore::Vector<casacore::Float> center(2), radii(2); // for record
+    auto wcs_control_points = GetWcsControlPoints();
+    if (!wcs_control_points || wcs_control_points->size() < 4) {
+        spdlog::error("Error converting ellipse to image.");
+        return record;
+    }
 
     // Center point
     std::vector<casacore::Quantity> ref_world_point(2);
-    ref_world_point[0] = _wcs_control_points[0];
-    ref_world_point[1] = _wcs_control_points[1];
+    ref_world_point[0] = (*wcs_control_points)[0];
+    ref_world_point[1] = (*wcs_control_points)[1];
     casacore::Vector<casacore::Double> out_pixel_point;
 
     try {
@@ -901,8 +928,8 @@ casacore::TableRecord RegionConverter::GetEllipseRecord(std::shared_ptr<casacore
             center(1) = out_pixel_point(1);
 
             // Convert radii to output world units, then to pixels using increment
-            casacore::Quantity bmaj = _wcs_control_points[2];
-            casacore::Quantity bmin = _wcs_control_points[3];
+            casacore::Quantity bmaj = (*wcs_control_points)[2];
+            casacore::Quantity bmin = (*wcs_control_points)[3];
             casacore::Vector<casacore::Double> out_increments(output_csys->increment());
             casacore::Vector<casacore::String> out_units(output_csys->worldAxisUnits());
             bmaj.convert(out_units(0));
