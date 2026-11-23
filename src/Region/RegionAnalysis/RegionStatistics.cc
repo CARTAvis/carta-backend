@@ -20,13 +20,13 @@ RegionStatistics::RegionStatistics(int region_id, int file_id, const std::vector
 
 void RegionStatistics::SetConfigurations(int file_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs) {
     ConfigId config_id(file_id, _region_id);
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_config_mutex);
     _configs[config_id].configs = configs;
 }
 
 bool RegionStatistics::GetConfigurations(int file_id, std::vector<CARTA::SetStatsRequirements_StatsConfig>& configs) {
     ConfigId config_id(file_id, _region_id);
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_config_mutex);
     if (_configs.find(config_id) != _configs.end()) {
         configs = _configs.at(config_id).configs;
         return true;
@@ -35,7 +35,7 @@ bool RegionStatistics::GetConfigurations(int file_id, std::vector<CARTA::SetStat
 }
 
 std::vector<int> RegionStatistics::GetConfigFileIds(int file_id) {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_config_mutex);
     std::vector<int> file_ids;
     for (const auto& [config_id, _] : _configs) {
         if ((file_id == ALL_FILES) || (config_id.file_id == file_id)) {
@@ -62,7 +62,7 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
     CacheId cache_id = CacheId(file_id, _region_id, stokes_index, z);
     std::uint64_t cache_generation;
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_cache_mutex);
         cache_generation = _cache_generation;
         auto cache_it = _cache.find(cache_id);
         if (cache_it != _cache.end()) {
@@ -103,7 +103,7 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
 
         // cache results
         {
-            std::lock_guard<std::mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_cache_mutex);
             if (cache_generation == _cache_generation) {
                 _cache[cache_id] = StatsCache(stats_results);
             }
@@ -115,7 +115,7 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
 }
 
 void RegionStatistics::ClearCache() {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_cache_mutex);
     ++_cache_generation;
     for (auto& cache : _cache) {
         cache.second.ClearStats();
@@ -123,21 +123,27 @@ void RegionStatistics::ClearCache() {
 }
 
 void RegionStatistics::ClearFileConfigsCache(int file_id) {
-    std::lock_guard<std::mutex> lock(_mutex);
-    for (auto it = _configs.begin(); it != _configs.end();) {
-        if ((*it).first.file_id == file_id) {
-            it = _configs.erase(it);
-        } else {
-            ++it;
+    // Configs and cache have separate locks; never hold both (no lock ordering needed).
+    {
+        std::lock_guard<std::mutex> lock(_config_mutex);
+        for (auto it = _configs.begin(); it != _configs.end();) {
+            if ((*it).first.file_id == file_id) {
+                it = _configs.erase(it);
+            } else {
+                ++it;
+            }
         }
     }
 
-    ++_cache_generation;
-    for (auto it = _cache.begin(); it != _cache.end();) {
-        if ((*it).first.file_id == file_id) {
-            it = _cache.erase(it);
-        } else {
-            ++it;
+    {
+        std::lock_guard<std::mutex> lock(_cache_mutex);
+        ++_cache_generation;
+        for (auto it = _cache.begin(); it != _cache.end();) {
+            if ((*it).first.file_id == file_id) {
+                it = _cache.erase(it);
+            } else {
+                ++it;
+            }
         }
     }
 }

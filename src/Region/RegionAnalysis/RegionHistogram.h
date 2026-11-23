@@ -105,8 +105,11 @@ private:
     /** @brief Histogram configurations stored as vector of HistogramConfig structs. */
     std::unordered_map<ConfigId, RegionHistogramConfig> _configs;
 
-    /** @brief Lock for configurations and cached histograms. */
-    std::mutex _mutex;
+    /** @brief Lock for _configs. Never held together with _cache_mutex. */
+    std::mutex _config_mutex;
+
+    /** @brief Lock for _cache and _cache_generation; never held during histogram calculation. */
+    std::mutex _cache_mutex;
 
     /** @brief Cache to hold calculated histograms. */
     std::unordered_map<CacheId, HistogramCache> _cache;

@@ -88,8 +88,11 @@ private:
     /** @brief Requirements map. */
     std::unordered_map<ConfigId, RegionStatsConfig> _configs;
 
-    /** @brief Lock for configurations and cached statistics. */
-    std::mutex _mutex;
+    /** @brief Lock for _configs. Never held together with _cache_mutex. */
+    std::mutex _config_mutex;
+
+    /** @brief Lock for _cache and _cache_generation; never held during statistics calculation. */
+    std::mutex _cache_mutex;
 
     /** @brief Cache to hold calculations. */
     std::unordered_map<CacheId, StatsCache> _cache;
