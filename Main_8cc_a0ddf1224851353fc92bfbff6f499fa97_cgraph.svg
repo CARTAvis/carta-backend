@@ -364,9 +364,9 @@ var sectionId = 'dynsection-1';
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="File_8cc.html#aa743c537861c278f5c5620fa996f8153" target="_top" xlink:title="Determines whether a given folder is a subdirectory of a specified top&#45;level folder.">
-<polygon fill="white" stroke="#666666" points="386,-678.5 300,-678.5 300,-659.5 386,-659.5 386,-678.5"/>
-<text text-anchor="middle" x="343" y="-666.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsSubdirectory</text>
+<g id="a_Node000003"><a xlink:href="Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" target="_top" xlink:title="Checks that a path is the given folder or inside it.">
+<polygon fill="white" stroke="#666666" points="390,-678.5 296,-678.5 296,-659.5 390,-659.5 390,-678.5"/>
+<text text-anchor="middle" x="343" y="-666.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetPathInFolder</text>
 </a>
 </g>
 </g>
@@ -374,8 +374,8 @@ var sectionId = 'dynsection-1';
 <g id="edge2_Node000002_Node000003" class="edge">
 <title>Node2&#45;&gt;Node3</title>
 <g id="a_edge2_Node000002_Node000003"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M211.9,-669C236.15,-669 265.11,-669 289.55,-669"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="289.73,-672.5 299.73,-669 289.73,-665.5 289.73,-672.5"/>
+<path fill="none" stroke="#63b8ff" d="M211.9,-669C234.85,-669 262.04,-669 285.61,-669"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="285.81,-672.5 295.81,-669 285.81,-665.5 285.81,-672.5"/>
 </a>
 </g>
 </g>

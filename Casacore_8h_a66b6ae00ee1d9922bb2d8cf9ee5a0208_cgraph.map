@@ -1,0 +1,9 @@
+<map id="CheckExpressionNames" name="CheckExpressionNames">
+<area shape="rect" id="Node000001" title="Checks that the images named in an image expression are inside the given folder." alt="" coords="5,5,184,31"/>
+<area shape="rect" id="Node000002" href="$Casacore_8cc.html#a5d8edc1c5abc4929d49ab7a0f99865c0" title=" " alt="" coords="232,5,340,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="184,15,218,15,218,21,184,21"/>
+<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a9498969555a0444b05e85cbde4b7dd0d" title=" " alt="" coords="388,5,531,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="340,15,374,15,374,21,340,21"/>
+<area shape="rect" id="Node000004" href="$Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" title="Checks that a path is the given folder or inside it." alt="" coords="579,5,704,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="531,15,565,15,565,21,531,21"/>
+</map>

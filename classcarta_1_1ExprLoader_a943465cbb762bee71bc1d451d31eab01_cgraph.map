@@ -1,9 +1,20 @@
 <map id="carta::ExprLoader::AllocateImage" name="carta::ExprLoader::AllocateImage">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,149,45"/>
-<area shape="rect" id="Node000002" href="$classcarta_1_1CartaHdf5Image.html#aa6d40fb4a674d41a64c73408e8c05b89" title=" " alt="" coords="197,5,371,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,23,184,23,184,28,149,28"/>
-<area shape="rect" id="Node000003" href="$classcarta_1_1CartaHdf5Image.html#a70fa8ffe224050e4f928c0bce6077feb" title=" " alt="" coords="419,5,589,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="371,23,405,23,405,28,371,28"/>
-<area shape="rect" id="Node000004" href="$classcarta_1_1CartaHdf5Image.html#a3b9ca60ae8616bc15fa88a76719f8083" title=" " alt="" coords="637,5,808,45"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="589,23,623,23,623,28,589,28"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,63,149,103"/>
+<area shape="rect" id="Node000002" href="$structcarta_1_1ProgramSettings.html#a97807f0274502e490bec84c4eb22823c" title=" " alt="" coords="199,5,369,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,60,198,46,199,52,150,65"/>
+<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a818ed3a747cc74fa996605e078c7a73f" title="Parses an image expression whose images must be inside the given folder." alt="" coords="199,70,369,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,80,185,80,185,85,149,85"/>
+<area shape="rect" id="Node000007" href="$classcarta_1_1CartaHdf5Image.html#aa6d40fb4a674d41a64c73408e8c05b89" title=" " alt="" coords="197,120,371,160"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="150,100,199,114,198,119,149,105"/>
+<area shape="rect" id="Node000004" href="$Casacore_8cc.html#a9498969555a0444b05e85cbde4b7dd0d" title=" " alt="" coords="651,45,794,70"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="339,67,418,55,533,49,637,50,637,56,533,55,419,60,340,73"/>
+<area shape="rect" id="Node000006" href="$Casacore_8cc.html#a5d8edc1c5abc4929d49ab7a0f99865c0" title=" " alt="" coords="450,70,558,95"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="369,80,436,80,436,85,369,85"/>
+<area shape="rect" id="Node000005" href="$Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" title="Checks that a path is the given folder or inside it." alt="" coords="856,45,981,70"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="794,55,842,55,842,60,794,60"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="558,74,637,64,638,70,558,79"/>
+<area shape="rect" id="Node000008" href="$classcarta_1_1CartaHdf5Image.html#a70fa8ffe224050e4f928c0bce6077feb" title=" " alt="" coords="419,120,589,160"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="371,137,405,137,405,143,371,143"/>
+<area shape="rect" id="Node000009" href="$classcarta_1_1CartaHdf5Image.html#a3b9ca60ae8616bc15fa88a76719f8083" title=" " alt="" coords="637,120,808,160"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="589,137,623,137,623,143,589,143"/>
 </map>

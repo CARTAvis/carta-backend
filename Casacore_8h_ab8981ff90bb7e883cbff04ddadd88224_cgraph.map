@@ -1,0 +1,5 @@
+<map id="GetResolvedFilename" name="GetResolvedFilename">
+<area shape="rect" id="Node000001" title="Resolves a file path based on a given root directory and relative subdirectory." alt="" coords="5,5,171,31"/>
+<area shape="rect" id="Node000002" href="$Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" title="Checks that a path is the given folder or inside it." alt="" coords="219,5,344,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="171,15,205,15,205,21,171,21"/>
+</map>

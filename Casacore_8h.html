@@ -102,6 +102,7 @@ $(document).ready(function(){initNavTree('Casacore_8h.html',''); initResizable()
 <div class="textblock"><code>#include &lt;carta-protobuf/enums.pb.h&gt;</code><br />
 <code>#include &lt;casacore/images/Images/ImageInterface.h&gt;</code><br />
 <code>#include &lt;casacore/images/Images/ImageOpener.h&gt;</code><br />
+<code>#include &lt;casacore/lattices/LEL/LatticeExprNode.h&gt;</code><br />
 <code>#include &lt;casacore/scimath/Mathematics/GaussianBeam.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Casacore.h:</div>
@@ -116,9 +117,18 @@ This graph shows which files directly or indirectly include this file:</div>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ad560f4fdd266b9e1503ae3f24a60aa52" id="r_ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#ad560f4fdd266b9e1503ae3f24a60aa52">GetResolvedFilename</a> (const std::string &amp;root_dir, const std::string &amp;directory, const std::string &amp;file, std::string &amp;message)</td></tr>
-<tr class="memdesc:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolves a file path based on a given root directory and relative subdirectory.  <br /></td></tr>
-<tr class="separator:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8981ff90bb7e883cbff04ddadd88224" id="r_ab8981ff90bb7e883cbff04ddadd88224"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#ab8981ff90bb7e883cbff04ddadd88224">GetResolvedFilename</a> (const std::string &amp;root_dir, const std::string &amp;directory, const std::string &amp;file, std::string &amp;message, std::string *checked_dir=nullptr)</td></tr>
+<tr class="memdesc:ab8981ff90bb7e883cbff04ddadd88224"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolves a file path based on a given root directory and relative subdirectory.  <br /></td></tr>
+<tr class="separator:ab8981ff90bb7e883cbff04ddadd88224"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35f8175fde026c3c3d7d3bb0add126d8" id="r_a35f8175fde026c3c3d7d3bb0add126d8"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a35f8175fde026c3c3d7d3bb0add126d8">GetPathInFolder</a> (const std::string &amp;path, const std::string &amp;folder, bool expand=true)</td></tr>
+<tr class="memdesc:a35f8175fde026c3c3d7d3bb0add126d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks that a path is the given folder or inside it.  <br /></td></tr>
+<tr class="separator:a35f8175fde026c3c3d7d3bb0add126d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66b6ae00ee1d9922bb2d8cf9ee5a0208" id="r_a66b6ae00ee1d9922bb2d8cf9ee5a0208"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a66b6ae00ee1d9922bb2d8cf9ee5a0208">CheckExpressionNames</a> (const std::string &amp;expression, const std::string &amp;directory, const std::string &amp;folder)</td></tr>
+<tr class="memdesc:a66b6ae00ee1d9922bb2d8cf9ee5a0208"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks that the images named in an image expression are inside the given folder.  <br /></td></tr>
+<tr class="separator:a66b6ae00ee1d9922bb2d8cf9ee5a0208"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a818ed3a747cc74fa996605e078c7a73f" id="r_a818ed3a747cc74fa996605e078c7a73f"><td class="memItemLeft" align="right" valign="top">casacore::LatticeExprNode&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a818ed3a747cc74fa996605e078c7a73f">ParseImageExpression</a> (const std::string &amp;expression, const std::string &amp;directory, const std::string &amp;folder)</td></tr>
+<tr class="memdesc:a818ed3a747cc74fa996605e078c7a73f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses an image expression whose images must be inside the given folder.  <br /></td></tr>
+<tr class="separator:a818ed3a747cc74fa996605e078c7a73f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f2e1b7b1fdc56656757ae21fa22be67" id="r_a7f2e1b7b1fdc56656757ae21fa22be67"><td class="memItemLeft" align="right" valign="top">casacore::ImageOpener::ImageTypes&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67">CasacoreImageType</a> (const std::string &amp;filename)</td></tr>
 <tr class="memdesc:a7f2e1b7b1fdc56656757ae21fa22be67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the image type of a given filename using Casacore.  <br /></td></tr>
 <tr class="separator:a7f2e1b7b1fdc56656757ae21fa22be67"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -179,6 +189,62 @@ Functions</h2></td></tr>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_a7f2e1b7b1fdc56656757ae21fa22be67_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a66b6ae00ee1d9922bb2d8cf9ee5a0208" name="a66b6ae00ee1d9922bb2d8cf9ee5a0208"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a66b6ae00ee1d9922bb2d8cf9ee5a0208">&#9670;&#160;</a></span>CheckExpressionNames()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CheckExpressionNames </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>expression</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>directory</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>folder</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Checks that the images named in an image expression are inside the given folder. </p>
+<p>casacore opens the images in an expression itself, so the names are found here the way its lexer finds them and checked before it parses the expression. Nothing is checked if the folder is /.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">expression</td><td>The image expression. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">directory</td><td>The directory that names in the expression are relative to, as <a class="el" href="Casacore_8h.html#a35f8175fde026c3c3d7d3bb0add126d8" title="Checks that a path is the given folder or inside it.">GetPathInFolder()</a> returned it. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">folder</td><td>The folder the images must stay inside.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">casacore::AipsError</td><td>If a name is outside the folder, or is itself a saved image expression. </td></tr>
+  </table>
+  </dd>
+</dl>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_a66b6ae00ee1d9922bb2d8cf9ee5a0208_cgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -300,8 +366,59 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="ad560f4fdd266b9e1503ae3f24a60aa52" name="ad560f4fdd266b9e1503ae3f24a60aa52"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad560f4fdd266b9e1503ae3f24a60aa52">&#9670;&#160;</a></span>GetResolvedFilename()</h2>
+<a id="a35f8175fde026c3c3d7d3bb0add126d8" name="a35f8175fde026c3c3d7d3bb0add126d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35f8175fde026c3c3d7d3bb0add126d8">&#9670;&#160;</a></span>GetPathInFolder()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string GetPathInFolder </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>folder</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>expand</em> = <code>true</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Checks that a path is the given folder or inside it. </p>
+<p>The check works on the text of the path, so symlinks inside the folder can still point anywhere. Open the returned path, not the input: in the text link/.. is just the folder, but the OS would follow link first and go up from where it points. To check where symlinks lead instead, give it paths that have had their symlinks followed.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">path</td><td>The path to check. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">folder</td><td>The folder the path must stay inside. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">expand</td><td>Whether to expand environment variables in the path first, as casacore will if it is given the path.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The path with . and .. removed, or an empty string if it is outside the folder. </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_a35f8175fde026c3c3d7d3bb0add126d8_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="ab8981ff90bb7e883cbff04ddadd88224" name="ab8981ff90bb7e883cbff04ddadd88224"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8981ff90bb7e883cbff04ddadd88224">&#9670;&#160;</a></span>GetResolvedFilename()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -328,7 +445,13 @@ Here is the caller graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">std::string &amp;&#160;</td>
-          <td class="paramname"><em>message</em>&#160;</td>
+          <td class="paramname"><em>message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string *&#160;</td>
+          <td class="paramname"><em>checked_dir</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -344,16 +467,22 @@ Here is the caller graph for this function:</div>
     <tr><td class="paramdir">[in]</td><td class="paramname">root_dir</td><td>A string refence to the root directory in which the file is expected to reside. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">directory</td><td>A string refence to the relative directory path within the root directory. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">file</td><td>A string refence to the name of the file to resolve. </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">message</td><td>A reference to a string that will contain an error message if the resolution fails.</td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">message</td><td>A reference to a string that will contain an error message if the resolution fails. </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">checked_dir</td><td>If given, set on success to the directory as <a class="el" href="Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" title="Checks that a path is the given folder or inside it.">GetPathInFolder()</a> returned it, before symlinks are followed.</td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The resolved absolute filename as a <code>casacore::String</code> if successful, otherwise an empty string.</dd></dl>
 <p>This function constructs an absolute file path using a specified root directory, a relative subdirectory, and a file name. It checks whether the resulting file path exists and is readable. If any issue is encountered, an error message is set. </p>
 <div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h_ab8981ff90bb7e883cbff04ddadd88224_cgraph.svg" width="350" height="36"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_ad560f4fdd266b9e1503ae3f24a60aa52_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_ab8981ff90bb7e883cbff04ddadd88224_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 
 </div>
@@ -508,6 +637,68 @@ Here is the call graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_a8733accb41db0f83703779c667ae852e_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a818ed3a747cc74fa996605e078c7a73f" name="a818ed3a747cc74fa996605e078c7a73f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a818ed3a747cc74fa996605e078c7a73f">&#9670;&#160;</a></span>ParseImageExpression()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">casacore::LatticeExprNode ParseImageExpression </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>expression</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>directory</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>folder</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Parses an image expression whose images must be inside the given folder. </p>
+<p>Checks the names as <a class="el" href="Casacore_8h.html#a66b6ae00ee1d9922bb2d8cf9ee5a0208" title="Checks that the images named in an image expression are inside the given folder.">CheckExpressionNames()</a> does first, then checks the names casacore reports having opened.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">expression</td><td>The image expression. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">directory</td><td>The directory that names in the expression are relative to, as <a class="el" href="Casacore_8h.html#a35f8175fde026c3c3d7d3bb0add126d8" title="Checks that a path is the given folder or inside it.">GetPathInFolder()</a> returned it. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">folder</td><td>The folder the images must stay inside.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The node for the parsed expression. </dd></dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">casacore::AipsError</td><td>If the expression is refused or cannot be parsed. </td></tr>
+  </table>
+  </dd>
+</dl>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="Casacore_8h_a818ed3a747cc74fa996605e078c7a73f_cgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="Casacore_8h_a818ed3a747cc74fa996605e078c7a73f_icgraph.svg" width="372" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>

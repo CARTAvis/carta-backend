@@ -91,113 +91,131 @@
 </a>
 </g>
 </g>
-<!-- Node6 -->
-<g id="Node000006" class="node">
-<title>Node6</title>
-<g id="a_Node000006"><a xlink:href="File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" target="_top" xlink:title="Determines the catalog table file type based on its content or file extension.">
+<!-- Node7 -->
+<g id="Node000007" class="node">
+<title>Node7</title>
+<g id="a_Node000007"><a xlink:href="File_8cc.html#ab867a11df63f2ba00cae668a8ad0f3ff" target="_top" xlink:title="Determines the catalog table file type based on its content or file extension.">
 <polygon fill="white" stroke="#666666" points="279,-115.5 184,-115.5 184,-96.5 279,-96.5 279,-115.5"/>
 <text text-anchor="middle" x="231.5" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">GuessTableType</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node6 -->
-<g id="edge5_Node000001_Node000006" class="edge">
-<title>Node1&#45;&gt;Node6</title>
-<g id="a_edge5_Node000001_Node000006"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node7 -->
+<g id="edge6_Node000001_Node000007" class="edge">
+<title>Node1&#45;&gt;Node7</title>
+<g id="a_edge6_Node000001_Node000007"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M120.61,-133.96C141.12,-128.74 163.82,-122.97 183.25,-118.02"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="184.25,-121.38 193.08,-115.52 182.52,-114.6 184.25,-121.38"/>
-</a>
-</g>
-</g>
-<!-- Node9 -->
-<g id="Node000009" class="node">
-<title>Node9</title>
-<g id="a_Node000009"><a xlink:href="classcarta_1_1ListProgressReporter.html#a10a2db7d423b702b8a3f7537b348de1d" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="306,-78 157,-78 157,-48 306,-48 306,-78"/>
-<text text-anchor="start" x="165" y="-66" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ListProgressReporter</text>
-<text text-anchor="middle" x="231.5" y="-55" font-family="Helvetica,sans-Serif" font-size="10.00">::ReportFileListProgress</text>
-</a>
-</g>
-</g>
-<!-- Node1&#45;&gt;Node9 -->
-<g id="edge8_Node000001_Node000009" class="edge">
-<title>Node1&#45;&gt;Node9</title>
-<g id="a_edge8_Node000001_Node000009"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M81.46,-133.83C100.18,-120.15 129.35,-100.21 157,-87 160.82,-85.18 164.8,-83.44 168.87,-81.79"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="170.35,-84.97 178.43,-78.12 167.84,-78.44 170.35,-84.97"/>
-</a>
-</g>
-</g>
-<!-- Node11 -->
-<g id="Node000011" class="node">
-<title>Node11</title>
-<g id="a_Node000011"><a xlink:href="classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="306,-30 157,-30 157,0 306,0 306,-30"/>
-<text text-anchor="start" x="165" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ListProgressReporter</text>
-<text text-anchor="middle" x="231.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::UpdateProgress</text>
-</a>
-</g>
-</g>
-<!-- Node1&#45;&gt;Node11 -->
-<g id="edge10_Node000001_Node000011" class="edge">
-<title>Node1&#45;&gt;Node11</title>
-<g id="a_edge10_Node000001_Node000011"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M70.71,-133.9C85.85,-110.3 118.22,-64.72 157,-39 159.41,-37.4 161.94,-35.9 164.54,-34.49"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="166.19,-37.58 173.65,-30.06 163.13,-31.29 166.19,-37.58"/>
-</a>
-</g>
-</g>
-<!-- Node7 -->
-<g id="Node000007" class="node">
-<title>Node7</title>
-<g id="a_Node000007"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
-<polygon fill="white" stroke="#666666" points="455.5,-149.5 353.5,-149.5 353.5,-130.5 455.5,-130.5 455.5,-149.5"/>
-<text text-anchor="middle" x="404.5" y="-137.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
-</a>
-</g>
-</g>
-<!-- Node6&#45;&gt;Node7 -->
-<g id="edge6_Node000006_Node000007" class="edge">
-<title>Node6&#45;&gt;Node7</title>
-<g id="a_edge6_Node000006_Node000007"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M279.23,-115.29C299.71,-119.36 323.97,-124.19 345.59,-128.49"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="345.15,-131.97 355.64,-130.48 346.51,-125.1 345.15,-131.97"/>
-</a>
-</g>
-</g>
-<!-- Node8 -->
-<g id="Node000008" class="node">
-<title>Node8</title>
-<g id="a_Node000008"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
-<polygon fill="white" stroke="#666666" points="436,-112.5 373,-112.5 373,-93.5 436,-93.5 436,-112.5"/>
-<text text-anchor="middle" x="404.5" y="-100.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
-</a>
-</g>
-</g>
-<!-- Node6&#45;&gt;Node8 -->
-<g id="edge7_Node000006_Node000008" class="edge">
-<title>Node6&#45;&gt;Node8</title>
-<g id="a_edge7_Node000006_Node000008"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M279.23,-105.18C305.27,-104.72 337.4,-104.16 362.47,-103.72"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="362.81,-107.21 372.74,-103.54 362.68,-100.22 362.81,-107.21"/>
 </a>
 </g>
 </g>
 <!-- Node10 -->
 <g id="Node000010" class="node">
 <title>Node10</title>
-<g id="a_Node000010"><a xlink:href="classMessage.html#a03594461e68b148a3398fbaad3d651a7" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="467,-72.5 342,-72.5 342,-53.5 467,-53.5 467,-72.5"/>
-<text text-anchor="middle" x="404.5" y="-60.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::ListProgress</text>
+<g id="a_Node000010"><a xlink:href="classcarta_1_1ListProgressReporter.html#a10a2db7d423b702b8a3f7537b348de1d" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="306,-78 157,-78 157,-48 306,-48 306,-78"/>
+<text text-anchor="start" x="165" y="-66" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ListProgressReporter</text>
+<text text-anchor="middle" x="231.5" y="-55" font-family="Helvetica,sans-Serif" font-size="10.00">::ReportFileListProgress</text>
 </a>
 </g>
 </g>
-<!-- Node9&#45;&gt;Node10 -->
-<g id="edge9_Node000009_Node000010" class="edge">
-<title>Node9&#45;&gt;Node10</title>
-<g id="a_edge9_Node000009_Node000010"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M306.01,-63C314.51,-63 323.16,-63 331.64,-63"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="331.86,-66.5 341.86,-63 331.86,-59.5 331.86,-66.5"/>
+<!-- Node1&#45;&gt;Node10 -->
+<g id="edge9_Node000001_Node000010" class="edge">
+<title>Node1&#45;&gt;Node10</title>
+<g id="a_edge9_Node000001_Node000010"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M81.9,-133.92C100.68,-120.54 129.69,-101.13 157,-88 161.59,-85.79 166.43,-83.69 171.33,-81.72"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="172.74,-84.93 180.82,-78.07 170.23,-78.39 172.74,-84.93"/>
+</a>
+</g>
+</g>
+<!-- Node12 -->
+<g id="Node000012" class="node">
+<title>Node12</title>
+<g id="a_Node000012"><a xlink:href="classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="306,-30 157,-30 157,0 306,0 306,-30"/>
+<text text-anchor="start" x="165" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ListProgressReporter</text>
+<text text-anchor="middle" x="231.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::UpdateProgress</text>
+</a>
+</g>
+</g>
+<!-- Node1&#45;&gt;Node12 -->
+<g id="edge11_Node000001_Node000012" class="edge">
+<title>Node1&#45;&gt;Node12</title>
+<g id="a_edge11_Node000001_Node000012"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M70.71,-133.9C85.85,-110.3 118.22,-64.72 157,-39 159.41,-37.4 161.94,-35.9 164.54,-34.49"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="166.19,-37.58 173.65,-30.06 163.13,-31.29 166.19,-37.58"/>
+</a>
+</g>
+</g>
+<!-- Node6 -->
+<g id="Node000006" class="node">
+<title>Node6</title>
+<g id="a_Node000006"><a xlink:href="Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" target="_top" xlink:title="Checks that a path is the given folder or inside it.">
+<polygon fill="white" stroke="#666666" points="451.5,-171.5 357.5,-171.5 357.5,-152.5 451.5,-152.5 451.5,-171.5"/>
+<text text-anchor="middle" x="404.5" y="-159.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetPathInFolder</text>
+</a>
+</g>
+</g>
+<!-- Node5&#45;&gt;Node6 -->
+<g id="edge5_Node000005_Node000006" class="edge">
+<title>Node5&#45;&gt;Node6</title>
+<g id="a_edge5_Node000005_Node000006"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M292.31,-153.55C310.18,-154.91 329.71,-156.39 347.34,-157.73"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="347.23,-161.23 357.47,-158.5 347.77,-154.25 347.23,-161.23"/>
+</a>
+</g>
+</g>
+<!-- Node8 -->
+<g id="Node000008" class="node">
+<title>Node8</title>
+<g id="a_Node000008"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
+<polygon fill="white" stroke="#666666" points="455.5,-134.5 353.5,-134.5 353.5,-115.5 455.5,-115.5 455.5,-134.5"/>
+<text text-anchor="middle" x="404.5" y="-122.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
+</a>
+</g>
+</g>
+<!-- Node7&#45;&gt;Node8 -->
+<g id="edge7_Node000007_Node000008" class="edge">
+<title>Node7&#45;&gt;Node8</title>
+<g id="a_edge7_Node000007_Node000008"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M279.23,-111.19C298.94,-113.38 322.15,-115.96 343.13,-118.29"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="342.91,-121.79 353.23,-119.41 343.68,-114.83 342.91,-121.79"/>
+</a>
+</g>
+</g>
+<!-- Node9 -->
+<g id="Node000009" class="node">
+<title>Node9</title>
+<g id="a_Node000009"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
+<polygon fill="white" stroke="#666666" points="436,-97.5 373,-97.5 373,-78.5 436,-78.5 436,-97.5"/>
+<text text-anchor="middle" x="404.5" y="-85.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
+</a>
+</g>
+</g>
+<!-- Node7&#45;&gt;Node9 -->
+<g id="edge8_Node000007_Node000009" class="edge">
+<title>Node7&#45;&gt;Node9</title>
+<g id="a_edge8_Node000007_Node000009"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M279.23,-101.08C305.27,-98.34 337.4,-94.96 362.47,-92.32"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="363.16,-95.77 372.74,-91.24 362.43,-88.8 363.16,-95.77"/>
+</a>
+</g>
+</g>
+<!-- Node11 -->
+<g id="Node000011" class="node">
+<title>Node11</title>
+<g id="a_Node000011"><a xlink:href="classMessage.html#a03594461e68b148a3398fbaad3d651a7" target="_top" xlink:title=" ">
+<polygon fill="white" stroke="#666666" points="467,-60.5 342,-60.5 342,-41.5 467,-41.5 467,-60.5"/>
+<text text-anchor="middle" x="404.5" y="-48.5" font-family="Helvetica,sans-Serif" font-size="10.00">Message::ListProgress</text>
+</a>
+</g>
+</g>
+<!-- Node10&#45;&gt;Node11 -->
+<g id="edge10_Node000010_Node000011" class="edge">
+<title>Node10&#45;&gt;Node11</title>
+<g id="a_edge10_Node000010_Node000011"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M306.01,-57.84C314.51,-57.25 323.16,-56.64 331.64,-56.04"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="332.13,-59.52 341.86,-55.33 331.64,-52.53 332.13,-59.52"/>
 </a>
 </g>
 </g>

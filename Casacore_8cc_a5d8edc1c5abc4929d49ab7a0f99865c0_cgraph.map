@@ -1,0 +1,7 @@
+<map id="CheckNames" name="CheckNames">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,113,31"/>
+<area shape="rect" id="Node000002" href="$Casacore_8cc.html#a9498969555a0444b05e85cbde4b7dd0d" title=" " alt="" coords="161,5,304,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,15,147,15,147,21,114,21"/>
+<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" title="Checks that a path is the given folder or inside it." alt="" coords="352,5,477,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="304,15,338,15,338,21,304,21"/>
+</map>

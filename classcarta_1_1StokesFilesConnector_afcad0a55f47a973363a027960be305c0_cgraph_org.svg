@@ -75,20 +75,20 @@
 </a>
 </g>
 </g>
-<!-- Node16 -->
-<g id="Node000016" class="node">
-<title>Node16</title>
-<g id="a_Node000016"><a xlink:href="classcarta_1_1StokesFilesConnector.html#adf4cafd64661676a483c234b666335cc" target="_top" xlink:title=" ">
+<!-- Node17 -->
+<g id="Node000017" class="node">
+<title>Node17</title>
+<g id="a_Node000017"><a xlink:href="classcarta_1_1StokesFilesConnector.html#adf4cafd64661676a483c234b666335cc" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="340,-69.5 188,-69.5 188,-39.5 340,-39.5 340,-69.5"/>
 <text text-anchor="start" x="196" y="-57.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::StokesFilesConnector</text>
 <text text-anchor="middle" x="264" y="-46.5" font-family="Helvetica,sans-Serif" font-size="10.00">::StokesFilesValid</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node16 -->
-<g id="edge16_Node000001_Node000016" class="edge">
-<title>Node1&#45;&gt;Node16</title>
-<g id="a_edge16_Node000001_Node000016"><a xlink:title=" ">
+<!-- Node1&#45;&gt;Node17 -->
+<g id="edge17_Node000001_Node000017" class="edge">
+<title>Node1&#45;&gt;Node17</title>
+<g id="a_edge17_Node000001_Node000017"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M109.68,-111.36C131.61,-101.45 161.27,-88.53 188,-78.5 193.12,-76.58 198.47,-74.67 203.86,-72.82"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="205.18,-76.07 213.54,-69.56 202.95,-69.44 205.18,-76.07"/>
 </a>
@@ -134,8 +134,8 @@
 <g id="Node000007" class="node">
 <title>Node7</title>
 <g id="a_Node000007"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title="Determines the image type of a given filename using Casacore.">
-<polygon fill="white" stroke="#666666" points="671,-132 556,-132 556,-113 671,-113 671,-132"/>
-<text text-anchor="middle" x="613.5" y="-120" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
+<polygon fill="white" stroke="#666666" points="671,-138 556,-138 556,-119 671,-119 671,-138"/>
+<text text-anchor="middle" x="613.5" y="-126" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
 </a>
 </g>
 </g>
@@ -143,8 +143,8 @@
 <g id="edge6_Node000006_Node000007" class="edge">
 <title>Node6&#45;&gt;Node7</title>
 <g id="a_edge6_Node000006_Node000007"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M340.17,-111.39C352.14,-112.58 364.4,-113.68 376,-114.5 433.08,-118.55 498.05,-120.56 545.44,-121.55"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="545.5,-125.05 555.57,-121.75 545.64,-118.05 545.5,-125.05"/>
+<path fill="none" stroke="#63b8ff" d="M340.19,-111.13C352.16,-112.36 364.41,-113.53 376,-114.5 433.09,-119.27 498.06,-123 545.44,-125.4"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="545.42,-128.9 555.58,-125.91 545.77,-121.91 545.42,-128.9"/>
 </a>
 </g>
 </g>
@@ -188,7 +188,7 @@
 <!-- Node15 -->
 <g id="Node000015" class="node">
 <title>Node15</title>
-<g id="a_Node000015"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
+<g id="a_Node000015"><a xlink:href="Casacore_8cc.html#a461918ff87ca3eb7218a2edc10f99d3d" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="510,-19 386,-19 386,0 510,0 510,-19"/>
 <text text-anchor="middle" x="448" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -207,8 +207,8 @@
 <g id="edge9_Node000009_Node000007" class="edge">
 <title>Node9&#45;&gt;Node7</title>
 <g id="a_edge9_Node000009_Node000007"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M494.37,-67.6C502.95,-70.71 511.8,-74.07 520,-77.5 542.45,-86.88 567.21,-99.02 585.45,-108.33"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="583.86,-111.45 594.36,-112.91 587.06,-105.22 583.86,-111.45"/>
+<path fill="none" stroke="#63b8ff" d="M498.4,-67.56C505.81,-70.49 513.23,-73.8 520,-77.5 537.79,-87.21 538.45,-95.36 556,-105.5 562.04,-108.99 568.71,-112.2 575.29,-115.06"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="574.19,-118.39 584.77,-118.96 576.86,-111.92 574.19,-118.39"/>
 </a>
 </g>
 </g>
@@ -216,8 +216,8 @@
 <g id="Node000010" class="node">
 <title>Node10</title>
 <g id="a_Node000010"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title="Checks whether a given file is a compressed FITS file.">
-<polygon fill="white" stroke="#666666" points="665,-73 562,-73 562,-54 665,-54 665,-73"/>
-<text text-anchor="middle" x="613.5" y="-61" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
+<polygon fill="white" stroke="#666666" points="665,-96 562,-96 562,-77 665,-77 665,-96"/>
+<text text-anchor="middle" x="613.5" y="-84" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>
 </g>
 </g>
@@ -225,8 +225,8 @@
 <g id="edge10_Node000009_Node000010" class="edge">
 <title>Node9&#45;&gt;Node10</title>
 <g id="a_edge10_Node000009_Node000010"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M500.28,-55.95C516.57,-57.05 534.74,-58.27 551.63,-59.4"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="551.75,-62.92 561.96,-60.1 552.22,-55.94 551.75,-62.92"/>
+<path fill="none" stroke="#63b8ff" d="M500.28,-63.16C518.22,-66.89 538.44,-71.1 556.73,-74.9"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="556.16,-78.36 566.66,-76.97 557.58,-71.5 556.16,-78.36"/>
 </a>
 </g>
 </g>
@@ -234,8 +234,8 @@
 <g id="Node000014" class="node">
 <title>Node14</title>
 <g id="a_Node000014"><a xlink:href="File_8cc.html#ac3253b9c72cf4368b08803ef2a0102bb" target="_top" xlink:title="Checks whether a given filename represents a remote HTTP or HTTPS URL.">
-<polygon fill="white" stroke="#666666" points="664,-36 563,-36 563,-17 664,-17 664,-36"/>
-<text text-anchor="middle" x="613.5" y="-24" font-family="Helvetica,sans-Serif" font-size="10.00">IsRemoteHttpFile</text>
+<polygon fill="white" stroke="#666666" points="664,-59 563,-59 563,-40 664,-40 664,-59"/>
+<text text-anchor="middle" x="613.5" y="-47" font-family="Helvetica,sans-Serif" font-size="10.00">IsRemoteHttpFile</text>
 </a>
 </g>
 </g>
@@ -243,8 +243,8 @@
 <g id="edge14_Node000009_Node000014" class="edge">
 <title>Node9&#45;&gt;Node14</title>
 <g id="a_edge14_Node000009_Node000014"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M500.28,-44.34C516.96,-41.69 535.61,-38.73 552.84,-35.99"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="553.47,-39.43 562.8,-34.4 552.37,-32.52 553.47,-39.43"/>
+<path fill="none" stroke="#63b8ff" d="M500.28,-51.56C516.8,-51.26 535.26,-50.92 552.36,-50.6"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="552.86,-54.09 562.8,-50.41 552.73,-47.1 552.86,-54.09"/>
 </a>
 </g>
 </g>
@@ -252,8 +252,8 @@
 <g id="Node000011" class="node">
 <title>Node11</title>
 <g id="a_Node000011"><a xlink:href="File_8cc.html#a7e6d57b61e0979a7171bb2e6519093f9" target="_top" xlink:title="Reads the magic number from the beginning of a file.">
-<polygon fill="white" stroke="#666666" points="811,-110 709,-110 709,-91 811,-91 811,-110"/>
-<text text-anchor="middle" x="760" y="-98" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
+<polygon fill="white" stroke="#666666" points="811,-133 709,-133 709,-114 811,-114 811,-133"/>
+<text text-anchor="middle" x="760" y="-121" font-family="Helvetica,sans-Serif" font-size="10.00">GetMagicNumber</text>
 </a>
 </g>
 </g>
@@ -261,8 +261,8 @@
 <g id="edge11_Node000010_Node000011" class="edge">
 <title>Node10&#45;&gt;Node11</title>
 <g id="a_edge11_Node000010_Node000011"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M651.71,-73.03C670.01,-77.71 692.27,-83.41 711.76,-88.4"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="711.11,-91.85 721.66,-90.94 712.84,-85.07 711.11,-91.85"/>
+<path fill="none" stroke="#63b8ff" d="M651.71,-96.03C670.01,-100.71 692.27,-106.41 711.76,-111.4"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="711.11,-114.85 721.66,-113.94 712.84,-108.07 711.11,-114.85"/>
 </a>
 </g>
 </g>
@@ -270,8 +270,8 @@
 <g id="Node000012" class="node">
 <title>Node12</title>
 <g id="a_Node000012"><a xlink:href="String_8cc.html#a1540adc30610b9db4add6622c248b9d1" target="_top" xlink:title="Checks if a string ends with a specified suffix.">
-<polygon fill="white" stroke="#666666" points="791.5,-73 728.5,-73 728.5,-54 791.5,-54 791.5,-73"/>
-<text text-anchor="middle" x="760" y="-61" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
+<polygon fill="white" stroke="#666666" points="791.5,-96 728.5,-96 728.5,-77 791.5,-77 791.5,-96"/>
+<text text-anchor="middle" x="760" y="-84" font-family="Helvetica,sans-Serif" font-size="10.00">HasSuffix</text>
 </a>
 </g>
 </g>
@@ -279,8 +279,8 @@
 <g id="edge12_Node000010_Node000012" class="edge">
 <title>Node10&#45;&gt;Node12</title>
 <g id="a_edge12_Node000010_Node000012"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M665.04,-63.5C682.4,-63.5 701.6,-63.5 718.1,-63.5"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="718.5,-67 728.5,-63.5 718.5,-60 718.5,-67"/>
+<path fill="none" stroke="#63b8ff" d="M665.04,-86.5C682.4,-86.5 701.6,-86.5 718.1,-86.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="718.5,-90 728.5,-86.5 718.5,-83 718.5,-90"/>
 </a>
 </g>
 </g>
@@ -288,8 +288,8 @@
 <g id="Node000013" class="node">
 <title>Node13</title>
 <g id="a_Node000013"><a xlink:href="File_8cc.html#a0b28b83747dc07e95f4a0e1b5b4db83e" target="_top" xlink:title="Determines if a given magic number corresponds to a gzip&#45;compressed file.">
-<polygon fill="white" stroke="#666666" points="813,-36 707,-36 707,-17 813,-17 813,-36"/>
-<text text-anchor="middle" x="760" y="-24" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
+<polygon fill="white" stroke="#666666" points="813,-59 707,-59 707,-40 813,-40 813,-59"/>
+<text text-anchor="middle" x="760" y="-47" font-family="Helvetica,sans-Serif" font-size="10.00">IsGzMagicNumber</text>
 </a>
 </g>
 </g>
@@ -297,8 +297,26 @@
 <g id="edge13_Node000010_Node000013" class="edge">
 <title>Node10&#45;&gt;Node13</title>
 <g id="a_edge13_Node000010_Node000013"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M651.71,-53.97C670.01,-49.29 692.27,-43.59 711.76,-38.6"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="712.84,-41.93 721.66,-36.06 711.11,-35.15 712.84,-41.93"/>
+<path fill="none" stroke="#63b8ff" d="M651.71,-76.97C670.01,-72.29 692.27,-66.59 711.76,-61.6"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="712.84,-64.93 721.66,-59.06 711.11,-58.15 712.84,-64.93"/>
+</a>
+</g>
+</g>
+<!-- Node16 -->
+<g id="Node000016" class="node">
+<title>Node16</title>
+<g id="a_Node000016"><a xlink:href="Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" target="_top" xlink:title="Checks that a path is the given folder or inside it.">
+<polygon fill="white" stroke="#666666" points="660.5,-19 566.5,-19 566.5,0 660.5,0 660.5,-19"/>
+<text text-anchor="middle" x="613.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">GetPathInFolder</text>
+</a>
+</g>
+</g>
+<!-- Node15&#45;&gt;Node16 -->
+<g id="edge16_Node000015_Node000016" class="edge">
+<title>Node15&#45;&gt;Node16</title>
+<g id="a_edge16_Node000015_Node000016"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M510.35,-9.5C525.44,-9.5 541.52,-9.5 556.36,-9.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="556.4,-13 566.4,-9.5 556.4,-6 556.4,-13"/>
 </a>
 </g>
 </g>

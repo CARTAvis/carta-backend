@@ -49,7 +49,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="Casacore_8cc.html#ad560f4fdd266b9e1503ae3f24a60aa52" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
+<g id="a_Node000004"><a xlink:href="Casacore_8cc.html#a461918ff87ca3eb7218a2edc10f99d3d" target="_top" xlink:title="Resolves a file path based on a given root directory and relative subdirectory.">
 <polygon fill="white" stroke="#666666" points="301,-19 177,-19 177,0 301,0 301,-19"/>
 <text text-anchor="middle" x="239" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
@@ -80,6 +80,24 @@
 <g id="a_edge2_Node000002_Node000003"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M297.34,-52.5C306.93,-52.5 316.95,-52.5 326.75,-52.5"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="326.86,-56 336.86,-52.5 326.86,-49 326.86,-56"/>
+</a>
+</g>
+</g>
+<!-- Node5 -->
+<g id="Node000005" class="node">
+<title>Node5</title>
+<g id="a_Node000005"><a xlink:href="Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" target="_top" xlink:title="Checks that a path is the given folder or inside it.">
+<polygon fill="white" stroke="#666666" points="442,-19 348,-19 348,0 442,0 442,-19"/>
+<text text-anchor="middle" x="395" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">GetPathInFolder</text>
+</a>
+</g>
+</g>
+<!-- Node4&#45;&gt;Node5 -->
+<g id="edge4_Node000004_Node000005" class="edge">
+<title>Node4&#45;&gt;Node5</title>
+<g id="a_edge4_Node000004_Node000005"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M301.31,-9.5C313.24,-9.5 325.71,-9.5 337.48,-9.5"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="337.62,-13 347.62,-9.5 337.62,-6 337.62,-13"/>
 </a>
 </g>
 </g>

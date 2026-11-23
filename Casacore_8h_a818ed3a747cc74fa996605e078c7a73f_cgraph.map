@@ -1,0 +1,10 @@
+<map id="ParseImageExpression" name="ParseImageExpression">
+<area shape="rect" id="Node000001" title="Parses an image expression whose images must be inside the given folder." alt="" coords="5,5,175,31"/>
+<area shape="rect" id="Node000002" href="$Casacore_8cc.html#a9498969555a0444b05e85cbde4b7dd0d" title=" " alt="" coords="379,5,521,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="175,15,365,15,365,21,175,21"/>
+<area shape="rect" id="Node000004" href="$Casacore_8cc.html#a5d8edc1c5abc4929d49ab7a0f99865c0" title=" " alt="" coords="223,31,331,56"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="175,27,209,32,209,37,174,32"/>
+<area shape="rect" id="Node000003" href="$Casacore_8cc.html#a97004d6f490d8d63dca3ef80dc63dbb0" title="Checks that a path is the given folder or inside it." alt="" coords="569,5,695,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="522,15,556,15,556,21,522,21"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="331,33,364,28,365,33,331,38"/>
+</map>
