@@ -200,6 +200,24 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     import_ack.set_success(success);
 }
 
+// Style strings go into region file lines, where a control character starts a new line and a ; starts a new DS9 region
+static void CleanStyleText(CARTA::RegionStyle& region_style) {
+    auto clean = [](std::string text) {
+        std::replace_if(text.begin(), text.end(), [](unsigned char c) { return std::iscntrl(c) || c == ';'; }, ' ');
+        return text;
+    };
+    region_style.set_name(clean(region_style.name()));
+    region_style.set_color(clean(region_style.color()));
+    if (region_style.has_annotation_style()) {
+        auto* annotation_style = region_style.mutable_annotation_style();
+        annotation_style->set_text_label0(clean(annotation_style->text_label0()));
+        annotation_style->set_text_label1(clean(annotation_style->text_label1()));
+        annotation_style->set_coordinate_system(clean(annotation_style->coordinate_system()));
+        annotation_style->set_font_style(clean(annotation_style->font_style()));
+        annotation_style->set_font(clean(annotation_style->font()));
+    }
+}
+
 void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     CARTA::CoordinateType coord_type, std::map<int, CARTA::RegionStyle>& region_styles, std::string& filename, bool overwrite,
     CARTA::ExportRegionAck& export_ack) {
@@ -234,6 +252,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         if (RegionSet(region_id)) {
             auto region = GetRegion(region_id);
             auto region_style = region_id_style.second;
+            CleanStyleText(region_style);
             if (!exporter->AddRegion(file_id, region, region_style, export_pixel_coords)) {
                 std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
                 export_errors.append(region_error);
