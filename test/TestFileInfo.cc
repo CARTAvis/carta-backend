@@ -9,8 +9,10 @@
 #include "CommonTestUtilities.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
+#include "ImageData/CartaFitsImage.h"
 #include "ImageData/CompressedFits.h"
 #include "Session/Session.h"
+#include "Table/Table.h"
 #include "Util/Message.h"
 
 using namespace carta;
@@ -248,6 +250,7 @@ public:
     }
 
     FRIEND_TEST(FileExtInfoLoaderTest, FitsHistoryEntries);
+    FRIEND_TEST(FileExtInfoLoaderTest, FitsPathIsNotCfitsioSyntax);
 };
 
 TEST_F(FileInfoLoaderTest, CasaFile) {
@@ -360,6 +363,67 @@ TEST_F(FileExtInfoLoaderTest, GzFitsBeamTableColumnTen) {
     ASSERT_EQ(beam_set.size(), 1);
     EXPECT_FLOAT_EQ(beam_set.getBeam(0, 0).getMajor("arcsec"), 3.0);
     EXPECT_FLOAT_EQ(beam_set.getBeam(0, 0).getMinor("arcsec"), 2.0);
+}
+
+TEST_F(FileExtInfoLoaderTest, FitsPathIsNotCfitsioSyntax) {
+    // cfitsio would read <tmp>/a.fits(<tmp>/out/<name>) as "copy <tmp>/a.fits to <tmp>/out/<name>"
+    auto tmp = fs::canonical(fs::temp_directory_path()) / "carta-cfitsio-syntax-test";
+    fs::remove_all(tmp);
+    fs::create_directories(tmp / "out");
+    fs::copy_file(FitsImages() / "noise_10px_10px.fits", tmp / "a.fits");
+    auto make_leaf = [&](const std::string& name, const std::string& image = "noise_10px_10px.fits") {
+        fs::path leaf = tmp.string() + "/a.fits(" + tmp.string() + "/out/" + name + ")";
+        fs::create_directories(leaf.parent_path());
+        fs::copy_file(FitsImages() / image, leaf);
+        return leaf;
+    };
+
+    auto leaf = make_leaf("info.fits");
+    TestSession t_session;
+    std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+    CARTA::FileInfo file_info;
+    std::string message;
+    t_session.FillExtendedFileInfo(extended_info_map, file_info, leaf.parent_path().string(), leaf.filename().string(), "", false, message);
+    EXPECT_FALSE(fs::exists(tmp / "out/info.fits"));
+
+    leaf = make_leaf("image.fits", "small_perplanebeam.fits"); // also reads the BEAMS table
+    try {
+        CartaFitsImage image(leaf.string(), 0);
+    } catch (const casacore::AipsError& err) {
+    }
+    EXPECT_FALSE(fs::exists(tmp / "out/image.fits"));
+
+    leaf = make_leaf("catalog.fits");
+    carta::Table table(leaf.string());
+    EXPECT_FALSE(fs::exists(tmp / "out/catalog.fits"));
+    fs::remove_all(tmp);
+}
+
+TEST_F(FileExtInfoLoaderTest, FitsSaveNameIsNotCfitsioSyntax) {
+    // cfitsio would read x.fits(a.fits) as "create x.fits from the template a.fits"
+    auto tmp = fs::canonical(fs::temp_directory_path()) / "carta-cfitsio-save-test";
+    fs::remove_all(tmp);
+    fs::create_directories(tmp);
+    fs::copy_file(FitsImages() / "noise_10px_10px.fits", tmp / "a.fits");
+    Frame frame(0, FileLoader::GetLoader((tmp / "a.fits").string()), "0");
+
+    auto save = [&](const std::string& name) {
+        CARTA::SaveFile save_file;
+        save_file.set_output_file_directory(tmp.string());
+        save_file.set_output_file_name(name);
+        save_file.set_output_file_type(CARTA::FileType::FITS);
+        save_file.set_rest_freq(NAN);
+        CARTA::SaveFileAck ack;
+        frame.SaveFile("/", save_file, ack, nullptr);
+        return ack.success();
+    };
+
+    EXPECT_FALSE(save("x.fits(" + (tmp / "a.fits").string() + ")"));
+    EXPECT_FALSE(save("x.fits[compress]"));
+    EXPECT_FALSE(fs::exists(tmp / "x.fits"));
+    EXPECT_TRUE(save("x.fits"));
+    EXPECT_TRUE(fs::exists(tmp / "x.fits"));
+    fs::remove_all(tmp);
 }
 
 TEST_F(SessionFileInfoTest, FitsFile) {

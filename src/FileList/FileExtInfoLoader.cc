@@ -1514,7 +1514,7 @@ casacore::Vector<casacore::String> FileExtInfoLoader::FitsHeaderStrings(casacore
     int* hdutype(nullptr);
 
     // Open file and move to hdu
-    fits_open_file(&fptr, name.c_str(), 0, &status);
+    fits_open_diskfile(&fptr, name.c_str(), 0, &status);
     status = 0;
     fits_movabs_hdu(fptr, hdu + 1, hdutype, &status);
 

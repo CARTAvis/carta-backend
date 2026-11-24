@@ -24,7 +24,7 @@ FitsHduList::FitsHduList(const std::string& filename) {
 void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& error) {
     // Returns list of hdu num and ext name for primary array and image extensions.
 
-    // DO NOT USE for compressed FITS, fits_open_file decompresses entire file.
+    // DO NOT USE for compressed FITS, cfitsio decompresses entire file.
     if (IsCompressedFits(_filename)) {
         error = "Should use CompressedFits for HDU header map.";
         spdlog::debug(error);
@@ -34,10 +34,10 @@ void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& er
     // Open file read-only
     fitsfile* fptr(nullptr);
     int status(0);
-    fits_open_file(&fptr, _filename.c_str(), 0, &status);
+    fits_open_diskfile(&fptr, _filename.c_str(), 0, &status);
 
     if (status) {
-        spdlog::debug("FITS {} fits_open_file status {}", _filename, status);
+        spdlog::debug("FITS {} fits_open_diskfile status {}", _filename, status);
         error = "FITS open file error.";
         return;
     }
