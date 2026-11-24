@@ -293,6 +293,10 @@ struct DimsInfo {
     size_t num_channels; ///< Number of spectral channels.
     size_t num_stokes;   ///< Number of Stokes parameters.
 
+    AxisRange x_range; ///< Full X range
+    AxisRange y_range; ///< Full Y range
+    AxisRange z_range; ///< Full Z range
+
     /**
      * @brief Retrieves the size of a given axis from the shape.
      * @param axis The axis index.
@@ -306,6 +310,15 @@ struct DimsInfo {
             throw casacore::AipsError("Axis index out of bounds in DimsInfo::FromAxis");
         }
         return shape(axis);
+    }
+
+    /**
+     * @brief Constructs a range over the given dimension.
+     * @param dimension The dimension.
+     * @return The full axis range over the dimension.
+     */
+    static AxisRange Range(size_t dimension) {
+        return AxisRange(0, dimension - 1);
     }
 
     /**
@@ -323,7 +336,10 @@ struct DimsInfo {
           height(FromAxis(axes.y, shape)),
           depth(FromAxis(axes.z, shape)),
           num_channels(FromAxis(axes.spectral, shape)),
-          num_stokes(FromAxis(axes.stokes, shape)) {}
+          num_stokes(FromAxis(axes.stokes, shape)),
+          x_range(Range(width)),
+          y_range(Range(height)),
+          z_range(Range(depth)) {}
 };
 
 #endif // CARTA_SRC_UTIL_IMAGE_H_

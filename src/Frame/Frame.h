@@ -280,7 +280,6 @@ protected:
     AxesInfo _axes; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
     DimsInfo _dims;
     int _z_index, _stokes_index; // current index
-    AxisRange _all_x, _all_y, _all_z;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;

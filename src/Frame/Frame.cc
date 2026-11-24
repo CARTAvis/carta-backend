@@ -74,10 +74,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _axes = _loader->GetAxes();
     _dims = _loader->GetDims();
 
-    _all_x = AxisRange(0, _dims.width - 1);
-    _all_y = AxisRange(0, _dims.height - 1);
-    _all_z = AxisRange(0, _dims.depth - 1);
-
     _use_tile_cache = _loader->UseTileCache();
 
     // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
@@ -220,7 +216,7 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
-    return GetImageSlicer(_all_x, _all_y, z_range, stokes);
+    return GetImageSlicer(_dims.x_range, _dims.y_range, z_range, stokes);
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
