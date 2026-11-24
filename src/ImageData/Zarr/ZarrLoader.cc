@@ -155,8 +155,15 @@ bool ZarrLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
     return std::dynamic_pointer_cast<CartaZarrImage>(_image) != nullptr && _num_dims == 4 && region_shape.size() >= 2;
 }
 
-void ZarrLoader::RegionSpectralPace::Reset(const RegionSpectralKey& other) {
-    key = other;
+bool ZarrLoader::RegionSpectralPace::IsOf(const RegionSpectralKey& other_key, const casacore::Array<casacore::Bool>& other_mask) const {
+    // The key includes the mask shape. Both masks are contiguous, as GetRegionSpectralData checks.
+    return key == other_key && mask.shape().isEqual(other_mask.shape()) &&
+           std::equal(mask.data(), mask.data() + mask.nelements(), other_mask.data());
+}
+
+void ZarrLoader::RegionSpectralPace::Reset(const RegionSpectralKey& other_key, const casacore::Array<casacore::Bool>& other_mask) {
+    key = other_key;
+    mask.reference(other_mask);
     channels_done = 0;
     reads = 0;
     stokes.clear();
@@ -191,9 +198,9 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         return _region_spectral_paces[region_id];
     }();
     std::scoped_lock lock(pace.mutex);
-    if (pace.key != key) {
+    if (!pace.IsOf(key, mask_array)) {
         // Start every stokes again. Otherwise a stokes finished for an earlier key would report a computed stokes as finished.
-        pace.Reset(key);
+        pace.Reset(key, mask_array);
     }
     auto [found, added] = pace.stokes.try_emplace(stokes);
     auto& state = found->second;
