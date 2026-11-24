@@ -64,9 +64,8 @@ protected:
     std::chrono::milliseconds _region_spectral_time{TARGET_PARTIAL_REGION_TIME};
     std::uint32_t _region_spectral_channels_per_emit = 0;
 
-    // The key of a profile is the region's bounding box and the channel range. A new key starts the profile again.
-    // Like the HDF5 loader, the key does not include the mask. So an edited region that keeps its bounding box
-    // continues the old profile.
+    // The key of a profile is the region's bounding box and the channel range. A new key or a new mask starts the
+    // profile again. The pace keeps the mask to compare, because an edited region can keep its bounding box.
     struct RegionSpectralKey : public Key<int, int, std::int64_t, std::int64_t, std::int64_t, std::int64_t> {
         RegionSpectralKey() {}
         RegionSpectralKey(const casacore::IPosition& origin, const casacore::IPosition& mask_shape, const AxisRange& range)
@@ -94,13 +93,17 @@ private:
     struct RegionSpectralPace {
         std::mutex mutex;
         RegionSpectralKey key;
+        // The mask that the profile is of. It shares the caller's storage, so it costs no copy.
+        casacore::Array<casacore::Bool> mask;
         std::size_t channels_done = 0;
         std::int64_t reads = 0;
         // The state of each stokes, by stokes index
         std::map<int, RegionSpectralState> stokes;
 
-        // Starts every stokes of the region again, for the key `other`
-        void Reset(const RegionSpectralKey& other);
+        // Whether the profile is of `other_key` and `other_mask`
+        bool IsOf(const RegionSpectralKey& other_key, const casacore::Array<casacore::Bool>& other_mask) const;
+        // Starts every stokes of the region again, for `other_key` and `other_mask`
+        void Reset(const RegionSpectralKey& other_key, const casacore::Array<casacore::Bool>& other_mask);
     };
 
     // Held only while finding or adding a pace. A pace is never erased.
