@@ -6,13 +6,16 @@
 
 #include "Casacore.h"
 
+#include <algorithm>
 #include <regex>
 
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
+#include <casacore/images/Images/ImageExprParse.h>
 
 #include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
+#include "Util/FileSystem.h"
 
 const std::regex GILDAS_REGEX(" *[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\) *");
 
@@ -22,27 +25,38 @@ const std::regex GILDAS_REGEX(" *[a-zA-Z]+[ .]+\\(T[a-zA-Z_]+[*.]*\\) *");
  * exists and is readable. If any issue is encountered, an error message is set.
  */
 casacore::String GetResolvedFilename(
-    const std::string& root_dir, const std::string& directory, const std::string& file, std::string& message) {
+    const std::string& root_dir, const std::string& directory, const std::string& file, std::string& message, std::string* checked_dir) {
     // Given directory (relative to root directory) and file, return resolved file path.
     // Check if file path exists and is readable.
     casacore::String resolved_filename;
-    casacore::Path path(root_dir);
-    path.append(directory);
+    casacore::Path dir_path(root_dir);
+    dir_path.append(directory);
+    casacore::Path file_path(dir_path);
+    file_path.append(file);
+
+    auto dir_name = GetPathInFolder(dir_path.originalName(), root_dir);
+    auto file_name = GetPathInFolder(file_path.originalName(), root_dir);
+    if (dir_name.empty() || file_name.empty()) {
+        message = "Forbidden path.";
+        return resolved_filename;
+    }
+
+    casacore::Path path(dir_name);
     casacore::File cc_file(path);
 
-    // Check directory
+    // Check directory. Messages use the path as requested, not its expanded form.
     if (!cc_file.exists()) {
-        message = fmt::format("Directory {} does not exist.", path.expandedName());
+        message = fmt::format("Directory {} does not exist.", directory);
     } else if (!cc_file.isReadable()) {
-        message = fmt::format("Directory {} is not readable.", path.expandedName());
+        message = fmt::format("Directory {} is not readable.", directory);
     } else {
         // Check file
-        path.append(file);
+        path = casacore::Path(file_name);
         cc_file = casacore::File(path);
         if (!cc_file.exists()) {
-            message = fmt::format("File {} does not exist.", path.expandedName());
+            message = fmt::format("File {} does not exist.", file);
         } else if (!cc_file.isReadable()) {
-            message = fmt::format("File {} is not readable.", path.expandedName());
+            message = fmt::format("File {} is not readable.", file);
         } else {
             try {
                 resolved_filename = path.resolvedName();
@@ -52,13 +66,195 @@ casacore::String GetResolvedFilename(
                 if (path.absoluteName().empty()) {
                     resolved_filename = path.expandedName();
                 } else {
-                    fmt::format("Error resolving file {} : {}", path.expandedName(), err.getMesg());
+                    message = fmt::format("Error resolving file {}.", file);
                 }
             }
         }
     }
 
+    if (checked_dir && !resolved_filename.empty()) {
+        *checked_dir = dir_name;
+    }
     return resolved_filename;
+}
+
+std::string GetPathInFolder(const std::string& path, const std::string& folder, bool expand) {
+    auto normalized = fs::path(expand ? casacore::Path(path).expandedName().c_str() : path.c_str()).lexically_normal();
+    if (!normalized.has_filename() && normalized.has_relative_path()) {
+        normalized = normalized.parent_path(); // a/b/.. is left as a/
+    }
+    auto relative = normalized.lexically_relative(fs::path(folder).lexically_normal());
+    // Also refuse any .. left behind, in case lexically_normal() misses one (older libstdc++ has had bugs here)
+    if (relative.empty() || *relative.begin() == ".." || std::find(normalized.begin(), normalized.end(), "..") != normalized.end()) {
+        return "";
+    }
+    return normalized.string();
+}
+
+// Throws unless casacore can be given this image name from an expression. The folder and the second directory have had
+// their symlinks followed.
+static void CheckImageName(
+    const std::string& name, const fs::path& directory, const fs::path& resolved_directory, const std::string& top_level_folder) {
+    if (name.empty()) {
+        return;
+    }
+    std::error_code error_code;
+    auto in_folder = [&](const fs::path& path) { return !GetPathInFolder(path.string(), top_level_folder, false).empty(); };
+
+    // casacore opens an absolute name as it is, after expanding ~ and $VAR, and any other name relative to the directory
+    fs::path expanded(casacore::Path(name).expandedName().c_str());
+    fs::path upward; // the name as far as its last ..
+    size_t num_parts(0), last_up(0);
+    for (const auto& part : expanded) {
+        ++num_parts;
+        if (part == "..") {
+            last_up = num_parts;
+        }
+    }
+    for (auto part = expanded.begin(); last_up > 0; ++part, --last_up) {
+        upward /= *part;
+    }
+
+    bool allowed;
+    if (upward.empty()) {
+        // A relative name with no .. stays inside the directory, which is already in the folder (symlinks in it may point
+        // anywhere). An absolute name has to be in the folder as written, or once its symlinks are followed.
+        allowed = expanded.is_relative() || in_folder(expanded) || in_folder(fs::weakly_canonical(expanded, error_code));
+    } else {
+        // casacore takes a .. out of the text in some places, and in others leaves the OS to follow symlinks first. Both
+        // have to end up in the folder, or where the path leads when the client's own text is read the first way.
+        auto text = (directory / upward).lexically_normal();
+        auto linked = in_folder(text) ? fs::weakly_canonical(text, error_code) : fs::path();
+        auto given = resolved_directory / upward;
+        allowed = !resolved_directory.empty();
+        for (const auto& end : {fs::weakly_canonical(given, error_code), fs::weakly_canonical(given.lexically_normal(), error_code)}) {
+            allowed = allowed && !end.empty() && (in_folder(end) || end / "" == linked / "");
+        }
+    }
+
+    if (!allowed) {
+        throw casacore::AipsError("Image expression cannot use " + name + ": names must be inside the top-level folder.");
+    }
+    // casacore opens the names in a saved expression relative to the working directory, and nothing checks them
+    if (fs::is_regular_file(directory / expanded / "imageexpr.json", error_code)) {
+        throw casacore::AipsError("Image expression cannot use the saved image expression " + name + ".");
+    }
+}
+
+// CheckExpressionNames() with the folder and the second directory already resolved. This copies casacore's lexer rules; a
+// check in casacore's ImageExprParse::addDir, which sees each name before it opens it, could replace it upstream.
+static void CheckNames(
+    const std::string& expression, const std::string& directory, const fs::path& resolved_directory, const std::string& top_level_folder) {
+    // casacore removes backslash escapes in its lexer, and again when it takes the image name from before any :mask or ::region
+    auto unescape = [](const std::string& text, bool stop_at_colon) {
+        std::string out;
+        for (size_t i = 0; i < text.size() && !(stop_at_colon && text[i] == ':'); ++i) {
+            i += (text[i] == '\\');
+            if (i < text.size()) {
+                out += text[i];
+            }
+        }
+        return out;
+    };
+    auto check_name = [&](const std::string& text) {
+        // A mask with no image name before it makes casacore open its working directory
+        if (text.size() > 1 && text[0] == ':' && text[1] != ':') {
+            throw casacore::AipsError("Image expression cannot use " + text + ": there is no image name before the colon.");
+        }
+        CheckImageName(unescape(text, true), directory, resolved_directory, top_level_folder);
+    };
+
+    auto is_digit_or_dot = [&](size_t pos) {
+        return pos < expression.size() && ((expression[pos] >= '0' && expression[pos] <= '9') || expression[pos] == '.');
+    };
+    // An unquoted name starts with a letter, one of _ ~ $ or any escaped character, and goes on with those, digits and dots
+    auto is_name_start = [&](size_t pos) {
+        char c = pos < expression.size() ? expression[pos] : ' ';
+        if (c == '\\') {
+            return pos + 1 < expression.size() && expression[pos + 1] != '\n';
+        }
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == '~' || c == '$';
+    };
+    auto name_end = [&](size_t pos) {
+        while (is_name_start(pos) || is_digit_or_dot(pos)) {
+            pos += (expression[pos] == '\\') ? 2 : 1;
+        }
+        return pos;
+    };
+
+    // Find the names as casacore's lexer does. Function and constant names are checked too: with no / or .. they pass,
+    // unless the directory holds a saved image expression of the same name.
+    for (size_t pos = 0; pos < expression.size();) {
+        char c = expression[pos];
+        if (c == '"' || c == '\'') {
+            // casacore joins quoted strings that touch into one name, so "..""/x.fits" has to be checked as ../x.fits
+            std::string text;
+            bool terminated(true);
+            while (terminated && pos < expression.size() && (expression[pos] == '"' || expression[pos] == '\'')) {
+                auto close = expression.find_first_of(std::string{expression[pos], '\n'}, pos + 1);
+                terminated = (close != std::string::npos && expression[close] != '\n');
+                if (terminated) {
+                    text += expression.substr(pos + 1, close - pos - 1);
+                    pos = close + 1;
+                }
+            }
+            check_name(text);
+            if (!terminated) {
+                return; // casacore stops with an error here, so it reads nothing more
+            }
+        } else if (is_name_start(pos) || c == ':') {
+            // An unquoted name can go on past one colon or two, if another name follows them directly
+            auto end = name_end(pos);
+            if (expression.compare(end, 1, ":") == 0) {
+                auto next = end + (expression.compare(end, 2, "::") == 0 ? 2 : 1);
+                end = is_name_start(next) ? name_end(next) : std::max(end, pos + 1);
+            }
+            check_name(unescape(expression.substr(pos, end - pos), false));
+            pos = end;
+        } else if (is_digit_or_dot(pos)) {
+            // casacore reads this as a number, and gives an error if a name follows it directly. That name is not checked,
+            // so refuse a number with anything in it that could make a path, in case casacore ever does open one.
+            auto end = name_end(pos);
+            auto text = unescape(expression.substr(pos, end - pos), false);
+            if (text.find_first_of("/~$\\") != std::string::npos || text.find("..") != std::string::npos) {
+                throw casacore::AipsError("Image expression cannot use " + text + ": names must be inside the top-level folder.");
+            }
+            pos = end;
+        } else {
+            ++pos;
+        }
+    }
+}
+
+void CheckExpressionNames(const std::string& expression, const std::string& directory, const std::string& folder) {
+    std::error_code error_code;
+    auto top_level_folder = fs::weakly_canonical(fs::absolute(folder, error_code), error_code).string();
+    if (top_level_folder != "/") {
+        CheckNames(expression, directory, fs::weakly_canonical(fs::absolute(directory, error_code), error_code), top_level_folder);
+    }
+}
+
+casacore::LatticeExprNode ParseImageExpression(const std::string& expression, const std::string& directory, const std::string& folder) {
+    std::error_code error_code;
+    auto top_level_folder = fs::weakly_canonical(fs::absolute(folder, error_code), error_code).string();
+    // casacore gets the directory with its symlinks followed, so that a .. in a name starts from where the directory really is
+    auto resolved_directory = fs::weakly_canonical(fs::absolute(directory, error_code), error_code);
+    bool restricted = top_level_folder != "/";
+    if (restricted) {
+        CheckNames(expression, directory, resolved_directory, top_level_folder);
+    }
+    if (resolved_directory.empty()) {
+        throw casacore::AipsError("Image expression directory " + directory + " cannot be resolved.");
+    }
+    auto node = casacore::ImageExprParse::command(expression, resolved_directory.string());
+
+    // casacore keeps the names of the images it opened, so check those too in case it read the expression differently
+    if (restricted) {
+        for (const auto& name : casacore::ImageExprParse::getImageNames()) {
+            CheckImageName(name, directory, resolved_directory, top_level_folder);
+        }
+    }
+    return node;
 }
 
 /**

@@ -18,6 +18,7 @@
 #include "CommonTestUtilities.h"
 
 using json = nlohmann::json;
+using namespace std::string_literals;
 
 // Allows testing of protected methods in HttpServer without polluting the original class
 class TestHttpServer : public carta::HttpServer {
@@ -80,6 +81,10 @@ public:
     FRIEND_TEST(RestApiTest, SetWorkspaceNotJson);
     FRIEND_TEST(RestApiTest, SetWorkspaceInvalidResult);
     FRIEND_TEST(RestApiTest, SetWorkspaceReadOnly);
+
+    FRIEND_TEST(RestApiTest, SetSnippetNameIsNotAPath);
+    FRIEND_TEST(RestApiTest, GetWorkspaceNameIsNotAPath);
+    FRIEND_TEST(RestApiTest, DeleteSnippetNameIsNotAPath);
 
     FRIEND_TEST(RestApiTest, SendScriptingRequest);
     FRIEND_TEST(RestApiTest, SendScriptingRequestSessionNotFound);
@@ -700,6 +705,40 @@ TEST_F(RestApiTest, SetWorkspaceReadOnly) {
     body = {{"workspaceName", "test_workspace"}};
     status = _frontend_server_read_only_mode->ClearObjectFromString("workspace", body.dump());
     EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, SetSnippetNameIsNotAPath) {
+    std::string outside(test_user_folder / "outside");
+    std::vector<std::string> names({"../../outside", outside, "created_snippet\0"s});
+    for (auto& name : names) {
+        json body = {{"snippetName", name}, {"snippet", example_snippet}};
+        EXPECT_EQ(_frontend_server->SetObjectFromString("snippet", body.dump()), HTTP_400);
+    }
+    EXPECT_FALSE(fs::exists(outside + ".json"));
+    EXPECT_FALSE(fs::exists(snippets_path / "created_snippet"));
+}
+
+TEST_F(RestApiTest, GetWorkspaceNameIsNotAPath) {
+    std::string outside(test_user_folder / "outside");
+    WriteDefaultWorkspaces();
+    std::ofstream(outside + ".json") << example_workspace.dump();
+    std::vector<std::string> names({"../../outside", outside, "bad_workspace_name\0"s});
+    for (auto& name : names) {
+        EXPECT_EQ(_frontend_server->GetExistingObject("workspace", name), nullptr);
+    }
+}
+
+TEST_F(RestApiTest, DeleteSnippetNameIsNotAPath) {
+    std::string outside(test_user_folder / "outside");
+    WriteDefaultSnippets();
+    std::ofstream(outside + ".json") << example_snippet.dump();
+    std::vector<std::string> names({"../../outside", outside, "bad_snippet_name\0"s});
+    for (auto& name : names) {
+        json body = {{"snippetName", name}};
+        EXPECT_EQ(_frontend_server->ClearObjectFromString("snippet", body.dump()), HTTP_400);
+    }
+    EXPECT_TRUE(fs::exists(outside + ".json"));
+    EXPECT_TRUE(fs::exists(snippets_path / "bad_snippet_name"));
 }
 
 TEST_F(RestApiTest, SendScriptingRequest) {

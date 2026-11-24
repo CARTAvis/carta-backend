@@ -11,6 +11,7 @@
 
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
+#include <casacore/lattices/LEL/LatticeExprNode.h>
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
 
 /**
@@ -20,11 +21,55 @@
  * @param[in] directory A string refence to the relative directory path within the root directory.
  * @param[in] file A string refence to the name of the file to resolve.
  * @param[out] message A reference to a string that will contain an error message if the resolution fails.
+ * @param[out] checked_dir If given, set on success to the directory as GetPathInFolder() returned it, before symlinks are followed.
  *
  * @return The resolved absolute filename as a `casacore::String` if successful, otherwise an empty string.
  */
-casacore::String GetResolvedFilename(
-    const std::string& root_dir, const std::string& directory, const std::string& file, std::string& message);
+casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file,
+    std::string& message, std::string* checked_dir = nullptr);
+
+/**
+ * @brief Checks that a path is the given folder or inside it.
+ *
+ * The check works on the text of the path, so symlinks inside the folder can still point anywhere. Open the returned path,
+ * not the input: in the text link/.. is just the folder, but the OS would follow link first and go up from where it points.
+ * To check where symlinks lead instead, give it paths that have had their symlinks followed.
+ *
+ * @param[in] path The path to check.
+ * @param[in] folder The folder the path must stay inside.
+ * @param[in] expand Whether to expand environment variables in the path first, as casacore will if it is given the path.
+ *
+ * @return The path with . and .. removed, or an empty string if it is outside the folder.
+ */
+std::string GetPathInFolder(const std::string& path, const std::string& folder, bool expand = true);
+
+/**
+ * @brief Checks that the images named in an image expression are inside the given folder.
+ *
+ * casacore opens the images in an expression itself, so the names are found here the way its lexer finds them and checked
+ * before it parses the expression. Nothing is checked if the folder is /.
+ *
+ * @param[in] expression The image expression.
+ * @param[in] directory The directory that names in the expression are relative to, as GetPathInFolder() returned it.
+ * @param[in] folder The folder the images must stay inside.
+ *
+ * @throws casacore::AipsError If a name is outside the folder, or is itself a saved image expression.
+ */
+void CheckExpressionNames(const std::string& expression, const std::string& directory, const std::string& folder);
+
+/**
+ * @brief Parses an image expression whose images must be inside the given folder.
+ *
+ * Checks the names as CheckExpressionNames() does first, then checks the names casacore reports having opened.
+ *
+ * @param[in] expression The image expression.
+ * @param[in] directory The directory that names in the expression are relative to, as GetPathInFolder() returned it.
+ * @param[in] folder The folder the images must stay inside.
+ *
+ * @return The node for the parsed expression.
+ * @throws casacore::AipsError If the expression is refused or cannot be parsed.
+ */
+casacore::LatticeExprNode ParseImageExpression(const std::string& expression, const std::string& directory, const std::string& folder);
 
 /**
  * @brief Determines the image type of a given filename using Casacore.

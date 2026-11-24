@@ -31,6 +31,7 @@
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
+#include "Util/String.h"
 
 using namespace carta;
 
@@ -596,18 +597,23 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
         if (entry_name == "EXTNAME") {
             Message::AddComputedEntry(extended_info, "Extension name", header_entry.value());
         } else if (entry_name.find("NAXIS") == 0) {
-            std::string naxis_index(&entry_name.back());
             auto entry_num_value = header_entry.numeric_value();
-
-            if (naxis_index == "S") { // just "NAXIS"
-                shape.resize(entry_num_value);
-            } else { // NAXISn (1-based)
-                int n = stoi(naxis_index);
+            int n(0);
+            if (entry_name == "NAXIS") {
+                if (entry_num_value >= 0 && entry_num_value <= 999) { // The FITS standard limits NAXIS to 999
+                    shape.resize(entry_num_value);
+                }
+            } else if (StringToInt(entry_name.substr(5), n) && n >= 1 && n <= shape.size()) { // NAXISn (1-based)
                 shape(n - 1) = entry_num_value;
             }
         } else if (entry_name.find("CTYPE") == 0) {
-            std::string ctype_index(&entry_name.back());
-            int axis_num = stoi(ctype_index) - 1;
+            // Only digits after CTYPE, since CTYPEia with a letter describes an alternate WCS
+            auto ctype_index = entry_name.substr(5);
+            int axis_num(0);
+            if (ctype_index.find_first_not_of("0123456789") != std::string::npos || !StringToInt(ctype_index, axis_num) || axis_num < 1) {
+                continue;
+            }
+            axis_num -= 1;
             auto entry_value = header_entry.value();
 
             if (!entry_value.empty()) {
@@ -711,7 +717,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     }
 
     // In case if the stokes axis name is not available from the header info
-    if (axes.stokes > -1 && axes_names[axes.stokes] == "NA") {
+    if (axes.stokes > -1 && axes.stokes < axes_names.size() && axes_names[axes.stokes] == "NA") {
         axes_names[axes.stokes] = "STOKES";
     }
 
@@ -1090,7 +1096,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
 
         // Make a spectral coordinate (if any) and add it to the coordinate system
-        if (calc_spectral_range) {
+        if (calc_spectral_range && axes.spectral >= 0 && axes.spectral < shape.size()) {
             casacore::MFrequency::Types frequency_type;
             if (casacore::MFrequency::getType(frequency_type, specsys)) {
                 // Convert velocities to frequencies
@@ -1129,7 +1135,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
 
         // Make a stokes coordinate (if any) and add it to the coordinate system
-        if (calc_stokes_range) {
+        if (calc_stokes_range && axes.stokes >= 0 && axes.stokes < shape.size()) {
             if (stokes_crpix != 1) { // Get the stokes type for the first pixel
                 stokes_crval -= stokes_cdelt * (stokes_crpix - 1);
             }
@@ -1194,7 +1200,7 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
             std::vector<std::pair<std::string, casacore::GaussianBeam>> beam_list;
             for (unsigned int i = 0; i < n_stokes; ++i) {
                 // Append Stokes name to entry name
-                if (stokes_names.empty()) {
+                if (i >= stokes_names.size()) {
                     stokes_name = std::to_string(i);
                 } else {
                     stokes_name = stokes_names(i);
@@ -1508,7 +1514,7 @@ casacore::Vector<casacore::String> FileExtInfoLoader::FitsHeaderStrings(casacore
     int* hdutype(nullptr);
 
     // Open file and move to hdu
-    fits_open_file(&fptr, name.c_str(), 0, &status);
+    fits_open_diskfile(&fptr, name.c_str(), 0, &status);
     status = 0;
     fits_movabs_hdu(fptr, hdu + 1, hdutype, &status);
 
