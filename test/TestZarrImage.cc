@@ -1024,6 +1024,81 @@ TEST_F(ZarrImageTest, RegionSpectralDataOfAStokesCatchingUpPauses) {
     EXPECT_EQ(FinishedChannels(q), kDepth);
 }
 
+// An edited region keeps its origin and shape, but its mask differs.
+TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskIsReadAgain) {
+    const casacore::IPosition origin(2, 1, 1);
+    std::mutex image_mutex;
+    const auto profile = [&](FileLoader& loader, const casacore::ArrayLattice<casacore::Bool>& mask) {
+        std::map<CARTA::StatsType, std::vector<double>> results;
+        float progress = 0.0;
+        for (int call = 0; progress < 1.0f; ++call) {
+            if (call == 100 ||
+                !loader.GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, {})) {
+                ADD_FAILURE() << "the profile did not finish";
+                break;
+            }
+        }
+        return results;
+    };
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    const auto first = profile(*loader, BoxMask([](int, int) { return true; }));
+    const auto edited = profile(*loader, BoxMask([](int x, int) { return x == 0; }));
+
+    // The profile of the same mask, from a loader that has read nothing before
+    auto fresh_loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(fresh_loader, nullptr);
+    fresh_loader->OpenFile("");
+    const auto fresh = profile(*fresh_loader, BoxMask([](int x, int) { return x == 0; }));
+    EXPECT_NE(edited.at(CARTA::StatsType::NumPixels), first.at(CARTA::StatsType::NumPixels));
+    EXPECT_EQ(edited.at(CARTA::StatsType::NumPixels), fresh.at(CARTA::StatsType::NumPixels));
+    EXPECT_EQ(edited.at(CARTA::StatsType::Sum), fresh.at(CARTA::StatsType::Sum));
+
+    // The same mask in a new array gives the same profile
+    const auto again = profile(*loader, BoxMask([](int x, int) { return x == 0; }));
+    EXPECT_EQ(again.at(CARTA::StatsType::Sum), fresh.at(CARTA::StatsType::Sum));
+}
+
+// Two columns of the box have as many pixels. Neighbouring boxes of a PV cut are like this.
+TEST_F(ZarrImageTest, RegionSpectralDataOfAnotherMaskOfAsManyPixelsIsReadAgain) {
+    const casacore::IPosition origin(2, 1, 1);
+    std::mutex image_mutex;
+    const auto profile = [&](FileLoader& loader, const casacore::ArrayLattice<casacore::Bool>& mask) {
+        std::map<CARTA::StatsType, std::vector<double>> results;
+        float progress = 0.0;
+        for (int call = 0; progress < 1.0f; ++call) {
+            if (call == 100 ||
+                !loader.GetRegionSpectralData(3, AxisRange(0, kDepth - 1), 0, mask, origin, image_mutex, results, progress, {})) {
+                ADD_FAILURE() << "the profile did not finish";
+                break;
+            }
+        }
+        return results;
+    };
+    const auto first_column = BoxMask([](int x, int) { return x == 0; });
+    const auto second_column = BoxMask([](int x, int) { return x == 1; });
+
+    auto loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(loader, nullptr);
+    loader->OpenFile("");
+    const auto first = profile(*loader, first_column);
+    const auto edited = profile(*loader, second_column);
+
+    auto fresh_loader = FileLoader::GetLoader(kZarrFixture.string());
+    ASSERT_NE(fresh_loader, nullptr);
+    fresh_loader->OpenFile("");
+    const auto fresh = profile(*fresh_loader, second_column);
+    // The two masks have the same number of pixels, valid or not
+    const auto covered = [](const std::map<CARTA::StatsType, std::vector<double>>& results) {
+        return results.at(CARTA::StatsType::NumPixels).front() + results.at(CARTA::StatsType::NanCount).front();
+    };
+    EXPECT_EQ(covered(edited), covered(first));
+    EXPECT_NE(edited.at(CARTA::StatsType::Sum), first.at(CARTA::StatsType::Sum));
+    EXPECT_EQ(edited.at(CARTA::StatsType::NumPixels), fresh.at(CARTA::StatsType::NumPixels));
+    EXPECT_EQ(edited.at(CARTA::StatsType::Sum), fresh.at(CARTA::StatsType::Sum));
+}
+
 TEST_F(ZarrImageTest, RegionSpectralDataOfAResizedRegionIsReadAgain) {
     const casacore::IPosition origin(2, 1, 1);
     std::mutex image_mutex;
