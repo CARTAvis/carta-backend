@@ -793,6 +793,12 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
         return false;
     }
 
+    // 5. Valid spectral range
+    if (spectral_range.from < 0 || spectral_range.from > spectral_range.to || spectral_range.to >= frame->Depth()) {
+        pv_response.set_message("Invalid spectral range.");
+        return false;
+    }
+
     // Set frame
     if (!FrameSet(file_id)) {
         _frames[file_id] = frame;
@@ -1168,9 +1174,6 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
     casacore::Quantity offset_increment;
     casacore::Matrix<float> pv_data;
     std::string message;
-    if (spectral_range.to == ALL_Z) {
-        spectral_range.to = frame->Depth() - 1;
-    }
 
     if (GetLineProfiles(file_id, region_id, width, spectral_range, stokes_index, "", progress_callback, pv_data, offset_increment,
             cancelled, message, reverse)) {
@@ -1778,6 +1781,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         for (const auto& profile : partial_profiles) {
             auto stats_type = profile.first;
             const std::vector<double>& stats_data = profile.second;
+            if (profile_start + stats_data.size() > profile_size) {
+                spdlog::error("Spectral profile has more channels than the range {} to {}", z_range.from, z_range.to);
+                return false;
+            }
             if (results.count(stats_type)) {
                 memcpy(&results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
             }
