@@ -54,12 +54,9 @@ void Region::ResetRegionCache() {
 }
 
 std::shared_ptr<RegionConverter> Region::GetRegionConverter() {
-    // Return local copy of region converter, creating it if needed.
-    // Local copy keeps converter alive even if ResetRegionCache() is called concurrently.
     auto converter = std::atomic_load(&_region_converter);
     if (!converter) {
         auto new_converter = std::make_shared<RegionConverter>(GetRegionState(), _coord_sys);
-        // Only store if still unset; if another thread set it first, converter is updated to that one.
         if (std::atomic_compare_exchange_strong(&_region_converter, &converter, new_converter)) {
             converter = new_converter;
         }
