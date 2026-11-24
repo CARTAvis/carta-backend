@@ -107,6 +107,10 @@ private:
     bool _valid;          // RegionState set properly
     bool _region_changed; // control points or rotation changed
 
+    // Incremented (under _region_state_mutex) when region state changes, before cache is reset.
+    // Cache entries are only stored if generation is unchanged since before reading the state used to compute them.
+    std::atomic<uint64_t> _cache_generation{0};
+
     // Region applied to reference image
     std::shared_ptr<casacore::LCRegion> _lcregion;
     std::mutex _lcregion_mutex;

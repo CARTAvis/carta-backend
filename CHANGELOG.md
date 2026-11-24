@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed key clash affecting some cached channel histograms and stats ([#1651](https://github.com/CARTAvis/carta-backend/issues/1651)).
 * Fixed race condition between region converter creation and cache invalidation during concurrent region conversions ([#1639](https://github.com/CARTAvis/carta-backend/issues/1639)).
 * Fixed race condition when concurrently initialising the reference region in region conversion ([#1675](https://github.com/CARTAvis/carta-backend/issues/1675)).
+* Fixed region cache being repopulated from the previous region state during a concurrent region update ([#1676](https://github.com/CARTAvis/carta-backend/issues/1676)).
 
 ## [6.0.0]
 
