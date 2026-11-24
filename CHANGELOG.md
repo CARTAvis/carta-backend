@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed regression that prevented calculation of image stats for computed Stokes ([#1652](https://github.com/CARTAvis/carta-backend/issues/1652)).
 * Fixed key clash affecting some cached channel histograms and stats ([#1651](https://github.com/CARTAvis/carta-backend/issues/1651)).
 * Fixed race condition between region converter creation and cache invalidation during concurrent region conversions ([#1639](https://github.com/CARTAvis/carta-backend/issues/1639)).
+* Fixed race condition when concurrently initialising the reference region in region conversion ([#1675](https://github.com/CARTAvis/carta-backend/issues/1675)).
 
 ## [6.0.0]
 

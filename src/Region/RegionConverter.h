@@ -10,6 +10,7 @@
 #define CARTA_SRC_REGION_REGIONCONVERTER_H_
 
 #include <atomic>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,7 @@ public:
 
 private:
     // Reference region in world coordinates (reference coordinate system)
+    void InitReferenceWCRegion(); // thread-safe, calls SetReferenceWCRegion once
     void SetReferenceWCRegion();
     bool ReferenceRegionValid();
     bool RectangleControlPointsToWorld(std::vector<casacore::Quantity>& wcs_points);
@@ -84,11 +86,11 @@ private:
     std::shared_ptr<casacore::CoordinateSystem> _reference_coord_sys;
 
     // Reference region: control points converted to world coords,
-    // cached as WCRegion, and flag that WCRegion was attempted
-    // (may be null if outside coordinate system)
+    // cached as WCRegion (may be null if outside coordinate system).
+    // Set once by InitReferenceWCRegion() via std::call_once, read-only afterwards.
     std::vector<casacore::Quantity> _wcs_control_points;
     std::shared_ptr<casacore::WCRegion> _reference_region;
-    bool _reference_region_set;
+    std::once_flag _reference_region_once;
 
     // Converted regions: reference region applied to image,
     // or as polygon approximation applied to image.

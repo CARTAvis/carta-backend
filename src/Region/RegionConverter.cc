@@ -27,18 +27,26 @@
 using namespace carta;
 
 RegionConverter::RegionConverter(const RegionState& state, std::shared_ptr<casacore::CoordinateSystem> csys)
-    : _region_state(state), _reference_coord_sys(csys), _reference_region_set(false) {}
+    : _region_state(state), _reference_coord_sys(csys) {}
 
 // ****************************************************************************
 // Apply region to reference image in world coordinates (WCRegion) and save wcs control points
 
 bool RegionConverter::ReferenceRegionValid() {
-    return _reference_region_set && bool(_reference_region);
+    // Call InitReferenceWCRegion() first
+    return bool(std::atomic_load(&_reference_region));
+}
+
+void RegionConverter::InitReferenceWCRegion() {
+    // Set reference region and wcs control points exactly once, even with concurrent callers.
+    // Other callers block until it completes, so members are fully set when this returns.
+    std::call_once(_reference_region_once, &RegionConverter::SetReferenceWCRegion, this);
 }
 
 void RegionConverter::SetReferenceWCRegion() {
     // Create WCRegion (world coordinate region) in the reference image according to type using wcs control points.
-    // Sets _reference_region (including to nullptr if fails) and _reference_region_set (attempted).
+    // Sets _reference_region (including to nullptr if fails) and _wcs_control_points.
+    // Do not call directly: use InitReferenceWCRegion() for thread safety.
     // Supports closed (not line-type) annotation regions, for conversion to matched image LCRegion then Record for export.
     // Rotated box is rotated, do not use for Record!
     casacore::WCRegion* region(nullptr);
@@ -123,9 +131,6 @@ void RegionConverter::SetReferenceWCRegion() {
 
     std::shared_ptr<casacore::WCRegion> shared_region = std::shared_ptr<casacore::WCRegion>(region);
     std::atomic_store(&_reference_region, shared_region);
-
-    // Flag indicates that attempt was made, to avoid repeated attempts
-    _reference_region_set = true;
 }
 
 bool RegionConverter::RectangleControlPointsToWorld(std::vector<casacore::Quantity>& world_corners) {
@@ -298,9 +303,7 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetConvertedLCRegion(int fi
 
     try {
         // Convert reference WCRegion to LCRegion using output csys and shape
-        if (!_reference_region_set) {
-            SetReferenceWCRegion();
-        }
+        InitReferenceWCRegion();
 
         if (ReferenceRegionValid()) {
             std::shared_ptr<const casacore::WCRegion> reference_region = std::atomic_load(&_reference_region);
@@ -697,9 +700,7 @@ casacore::TableRecord RegionConverter::GetRegionPointsRecord(
     // Convert control points to output coord sys if needed, and return completed record.
     // Used when LCRegion::toRecord() fails, usually outside image.
     casacore::TableRecord record;
-    if (!_reference_region_set) {
-        SetReferenceWCRegion(); // set wcs control points
-    }
+    InitReferenceWCRegion(); // set wcs control points
 
     switch (_region_state.type) {
         case CARTA::RegionType::POINT:
