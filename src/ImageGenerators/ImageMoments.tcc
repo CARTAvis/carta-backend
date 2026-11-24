@@ -10,12 +10,61 @@
 #ifndef CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
 #define CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
 
+#include <algorithm>
+#include <atomic>
+#include <exception>
+#include <memory>
+#include <mutex>
+#include <vector>
+
+#include <omp.h>
+#include <chrono>
 #include <cmath>
+
+#include <casacore/casa/OS/HostInfo.h>
 
 #include "../Logger/Logger.h"
 #include "Util/Casacore.h"
 
 using namespace carta;
+
+namespace carta {
+
+// Times the read, collapse and store phases of the moment walk, and logs them at debug level.
+// It times each slab instead of each line, because timing each line would slow the walk.
+// Begin and Since are calls instead of a scoped guard, because what a phase makes outlives the phase.
+class WalkTiming {
+public:
+    double read = 0.0;
+    double collapse = 0.0;
+    double store = 0.0;
+    std::size_t slabs = 0;
+    std::size_t lines = 0;
+
+    void Begin() {
+        _phase = Clock::now();
+    }
+
+    double Since() const {
+        return std::chrono::duration<double>(Clock::now() - _phase).count();
+    }
+
+    void Log(std::size_t workers) const {
+        const double total = std::chrono::duration<double>(Clock::now() - _started).count();
+        spdlog::debug(
+            "moment walk: {:.1f} s over {} slabs and {} lines -- read {:.1f} s ({:.0f}%, decode pool), "
+            "collapsing {:.1f} s ({:.0f}%, {} workers), writing {:.1f} s ({:.0f}%)",
+            total, slabs, lines, read, 100.0 * read / total, collapse, 100.0 * collapse / total, workers, store, 100.0 * store / total);
+    }
+
+private:
+    using Clock = std::chrono::steady_clock;
+
+    Clock::time_point _started = Clock::now();
+    Clock::time_point _phase = Clock::now();
+};
+
+} // namespace carta
 
 template <class T>
 ImageMoments<T>::ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os,
@@ -89,6 +138,10 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
         // image
         if (!_stop) { // check cancellation
             _image = image_copy;
+            // The convolved image is held in memory, so the chunks of the store no longer apply.
+            _chunk_grid_unit = casacore::IPosition();
+            _chunk_grid_origin = casacore::IPosition();
+            _hold_cache = nullptr;
         }
     }
 
@@ -344,16 +397,39 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         stdDeviation_p = noise;
     }
 
-    // Create appropriate MomentCalculator object
-    shared_ptr<casa::MomentCalcBase<T>> moment_calculator;
-    if (clip_method || smooth_clip_method) {
-        moment_calculator.reset(new casa::MomentClip<T>(smoothed_image, *this, os_p, output_images.size()));
+    // casacore's world-coordinate conversion is not safe on several threads, even with one CoordinateSystem per collapser.
+    // So the walk runs on one worker when a coordinate moment is asked for. These are the moments that doCoordCalc checks.
+    bool needs_world_coordinates = false;
+    for (casacore::uInt i = 0; i < moments_p.nelements(); ++i) {
+        const casacore::Int moment = moments_p(i);
+        if (moment == casa::MomentsBase<T>::WEIGHTED_MEAN_COORDINATE || moment == casa::MomentsBase<T>::WEIGHTED_DISPERSION_COORDINATE ||
+            moment == casa::MomentsBase<T>::MEDIAN_COORDINATE || moment == casa::MomentsBase<T>::MAXIMUM_COORDINATE ||
+            moment == casa::MomentsBase<T>::MINIMUM_COORDINATE) {
+            needs_world_coordinates = true;
+            break;
+        }
+    }
+    // Only MomentClip without smoothing is known to be safe in parallel. MomentWindow keeps the window of a line in
+    // function-local statics, so two workers would overwrite each other's window. MomentFit has not been checked.
+    // With smoothing, every MomentClip reads the one smoothed image, and a paged casacore image is not thread-safe.
+    const bool clipping = clip_method && !smooth_clip_method;
+    const std::size_t workers = (needs_world_coordinates || !clipping) ? 1 : std::max(1, omp_get_max_threads());
+    if (needs_world_coordinates) {
+        spdlog::debug("moment walk: one worker, because a coordinate moment was asked for");
+    } else if (!clipping) {
+        spdlog::debug("moment walk: one worker, because smoothing and the window and fit methods are not safe in parallel");
+    }
+    std::vector<std::shared_ptr<casa::MomentCalcBase<T>>> moment_calculators(workers);
+    for (std::size_t worker = 0; worker < workers; ++worker) {
+        if (clip_method || smooth_clip_method) {
+            moment_calculators[worker].reset(new casa::MomentClip<T>(smoothed_image, *this, os_p, output_images.size()));
 
-    } else if (window_method) {
-        moment_calculator.reset(new casa::MomentWindow<T>(smoothed_image, *this, os_p, output_images.size()));
+        } else if (window_method) {
+            moment_calculators[worker].reset(new casa::MomentWindow<T>(smoothed_image, *this, os_p, output_images.size()));
 
-    } else if (fit_method) {
-        moment_calculator.reset(new casa::MomentFit<T>(*this, os_p, output_images.size()));
+        } else if (fit_method) {
+            moment_calculators[worker].reset(new casa::MomentFit<T>(*this, os_p, output_images.size()));
+        }
     }
 
     // Iterate optimally through the image, compute the moments, fill the output lattices
@@ -364,11 +440,15 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     // Do expensive calculation
-    LineMultiApply(ptr_blocks, *_image, *moment_calculator, momentAxis_p);
+    LineMultiApply(ptr_blocks, *_image, moment_calculators, momentAxis_p);
 
     if (window_method || fit_method) {
-        if (moment_calculator->nFailedFits() != 0) {
-            spdlog::warn("There were {} failed fits.", moment_calculator->nFailedFits());
+        casacore::uInt failed_fits = 0;
+        for (const auto& calculator : moment_calculators) {
+            failed_fits += calculator->nFailedFits();
+        }
+        if (failed_fits != 0) {
+            spdlog::warn("There were {} failed fits.", failed_fits);
         }
     }
 
@@ -541,7 +621,8 @@ void ImageMoments<T>::StopCalculation() {
 
 template <class T>
 void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out,
-    const casacore::MaskedLattice<T>& lattice_in, casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis) {
+    const casacore::MaskedLattice<T>& lattice_in, const std::vector<std::shared_ptr<casa::MomentCalcBase<T>>>& collapsers,
+    casacore::uInt collapse_axis) {
     // First verify that all the output lattices have the same shape and tile shape
     const casacore::uInt n_out = lattice_out.nelements(); // Number of output lattices
     AlwaysAssert(n_out > 0, AipsError);
@@ -556,13 +637,20 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     casacore::IPosition out_pos(out_dim, 0);
 
     // Does the input has a mask? If not, can the collapser handle a null mask.
-    casacore::Bool use_mask = lattice_in.isMasked() ? casacore::True : (!collapser.canHandleNullMask());
+    casacore::Bool use_mask = lattice_in.isMasked() ? casacore::True : (!collapsers.front()->canHandleNullMask());
     const casacore::uInt in_ndim = in_shape.size();
     const casacore::IPosition display_axes = IPosition::makeAxisPath(in_ndim).otherAxes(in_ndim, IPosition(1, collapse_axis));
     const casacore::uInt n_display_axes = display_axes.size();
 
-    casacore::Vector<T> result(n_out);                   // Resulting values for a slice
-    casacore::Vector<casacore::Bool> result_mask(n_out); // Resulting masks for a slice
+    // One result vector per worker, as with the collapsers.
+    const std::size_t workers = collapsers.size();
+    std::vector<casacore::Vector<T>> results(workers);
+    std::vector<casacore::Vector<casacore::Bool>> result_masks(workers);
+    for (std::size_t worker = 0; worker < workers; ++worker) {
+        // Assign a new Vector to each element. A casacore Array copy shares storage, so copies of one Vector would share it.
+        results[worker] = casacore::Vector<T>(n_out);
+        result_masks[worker] = casacore::Vector<casacore::Bool>(n_out);
+    }
 
     // Read in larger chunks than before, because that was very inefficient and brought NRAO cluster to a snail's pace, and then do the
     // accounting for the input lines in memory
@@ -571,24 +659,40 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     chunk_slice_end[collapse_axis] = in_shape[collapse_axis] - 1;                    // Position at the end of a collapse axis line
     const casacore::IPosition chunk_slice_end_at_chunk_iter_begin = chunk_slice_end; // As an increment of a chunk for the lattice iterator
 
-    // Get a chunk shape and used it to set the data iterator
-
-    casacore::IPosition chunk_shape_init = ChunkShape(collapse_axis, lattice_in);
-
-    casacore::IPosition hdf5_chunk_shape(in_ndim, 1);
-    hdf5_chunk_shape[0] = 512;
-    hdf5_chunk_shape[1] = 512;
-
-    auto nice_shape = lattice_in.niceCursorShape();
-    if (nice_shape == hdf5_chunk_shape) {
-        chunk_shape_init[0] = nice_shape[0];
-        chunk_shape_init[1] = nice_shape[1];
+    // Shape the slab to the chunk grid that the caller gave, if it still applies. Otherwise use the cursor advice.
+    const casacore::uInt pixel_bytes = lattice_in.isMasked() ? sizeof(T) + sizeof(casacore::Bool) : sizeof(T);
+    const ptrdiff_t total_kib = casacore::HostInfo::memoryTotal();
+    const std::uint64_t memory_bytes = total_kib > 0 ? static_cast<std::uint64_t>(total_kib) * 1024 : 0;
+    const bool on_the_grid = _chunk_grid_unit.size() == in_ndim && _chunk_grid_origin.size() == in_ndim;
+    // The walk also keeps one value and one mask of each moment for every line of a slab.
+    const std::uint64_t result_bytes = static_cast<std::uint64_t>(n_out) * (sizeof(T) + sizeof(casacore::Bool));
+    const SlabPlan plan =
+        on_the_grid ? PlanSlab(in_shape, _chunk_grid_unit, collapse_axis, pixel_bytes, memory_bytes, _chunk_grid_origin, result_bytes)
+                    : PlanSlab(in_shape, lattice_in.niceCursorShape(), collapse_axis, pixel_bytes, memory_bytes, casacore::IPosition(),
+                          result_bytes);
+    // The cache that the slabs share. It is released when the walk ends.
+    std::shared_ptr<void> held_cache;
+    // The cache that the plan needs: in decoded chunks when the image gives their size, and in T otherwise.
+    const std::uint64_t cache_need = _decoded_chunk_bytes != 0 ? plan.reuse_chunks * _decoded_chunk_bytes : plan.reuse_pixels * sizeof(T);
+    // A plan that is not chunked reads by bytes and decodes a chunk again for each slab, so it keeps the session's cache.
+    const bool own_cache = on_the_grid && plan.chunked && _hold_cache;
+    const std::uint64_t cache_bytes = !own_cache                  ? 0
+                                      : _decoded_chunk_bytes != 0 ? plan.CacheBytesOfChunks(_decoded_chunk_bytes)
+                                                                  : plan.CacheBytes(sizeof(T));
+    if (own_cache) {
+        held_cache = _hold_cache(cache_bytes);
+    }
+    if (plan.chunked) {
+        spdlog::debug("moment slab {} path {} from the {}, budget {} MiB, unit {} MiB, reads the store {:.1f}x, cache {} MiB{}{}",
+            plan.slab.toString(), plan.axis_path.toString(), on_the_grid ? "chunks" : "cursor advice", plan.budget_bytes >> 20U,
+            plan.unit_bytes >> 20U, plan.store_reads, cache_bytes >> 20U, held_cache ? " of its own" : "",
+            held_cache ? fmt::format(" ({}{:.1f}x with it)", cache_bytes < cache_need ? "short of the need; " : "", plan.cached_store_reads)
+                       : std::string());
     }
 
-    casacore::LatticeStepper my_stepper(in_shape, chunk_shape_init, LatticeStepper::RESIZE);
+    casacore::LatticeStepper my_stepper(in_shape, plan.slab, plan.axis_path, LatticeStepper::RESIZE);
     casacore::RO_MaskedLatticeIterator<T> lat_iter(lattice_in, my_stepper);
 
-    casacore::IPosition cur_pos;                           // Current position for the chunk iterator
     static const casacore::Vector<casacore::Bool> no_mask; // False mask vector
 
     if (_progress_monitor && (_steps_for_beam_convolution == 0)) { // no beam convolution done before, so initialize the progress meter
@@ -598,15 +702,18 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
 
     casacore::uInt n_done = 0; // Number of slices have done
 
+    WalkTiming timing;
+
     // Iterate through a cube image, chunk by chunk
-    for (lat_iter.reset(); !lat_iter.atEnd(); ++lat_iter) {
+    for (lat_iter.reset(); !lat_iter.atEnd();) {
+        timing.Begin();
         const casacore::IPosition iter_pos = lat_iter.position();
         const casacore::Array<T>& chunk = lat_iter.cursor();
         casacore::IPosition chunk_shape = chunk.shape();
         const casacore::Array<casacore::Bool> mask_chunk = use_mask ? lat_iter.getMask() : Array<Bool>();
+        timing.read += timing.Since();
+        ++timing.slabs;
 
-        chunk_slice_start = 0;
-        chunk_slice_end = chunk_slice_end_at_chunk_iter_begin;
         casacore::IPosition result_array_shape = chunk_shape;
         result_array_shape[collapse_axis] = 1;
         std::vector<casacore::Array<T>> result_arrays(n_out);                   // Resulting value arrays for a chunk
@@ -619,49 +726,90 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             result_array_masks[k] = Array<Bool>(result_array_shape);
         }
 
-        // Iterate through a chunk, slice by slice on the output image display axes
-        casacore::Bool done = casacore::False;
-        while (!done) {
-            if (_stop) { // Break the iteration in a chunk
-                break;
+        // Collapse every line of the slab by a flat index, so that the loop can run in parallel. Each line writes
+        // its own output element, and nothing is summed across lines, so the result does not depend on the order.
+        std::size_t slab_lines = 1;
+        for (casacore::uInt k = 0; k < n_display_axes; ++k) {
+            slab_lines *= static_cast<std::size_t>(chunk_shape[display_axes[k]]);
+        }
+
+        // Write through raw pointers, so that the loop does not depend on Array::operator() being thread-safe.
+        std::vector<T*> value_out(n_out);
+        std::vector<casacore::Bool*> mask_out_ptr(n_out);
+        for (casacore::uInt k = 0; k < n_out; ++k) {
+            value_out[k] = result_arrays[k].data();
+            mask_out_ptr[k] = result_array_masks[k].data();
+        }
+        std::vector<std::size_t> result_stride(in_ndim, 0);
+        std::size_t stride = 1;
+        for (casacore::uInt axis = 0; axis < in_ndim; ++axis) {
+            result_stride[axis] = stride;
+            stride *= static_cast<std::size_t>(result_array_shape[axis]);
+        }
+
+        timing.Begin();
+        // An exception must not leave an OpenMP loop, so the first one is kept and thrown after the loop.
+        std::exception_ptr failure;
+        std::mutex failure_mutex;
+        std::atomic<bool> failed(false);
+#pragma omp parallel for schedule(static) num_threads(static_cast <int>(workers))
+        for (std::ptrdiff_t line = 0; line < static_cast<std::ptrdiff_t>(slab_lines); ++line) {
+            if (_stop || failed) { // OpenMP cannot break out of a parallel loop, so skip the remaining lines
+                continue;
             }
+            try {
+                const std::size_t worker = static_cast<std::size_t>(omp_get_thread_num());
 
-            casacore::Vector<T> data(chunk(chunk_slice_start, chunk_slice_end));
-            casacore::Vector<Bool> mask =
-                use_mask ? casacore::Vector<casacore::Bool>(mask_chunk(chunk_slice_start, chunk_slice_end)) : no_mask;
-            cur_pos = iter_pos + chunk_slice_start;
-
-            // Do calculations
-            collapser.multiProcess(result, result_mask, data, mask, cur_pos);
-
-            // Fill partial results in a chunk
-            for (uInt k = 0; k < n_out; ++k) {
-                result_arrays[k](chunk_slice_start) = result[k];
-                result_array_masks[k](chunk_slice_start) = result_mask[k];
-            }
-
-            done = True; // The scan of this chunk is complete
-
-            // Report the number of slices have done
-            if (_progress_monitor) {
-                ++n_done;
-                _progress_monitor->nstepsDone(n_done + _steps_for_beam_convolution);
-            }
-
-            // Proceed to the next slice on the display axes
-            for (casacore::uInt k = 0; k < n_display_axes; ++k) {
-                casacore::uInt dax = display_axes[k];
-                if (chunk_slice_start[dax] < chunk_shape[dax] - 1) {
-                    ++chunk_slice_start[dax];
-                    ++chunk_slice_end[dax];
-                    done = False;
-                    break;
-                } else {
-                    chunk_slice_start[dax] = 0;
-                    chunk_slice_end[dax] = 0;
+                // Unpack the flat index onto the display axes, fastest first.
+                casacore::IPosition slice_start(in_ndim, 0);
+                std::size_t rest = static_cast<std::size_t>(line);
+                for (casacore::uInt k = 0; k < n_display_axes; ++k) {
+                    const casacore::uInt dax = display_axes[k];
+                    const std::size_t extent = static_cast<std::size_t>(chunk_shape[dax]);
+                    slice_start[dax] = static_cast<ssize_t>(rest % extent);
+                    rest /= extent;
                 }
+                casacore::IPosition slice_end = slice_start;
+                slice_end[collapse_axis] = chunk_slice_end_at_chunk_iter_begin[collapse_axis];
+
+                casacore::Vector<T> data(chunk(slice_start, slice_end));
+                casacore::Vector<Bool> mask = use_mask ? casacore::Vector<casacore::Bool>(mask_chunk(slice_start, slice_end)) : no_mask;
+                const casacore::IPosition cur_pos = iter_pos + slice_start;
+
+                // Do calculations
+
+                collapsers[worker]->multiProcess(results[worker], result_masks[worker], data, mask, cur_pos);
+
+                // Fill partial results in a chunk
+                std::size_t offset = 0;
+                for (casacore::uInt axis = 0; axis < in_ndim; ++axis) {
+                    offset += static_cast<std::size_t>(slice_start[axis]) * result_stride[axis];
+                }
+                for (uInt k = 0; k < n_out; ++k) {
+                    value_out[k][offset] = results[worker][k];
+                    mask_out_ptr[k][offset] = result_masks[worker][k];
+                }
+            } catch (...) {
+                std::scoped_lock lock(failure_mutex);
+                if (!failure) {
+                    failure = std::current_exception();
+                }
+                failed = true;
             }
         }
+        if (failure) {
+            std::rethrow_exception(failure);
+        }
+        timing.lines += slab_lines;
+
+        // Report progress once per slab. A call per line would need a lock inside the parallel loop.
+        if (_progress_monitor) {
+            n_done += static_cast<casacore::uInt>(slab_lines);
+            _progress_monitor->nstepsDone(n_done + _steps_for_beam_convolution);
+        }
+
+        timing.collapse += timing.Since();
+        timing.Begin();
 
         if (_stop) { // Break the iteration in a cube image
             break;
@@ -686,47 +834,16 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
                 }
             }
         }
+
+        timing.store += timing.Since();
+        ++lat_iter;
     }
+
+    timing.Log(collapsers.size());
 
     if (_progress_monitor) {
         _progress_monitor->done();
     }
-}
-
-template <class T>
-casacore::IPosition ImageMoments<T>::ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in) {
-    casacore::uInt ndim = lattice_in.ndim();
-    casacore::IPosition chunk_shape(ndim, 1);
-    casacore::IPosition lat_in_shape = lattice_in.shape();
-    casacore::uInt axis_length = lat_in_shape[axis];
-    chunk_shape[axis] = axis_length;
-
-    // arbitrary, but reasonable, max memory limit in bytes for storing arrays in bytes
-    static const casacore::uInt limit = 2e7; // Set the limit of memory usage (Bytes)
-    static const casacore::uInt size_of_T = sizeof(T);
-    static const casacore::uInt size_of_Bool = sizeof(casacore::Bool);
-    casacore::uInt chunk_mult = lattice_in.isMasked() ? size_of_T + size_of_Bool : size_of_T;
-    casacore::uInt sub_chunk_size = chunk_mult * axis_length; // Memory size for a sub-chunk (Bytes), i.e., memory for a specific axis line
-
-    // integer division
-    const casacore::uInt chunk_size = limit / sub_chunk_size; // Chunk size, i.e., number of pixels on display axes
-    if (chunk_size <= 1) {
-        // can only go row by row
-        return chunk_shape;
-    }
-
-    ssize_t x = chunk_size;
-    for (casacore::uInt i = 0; i < ndim; ++i) {
-        if (i != axis) {
-            chunk_shape[i] = std::min(x, lat_in_shape[i]);
-            // integer division
-            x /= chunk_shape[i];
-            if (x == 0) {
-                break;
-            }
-        }
-    }
-    return chunk_shape;
 }
 
 #endif // CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_

@@ -7,6 +7,7 @@
 #include "MomentGenerator.h"
 
 #include "../Logger/Logger.h"
+#include "ImageData/Zarr/CartaZarrImage.h"
 #include "ImageGenerator.h"
 
 using namespace carta;
@@ -192,14 +193,50 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     // Set the requested rest frequency in the image spectral coordinate
     SetImageRestFrequency(_rest_frequency);
 
-    // Reset the sub-image
-    _sub_image.reset(new casacore::SubImage<casacore::Float>(*_image, image_region));
+    // Reset the sub-image. Cut it from a copy with a cache of its own, if the image is a Zarr image.
+    std::function<std::shared_ptr<void>(std::uint64_t bytes)> hold_cache;
+    const auto own = WithCacheOfItsOwn(*_image, hold_cache);
+    _sub_image.reset(new casacore::SubImage<casacore::Float>(own ? *own : *_image, image_region));
 
     casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     casacore::LogIO os(log);
 
     // Make an ImageMoments object and overwrite the output file if it already exists
     _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this, true));
+
+    casacore::IPosition unit;
+    casacore::IPosition origin;
+    std::uint64_t chunk_bytes = 0;
+    if (ChunkGridOf(*_image, *_sub_image, unit, origin, chunk_bytes)) {
+        _image_moments->SetChunkGrid(unit, origin, hold_cache, chunk_bytes);
+    }
+}
+
+bool carta::ChunkGridOf(const casacore::ImageInterface<float>& image, const casacore::SubImage<float>& region, casacore::IPosition& unit,
+    casacore::IPosition& origin, std::uint64_t& decoded_chunk_bytes) {
+    // Only the Zarr image knows its chunks, and only the region knows where it starts among them.
+    // Other images give the moment their cursor advice instead.
+    const auto* zarr = dynamic_cast<const CartaZarrImage*>(&image);
+    if (zarr == nullptr) {
+        return false;
+    }
+    unit = zarr->ChunkShape();
+    origin = region.region().slicer().start();
+    // The default options apply the pixel mask, as the reads of CartaZarrImage do.
+    decoded_chunk_bytes = zarr->ZarrImage().DecodedChunkBytes();
+    return !unit.empty() && origin.size() == unit.size() && region.shape().size() == unit.size();
+}
+
+std::shared_ptr<casacore::ImageInterface<float>> carta::WithCacheOfItsOwn(
+    const casacore::ImageInterface<float>& image, std::function<std::shared_ptr<void>(std::uint64_t bytes)>& hold_cache) {
+    const auto* zarr = dynamic_cast<const CartaZarrImage*>(&image);
+    if (zarr == nullptr) {
+        hold_cache = nullptr;
+        return nullptr;
+    }
+    auto own = std::make_shared<CartaZarrImage>(*zarr);
+    hold_cache = own->OwnCache();
+    return own;
 }
 
 void MomentGenerator::SetImageRestFrequency(double rest_frequency) {

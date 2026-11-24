@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARR_CARTAZARRIMAGE_H_
 #define CARTA_SRC_IMAGEDATA_ZARR_CARTAZARRIMAGE_H_
 
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -80,6 +82,13 @@ public:
     // The size in bytes of the mask kept from the last pixel read. Tests use it to check that the mask is released.
     std::size_t MaskCacheBytes() const;
 
+    // Makes the reads of this image, and of the copies made of it after this call, use a cache of their own.
+    // The returned function makes a pool of the given size and returns a hold on it. Releasing the hold frees the pool.
+    // Keep only one hold at a time, because releasing any hold clears the pool.
+    std::function<std::shared_ptr<void>(std::uint64_t bytes)> OwnCache();
+    // The size of the pool while a hold is kept. Empty otherwise.
+    std::optional<std::size_t> OwnCacheBytes() const;
+
     std::vector<StorageEntry> GetStorageInfo() const;
     // carta-zarr's diagnostics on the image and the notes made while describing it to casacore
     const std::vector<ZarrNote>& Notes() const {
@@ -107,6 +116,16 @@ private:
         MaskCache(const MaskCache& /*other*/) {}
     };
     mutable MaskCache _mask_cache;
+
+    // Returns `options` with the pool of OwnCache, if the pool is held and `options` names no cache.
+    carta::zarr::ReadOptions ThroughOwnCache(const carta::zarr::ReadOptions& options) const;
+
+    // The pool of OwnCache. Copies made after OwnCache was called share it.
+    struct CacheOfItsOwn {
+        std::mutex mutex;
+        std::optional<carta::zarr::CachePool> pool;
+    };
+    std::shared_ptr<CacheOfItsOwn> _own_cache;
 
     std::string _filename;
     std::optional<carta::zarr::Image> _zarr_image;

@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_
 #define CARTA_SRC_IMAGEGENERATORS_MOMENTGENERATOR_H_
 
+#include <cstdint>
+
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
@@ -89,6 +91,18 @@ private:
     std::chrono::high_resolution_clock::time_point _start_time;
     bool _first_report_made;
 };
+
+// Gets the chunk grid of `region` for ImageMoments::SetChunkGrid: the chunk shape, the corner of `region` in the
+// grid, and the size of one decoded chunk with its flag, as carta-zarr counts it.
+// Returns false if `image` is not a Zarr image, or if the shapes do not match.
+bool ChunkGridOf(const casacore::ImageInterface<float>& image, const casacore::SubImage<float>& region, casacore::IPosition& unit,
+    casacore::IPosition& origin, std::uint64_t& decoded_chunk_bytes);
+
+// Returns a copy of `image` whose reads use a cache of the moment's own while `hold_cache` holds it. The slabs come
+// back to the chunks they share, and the session's cache is too small for them without evicting the displayed plane.
+// Returns null and clears `hold_cache` if `image` is not a Zarr image.
+std::shared_ptr<casacore::ImageInterface<float>> WithCacheOfItsOwn(
+    const casacore::ImageInterface<float>& image, std::function<std::shared_ptr<void>(std::uint64_t bytes)>& hold_cache);
 
 } // namespace carta
 

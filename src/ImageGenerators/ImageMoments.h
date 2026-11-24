@@ -21,7 +21,14 @@
 #include <imageanalysis/ImageAnalysis/MomentsBase.h>
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
 
+#include <atomic>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <vector>
+
 #include "Image2DConvolver.h"
+#include "SlabPlan.h"
 
 namespace carta {
 
@@ -66,6 +73,18 @@ public:
     // Stop the calculation
     void StopCalculation();
 
+    // Gives the chunk grid of the source image, so that the walk shapes its slabs to the chunks (see SlabPlan).
+    // `unit` is the chunk shape, and `origin` is this image's corner in the grid. Both are in this image's axis order.
+    // `hold_cache`, if given, is called once with the cache size that the plan needs. The walk keeps the result until it ends.
+    // `decoded_chunk_bytes` is the size of one decoded chunk in that cache. If it is 0, a chunk counts as its pixels in T.
+    void SetChunkGrid(const casacore::IPosition& unit, const casacore::IPosition& origin,
+        std::function<std::shared_ptr<void>(std::uint64_t bytes)> hold_cache = {}, std::uint64_t decoded_chunk_bytes = 0) {
+        _chunk_grid_unit = unit;
+        _chunk_grid_origin = origin;
+        _hold_cache = std::move(hold_cache);
+        _decoded_chunk_bytes = decoded_chunk_bytes;
+    }
+
 private:
     SPCIIT _image = SPCIIT(nullptr);
     std::unique_ptr<casa::ImageMomentsProgress> _progress_monitor;
@@ -81,17 +100,21 @@ private:
     void WhatIsTheNoise(T& noise, const casacore::ImageInterface<T>& image);
 
     // Iterate through a cube image with the moments calculator. Re-write from the casacore::LatticeApply<T,U>::lineMultiApply() function
+    // One collapser per worker, because a collapser keeps scratch state and cannot be shared between threads.
     void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
-        casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis);
+        const std::vector<std::shared_ptr<casa::MomentCalcBase<T>>>& collapsers, casacore::uInt collapse_axis);
 
-    // Get a suitable chunk shape in order for the iteration
-    casacore::IPosition ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in);
-
-    // Stop moment calculation
-    volatile bool _stop;
+    // Stop moment calculation. Atomic, because StopCalculation sets it on another thread while the workers read it.
+    std::atomic<bool> _stop;
 
     // Number of steps have done for the beam convolution
     casacore::uInt _steps_for_beam_convolution = 0;
+
+    // See SetChunkGrid. Empty when not known.
+    casacore::IPosition _chunk_grid_unit;
+    casacore::IPosition _chunk_grid_origin;
+    std::function<std::shared_ptr<void>(std::uint64_t bytes)> _hold_cache;
+    std::uint64_t _decoded_chunk_bytes = 0;
 
 protected:
     using casa::MomentsBase<T>::os_p;

@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <utility>
 
@@ -25,6 +26,7 @@
 #include "Util/Casacore.h"
 #include "Util/Nan.h"
 #include "ZarrCasacore.h"
+#include "ZarrContext.h"
 #include "ZarrStores.h"
 
 namespace carta {
@@ -219,7 +221,7 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
     bool delete_storage(false);
     float* storage = buffer.getStorage(delete_storage);
     auto read = _zarr_image->Read(RequestFor(section, _zarr_image->descriptor().axes.size()),
-        {storage, static_cast<std::size_t>(buffer.nelements())}, options, progress);
+        {storage, static_cast<std::size_t>(buffer.nelements())}, ThroughOwnCache(options), progress);
     if (read) {
         // The mask is false for every pixel that is not finite. So we set infinite pixels to NaN as well,
         // and every reader of the image sees only NaN.
@@ -232,6 +234,55 @@ carta::zarr::Result<std::size_t> CartaZarrImage::Read(casacore::Array<float>& bu
 
 carta::zarr::ReadRequest CartaZarrImage::Request(const casacore::Slicer& section) const {
     return RequestFor(section, _zarr_image->descriptor().axes.size());
+}
+
+carta::zarr::ReadOptions CartaZarrImage::ThroughOwnCache(const carta::zarr::ReadOptions& options) const {
+    carta::zarr::ReadOptions chosen = options;
+    if (_own_cache && !options.control.cache_pool) {
+        std::scoped_lock lock(_own_cache->mutex);
+        if (_own_cache->pool) {
+            chosen.control.cache_pool = _own_cache->pool;
+        }
+    }
+    return chosen;
+}
+
+std::function<std::shared_ptr<void>(std::uint64_t bytes)> CartaZarrImage::OwnCache() {
+    auto cache = std::make_shared<CacheOfItsOwn>();
+    _own_cache = cache;
+    return [cache](std::uint64_t bytes) -> std::shared_ptr<void> {
+        auto pool = GetZarrContext().CreateCachePool(static_cast<std::size_t>(bytes));
+        if (!pool) {
+            spdlog::warn("A moment reads through the session's cache: {}", pool.error().message);
+            return nullptr;
+        }
+        {
+            std::scoped_lock lock(cache->mutex);
+            cache->pool = *pool;
+        }
+        struct Hold {
+            explicit Hold(std::shared_ptr<CacheOfItsOwn> held) : cache(std::move(held)) {}
+            Hold(const Hold&) = delete;
+            Hold& operator=(const Hold&) = delete;
+            ~Hold() {
+                std::scoped_lock lock(cache->mutex);
+                cache->pool.reset();
+            }
+            std::shared_ptr<CacheOfItsOwn> cache;
+        };
+        return std::make_shared<Hold>(cache);
+    };
+}
+
+std::optional<std::size_t> CartaZarrImage::OwnCacheBytes() const {
+    if (!_own_cache) {
+        return std::nullopt;
+    }
+    std::scoped_lock lock(_own_cache->mutex);
+    if (!_own_cache->pool) {
+        return std::nullopt;
+    }
+    return _own_cache->pool->bytes();
 }
 
 casacore::Bool CartaZarrImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
