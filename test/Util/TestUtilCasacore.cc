@@ -66,6 +66,19 @@ TEST_F(GetResolvedFilenameTest, FileDoesNotExist) {
     EXPECT_FALSE(message.empty());
 }
 
+TEST_F(GetResolvedFilenameTest, MessageUsesRequestedPath) {
+    setenv("CARTA_TEST_VARIABLE", "expanded-value", 1);
+    std::string dir_message, file_message;
+    GetResolvedFilename(temp_dir.string(), "$CARTA_TEST_VARIABLE", "missing.txt", dir_message);
+    GetResolvedFilename(temp_dir.string(), "", "$CARTA_TEST_VARIABLE", file_message);
+    unsetenv("CARTA_TEST_VARIABLE");
+
+    EXPECT_FALSE(dir_message.empty());
+    EXPECT_EQ(dir_message.find("expanded-value"), std::string::npos);
+    EXPECT_FALSE(file_message.empty());
+    EXPECT_EQ(file_message.find("expanded-value"), std::string::npos);
+}
+
 TEST_F(GetResolvedFilenameTest, ResolvesNormalFile) {
     fs::path dir = temp_dir / "subdir";
     fs::create_directory(dir);

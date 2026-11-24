@@ -44,19 +44,19 @@ casacore::String GetResolvedFilename(
     casacore::Path path(dir_name);
     casacore::File cc_file(path);
 
-    // Check directory
+    // Check directory. Messages use the path as requested, not its expanded form.
     if (!cc_file.exists()) {
-        message = fmt::format("Directory {} does not exist.", path.expandedName());
+        message = fmt::format("Directory {} does not exist.", directory);
     } else if (!cc_file.isReadable()) {
-        message = fmt::format("Directory {} is not readable.", path.expandedName());
+        message = fmt::format("Directory {} is not readable.", directory);
     } else {
         // Check file
         path = casacore::Path(file_name);
         cc_file = casacore::File(path);
         if (!cc_file.exists()) {
-            message = fmt::format("File {} does not exist.", path.expandedName());
+            message = fmt::format("File {} does not exist.", file);
         } else if (!cc_file.isReadable()) {
-            message = fmt::format("File {} is not readable.", path.expandedName());
+            message = fmt::format("File {} is not readable.", file);
         } else {
             try {
                 resolved_filename = path.resolvedName();
@@ -66,7 +66,7 @@ casacore::String GetResolvedFilename(
                 if (path.absoluteName().empty()) {
                     resolved_filename = path.expandedName();
                 } else {
-                    message = fmt::format("Error resolving file {} : {}", path.expandedName(), err.getMesg());
+                    message = fmt::format("Error resolving file {}.", file);
                 }
             }
         }
