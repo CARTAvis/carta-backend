@@ -61,7 +61,8 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
       _has_blanks(other._has_blanks),
       _pixel_mask(nullptr),
       _tiled_shape(other._tiled_shape),
-      _is_copy(true) {
+      _is_copy(true),
+      _is_http(other._is_http) {
     if (other._pixel_mask != nullptr) {
         _pixel_mask = other._pixel_mask->clone();
     }
@@ -237,7 +238,12 @@ fitsfile* CartaFitsImage::OpenFile() {
     if (!_fptr) {
         fitsfile* fptr;
         int iomode(READONLY), status(0);
-        fits_open_file(&fptr, _filename.c_str(), iomode, &status);
+        // A local path is opened as written, since cfitsio's extended filename syntax can copy files
+        if (_is_http) {
+            fits_open_file(&fptr, _filename.c_str(), iomode, &status);
+        } else {
+            fits_open_diskfile(&fptr, _filename.c_str(), iomode, &status);
+        }
 
         if (status) {
             fits_report_error(stdout, status);
@@ -1293,7 +1299,11 @@ void CartaFitsImage::ReadBeamsTable(casacore::ImageInfo& image_info) {
     // Read BEAMS Binary Table to set ImageBeamSet in ImageInfo
     fitsfile* fptr;
     int status(0);
-    fits_open_file(&fptr, _filename.c_str(), 0, &status);
+    if (_is_http) {
+        fits_open_file(&fptr, _filename.c_str(), 0, &status);
+    } else {
+        fits_open_diskfile(&fptr, _filename.c_str(), 0, &status);
+    }
 
     if (status) {
         throw(casacore::AipsError("Error opening FITS file."));

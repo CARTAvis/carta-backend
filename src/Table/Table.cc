@@ -251,8 +251,15 @@ bool Table::PopulateRows(const pugi::xml_node& table) {
 bool Table::ConstructFromFITS(bool header_only) {
     fitsfile* file_ptr = nullptr;
     int status = 0;
-    // Attempt to open the first table HDU. status = 0 means no error
-    if (fits_open_table(&file_ptr, _filename.c_str(), READONLY, &status)) {
+    // Open the file as written, not as cfitsio's extended filename syntax, then move to the first table HDU
+    int hdu_type(IMAGE_HDU);
+    fits_open_diskfile(&file_ptr, _filename.c_str(), READONLY, &status);
+    while (!status && hdu_type == IMAGE_HDU) {
+        fits_movrel_hdu(file_ptr, 1, &hdu_type, &status);
+    }
+    if (status) {
+        status = 0;
+        fits_close_file(file_ptr, &status);
         _parse_error_message = "File does not contain a FITS table!";
         return false;
     }

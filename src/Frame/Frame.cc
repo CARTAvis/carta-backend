@@ -2154,6 +2154,12 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
 // Input message as a return message, which may contain error message
 // Return a bool if this functionality success
 bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, std::string& message) {
+    // cfitsio reads "name(template)" and "name[compression]" in the name of a new file
+    if (output_filename.string().find_first_of("([") != std::string::npos) {
+        message = "FITS file paths cannot contain ( or [.";
+        return false;
+    }
+
     bool success = false;
     bool prefer_velocity;
     bool optical_velocity;

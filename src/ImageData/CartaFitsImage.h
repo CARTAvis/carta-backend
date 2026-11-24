@@ -120,7 +120,7 @@ private:
     // Whether is a copy of the other CartaFitsImage
     bool _is_copy;
     // Whether the file is a remote file
-    bool _is_http;
+    bool _is_http = false;
 };
 
 } // namespace carta
