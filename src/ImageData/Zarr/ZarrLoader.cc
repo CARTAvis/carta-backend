@@ -372,6 +372,97 @@ bool ZarrLoader::GetRegionStats(int z, int stokes, const casacore::ArrayLattice<
     return true;
 }
 
+// A PV image is the mean spectra of many small boxes along a line, and the boxes overlap. carta-zarr reduces all of them
+// in one pass, so each chunk that they cover is decoded once instead of once for each box.
+FileLoader::LoaderScan ZarrLoader::GetRegionMeanSpectra(const std::vector<LoaderRegion>& regions, const AxisRange& z_range, int stokes,
+    const std::function<bool()>& still_wanted, const std::function<void(float)>& progress, const RegionMeansSink& store) {
+    auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
+    if (!image || _num_dims != 4 || regions.empty() || !store || stokes < 0 || stokes >= _image_shape(3)) {
+        return LoaderScan::unsupported;
+    }
+    const int depth = _image_shape(2);
+    if (z_range.from < 0 || z_range.to < z_range.from || z_range.to >= depth) {
+        return LoaderScan::unsupported;
+    }
+    const auto channels = static_cast<std::size_t>(z_range.to - z_range.from + 1);
+
+    static_assert(sizeof(casacore::Bool) == sizeof(std::uint8_t), "a casacore Bool must be one byte to lend a mask");
+    std::vector<carta::zarr::RegionMask> zarr_regions;
+    zarr_regions.reserve(regions.size());
+    for (const auto& region : regions) {
+        if (region.origin.size() < 2 || region.shape.size() < 2 || region.shape(0) < 1 || region.shape(1) < 1) {
+            return LoaderScan::unsupported;
+        }
+        carta::zarr::RegionMask zarr_region{static_cast<std::uint64_t>(region.origin(0)), static_cast<std::uint64_t>(region.origin(1)),
+            static_cast<std::uint64_t>(region.shape(0)), static_cast<std::uint64_t>(region.shape(1))};
+        const auto& mask_array = region.mask.asArray();
+        if (mask_array.shape().size() != 2 || mask_array.shape()(0) != region.shape(0) || mask_array.shape()(1) != region.shape(1) ||
+            !mask_array.contiguousStorage()) {
+            return LoaderScan::unsupported;
+        }
+        zarr_region.mask = {reinterpret_cast<const std::uint8_t*>(mask_array.data()), static_cast<std::size_t>(mask_array.nelements())};
+        zarr_regions.push_back(zarr_region);
+    }
+
+    carta::zarr::SpectralReduceRequest request;
+    request.planes.spectral = {static_cast<std::uint64_t>(z_range.from), static_cast<std::uint64_t>(channels), 1};
+    request.planes.polarization = static_cast<std::uint64_t>(stokes);
+    request.regions = {zarr_regions.data(), zarr_regions.size()};
+    request.statistics = carta::zarr::Statistic::num_pixels | carta::zarr::Statistic::sum;
+
+    carta::zarr::ReadOptions options;
+    // The pass decodes each chunk once, so keeping the chunks would only evict those of the displayed plane.
+    options.control.cache_pool = PoolThatKeepsNothing();
+    options.control.cancellation_requested = [&]() { return still_wanted && !still_wanted(); };
+
+    std::vector<float> run;
+    std::size_t channels_done(0);
+    bool missing_statistic(false);
+    const auto take = [&](const carta::zarr::SpectralBlock& block) {
+        // carta-zarr does not check cancellation_requested while it accumulates the last read, so the sink checks it too
+        if (still_wanted && !still_wanted()) {
+            return false;
+        }
+        if (!block.complete) {
+            // Partial sums. The same channels come again, complete.
+            if (progress) {
+                progress((static_cast<float>(channels_done) + static_cast<float>(block.channel_count * block.completeness)) /
+                         static_cast<float>(channels));
+            }
+            return true;
+        }
+        for (std::size_t r = 0; r < zarr_regions.size(); ++r) {
+            const double* num_pixels = block.Series(r, carta::zarr::Statistic::num_pixels);
+            const double* sum = block.Series(r, carta::zarr::Statistic::sum);
+            if (!num_pixels || !sum) {
+                missing_statistic = true;
+                return false;
+            }
+            run.assign(static_cast<std::size_t>(block.channel_count), FLOAT_NAN);
+            for (std::uint64_t c = 0; c < block.channel_count; ++c) {
+                if (num_pixels[c] > 0.0) {
+                    run[c] = static_cast<float>(sum[c] / num_pixels[c]);
+                }
+            }
+            store(r, static_cast<std::size_t>(block.first_channel), run.size(), run.data());
+        }
+        channels_done += static_cast<std::size_t>(block.channel_count);
+        if (progress) {
+            progress(static_cast<float>(channels_done) / static_cast<float>(channels));
+        }
+        return true;
+    };
+    const auto reduced = image->ZarrImage().ReduceSpectral(request, take, options);
+    if (still_wanted && !still_wanted()) {
+        return LoaderScan::cancelled;
+    }
+    if (missing_statistic || (reduced && channels_done != channels)) {
+        spdlog::warn("Could not reduce the regions of a line over the spectrum of a Zarr image: a result was missing");
+        return LoaderScan::failed;
+    }
+    return ScanOutcome(reduced, "reduce the regions of a line over the spectrum");
+}
+
 std::optional<ZarrPlaneRead> ZarrLoader::Plane(int z, int stokes) const {
     auto image = std::dynamic_pointer_cast<CartaZarrImage>(_image);
     if (!image || _num_dims != 4 || z < 0 || z >= _image_shape(2) || stokes < 0 || stokes >= _image_shape(3)) {

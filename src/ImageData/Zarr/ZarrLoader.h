@@ -51,6 +51,11 @@ public:
     }
     bool GetRegionStats(int z, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
         std::map<CARTA::StatsType, double>& results) override;
+    bool HasRegionMeanSpectra() const override {
+        return true;
+    }
+    LoaderScan GetRegionMeanSpectra(const std::vector<LoaderRegion>& regions, const AxisRange& z_range, int stokes,
+        const std::function<bool()>& still_wanted, const std::function<void(float)>& progress, const RegionMeansSink& store) override;
     LoaderScan GetPlaneHistograms(int stokes, int num_bins, const HistogramBounds& bounds, const std::function<bool()>& cancelled,
         const PlaneHistogramCallback& plane) override;
 

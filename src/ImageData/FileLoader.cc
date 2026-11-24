@@ -886,6 +886,15 @@ bool FileLoader::GetRegionStats(
     return false;
 }
 
+bool FileLoader::HasRegionMeanSpectra() const {
+    return false;
+}
+
+FileLoader::LoaderScan FileLoader::GetRegionMeanSpectra(const std::vector<LoaderRegion>&, const AxisRange&, int,
+    const std::function<bool()>&, const std::function<void(float)>&, const RegionMeansSink&) {
+    return LoaderScan::unsupported;
+}
+
 FileLoader::LoaderScan FileLoader::GetPlaneHistograms(
     int, int, const HistogramBounds&, const std::function<bool()>&, const PlaneHistogramCallback&) {
     return LoaderScan::unsupported;

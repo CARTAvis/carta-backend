@@ -2063,6 +2063,21 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     std::vector<RegionState> box_regions;
 
     if (line_box_regions.GetLineBoxRegions(line_region_state, line_coord_sys, width, increment, box_regions, message)) {
+        switch (GetLoaderLineProfiles(file_id, region_id, line_region_state, box_regions, line_coord_sys, z_range, stokes_index,
+            progress_callback, profiles, reverse)) {
+            case FileLoader::LoaderScan::finished:
+                return !allEQ(profiles, FLOAT_NAN);
+            case FileLoader::LoaderScan::cancelled:
+                cancelled = true;
+                return false;
+            case FileLoader::LoaderScan::failed:
+                // The boxes read one at a time would read the same pixels
+                message = "Could not read the line profiles.";
+                return false;
+            case FileLoader::LoaderScan::unsupported:
+                break;
+        }
+
         auto t_start = std::chrono::high_resolution_clock::now();
         auto num_profiles = box_regions.size();
         for (size_t iprofile = 0; iprofile < num_profiles; ++iprofile) {
@@ -2116,6 +2131,84 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     }
 
     return (!cancelled) && (progress >= 1.0) && !allEQ(profiles, FLOAT_NAN);
+}
+
+FileLoader::LoaderScan RegionHandler::GetLoaderLineProfiles(int file_id, int region_id, RegionState& line_region_state,
+    const std::vector<RegionState>& box_regions, std::shared_ptr<casacore::CoordinateSystem> line_coord_sys, const AxisRange& z_range,
+    int stokes_index, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, bool reverse) {
+    if (Stokes::IsComputed(stokes_index) || box_regions.empty() || !FrameSet(file_id)) {
+        return FileLoader::LoaderScan::unsupported;
+    }
+    auto frame = _frames.at(file_id);
+    if (!frame->HasLoaderRegionMeanSpectra()) {
+        return FileLoader::LoaderScan::unsupported;
+    }
+    // As for a region spectrum, the frame is not closed until the read ends
+    std::shared_lock frame_lock(frame->GetActiveTaskMutex());
+    auto image_csys = frame->CoordinateSystem();
+    auto image_shape = frame->ImageShape();
+
+    // A box that is not on the image keeps a row of NaN, as it does when the boxes are read one at a time.
+    std::vector<LoaderRegion> regions;
+    std::vector<std::size_t> box_of_region;
+    regions.reserve(box_regions.size());
+    const auto still_wanted = [&]() { return !CancelLineProfiles(region_id, file_id, line_region_state) && !_stop_pv[file_id]; };
+    for (std::size_t ibox = 0; ibox < box_regions.size(); ++ibox) {
+        // Converting the boxes of a long line to a matched image can take seconds
+        if (ibox % 256 == 0 && !still_wanted()) {
+            return FileLoader::LoaderScan::cancelled;
+        }
+        // A box near a projection boundary can be undefined
+        if (box_regions[ibox].control_points.empty()) {
+            continue;
+        }
+        Region box(box_regions[ibox], line_coord_sys);
+        auto lc_region = box.GetLCRegion(file_id, image_csys, image_shape, StokesSource(), false);
+        if (!lc_region) {
+            continue;
+        }
+        const auto bounding_box = lc_region->boundingBox();
+        regions.push_back({bounding_box.start().keepAxes(casacore::IPosition(2, 0, 1)),
+            bounding_box.length().keepAxes(casacore::IPosition(2, 0, 1)), Region::GetImageRegionMask(*lc_region)});
+        box_of_region.push_back(ibox);
+    }
+    if (regions.empty()) {
+        return FileLoader::LoaderScan::unsupported;
+    }
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+    const auto report = [&](float progress) {
+        auto t_end = std::chrono::high_resolution_clock::now();
+        auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+        if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress >= 1.0)) {
+            t_start = t_end;
+            progress_callback(progress);
+        }
+    };
+    // The loader writes each run of means into the profiles, so the PV image is held once
+    const auto num_channels = static_cast<std::size_t>(z_range.to - z_range.from + 1);
+    if (reverse) {
+        profiles.resize(casacore::IPosition(2, num_channels, box_regions.size()));
+    } else {
+        profiles.resize(casacore::IPosition(2, box_regions.size(), num_channels));
+    }
+    profiles = FLOAT_NAN;
+    const auto store = [&](std::size_t region, std::size_t first, std::size_t count, const float* means) {
+        const auto box = box_of_region[region];
+        for (std::size_t c = 0; c < count; ++c) {
+            if (reverse) {
+                profiles(first + c, box) = means[c];
+            } else {
+                profiles(box, first + c) = means[c];
+            }
+        }
+    };
+    const auto scan = frame->GetLoaderRegionMeanSpectra(regions, z_range, stokes_index, still_wanted, report, store);
+    if (scan != FileLoader::LoaderScan::finished) {
+        // The box-by-box path starts from empty profiles
+        profiles.resize();
+    }
+    return scan;
 }
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {

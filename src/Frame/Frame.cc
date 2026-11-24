@@ -1828,6 +1828,16 @@ bool Frame::HasLoaderRegionStats() const {
     return _loader->HasRegionStats();
 }
 
+bool Frame::HasLoaderRegionMeanSpectra() const {
+    return _loader->HasRegionMeanSpectra();
+}
+
+FileLoader::LoaderScan Frame::GetLoaderRegionMeanSpectra(const std::vector<LoaderRegion>& regions, const AxisRange& z_range, int stokes,
+    const std::function<bool()>& still_wanted, const std::function<void(float)>& progress, const RegionMeansSink& store) {
+    // No image mutex, as for the loader's region spectra: carta-zarr's reads are safe on several threads.
+    return _loader->GetRegionMeanSpectra(regions, z_range, stokes, still_wanted, progress, store);
+}
+
 bool Frame::GetLoaderRegionStats(const StokesRegion& stokes_region, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& xy_origin, const std::vector<CARTA::StatsType>& required_stats,
     std::map<CARTA::StatsType, double>& stats_values) {

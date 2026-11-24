@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <casacore/casa/Utilities/DataType.h>
 #include <casacore/images/Images/ImageInterface.h>
@@ -45,6 +46,17 @@ struct StokesRegion {
 };
 
 class PlaneReadAhead;
+
+// One region of GetRegionMeanSpectra: the corner and the shape of its bounding box in the image, and its mask over that
+// box. The Zarr loader does not read a region without a mask, because the mask is what says which pixels it covers.
+struct LoaderRegion {
+    casacore::IPosition origin;
+    casacore::IPosition shape;
+    casacore::ArrayLattice<casacore::Bool> mask;
+};
+
+// Receives `count` means of region `region`, from channel `first` of the range. The values are valid only during the call.
+using RegionMeansSink = std::function<void(std::size_t region, std::size_t first, std::size_t count, const float* means)>;
 
 class FileLoader {
 public:
@@ -149,6 +161,14 @@ public:
     // Returns false if the loader cannot compute them. Then the caller uses casacore.
     virtual bool GetRegionStats(int z, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
         std::map<CARTA::StatsType, double>& results);
+    // Whether GetRegionMeanSpectra computes mean spectra.
+    virtual bool HasRegionMeanSpectra() const;
+    // The mean spectrum of each region over `z_range`, read in one pass over the pixels and given to `store` in runs of
+    // channels. A channel with no valid pixel is NaN. `progress` gets the fraction of channels done. The read stops when
+    // `still_wanted` returns false. Returns unsupported when the loader cannot read these regions, and the caller then reads
+    // them another way. The other results come after the read began, maybe after some runs.
+    virtual LoaderScan GetRegionMeanSpectra(const std::vector<LoaderRegion>& regions, const AxisRange& z_range, int stokes,
+        const std::function<bool()>& still_wanted, const std::function<void(float)>& progress, const RegionMeansSink& store);
 
     // Get the full name of image file
     std::string GetFileName();

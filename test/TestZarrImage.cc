@@ -1572,3 +1572,152 @@ TEST(ZarrRegionMask, TheMaskOfACapturedRegionIsTheMaskOfThatRegion) {
     ASSERT_EQ(extended_mask.shape(), pattern.shape());
     EXPECT_TRUE(casacore::allEQ(extended_mask.asArray(), pattern));
 }
+
+namespace {
+
+// Counts the loader's mean spectra, and can say that it has none, so that the region handler reads the boxes one at a time.
+class MeanSpectraZarrLoader : public ZarrLoader {
+public:
+    MeanSpectraZarrLoader(const std::string& filename, bool computes) : ZarrLoader(filename), _computes(computes) {}
+    bool HasRegionMeanSpectra() const override {
+        return _computes;
+    }
+    LoaderScan GetRegionMeanSpectra(const std::vector<LoaderRegion>& regions, const AxisRange& z_range, int stokes,
+        const std::function<bool()>& still_wanted, const std::function<void(float)>& progress, const RegionMeansSink& store) override {
+        ++computed;
+        return ZarrLoader::GetRegionMeanSpectra(regions, z_range, stokes, still_wanted, progress, store);
+    }
+    int computed = 0;
+
+private:
+    bool _computes;
+};
+
+// The PV image of a line from (x0, y0) to (x1, y1) in plane `stokes`, as the region handler makes it. Empty if it makes none.
+casacore::Array<float> PvOf(const std::shared_ptr<MeanSpectraZarrLoader>& loader, float x0, float y0, float x1, float y1, int width,
+    bool reverse = false, int stokes = 0) {
+    std::shared_ptr<Frame> frame(new Frame(0, loader, ""));
+    std::string message;
+    if (stokes != frame->CurrentStokes() && !frame->SetImageChannels(frame->CurrentZ(), stokes, message)) {
+        return {};
+    }
+    carta::RegionHandler handler;
+    int region_id(-1);
+    RegionState state(0, CARTA::RegionType::LINE, {Message::Point(x0, y0), Message::Point(x1, y1)}, 0.0);
+    if (!handler.SetRegion(region_id, state, frame->CoordinateSystem())) {
+        return {};
+    }
+    CARTA::PvRequest request;
+    request.set_file_id(0);
+    request.set_region_id(region_id);
+    request.set_width(width);
+    request.set_reverse(reverse);
+    CARTA::PvResponse response;
+    GeneratedImage pv;
+    handler.CalculatePvImage(
+        request, frame, [](float) {}, response, pv);
+    if (!response.success() || !pv.image) {
+        return {};
+    }
+    casacore::Array<float> data;
+    pv.image->getSlice(data, casacore::IPosition(pv.image->ndim(), 0), pv.image->shape(), casacore::IPosition(pv.image->ndim(), 1));
+    return data;
+}
+
+void ExpectSamePv(const casacore::Array<float>& from_loader, const casacore::Array<float>& box_by_box) {
+    ASSERT_FALSE(box_by_box.empty());
+    ASSERT_EQ(from_loader.shape(), box_by_box.shape());
+    EXPECT_TRUE(std::any_of(box_by_box.begin(), box_by_box.end(), [](float value) { return std::isfinite(value); }));
+    auto other = box_by_box.begin();
+    for (auto value = from_loader.begin(); value != from_loader.end(); ++value, ++other) {
+        if (std::isnan(*other)) {
+            EXPECT_TRUE(std::isnan(*value));
+        } else {
+            EXPECT_NEAR(*value, *other, 1e-6 * std::max(1.0f, std::abs(*other)));
+        }
+    }
+}
+
+} // namespace
+
+// Diagonal, horizontal and vertical lines, a line partly off the image, a wide line and a reversed image. The boxes read one
+// at a time are correct only while neighbouring boxes have different bounding boxes, which holds for these lines.
+TEST(ZarrLineProfiles, ThePvImageFromTheLoaderIsTheOneReadBoxByBox) {
+    const std::filesystem::path fixture{ZARR_PIXEL_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "carta-zarr pixel fixture not found at " << fixture;
+    }
+    struct Line {
+        float x0, y0, x1, y1;
+        int width;
+        bool reverse;
+    };
+    const std::vector<Line> lines{{0, 0, 3, 4, 1, false}, {0, 0, 3, 4, 3, false}, {0, 2, 3, 2, 1, false}, {1, 0, 1, 4, 3, false},
+        {-2, -1, 5, 6, 1, false}, {0, 4, 3, 0, 2, true}};
+    for (const auto& line : lines) {
+        SCOPED_TRACE(fmt::format("line ({}, {}) to ({}, {}), width {}", line.x0, line.y0, line.x1, line.y1, line.width));
+        auto fast = std::make_shared<MeanSpectraZarrLoader>(fixture.string(), true);
+        auto slow = std::make_shared<MeanSpectraZarrLoader>(fixture.string(), false);
+        const auto from_loader = PvOf(fast, line.x0, line.y0, line.x1, line.y1, line.width, line.reverse);
+        EXPECT_EQ(fast->computed, 1);
+        ExpectSamePv(from_loader, PvOf(slow, line.x0, line.y0, line.x1, line.y1, line.width, line.reverse));
+        EXPECT_EQ(slow->computed, 0);
+    }
+}
+
+TEST(ZarrLineProfiles, ThePvImageOfAnotherStokesIsReadFromThatStokes) {
+    const std::filesystem::path fixture{ZARR_PIXEL_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "carta-zarr pixel fixture not found at " << fixture;
+    }
+    auto fast = std::make_shared<MeanSpectraZarrLoader>(fixture.string(), true);
+    auto slow = std::make_shared<MeanSpectraZarrLoader>(fixture.string(), false);
+    const auto stokes_0 = PvOf(fast, 0, 0, 3, 4, 1, false, 0);
+    const auto stokes_2 = PvOf(fast, 0, 0, 3, 4, 1, false, 2);
+    ExpectSamePv(stokes_2, PvOf(slow, 0, 0, 3, 4, 1, false, 2));
+    EXPECT_FALSE(casacore::allNearAbs(stokes_0, stokes_2, 1e-6f));
+}
+
+// The mean of a region is the mean of the pixels that its mask selects, from the first channel of the range. A region
+// without a mask is not read.
+TEST(ZarrLineProfiles, ARegionIsReadThroughItsMask) {
+    const std::filesystem::path fixture{ZARR_PIXEL_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "carta-zarr pixel fixture not found at " << fixture;
+    }
+    auto loader = std::make_shared<ZarrLoader>(fixture.string());
+    // The frame opens the image
+    Frame frame(0, loader, "");
+    const casacore::IPosition origin(2, 1, 1);
+    const casacore::IPosition shape(2, 2, 3);
+    casacore::Array<casacore::Bool> selected(shape, true);
+    selected(casacore::IPosition(2, 0, 0)) = false;
+    casacore::Matrix<float> means(1, 1, FLOAT_NAN);
+    const auto store = [&](std::size_t region, std::size_t first, std::size_t count, const float* values) {
+        ASSERT_EQ(first, 0U);
+        ASSERT_EQ(count, 1U);
+        means(region, 0) = values[0];
+    };
+    ASSERT_EQ(loader->GetRegionMeanSpectra(
+                  {{origin, shape, casacore::ArrayLattice<casacore::Bool>(selected)}}, AxisRange(1, 1), 0, {}, {}, store),
+        FileLoader::LoaderScan::finished);
+
+    casacore::Array<float> pixels;
+    loader->GetImage()->getSlice(pixels, casacore::Slicer(casacore::IPosition(4, 1, 1, 1, 0), casacore::IPosition(4, 2, 3, 1, 1)));
+    double sum = 0;
+    int count = 0;
+    for (int y = 0; y < 3; ++y) {
+        for (int x = 0; x < 2; ++x) {
+            const float value = pixels(casacore::IPosition(4, x, y, 0, 0));
+            if (selected(casacore::IPosition(2, x, y)) && std::isfinite(value)) {
+                sum += value;
+                ++count;
+            }
+        }
+    }
+    ASSERT_GT(count, 0);
+    EXPECT_FLOAT_EQ(means(0, 0), static_cast<float>(sum / count));
+
+    EXPECT_EQ(loader->GetRegionMeanSpectra({{origin, shape, casacore::ArrayLattice<casacore::Bool>()}}, AxisRange(1, 1), 0, {}, {}, store),
+        FileLoader::LoaderScan::unsupported);
+}

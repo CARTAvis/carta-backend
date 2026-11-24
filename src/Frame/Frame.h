@@ -195,6 +195,11 @@ public:
         std::map<CARTA::StatsType, double>& stats_values);
     bool GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+    // Whether the loader computes the mean spectra of many regions at once. A caller builds the masks only then.
+    bool HasLoaderRegionMeanSpectra() const;
+    // See FileLoader::GetRegionMeanSpectra.
+    FileLoader::LoaderScan GetLoaderRegionMeanSpectra(const std::vector<LoaderRegion>& regions, const AxisRange& z_range, int stokes,
+        const std::function<bool()>& still_wanted, const std::function<void(float)>& progress, const RegionMeansSink& store);
     bool GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
 
