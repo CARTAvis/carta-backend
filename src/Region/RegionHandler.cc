@@ -1951,7 +1951,15 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
             continue;
         }
 
+        // Region may be removed concurrently; hold shared_ptr and active task lock while in use
         auto region = GetRegion(stats_region_id);
+        if (!region) {
+            continue;
+        }
+        std::shared_lock region_lock(region->GetActiveTaskMutex());
+        if (!region->IsConnected()) {
+            continue;
+        }
 
         for (int stats_file_id : config_file_ids) {
             // Get statistics for specific region id and file id
