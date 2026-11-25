@@ -45,8 +45,13 @@ std::vector<int> RegionStatistics::GetConfigFileIds(int file_id) {
     return file_ids;
 }
 
+std::uint64_t RegionStatistics::GetCacheGeneration() {
+    std::lock_guard<std::mutex> cache_guard(_cache_mutex);
+    return _cache_generation;
+}
+
 bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> frame, const CARTA::SetStatsRequirements_StatsConfig& config,
-    StokesRegion& stokes_region, CARTA::RegionStatsData& stats_data_message) {
+    StokesRegion& stokes_region, std::uint64_t cache_generation, CARTA::RegionStatsData& stats_data_message) {
     bool success(false);
     int z(stokes_region.stokes_source.z_range.from);
     int stokes_index(stokes_region.stokes_source.stokes);
@@ -60,10 +65,8 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
 
     // Check cache
     CacheId cache_id = CacheId(file_id, _region_id, stokes_index, z);
-    std::uint64_t cache_generation;
     {
         std::lock_guard<std::mutex> cache_guard(_cache_mutex);
-        cache_generation = _cache_generation;
         auto cache_it = _cache.find(cache_id);
         if (cache_it != _cache.end()) {
             std::map<CARTA::StatsType, double> stats_results;
@@ -101,7 +104,7 @@ bool RegionStatistics::GetRegionStatsData(int file_id, std::shared_ptr<Frame> fr
         // add values to message
         FillStatistics(stats_data_message, required_stats, stats_results); // Message helper
 
-        // cache results
+        // cache results, unless cache was cleared since region was obtained (may be old region)
         {
             std::lock_guard<std::mutex> cache_guard(_cache_mutex);
             if (cache_generation == _cache_generation) {

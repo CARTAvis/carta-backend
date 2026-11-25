@@ -65,8 +65,13 @@ void RegionHistogram::AddDefaultHistogram(CARTA::RegionHistogramData& histogram_
     FillHistogram(histogram, 1, 0.0, 0.0, histogram_bins, DOUBLE_NAN, DOUBLE_NAN); // Message helper
 }
 
+std::uint64_t RegionHistogram::GetCacheGeneration() {
+    std::lock_guard<std::mutex> cache_guard(_cache_mutex);
+    return _cache_generation;
+}
+
 bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config,
-    StokesRegion& stokes_region, CARTA::RegionHistogramData& histogram_data_message) {
+    StokesRegion& stokes_region, std::uint64_t cache_generation, CARTA::RegionHistogramData& histogram_data_message) {
     auto image_region = stokes_region.image_region;
     auto stokes_source = stokes_region.stokes_source;
 
@@ -83,12 +88,10 @@ bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame>
     int stokes_index = stokes_source.stokes;
     int z = stokes_source.z_range.from;
     CacheId cache_id(file_id, _region_id, stokes_index, z);
-    std::uint64_t cache_generation;
     BasicStats<float> stats;
     bool has_basic_stats(false);
     {
         std::lock_guard<std::mutex> cache_guard(_cache_mutex);
-        cache_generation = _cache_generation;
         auto cache_it = _cache.find(cache_id);
         if (cache_it != _cache.end() && cache_it->second.GetBasicStats(stats)) {
             has_basic_stats = true;
@@ -117,6 +120,7 @@ bool RegionHistogram::GetRegionHistogramData(int file_id, std::shared_ptr<Frame>
     auto* histogram_submessage = histogram_data_message.mutable_histograms();
     FillHistogram(histogram_submessage, stats, calculated_histogram); // Message helper
 
+    // Cache results, unless cache was cleared since region was obtained (may be old region)
     {
         std::lock_guard<std::mutex> cache_guard(_cache_mutex);
         if (cache_generation == _cache_generation) {

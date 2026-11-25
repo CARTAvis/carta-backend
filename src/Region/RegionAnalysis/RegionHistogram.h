@@ -53,16 +53,24 @@ public:
     std::vector<int> GetConfigFileIds(int file_id);
 
     /**
+     * @brief Get cache generation, which changes when the cache is cleared.
+     * @details Must be read before getting the region to pass to GetRegionHistogramData.
+     * @return Cache generation
+     */
+    std::uint64_t GetCacheGeneration();
+
+    /**
      * @brief Add cached or calculated histogram to message.
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
      * @param[in] config Histogram configuration struct
      * @param[in] stokes_region Struct describing region, stokes, and z range
+     * @param[in] cache_generation Cache generation before stokes_region was created; results are not cached if it has changed
      * @param[out] histogram_data_message Region histogram data message
      * @return Whether histogram was added
      */
     bool GetRegionHistogramData(int file_id, std::shared_ptr<Frame> frame, const HistogramConfig& config, StokesRegion& stokes_region,
-        CARTA::RegionHistogramData& histogram_data_message);
+        std::uint64_t cache_generation, CARTA::RegionHistogramData& histogram_data_message);
 
     /** @brief Clear cache when region changes. */
     void ClearCache();
@@ -114,7 +122,7 @@ private:
     /** @brief Cache to hold calculated histograms. */
     std::unordered_map<CacheId, HistogramCache> _cache;
 
-    /** @brief Detect cache invalidation during a histogram calculation. */
+    /** @brief Detect cache invalidation after getting the region for a histogram calculation. */
     std::uint64_t _cache_generation = 0;
 };
 

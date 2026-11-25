@@ -1523,6 +1523,8 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 AxisRange z_range(z);
                 StokesSource stokes_source(stokes_index, z_range);
 
+                // Cache generation must be read before getting the region, so results for an old region are not cached
+                auto cache_generation = region_histogram->GetCacheGeneration();
                 auto lc_region = region->GetLCRegion(
                     hist_file_id, frame->CoordinateSystem(stokes_source), frame->ImageShape(stokes_source), stokes_source);
 
@@ -1533,7 +1535,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 // Fill histogram message
                 CARTA::RegionHistogramData histogram_data_message;
                 if (region_histogram->GetRegionHistogramData(
-                        hist_file_id, frame, histogram_config, stokes_region, histogram_data_message)) {
+                        hist_file_id, frame, histogram_config, stokes_region, cache_generation, histogram_data_message)) {
                     cb(histogram_data_message);
                     success = true;
                 }
@@ -1976,6 +1978,9 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 int z(_frames.at(stats_file_id)->CurrentZ());
                 AxisRange z_range(z);
                 StokesSource stokes_source(stokes_index, z_range);
+
+                // Cache generation must be read before getting the region, so results for an old region are not cached
+                auto cache_generation = region_statistics->GetCacheGeneration();
                 auto lc_region = region->GetLCRegion(
                     stats_file_id, frame->CoordinateSystem(stokes_source), frame->ImageShape(stokes_source), stokes_source);
 
@@ -1984,7 +1989,8 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 StokesRegion stokes_region(stokes_source, image_region);
                 CARTA::RegionStatsData stats_data_message;
 
-                if (region_statistics->GetRegionStatsData(stats_file_id, frame, stats_config, stokes_region, stats_data_message)) {
+                if (region_statistics->GetRegionStatsData(
+                        stats_file_id, frame, stats_config, stokes_region, cache_generation, stats_data_message)) {
                     cb(stats_data_message);
                     success = true;
                 }
