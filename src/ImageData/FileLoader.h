@@ -84,6 +84,10 @@ public:
     std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
     bool FindCoordinateAxes(std::string& message);
 
+    // Slicer for main image or computed stokes image (to be refactored)
+    StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);
+    StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
+
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
 

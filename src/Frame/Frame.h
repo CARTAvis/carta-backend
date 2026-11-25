@@ -109,7 +109,7 @@ public:
     AxesInfo Axes(); // struct of all axes
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
-    // Slicer to set z and stokes ranges with full xy plane
+    // Slicer to set z and stokes ranges with full xy plane: moved to the loader, but wrapped here because region code needs access
     StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);
     StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
 
