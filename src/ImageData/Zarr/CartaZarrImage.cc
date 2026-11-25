@@ -63,12 +63,13 @@ std::optional<casacore::Unit> BrightnessUnit(const std::string& unit) {
 } // namespace
 
 CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& image_id) : _filename(filename) {
-    // From the store the file list already opened
+    // From the store the file list already checked
     std::string reason;
     auto opened = ZarrStores::Instance().Probe(filename)->OpenImage(image_id, reason);
     if (!opened) {
         throw casacore::AipsError(reason);
     }
+    _zarr_context = std::move(opened->context);
     _zarr_image = std::move(opened->image);
     _shape = opened->shape;
 

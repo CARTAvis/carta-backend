@@ -196,7 +196,7 @@ std::shared_ptr<const ZarrStoreProbe> ZarrStores::ProbeUncached(const std::strin
         return probe;
     }
 
-    auto dataset = carta::zarr::Dataset::Open(GetZarrContext(), path);
+    auto dataset = carta::zarr::Dataset::Open(GetZarrProbeContext(), path);
     if (!dataset) {
         const auto code = dataset.error().code;
         // Nothing there, not Zarr, or not an image store
@@ -259,7 +259,13 @@ std::optional<ZarrOpenedImage> ZarrStoreProbe::OpenImage(const std::string& id, 
     // With no id, open the first offered image. The file list also shows that image first.
     const auto& image_id = id.empty() ? offered.front() : id;
 
-    auto image = dataset->OpenImage(image_id);
+    auto context = GetZarrContext();
+    auto shared = carta::zarr::Dataset::Open(*context, path);
+    if (!shared) {
+        reason = "Failed to open XRADIO dataset: " + shared.error().message;
+        return std::nullopt;
+    }
+    auto image = shared->OpenImage(image_id);
     if (!image) {
         reason = "Failed to open XRADIO image '" + image_id + "': " + image.error().message;
         return std::nullopt;
@@ -268,7 +274,7 @@ std::optional<ZarrOpenedImage> ZarrStoreProbe::OpenImage(const std::string& id, 
     if (!shape) {
         return std::nullopt;
     }
-    return ZarrOpenedImage{std::move(image.value()), *shape};
+    return ZarrOpenedImage{std::move(image.value()), std::move(context), *shape};
 }
 
 void ZarrStores::Clear() {

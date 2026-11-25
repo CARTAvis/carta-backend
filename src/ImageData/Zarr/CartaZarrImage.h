@@ -7,6 +7,7 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARR_CARTAZARRIMAGE_H_
 #define CARTA_SRC_IMAGEDATA_ZARR_CARTAZARRIMAGE_H_
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -62,6 +63,8 @@ private:
     void AddNotes(std::vector<ZarrNote> notes);
 
     std::string _filename;
+    // Keeps the shared context and its cache while the image or a copy of it is open
+    std::shared_ptr<const carta::zarr::Context> _zarr_context;
     std::optional<carta::zarr::Image> _zarr_image;
     // CARTA's four axes in CARTA's order; see CartaShape in ZarrStores.h
     casacore::IPosition _shape;
