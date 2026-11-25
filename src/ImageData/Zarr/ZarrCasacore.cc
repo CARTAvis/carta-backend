@@ -27,6 +27,7 @@
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
 #include <casacore/measures/Measures/MCDirection.h>
 #include <casacore/measures/Measures/MDirection.h>
+#include <casacore/measures/Measures/MDoppler.h>
 #include <casacore/measures/Measures/MEpoch.h>
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/measures/Measures/MPosition.h>
@@ -76,6 +77,24 @@ casacore::MFrequency::Types SpectralReferenceFrame(const std::string& frame) {
         throw casacore::AipsError("Unsupported XRADIO spectral reference frame: " + frame);
     }
     return result;
+}
+
+// Returns the velocity convention that `doppler_type` names.
+// An empty or unknown value gives RADIO, which is also what FITS assumes.
+casacore::MDoppler::Types VelocityDoppler(const std::string& doppler_type) {
+    if (doppler_type == "optical" || doppler_type == "z") {
+        return casacore::MDoppler::Z;
+    }
+    if (doppler_type == "ratio") {
+        return casacore::MDoppler::RATIO;
+    }
+    if (doppler_type == "true" || doppler_type == "relativistic" || doppler_type == "beta") {
+        return casacore::MDoppler::BETA;
+    }
+    if (doppler_type == "gamma") {
+        return casacore::MDoppler::GAMMA;
+    }
+    return casacore::MDoppler::RADIO;
 }
 
 casacore::Projection DirectionProjection(const carta::zarr::DirectionCoordinate& descriptor) {
@@ -167,6 +186,7 @@ casacore::SpectralCoordinate MakeSpectralCoordinate(const carta::zarr::SpectralC
     casacore::Vector<casacore::String> units(1);
     units[0] = unit;
     coordinate.setWorldAxisUnits(units);
+    coordinate.setVelocity("km/s", VelocityDoppler(descriptor.doppler_type));
     return coordinate;
 }
 
