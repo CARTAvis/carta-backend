@@ -109,12 +109,13 @@ private:
 } // namespace
 
 CartaZarrImage::CartaZarrImage(const std::string& filename, const std::string& image_id) : _filename(filename) {
-    // From the store the file list already opened
+    // From the store the file list already checked
     std::string reason;
     auto opened = ZarrStores::Instance().Probe(filename)->OpenImage(image_id, reason);
     if (!opened) {
         throw casacore::AipsError(reason);
     }
+    _zarr_context = std::move(opened->context);
     _zarr_image = std::move(opened->image);
     _shape = opened->shape;
 
@@ -250,8 +251,14 @@ carta::zarr::ReadOptions CartaZarrImage::ThroughOwnCache(const carta::zarr::Read
 std::function<std::shared_ptr<void>(std::uint64_t bytes)> CartaZarrImage::OwnCache() {
     auto cache = std::make_shared<CacheOfItsOwn>();
     _own_cache = cache;
-    return [cache](std::uint64_t bytes) -> std::shared_ptr<void> {
-        auto pool = GetZarrContext().CreateCachePool(static_cast<std::size_t>(bytes));
+    // Weak, so that the function does not keep the shared context after the image closes
+    std::weak_ptr<const carta::zarr::Context> weak_context = _zarr_context;
+    return [cache, weak_context](std::uint64_t bytes) -> std::shared_ptr<void> {
+        const auto context = weak_context.lock();
+        if (!context) {
+            return nullptr;
+        }
+        auto pool = context->CreateCachePool(static_cast<std::size_t>(bytes));
         if (!pool) {
             spdlog::warn("A moment reads through the session's cache: {}", pool.error().message);
             return nullptr;

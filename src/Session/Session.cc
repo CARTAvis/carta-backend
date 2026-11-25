@@ -195,6 +195,11 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             message = "Unsupported format.";
             return file_info_ok;
         }
+        // The file browser does not keep a Zarr loader. Its open image would keep the shared chunk cache in
+        // memory after every displayed image has closed. See GetZarrContext.
+        if (file_info.type() == CARTA::FileType::ZARR) {
+            _loaders.Remove(fullname);
+        }
         loader->SetAipsBeamSupport(support_aips_beam);
         FileExtInfoLoader ext_info_loader(loader);
 
@@ -589,6 +594,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             } else {
                 err_message = frame->GetErrorMessage();
             }
+        } else if (file_info.type() == CARTA::FileType::ZARR) {
+            // Its open image would keep the shared chunk cache in memory; see FillExtendedFileInfo
+            _loaders.Remove(fullname);
         }
     }
 
