@@ -9,6 +9,8 @@
 #ifndef CARTA_SRC_REGION_REGIONANALYSIS_REGIONSTATISTICS_H_
 #define CARTA_SRC_REGION_REGIONANALYSIS_REGIONSTATISTICS_H_
 
+#include <cstdint>
+#include <mutex>
 #include <vector>
 
 #include "Cache/RequirementsCache.h"
@@ -52,16 +54,24 @@ public:
     std::vector<int> GetConfigFileIds(int file_id);
 
     /**
+     * @brief Get cache generation, which changes when the cache is cleared.
+     * @details Must be read before getting the region to pass to GetRegionStatsData.
+     * @return Cache generation
+     */
+    std::uint64_t GetCacheGeneration();
+
+    /**
      * @brief Add cached or calculated statistics to message.
      * @param[in] file_id File id for image frame
      * @param[in] frame Image frame
      * @param[in] config Statistics configuration
      * @param[in] stokes_region Struct holding image region and struct describing stokes and z range
+     * @param[in] cache_generation Cache generation before stokes_region was created; results are not cached if it has changed
      * @param[in, out] stats_data_message Region stats data message
      * @return Whether statistics were added
      */
     bool GetRegionStatsData(int file_id, std::shared_ptr<Frame> frame, const CARTA::SetStatsRequirements_StatsConfig& config,
-        StokesRegion& stokes_region, CARTA::RegionStatsData& stats_data_message);
+        StokesRegion& stokes_region, std::uint64_t cache_generation, CARTA::RegionStatsData& stats_data_message);
 
     /** @brief Clear cache when region changes. */
     void ClearCache();
@@ -86,8 +96,17 @@ private:
     /** @brief Requirements map. */
     std::unordered_map<ConfigId, RegionStatsConfig> _configs;
 
+    /** @brief Lock for _configs. Never held together with _cache_mutex. */
+    std::mutex _config_mutex;
+
+    /** @brief Lock for _cache and _cache_generation; never held during statistics calculation. */
+    std::mutex _cache_mutex;
+
     /** @brief Cache to hold calculations. */
     std::unordered_map<CacheId, StatsCache> _cache;
+
+    /** @brief Detect cache invalidation after getting the region for a statistics calculation. */
+    std::uint64_t _cache_generation = 0;
 };
 
 } // namespace carta
