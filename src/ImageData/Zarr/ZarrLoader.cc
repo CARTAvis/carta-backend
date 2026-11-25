@@ -26,11 +26,11 @@ namespace {
 
 // A cache pool that keeps nothing, so a read does not evict chunks from the shared cache.
 // Returns nothing if there is no shared cache, or if the pool cannot be made. Then the read uses the default pool.
-std::optional<carta::zarr::CachePool> PoolThatKeepsNothing() {
+std::optional<carta::zarr::CachePool> PoolThatKeepsNothing(const CartaZarrImage& image) {
     if (ZarrCacheBytes() == 0) {
         return std::nullopt;
     }
-    auto pool = GetZarrContext().CreateCachePool(0);
+    auto pool = image.SharedContext().CreateCachePool(0);
     if (!pool) {
         spdlog::warn("A spectrum reads through the session's cache: {}", pool.error().message);
         return std::nullopt;
@@ -56,7 +56,7 @@ std::optional<carta::zarr::CachePool> PoolForSpectrum(const CartaZarrImage& imag
             image.ZarrImage().DecodedChunkBytes(), cache_bytes)) {
         return std::nullopt;
     }
-    return PoolThatKeepsNothing();
+    return PoolThatKeepsNothing(image);
 }
 
 // The statistics that CalcBasicStats gives for the same pixels. Sigma comes from the centered moment instead
@@ -338,7 +338,7 @@ FileLoader::LoaderScan ZarrLoader::GetPlaneStats(int stokes, const std::function
 
     carta::zarr::ReadOptions options;
     // The chunks are not kept. Even when the whole cube fits in the cache, the histogram pass is no faster with them.
-    options.control.cache_pool = PoolThatKeepsNothing();
+    options.control.cache_pool = PoolThatKeepsNothing(*image);
     options.control.cancellation_requested = cancelled;
 
     const auto reduced = image->ZarrImage().ReduceSpectral(
@@ -381,7 +381,7 @@ FileLoader::LoaderScan ZarrLoader::GetPlaneHistograms(
     request.upper = bounds.max;
 
     carta::zarr::ReadOptions options;
-    options.control.cache_pool = PoolThatKeepsNothing();
+    options.control.cache_pool = PoolThatKeepsNothing(*image);
     options.control.cancellation_requested = cancelled;
 
     std::vector<int> bins(static_cast<std::size_t>(num_bins));

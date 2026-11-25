@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -18,6 +19,8 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "ImageData/Zarr/CartaZarrImage.h"
+#include "ImageData/Zarr/ZarrContext.h"
+#include "ImageData/Zarr/ZarrStores.h"
 #include "Session/Session.h"
 #include "Util/Message.h"
 
@@ -211,6 +214,14 @@ public:
         response.set_success(success);
 
         SessionFileInfoTest::CheckFileInfoResponse(response, request_filename, request_file_type, request_hdu);
+    }
+
+    // The extended file info of `file` in `directory`, as the file browser asks for it
+    bool BrowseFileInfo(const std::string& directory, const std::string& file) {
+        CARTA::FileInfo file_info;
+        std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+        std::string message;
+        return FillExtendedFileInfo(extended_info_map, file_info, directory, file, "", false, message);
     }
 
     FRIEND_TEST(FileExtInfoLoaderTest, FitsHistoryEntries);
@@ -431,3 +442,16 @@ TEST_P(FileExtInfoTestWithParam, Issue1632) {
 }
 
 INSTANTIATE_TEST_SUITE_P(Issue1632Files, FileExtInfoTestWithParam, ::testing::Values("bad.fits", "bad.fits.gz"));
+
+// The file browser does not keep a Zarr image open, so the shared context and its cache are freed
+TEST(ZarrFileBrowser, TheFileInfoOfAZarrImageDoesNotKeepTheSharedContext) {
+    const std::filesystem::path store{ZARR_PIXEL_FIXTURE};
+    if (!std::filesystem::exists(store)) {
+        GTEST_SKIP() << "carta-zarr pixel fixture not found at " << store;
+    }
+    ZarrStores::Instance().Clear();
+    TestSession session;
+    ASSERT_TRUE(session.BrowseFileInfo(store.parent_path().string(), store.filename().string()));
+    std::weak_ptr<const carta::zarr::Context> context = GetZarrContext();
+    EXPECT_TRUE(context.expired());
+}

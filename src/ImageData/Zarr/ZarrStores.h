@@ -68,6 +68,8 @@ ZarrOffer OfferedImages(const carta::zarr::DatasetDescriptor& dataset);
 // An image of a store, opened as CARTA displays it
 struct ZarrOpenedImage {
     carta::zarr::Image image;
+    // The shared context the image was opened with; see GetZarrContext
+    std::shared_ptr<const carta::zarr::Context> context;
     // In CARTA's order; see CartaShape
     casacore::IPosition shape;
 };
@@ -79,7 +81,7 @@ struct ZarrStoreProbe {
     // The file list still lists such a store, so that opening it shows the reason.
     // False for a plain folder, a file, or a Zarr store that does not hold images.
     bool is_zarr = false;
-    // Set when the store opened
+    // Set when the store opened. It is opened with the probe context, so it keeps no chunks.
     std::optional<carta::zarr::Dataset> dataset;
     // The images CARTA offers, the default first
     std::vector<std::string> offered;
@@ -89,6 +91,7 @@ struct ZarrStoreProbe {
     // The size of the store, measured on first use and then kept; zero for a store that will not open
     ZarrStoreSize Size() const;
     // Opens image `id`. With no id, it opens the first offered image.
+    // It opens the store again with the shared context, so that the image's reads use the shared cache.
     // If CARTA cannot display the image, it returns nothing and sets `reason`.
     std::optional<ZarrOpenedImage> OpenImage(const std::string& id, std::string& reason) const;
 
@@ -102,8 +105,8 @@ private:
 
 // The Zarr stores this process has opened. Each store is kept for ZARR_STORES_TTL.
 // The file list, the file info, the choice of loader and the image all ask the same questions about a path:
-// is it a Zarr image store, which images does it offer, and how large is it. This class opens and measures
-// each path once, and all of them share the result.
+// is it a Zarr image store, which images does it offer, and how large is it. This class answers them once
+// for each path, and all of them share the result. An image opens its store again; see OpenImage.
 //
 // An entry also expires when the directory's own timestamp changes. That only catches changes to its
 // entry list, not writes deeper in the store.

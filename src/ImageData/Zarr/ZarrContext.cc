@@ -7,8 +7,10 @@
 #include "ZarrContext.h"
 
 #include <algorithm>
+#include <condition_variable>
 #include <cstddef>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -25,9 +27,13 @@ namespace {
 constexpr std::size_t BYTES_PER_GIB = 1024U * 1024U * 1024U;
 
 std::mutex context_mutex;
-std::optional<carta::zarr::Context> shared_context;
-// The cache size of the shared context, in bytes
-std::size_t shared_cache_bytes = 0;
+// Signalled when a shared context has been destroyed
+std::condition_variable context_destroyed;
+// The shared contexts made and not yet destroyed
+int contexts_alive = 0;
+// The options that ConfigureZarrContext set
+std::optional<carta::zarr::ContextOptions> configured_options;
+std::weak_ptr<const carta::zarr::Context> shared_context;
 
 // The options in use
 void LogZarrContextOptions(const carta::zarr::ContextOptions& options) {
@@ -55,14 +61,29 @@ carta::zarr::Context CreateContext(const carta::zarr::ContextOptions& options, c
     return *std::move(default_context);
 }
 
-// The shared context, made with the defaults if none was configured. The caller holds context_mutex.
-const carta::zarr::Context& SharedContext() {
-    if (!shared_context) {
-        carta::zarr::ContextOptions used;
-        shared_context = CreateContext(DefaultZarrContextOptions(), used);
-        shared_cache_bytes = used.cache_bytes.value_or(0);
-    }
-    return *shared_context;
+// A shared context, with a count of the contexts not yet destroyed. The count goes down only after the
+// context and its cache are gone, because members are destroyed in reverse order.
+struct SharedContext {
+    struct Count {
+        ~Count() {
+            {
+                std::scoped_lock lock(context_mutex);
+                --contexts_alive;
+            }
+            context_destroyed.notify_all();
+        }
+    } count;
+    carta::zarr::Context context;
+
+    explicit SharedContext(carta::zarr::Context made) : context(std::move(made)) {}
+};
+
+// Makes the shared context with `options`. The caller holds context_mutex.
+std::shared_ptr<const carta::zarr::Context> MakeSharedContext(
+    const carta::zarr::ContextOptions& options, carta::zarr::ContextOptions& used) {
+    auto holder = std::make_shared<SharedContext>(CreateContext(options, used));
+    ++contexts_alive;
+    return {holder, &holder->context};
 }
 
 } // namespace
@@ -87,22 +108,55 @@ carta::zarr::ContextOptions DefaultZarrContextOptions() {
 
 void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count) {
     const auto options = ZarrContextOptions(file_io_concurrency, data_copy_concurrency, cache_pool_gib, omp_thread_count);
+    // Made once here only to report refused options at startup
     carta::zarr::ContextOptions used;
-    auto context = CreateContext(options, used);
+    CreateContext(options, used);
     std::scoped_lock lock(context_mutex);
-    shared_context = std::move(context);
-    shared_cache_bytes = used.cache_bytes.value_or(0);
+    configured_options = used;
+}
+
+std::shared_ptr<const carta::zarr::Context> GetZarrContext() {
+    std::unique_lock lock(context_mutex);
+    // Waits while the last context is still being destroyed, so that there is never more than one cache
+    while (contexts_alive > 0) {
+        if (auto context = shared_context.lock()) {
+            return context;
+        }
+        context_destroyed.wait(lock);
+    }
+    carta::zarr::ContextOptions used;
+    auto context = MakeSharedContext(configured_options.value_or(DefaultZarrContextOptions()), used);
+    // A context that falls back to the defaults does not change the settings for the next one
+    if (!configured_options) {
+        configured_options = used;
+    }
+    shared_context = context;
+    return context;
+}
+
+const carta::zarr::Context& GetZarrProbeContext() {
+    // Never destroyed, because other threads may still use it while the process exits
+    static const auto* context = [] {
+        carta::zarr::ContextOptions options;
+        {
+            // The same file IO limit as the shared context, so that one slow listing does not hold up the others
+            std::scoped_lock lock(context_mutex);
+            options.io_threads = configured_options.value_or(DefaultZarrContextOptions()).io_threads;
+        }
+        options.decode_threads = 1;
+        options.cache_bytes = 0;
+        auto created = carta::zarr::Context::Create(options);
+        if (!created) {
+            throw casacore::AipsError("Failed to create the carta-zarr context for the file list: " + created.error().message);
+        }
+        return new carta::zarr::Context(*std::move(created));
+    }();
+    return *context;
 }
 
 std::size_t ZarrCacheBytes() {
     std::scoped_lock lock(context_mutex);
-    SharedContext();
-    return shared_cache_bytes;
-}
-
-carta::zarr::Context GetZarrContext() {
-    std::scoped_lock lock(context_mutex);
-    return SharedContext();
+    return configured_options.value_or(DefaultZarrContextOptions()).cache_bytes.value_or(0);
 }
 
 } // namespace carta
