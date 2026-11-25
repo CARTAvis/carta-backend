@@ -39,9 +39,6 @@
 #define CURRENT_Z -1
 #define ALL_Z -2
 
-// stokes (computed stokes in Stokes.h)
-#define CURRENT_STOKES -1
-
 // raster image data
 #define TILE_SIZE 256
 #define CHUNK_SIZE 512
