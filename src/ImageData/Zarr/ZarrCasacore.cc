@@ -8,7 +8,12 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <regex>
 #include <string>
+#include <type_traits>
+#include <variant>
 
 #include <casacore/casa/Arrays/Matrix.h>
 #include <casacore/casa/Exceptions/Error.h>
@@ -20,10 +25,12 @@
 #include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
+#include <casacore/measures/Measures/MCDirection.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/MEpoch.h>
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/measures/Measures/MPosition.h>
+#include <casacore/measures/Measures/MeasFrame.h>
 #include <casacore/measures/Measures/Stokes.h>
 #include <spdlog/fmt/fmt.h>
 
@@ -179,13 +186,60 @@ casacore::StokesCoordinate MakeStokesCoordinate(const carta::zarr::PolarizationC
     return casacore::StokesCoordinate(stokes);
 }
 
+// The equinox fixed by a casacore direction frame, for J2000 and B1950
+std::optional<double> EquinoxOf(casacore::MDirection::Types type) {
+    switch (type) {
+        case casacore::MDirection::J2000:
+            return 2000.0;
+        case casacore::MDirection::B1950:
+            return 1950.0;
+        default:
+            return std::nullopt;
+    }
+}
+
+// Returns the pointing center in `direction_type`, the frame of the image's direction coordinate. casacore keeps
+// the pointing center without a frame, and the header shows it as OBSRA and OBSDEC in the image's frame.
+// Without a direction coordinate, the pointing center stays in its own frame. `frame` holds the time and
+// place that a frame such as AZEL needs, when the store gives them.
+std::optional<casacore::MVDirection> PointingCenter(const carta::zarr::SkyDirection& pointing,
+    std::optional<casacore::MDirection::Types> direction_type, const casacore::MeasFrame& frame, std::vector<ZarrNote>& notes) {
+    const casacore::MVDirection value(casacore::Quantity(pointing.value[0], "deg"), casacore::Quantity(pointing.value[1], "deg"));
+    try {
+        const auto pointing_type = DirectionReferenceFrame(pointing.reference_frame);
+        // As for the direction coordinate, FK5 and FK4 at another equinox are read at J2000 and B1950
+        const auto fixed = EquinoxOf(pointing_type);
+        if (fixed && pointing.equinox && *pointing.equinox != *fixed) {
+            const auto equinox = fmt::format("{:.6g}", *pointing.equinox);
+            notes.push_back(ZarrNote{ZarrNoteTopic::none,
+                "pointing center equinox " + equinox + " read as " + std::string(casacore::MDirection::showType(pointing_type)),
+                "pointing center frame " + pointing.reference_frame + " names equinox " + equinox +
+                    ", which casacore cannot hold; the pointing center is read as " +
+                    std::string(casacore::MDirection::showType(pointing_type))});
+        }
+        if (!direction_type || *direction_type == pointing_type) {
+            return value;
+        }
+        const casacore::MDirection::Ref from(pointing_type, frame);
+        return casacore::MDirection::Convert(casacore::MDirection(value, from), casacore::MDirection::Ref(*direction_type, frame))()
+            .getValue();
+    } catch (const casacore::AipsError& error) {
+        notes.push_back(ZarrNote{ZarrNoteTopic::none, "pointing center omitted",
+            "pointing center in frame " + pointing.reference_frame + " could not be used: " + std::string(error.getMesg()) +
+                "; the pointing center is left out"});
+        return std::nullopt;
+    }
+}
+
 void SetObservationInfo(casacore::CoordinateSystem& coordinate_system, const std::optional<carta::zarr::ObservationInfo>& descriptor,
-    std::vector<ZarrNote>& notes) {
+    std::optional<casacore::MDirection::Types> direction_type, std::vector<ZarrNote>& notes) {
     if (!descriptor) {
         return;
     }
 
     casacore::ObsInfo observation;
+    // The time and place of the observation, for a pointing center in a frame that needs them
+    casacore::MeasFrame frame;
     if (!descriptor->observer.empty()) {
         observation.setObserver(casacore::String(descriptor->observer));
     }
@@ -200,6 +254,7 @@ void SetObservationInfo(casacore::CoordinateSystem& coordinate_system, const std
                 "observation time scale " + descriptor->time_scale + " is one casacore cannot hold; the observation date is left out"});
         } else {
             observation.setObsDate(casacore::MEpoch(casacore::Quantity(*descriptor->observation_mjd, "d"), epoch_type));
+            frame.set(observation.obsDate());
         }
     }
     if (descriptor->observatory_position) {
@@ -208,19 +263,19 @@ void SetObservationInfo(casacore::CoordinateSystem& coordinate_system, const std
         observation.setTelescopePosition(
             casacore::MPosition(casacore::MVPosition(position[0], position[1], position[2]), casacore::MPosition::ITRF));
     }
-    coordinate_system.setObsInfo(observation);
-}
-
-// The equinox fixed by a casacore direction frame, for J2000 and B1950
-std::optional<double> EquinoxOf(casacore::MDirection::Types type) {
-    switch (type) {
-        case casacore::MDirection::J2000:
-            return 2000.0;
-        case casacore::MDirection::B1950:
-            return 1950.0;
-        default:
-            return std::nullopt;
+    // casacore also sets the position of a telescope that it knows by name
+    if (observation.isTelescopePositionSet()) {
+        frame.set(observation.telescopePosition());
     }
+    // casacore's pointing center is (0,0) until it is set, and XRADIO writes that (0,0) from a CASA image.
+    // So (0,0) is taken as not set, although a real pointing at (0,0) is then left out.
+    const auto& pointing_center = descriptor->pointing_center;
+    if (pointing_center && (pointing_center->value[0] != 0.0 || pointing_center->value[1] != 0.0)) {
+        if (const auto pointing = PointingCenter(*pointing_center, direction_type, frame, notes)) {
+            observation.setPointingCenter(*pointing);
+        }
+    }
+    coordinate_system.setObsInfo(observation);
 }
 
 } // namespace
@@ -266,7 +321,11 @@ ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& des
     }
     made.coordinates.addCoordinate(MakeSpectralCoordinate(*descriptor.spectral));
     made.coordinates.addCoordinate(MakeStokesCoordinate(*descriptor.polarization));
-    SetObservationInfo(made.coordinates, descriptor.observation, made.notes);
+    std::optional<casacore::MDirection::Types> direction_type;
+    if (descriptor.direction) {
+        direction_type = made.coordinates.directionCoordinate().directionType();
+    }
+    SetObservationInfo(made.coordinates, descriptor.observation, direction_type, made.notes);
     if (!descriptor.direction) {
         return made; // the aperture plane has no celestial frame
     }
@@ -285,6 +344,55 @@ ZarrCoordinates MakeZarrCoordinateSystem(const carta::zarr::ImageDescriptor& des
                 ", which casacore cannot hold; its coordinates are read as " + read_as});
     }
     return made;
+}
+
+casacore::Record MakeZarrMiscInfo(const std::vector<carta::zarr::UserKeyword>& keywords) {
+    // The cards that casacore writes from the image itself. A user keyword of the same name would add a second
+    // card, change the Stokes axis that CRVALn describes, or stop the header if its type differs.
+    // COMMENT and HISTORY are cards with no value, which the file info does not show.
+    static const std::regex written_by_casacore(
+        "SIMPLE|XTENSION|BITPIX|EXTEND|PCOUNT|GCOUNT|BUNIT|BSCALE|BZERO|BLANK|END|DATE|ORIGIN|COMMENT|HISTORY|CASAMBM|NAXIS[0-9]*|"
+        "(CTYPE|CRVAL|CDELT|CRPIX|CUNIT|CROTA)[0-9]+|(PC|CD|PV|PS)[0-9]+_[0-9]+",
+        std::regex::icase);
+    // The longest string a FITS card holds
+    constexpr std::size_t longest_string = 68;
+
+    casacore::Record record;
+    for (const auto& keyword : keywords) {
+        if (keyword.name.empty() || std::regex_match(keyword.name, written_by_casacore)) {
+            continue;
+        }
+        const casacore::String name(keyword.name);
+        std::visit(
+            [&](const auto& value) {
+                using Value = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<Value, std::string>) {
+                    // The cut moves back to the start of a UTF-8 character, so that no character is split
+                    auto length = std::min(value.size(), longest_string);
+                    while (length < value.size() && length > 0 && (static_cast<unsigned char>(value[length]) & 0xC0) == 0x80) {
+                        --length;
+                    }
+                    record.define(name, casacore::String(value.substr(0, length)));
+                } else if constexpr (std::is_same_v<Value, std::int64_t>) {
+                    // casacore writes an integer card from an Int. A larger integer is a Double while a Double holds it
+                    // exactly, up to 2^53, and a string of its digits beyond.
+                    constexpr std::int64_t exact_in_double = std::int64_t{1} << 53;
+                    if (value >= std::numeric_limits<casacore::Int>::min() && value <= std::numeric_limits<casacore::Int>::max()) {
+                        record.define(name, static_cast<casacore::Int>(value));
+                    } else if (value >= -exact_in_double && value <= exact_in_double) {
+                        record.define(name, static_cast<casacore::Double>(value));
+                    } else {
+                        record.define(name, casacore::String(std::to_string(value)));
+                    }
+                } else if constexpr (std::is_same_v<Value, bool>) {
+                    record.define(name, casacore::Bool(value));
+                } else {
+                    record.define(name, casacore::Double(value));
+                }
+            },
+            keyword.value);
+    }
+    return record;
 }
 
 casacore::ImageInfo::ImageTypes MakeZarrImageType(const std::string& sub_type) {
