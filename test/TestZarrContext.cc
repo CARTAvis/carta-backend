@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <memory>
 #include <optional>
 
 #include <gtest/gtest.h>
@@ -86,4 +87,16 @@ TEST(ZarrContextTest, TheRecordedCacheIsTheConfiguredOne) {
 TEST(ZarrContextTest, ConfigureThenGetDoesNotThrow) {
     EXPECT_NO_THROW(carta::ConfigureZarrContext(2, 1, 0, 1));
     EXPECT_NO_THROW(carta::GetZarrContext());
+}
+
+TEST(ZarrContextTest, TheContextIsSharedWhileItIsHeld) {
+    carta::ConfigureZarrContext(2, 1, 0, 1);
+    const auto first = carta::GetZarrContext();
+    EXPECT_EQ(carta::GetZarrContext(), first);
+}
+
+TEST(ZarrContextTest, TheBackendDoesNotHoldTheContext) {
+    carta::ConfigureZarrContext(2, 1, 0, 1);
+    std::weak_ptr<const carta::zarr::Context> context = carta::GetZarrContext();
+    EXPECT_TRUE(context.expired());
 }

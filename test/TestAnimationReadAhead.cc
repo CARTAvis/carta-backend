@@ -84,7 +84,7 @@ std::shared_ptr<PlaneReadAhead> Load() {
 class ThroughPool : public PlaneReadAhead {
 public:
     ThroughPool(std::shared_ptr<PlaneReadAhead> planes, std::size_t bytes)
-        : _planes(std::move(planes)), _pool(GetZarrContext().CreateCachePool(bytes).value()) {}
+        : _planes(std::move(planes)), _pool(GetZarrContext()->CreateCachePool(bytes).value()) {}
     std::optional<ZarrPlaneRead> Plane(int z, int stokes) const override {
         auto plane = _planes->Plane(z, stokes);
         if (plane) {
