@@ -187,6 +187,19 @@ TEST(ZarrCasacore, ASpectralAxisWithNoLinearDescriptionIsTabular) {
     EXPECT_DOUBLE_EQ(world, 1.403e9) << "the last channel is where it was listed, not where a line would put it";
 }
 
+TEST(ZarrCasacore, TheVelocityConventionIsCarried) {
+    auto descriptor = Described();
+    EXPECT_EQ(MakeZarrCoordinateSystem(descriptor).coordinates.spectralCoordinate().velocityDoppler(), casacore::MDoppler::RADIO)
+        << "a store that names no convention is radio";
+    descriptor.spectral->doppler_type = "z";
+    EXPECT_EQ(MakeZarrCoordinateSystem(descriptor).coordinates.spectralCoordinate().velocityDoppler(), casacore::MDoppler::Z);
+    descriptor.spectral->doppler_type = "relativistic";
+    EXPECT_EQ(MakeZarrCoordinateSystem(descriptor).coordinates.spectralCoordinate().velocityDoppler(), casacore::MDoppler::BETA);
+    descriptor.spectral->doppler_type = "Optical";
+    EXPECT_EQ(MakeZarrCoordinateSystem(descriptor).coordinates.spectralCoordinate().velocityDoppler(), casacore::MDoppler::RADIO)
+        << "a value that the schema does not allow is radio";
+}
+
 TEST(ZarrCasacore, WhatCasacoreCannotExpressIsRefused) {
     auto projection = Described();
     projection.direction->projection = "NOT_A_PROJECTION";
