@@ -268,6 +268,38 @@ TEST_F(ZarrImageTest, AnApertureImageOpensWithUuAndVv) {
     EXPECT_EQ(extended_info.height(), 4);
 }
 
+// A user keyword of the store is a card of the header that the file info shows
+TEST_F(ZarrImageTest, AUserKeywordIsAHeaderCard) {
+    const std::filesystem::path fixture{ZARR_XRADIO_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio fixture not found at " << fixture;
+    }
+    auto loader = FileLoader::GetLoader(fixture.string());
+    ASSERT_NE(loader, nullptr);
+    CARTA::FileInfoExtended extended_info;
+    std::string message;
+    ASSERT_TRUE(FileExtInfoLoader(loader).FillFileExtInfo(extended_info, fixture.filename().string(), "SKY", message)) << message;
+    const auto& entries = extended_info.header_entries();
+    const auto exposure = std::find_if(entries.begin(), entries.end(), [](const auto& entry) { return entry.name() == "EXPOSURE"; });
+    ASSERT_NE(exposure, entries.end()) << "the user keyword exposure is not in the header";
+    EXPECT_DOUBLE_EQ(exposure->numeric_value(), 12.5);
+}
+
+// XRADIO writes casacore's unset pointing center (0,0) from a CASA image, and the header shows none
+TEST_F(ZarrImageTest, AnUnsetPointingCenterIsNotAHeaderCard) {
+    const std::filesystem::path fixture{ZARR_XRADIO_FLAGGED_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio flagged fixture not found at " << fixture;
+    }
+    auto loader = FileLoader::GetLoader(fixture.string());
+    ASSERT_NE(loader, nullptr);
+    CARTA::FileInfoExtended extended_info;
+    std::string message;
+    ASSERT_TRUE(FileExtInfoLoader(loader).FillFileExtInfo(extended_info, fixture.filename().string(), "SKY", message)) << message;
+    const auto& entries = extended_info.header_entries();
+    EXPECT_TRUE(std::none_of(entries.begin(), entries.end(), [](const auto& entry) { return entry.name() == "OBSRA"; }));
+}
+
 // The library opens every image of a dataset with two times, but CARTA displays one time, so none is
 // offered, and opening one anyway says why.
 TEST_F(ZarrImageTest, ADatasetWithTwoTimesListsNoImage) {
