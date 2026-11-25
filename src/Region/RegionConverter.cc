@@ -32,14 +32,7 @@ RegionConverter::RegionConverter(const RegionState& state, std::shared_ptr<casac
 // ****************************************************************************
 // Apply region to reference image in world coordinates (WCRegion) and save wcs control points
 
-bool RegionConverter::ReferenceRegionValid() {
-    // Call InitReferenceWCRegion() first
-    return bool(std::atomic_load(&_reference_region));
-}
-
 void RegionConverter::InitReferenceWCRegion() {
-    // Set reference region and wcs control points exactly once, even with concurrent callers.
-    // Other callers block until it completes, so members are fully set when this returns.
     std::call_once(_reference_region_once, &RegionConverter::SetReferenceWCRegion, this);
 }
 
@@ -49,6 +42,7 @@ void RegionConverter::SetReferenceWCRegion() {
     // Do not call directly: use InitReferenceWCRegion() for thread safety.
     // Supports closed (not line-type) annotation regions, for conversion to matched image LCRegion then Record for export.
     // Rotated box is rotated, do not use for Record!
+    _wcs_control_points.clear();
     casacore::WCRegion* region(nullptr);
     std::vector<casacore::Quantity> world_points; // for converting one point at a time
     casacore::IPosition pixel_axes(2, 0, 1);      // first and second axes only
@@ -129,8 +123,7 @@ void RegionConverter::SetReferenceWCRegion() {
         spdlog::error("region type {} failed: {}", type, err.getMesg());
     }
 
-    std::shared_ptr<casacore::WCRegion> shared_region = std::shared_ptr<casacore::WCRegion>(region);
-    std::atomic_store(&_reference_region, shared_region);
+    _reference_region.reset(region);
 }
 
 bool RegionConverter::RectangleControlPointsToWorld(std::vector<casacore::Quantity>& world_corners) {
@@ -305,9 +298,8 @@ std::shared_ptr<casacore::LCRegion> RegionConverter::GetConvertedLCRegion(int fi
         // Convert reference WCRegion to LCRegion using output csys and shape
         InitReferenceWCRegion();
 
-        if (ReferenceRegionValid()) {
-            std::shared_ptr<const casacore::WCRegion> reference_region = std::atomic_load(&_reference_region);
-            lc_region.reset(reference_region->toLCRegion(*output_csys.get(), output_shape));
+        if (_reference_region) {
+            lc_region.reset(_reference_region->toLCRegion(*output_csys.get(), output_shape));
         }
     } catch (const casacore::AipsError& err) {
         if (report_error) {

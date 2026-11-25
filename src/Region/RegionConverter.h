@@ -9,9 +9,10 @@
 #ifndef CARTA_SRC_REGION_REGIONCONVERTER_H_
 #define CARTA_SRC_REGION_REGIONCONVERTER_H_
 
-#include <atomic>
+#include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
@@ -41,9 +42,8 @@ public:
 
 private:
     // Reference region in world coordinates (reference coordinate system)
-    void InitReferenceWCRegion(); // thread-safe, calls SetReferenceWCRegion once
+    void InitReferenceWCRegion();
     void SetReferenceWCRegion();
-    bool ReferenceRegionValid();
     bool RectangleControlPointsToWorld(std::vector<casacore::Quantity>& wcs_points);
     bool EllipseControlPointsToWorld(std::vector<casacore::Quantity>& wcs_points, float& ellipse_rotation);
     bool CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
