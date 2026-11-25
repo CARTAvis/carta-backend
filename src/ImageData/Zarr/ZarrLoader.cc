@@ -210,9 +210,8 @@ bool ZarrLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, 
         request.emit_every_channels = _region_spectral_channels_per_emit;
 
         carta::zarr::ReadOptions options;
-        // The chunks are not kept. The finished channels are kept in the pace, so the chunks are rarely read again.
-        // Keeping them would evict the chunks of the displayed plane.
-        options.control.cache_pool = PoolThatKeepsNothing();
+        options.control.cache_pool =
+            PoolForSpectrum(*image, origin(0), origin(1), mask_shape(0), mask_shape(1), range.from, static_cast<std::int64_t>(channels));
         // Stop part way through a run once the profile is not wanted. One run can be a whole layer of chunks.
         options.control.cancellation_requested = [&]() { return still_wanted && !still_wanted(); };
         const auto deadline = std::chrono::steady_clock::now() + _region_spectral_time;
