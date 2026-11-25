@@ -477,9 +477,11 @@ bool CompressedFits::IsBeamTable(const std::string& fits_block, BeamTableInfo& b
         } else if (keyword == "NPOL") {
             beam_table_info.npol = std::stoi(value);
         } else if (keyword.startsWith("TTYPE") || keyword.startsWith("TUNIT")) {
-            // Store column info
-            std::string index_str(1, keyword.lastchar());
-            int index = std::atoi(index_str.c_str());
+            // Store column info, for columns 1 to TFIELDS
+            int index(0);
+            if (!StringToInt(keyword.substr(5), index) || index < 1 || index > beam_table_info.ncol) {
+                continue;
+            }
 
             if (beam_table_info.column_info.size() < index) {
                 beam_table_info.column_info.resize(index);

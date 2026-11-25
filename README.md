@@ -78,7 +78,7 @@ This repository includes several dependencies as submodules:
 * [sse2neon](https://github.com/DLTcollab/sse2neon) for ARM support
 
 Two submodules are not required for building the main source:
-* [image-generator](https://github.com/idia-astro/image-generator) for creating FITS images (from the unit tests; soon to be deprecated)
+* [carta-backend-test-data](https://github.com/CARTAvis/carta-backend-test-data) contains test data and tools to generate (some of) it (only needed to run the unit tests)
 * [Doxygen Awesome](https://github.com/jothepro/doxygen-awesome-css), a Doxygen stylesheet (for generating the developer documentation)
 
 You can fetch the submodule contents after you clone the repository:

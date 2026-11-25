@@ -147,6 +147,21 @@ TEST_F(FileListTest, AccessForbiddenFolder) {
 
     auto request2 = FileListTest::FileListRequest("../../..");
     TestFileList(TestRoot(), "", request2, false);
+
+    auto request3 = FileListTest::FileListRequest("../mix");
+    TestFileList(FitsImages(), "", request3, false);
+}
+
+TEST_F(FileListTest, AccessSymlinkedFolder) {
+    // Sites link shared data into users' folders, so a symlink in the top-level folder can point outside it
+    auto top_level_folder = fs::weakly_canonical(fs::temp_directory_path()) / "carta_symlink_test";
+    fs::remove_all(top_level_folder);
+    fs::create_directories(top_level_folder);
+    fs::create_directory_symlink(MixedImages(), top_level_folder / "mix");
+
+    TestFileList(top_level_folder, "", FileListTest::FileListRequest("mix"));
+
+    fs::remove_all(top_level_folder);
 }
 
 TEST_F(FileListTest, TestFilterModes) {

@@ -429,3 +429,41 @@ TEST_F(RegionImportExportTest, TestDs9WorldExportImport) {
     // Check that all regions were imported
     ASSERT_EQ(import_ack1.regions_size(), num_regions);
 }
+
+TEST_F(RegionImportExportTest, ExportedTextStaysOnItsLine) {
+    auto loader = carta::FileLoader::GetLoader(FitsImages() / "noise_10px_10px.fits");
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    std::string text = "x\"};circle(5,5,2)\nssh-ed25519 AAAA injected";
+
+    for (auto file_type : {CARTA::CRTF, CARTA::DS9_REG}) {
+        carta::RegionHandler region_handler;
+        int file_id(0);
+        int num_regions = SetAllRegions(region_handler, file_id, frame->CoordinateSystem());
+        std::map<int, CARTA::RegionStyle> region_style_map;
+        for (int region_id = 1; region_id <= num_regions; ++region_id) {
+            auto style = GetRegionStyle(region_handler.GetRegion(region_id)->GetRegionState().type);
+            style.set_name(text);
+            if (style.has_annotation_style()) {
+                style.mutable_annotation_style()->set_text_label0(text);
+                style.mutable_annotation_style()->set_text_label1(text);
+                style.mutable_annotation_style()->set_font(text);
+            }
+            region_style_map[region_id] = style;
+        }
+        std::string filename;
+        CARTA::ExportRegionAck export_ack;
+        region_handler.ExportRegion(file_id, frame, file_type, CARTA::PIXEL, region_style_map, filename, false, export_ack);
+        ASSERT_TRUE(export_ack.success());
+
+        auto contents = ConcatContents({export_ack.contents().begin(), export_ack.contents().end()});
+        std::istringstream lines(contents);
+        std::string line;
+        while (std::getline(lines, line)) {
+            EXPECT_NE(line.rfind("ssh-ed25519", 0), 0) << (file_type == CARTA::CRTF ? "CRTF" : "DS9") << " line: " << line;
+        }
+
+        CARTA::ImportRegionAck import_ack;
+        region_handler.ImportRegion(file_id, frame, file_type, contents, false, import_ack);
+        EXPECT_EQ(import_ack.regions_size(), num_regions) << (file_type == CARTA::CRTF ? "CRTF" : "DS9");
+    }
+}

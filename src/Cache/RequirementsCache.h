@@ -9,55 +9,15 @@
 
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
+#include "Util/Key.h"
 #include "Util/Message.h"
 
 namespace carta {
 
-struct ConfigId {
-    int file_id;
-    int region_id;
-
-    ConfigId() {}
-    ConfigId(int file, int region) : file_id(file), region_id(region) {}
-
-    bool operator==(const ConfigId& rhs) const {
-        return (file_id == rhs.file_id) && (region_id == rhs.region_id);
-    }
-};
-
-struct ConfigIdHash {
-    std::size_t operator()(ConfigId const& id) const noexcept {
-        std::size_t h1 = std::hash<int>{}(id.file_id);
-        std::size_t h2 = std::hash<int>{}(id.region_id);
-        return h1 ^ (h2 << 1);
-    }
-};
-
-// -------------------------------
-
-struct CacheId {
-    int file_id;
-    int region_id;
-    int stokes;
-    int channel;
-
-    CacheId() {}
-    CacheId(int file, int region, int stokes, int channel = -1) : file_id(file), region_id(region), stokes(stokes), channel(channel) {}
-
-    bool operator==(const CacheId& rhs) const {
-        return (file_id == rhs.file_id) && (region_id == rhs.region_id) && (stokes == rhs.stokes) && (channel == rhs.channel);
-    }
-};
-
-struct CacheIdHash {
-    std::size_t operator()(CacheId const& id) const noexcept {
-        std::size_t h1 = std::hash<int>{}(id.file_id);
-        std::size_t h2 = std::hash<int>{}(id.region_id);
-        std::size_t h3 = std::hash<int>{}(id.stokes);
-        std::size_t h4 = std::hash<int>{}(id.channel);
-        return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
-    }
-};
+/** @brief Key used to store configs per file and region */
+using ConfigId = FileRegionKey;
+/** @brief Key used to store cached data per file, region, polarization, and Z */
+using CacheId = FileRegionChannelKey;
 
 // -------------------------------
 

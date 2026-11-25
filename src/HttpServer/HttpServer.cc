@@ -637,12 +637,23 @@ nlohmann::json HttpServer::GetObjectFromPath(const fs::path& path, const std::st
     return obj;
 }
 
+fs::path HttpServer::GetObjectPath(const std::string& object_type, const std::string& object_name) {
+    using namespace std::string_literals;
+    // The name is a file name in the object folder, so a / would leave the folder and a NUL would cut off the .json
+    static const std::regex illegal("[/\0]"s);
+    if (std::regex_search(object_name, illegal)) {
+        spdlog::warn("Rejecting invalid {} name.", object_type);
+        return {};
+    }
+    return _config_folder / (object_type + "s") / (object_name + ".json");
+}
+
 nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, const std::string& object_name) {
-    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
+    auto object_path = GetObjectPath(object_type, object_name);
     json obj = {};
     std::error_code error_code;
 
-    if (fs::is_regular_file(object_path, error_code)) {
+    if (!object_path.empty() && fs::is_regular_file(object_path, error_code)) {
         obj = GetObjectFromPath(object_path, object_type);
     }
 
@@ -672,7 +683,10 @@ nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
 }
 
 bool HttpServer::WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj) {
-    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
+    auto object_path = GetObjectPath(object_type, object_name);
+    if (object_path.empty()) {
+        return false;
+    }
 
     // Ensure correct schema value is written
     if (OBJECT_TYPES.count(object_type)) {
@@ -741,8 +755,8 @@ std::string_view HttpServer::ClearObjectFromString(const std::string& object_typ
         if (post_data[field_name].is_string()) {
             std::string object_name = post_data[field_name];
             if (!object_name.empty()) {
-                auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
-                if (fs::exists(object_path) && fs::is_regular_file(object_path)) {
+                auto object_path = GetObjectPath(object_type, object_name);
+                if (!object_path.empty() && fs::exists(object_path) && fs::is_regular_file(object_path)) {
                     fs::remove(object_path);
                     return HTTP_200;
                 }
