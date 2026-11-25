@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-* Fixed incorrect scientic notation parsing ([#1632](https://github.com/CARTAvis/carta-backend/issues/1632)).
 * Fixed error importing incorrect region name from a CRTF region file ([#1626](https://github.com/CARTAvis/carta-backend/issues/1626)).
+* Fixed incorrect scientic notation parsing ([#1632](https://github.com/CARTAvis/carta-backend/issues/1632)).
+* Fixed incorrect specrtral frame displayed in cubes with WAVE-LOG ([#1633](https://github.com/CARTAvis/carta-backend/issues/1633)). 
 * Fixed regression that prevented calculation of image stats for computed Stokes ([#1652](https://github.com/CARTAvis/carta-backend/issues/1652)).
 * Fixed key clash affecting some cached channel histograms and stats ([#1651](https://github.com/CARTAvis/carta-backend/issues/1651)).
 
