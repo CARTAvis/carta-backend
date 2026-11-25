@@ -28,16 +28,23 @@ bool Region::UpdateRegion(const RegionState& new_state) {
     bool valid = CheckPoints(new_state.control_points, new_state.type);
 
     if (valid) {
-        // discern changes
-        auto state = GetRegionState();
-        _region_changed = (state.RegionChanged(new_state));
-        if (_region_changed) {
-            ResetRegionCache();
+        bool changed(false);
+        {
+            // Discern changes and set new region state.
+            // Increment cache generation with the state change, so cache entries computed from the old state are not stored.
+            std::lock_guard<std::mutex> guard(_region_state_mutex);
+            changed = _region_state.RegionChanged(new_state);
+            _region_state = new_state;
+            if (changed) {
+                ++_cache_generation;
+            }
         }
 
-        // set new region state
-        std::lock_guard<std::mutex> guard(_region_state_mutex);
-        _region_state = new_state;
+        // Invalidate cache after new state is set, so it cannot be repopulated from the old state
+        _region_changed = changed;
+        if (changed) {
+            ResetRegionCache();
+        }
     } else { // keep existing state
         _region_changed = false;
     }
@@ -56,9 +63,19 @@ void Region::ResetRegionCache() {
 std::shared_ptr<RegionConverter> Region::GetRegionConverter() {
     auto converter = std::atomic_load(&_region_converter);
     if (!converter) {
+        // Generation must be read before the state used to create the converter
+        auto generation = _cache_generation.load();
         auto new_converter = std::make_shared<RegionConverter>(GetRegionState(), _coord_sys);
+
         if (std::atomic_compare_exchange_strong(&_region_converter, &converter, new_converter)) {
             converter = new_converter;
+
+            if (_cache_generation.load() != generation) {
+                // Region changed while creating converter, which may use old state: remove it from cache (if not already removed).
+                // Still return it to this caller, whose request was concurrent with the change.
+                auto expected = new_converter;
+                std::atomic_compare_exchange_strong(&_region_converter, &expected, std::shared_ptr<RegionConverter>());
+            }
         }
     }
     return converter;
@@ -159,6 +176,9 @@ std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared
     if (!lcregion) {
         if (IsInReferenceImage(file_id)) {
             if (!_lcregion_set || Stokes::IsComputed(stokes_source.stokes)) {
+                // Generation must be read before the state used to create the LCRegion
+                auto generation = _cache_generation.load();
+
                 // Create LCRegion from TableRecord
                 casacore::TableRecord region_record;
                 if (GetRegionState().IsRotbox()) {
@@ -174,13 +194,15 @@ std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared
                     // Region is outside image
                 }
 
-                // Cache LCRegion and set flag
+                // Cache LCRegion and set flag, unless region changed while creating it (may use old state)
                 if (stokes_source.IsOriginalImage()) {
-                    if (lcregion) {
-                        std::lock_guard<std::mutex> guard(_lcregion_mutex);
-                        _lcregion = lcregion;
+                    std::lock_guard<std::mutex> guard(_lcregion_mutex);
+                    if (_cache_generation.load() == generation) {
+                        if (lcregion) {
+                            _lcregion = lcregion;
+                        }
+                        _lcregion_set = true; // attempt was made even if lcregion failed (outside image)
                     }
-                    _lcregion_set = true; // attempt was made even if lcregion failed (outside image)
                 }
             }
         } else {
