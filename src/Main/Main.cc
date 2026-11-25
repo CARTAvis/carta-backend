@@ -143,6 +143,9 @@ int main(int argc, char* argv[]) {
                         "frontend_folder argument.");
                 }
             }
+            if (!frontend_path.empty()) {
+                frontend_path = fs::absolute(frontend_path);
+            }
 
             if (!url_prefix.empty()) {
                 std::regex allowed_prefix("[0-9A-Za-z+/@_-]*");
@@ -232,6 +235,9 @@ int main(int argc, char* argv[]) {
                     spdlog::debug("To use the CARTA scripting interface, send POST requests to {}", scripting_url);
                 }
             }
+
+            // casacore resolves library names from image files against the working directory
+            fs::current_path("/");
 
             session_manager->RunApp();
         }
