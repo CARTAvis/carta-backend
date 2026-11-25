@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <thread>
 #include <utility>
@@ -20,6 +21,7 @@
 
 #include "FileList/FileInfoLoader.h"
 #include "ImageData/Zarr/CartaZarrImage.h"
+#include "ImageData/Zarr/ZarrContext.h"
 #include "ImageData/Zarr/ZarrStores.h"
 #include "Util/Casacore.h"
 
@@ -258,6 +260,45 @@ TEST_F(ZarrStoresTest, AProbeIsKeptOnlyForTheTtl) {
     const auto first = stores.Probe(store);
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     EXPECT_NE(stores.Probe(store), first);
+}
+
+// A probe does not hold the backend's handle to the shared context
+TEST_F(ZarrStoresTest, AProbeDoesNotHoldTheSharedContext) {
+    const auto probe = ZarrStores::Instance().Probe(AStore().string());
+    ASSERT_TRUE(probe->dataset.has_value());
+    std::weak_ptr<const carta::zarr::Context> context = GetZarrContext();
+    EXPECT_TRUE(context.expired());
+}
+
+TEST_F(ZarrStoresTest, AnImageHoldsTheSharedContextUntilItCloses) {
+    auto image = std::make_unique<CartaZarrImage>(AStore().string());
+    std::weak_ptr<const carta::zarr::Context> context = GetZarrContext();
+    EXPECT_FALSE(context.expired());
+    image.reset();
+    EXPECT_TRUE(context.expired());
+}
+
+TEST_F(ZarrStoresTest, TwoImagesShareTheContextUntilBothClose) {
+    auto first = std::make_unique<CartaZarrImage>(AStore("a.zarr").string());
+    std::weak_ptr<const carta::zarr::Context> context = GetZarrContext();
+    auto second = std::make_unique<CartaZarrImage>(AStore("b.zarr").string());
+    EXPECT_EQ(GetZarrContext(), context.lock());
+
+    first.reset();
+    EXPECT_FALSE(context.expired());
+    second.reset();
+    EXPECT_TRUE(context.expired());
+}
+
+TEST_F(ZarrStoresTest, AClonedImageKeepsTheContext) {
+    auto image = std::make_unique<CartaZarrImage>(AStore().string());
+    std::unique_ptr<casacore::ImageInterface<float>> clone(image->cloneII());
+    std::weak_ptr<const carta::zarr::Context> context = GetZarrContext();
+
+    image.reset();
+    EXPECT_FALSE(context.expired());
+    clone.reset();
+    EXPECT_TRUE(context.expired());
 }
 
 TEST_F(ZarrStoresTest, TheLeastRecentlyUsedProbeIsForgotten) {

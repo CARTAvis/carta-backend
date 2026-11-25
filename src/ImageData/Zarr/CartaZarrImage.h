@@ -64,6 +64,10 @@ public:
     const carta::zarr::Image& ZarrImage() const {
         return *_zarr_image;
     }
+    // The shared context the image reads through
+    const carta::zarr::Context& SharedContext() const {
+        return *_zarr_context;
+    }
     void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride) override;
     const casacore::LatticeRegion* getRegionPtr() const override;
     void resize(const casacore::TiledShape& newShape) override;
@@ -128,6 +132,8 @@ private:
     std::shared_ptr<CacheOfItsOwn> _own_cache;
 
     std::string _filename;
+    // Keeps the shared context and its cache while the image or a copy of it is open
+    std::shared_ptr<const carta::zarr::Context> _zarr_context;
     std::optional<carta::zarr::Image> _zarr_image;
     // CARTA's four axes in CARTA's order; see CartaShape in ZarrStores.h
     casacore::IPosition _shape;
