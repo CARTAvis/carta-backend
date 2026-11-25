@@ -50,7 +50,18 @@ void Region::ResetRegionCache() {
     std::lock_guard<std::mutex> guard(_lcregion_mutex);
     _lcregion.reset();
     _lcregion_set = false;
-    _region_converter.reset();
+    std::atomic_store(&_region_converter, std::shared_ptr<RegionConverter>());
+}
+
+std::shared_ptr<RegionConverter> Region::GetRegionConverter() {
+    auto converter = std::atomic_load(&_region_converter);
+    if (!converter) {
+        auto new_converter = std::make_shared<RegionConverter>(GetRegionState(), _coord_sys);
+        if (std::atomic_compare_exchange_strong(&_region_converter, &converter, new_converter)) {
+            converter = new_converter;
+        }
+    }
+    return converter;
 }
 
 // *************************************************************************
@@ -173,10 +184,8 @@ std::shared_ptr<casacore::LCRegion> Region::GetLCRegion(int file_id, std::shared
                 }
             }
         } else {
-            if (!_region_converter) {
-                _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
-            }
-            return _region_converter->GetImageRegion(file_id, image_csys, image_shape, stokes_source, report_error);
+            auto region_converter = GetRegionConverter();
+            return region_converter->GetImageRegion(file_id, image_csys, image_shape, stokes_source, report_error);
         }
     }
 
@@ -195,10 +204,8 @@ std::shared_ptr<casacore::LCRegion> Region::GetCachedLCRegion(int file_id, const
         std::lock_guard<std::mutex> guard(_lcregion_mutex);
         return _lcregion;
     } else {
-        if (!_region_converter) {
-            _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
-        }
-        return _region_converter->GetCachedLCRegion(file_id);
+        auto region_converter = GetRegionConverter();
+        return region_converter->GetCachedLCRegion(file_id);
     }
 
     // Not cached
@@ -239,10 +246,8 @@ casacore::TableRecord Region::GetImageRegionRecord(
     if (IsInReferenceImage(file_id)) {
         record = GetControlPointsRecord(image_shape);
     } else {
-        if (!_region_converter) {
-            _region_converter.reset(new RegionConverter(GetRegionState(), _coord_sys));
-        }
-        record = _region_converter->GetImageRegionRecord(file_id, csys, image_shape);
+        auto region_converter = GetRegionConverter();
+        record = region_converter->GetImageRegionRecord(file_id, csys, image_shape);
     }
 
     if (!record.isDefined("isRegion")) {

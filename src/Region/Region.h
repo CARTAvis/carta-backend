@@ -112,8 +112,9 @@ private:
     std::mutex _lcregion_mutex;
     bool _lcregion_set; // may be nullptr if outside image
 
-    // Converter to handle region applied to matched image
-    std::unique_ptr<RegionConverter> _region_converter;
+    // Access only via std::atomic_load/std::atomic_store (see GetRegionConverter) for thread safety.
+    std::shared_ptr<RegionConverter> _region_converter;
+    std::shared_ptr<RegionConverter> GetRegionConverter();
 
     // Communication:
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
