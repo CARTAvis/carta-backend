@@ -25,6 +25,7 @@
 using carta::MakeZarrBeamSet;
 using carta::MakeZarrCoordinateSystem;
 using carta::MakeZarrImageType;
+using carta::MakeZarrMiscInfo;
 using carta::NotesFromDiagnostics;
 using carta::ZarrNoteTopic;
 using carta::zarr::DiagnosticCode;
@@ -212,6 +213,133 @@ TEST(ZarrCasacore, TheObservationIsCarried) {
     const auto position = info.telescopePosition().getValue().getValue();
     EXPECT_DOUBLE_EQ(position[0], 1.0) << "three doubles are Cartesian, not longitude, latitude and height";
     EXPECT_DOUBLE_EQ(position[2], 3.0);
+}
+
+// The pointing center of an image with an equatorial direction, in degrees
+casacore::Vector<casacore::Double> PointingOf(
+    const std::string& frame, double longitude, double latitude, carta::ZarrCoordinates* made = nullptr) {
+    auto descriptor = Described();
+    carta::zarr::ObservationInfo observation;
+    observation.pointing_center = carta::zarr::SkyDirection{frame, std::nullopt, {longitude, latitude}};
+    descriptor.observation = observation;
+    auto coordinates = MakeZarrCoordinateSystem(descriptor);
+    const auto info = coordinates.coordinates.obsInfo();
+    if (made) {
+        *made = coordinates;
+    }
+    if (info.isPointingCenterInitial()) {
+        return {};
+    }
+    return info.pointingCenter().getAngle("deg").getValue();
+}
+
+TEST(ZarrCasacore, ThePointingCenterIsInTheFrameOfTheDirection) {
+    const auto fk5 = PointingOf("FK5", 10.5, 20.25);
+    ASSERT_EQ(fk5.size(), 2u);
+    EXPECT_NEAR(fk5[0], 10.5, 1e-9);
+    EXPECT_NEAR(fk5[1], 20.25, 1e-9);
+
+    // The north galactic pole, which is at RA 192.85948 and Dec 27.12825 in J2000. casacore puts it 0.5" away.
+    const auto pole = PointingOf("GALACTIC", 0.0, 90.0);
+    ASSERT_EQ(pole.size(), 2u);
+    // casacore gives the longitude between -180 and 180 degrees
+    EXPECT_NEAR(std::fmod(pole[0] + 360.0, 360.0), 192.85948, 1e-3)
+        << "a pointing center in another frame is converted to the image's frame";
+    EXPECT_NEAR(pole[1], 27.12825, 1e-3);
+}
+
+TEST(ZarrCasacore, APointingCenterAtAnotherEquinoxIsReadAtTheFramesAndSaid) {
+    auto descriptor = Described();
+    carta::zarr::ObservationInfo observation;
+    observation.pointing_center = carta::zarr::SkyDirection{"FK5", 1950.0, {10.5, 20.25}};
+    descriptor.observation = observation;
+    const auto made = MakeZarrCoordinateSystem(descriptor);
+    const auto pointing = made.coordinates.obsInfo().pointingCenter().getAngle("deg").getValue();
+    EXPECT_NEAR(pointing[0], 10.5, 1e-9);
+    EXPECT_NEAR(pointing[1], 20.25, 1e-9);
+    const auto said = std::find_if(made.notes.begin(), made.notes.end(),
+        [](const carta::ZarrNote& note) { return note.detail.find("pointing center frame FK5 names equinox 1950") != std::string::npos; });
+    EXPECT_NE(said, made.notes.end());
+}
+
+// AZEL needs the time and the place of the observation to be converted. Without them it is left out.
+TEST(ZarrCasacore, APointingCenterInAzelUsesTheObservation) {
+    auto descriptor = Described();
+    carta::zarr::ObservationInfo observation;
+    observation.observation_mjd = 59000.0;
+    observation.observatory_position = std::array<double, 3>{2225142.18, -5440307.37, -2481029.85}; // ALMA
+    observation.pointing_center = carta::zarr::SkyDirection{"AZEL", std::nullopt, {180.0, 60.0}};
+    descriptor.observation = observation;
+    const auto made = MakeZarrCoordinateSystem(descriptor);
+    ASSERT_FALSE(made.coordinates.obsInfo().isPointingCenterInitial()) << (made.notes.empty() ? "" : made.notes.back().detail);
+    // South at elevation 60 is 30 degrees south of the zenith, at ALMA's latitude of -23 degrees
+    EXPECT_NEAR(made.coordinates.obsInfo().pointingCenter().getAngle("deg").getValue()[1], -53.0, 0.5);
+
+    descriptor.observation->observation_mjd.reset();
+    descriptor.observation->observatory_position.reset();
+    EXPECT_TRUE(MakeZarrCoordinateSystem(descriptor).coordinates.obsInfo().isPointingCenterInitial())
+        << "a conversion that needs the time and the place does not use made-up ones";
+
+    descriptor.observation->observation_mjd = 59000.0;
+    descriptor.observation->telescope_name = "ALMA";
+    EXPECT_FALSE(MakeZarrCoordinateSystem(descriptor).coordinates.obsInfo().isPointingCenterInitial()) << "casacore knows where ALMA is";
+}
+
+TEST(ZarrCasacore, APointingCenterAtZeroIsNotSet) {
+    EXPECT_TRUE(PointingOf("FK5", 0.0, 0.0).empty()) << "(0,0) is casacore's pointing center before it is set";
+    EXPECT_FALSE(PointingOf("FK5", 0.0, 30.0).empty()) << "a pointing center with one coordinate at 0 is set";
+}
+
+TEST(ZarrCasacore, APointingCenterInAFrameCasacoreLacksIsLeftOutAndSaid) {
+    carta::ZarrCoordinates made;
+    EXPECT_TRUE(PointingOf("NOT_A_FRAME", 10.0, 20.0, &made).empty());
+    const auto said = std::find_if(made.notes.begin(), made.notes.end(),
+        [](const carta::ZarrNote& note) { return note.detail.find("NOT_A_FRAME") != std::string::npos; });
+    EXPECT_NE(said, made.notes.end());
+}
+
+TEST(ZarrCasacore, AnApertureImageKeepsThePointingCenterAsWritten) {
+    auto descriptor = ApertureDescribed();
+    carta::zarr::ObservationInfo observation;
+    observation.pointing_center = carta::zarr::SkyDirection{"GALACTIC", std::nullopt, {10.0, 20.0}};
+    descriptor.observation = observation;
+    const auto info = MakeZarrCoordinateSystem(descriptor).coordinates.obsInfo();
+    ASSERT_FALSE(info.isPointingCenterInitial());
+    const auto pointing = info.pointingCenter().getAngle("deg").getValue();
+    EXPECT_NEAR(pointing[0], 10.0, 1e-9) << "an image without a direction has no frame to convert to";
+    EXPECT_NEAR(pointing[1], 20.0, 1e-9);
+}
+
+TEST(ZarrCasacore, UserKeywordsAreMiscInfoOfTheirTypes) {
+    const auto record =
+        MakeZarrMiscInfo({{"instrume", std::string("ALMA")}, {"ncombine", std::int64_t{3}}, {"large", std::int64_t{4294967297}},
+            {"huge", std::int64_t{9007199254740993}}, {"distance", 101.5}, {"pbcor", true}, {"", std::string("no name")}});
+    EXPECT_EQ(record.nfields(), 6u) << "a keyword with no name is left out";
+    EXPECT_EQ(record.asString("instrume"), "ALMA");
+    EXPECT_EQ(record.dataType("ncombine"), casacore::TpInt);
+    EXPECT_EQ(record.asInt("ncombine"), 3);
+    EXPECT_EQ(record.dataType("large"), casacore::TpDouble) << "casacore writes an integer card from 32 bits";
+    EXPECT_DOUBLE_EQ(record.asDouble("large"), 4294967297.0);
+    EXPECT_EQ(record.asString("huge"), "9007199254740993") << "a Double would round it";
+    EXPECT_DOUBLE_EQ(record.asDouble("distance"), 101.5);
+    EXPECT_TRUE(record.asBool("pbcor"));
+}
+
+TEST(ZarrCasacore, AUserKeywordDoesNotReplaceACardOfTheImage) {
+    const auto record = MakeZarrMiscInfo({{"bunit", std::string("K")}, {"crval4", 2.0}, {"NAXIS1", std::int64_t{5}}, {"pc1_2", 0.5},
+        {"date", 5.0}, {"ORIGIN", std::int64_t{5}}, {"comment", std::string("a comment")}, {"History", std::string("made")},
+        {"casambm", 1.5}, {"field", std::string("J0423-0120")}});
+    EXPECT_EQ(record.nfields(), 1u);
+    EXPECT_EQ(record.asString("field"), "J0423-0120");
+}
+
+TEST(ZarrCasacore, AUserKeywordStringIsCutToACard) {
+    const auto record = MakeZarrMiscInfo({{"note", std::string(100, 'x')}});
+    EXPECT_EQ(std::string(record.asString("note")), std::string(68, 'x'));
+
+    // "é" is two bytes, at bytes 67 and 68, so the cut would split it
+    const auto accented = MakeZarrMiscInfo({{"note", std::string(67, 'x') + "\xC3\xA9" + "y"}});
+    EXPECT_EQ(std::string(accented.asString("note")), std::string(67, 'x'));
 }
 
 // A time scale casacore does not know leaves out only the observation date

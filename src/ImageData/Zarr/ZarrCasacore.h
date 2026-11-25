@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include <casacore/casa/Containers/Record.h>
 #include <casacore/casa/aipstype.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/images/Images/ImageBeamSet.h>
@@ -61,6 +62,12 @@ struct ZarrBeams {
 // XRADIO writes casacore's type names without spaces, for example "SpectralIndex" for "Spectral Index".
 // If sub_type is empty or casacore does not know it, the type is Intensity, which is casacore's default.
 casacore::ImageInfo::ImageTypes MakeZarrImageType(const std::string& sub_type);
+
+// Returns the user keywords as casacore misc info, which the FITS header shows as cards. A keyword with no
+// name is left out, and so is one that names a card casacore writes from the image, such as BUNIT or CRVAL3.
+// A string is cut to the 68 characters of a FITS card. An integer that does not fit in 32 bits is a Double,
+// or a string beyond 2^53.
+casacore::Record MakeZarrMiscInfo(const std::vector<carta::zarr::UserKeyword>& keywords);
 
 // The beams at the first time slice, for an image of `channels` by `polarizations` planes. A table casacore
 // refuses is ignored and noted.
