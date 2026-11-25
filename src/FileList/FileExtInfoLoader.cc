@@ -499,7 +499,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
         }
 
         // Fill HeaderEntry fields
-        CARTA::HeaderEntry* header_entry;
+        CARTA::HeaderEntry* header_entry(nullptr);
 
         switch (fkw->type()) {
             case casacore::FITS::NOVALUE:
@@ -574,7 +574,10 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                 break;
             }
         }
-        header_entry->set_comment(fkw->comm());
+        // A card with no value, such as COMMENT, has no entry
+        if (header_entry) {
+            header_entry->set_comment(fkw->comm());
+        }
         fkw = fhi.kw.next(); // get next keyword
     }
 }

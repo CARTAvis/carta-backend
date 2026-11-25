@@ -185,6 +185,9 @@ void CartaZarrImage::SetUpImage() {
             image_info.setBeams(*beams);
         }
         setImageInfo(image_info);
+        if (!descriptor.user_keywords.empty()) {
+            setMiscInfoMember(MakeZarrMiscInfo(descriptor.user_keywords));
+        }
     } catch (const casacore::AipsError&) {
         throw;
     } catch (const std::exception& error) {
