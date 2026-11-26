@@ -346,6 +346,17 @@ TEST(ZarrCasacore, AUserKeywordDoesNotReplaceACardOfTheImage) {
     EXPECT_EQ(record.asString("field"), "J0423-0120");
 }
 
+TEST(ZarrCasacore, AUserKeywordThatIsNotAFitsKeywordIsLeftOut) {
+    const auto record = MakeZarrMiscInfo({{"key.cdelt1", std::string("cdelt1")}, {"key.cdelt2", std::string("cdelt2")},
+        {"key.x", std::string("dot")}, {"telescop1", std::string("too long")}, {"class___", std::string("kept")},
+        {"proj-id", std::string("kept")}, {"OBSGEO-Z", 1.0}, {"2ndpass", true}});
+    EXPECT_EQ(record.nfields(), 4u);
+    EXPECT_EQ(record.asString("class___"), "kept");
+    EXPECT_EQ(record.asString("proj-id"), "kept");
+    EXPECT_TRUE(record.isDefined("OBSGEO-Z"));
+    EXPECT_TRUE(record.isDefined("2ndpass"));
+}
+
 TEST(ZarrCasacore, AUserKeywordStringIsCutToACard) {
     const auto record = MakeZarrMiscInfo({{"note", std::string(100, 'x')}});
     EXPECT_EQ(std::string(record.asString("note")), std::string(68, 'x'));
