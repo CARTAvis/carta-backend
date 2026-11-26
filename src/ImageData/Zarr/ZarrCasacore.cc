@@ -374,12 +374,15 @@ casacore::Record MakeZarrMiscInfo(const std::vector<carta::zarr::UserKeyword>& k
         "SIMPLE|XTENSION|BITPIX|EXTEND|PCOUNT|GCOUNT|BUNIT|BSCALE|BZERO|BLANK|END|DATE|ORIGIN|COMMENT|HISTORY|CASAMBM|NAXIS[0-9]*|"
         "(CTYPE|CRVAL|CDELT|CRPIX|CUNIT|CROTA)[0-9]+|(PC|CD|PV|PS)[0-9]+_[0-9]+",
         std::regex::icase);
+    // casacore cuts a longer name to 8 characters. It writes a name with other characters anyway and logs an error
+    // each time. A HIERARCH name such as key.CDELT1 would become KEY.CDEL, and key.CDELT2 would become the same name.
+    static const std::regex fits_keyword("[A-Za-z0-9_-]{1,8}");
     // The longest string a FITS card holds
     constexpr std::size_t longest_string = 68;
 
     casacore::Record record;
     for (const auto& keyword : keywords) {
-        if (keyword.name.empty() || std::regex_match(keyword.name, written_by_casacore)) {
+        if (!std::regex_match(keyword.name, fits_keyword) || std::regex_match(keyword.name, written_by_casacore)) {
             continue;
         }
         const casacore::String name(keyword.name);
