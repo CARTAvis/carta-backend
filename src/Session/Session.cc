@@ -510,8 +510,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
     if (lel_expr) {
         // filename field is LEL expression
-        auto dir_path = GetResolvedFilename(_top_level_folder, directory, "", err_message);
-        if (!dir_path.empty()) {
+        // Names in the expression are checked from the directory as the client gave it, not from where its symlinks lead
+        std::string dir_path;
+        if (!GetResolvedFilename(_top_level_folder, directory, "", err_message, &dir_path).empty()) {
             auto loader = _loaders.Get(filename, dir_path);
             try {
                 loader->OpenFile(hdu);
@@ -1053,13 +1054,18 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
                 casacore::Path top_level_path(_top_level_folder);
                 top_level_path.append(directory);
                 top_level_path.append(filename);
-                abs_filename = top_level_path.absoluteName();
+                abs_filename = GetPathInFolder(top_level_path.originalName(), _top_level_folder);
             }
 
-            std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
+            if (!filename.empty() && abs_filename.empty()) {
+                export_ack.set_success(false);
+                export_ack.set_message("Export region failed: forbidden path.");
+            } else {
+                std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
 
-            _region_handler->ExportRegion(file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename,
-                message.overwrite(), export_ack);
+                _region_handler->ExportRegion(file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles,
+                    abs_filename, message.overwrite(), export_ack);
+            }
         }
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
