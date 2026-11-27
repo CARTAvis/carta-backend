@@ -289,6 +289,9 @@ bool FitsLoader::GetLastHistoryBeam(unsigned int hdu_num, casacore::Quantity& ma
         }
     }
 
+    status = 0;
+    fits_close_file(fptr, &status);
+
     return found_history_beam;
 }
 
