@@ -94,11 +94,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, c
         file_list_response.set_success(false);
         file_list_response.set_message("File list failed: " + message);
         return;
-    } else if ((_top_level_folder.find(resolved_path) == 0) && (resolved_path.length() < _top_level_folder.length())) {
-        // path is above top folder!
-        file_list_response.set_success(false);
-        file_list_response.set_message("Forbidden path.");
-        return;
     }
 
     casacore::File folder_path(resolved_path);

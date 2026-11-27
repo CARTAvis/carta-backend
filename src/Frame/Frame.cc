@@ -1976,10 +1976,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
-    // Get the full resolved name of the output image
-    fs::path temp_path = fs::path(root_folder) / directory;
-    fs::path abs_path = fs::absolute(temp_path);
-    output_filename = abs_path / output_filename;
+    // Get the full name of the output image. As with other paths from the frontend, a leading / is the top-level folder.
+    fs::path top_path = fs::absolute(root_folder);
+    output_filename = GetPathInFolder((top_path / directory.relative_path() / output_filename.relative_path()).string(), top_path.string());
+
+    if (output_filename.empty()) {
+        save_file_ack.set_success(false);
+        save_file_ack.set_message("Cannot save image: forbidden path.");
+        return;
+    }
 
     if (fs::exists(output_filename)) {
         if (output_filename.string() == in_file) {
@@ -2180,6 +2185,12 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
 // Input message as a return message, which may contain error message
 // Return a bool if this functionality success
 bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, std::string& message) {
+    // cfitsio reads "name(template)" and "name[compression]" in the name of a new file
+    if (output_filename.string().find_first_of("([") != std::string::npos) {
+        message = "FITS file paths cannot contain ( or [.";
+        return false;
+    }
+
     bool success = false;
     bool prefer_velocity;
     bool optical_velocity;
