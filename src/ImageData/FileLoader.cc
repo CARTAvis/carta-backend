@@ -19,10 +19,10 @@
 #include "CompListLoader.h"
 #include "ConcatLoader.h"
 #include "ExprLoader.h"
-#include "FitsLoader.h"
-#include "Hdf5Loader.h"
+#include "Fits/FitsLoader.h"
+#include "Hdf5/Hdf5Loader.h"
 #include "ImagePtrLoader.h"
-#include "MiriadLoader.h"
+#include "Miriad/MiriadLoader.h"
 #include "PolarizationCalculator.h"
 
 using namespace carta;

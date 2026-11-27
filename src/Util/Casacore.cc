@@ -13,7 +13,7 @@
 #include <casacore/casa/Quanta/UnitMap.h>
 #include <casacore/images/Images/ImageExprParse.h>
 
-#include "ImageData/CartaMiriadImage.h"
+#include "ImageData/Miriad/CartaMiriadImage.h"
 #include "Logger/Logger.h"
 #include "Util/FileSystem.h"
 

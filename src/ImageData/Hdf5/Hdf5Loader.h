@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_IMAGEDATA_HDF5LOADER_H_
-#define CARTA_SRC_IMAGEDATA_HDF5LOADER_H_
+#ifndef CARTA_SRC_IMAGEDATA_HDF5_HDF5LOADER_H_
+#define CARTA_SRC_IMAGEDATA_HDF5_HDF5LOADER_H_
 
 #include <regex>
 #include <unordered_map>
@@ -15,8 +15,8 @@
 
 #include "Frame/Frame.h"
 
+#include "../FileLoader.h"
 #include "CartaHdf5Image.h"
-#include "FileLoader.h"
 #include "Hdf5Attributes.h"
 
 namespace carta {
@@ -72,4 +72,4 @@ private:
 
 #include "Hdf5Loader.tcc"
 
-#endif // CARTA_SRC_IMAGEDATA_HDF5LOADER_H_
+#endif // CARTA_SRC_IMAGEDATA_HDF5_HDF5LOADER_H_
