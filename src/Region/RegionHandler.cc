@@ -1598,10 +1598,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     }
 
     // Get 2D region with original image coordinate to check if inside image and whether to use loader.
-    // A computed stokes is calculated from the image's own stokes, so it uses the LCRegion of the image.
+    // A computed stokes is calculated from the image's own stokes, so it uses the LCRegion of the image too.
     // Only that LCRegion is cached, and the loader takes its mask from the cache.
-    StokesSource stokes_source = Stokes::IsComputed(stokes_index) ? StokesSource() : StokesSource(stokes_index, z_range);
-    auto lc_region = region->GetLCRegion(file_id, frame->CoordinateSystem(stokes_source), frame->ImageShape(stokes_source), stokes_source);
+    auto lc_region = region->GetLCRegion(file_id, frame->CoordinateSystem(), frame->ImageShape());
 
     if (!lc_region) {
         // region outside image, send NaNs

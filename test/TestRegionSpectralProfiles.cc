@@ -206,6 +206,8 @@ public:
         }
         _frame = std::make_shared<Frame>(0, carta::FileLoader::GetLoader(_image_path), "0");
         _csys = _frame->CoordinateSystem();
+        // The tests use 4 x 4 boxes. Only the HDF5 image reads their profiles through the loader.
+        ASSERT_EQ(_frame->UseLoaderSpectralData(casacore::IPosition(2, 4, 4)), GetParam() == "hdf5");
     }
 
     // Sets a box region with corners (x0, y0) and (x1, y1), or moves it there
@@ -293,6 +295,8 @@ TEST_P(ComputedStokesSpectralProfileTest, PlinearProfileAfterQProfileFollowsRegi
     ASSERT_TRUE(GetProfile(spectral_data));
     ASSERT_TRUE(SetCoordinate("Plinearz"));
     ASSERT_TRUE(GetProfile(spectral_data));
+    EXPECT_EQ(spectral_data.stokes(), CARTA::PolarizationType::Plinear);
+    EXPECT_EQ(spectral_data.progress(), 1.0);
     CmpVectors<double>(MeanValues(spectral_data), PlinearMeanProfile(0, 0, 3, 3), 1e-6);
 
     ASSERT_TRUE(SetBox(4, 4, 7, 7));
