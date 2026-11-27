@@ -24,6 +24,7 @@
 #include "ImagePtrLoader.h"
 #include "Miriad/MiriadLoader.h"
 #include "PolarizationCalculator.h"
+#include "Zarr/CartaZarrImage.h"
 #include "Zarr/ZarrLoader.h"
 #include "Zarr/ZarrStores.h"
 
@@ -341,6 +342,14 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
         if (image_type == "CartaFitsImage") {
             // Use cfitsio for slice
             return image->doGetSlice(data, slicer);
+        } else if (auto* zarr_image = dynamic_cast<CartaZarrImage*>(image.get())) {
+            // Read sets masked pixels to NaN, so there is no mask to apply here
+            const auto read = zarr_image->Read(data, slicer);
+            if (!read) {
+                spdlog::error("Error loading image data: {}", read.error().message);
+                return false;
+            }
+            return true;
         } else if (image_type == "ImageExpr") {
             // Use ImageExpr for slice
             casacore::Array<float> slice_data;
