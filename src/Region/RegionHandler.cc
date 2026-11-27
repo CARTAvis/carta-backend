@@ -1597,8 +1597,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         return true;
     }
 
-    // Get 2D region with original image coordinate to check if inside image and whether to use loader
-    StokesSource stokes_source(stokes_index, z_range);
+    // Get 2D region with original image coordinate to check if inside image and whether to use loader.
+    // A computed stokes is calculated from the image's own stokes, so it uses the LCRegion of the image.
+    // Only that LCRegion is cached, and the loader takes its mask from the cache.
+    StokesSource stokes_source = Stokes::IsComputed(stokes_index) ? StokesSource() : StokesSource(stokes_index, z_range);
     auto lc_region = region->GetLCRegion(file_id, frame->CoordinateSystem(stokes_source), frame->ImageShape(stokes_source), stokes_source);
 
     if (!lc_region) {
@@ -1733,10 +1735,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
-
-    if (Stokes::IsComputed(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
-        lc_region = nullptr;
-    }
 
     // Get per-z stats data for spectral profiles
     while (progress < 1.0) {

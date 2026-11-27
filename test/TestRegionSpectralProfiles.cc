@@ -190,3 +190,116 @@ TEST_F(RegionSpectralProfileTest, TestAnnPointSpectralProfile) {
     bool ok = SpectralProfile(image_path, points, spectral_data, true);
     ASSERT_FALSE(ok);
 }
+
+class ComputedStokesSpectralProfileTest : public RegionSpectralProfileTest, public ::testing::WithParamInterface<std::string> {
+public:
+    void SetUp() override {
+        // DataReader has no virtual destructor, so each reader is kept with its own type
+        if (GetParam() == "fits") {
+            _image_path = FitsImages() / "noise_iquv.fits";
+            _fits_reader = std::make_unique<FitsDataReader>(_image_path);
+            _reader = _fits_reader.get();
+        } else {
+            _image_path = Hdf5Images() / "noise_iquv.hdf5";
+            _hdf5_reader = std::make_unique<Hdf5DataReader>(_image_path);
+            _reader = _hdf5_reader.get();
+        }
+        _frame = std::make_shared<Frame>(0, carta::FileLoader::GetLoader(_image_path), "0");
+        _csys = _frame->CoordinateSystem();
+    }
+
+    // Sets a box region with corners (x0, y0) and (x1, y1), or moves it there
+    bool SetBox(float x0, float y0, float x1, float y1) {
+        return SetRegion(_region_handler, _file_id, _region_id, {x0, y0, x0, y1, x1, y1, x1, y0}, _csys, false);
+    }
+
+    bool SetCoordinate(const std::string& coordinate) {
+        auto message = SetSpectralRequirements(_file_id, _region_id, coordinate);
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> requirements = {
+            message.spectral_profiles().begin(), message.spectral_profiles().end()};
+        return _region_handler.SetSpectralRequirements(_region_id, _file_id, _frame, requirements);
+    }
+
+    bool GetProfile(CARTA::SpectralProfileData& spectral_data) {
+        spectral_data.Clear();
+        return _region_handler.FillSpectralProfileData(
+            [&](CARTA::SpectralProfileData profile_data) { spectral_data = profile_data; }, _region_id, _file_id, false);
+    }
+
+    // Returns the mean of each channel of stokes `stokes` in the box from (x0, y0) to (x1, y1)
+    std::vector<double> MeanProfile(hsize_t stokes, hsize_t x0, hsize_t y0, hsize_t x1, hsize_t y1) {
+        std::vector<double> profile;
+        for (hsize_t z = 0; z < DEPTH; ++z) {
+            auto data = _reader->ReadRegion({x0, y0, z, stokes}, {x1 + 1, y1 + 1, z + 1, stokes + 1});
+            profile.push_back(std::accumulate(data.begin(), data.end(), 0.0) / data.size());
+        }
+        return profile;
+    }
+
+    // Returns the Plinear mean profile of the box. RegionHandler combines the profiles of Q and U.
+    std::vector<double> PlinearMeanProfile(hsize_t x0, hsize_t y0, hsize_t x1, hsize_t y1) {
+        auto q = MeanProfile(1, x0, y0, x1, y1);
+        auto u = MeanProfile(2, x0, y0, x1, y1);
+        std::vector<double> profile;
+        for (size_t z = 0; z < q.size(); ++z) {
+            profile.push_back(std::sqrt(q[z] * q[z] + u[z] * u[z]));
+        }
+        return profile;
+    }
+
+    static std::vector<double> MeanValues(const CARTA::SpectralProfileData& spectral_data) {
+        for (const auto& profile : spectral_data.profiles()) {
+            if (profile.stats_type() == CARTA::StatsType::Mean) {
+                return GetSpectralProfileValues<double>(profile);
+            }
+        }
+        return {};
+    }
+
+    // The image noise_iquv has 5 channels
+    static constexpr hsize_t DEPTH = 5;
+    fs::path _image_path;
+    std::unique_ptr<FitsDataReader> _fits_reader;
+    std::unique_ptr<Hdf5DataReader> _hdf5_reader;
+    DataReader* _reader = nullptr;
+    std::shared_ptr<Frame> _frame;
+    std::shared_ptr<casacore::CoordinateSystem> _csys;
+    carta::RegionHandler _region_handler;
+    int _file_id = 0;
+    int _region_id = -1;
+};
+
+// The FITS image goes through casacore. The HDF5 image goes through the loader, because it has swizzled data.
+TEST_P(ComputedStokesSpectralProfileTest, PlinearProfileFollowsRegion) {
+    CARTA::SpectralProfileData spectral_data;
+    ASSERT_TRUE(SetBox(0, 0, 3, 3));
+    ASSERT_TRUE(SetCoordinate("Plinearz"));
+    ASSERT_TRUE(GetProfile(spectral_data));
+    EXPECT_EQ(spectral_data.stokes(), CARTA::PolarizationType::Plinear);
+    EXPECT_EQ(spectral_data.progress(), 1.0);
+    CmpVectors<double>(MeanValues(spectral_data), PlinearMeanProfile(0, 0, 3, 3), 1e-6);
+
+    ASSERT_TRUE(SetBox(4, 4, 7, 7));
+    ASSERT_TRUE(GetProfile(spectral_data));
+    EXPECT_EQ(spectral_data.progress(), 1.0);
+    CmpVectors<double>(MeanValues(spectral_data), PlinearMeanProfile(4, 4, 7, 7), 1e-6);
+}
+
+// A profile of Q first caches the LCRegion of the image. Moving the region clears that cache.
+TEST_P(ComputedStokesSpectralProfileTest, PlinearProfileAfterQProfileFollowsRegion) {
+    CARTA::SpectralProfileData spectral_data;
+    ASSERT_TRUE(SetBox(0, 0, 3, 3));
+    ASSERT_TRUE(SetCoordinate("Qz"));
+    ASSERT_TRUE(GetProfile(spectral_data));
+    ASSERT_TRUE(SetCoordinate("Plinearz"));
+    ASSERT_TRUE(GetProfile(spectral_data));
+    CmpVectors<double>(MeanValues(spectral_data), PlinearMeanProfile(0, 0, 3, 3), 1e-6);
+
+    ASSERT_TRUE(SetBox(4, 4, 7, 7));
+    ASSERT_TRUE(GetProfile(spectral_data));
+    EXPECT_EQ(spectral_data.progress(), 1.0);
+    CmpVectors<double>(MeanValues(spectral_data), PlinearMeanProfile(4, 4, 7, 7), 1e-6);
+}
+
+INSTANTIATE_TEST_SUITE_P(RegionSpectralProfileTest, ComputedStokesSpectralProfileTest, ::testing::Values("fits", "hdf5"),
+    [](const ::testing::TestParamInfo<std::string>& info) { return info.param; });
