@@ -10,11 +10,18 @@
 #include "ImageData/FileLoader.h"
 #include "ImageData/Hdf5/CartaHdf5Image.h"
 #include "Logger/Logger.h"
+#include "Main/ProgramSettings.h"
 
 using namespace carta;
 
 class ImageExprTest : public ::testing::Test {
 public:
+    std::string default_top_level_folder = ProgramSettings::GetInstance().top_level_folder;
+
+    void TearDown() override {
+        ProgramSettings::GetInstance().top_level_folder = default_top_level_folder;
+    }
+
     void GenerateImageExprTimesTwo(const fs::path file_path, const std::string& hdu, bool invalid = false) {
         // Image on disk
         auto loader = carta::FileLoader::GetLoader(file_path);
@@ -131,4 +138,58 @@ TEST_F(ImageExprTest, ImageExprTwoDirs) {
     fits_loader->OpenFile("");
     casacore::IPosition fits_shape(fits_loader->GetShape());
     ASSERT_EQ(fits_shape, expr_shape);
+}
+
+TEST_F(ImageExprTest, ImageExprOutsideTopLevelFolder) {
+    auto& top_level_folder = ProgramSettings::GetInstance().top_level_folder;
+    std::string two_dirs = "\"noise_10px_10px.fits\" + \"../casa/noise_10px_10px.im\"";
+    auto saved_path = (FitsImages() / "test_two_dirs_expr.im").string();
+    fs::remove_all(saved_path);
+    std::string message;
+
+    top_level_folder = ImagesPath().string();
+    auto loader = carta::FileLoader::GetLoader(two_dirs, FitsImages());
+    EXPECT_NO_THROW(loader->OpenFile(""));
+    ASSERT_TRUE(loader->SaveFile(CARTA::FileType::CASA, saved_path, message));
+    EXPECT_NO_THROW(carta::FileLoader::GetLoader(saved_path)->OpenFile(""));
+
+    top_level_folder = FitsImages().string();
+    EXPECT_THROW(carta::FileLoader::GetLoader(two_dirs, FitsImages())->OpenFile(""), casacore::AipsError);
+    EXPECT_THROW(carta::FileLoader::GetLoader(saved_path)->OpenFile(""), casacore::AipsError);
+    fs::remove_all(saved_path);
+
+    // A name outside the folder is refused before casacore looks for it, so the error doesn't give away whether it exists
+    try {
+        carta::FileLoader::GetLoader("\"../casa/missing.im\" * 2", FitsImages())->OpenFile("");
+        ADD_FAILURE() << "Expression with a name outside the top-level folder was opened";
+    } catch (const casacore::AipsError& err) {
+        EXPECT_NE(err.getMesg().find("top-level folder"), std::string::npos) << err.getMesg();
+    }
+}
+
+TEST_F(ImageExprTest, RootFolderAllowsSavedExprInExpr) {
+    // With the top-level folder /, nothing is refused, so an expression can still use a saved image expression
+    ProgramSettings::GetInstance().top_level_folder = "/";
+    auto saved_path = (FitsImages() / "test_saved_in_expr.im").string();
+    fs::remove_all(saved_path);
+    std::string message;
+    auto loader = carta::FileLoader::GetLoader("\"" + (FitsImages() / "noise_10px_10px.fits").string() + "\" * 2", FitsImages());
+    loader->OpenFile("");
+    ASSERT_TRUE(loader->SaveFile(CARTA::FileType::CASA, saved_path, message));
+    EXPECT_NO_THROW(carta::FileLoader::GetLoader("\"test_saved_in_expr.im\" * 1", FitsImages())->OpenFile(""));
+    fs::remove_all(saved_path);
+}
+
+TEST_F(ImageExprTest, ImageExprInLinkedFolder) {
+    // In a folder reached through a symlink, a .. in a name starts from where the symlink points
+    auto link_dir = ImagesPath() / "test_link_dir";
+    fs::remove_all(link_dir);
+    fs::create_directory(link_dir);
+    fs::create_directory_symlink(FitsImages(), link_dir / "link");
+
+    ProgramSettings::GetInstance().top_level_folder = ImagesPath().string();
+    auto loader = carta::FileLoader::GetLoader("\"noise_10px_10px.fits\" + \"../casa/noise_10px_10px.im\"", link_dir / "link");
+    EXPECT_NO_THROW(loader->OpenFile(""));
+
+    fs::remove_all(link_dir);
 }

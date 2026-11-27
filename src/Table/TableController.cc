@@ -11,6 +11,7 @@
 #include "Logger/Logger.h"
 #include "Main/ProgramSettings.h"
 #include "Timer/ListProgressReporter.h"
+#include "Util/Casacore.h"
 #include "Util/File.h"
 #include "Util/Message.h"
 
@@ -425,5 +426,5 @@ fs::path TableController::GetPath(std::string directory, std::string name) {
         file_path /= name;
     }
 
-    return file_path;
+    return GetPathInFolder(file_path.string(), _top_level_folder, false);
 }
