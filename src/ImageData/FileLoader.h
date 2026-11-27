@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_IMAGEDATA_FILELOADER_H_
 #define CARTA_SRC_IMAGEDATA_FILELOADER_H_
 
+#include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -98,14 +100,20 @@ public:
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
+    // Called during a cursor spectrum read with the number of channels read so far, from the first channel,
+    // and the total. Returning false stops the read.
+    using SpectralReadProgress = std::function<bool(std::size_t channels_done, std::size_t channels_total)>;
+    // Whether a region spectral profile is still wanted. A loader may call it during a read.
+    using SpectralReadWanted = std::function<bool()>;
+
     // Spectral profiles for cursor and region
-    virtual bool GetCursorSpectralData(
-        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
+    virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y,
+        std::mutex& image_mutex, const SpectralReadProgress& progress);
     // Check if one can apply swizzled data under such image format and region condition
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
     virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress, const SpectralReadWanted& still_wanted);
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual bool GetChunk(

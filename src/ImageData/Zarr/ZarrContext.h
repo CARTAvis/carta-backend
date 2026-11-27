@@ -7,6 +7,7 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARR_ZARRCONTEXT_H_
 #define CARTA_SRC_IMAGEDATA_ZARR_ZARRCONTEXT_H_
 
+#include <cstddef>
 #include <memory>
 
 #include <carta-zarr/carta_zarr.h>
@@ -34,6 +35,10 @@ std::shared_ptr<const carta::zarr::Context> GetZarrContext();
 // Returns the context that the file list uses to check stores and read their metadata. It has no cache and
 // no decode threads of its own, so it can stay for the life of the process.
 const carta::zarr::Context& GetZarrProbeContext();
+
+// The size in bytes of the shared cache. It is the backend's default if ConfigureZarrContext
+// was not called, or if its settings were refused.
+std::size_t ZarrCacheBytes();
 
 } // namespace carta
 

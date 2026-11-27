@@ -1661,21 +1661,16 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             auto t_start = std::chrono::high_resolution_clock::now();
             auto t_latest = t_start;
 
+            // Whether the profile is still wanted. It is checked between the loader's calls, and by the loader during a read.
+            const auto still_wanted = [&]() {
+                return RegionFileIdsValid(region_id, file_id) && region->GetRegionState() == initial_region_state &&
+                       !(use_current_stokes && (stokes_index != frame->CurrentStokes())) &&
+                       HasSpectralRequirements(region_id, file_id, coordinate, required_stats);
+            };
+
             // Get partial profiles until complete (do once if cached)
             while (progress < 1.0) {
-                // Cancel if region or frame is closing
-                if (!RegionFileIdsValid(region_id, file_id)) {
-                    return false;
-                }
-
-                // Cancel if region, current stokes, or spectral requirements changed
-                if (region->GetRegionState() != initial_region_state) {
-                    return false;
-                }
-                if (use_current_stokes && (stokes_index != frame->CurrentStokes())) {
-                    return false;
-                }
-                if (!HasSpectralRequirements(region_id, file_id, coordinate, required_stats)) {
+                if (!still_wanted()) {
                     return false;
                 }
 
@@ -1683,7 +1678,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                 auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
                     int tmp_stokes_index;
                     return (frame->GetStokesTypeIndex(tmp_coordinate, tmp_stokes_index) &&
-                            frame->GetLoaderSpectralData(region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress));
+                            frame->GetLoaderSpectralData(
+                                region_id, z_range, tmp_stokes_index, mask, xy_origin, tmp_results, progress, still_wanted));
                 };
 
                 ProfilesMap partial_profiles;
@@ -1692,7 +1688,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                         return false;
                     }
                 } else { // For regular stokes I, Q, U, or V
-                    if (!frame->GetLoaderSpectralData(region_id, z_range, stokes_index, mask, xy_origin, partial_profiles, progress)) {
+                    if (!frame->GetLoaderSpectralData(
+                            region_id, z_range, stokes_index, mask, xy_origin, partial_profiles, progress, still_wanted)) {
                         return false;
                     }
                 }

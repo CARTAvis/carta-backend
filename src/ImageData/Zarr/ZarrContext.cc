@@ -154,4 +154,9 @@ const carta::zarr::Context& GetZarrProbeContext() {
     return *context;
 }
 
+std::size_t ZarrCacheBytes() {
+    std::scoped_lock lock(context_mutex);
+    return configured_options.value_or(DefaultZarrContextOptions()).cache_bytes.value_or(0);
+}
+
 } // namespace carta
