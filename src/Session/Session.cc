@@ -194,10 +194,33 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             message = "Unsupported format.";
             return file_info_ok;
         }
+        // The file browser does not keep a Zarr loader. Its open image would keep the shared chunk cache in
+        // memory after every displayed image has closed. See GetZarrContext.
+        if (file_info.type() == CARTA::FileType::ZARR) {
+            _loaders.Remove(fullname);
+        }
         loader->SetAipsBeamSupport(support_aips_beam);
         FileExtInfoLoader ext_info_loader(loader);
 
         std::string requested_hdu(hdu);
+        if (requested_hdu.empty() && (file_info.type() == CARTA::FileType::ZARR) && (file_info.hdu_list_size() > 1)) {
+            // Extended file info for every image the store offers, for the HDU menu
+            for (const auto& image_id : file_info.hdu_list()) {
+                CARTA::FileInfoExtended file_info_ext;
+                if (ext_info_loader.FillFileExtInfo(file_info_ext, fullname, image_id, message)) {
+                    hdu_info_map[image_id] = file_info_ext;
+                } else {
+                    // The HDU menu leaves this image out, so log the reason
+                    spdlog::warn("No file info for image {} of {}: {}", image_id, fullname, message);
+                }
+            }
+            file_info_ok = !hdu_info_map.empty();
+            if (file_info_ok) {
+                message.clear();
+            }
+            return file_info_ok;
+        }
+
         if (requested_hdu.empty() && (file_info.hdu_list_size() > 0)) {
             // Use first hdu
             requested_hdu = file_info.hdu_list(0);
@@ -333,7 +356,11 @@ bool Session::FillFileInfo(
     file_info_ok = info_loader.FillFileInfo(file_info);
 
     if (!file_info_ok) {
-        message = fmt::format("File info for {} failed.", filename);
+        if (info_loader.Message().empty()) {
+            message = fmt::format("File info for {} failed.", filename);
+        } else {
+            message = fmt::format("File info for {} failed: {}", filename, info_loader.Message());
+        }
     }
 
     return file_info_ok;
@@ -567,6 +594,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             } else {
                 err_message = frame->GetErrorMessage();
             }
+        } else if (file_info.type() == CARTA::FileType::ZARR) {
+            // Its open image would keep the shared chunk cache in memory; see FillExtendedFileInfo
+            _loaders.Remove(fullname);
         }
     }
 

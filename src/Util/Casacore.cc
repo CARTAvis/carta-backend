@@ -14,6 +14,7 @@
 #include <casacore/images/Images/ImageExprParse.h>
 
 #include "ImageData/Miriad/CartaMiriadImage.h"
+#include "ImageData/Zarr/ZarrStores.h"
 #include "Logger/Logger.h"
 #include "Util/FileSystem.h"
 
@@ -270,6 +271,11 @@ CARTA::FileType FolderImageType(const std::string& folder_path, std::string& mes
     casacore::File input_file(folder_path);
     if (input_file.isRegular()) {
         return carta_type;
+    }
+
+    // A malformed Zarr image is still listed as one, so that opening it says why it will not open
+    if (carta::ZarrStores::Instance().Probe(folder_path)->is_zarr) {
+        return CARTA::FileType::ZARR;
     }
 
     switch (CasacoreImageType(folder_path)) {

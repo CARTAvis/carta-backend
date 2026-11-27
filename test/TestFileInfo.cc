@@ -5,12 +5,24 @@
 */
 
 #include <gtest/gtest.h>
+#include <spdlog/sinks/ringbuffer_sink.h>
+#include <spdlog/spdlog.h>
+
+#include <algorithm>
+#include <filesystem>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "CommonTestUtilities.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "ImageData/Fits/CartaFitsImage.h"
 #include "ImageData/Fits/CompressedFits.h"
+#include "ImageData/Zarr/CartaZarrImage.h"
+#include "ImageData/Zarr/ZarrContext.h"
+#include "ImageData/Zarr/ZarrStores.h"
 #include "Session/Session.h"
 #include "Table/Table.h"
 #include "Util/Message.h"
@@ -230,6 +242,14 @@ public:
         SessionFileInfoTest::CheckFileInfoResponse(response, request_filename, request_file_type, request_hdu);
     }
 
+    // The extended file info of `file` in `directory`, as the file browser asks for it
+    bool BrowseFileInfo(const std::string& directory, const std::string& file) {
+        CARTA::FileInfo file_info;
+        std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+        std::string message;
+        return FillExtendedFileInfo(extended_info_map, file_info, directory, file, "", false, message);
+    }
+
     void TestGzFitsShape(const std::vector<std::string>& cards, const std::string& expect_shape) {
         auto folder = TestRoot() / "data" / "generated";
         std::string filename = "shape_test.fits.gz";
@@ -441,6 +461,119 @@ TEST_F(SessionFileInfoTest, MiriadFile) {
     t_session.TestFileInfo("M17_SWex_unit.miriad", CARTA::FileType::MIRIAD);
 }
 
+namespace {
+
+CARTA::FileInfoExtended PanelWith(const std::vector<std::string>& names) {
+    CARTA::FileInfoExtended info;
+    for (const auto& name : names) {
+        info.add_computed_entries()->set_name(name);
+    }
+    return info;
+}
+
+const CARTA::HeaderEntry& Entry(const CARTA::FileInfoExtended& info, const std::string& name) {
+    for (const auto& entry : info.computed_entries()) {
+        if (entry.name() == name) {
+            return entry;
+        }
+    }
+    throw std::runtime_error("no entry " + name);
+}
+
+} // namespace
+
+TEST(ZarrNotes, ANoteIsTheCommentOfTheEntryItQualifies) {
+    auto info = PanelWith({"Name", "Celestial frame", "Frequency range", "Pixel increment"});
+    AnnotateEntries(info, {ZarrNote{ZarrNoteTopic::frequency, "channels not evenly spaced", ""},
+                              ZarrNote{ZarrNoteTopic::celestial_frame, "equinox 1975 read as J2000", ""}});
+    EXPECT_EQ(Entry(info, "Frequency range").comment(), "channels not evenly spaced");
+    EXPECT_EQ(Entry(info, "Celestial frame").comment(), "equinox 1975 read as J2000");
+    EXPECT_TRUE(Entry(info, "Name").comment().empty()) << "an entry no note is about is left alone";
+    EXPECT_TRUE(Entry(info, "Pixel increment").comment().empty());
+}
+
+// An existing comment stays, and two notes on one value are both added once
+TEST(ZarrNotes, NotesOnOneValueAreJoinedAfterWhatWasThere) {
+    auto info = PanelWith({"Pixel increment"});
+    info.mutable_computed_entries(0)->set_comment("from the header");
+    AnnotateEntries(info, {ZarrNote{ZarrNoteTopic::pixel_increment, "l samples not evenly spaced", ""},
+                              ZarrNote{ZarrNoteTopic::pixel_increment, "m samples not evenly spaced", ""},
+                              ZarrNote{ZarrNoteTopic::pixel_increment, "m samples not evenly spaced", ""}});
+    EXPECT_EQ(Entry(info, "Pixel increment").comment(), "from the header; l samples not evenly spaced; m samples not evenly spaced");
+}
+
+// With per-plane beams there is one beam entry per Stokes, and each gets the note
+TEST(ZarrNotes, ABeamNoteGoesOnEveryBeamEntry) {
+    auto info = PanelWith({"Median area beam (Stokes I)", "Median area beam (Stokes Q)"});
+    AnnotateEntries(info, {ZarrNote{ZarrNoteTopic::beam, "table covers 5 of 6 planes", ""}});
+    EXPECT_EQ(Entry(info, "Median area beam (Stokes I)").comment(), "table covers 5 of 6 planes");
+    EXPECT_EQ(Entry(info, "Median area beam (Stokes Q)").comment(), "table covers 5 of 6 planes");
+}
+
+// A note changes nothing in the file info if it has no topic, or if the panel does not show its entry.
+// The image has already logged such a note.
+TEST(ZarrNotes, ANoteWithNoEntryChangesNothing) {
+    auto info = PanelWith({"Name"});
+    AnnotateEntries(
+        info, {ZarrNote{ZarrNoteTopic::none, "unreadable_array", ""}, ZarrNote{ZarrNoteTopic::beam, "table covers 5 of 6 planes", ""}});
+    ASSERT_EQ(info.computed_entries_size(), 1);
+    EXPECT_TRUE(Entry(info, "Name").comment().empty());
+}
+
+// The fixture's channels are unevenly spaced, which shows in the file info
+TEST(ZarrNotes, TheFileInfoSaysWhatTheLibrarySaid) {
+    const std::filesystem::path fixture{ZARR_XRADIO_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio fixture not found at " << fixture;
+    }
+    auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fixture.string()));
+    ASSERT_NE(loader, nullptr);
+    carta::FileExtInfoLoader ext_info_loader(loader);
+    CARTA::FileInfoExtended info;
+    std::string message;
+    ASSERT_TRUE(ext_info_loader.FillFileExtInfo(info, fixture.string(), "SKY", message)) << message;
+    EXPECT_NE(Entry(info, "Frequency range").comment().find("channels not evenly spaced"), std::string::npos)
+        << "comment was '" << Entry(info, "Frequency range").comment() << "'";
+}
+
+// The image logs every note once, when it opens. This includes notes that the file info shows.
+// Filling the file info does not log them again.
+TEST(ZarrNotes, EveryNoteIsLoggedOnce) {
+    const std::filesystem::path fixture{ZARR_XRADIO_FIXTURE};
+    if (!std::filesystem::exists(fixture)) {
+        GTEST_SKIP() << "xradio fixture not found at " << fixture;
+    }
+    auto sink = std::make_shared<spdlog::sinks::ringbuffer_sink_mt>(1024);
+    sink->set_pattern("%v");
+    const auto previous = spdlog::default_logger();
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>("notes", sink));
+    std::vector<carta::ZarrNote> notes;
+    bool filled = false;
+    std::string message;
+    {
+        auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fixture.string()));
+        carta::FileExtInfoLoader ext_info_loader(loader);
+        CARTA::FileInfoExtended info;
+        filled = ext_info_loader.FillFileExtInfo(info, fixture.string(), "SKY", message);
+        if (filled) {
+            notes = dynamic_cast<const carta::CartaZarrImage&>(*loader->GetImage()).Notes();
+        }
+    }
+    spdlog::set_default_logger(previous);
+    const auto logged = sink->last_formatted();
+
+    ASSERT_TRUE(filled) << message;
+    ASSERT_FALSE(notes.empty());
+    EXPECT_TRUE(std::any_of(notes.begin(), notes.end(), [](const carta::ZarrNote& note) {
+        return note.topic != carta::ZarrNoteTopic::none;
+    })) << "the fixture should have a note the file info shows";
+    for (const auto& note : notes) {
+        const auto times = std::count_if(
+            logged.begin(), logged.end(), [&](const std::string& line) { return line.find(note.detail) != std::string::npos; });
+        EXPECT_EQ(times, 1) << note.detail;
+    }
+}
+
 class FileExtInfoTestWithParam : public testing::TestWithParam<std::string> {};
 
 TEST_P(FileExtInfoTestWithParam, Issue1632) {
@@ -470,3 +603,16 @@ TEST_P(FileExtInfoTestWithParam, Issue1632) {
 }
 
 INSTANTIATE_TEST_SUITE_P(Issue1632Files, FileExtInfoTestWithParam, ::testing::Values("bad.fits", "bad.fits.gz"));
+
+// The file browser does not keep a Zarr image open, so the shared context and its cache are freed
+TEST(ZarrFileBrowser, TheFileInfoOfAZarrImageDoesNotKeepTheSharedContext) {
+    const std::filesystem::path store{ZARR_PIXEL_FIXTURE};
+    if (!std::filesystem::exists(store)) {
+        GTEST_SKIP() << "carta-zarr pixel fixture not found at " << store;
+    }
+    ZarrStores::Instance().Clear();
+    TestSession session;
+    ASSERT_TRUE(session.BrowseFileInfo(store.parent_path().string(), store.filename().string()));
+    std::weak_ptr<const carta::zarr::Context> context = GetZarrContext();
+    EXPECT_TRUE(context.expired());
+}

@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_IMAGEDATA_ZARR_ZARRCONTEXT_H_
 #define CARTA_SRC_IMAGEDATA_ZARR_ZARRCONTEXT_H_
 
+#include <memory>
+
 #include <carta-zarr/carta_zarr.h>
 
 namespace carta {
@@ -20,13 +22,18 @@ carta::zarr::ContextOptions ZarrContextOptions(
 
 carta::zarr::ContextOptions DefaultZarrContextOptions();
 
-// Creates the process-wide carta-zarr context. Called once at startup, before any Zarr file is
-// opened, so that every Zarr image shares one set of thread pools and one chunk cache.
+// Sets the options of the context that Zarr images share. Called once at startup, before any Zarr file is
+// opened. If carta-zarr refuses the options, the backend's defaults are used.
 void ConfigureZarrContext(int file_io_concurrency, int data_copy_concurrency, double cache_pool_gib, int omp_thread_count);
 
-// Returns the context that ConfigureZarrContext created at startup.
-// If ConfigureZarrContext was never called, it returns a context with the backend's default options.
-carta::zarr::Context GetZarrContext();
+// Returns the context that every open Zarr image shares, with its thread pools and its chunk cache.
+// An image holds the pointer while it is open. The backend itself keeps only a weak pointer, so the context
+// and its cache are freed when the last image closes. The next call then makes a new one.
+std::shared_ptr<const carta::zarr::Context> GetZarrContext();
+
+// Returns the context that the file list uses to check stores and read their metadata. It has no cache and
+// no decode threads of its own, so it can stay for the life of the process.
+const carta::zarr::Context& GetZarrProbeContext();
 
 } // namespace carta
 
