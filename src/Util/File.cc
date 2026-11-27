@@ -10,6 +10,7 @@
 #include <fstream>
 #include <regex>
 
+#include "Casacore.h"
 #include "String.h"
 
 /**
@@ -64,48 +65,15 @@ bool CheckFolderPaths(std::string& top_level_string, std::string& starting_strin
         starting_string = starting_path.string();
     }
 
-    // Check if starting directory is a subdirectory of the top-level directory
+    // Check if starting directory is a subdirectory of the top-level directory. Both have had their symlinks followed.
 
-    if (!IsSubdirectory(starting_path, top_level_path)) {
+    if (GetPathInFolder(starting_path.string(), top_level_path.string(), false).empty()) {
         spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", starting_string, top_level_string);
 
         return false;
     }
 
     return true;
-}
-
-/**
- * @details This function checks if `folder` is a subdirectory of `top_folder` by
- * resolving both paths to their absolute, weakly canonical forms and then
- * traversing up the directory hierarchy.
- *
- * @warning If `top_folder` is empty, the function will always return `true`.
- */
-bool IsSubdirectory(std::string folder, std::string top_folder) {
-    auto folder_path = fs::weakly_canonical(fs::absolute(folder));
-
-    auto parent_path = fs::weakly_canonical(fs::absolute(top_folder));
-
-    if (parent_path.empty() || folder_path == parent_path) {
-        return true;
-    }
-
-    auto current_path = folder_path;
-
-    while (current_path.has_parent_path()) {
-        current_path = current_path.parent_path();
-
-        if (current_path == parent_path) {
-            return true;
-        }
-
-        if (current_path == fs::path("/")) {
-            break;
-        }
-    }
-
-    return false;
 }
 
 /**

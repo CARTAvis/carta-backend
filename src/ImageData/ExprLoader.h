@@ -16,6 +16,8 @@
 
 #include "FileLoader.h"
 #include "Hdf5/CartaHdf5Image.h"
+#include "Main/ProgramSettings.h"
+#include "Util/Casacore.h"
 #include "Util/FileSystem.h"
 
 namespace carta {
@@ -41,7 +43,7 @@ void ExprLoader::AllocateImage(const std::string& /*hdu*/) {
             // Open HDF5 with CartaHdf5Image
             CartaHdf5Image::RegisterOpenFunction();
 
-            casacore::LatticeExprNode expr_node = casacore::LatticeExprNode(casacore::ImageExprParse::command(expr, _directory));
+            auto expr_node = ParseImageExpression(expr, _directory, ProgramSettings::GetInstance().top_level_folder);
             _image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(expr_node), expr));
         } else {
             // load LEL image from disk
@@ -49,9 +51,7 @@ void ExprLoader::AllocateImage(const std::string& /*hdu*/) {
             std::string directory = file_path.parent_path().string();
             casacore::JsonKVMap jmap = casacore::JsonParser::parseFile(_filename + "/imageexpr.json");
             casacore::String expr = jmap.get("ImageExpr").getString();
-            casacore::PtrBlock<const casacore::ImageRegion*> regions;
-            casacore::LatticeExprNode node =
-                casacore::ImageExprParse::command(expr, casacore::Block<casacore::LatticeExprNode>(), regions, directory);
+            auto node = ParseImageExpression(expr, directory, ProgramSettings::GetInstance().top_level_folder);
             _image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(node), expr, _filename, jmap));
         }
 

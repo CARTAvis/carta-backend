@@ -325,7 +325,7 @@ bool FitsLoader::OpenHdu(unsigned int hdu_num, fitsfile*& fptr, int& hdu_type) {
     int status(0);
 
     // Open file and move to hdu
-    fits_open_file(&fptr, _filename.c_str(), 0, &status);
+    fits_open_diskfile(&fptr, _filename.c_str(), 0, &status);
     if (status) {
         spdlog::error("Failed to open FITS file: {}", _filename);
         return false;
@@ -346,7 +346,7 @@ bool FitsLoader::OpenBeamsTable(fitsfile*& fptr) {
     // Open binary table with name BEAMS.  Returns success.
     // If success, returns fptr moved to beams table hdu, else closes fptr.
     int status(0);
-    fits_open_file(&fptr, _filename.c_str(), 0, &status);
+    fits_open_diskfile(&fptr, _filename.c_str(), 0, &status);
 
     if (status) {
         spdlog::error("Failed to open FITS file: {}", _filename);

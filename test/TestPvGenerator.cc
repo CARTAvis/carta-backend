@@ -380,6 +380,35 @@ TEST_F(PvGeneratorTest, PvImageSpectralRange) {
     EXPECT_EQ(pv_image_shape(1), 6); // spectral axis is 6 channels
 }
 
+TEST_F(PvGeneratorTest, PvImageInvalidSpectralRange) {
+    auto image_path = FitsImages() / "noise_3d.fits"; // 10x10x10 image
+    auto loader = carta::FileLoader::GetLoader(image_path);
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+    int file_id(0), region_id(-1);
+    std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
+    SetPvCut(region_handler, file_id, region_id, endpoints, frame->CoordinateSystem());
+
+    std::vector<std::pair<int, int>> ranges = {{ALL_Z, CURRENT_Z}, {2, ALL_Z}, {0, -1}, {-3, 5}, {0, 10}, {6, 4}};
+    for (bool is_preview : {false, true}) {
+        for (auto [z_min, z_max] : ranges) {
+            auto pv_request = PvGeneratorTest::PvRequest(file_id, region_id, 3);
+            pv_request.mutable_spectral_range()->set_min(z_min);
+            pv_request.mutable_spectral_range()->set_max(z_max);
+            if (is_preview) {
+                pv_request.mutable_preview_settings()->set_region_id(IMAGE_REGION_ID);
+            }
+            CARTA::PvResponse pv_response;
+            carta::GeneratedImage pv_image;
+            region_handler.CalculatePvImage(
+                pv_request, frame, [](float) {}, pv_response, pv_image);
+            EXPECT_FALSE(pv_response.success()) << z_min << " to " << z_max << (is_preview ? " preview" : "");
+            EXPECT_EQ(pv_image.image.get(), nullptr);
+            EXPECT_FALSE(pv_response.message().empty());
+        }
+    }
+}
+
 TEST_F(PvGeneratorTest, PvImageReversedAxes) {
     auto image_path = FitsImages() / "noise_3d.fits"; // 10x10x10 image
     auto loader = carta::FileLoader::GetLoader(image_path);
