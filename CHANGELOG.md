@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed regression that prevented calculation of image stats for computed Stokes ([#1652](https://github.com/CARTAvis/carta-backend/issues/1652)).
 * Fixed key clash affecting some cached channel histograms and stats ([#1651](https://github.com/CARTAvis/carta-backend/issues/1651)).
 * Fixed region spectral profiles for computed Stokes ([#1684](https://github.com/CARTAvis/carta-backend/issues/1684)).
+* Fixed saving an image onto itself not being rejected when the output folder is reached through a symbolic link ([#1616](https://github.com/CARTAvis/carta-backend/issues/1616)).
 
 ## [6.0.0]
 
