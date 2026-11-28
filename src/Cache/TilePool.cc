@@ -5,13 +5,22 @@
 */
 
 #include "Cache/TilePool.h"
+
+#include <algorithm>
+
 #include "Util/Image.h"
 #include "Util/Nan.h"
 
 using namespace carta;
 
 void TilePool::Grow(int size) {
+    std::unique_lock<std::mutex> guard(_tile_pool_mutex);
     _capacity += size;
+}
+
+void TilePool::Reserve(int capacity) {
+    std::unique_lock<std::mutex> guard(_tile_pool_mutex);
+    _capacity = std::max(_capacity, capacity);
 }
 
 TilePtr TilePool::Pull() {
