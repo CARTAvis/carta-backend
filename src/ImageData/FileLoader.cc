@@ -319,6 +319,79 @@ bool FileLoader::FindCoordinateAxes(std::string& message) {
     return true;
 }
 
+StokesSlicer FileLoader::GetImageSlicer(const AxisRange& z_range, int stokes) {
+    return GetImageSlicer(_dims.x_range, _dims.y_range, z_range, stokes);
+}
+
+StokesSlicer FileLoader::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
+    // Set stokes source for the image loader
+    StokesSource stokes_source(stokes, z_range, x_range, y_range);
+
+    // Slicer to apply z range and stokes to image shape
+    // Start with entire image
+    casacore::IPosition start(_image_shape.size());
+    start = 0;
+    casacore::IPosition end(_image_shape);
+    end -= 1; // last position, not length
+
+    // Slice x axis
+    if (_axes.x >= 0) {
+        int start_x(x_range.from), end_x(x_range.to);
+
+        // Normalize x constants
+        if (stokes_source.IsOriginalImage()) {
+            start(_axes.x) = start_x;
+            end(_axes.x) = end_x;
+        } else { // Reset the slice cut for the computed stokes image
+            start(_axes.x) = 0;
+            end(_axes.x) = end_x - start_x;
+        }
+    }
+
+    // Slice y axis
+    if (_axes.y >= 0) {
+        int start_y(y_range.from), end_y(y_range.to);
+
+        // Normalize y constants
+        if (stokes_source.IsOriginalImage()) {
+            start(_axes.y) = start_y;
+            end(_axes.y) = end_y;
+        } else { // Reset the slice cut for the computed stokes image
+            start(_axes.y) = 0;
+            end(_axes.y) = end_y - start_y;
+        }
+    }
+
+    // Slice z axis
+    if (_axes.z >= 0) {
+        int start_z(z_range.from), end_z(z_range.to);
+
+        if (stokes_source.IsOriginalImage()) {
+            start(_axes.z) = start_z;
+            end(_axes.z) = end_z;
+        } else { // Reset the slice cut for the computed stokes image
+            start(_axes.z) = 0;
+            end(_axes.z) = end_z - start_z;
+        }
+    }
+
+    // Slice stokes axis
+    if (_axes.stokes >= 0) {
+        if (stokes_source.IsOriginalImage()) {
+            start(_axes.stokes) = stokes;
+            end(_axes.stokes) = stokes;
+        } else {
+            // Reset the slice cut for the computed stokes image
+            start(_axes.stokes) = 0;
+            end(_axes.stokes) = 0;
+        }
+    }
+
+    // slicer for image data
+    casacore::Slicer section(start, end, casacore::Slicer::endIsLast);
+    return StokesSlicer(stokes_source, section);
+}
+
 bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer) {
     StokesSource stokes_source = stokes_slicer.stokes_source;
     casacore::Slicer slicer = stokes_slicer.slicer;

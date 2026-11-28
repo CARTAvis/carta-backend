@@ -74,10 +74,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _axes = _loader->GetAxes();
     _dims = _loader->GetDims();
 
-    _all_x = AxisRange(0, _dims.width - 1);
-    _all_y = AxisRange(0, _dims.height - 1);
-    _all_z = AxisRange(0, _dims.depth - 1);
-
     _use_tile_cache = _loader->UseTileCache();
 
     // load full single-channel image cache for loaders that don't use the tile cache and mipmaps
@@ -220,91 +216,11 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
-    return GetImageSlicer(_all_x, _all_y, z_range, stokes);
+    return _loader->GetImageSlicer(z_range, stokes);
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
-    // Set stokes source for the image loader
-    StokesSource stokes_source(stokes, z_range, x_range, y_range);
-
-    // Slicer to apply z range and stokes to image shape
-    // Start with entire image
-    casacore::IPosition start(_image_shape.size());
-    start = 0;
-    casacore::IPosition end(_image_shape);
-    end -= 1; // last position, not length
-
-    // Slice x axis
-    if (_axes.x >= 0) {
-        int start_x(x_range.from), end_x(x_range.to);
-
-        // Normalize x constants
-        if (stokes_source.IsOriginalImage()) {
-            start(_axes.x) = start_x;
-            end(_axes.x) = end_x;
-        } else { // Reset the slice cut for the computed stokes image
-            start(_axes.x) = 0;
-            end(_axes.x) = end_x - start_x;
-        }
-    }
-
-    // Slice y axis
-    if (_axes.y >= 0) {
-        int start_y(y_range.from), end_y(y_range.to);
-
-        // Normalize y constants
-        if (stokes_source.IsOriginalImage()) {
-            start(_axes.y) = start_y;
-            end(_axes.y) = end_y;
-        } else { // Reset the slice cut for the computed stokes image
-            start(_axes.y) = 0;
-            end(_axes.y) = end_y - start_y;
-        }
-    }
-
-    // Slice z axis
-    if (_axes.z >= 0) {
-        int start_z(z_range.from), end_z(z_range.to);
-
-        // Normalize z constants
-        if (start_z == ALL_Z) {
-            start_z = 0;
-        } else if (start_z == CURRENT_Z) {
-            start_z = CurrentZ();
-        }
-        if (end_z == ALL_Z) {
-            end_z = Depth() - 1;
-        } else if (end_z == CURRENT_Z) {
-            end_z = CurrentZ();
-        }
-
-        if (stokes_source.IsOriginalImage()) {
-            start(_axes.z) = start_z;
-            end(_axes.z) = end_z;
-        } else { // Reset the slice cut for the computed stokes image
-            start(_axes.z) = 0;
-            end(_axes.z) = end_z - start_z;
-        }
-    }
-
-    // Slice stokes axis
-    if (_axes.stokes >= 0) {
-        // Normalize stokes constant
-        stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
-
-        if (stokes_source.IsOriginalImage()) {
-            start(_axes.stokes) = stokes;
-            end(_axes.stokes) = stokes;
-        } else {
-            // Reset the slice cut for the computed stokes image
-            start(_axes.stokes) = 0;
-            end(_axes.stokes) = 0;
-        }
-    }
-
-    // slicer for image data
-    casacore::Slicer section(start, end, casacore::Slicer::endIsLast);
-    return StokesSlicer(stokes_source, section);
+    return _loader->GetImageSlicer(x_range, y_range, z_range, stokes);
 }
 
 bool Frame::CheckZ(int z) {

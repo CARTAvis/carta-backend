@@ -109,7 +109,7 @@ public:
     AxesInfo Axes(); // struct of all axes
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
-    // Slicer to set z and stokes ranges with full xy plane
+    // Slicer to set z and stokes ranges with full xy plane: moved to the loader, but wrapped here because region code needs access
     StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);
     StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
 
@@ -280,7 +280,6 @@ protected:
     AxesInfo _axes; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
     DimsInfo _dims;
     int _z_index, _stokes_index; // current index
-    AxisRange _all_x, _all_y, _all_z;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
